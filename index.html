@@ -5535,7 +5535,7 @@ function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
     const earned = gradeRank[tier] <= currentRank;
     const tierId = idPrefix+tier;
     const pending = earned && hasPendingId(tierId);
-    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
+    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" data-claim-group="'+idPrefix+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
     html += '<div'+claimAttr+'>'
       + (pending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
       + '<div style="font-weight:800; font-size:13px; text-align:center;">'+tier+'</div>'
@@ -7622,9 +7622,10 @@ function openInfoOverlay(title, bodyHtml, onClaim, refreshBody){
       btn.dataset.bound = '1';
       btn.addEventListener('click', ()=>{
         if(btn.dataset.claimGroup){
-          const ids = [...overlay.querySelectorAll('[data-claim-reward][data-claim-group="'+btn.dataset.claimGroup+'"]')].map(x=>x.dataset.claimReward);
+          // (v191) 등급 보상은 어느 칸을 누르든 받을 수 있는 등급을 한 번에 — 알림도 합산해서 1번
+          const ids = pendingRewardsFor(btn.dataset.claimGroup).map(r=>r.id);
           const r = claimManyPending(ids);
-          if(r.n>0) toastReward({essence:r.essence, stone:r.stone, items:r.items}, '🎁 등급 보상 '+r.n+'개 획득');
+          if(r.n>0) toastReward({essence:r.essence, stone:r.stone, items:r.items}, '🏅 등급 보상 '+r.n+'개 획득');
         }else{
           claimPendingReward(btn.dataset.claimReward);
         }
