@@ -40,15 +40,16 @@
   .home.compact .home-emo{font-size:64px;} .home.compact .home-name{margin-top:6px; font-size:15px;} .home.compact .home-side{top:62px; gap:6px;} .home.compact .home-ic{height:46px;}
   .home-bg{position:absolute; inset:0; width:100%; height:100%; z-index:0; opacity:0; transition:opacity .55s ease;}
   .home-bg.on{opacity:1;}
-  .home-car{position:relative; height:96px;}
+  .home-car{position:relative; height:var(--car-h, 96px);} /* (v198) 모드 버튼 줄 높이는 fitHome()이 화면 높이에 맞춰 64~96px로 정함 */
   .home-mbtn{position:absolute; top:50%; border-radius:18px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text);
     transition:left .38s cubic-bezier(.2,.8,.2,1), width .38s cubic-bezier(.2,.8,.2,1), height .38s cubic-bezier(.2,.8,.2,1), transform .38s cubic-bezier(.2,.8,.2,1), opacity .25s, background .38s, box-shadow .38s;}
-  .home-mbtn.pos-center{left:50%; width:58%; height:88px; transform:translate(-50%,-50%); background:linear-gradient(180deg,#48f0c8,#1cc49a); color:#0d2a24; box-shadow:0 6px 0 #0e8a6c, 0 10px 20px #0008; z-index:2;}
-  .home-mbtn.pos-left{left:1%; width:19%; height:64px; transform:translate(0,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
-  .home-mbtn.pos-right{left:99%; width:19%; height:64px; transform:translate(-100%,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
+  .home-mbtn.pos-center{left:50%; width:58%; height:calc(var(--car-h, 96px) - 8px); transform:translate(-50%,-50%); background:linear-gradient(180deg,#48f0c8,#1cc49a); color:#0d2a24; box-shadow:0 6px 0 #0e8a6c, 0 10px 20px #0008; z-index:2;}
+  .home-mbtn.pos-left{left:1%; width:19%; height:max(46px, calc(var(--car-h, 96px) * .667)); transform:translate(0,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
+  .home-mbtn.pos-right{left:99%; width:19%; height:max(46px, calc(var(--car-h, 96px) * .667)); transform:translate(-100%,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
   .home-mbtn.jump{transition:none; opacity:0;}
   .home-mbtn .hm-ico{font-size:20px; line-height:1;} .home-mbtn.pos-center .hm-ico{font-size:24px;}
-  .home-mbtn .hm-name{font-weight:900; font-size:12px;} .home-mbtn.pos-center .hm-name{font-size:22px;}
+  .home-mbtn .hm-name{font-weight:900; font-size:12px;} .home-mbtn.pos-center .hm-name{font-size:max(17px, calc(var(--car-h, 96px) * .23));}
+  .home.car-s .home-mbtn.pos-center .hm-ico{font-size:18px;} .home.car-s .home-mbtn.pos-center .hm-sub{font-size:10px;} .home.car-xs .home-mbtn.pos-center .hm-sub{display:none;}
   .home-mbtn .hm-sub{display:none;} .home-mbtn.pos-center .hm-sub{display:block; font-size:11px; font-weight:800; opacity:.8; max-width:94%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .home-mbtn.pos-center[data-hmode="raid"]{background:linear-gradient(180deg,#ff8a7a,#d8404a); color:#2a0508; box-shadow:0 6px 0 #8a1f2a, 0 10px 20px #0008;}
   .home-mbtn.pos-center[data-hmode="expedition"]{background:linear-gradient(180deg,#ffd27a,#e89a3a); color:#2a1805; box-shadow:0 6px 0 #9a5a1a, 0 10px 20px #0008;}
@@ -67,6 +68,7 @@
   .home-hero{position:absolute; z-index:2; left:50%; top:var(--hero-foot, 72%); transform:translateX(-50%); width:72%; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer;}
   .home-hero .home-emo{margin-top:-1em;}
   .home-bottom{margin-top:auto;}
+  .home-bg[data-img]{background-color:#7a6aa8; background-size:cover; background-repeat:no-repeat; background-position:50% var(--home-bg-y, 50%);}
   .home-emo{font-size:clamp(72px, 26vw, 120px); line-height:1; filter:drop-shadow(0 0 22px #b79cffaa); animation:homeFloat 3.2s ease-in-out infinite;}
   @keyframes homeFloat{0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)}}
   .home-name{margin-top:14px; font-size:18px; font-weight:900; text-shadow:0 2px 6px #000a;}
@@ -2300,7 +2302,7 @@ function homeModeDot(m){ return pendingRewardCount(m)>0 && (m!=='expedition' || 
 // (v197) 일러스트가 준비된 홈 모드는 그림 배경을 씀 (1024×1536, 받침 중심 세로 74.9% — fitHome()의 정령 발끝 계산과 짝)
 const HOME_BG_IMAGES = { stage:'assets/home_stage.webp' };
 function homeBgLayer(mode){
-  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" style="background:#7a6aa8 url('+HOME_BG_IMAGES[mode]+') center/cover no-repeat;"></div>';
+  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" data-img="1" style="background-image:url('+HOME_BG_IMAGES[mode]+');"></div>';
   let stars = '';
   for(let i=0;i<30;i++){ const x = (i*97.3)%400, y = (i*53.7)%260, r = (i%5===0)?1.6:0.9; stars += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="#fff" opacity="'+(0.3+(i%4)*0.15).toFixed(2)+'"/>'; }
   const P = {
@@ -2383,12 +2385,20 @@ function fitHome(){ // 헤더와 하단 탭 사이 남는 높이에 홈을 딱 �
   const hgt = Math.max(300, Math.floor(bottom - top));
   if(el.style.height !== hgt+'px') el.style.height = hgt+'px';
   el.classList.toggle('compact', hgt < 470);
-  // (v196) 배경은 가운데 기준 cover로 깔리므로, 배경 그림 속 받침 중심(세로 74.9%)이 이 상자에서 몇 px인지 계산.
-  // 이름표가 아래 모드 버튼에 겹치지 않게, 너무 위로 올라가지 않게 범위를 제한함
-  const W = el.clientWidth, sc = Math.max(W/1024, hgt/1536), barTop = hgt - ((el.querySelector('.home-bottom')||{}).offsetHeight||96);
+  // (v198) 아래 모드 버튼 줄은 화면 높이의 14%(64~96px) — 작은 폰에서 버튼이 받침(소환진)을 가리지 않게
+  const carH = Math.max(64, Math.min(96, Math.round(hgt*0.14)));
+  el.style.setProperty('--car-h', carH+'px');
+  el.classList.toggle('car-s', carH < 84); el.classList.toggle('car-xs', carH < 72);
+  // (v196) 배경 그림(1024×1536, cover) 속 받침 중심(세로 74.9%)이 이 상자에서 몇 px인지 계산해 정령 발끝을 맞춤.
+  // (v198) 받침이 버튼 줄에 가려질 만큼 낮으면, 그림이 위아래로 남는 범위 안에서 배경을 위로 올려 받침이 보이게 함
+  const W = el.clientWidth, sc = Math.max(W/1024, hgt/1536), dispH = 1536*sc;
+  const barTop = hgt - ((el.querySelector('.home-bottom')||{}).offsetHeight || (carH+12));
   const nameH = hgt < 470 ? 46 : 60, emoH = hgt < 470 ? 64 : Math.min(120, Math.max(72, W*0.26));
-  let foot = hgt/2 + (0.749-0.5)*1536*sc;
-  foot = Math.max(70 + emoH, Math.min(barTop - nameH - 4, foot));
+  const want = barTop - nameH - 4;
+  let offY = (hgt - dispH)/2, ped = offY + 0.749*dispH;
+  if(ped > want){ const up = Math.min(ped - want, offY - (hgt - dispH)); offY -= up; ped -= up; }
+  el.style.setProperty('--home-bg-y', Math.round(offY)+'px');
+  const foot = Math.max(70 + emoH, Math.min(want, ped));
   el.style.setProperty('--hero-foot', Math.round(foot)+'px');
 }
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
