@@ -40,15 +40,17 @@
   .home.compact .home-emo{font-size:64px;} .home.compact .home-name{margin-top:6px; font-size:15px;} .home.compact .home-side{top:62px; gap:6px;} .home.compact .home-ic{height:46px;}
   .home-bg{position:absolute; inset:0; width:100%; height:100%; z-index:0; opacity:0; transition:opacity .55s ease;}
   .home-bg.on{opacity:1;}
-  .home-car{position:relative; height:96px;}
+  .home-car{position:relative; height:var(--car-h, 96px);} /* (v198) 모드 버튼 줄 높이는 fitHome()이 화면 높이에 맞춰 64~96px로 정함 */
   .home-mbtn{position:absolute; top:50%; border-radius:18px; border:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text);
     transition:left .38s cubic-bezier(.2,.8,.2,1), width .38s cubic-bezier(.2,.8,.2,1), height .38s cubic-bezier(.2,.8,.2,1), transform .38s cubic-bezier(.2,.8,.2,1), opacity .25s, background .38s, box-shadow .38s;}
-  .home-mbtn.pos-center{left:50%; width:58%; height:88px; transform:translate(-50%,-50%); background:linear-gradient(180deg,#48f0c8,#1cc49a); color:#0d2a24; box-shadow:0 6px 0 #0e8a6c, 0 10px 20px #0008; z-index:2;}
-  .home-mbtn.pos-left{left:1%; width:19%; height:64px; transform:translate(0,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
-  .home-mbtn.pos-right{left:99%; width:19%; height:64px; transform:translate(-100%,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
+  .home-mbtn.pos-center{left:50%; width:58%; height:calc(var(--car-h, 96px) - 8px); transform:translate(-50%,-50%); background:linear-gradient(180deg,#48f0c8,#1cc49a); color:#0d2a24; box-shadow:0 6px 0 #0e8a6c, 0 10px 20px #0008; z-index:2;}
+  .home-mbtn.pos-left{left:1%; width:19%; height:max(46px, calc(var(--car-h, 96px) * .667)); transform:translate(0,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
+  .home-mbtn.pos-right{left:99%; width:19%; height:max(46px, calc(var(--car-h, 96px) * .667)); transform:translate(-100%,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
   .home-mbtn.jump{transition:none; opacity:0;}
   .home-mbtn .hm-ico{font-size:20px; line-height:1;} .home-mbtn.pos-center .hm-ico{font-size:24px;}
-  .home-mbtn .hm-name{font-weight:900; font-size:12px;} .home-mbtn.pos-center .hm-name{font-size:22px;}
+  .home-mbtn .hm-ico .uic{margin:0 0 1px;} .home-mbtn.pos-center .hm-ico .uic{filter:drop-shadow(0 1px 1px #0006);}
+  .home-mbtn .hm-name{font-weight:900; font-size:12px;} .home-mbtn.pos-center .hm-name{font-size:max(17px, calc(var(--car-h, 96px) * .23));}
+  .home.car-s .home-mbtn.pos-center .hm-ico{font-size:18px;} .home.car-s .home-mbtn.pos-center .hm-sub{font-size:10px;} .home.car-xs .home-mbtn.pos-center .hm-sub{display:none;}
   .home-mbtn .hm-sub{display:none;} .home-mbtn.pos-center .hm-sub{display:block; font-size:11px; font-weight:800; opacity:.8; max-width:94%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .home-mbtn.pos-center[data-hmode="raid"]{background:linear-gradient(180deg,#ff8a7a,#d8404a); color:#2a0508; box-shadow:0 6px 0 #8a1f2a, 0 10px 20px #0008;}
   .home-mbtn.pos-center[data-hmode="expedition"]{background:linear-gradient(180deg,#ffd27a,#e89a3a); color:#2a1805; box-shadow:0 6px 0 #9a5a1a, 0 10px 20px #0008;}
@@ -63,11 +65,17 @@
   .home-ic{position:relative; width:52px; height:56px; border-radius:14px; background:#1a1540dd; border:1px solid #8a74e066; color:var(--text); font-size:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; box-shadow:0 4px 10px #0006;}
   .home-ic small{font-size:10px; font-weight:800; color:#d8ccff;}
   .home-dot{position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:#ff4a4a; box-shadow:0 0 6px #ff4a4a;}
-  .home-hero{position:relative; z-index:2; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:4%; cursor:pointer;}
+  /* (v196) 대표 정령은 홈 배경의 '받침(소환진)' 위에 섬 — 발끝 높이는 fitHome()이 배경 그림(1024×1536, 받침 중심 세로 74.9%) 기준으로 계산해 --hero-foot에 넣음 */
+  .home-hero{position:absolute; z-index:2; left:50%; top:var(--hero-foot, 72%); transform:translateX(-50%); width:72%; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer;}
+  .home-hero .home-emo{margin-top:-1em;}
+  .home-bottom{margin-top:auto;}
+  .home-bg[data-img]{background-color:#6a6a9a; background-size:cover; background-repeat:no-repeat; background-position:50% 50%;}
+  .home-hero{transition:top .45s ease;} @media (prefers-reduced-motion: reduce){ .home-hero{transition:none;} }
   .home-emo{font-size:clamp(72px, 26vw, 120px); line-height:1; filter:drop-shadow(0 0 22px #b79cffaa); animation:homeFloat 3.2s ease-in-out infinite;}
   @keyframes homeFloat{0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)}}
   .home-name{margin-top:14px; font-size:18px; font-weight:900; text-shadow:0 2px 6px #000a;}
   .home-rar{font-size:12px; font-weight:800; margin-top:2px;}
+  .home-name, .home-rar{text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000, 0 2px 8px #000c;} /* (v199) 밝은 돌 받침 위에서도 읽히게 */
   .home-bottom{position:relative; z-index:3; padding:0 12px 12px; display:flex; flex-direction:column; gap:8px;}
   .home-modes{display:flex; gap:8px;}
   .home-mode{position:relative; flex:1; padding:9px 4px 8px; border-radius:14px; background:#1a1540ee; border:1px solid #8a74e066; color:var(--text); font-size:22px; display:flex; flex-direction:column; align-items:center; gap:1px;}
@@ -189,6 +197,12 @@
   nav button.locked .ico{position:relative;}
   nav button.locked .ico::after{content:'🔒'; position:absolute; right:-6px; bottom:-4px; font-size:9px;}
   nav button .ico{font-size:20px;}
+  /* (v200) 이모지 대신 쓰는 그림 아이콘 — 글자 크기(1em)에 맞춰 커지고 작아짐 */
+  .uic{width:1.25em; height:1.25em; object-fit:contain; display:inline-block; vertical-align:middle; margin:-.12em 0; pointer-events:none; -webkit-user-drag:none;}
+  nav button .ico .uic{width:28px; height:28px; margin:0;}
+  .home-ic .uic{width:30px; height:30px; margin:0;} .home.compact .home-ic .uic{width:26px; height:26px;}
+  header .essence .uic{width:18px; height:18px; margin:0;}
+  #headerFriendBtn .uic, #headerMenuBtn .uic{width:24px; height:24px; margin:0;}
   h2{font-size:15px; margin:4px 0 10px;}
   .card{background:linear-gradient(160deg,#22222f 0%,#1a1a26 100%); border-radius:14px; padding:12px; margin-bottom:10px; border:1px solid #ffffff0f; box-shadow:0 4px 14px #00000040;}
   .btn{background:linear-gradient(135deg,#6a7bff,#9a6bff); color:#fff; border:none; border-radius:12px; padding:12px; font-size:14px; font-weight:800; width:100%; box-shadow:0 4px 14px #7a5bff55, inset 0 1px 0 #ffffff33; transition:transform .08s ease, box-shadow .08s ease; letter-spacing:.2px;}
@@ -203,6 +217,13 @@
   .species-tile[data-manage]:active{transform:scale(0.96);}
   .species-tile[data-manage]::after{content:'›'; position:absolute; bottom:2px; right:5px; font-size:13px; font-weight:900; color:var(--sub); opacity:0.6;}
   .species-tile .icon{font-size:22px;}
+  /* (v200) 등급 테두리 그림 — 정령 아이콘을 정사각형 칸에 넣고 위에 등급 테두리를 씌움 (나중에 정령 그림이 들어갈 자리) */
+  .av{position:relative; display:inline-flex; align-items:center; justify-content:center; width:2.1em; height:2.1em; border-radius:22%; background:#15131f; line-height:1;}
+  .av::after{content:''; position:absolute; inset:-9%; background:center/contain no-repeat; pointer-events:none;}
+  .av.r-common::after{background-image:url(assets/ui/frame_common.webp);} .av.r-rare::after{background-image:url(assets/ui/frame_rare.webp);}
+  .av.r-epic::after{background-image:url(assets/ui/frame_epic.webp);} .av.r-legendary::after{background-image:url(assets/ui/frame_legendary.webp);}
+  .av.r-mythic::after{background-image:url(assets/ui/frame_mythic.webp);}
+  .species-tile .av{margin:2px 0 3px;} .slot .av{font-size:22px;}
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:4px; font-size:10px; background:#000a; padding:1px 5px; border-radius:8px;}
   .species-tile .passive-badge{position:absolute; top:2px; left:4px; font-size:11px;}
@@ -536,6 +557,7 @@
   .bs-field.scene .bu-hpnum{color:var(--ink,#33435c); text-shadow:var(--inksh,none);}
   .bs-scene{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
   .bs-scene i{position:absolute; left:0; right:0; display:block;}
+  .bs-scene.bs-img{background-color:#8fb86a; background-size:cover; background-repeat:no-repeat; background-position:50% 62%;}
   .sc-sky{top:0; height:42%; background:var(--sky);}
   .sc-far{top:var(--far-t,12%); height:var(--far-h,24%); background:var(--far,transparent); clip-path:var(--farclip,none);}
   .sc-mid{top:var(--mid-t,22%); height:var(--mid-h,18%); background:var(--mid,transparent); clip-path:var(--midclip,none);}
@@ -648,6 +670,9 @@
   .bg-raid-dawnJudge .bs-parts{filter:drop-shadow(0 0 3px #ffd24a);}
   /* 보스: 큰 아이콘 · 큰 체력바 · 그로기 게이지 */
   .bu.bu-boss{width:calc(var(--sz) * var(--k,1) * 1.25);}
+  .bu-bimg{display:block; width:calc(var(--sz) * var(--k,1) * 1.3); height:calc(var(--sz) * var(--k,1) * 1.3); object-fit:contain; margin-bottom:calc(var(--sz) * var(--k,1) * .3); pointer-events:none;} /* (v201) 보스 그림 — 몸통 칸보다 커서 위로만 넘치게 */
+  .ex-bimg{display:block; width:1.35em; height:1.35em; object-fit:contain; margin:-.2em;} .prep-bimg{display:block; width:96px; height:96px; object-fit:contain; margin:0 auto;}
+  .rd-bimg{display:block; width:34px; height:34px; object-fit:contain; margin:0 auto;} .rd-bimg.big{width:64px; height:64px;} @media (max-height:760px){ .rd-bimg.big{width:50px; height:50px;} }
   .bu-bel{position:absolute; right:2%; bottom:4%; z-index:2; width:calc(var(--sz) * var(--k,1) * .3); height:calc(var(--sz) * var(--k,1) * .3); border-radius:50%; background:#1a1a26d0; border:1.5px solid #ffffff88; display:flex; align-items:center; justify-content:center; font-size:calc(var(--sz) * var(--k,1) * .18);}
   .bu-boss .bu-plate, .bs-field.side .bu-boss .bu-plate{font-size:12px; padding:2px 10px; max-width:none; overflow:visible; background:#7a1020e8;}
   .bu-boss .bu-hp{width:100%; height:10px; border-radius:5px; border:1px solid #00000055;}
@@ -808,16 +833,16 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <body>
 <div id="app">
   <header>
-    <div class="title">🔮<span class="tname"> 아니마룬</span></div>
+    <div class="title"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="tname"> 아니마룬</span></div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <div class="essence" id="essenceInfoBtn" style="cursor:pointer; position:relative;">✨ <span id="essenceVal">0</span>
+      <div class="essence" id="essenceInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_essence.webp" alt="" draggable="false"><span id="essenceVal">0</span>
         <div id="essenceInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;">✨ 정수: 소환 · 에픽 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
-      <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;">🔩 <span id="stoneVal">0</span>
+      <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_stone.webp" alt="" draggable="false"><span id="stoneVal">0</span>
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;">🔩 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
-      <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;">👥<span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
-      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;">☰<span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span></button>
+      <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
+      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"><span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="achieve" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🏅 업적<span id="headerMenuAchieveDot" style="display:none; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📖 가이드북</button>
@@ -834,9 +859,9 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
   <main id="main"></main>
   <nav>
-    <button data-tab="summon"><span class="ico" style="position:relative;">🔮<span class="navdot" data-navdot="summon"></span></span>소환</button>
-    <button data-tab="spirits"><span class="ico" style="position:relative;">📦</span>정령</button>
-    <button data-tab="hearth"><span class="ico" style="position:relative;">🔥</span>화로</button>
+    <button data-tab="summon"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="navdot" data-navdot="summon"></span></span>소환</button>
+    <button data-tab="spirits"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_spirits.webp" alt="" draggable="false"></span>정령</button>
+    <button data-tab="hearth"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_hearth.webp" alt="" draggable="false"></span>화로</button>
   </nav>
 </div>
 <div id="modalRoot"></div>
@@ -859,11 +884,11 @@ const RARITY_INFO = {
   rare:{name:'레어', mult:2.5, color:'var(--rare)'},
   epic:{name:'에픽', mult:6, color:'var(--epic)'},
   legendary:{name:'레전더리', mult:15, color:'var(--legendary)'},
-  mythic:{name:'신화', mult:35, color:'#ff4fd8'}
+  mythic:{name:'신화', mult:35, color:'#ff2f57'}
 };
 const NAMES = {
   // (v157) 짜치는 "속성+등급형용사+종" 반복 조합을 버리고 고유명사·신화 모티프 위주로 재작성
-  fire:{common:['잉걸','불티'], rare:['하랑','적작'], epic:['볼칸','주작'], legendary:['펜리르','불사조'], mythic:['스콜','삼족오']},
+  fire:{common:['잉걸','불티'], rare:['하랑','적작'], epic:['볼칸','주작'], legendary:['펜리르','불사조'], mythic:['스콜','금오']},
   water:{common:['이슬','물뱀'], rare:['나이아','백사'], epic:['로렐라이','이무기'], legendary:['세이렌','청룡'], mythic:['테티스','요르문간드']},
   wood:{common:['이끼','실이'], rare:['등돌','독줄'], epic:['반석','아라크네'], legendary:['지신','그림자여왕'], mythic:['현무','아난시']},
   light:{common:['빛씨','별가루'], rare:['지천사','은사슴'], epic:['대천사','유니콘'], legendary:['치천사','키린'], mythic:['광명','백록']},
@@ -2286,7 +2311,7 @@ function homeRepSpirit(){
 function homeNextStage(){ for(let i=0;i<CHAPTER_LENGTH*MAX_CHAPTERS;i++){ if(!state.stageBest[i]) return i; } return CHAPTER_LENGTH*MAX_CHAPTERS-1; }
 // (v170) 홈 가운데 큰 버튼 = 지금 모드(기본 탐험). 양옆 버튼을 누르면 스르륵 넘어가며 배경이 페이드로 바뀜
 const HOME_MODES = ['raid','stage','expedition']; // 원형 순서: 탐험 기준 왼쪽 레이드 · 오른쪽 출정
-const HOME_MODE_INFO = { stage:{icon:'⚔️', name:'탐험'}, expedition:{icon:'🗡️', name:'출정'}, raid:{icon:'👹', name:'레이드'} };
+const HOME_MODE_INFO = { stage:{icon:'⚔️', img:'explore', name:'탐험'}, expedition:{icon:'🗡️', img:'expedition', name:'출정'}, raid:{icon:'👹', img:'raid', name:'레이드'} };
 let homeMode = 'stage'; // 앱을 켤 때는 항상 탐험부터
 function homeModeSub(m){
   if(m==='stage'){ const n = homeNextStage(); return '챕터 '+(Math.floor(n/CHAPTER_LENGTH)+1)+' · 스테이지 '+(n+1)+(isBossStage(n)?' 👑':''); }
@@ -2294,7 +2319,15 @@ function homeModeSub(m){
   const n = RAID_BOSSES.filter((x,i)=>raidBossUnlocked(i)).length; return '보스 '+n+'/'+RAID_BOSSES.length+' 해금';
 }
 function homeModeDot(m){ return pendingRewardCount(m)>0 && (m!=='expedition' || isUnlocked('expedition')); } // (v184) 잠긴 화면엔 받을 곳이 없으니 점도 안 띄움
+// (v197) 일러스트가 준비된 홈 모드는 그림 배경을 씀 (1024×1536). ped = 그림 속 받침(소환진) 가운데 마름모의 세로 위치 비율 — fitHome()이 정령 발끝을 여기에 맞춤
+const HOME_BG_IMAGES = {
+  stage:      { src:'assets/home_stage.webp',      ped:0.726 },
+  expedition: { src:'assets/home_expedition.webp', ped:0.664 },
+  raid:       { src:'assets/home_raid.webp',       ped:0.655 }
+};
+const HOME_BG_PED_DEFAULT = 0.72; // 그림이 없는(SVG) 모드용 대략값
 function homeBgLayer(mode){
+  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" data-img="1" style="background-image:url('+HOME_BG_IMAGES[mode].src+');"></div>';
   let stars = '';
   for(let i=0;i<30;i++){ const x = (i*97.3)%400, y = (i*53.7)%260, r = (i%5===0)?1.6:0.9; stars += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="#fff" opacity="'+(0.3+(i%4)*0.15).toFixed(2)+'"/>'; }
   const P = {
@@ -2315,17 +2348,23 @@ function homeBgLayer(mode){
     + '<path d="M0 520 L60 440 L120 500 L190 400 L260 490 L330 420 L400 480 L400 800 L0 800Z" fill="'+P.far+'" opacity=".92"/>'
     + extra
     + '<path d="M0 590 L80 520 L150 575 L230 505 L310 570 L400 530 L400 800 L0 800Z" fill="'+P.near+'"/>'
-    + '<circle cx="200" cy="430" r="150" fill="url(#hglow-'+mode+')"/>'
-    + '<g fill="none" stroke="'+P.glow+'" opacity=".5"><circle cx="200" cy="430" r="118" stroke-width="2.5"/><circle cx="200" cy="430" r="100" stroke-width="1" stroke-dasharray="4 7"/></g>'
+    + '<circle cx="200" cy="500" r="150" fill="url(#hglow-'+mode+')"/>'
+    + '<g fill="none" stroke="'+P.glow+'" opacity=".5"><circle cx="200" cy="500" r="118" stroke-width="2.5"/><circle cx="200" cy="500" r="100" stroke-width="1" stroke-dasharray="4 7"/></g>'
     + '<ellipse cx="200" cy="560" rx="96" ry="22" fill="'+P.far+'"/><path d="M104 560 L118 620 L282 620 L296 560Z" fill="'+P.near+'"/>'
     + '<path d="M0 660 Q200 610 400 660 L400 800 L0 800Z" fill="'+P.ground+'"/>'
     + '</svg>';
 }
 function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MODES.indexOf(m); const d = (i - c + 3) % 3; return d===0 ? 'center' : (d===1 ? 'right' : 'left'); }
+// (v201) 보스 그림 — assets/boss/<챕터 보스 기믹 id 또는 레이드 보스 id>.webp (없으면 기존 이모지)
+const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
+function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
+function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.gimmick; const sf = state.skillFight; return (sf && sf.mode==='raid') ? sf.raidBossId : null; }
+// (v200) 그림 아이콘 — assets/ui/ic_<이름>.webp
+function uiIc(n){ return '<img class="uic" src="assets/ui/ic_'+n+'.webp" alt="" draggable="false">'; }
 function homeModeBtnHtml(m){
   const info = HOME_MODE_INFO[m], locked = m==='expedition' && !isUnlocked('expedition');
   return '<button class="home-mbtn pos-'+homeCarouselPos(m)+(locked?' locked':'')+'" data-hmode="'+m+'">'
-    + '<span class="hm-ico">'+info.icon+'</span><span class="hm-name">'+info.name+'</span><small class="hm-sub">'+homeModeSub(m)+'</small>'
+    + '<span class="hm-ico">'+uiIc(info.img)+'</span><span class="hm-name">'+info.name+'</span><small class="hm-sub">'+homeModeSub(m)+'</small>'
     + (homeModeDot(m) ? '<span class="home-dot"></span>' : '') + '</button>';
 }
 function homeRotateTo(m){
@@ -2341,6 +2380,7 @@ function homeRotateTo(m){
     else el.className = el.className.replace(/pos-\w+/, 'pos-'+np);
   });
   document.querySelectorAll('.home-bg[data-bg]').forEach(b=>b.classList.toggle('on', b.dataset.bg===homeMode));
+  fitHome(); // (v199) 모드마다 받침 높이가 달라 정령 위치를 다시 맞춤
 }
 function renderHomeTab(){
   const rep = homeRepSpirit();
@@ -2348,8 +2388,8 @@ function renderHomeTab(){
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
   h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?ELEMENT_INFO[sp.element].icon:'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
-  h += '<div class="home-side left"><button class="home-ic" data-home="tower">🗼<small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest">📜<small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve">🏅<small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide">📖<small>가이드</small></button></div>';
-  h += '<div class="home-side right"><button class="home-ic" data-home="friends">👥<small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel">⚔️<small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings">⚙️<small>설정</small></button></div>';
+  h += '<div class="home-side left"><button class="home-ic" data-home="tower"><img class="uic" src="assets/ui/ic_tower.webp" alt="" draggable="false"><small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
+  h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+ELEMENT_INFO[sp.element].icon+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo">🔮</div><div class="home-name">첫 정령을 소환해보세요</div>')
@@ -2377,6 +2417,24 @@ function fitHome(){ // 헤더와 하단 탭 사이 남는 높이에 홈을 딱 �
   const hgt = Math.max(300, Math.floor(bottom - top));
   if(el.style.height !== hgt+'px') el.style.height = hgt+'px';
   el.classList.toggle('compact', hgt < 470);
+  // (v198) 아래 모드 버튼 줄은 화면 높이의 14%(64~96px) — 작은 폰에서 버튼이 받침(소환진)을 가리지 않게
+  const carH = Math.max(64, Math.min(96, Math.round(hgt*0.14)));
+  el.style.setProperty('--car-h', carH+'px');
+  el.classList.toggle('car-s', carH < 84); el.classList.toggle('car-xs', carH < 72);
+  // (v196) 배경 그림(1024×1536, cover) 속 받침 중심이 이 상자에서 몇 px인지 계산해 정령 발끝을 맞춤.
+  // (v198) 받침이 버튼 줄에 가려질 만큼 낮으면, 그림이 위아래로 남는 범위 안에서 배경을 위로 올려 받침이 보이게 함
+  // (v199) 모드마다 그림 속 받침 높이가 달라서 배경마다 따로 계산하고, 정령은 지금 모드의 받침에 세움
+  const W = el.clientWidth, sc = Math.max(W/1024, hgt/1536), dispH = 1536*sc;
+  const barTop = hgt - ((el.querySelector('.home-bottom')||{}).offsetHeight || (carH+12));
+  const nameH = hgt < 470 ? 46 : 60, emoH = hgt < 470 ? 64 : Math.min(120, Math.max(72, W*0.26));
+  const want = barTop - nameH - 4;
+  const place = ratio=>{ let offY = (hgt - dispH)/2, ped = offY + ratio*dispH;
+    if(ped > want){ const up = Math.min(ped - want, offY - (hgt - dispH)); offY -= up; ped -= up; }
+    return { offY, ped }; };
+  el.querySelectorAll('.home-bg[data-img]').forEach(b=>{ const im = HOME_BG_IMAGES[b.dataset.bg]; if(im) b.style.backgroundPosition = '50% '+Math.round(place(im.ped).offY)+'px'; });
+  const cur = place((HOME_BG_IMAGES[homeMode]||{}).ped || HOME_BG_PED_DEFAULT);
+  const foot = Math.max(70 + emoH, Math.min(want, cur.ped));
+  el.style.setProperty('--hero-foot', Math.round(foot)+'px');
 }
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
 // 앱으로 돌아옴, 글꼴 로딩. 처음 켤 때 잘리던 문제의 근본 대책
@@ -2433,9 +2491,9 @@ function renderRaidTab(){ // (v173) 한 화면 레이아웃: 상단(입장권·�
     + (raidNet.ready && !raidNet.code ? '<div class="rd-join"><input id="raidCodeInput" maxlength="6" placeholder="방 코드" autocomplete="off" autocapitalize="characters"><button id="raidJoinBtn" '+(raidNet.busy?'disabled':'')+'>참가</button></div>' : '')
     + '</div>';
   h += '<div class="rd-bosses">'+RAID_BOSSES.map((x,i)=>{ const un = raidBossUnlocked(i), p = (state.raidProgress && state.raidProgress[x.id]) || [];
-    return '<button class="rd-boss'+(x.id===info.id?' on':'')+(un?'':' lock')+'" data-raid-boss="'+x.id+'" '+(un?'':'disabled')+'><span>'+(un?x.icon:'🔒')+'</span><small>'+(un?x.name:'???')+'</small>'+(p.length?'<i>✅</i>':'')+'</button>'; }).join('')+'</div>';
+    return '<button class="rd-boss'+(x.id===info.id?' on':'')+(un?'':' lock')+'" data-raid-boss="'+x.id+'" '+(un?'':'disabled')+'><span>'+(un?bossImg(x.id, 'rd-bimg', x.icon):'🔒')+'</span><small>'+(un?x.name:'???')+'</small>'+(p.length?'<i>✅</i>':'')+'</button>'; }).join('')+'</div>';
   const br = BOSS_RUNES[info.id];
-  h += '<div class="rd-card"><div class="rd-hero"><div class="rd-ico">'+info.icon+'</div><div><div class="rd-name">'+info.name+'</div><div class="sub" style="font-size:12px; color:'+ELEMENT_INFO[info.element].color+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div></div><button class="bs-info" id="raidBossInfo" style="margin-left:auto;">ⓘ</button></div>'
+  h += '<div class="rd-card"><div class="rd-hero"><div class="rd-ico">'+bossImg(info.id, 'rd-bimg big', info.icon)+'</div><div><div class="rd-name">'+info.name+'</div><div class="sub" style="font-size:12px; color:'+ELEMENT_INFO[info.element].color+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div></div><button class="bs-info" id="raidBossInfo" style="margin-left:auto;">ⓘ</button></div>'
     + '<div class="rd-chips">'+info.gimmicks.map(g=>'<span class="rd-chip warn">⚠️ '+g.name+'</span>').join('')+'<span class="rd-chip warn">💫 그로기</span>'+(br?'<span class="rd-chip rune">💎 '+br.icon+' '+br.name+'</span>':'')+'</div>';
   h += '<div class="rd-diffs">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+x.name+(prog.includes(x.id)?'<i>✅</i>':'')+'</button>').join('')+'</div>';
   h += '<div class="rd-rew"><span>💎 <b>'+RAID_GEMS[cur.id]+'</b></span><span>🔩 <b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비 <b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+'<span class="'+(wd.includes(cur.id)?'done':'')+'">주간 첫 승리 '+Object.keys(cur.weekly).map(k=>({summon:'🔮',rare:'🎟️',epic:'💜'}[k]||'')+'×'+cur.weekly[k]).join(' ')+'</span></div>'
@@ -3640,7 +3698,7 @@ function battleUnitHtml(u, opts){
   return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon || ELEMENT_INFO[u.element].icon)+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : ELEMENT_INFO[u.element].icon)+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '👥' : '')+(u.dispName || sp.name)+eff+'</div>'
@@ -3702,7 +3760,7 @@ function battleLayout(sf){
 }
 // (v179) 전투 배경: 스테이지는 챕터 지역(설원·화산·숲·사막·동굴), 레이드는 보스마다, 출정은 들판 길, 결투는 투기장
 const BATTLE_THEMES = ['snow','volcano','forest','desert','cave'];
-const DARK_THEMES = ['volcano','cave','raid-infernoDrake','raid-abyssEye','raid-eldertree']; // 어두운 배경은 글자를 밝게
+const DARK_THEMES = ['volcano','cave','raid-infernoDrake','raid-abyssEye']; // (v204) 태고수 레이드는 그림 배경이 밝아서 제외 // 어두운 배경은 글자를 밝게
 function battleThemeOf(sf){
   if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
   if(sf.mode==='expedition') return 'plains';
@@ -3710,7 +3768,10 @@ function battleThemeOf(sf){
   const ch = Math.max(0, Math.min(MAX_CHAPTERS-1, Math.floor((sf.stageIdx||0)/CHAPTER_LENGTH)));
   return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
 }
+// (v201) 그림이 준비된 전투 배경 — 그 외 테마는 CSS로 그린 기존 배경
+const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp' };
 function battleSceneHtml(theme){
+  if(BATTLE_BG_IMAGES[theme]) return '<div class="bs-scene bs-img" style="background-image:url('+BATTLE_BG_IMAGES[theme]+');"></div><div class="bs-parts"></div>';
   return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
 function showSkillStageScreen(){
@@ -3971,7 +4032,7 @@ function showBossPrepModal(stageIdx){
     + (hasPendingForStage(stageIdx)?'<span style="position:absolute; top:-2px; right:-2px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span>':'')
     + '</button></div>';
   html += '<div class="card" style="text-align:center; margin-top:10px; padding:16px 10px;">'
-    + '<div style="font-size:44px; line-height:1;">'+gi.icon+'</div>'
+    + '<div style="font-size:44px; line-height:1;">'+bossImg(gimmickType, 'prep-bimg', gi.icon)+'</div>'
     + '<div style="font-size:18px; font-weight:900; margin-top:6px;">'+gi.name+(fixedEl?' <span style="font-size:13px; font-weight:700; color:'+ELEMENT_INFO[fixedEl].color+';">'+ELEMENT_INFO[fixedEl].icon+' '+ELEMENT_INFO[fixedEl].name+'</span>':'')+'</div>'
     + '<div class="sub" style="margin-top:6px;">⚔️ 3웨이브 연전 <button class="bs-info" id="bossInfoBtn2" style="width:24px; height:24px; font-size:12px; margin-left:4px;">ⓘ</button></div>'
     + '</div>';
@@ -3991,7 +4052,7 @@ function showBossPrepModal(stageIdx){
   });
 }
 // (v98) 출전 명단 초안 — 창을 닫았다 열어도(새로고침 포함) 남도록 세이브 상태에 보스별로 저장
-const RARITY_HEX = {common:'#b8bcc4', rare:'#4a90ff', epic:'#b04aff', legendary:'#ffb92a', mythic:'#ff4fd8'}; // 상단 CSS 변수(--common 등)와 같은 색
+const RARITY_HEX = {common:'#b8bcc4', rare:'#4a90ff', epic:'#b04aff', legendary:'#ffb92a', mythic:'#ff2f57'}; // 상단 CSS 변수(--common 등)와 같은 색
 const BOSS_MAX_COMBO_MULT = 2.2;
 function bossComboMult(matched, total){
   if(matched<=0) return 1;
@@ -5120,7 +5181,7 @@ function tile(key){
   return '<div class="species-tile" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0? '<div class="count">x'+owned+'</div>':'')
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon">'+ELEMENT_INFO[sp.element].icon+'</div>'
+    + '<div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div>'
     + '<div class="name">'+sp.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
     + (owned>0 && enhanceLevel(key)>0 ? '<div class="sub" style="margin-top:2px;">+'+enhanceLevel(key)+'</div>' : '')
@@ -5551,7 +5612,7 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 ✅. labelFn(tier) = 보상 표기
 function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
@@ -7174,7 +7235,7 @@ function renderStageTab(){
     const cls = ['ex-node', boss?'boss':'', best?'clear':(unlocked?'open':'lock'), i===next?'next':''].filter(Boolean).join(' ');
     const bi = boss ? BOSS_GIMMICK_INFO[bossGimmickFor(i)] : null;
     nodes += '<div class="'+cls+'" '+(unlocked?'data-stage="'+i+'"':'')+' style="left:'+P[l].x+'%; top:'+P[l].y+'%;">'
-      + '<div class="ex-disc">'+(boss ? '<span class="ex-bicon">'+bi.icon+'</span>' : '<b>'+(l+1)+'</b>')+(unlocked||best?'':'<span class="ex-lock">🔒</span>')+'</div>'
+      + '<div class="ex-disc">'+(boss ? '<span class="ex-bicon">'+bossImg(bossGimmickFor(i), 'ex-bimg', bi.icon)+'</span>' : '<b>'+(l+1)+'</b>')+(unlocked||best?'':'<span class="ex-lock">🔒</span>')+'</div>'
       + (boss ? '<div class="ex-lbl">👑 '+bi.name+'</div>' : '')
       + (best ? '<span class="ex-grade g'+best+'">'+best+'</span>' : '')
       + (special ? '<span class="ex-sp">🌀</span>' : '')
@@ -7234,7 +7295,7 @@ const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 �
   rare:     {c2:'#4ad0ff', stars:2, rev:0.6,  rays:0, particles:10, glow:24, flash:0.45, sfx:'summonRare'},
   epic:     {c2:'#6b6bff', stars:3, rev:0.95, rays:1, particles:20, glow:36, flash:0.75, sfx:'summonEpic'},
   legendary:{c2:'#ff7a2a', stars:4, rev:1.2,  rays:2, particles:30, glow:48, flash:1,    sfx:'summonLegend'},
-  mythic:   {c2:'#ff4fd8', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'}
+  mythic:   {c2:'#ffc94a', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'}
 };
 function summonVars(rarity, revOverride){ const hex = RARITY_HEX[rarity], t = SUMMON_THEME[rarity]; return '--rc:'+hex+'; --rc2:'+t.c2+'; --rca:'+hex+'66; --rcb:'+hex+'2e; --glow:'+t.glow+'px; --rev:'+(revOverride||t.rev)+'s; --flash:'+t.flash+';'; }
 function walletTicketHtml(opts){ const k = (opts && opts.ticketKey) || 'summon'; return ticketCount(k)>0 ? '<span>'+TICKET_INFO[k].icon+' '+ticketCount(k)+'</span>' : ''; }
