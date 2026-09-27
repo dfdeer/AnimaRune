@@ -2297,7 +2297,10 @@ function homeModeSub(m){
   const n = RAID_BOSSES.filter((x,i)=>raidBossUnlocked(i)).length; return '보스 '+n+'/'+RAID_BOSSES.length+' 해금';
 }
 function homeModeDot(m){ return pendingRewardCount(m)>0 && (m!=='expedition' || isUnlocked('expedition')); } // (v184) 잠긴 화면엔 받을 곳이 없으니 점도 안 띄움
+// (v197) 일러스트가 준비된 홈 모드는 그림 배경을 씀 (1024×1536, 받침 중심 세로 74.9% — fitHome()의 정령 발끝 계산과 짝)
+const HOME_BG_IMAGES = { stage:'assets/home_stage.webp' };
 function homeBgLayer(mode){
+  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" style="background:#7a6aa8 url('+HOME_BG_IMAGES[mode]+') center/cover no-repeat;"></div>';
   let stars = '';
   for(let i=0;i<30;i++){ const x = (i*97.3)%400, y = (i*53.7)%260, r = (i%5===0)?1.6:0.9; stars += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="#fff" opacity="'+(0.3+(i%4)*0.15).toFixed(2)+'"/>'; }
   const P = {
