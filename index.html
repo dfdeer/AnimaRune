@@ -308,8 +308,8 @@
   @keyframes bsWipe{0%{opacity:1} 100%{opacity:0; visibility:hidden}}
   .bs-intro .bu-mine{animation:bsInUp .65s ease-out .15s both;}
   .bs-intro .bu-enemy{animation:bsInDown .65s ease-out .15s both;}
-  @keyframes bsInUp{from{opacity:0; transform:translateY(60px)} to{opacity:1; transform:none}}
-  @keyframes bsInDown{from{opacity:0; transform:translateY(-60px)} to{opacity:1; transform:none}}
+  @keyframes bsInUp{from{opacity:0; transform:translateX(-60px)} to{opacity:1; transform:none}} /* (v179) 옆 시점: 내 편은 왼쪽에서 */
+  @keyframes bsInDown{from{opacity:0; transform:translateX(60px)} to{opacity:1; transform:none}}
   .bs-banner{position:absolute; left:0; right:0; top:44%; z-index:8; text-align:center; pointer-events:none;}
   .bs-banner span{display:inline-block; font-size:22px; font-weight:900; color:#fff; letter-spacing:2px; padding:8px 44px;
     background:linear-gradient(90deg,transparent,#1a2438ee 18%,#1a2438ee 82%,transparent); animation:bsBanner 1.3s ease-out forwards;}
@@ -410,14 +410,143 @@
   .bs-claim{display:flex; align-items:center; justify-content:center; gap:6px; padding:8px; border-radius:12px; border:1px solid #ffd24a88; background:#ffd24a1a; color:var(--text); font-size:13px; font-weight:800;}
   .bs-claim b{margin-left:6px; padding:2px 10px; border-radius:8px; background:#ffd24a; color:#2a1800;} .bs-claim.done{opacity:.6; border-color:#5cd65c88; background:#5cd65c1a;}
   .bs-special{padding:5px 10px; border-radius:10px; background:#ffb0201f; border:1px solid #ffb02088; color:#ffd9a0; font-size:11px; font-weight:800; text-align:center;}
-  /* 사선 시점: 전장을 뒤로 기울이고 유닛은 다시 세움 · 편마다 바닥 색 */
-  .bs-field.side .bs-arena{transform:perspective(820px) rotateX(20deg); transform-origin:50% 100%; transform-style:preserve-3d;}
-  .bs-field.side .bu{transform:rotateX(-20deg); transform-origin:50% 100%;}
-  .bs-field.side .bs-col.c-mb, .bs-field.side .bs-col.c-mf{background:linear-gradient(180deg,#4a7dff00,#4a7dff22); border-radius:14px;}
-  .bs-field.side .bs-col.c-ef, .bs-field.side .bs-col.c-eb{background:linear-gradient(180deg,#ff5a5a00,#ff5a5a22); border-radius:14px;}
-  .bs-field.side .bs-col.c-mf{transform:translateY(8px);} .bs-field.side .bs-col.c-ef{transform:translateY(-8px);} .bs-field.side .bs-col.c-eb{transform:translateY(-16px);}
   .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:10px; font-weight:900; padding:2px 8px; border-radius:8px;}
   .bs-teamtag.me{left:8px; background:#2f5bdccc; color:#fff;} .bs-teamtag.en{right:8px; background:#c0303acc; color:#fff;}
+
+  /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
+  .bs-arena2{position:relative; z-index:2; flex:1; min-height:0;}
+  .bs-arena2::before{content:''; position:absolute; left:50%; top:6%; bottom:4%; width:2px; transform:translateX(-50%); background:linear-gradient(180deg,transparent,var(--bs-line,#9fb4cf66),transparent);}
+  .bs-slot{position:absolute; transform:translate(-50%,-50%) scale(var(--d,1)); transform-origin:50% 60%;}
+  .bs-gtag{position:absolute; top:0; transform:translateX(-50%); z-index:1; font-size:9px; font-weight:800; color:var(--bs-tag,#5b6f8c); background:var(--bs-tagbg,#ffffffb0); padding:1px 7px; border-radius:6px; white-space:nowrap;}
+  .bs-field.scene{background:var(--g2,#eef4fb); box-shadow:0 6px 18px #0007;}
+  .bs-field.scene::before, .bs-field.scene::after{display:none;}
+  .bs-field.scene .bu-hpnum{color:var(--ink,#33435c); text-shadow:var(--inksh,none);}
+  .bs-scene{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
+  .bs-scene i{position:absolute; left:0; right:0; display:block;}
+  .sc-sky{top:0; height:42%; background:var(--sky);}
+  .sc-far{top:var(--far-t,12%); height:var(--far-h,24%); background:var(--far,transparent); clip-path:var(--farclip,none);}
+  .sc-mid{top:var(--mid-t,22%); height:var(--mid-h,18%); background:var(--mid,transparent); clip-path:var(--midclip,none);}
+  .sc-ground{top:var(--gr-t,36%); bottom:0; background:var(--ground);}
+  .sc-deco{inset:0; background:var(--deco,none);}
+  .bs-parts{position:absolute; inset:-200px; z-index:4; pointer-events:none; background-image:var(--pimg,none); background-size:200px 200px; opacity:var(--pop,.9); animation:var(--panim,none);}
+  @keyframes pFall{from{transform:translate(0,0)} to{transform:translate(0,200px)}}
+  @keyframes pFallX{from{transform:translate(0,0)} to{transform:translate(-200px,200px)}}
+  @keyframes pRise{from{transform:translate(0,0)} to{transform:translate(0,-200px)}}
+  @keyframes pDrift{from{transform:translate(0,0)} to{transform:translate(200px,0)}}
+  @keyframes pDriftL{from{transform:translate(0,0)} to{transform:translate(-200px,40px)}}
+  .scene.dark{--ink:#e8ecf8; --inksh:0 1px 2px #000c; --bs-tag:#e8ecf8; --bs-tagbg:#00000066; --bs-line:#ffffff40;}
+  /* 설원 */
+  .bg-snow{--sky:linear-gradient(180deg,#a9c2de,#d9e6f4); --g2:#f3f7fc;
+    --far:linear-gradient(180deg,#c3d4e8,#e0eaf5); --farclip:polygon(0 100%,0 55%,8% 30%,16% 50%,27% 10%,38% 45%,47% 26%,58% 60%,68% 16%,80% 48%,90% 28%,100% 52%,100% 100%);
+    --mid:linear-gradient(180deg,#8fa9c6,#a9bfd8); --mid-t:24%; --mid-h:16%; --midclip:polygon(0 100%,1% 55%,3% 100%,4% 30%,7% 100%,8% 62%,10% 100%,86% 100%,88% 50%,90% 100%,92% 22%,95% 100%,96% 58%,98% 100%,99% 40%,100% 100%);
+    --ground:linear-gradient(180deg,#e4edf7 0%,#f1f6fb 35%,#fbfdff 100%);
+    --deco:radial-gradient(ellipse 42% 6% at 26% 60%,#c9d8e988,transparent 72%),radial-gradient(ellipse 36% 5% at 74% 82%,#c9d8e988,transparent 72%),radial-gradient(ellipse 30% 4% at 62% 42%,#c9d8e977,transparent 72%),radial-gradient(ellipse 60% 20% at 50% 0%,#ffffff66,transparent 70%);
+    --pimg:radial-gradient(2.5px 2.5px at 12% 14%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 38% 52%,#fff 60%,transparent 66%),radial-gradient(3px 3px at 64% 26%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 86% 70%,#fff 60%,transparent 66%),radial-gradient(2.5px 2.5px at 24% 84%,#fff 60%,transparent 66%),radial-gradient(1.5px 1.5px at 52% 6%,#fff 60%,transparent 66%);
+    --panim:pFall 10s linear infinite;}
+  .bg-snow .bs-parts{filter:drop-shadow(0 0 1px #9bb3cf);}
+  /* 화산 */
+  .bg-volcano{--sky:linear-gradient(180deg,#1e0a0b,#5a1d12 70%,#7a2a14); --g2:#22100c;
+    --far:linear-gradient(180deg,#2a1210,#170909); --far-t:6%; --far-h:34%; --farclip:polygon(0 100%,0 80%,14% 70%,28% 42%,38% 14%,44% 9%,52% 9%,58% 16%,68% 44%,82% 66%,100% 74%,100% 100%);
+    --mid:#1a0b09; --mid-t:30%; --mid-h:10%; --midclip:polygon(0 100%,0 40%,6% 70%,12% 20%,18% 60%,24% 45%,30% 100%,70% 100%,76% 50%,82% 70%,88% 15%,94% 55%,100% 30%,100% 100%);
+    --ground:linear-gradient(180deg,#3a1812 0%,#2a120e 45%,#1c0c09 100%);
+    --deco:radial-gradient(ellipse 12% 5% at 48% 10%,#ffb24acc,transparent 70%),radial-gradient(ellipse 30% 14% at 48% 12%,#ff5a1a55,transparent 70%),linear-gradient(172deg,transparent 12%,#ff6a1a66 12.6%,#ffb24a88 13.2%,transparent 14%) 0 0/100% 40% no-repeat,radial-gradient(ellipse 34% 3% at 24% 66%,#ff5a1a77,transparent 70%),radial-gradient(ellipse 26% 2.5% at 78% 88%,#ff7a2a66,transparent 70%),radial-gradient(ellipse 18% 2% at 66% 50%,#ff5a1a55,transparent 70%);
+    --pimg:radial-gradient(2px 2px at 14% 20%,#ffb24a 60%,transparent 70%),radial-gradient(1.5px 1.5px at 44% 64%,#ff7a2a 60%,transparent 70%),radial-gradient(2.5px 2.5px at 72% 38%,#ffd27a 60%,transparent 70%),radial-gradient(1.5px 1.5px at 88% 82%,#ff8a3a 60%,transparent 70%),radial-gradient(2px 2px at 30% 92%,#ffb24a 60%,transparent 70%);
+    --panim:pRise 7s linear infinite;}
+  .bg-volcano .bs-parts{filter:drop-shadow(0 0 3px #ff6a1a);}
+  /* 숲 */
+  .bg-forest{--sky:linear-gradient(180deg,#8fc7b8,#cfe8c8); --g2:#7faa5a;
+    --far:linear-gradient(180deg,#6f9f7a,#5c8a66); --far-t:10%; --far-h:28%; --farclip:polygon(0 100%,0 40%,5% 25%,10% 38%,15% 16%,22% 35%,28% 14%,35% 32%,42% 20%,50% 36%,57% 14%,64% 30%,71% 10%,78% 34%,85% 18%,92% 36%,100% 20%,100% 100%);
+    --mid:linear-gradient(180deg,#3f6b47,#355c3c); --mid-t:28%; --mid-h:12%; --midclip:polygon(0 100%,0 30%,4% 10%,9% 35%,13% 20%,18% 100%,80% 100%,84% 25%,89% 5%,94% 30%,100% 15%,100% 100%);
+    --ground:linear-gradient(180deg,#8fbf6a 0%,#7fb05c 40%,#6a9a4c 100%);
+    --deco:linear-gradient(104deg,transparent 40%,#d8c49a77 45%,#e3d2a8aa 50%,#d8c49a77 55%,transparent 60%) 0 100%/100% 64% no-repeat,repeating-linear-gradient(115deg,#fff0 0 46px,#ffffff16 46px 70px) 0 0/100% 42% no-repeat,radial-gradient(ellipse 20% 3% at 18% 72%,#4f7f3a88,transparent 70%),radial-gradient(ellipse 16% 3% at 84% 60%,#4f7f3a88,transparent 70%);
+    --pimg:radial-gradient(2.5px 2.5px at 16% 22%,#fff7a0 50%,transparent 70%),radial-gradient(2px 2px at 58% 62%,#e8ff9a 50%,transparent 70%),radial-gradient(3px 1.6px at 80% 30%,#9fd06a 60%,transparent 70%),radial-gradient(2px 2px at 36% 86%,#fff7a0 50%,transparent 70%);
+    --panim:pFallX 16s linear infinite; --ink:#23402a;}
+  .bg-forest .bs-parts{filter:drop-shadow(0 0 3px #f6ff9a);}
+  /* 사막(유적) */
+  .bg-desert{--sky:radial-gradient(circle at 80% 14%,#fff6d0 0 5%,#ffe7a0 7%,transparent 16%),linear-gradient(180deg,#f0b772,#fbe1ac); --g2:#e8c384;
+    --far:linear-gradient(180deg,#e4b675,#d9a863); --far-t:22%; --far-h:16%; --farclip:polygon(0 100%,0 60%,12% 40%,26% 55%,40% 30%,55% 50%,70% 25%,85% 45%,100% 35%,100% 100%);
+    --mid:linear-gradient(180deg,#b98552,#a87444); --mid-t:18%; --mid-h:20%; --midclip:polygon(4% 100%,4% 40%,3% 40%,3% 30%,10% 30%,10% 40%,9% 40%,9% 100%,13% 100%,13% 55%,12% 55%,12% 48%,18% 48%,18% 55%,17% 55%,17% 100%,78% 100%,78% 52%,77% 52%,77% 45%,83% 45%,83% 52%,82% 52%,82% 100%,88% 100%,88% 25%,87% 25%,87% 15%,95% 15%,95% 25%,94% 25%,94% 100%);
+    --ground:repeating-linear-gradient(172deg,transparent 0 22px,#ffffff1c 22px 24px),linear-gradient(180deg,#f0cf92 0%,#e8c282 45%,#dcb070 100%);
+    --deco:radial-gradient(ellipse 40% 5% at 30% 64%,#c9965a55,transparent 70%),radial-gradient(ellipse 30% 4% at 76% 86%,#c9965a55,transparent 70%);
+    --pimg:linear-gradient(90deg,transparent 30%,#fff3d0aa 50%,transparent 70%) 0 30%/60px 1.5px no-repeat,linear-gradient(90deg,transparent 30%,#fff3d088 50%,transparent 70%) 120px 110px/40px 1px no-repeat,radial-gradient(1.5px 1.5px at 60% 70%,#fff3d0 60%,transparent 70%);
+    --panim:pDrift 5s linear infinite; --ink:#5a3a14;}
+  /* 동굴(수정) */
+  .bg-cave{--sky:linear-gradient(180deg,#0e0b1e,#221a42); --g2:#1a1630;
+    --far:#0a0816; --far-t:0; --far-h:22%; --farclip:polygon(0 0,100% 0,100% 30%,95% 75%,90% 30%,84% 95%,78% 35%,70% 60%,63% 25%,55% 85%,48% 30%,40% 65%,33% 25%,25% 90%,18% 30%,10% 60%,4% 25%,0 50%);
+    --mid:linear-gradient(180deg,#b79cff,#6a4ad8); --mid-t:26%; --mid-h:14%; --midclip:polygon(1% 100%,3% 30%,5% 100%,6% 50%,8% 5%,10% 100%,12% 60%,14% 100%,86% 100%,88% 40%,90% 100%,92% 0,95% 100%,97% 45%,99% 100%);
+    --ground:linear-gradient(180deg,#2c2548 0%,#221c3a 45%,#16122a 100%);
+    --deco:radial-gradient(ellipse 18% 12% at 8% 32%,#8a6aff55,transparent 70%),radial-gradient(ellipse 18% 12% at 92% 32%,#8a6aff55,transparent 70%),radial-gradient(circle 2px at 20% 70%,#c9b6ff,transparent),radial-gradient(circle 2px at 70% 58%,#c9b6ff,transparent),radial-gradient(circle 1.5px at 44% 88%,#c9b6ff,transparent),radial-gradient(ellipse 50% 10% at 50% 100%,#6a4ad833,transparent 70%);
+    --pimg:radial-gradient(1.5px 1.5px at 20% 30%,#e0d4ff 60%,transparent 70%),radial-gradient(2px 2px at 70% 60%,#b79cff 60%,transparent 70%),radial-gradient(1px 1px at 45% 85%,#fff 60%,transparent 70%);
+    --panim:pRise 14s linear infinite;}
+  .bg-cave .bs-parts{filter:drop-shadow(0 0 3px #b79cff);}
+  /* 출정: 해질녘 들판 길 */
+  .bg-plains{--sky:radial-gradient(circle at 22% 30%,#fff1c4 0 4%,#ffd48a 7%,transparent 18%),linear-gradient(180deg,#f29a6a,#ffd6a0); --g2:#8f9a55;
+    --far:linear-gradient(180deg,#9a88b8,#8a7aa8); --far-t:24%; --far-h:14%; --farclip:polygon(0 100%,0 50%,15% 30%,30% 55%,48% 20%,62% 50%,80% 28%,100% 45%,100% 100%);
+    --mid:#4f5a38; --mid-t:30%; --mid-h:8%; --midclip:polygon(0 100%,0 40%,3% 20%,6% 45%,9% 25%,12% 100%,60% 100%,62% 60%,63% 0,64% 0,64% 30%,70% 30%,70% 40%,64% 40%,64% 100%,90% 100%,92% 30%,95% 50%,98% 20%,100% 40%,100% 100%);
+    --ground:linear-gradient(180deg,#b3b86a 0%,#9aa75a 40%,#7f8c48 100%);
+    --deco:linear-gradient(90deg,transparent 0,#d9bf8a88 10%,#e3cc9a99 50%,#d9bf8a88 90%,transparent 100%) 0 58%/100% 14% no-repeat,radial-gradient(ellipse 16% 3% at 16% 84%,#6a7a3a88,transparent 70%),radial-gradient(ellipse 16% 3% at 86% 40%,#6a7a3a88,transparent 70%);
+    --pimg:radial-gradient(2px 2px at 20% 30%,#fff8e0 60%,transparent 70%),radial-gradient(1.5px 1.5px at 60% 70%,#ffe6b0 60%,transparent 70%),radial-gradient(2px 1.2px at 85% 20%,#fff 60%,transparent 70%);
+    --panim:pDriftL 12s linear infinite; --ink:#3a3a1a;}
+  /* 결투: 투기장 */
+  .bg-arena{--sky:linear-gradient(180deg,#5a6f9a,#a8b6d2); --g2:#c9ae80;
+    --far:repeating-linear-gradient(90deg,#8b7a66 0 30px,#6e5f4d 30px 34px); --far-t:14%; --far-h:24%; --farclip:polygon(0 100%,0 18%,100% 18%,100% 100%);
+    --mid:radial-gradient(ellipse 13px 22px at 17px 100%,#2e261f 0 60%,transparent 63%) 0 0/34px 100% repeat-x; --mid-t:24%; --mid-h:12%;
+    --ground:linear-gradient(180deg,#dcc49a 0%,#cfb384 45%,#bf9f6e 100%);
+    --deco:radial-gradient(ellipse 46% 26% at 50% 64%,transparent 95%,#ffffff55 96.5%,transparent 98%),linear-gradient(180deg,#3a2f25 0,#3a2f25 100%) 0 37.5%/100% 3px no-repeat;
+    --pimg:radial-gradient(1.5px 1.5px at 30% 40%,#fff3d888 60%,transparent 70%),radial-gradient(1px 1px at 70% 80%,#fff3d888 60%,transparent 70%);
+    --panim:pDrift 9s linear infinite; --ink:#4a3a24;}
+  /* 레이드 보스 전장 */
+  .bg-raid-frostTyrant{--sky:linear-gradient(180deg,#0b1830,#22426a); --g2:#6f8db3;
+    --far:linear-gradient(180deg,#3a6594,#274a72); --far-t:8%; --far-h:32%; --farclip:polygon(0 100%,0 60%,6% 30%,10% 55%,16% 8%,22% 50%,30% 20%,36% 60%,44% 35%,50% 0,56% 35%,64% 60%,70% 20%,78% 50%,84% 8%,90% 55%,94% 30%,100% 60%,100% 100%);
+    --mid:#1a3354; --mid-t:30%; --mid-h:10%; --midclip:polygon(0 100%,0 30%,5% 30%,5% 0,9% 0,9% 30%,14% 30%,16% 100%,84% 100%,86% 30%,91% 30%,91% 0,95% 0,95% 30%,100% 30%,100% 100%);
+    --ground:linear-gradient(180deg,#a8c0dc 0%,#86a3c6 45%,#6582aa 100%);
+    --deco:radial-gradient(ellipse 60% 18% at 50% 0,#9fd0ff33,transparent 70%),radial-gradient(ellipse 40% 5% at 30% 64%,#d8e8ff66,transparent 70%);
+    --pimg:radial-gradient(2.5px 2.5px at 12% 14%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 38% 52%,#fff 60%,transparent 66%),radial-gradient(3px 3px at 64% 26%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 86% 70%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 24% 84%,#fff 60%,transparent 66%),radial-gradient(1.5px 1.5px at 52% 6%,#fff 60%,transparent 66%),radial-gradient(2px 2px at 76% 92%,#fff 60%,transparent 66%);
+    --panim:pFallX 4s linear infinite;}
+  .bg-raid-infernoDrake{--sky:linear-gradient(180deg,#0e0404,#3d0b06 75%,#5a1206); --g2:#150605;
+    --far:#0c0404; --far-t:6%; --far-h:34%; --farclip:polygon(0 100%,0 40%,8% 20%,14% 45%,22% 10%,30% 50%,38% 25%,46% 60%,54% 30%,62% 55%,70% 15%,80% 45%,88% 22%,100% 50%,100% 100%);
+    --ground:linear-gradient(180deg,#2a0d08 0%,#1c0806 50%,#120404 100%);
+    --deco:radial-gradient(ellipse 50% 20% at 50% 36%,#ff3a0a44,transparent 70%),radial-gradient(ellipse 30% 4% at 22% 62%,#ff5a1a88,transparent 70%),radial-gradient(ellipse 24% 3% at 76% 80%,#ff7a2a77,transparent 70%),radial-gradient(ellipse 14% 2.5% at 54% 94%,#ff5a1a77,transparent 70%);
+    --pimg:radial-gradient(2px 2px at 14% 20%,#ffb24a 60%,transparent 70%),radial-gradient(2px 2px at 44% 64%,#ff5a1a 60%,transparent 70%),radial-gradient(3px 3px at 72% 38%,#ffd27a 60%,transparent 70%),radial-gradient(2px 2px at 88% 82%,#ff8a3a 60%,transparent 70%),radial-gradient(2.5px 2.5px at 30% 92%,#ffb24a 60%,transparent 70%),radial-gradient(1.5px 1.5px at 60% 10%,#ff7a2a 60%,transparent 70%);
+    --panim:pRise 4s linear infinite;}
+  .bg-raid-infernoDrake .bs-parts{filter:drop-shadow(0 0 3px #ff4a0a);}
+  .bg-raid-abyssEye{--sky:linear-gradient(180deg,#06020d,#1c0a31); --g2:#0e0818;
+    --far:repeating-radial-gradient(circle at 50% 60%,#7a3aff22 0 6px,transparent 6px 16px); --far-t:0; --far-h:40%;
+    --ground:linear-gradient(180deg,#1d112c 0%,#130b20 50%,#0b0614 100%);
+    --deco:radial-gradient(circle at 50% 22%,#c07aff55 0 3%,#7a3aff33 8%,transparent 24%),radial-gradient(ellipse 70% 12% at 50% 40%,#5a2aa044,transparent 70%),radial-gradient(ellipse 60% 10% at 50% 100%,#7a3aff33,transparent 70%);
+    --pimg:radial-gradient(2px 2px at 20% 30%,#c07aff 60%,transparent 70%),radial-gradient(1.5px 1.5px at 70% 60%,#8a5aff 60%,transparent 70%),radial-gradient(2.5px 2.5px at 45% 85%,#e0b0ff 60%,transparent 70%);
+    --panim:pRise 9s linear infinite;}
+  .bg-raid-abyssEye .bs-parts{filter:drop-shadow(0 0 4px #a45bff);}
+  .bg-raid-eldertree{--sky:linear-gradient(180deg,#051410,#0f2f23); --g2:#10241a;
+    --far:linear-gradient(90deg,#0a1f17 0 9%,transparent 9% 84%,#0a1f17 84% 95%,transparent 95%); --far-t:0; --far-h:42%;
+    --mid:#0b2219; --mid-t:0; --mid-h:16%; --midclip:polygon(0 0,100% 0,100% 60%,90% 100%,80% 50%,70% 90%,60% 40%,50% 80%,40% 45%,30% 95%,20% 50%,10% 90%,0 60%);
+    --ground:linear-gradient(180deg,#1c3a26 0%,#15301f 50%,#0e2216 100%);
+    --deco:radial-gradient(ellipse 40% 16% at 50% 40%,#3aff9a1c,transparent 70%),radial-gradient(ellipse 22% 3% at 24% 70%,#2a5a3a99,transparent 70%),radial-gradient(ellipse 20% 3% at 78% 88%,#2a5a3a99,transparent 70%);
+    --pimg:radial-gradient(2px 2px at 20% 30%,#7affc8 60%,transparent 70%),radial-gradient(1.5px 1.5px at 70% 60%,#b0ffd8 60%,transparent 70%),radial-gradient(2.5px 2.5px at 45% 85%,#5affb0 60%,transparent 70%);
+    --panim:pRise 12s linear infinite;}
+  .bg-raid-eldertree .bs-parts{filter:drop-shadow(0 0 4px #3aff9a);}
+  .bg-raid-dawnJudge{--sky:linear-gradient(180deg,#ffcf7a,#fff2d0); --g2:#e8dcc0;
+    --far:radial-gradient(ellipse 30% 40% at 20% 80%,#fff 0 60%,transparent 62%),radial-gradient(ellipse 34% 44% at 75% 85%,#fff 0 60%,transparent 62%),radial-gradient(ellipse 26% 30% at 50% 95%,#fffaf0 0 60%,transparent 62%); --far-t:18%; --far-h:22%;
+    --mid:repeating-linear-gradient(90deg,transparent 0 6%,#e8d3a0 6% 9%,transparent 9% 15%); --mid-t:16%; --mid-h:22%; --midclip:polygon(0 100%,0 8%,100% 8%,100% 100%,82% 100%,82% 0,18% 0,18% 100%);
+    --ground:repeating-linear-gradient(90deg,transparent 0 48px,#d9c79a55 48px 50px),linear-gradient(180deg,#f7efdb 0%,#ece0c2 50%,#dccb9f 100%);
+    --deco:repeating-conic-gradient(from 180deg at 50% -10%,#fff5 0 4deg,#fff0 4deg 12deg) 0 0/100% 60% no-repeat;
+    --pimg:radial-gradient(2px 2px at 20% 30%,#fff3b0 60%,transparent 70%),radial-gradient(1.5px 1.5px at 70% 60%,#ffd24a 60%,transparent 70%),radial-gradient(2px 2px at 45% 85%,#fff 60%,transparent 70%);
+    --panim:pFall 12s linear infinite; --ink:#5a4a24;}
+  .bg-raid-dawnJudge .bs-parts{filter:drop-shadow(0 0 3px #ffd24a);}
+  /* 보스: 큰 아이콘 · 큰 체력바 · 그로기 게이지 */
+  .bu.bu-boss{width:calc(var(--sz) * var(--k,1) * 1.25);}
+  .bu-bel{position:absolute; right:2%; bottom:4%; z-index:2; width:calc(var(--sz) * var(--k,1) * .3); height:calc(var(--sz) * var(--k,1) * .3); border-radius:50%; background:#1a1a26d0; border:1.5px solid #ffffff88; display:flex; align-items:center; justify-content:center; font-size:calc(var(--sz) * var(--k,1) * .18);}
+  .bu-boss .bu-plate, .bs-field.side .bu-boss .bu-plate{font-size:12px; padding:2px 10px; max-width:none; overflow:visible; background:#7a1020e8;}
+  .bu-boss .bu-hp{width:100%; height:10px; border-radius:5px; border:1px solid #00000055;}
+  .bu-boss .bu-hpnum{font-size:11px;}
+  .bu-gg{position:relative; margin-top:3px; width:100%; height:13px; border-radius:7px; background:#1a1024cc; border:1px solid #ffd24a88; overflow:hidden; cursor:pointer;}
+  .bu-gg > div{height:100%; background:linear-gradient(90deg,#ffb020,#ffe066); transition:width .3s;}
+  .bu-gg span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000;}
+  .bu-gg.lock{border-color:#8a8fa0aa;} .bu-gg.lock > div{background:repeating-linear-gradient(45deg,#6b7080 0 5px,#565a68 5px 10px);}
+  .bu-gg.on{border-color:#ff5ad2; box-shadow:0 0 10px #ff5ad2; animation:ggPulse .8s ease-in-out infinite;} .bu-gg.on > div{background:linear-gradient(90deg,#c04aff,#ff5ad2);}
+  @keyframes ggPulse{0%,100%{opacity:.75} 50%{opacity:1}}
+  .bu-boss.bu-groggy .bu-icon{animation:groggySway 1.4s ease-in-out infinite; filter:grayscale(.4) drop-shadow(0 0 8px #ff5ad2);}
+  @keyframes groggySway{0%,100%{transform:rotate(-8deg)} 50%{transform:rotate(8deg)}}
   .bs-acts.n3 .btn{font-size:12px; padding:8px 4px;}
   .bs-acts.n3 .btn small{font-size:10px;}
   .bs-info{flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff33; color:var(--text); font-size:14px;}
@@ -1152,6 +1281,7 @@ function dmgReduction(sf, d){
 function killUnit(sf, u){
   if(!u.alive) return; // 이미 쓰러진 유닛을 다시 처리하지 않음
   u.hp = 0; u.alive = false;
+  if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
   u.st = {};
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
@@ -1177,24 +1307,27 @@ function dealDamage(sf, a, d, mult, opts){
   if(sf.mode==='boss'){
     const adj = bossDefenseAdjust(sf, a, d, v);
     if(adj.blocked) return { total:0, crit:false, blocked:true };
-    if(adj.healBoss>0){ d.hp = Math.min(d.maxHp, d.hp + adj.healBoss); return { total:0, crit:false, healed:adj.healBoss }; }
+    if(adj.healBoss>0){ d.hp = Math.min(d.maxHp, d.hp + adj.healBoss); groggyHit(sf, a, d, mult, false, 0); return { total:0, crit:false, healed:adj.healBoss }; }
     v = adj.v;
   }
   const s = d.st;
   v *= 1 + (s.curse ? s.curse.v : 0) + (s.web ? s.web.v : 0);
   v *= Math.max(0.1, 1 - dmgReduction(sf, d));
+  if(d.groggy) v *= GROGGY_DMG_MULT; // (v179) 그로기: 받는 피해 2배
   let critCh = BASE_CRIT + runeCrit(a);
   if(a.line==='dark_b' && a.g>=1 && s.curse) critCh += [0,.10,.15,.20,.25][a.g];
   const crit = !opts.noCrit && Math.random() < critCh;
   if(crit) v *= CRIT_MULT;
   const total = Math.max(0, Math.round(v));
   let rest = total;
+  const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; }
   d.hp = Math.max(0, d.hp - rest);
   runeOnHit(sf, a, d, total);
   if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); if(a.hp<=0) killUnit(sf, a); }
+  const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
   if(d.hp<=0) killUnit(sf, d);
-  return { total, crit };
+  return { total, crit, groggy };
 }
 function healAmount(target, amt){
   const p = target.st.poison;
@@ -1212,6 +1345,7 @@ function makeActCtx(sf, a, tSide, tIdx){
     const r = dealDamage(sf, a, u, mult);
     if(!r) return null;
     C.hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, crit:r.crit, eff:typeMult(a.element, u.element) });
+    if(r.groggy) C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'💫그로기!' });
     if(a.line==='water_b' && a.g>=1 && u.alive){ const v = [0,5,6,8,10][a.g]; u.st.chill = Math.min(v*3, (u.st.chill||0) + v); }
     return r;
   };
@@ -1379,7 +1513,7 @@ function buildRaidFight(hostPicks, guestPicks, bossId, diffId){
   const diff = raidDiffById(diffId);
   const per = bossWaveNormalPower(RAID_BOSS_STAGE) * BOSS_POWER_MULT * diff.atk;
   const boss = makeBattleUnit('enemy', 1, info.element+'_legendary_a', per*ELEMENT_ATK_MULT[info.element], raidBossHpMult()*diff.hp/diff.atk);
-  boss.isBoss = true; boss.dispName = info.name;
+  boss.isBoss = true; boss.dispName = info.name; boss.bossIcon = info.icon; ensureGroggy(boss);
   const sf = { v:168, mode:'raid', stageIdx: RAID_BOSS_STAGE, raidBossId: info.id, raidDiff: diff.id, round:1, phase:'acting', queue:[], queuePos:0, myUnits, enemyUnits:[boss],
     log:['레이드 시작!'], result:null, fxSeq:0, lastFx:null, actSeq:0 };
   startRoundQueue(sf);
@@ -2068,7 +2202,7 @@ function renderRaidTab(){ // (v173) 한 화면 레이아웃: 상단(입장권·�
     return '<button class="rd-boss'+(x.id===info.id?' on':'')+(un?'':' lock')+'" data-raid-boss="'+x.id+'" '+(un?'':'disabled')+'><span>'+(un?x.icon:'🔒')+'</span><small>'+(un?x.name:'???')+'</small>'+(p.length?'<i>✅</i>':'')+'</button>'; }).join('')+'</div>';
   const br = BOSS_RUNES[info.id];
   h += '<div class="rd-card"><div class="rd-hero"><div class="rd-ico">'+info.icon+'</div><div><div class="rd-name">'+info.name+'</div><div class="sub" style="font-size:12px; color:'+ELEMENT_INFO[info.element].color+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div></div><button class="bs-info" id="raidBossInfo" style="margin-left:auto;">ⓘ</button></div>'
-    + '<div class="rd-chips">'+info.gimmicks.map(g=>'<span class="rd-chip warn">⚠️ '+g.name+'</span>').join('')+(br?'<span class="rd-chip rune">💎 '+br.icon+' '+br.name+'</span>':'')+'</div>';
+    + '<div class="rd-chips">'+info.gimmicks.map(g=>'<span class="rd-chip warn">⚠️ '+g.name+'</span>').join('')+'<span class="rd-chip warn">💫 그로기</span>'+(br?'<span class="rd-chip rune">💎 '+br.icon+' '+br.name+'</span>':'')+'</div>';
   h += '<div class="rd-diffs">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+x.name+(prog.includes(x.id)?'<i>✅</i>':'')+'</button>').join('')+'</div>';
   h += '<div class="rd-rew"><span>💎 <b>'+RAID_GEMS[cur.id]+'</b></span><span>🔩 <b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비 <b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+'<span class="'+(wd.includes(cur.id)?'done':'')+'">주간 첫 승리 '+Object.keys(cur.weekly).map(k=>({summon:'🔮',rare:'🎟️',epic:'💜'}[k]||'')+'×'+cur.weekly[k]).join(' ')+'</span></div>'
     + '<div class="sub" style="text-align:center; font-size:10px; margin-top:4px;">보상은 입장권을 쓴 판만</div></div>';
@@ -2088,7 +2222,7 @@ function bindRaidTab(){
   if(q('raidSoloBtn')) q('raidSoloBtn').addEventListener('click', raidStartSolo);
   if(q('raidShopBtn')) q('raidShopBtn').addEventListener('click', showRaidShop);
   document.querySelectorAll('[data-raid-boss]').forEach(el=>el.addEventListener('click', ()=>{ state.raidBossSel = el.dataset.raidBoss; save(); render(); }));
-  if(q('raidBossInfo')) q('raidBossInfo').addEventListener('click', ()=>{ const i = raidWeekBoss(); openInfoOverlay(i.icon+' '+i.name, i.gimmicks.map(g=>'<div style="padding:7px 0; border-bottom:1px solid #ffffff10;"><b>⚠️ '+g.name+'</b><div class="sub" style="font-size:12px;">'+g.desc+'</div></div>').join('')+(BOSS_RUNES[i.id]?'<div style="padding:7px 0;"><b style="color:#ff9ab0;">💎 고대 룬 · '+BOSS_RUNES[i.id].name+'</b><div class="sub" style="font-size:12px;">'+BOSS_RUNES[i.id].desc+'</div></div>':'')); });
+  if(q('raidBossInfo')) q('raidBossInfo').addEventListener('click', ()=>{ const i = raidWeekBoss(); openInfoOverlay(i.icon+' '+i.name, i.gimmicks.map(g=>'<div style="padding:7px 0; border-bottom:1px solid #ffffff10;"><b>⚠️ '+g.name+'</b><div class="sub" style="font-size:12px;">'+g.desc+'</div></div>').join('')+groggyInfoHtml(i.id)+(BOSS_RUNES[i.id]?'<div style="padding:7px 0;"><b style="color:#ff9ab0;">💎 고대 룬 · '+BOSS_RUNES[i.id].name+'</b><div class="sub" style="font-size:12px;">'+BOSS_RUNES[i.id].desc+'</div></div>':'')); });
   document.querySelectorAll('[data-raid-tabdiff]').forEach(el=>el.addEventListener('click', ()=>{ state.raidDiff = el.dataset.raidTabdiff; save(); render(); }));
   if(q('raidReopenBtn')) q('raidReopenBtn').addEventListener('click', ()=>{ if(raidNet.doc) raidOnDoc({exists:true, data:()=>raidNet.doc}); });
 }
@@ -2353,6 +2487,7 @@ function settleQueue(sf){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
       if(u.st.freeze){ delete u.st.freeze; pushLog(sf, skillUnitName(u.side, u)+' 빙결로 쉼'); sf.queuePos++; continue; }
+      if(u.groggy){ pushLog(sf, '💫 '+skillUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
     }
     sf.queuePos++;
@@ -2362,6 +2497,7 @@ function settleQueue(sf){
 // 라운드 시작: 쿨다운 감소 · 지속 효과(화상·독·재생) · 지속 시간 감소 · 패시브(맑은 물·서약)
 function roundStartEffects(sf){
   sf.myUnits.concat(sf.enemyUnits).forEach(u=>{ if(u.alive && u.st.shield>0){ u.st.shieldR = (u.st.shieldR||2) - 1; if(u.st.shieldR<=0){ u.st.shield = 0; delete u.st.shieldR; } } }); // (v173) 보호막 지속시간
+  groggyRoundStart(sf); // (v179) 그로기 해제·게이지 회복(기믹보다 먼저)
   if(sf.mode==='boss') applyBossGimmick(sf);
   if(sf.mode==='raid') applyRaidGimmicks(sf);
   runeRoundStart(sf);
@@ -2756,20 +2892,33 @@ const LINE_KITS = {
 function kitOf(u){ return LINE_KITS[u.line]; }
 function unitSkill(u, act){ return act==='basic' ? null : kitOf(u)[act]; }
 function skillAvailable(u, act){ if(act==='basic') return true; if(act==='s2' && u.g<2) return false; return (act==='s1'?u.cd1:u.cd2)<=0; }
-// (v172) 스테이지 보상 구조: 첫 클리어 보상은 1번만(준비창 🎁에서 직접 수령), 등급 보상은 클리어할 때마다 바로 지급(반복)
-const STAGE_REPEAT_MULT = { C:1, B:1.4, A:1.8, S:2.5 };
-function stageRepeatReward(i, grade){ return Math.round((5 + i*0.4) * STAGE_REPEAT_MULT[grade]); }
+// (v179) 스테이지 보상 구조 — 세 가지로 나눔
+//  🔁 기본 클리어 보상: 클리어할 때마다 자동 지급(등급 무관, 반복)
+//  🎉 첫 클리어 보상: 1번만, 눌러서 수령
+//  🏅 등급 달성 보상(C/B/A/S): 등급마다 1번씩, 눌러서 수령. 처음 A로 깨면 C·B·A를 한꺼번에 받을 수 있고, 나중에 S를 따면 S만 추가
+const STAGE_GRADE_SHARE = { C:0.10, B:0.12, A:0.15, S:0.23 }; // 첫 클리어 보상 대비 비율(합계 0.6배)
+function stageClearReward(i){ return Math.round((5 + i*0.4) * 1.4); }
 function stageFirstReward(i){ return Math.round((50 + i*15) * 1.6); }
+function stageGradeReward(i, tier){ return Math.round(stageFirstReward(i) * STAGE_GRADE_SHARE[tier]); }
+function bossFirstReward(i){ return Math.round(stageFirstReward(i) * 1.5); }
+function bossClearReward(i){ return Math.round(20 + i*1.2); }
+function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
+  for(let r=fromRank+1; r<=toRank; r++){
+    const tier = STAGE_GRADE_ORDER[r-1];
+    if(isBossStage(i)){ const ch = bossChapter(i); addPendingReward('stage_'+i+'_bossclear_'+tier, '🛡️', '챕터 '+ch+' 보스 '+tier+'등급', 0, 0, 'stage', {equip: ch}); }
+    else addPendingReward('stage_'+i+'_grade_'+tier, '🏅', '스테이지 '+(i+1)+' '+tier+'등급 달성', stageGradeReward(i, tier), 0, 'stage');
+  }
+}
 function resolveSkillStageBattle(i, rounds){
   const grade = skillGradeForRounds(rounds);
   const already = state.stageBest[i];
   const gradeRank = {C:1,B:2,A:3,S:4};
-  const baseReward = stageRepeatReward(i, grade);
+  const baseReward = stageClearReward(i);
   state.essence += baseReward;
   let improved = false, reward = 0;
   if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', '스테이지 '+(i+1)+' 첫 클리어', reward, 0, 'stage');
     if(isSpecialStage(i) && !state.specialStageBonusClaimed[i]){ state.specialStageBonusClaimed[i] = true; addPendingReward('stage_'+i+'_special_bonus', '🌀', '스테이지 '+(i+1)+' 특수 규칙 보너스', 30+i*3, 8, 'stage'); } }
-  if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; state.stageBest[i] = grade; }
+  if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
   state.dailyStats.stagesCleared += 1;
   checkChapterPctRewards(Math.floor(i/CHAPTER_LENGTH)+1);
   checkAchievements();
@@ -2787,7 +2936,7 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null]; // null=심연의 수정(매 라운드 변환)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal'];
 const BOSS_GIMMICK_INFO = {
-  frostGiant:  {name:'서리거인', icon:'🧊', desc:'얼음 갑옷 — 받는 피해 절반(화염 공격은 오히려 ×2) · 3라운드마다 가장 빠른 아군 빙결'},
+  frostGiant:  {name:'서리거인', icon:'🧊', desc:'얼음 갑옷 — 받는 피해 절반 · 3라운드마다 가장 빠른 아군 빙결'},
   lavaLord:    {name:'용암군주', icon:'🌋', desc:'화염 피해를 흡수해 회복 · 매 라운드 화상 장판으로 아군 전체에 화상 부여'},
   ancientTree: {name:'고대수목', icon:'🌳', desc:'2라운드마다 덩굴로 아군 후열 하나를 전열로 끌어냄 · 매 라운드 자체 재생'},
   ruinGuardian:{name:'유적파수꾼', icon:'🗿', desc:'서로 다른 속성의 결계석 2개가 살아있는 동안 보스 무적 — 결계석부터 파괴해야 함'},
@@ -2836,7 +2985,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
     const per = bossWaveNormalPower(stageIdx) * BOSS_POWER_MULT;
     const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], BOSS_HP_MULT);
-    boss.isBoss = true; boss.gimmick = type;
+    boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss);
     if(type==='ruinGuardian'){
       const [we1, we2] = bossWardElements(stageIdx);
       const w1 = makeBattleUnit('enemy', 1, we1+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we1], ENEMY_HP_MULT*1.4);
@@ -2895,10 +3044,86 @@ function applyBossGimmick(sf){
 // 보스 기믹으로 인한 방어측 배율/특수 판정 — dealDamage에서 typeMult 적용 직후 호출
 function bossDefenseAdjust(sf, a, d, v){
   if(!d.isBoss || !d.gimmick) return { v, blocked:false, healBoss:0 };
-  if(d.gimmick==='frostGiant'){ v *= (a.element==='fire') ? 2 : 0.5; }
+  if(d.gimmick==='frostGiant'){ v *= 0.5; } // (v179) 얼음 갑옷: 받는 피해 절반(화염 ×2는 그로기 게이지에만 적용)
   else if(d.gimmick==='lavaLord' && a.element==='fire'){ return { v:0, blocked:false, healBoss: Math.round(v) }; }
   else if(d.gimmick==='ruinGuardian'){ if(sf.enemyUnits.some(u=>u.isWard && u.alive)) return { v:0, blocked:true, healBoss:0 }; }
   return { v, blocked:false, healBoss:0 };
+}
+// ===================== (v179) 보스 그로기 게이지 =====================
+// 모든 보스(챕터 보스·레이드 보스)가 게이지 100을 가짐. 아군 공격이 맞을 때마다 깎이고, 얼마나/언제 깎이는지는 보스 기믹마다 다름.
+// 0이 되면 그로기: 다음 라운드가 시작될 때까지 받는 피해 2배 + 이번 라운드에 아직 행동 전이면 행동을 못 함.
+// 다음 라운드 시작 때 그로기가 풀리고 게이지가 다시 가득 참.
+const GROGGY_MAX = 100, GROGGY_DMG_MULT = 2;
+const GROGGY_RULES = {
+  frostGiant:   { desc:'🔥 화염 공격은 게이지를 2배로 깎음',
+    mult:(sf,a)=> a.element==='fire' ? 2 : 1 },
+  lavaLord:     { desc:'💧 물결 공격은 게이지 2배 · 🔥 화염 공격은 오히려 게이지를 채움',
+    mult:(sf,a)=> a.element==='water' ? 2 : (a.element==='fire' ? -1 : 1) },
+  ancientTree:  { desc:'평소엔 🔒 잠김 · 덩굴을 뻗는 짝수 라운드에만 뿌리가 드러나 열림(🔥 화염 2배)',
+    lock:(sf)=> sf.round%2!==0 ? '짝수R에 열림' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1 },
+  ruinGuardian: { desc:'결계석이 남아 있는 동안 🔒 잠김 · 결계석을 하나 부술 때마다 게이지 −35',
+    lock:(sf)=> sf.enemyUnits.some(u=>u.isWard && u.alive) ? '결계석' : '', mult:()=>1 },
+  abyssCrystal: { desc:'지금 속성에 유리한 공격은 게이지 3배 · 불리한 공격은 절반',
+    mult:(sf,a,b)=>{ const t = typeMult(a.element, b.element); return t>1 ? 3 : (t<1 ? 0.5 : 1); } },
+  // 레이드 보스
+  frostTyrant:  { desc:'🔥 화염 공격 2배 · 얼음 껍질(보호막)이 있는 동안 🔒 잠김 · 껍질을 깨면 게이지 −30',
+    lock:(sf,b)=> (sf.raidShellUsed && b.st.shield>0) ? '얼음 껍질' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1, shellBreak:30 },
+  infernoDrake: { desc:'💧 물결 공격 2배 · 격노하는 라운드(4의 배수)엔 🔒 잠김',
+    lock:(sf)=> sf.round%4===0 ? '격노 중' : '', mult:(sf,a)=> a.element==='water' ? 2 : 1 },
+  abyssEye:     { desc:'응시(저주)를 받은 정령의 공격은 게이지 3배 · 🌟 빛 공격 2배',
+    mult:(sf,a)=> (a.st.curse ? 3 : 1) * (a.element==='light' ? 2 : 1) },
+  eldertree:    { desc:'🔥 화염 공격 2배 · 매 라운드 게이지 10 재생 · 껍질 경화(보호막) 중엔 🔒 잠김',
+    lock:(sf,b)=> (sf.raidShellUsed && b.st.shield>0) ? '껍질 경화' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1, regen:10 },
+  dawnJudge:    { desc:'판결이 내려지는 라운드(3의 배수)엔 빈틈이 생겨 게이지 2배',
+    mult:(sf)=> sf.round%3===0 ? 2 : 1 }
+};
+function groggyInfoHtml(ruleId){
+  const r = GROGGY_RULES[ruleId]; if(!r) return '';
+  return '<div style="padding:7px 0; border-bottom:1px solid #ffffff10;"><b>💫 그로기 게이지</b><div class="sub" style="font-size:12px;">'+r.desc+'<br>게이지가 0이 되면 다음 라운드 시작까지 받는 피해 2배 · 아직 행동 전이면 그 라운드 행동 불가</div></div>';
+}
+function groggyRuleOf(sf, b){ if(!b || !b.isBoss) return null; return GROGGY_RULES[b.gimmick || (sf.mode==='raid' ? sf.raidBossId : '')] || null; }
+function groggyLockReason(sf, b){ const r = groggyRuleOf(sf, b); return (r && r.lock) ? r.lock(sf, b) : ''; }
+function ensureGroggy(b){ if(b && b.isBoss && typeof b.gauge!=='number') b.gauge = GROGGY_MAX; }
+// 게이지 변화 적용 → 그로기가 새로 걸리면 true
+function groggyAdd(sf, b, delta){
+  ensureGroggy(b);
+  if(!b.alive || b.groggy || !delta) return false;
+  b.gauge = Math.max(0, Math.min(GROGGY_MAX, b.gauge + delta));
+  if(b.gauge>0) return false;
+  b.groggy = true;
+  pushLog(sf, '💫 '+skillUnitName('enemy', b)+' 그로기! 받는 피해 2배');
+  return true;
+}
+// 아군 공격이 보스에 맞았을 때 게이지 깎기. mult = 스킬 배율(기본 공격 1)
+function groggyHit(sf, a, b, mult, crit, shieldBefore){
+  const r = groggyRuleOf(sf, b); if(!r || a.side===b.side || !b.alive) return false;
+  ensureGroggy(b);
+  if(r.shellBreak && shieldBefore>0 && !(b.st.shield>0) && sf.raidShellUsed && !sf.raidShellBroken){ // 껍질을 깬 순간
+    sf.raidShellBroken = true; pushLog(sf, '💥 껍질이 깨졌다! 그로기 게이지 −'+r.shellBreak);
+    if(groggyAdd(sf, b, -r.shellBreak)) return true;
+  }
+  if(groggyLockReason(sf, b)) return false;
+  const base = sf.mode==='raid' ? 3 : 4;
+  const m = r.mult(sf, a, b);
+  const amt = base * Math.min(2.5, Math.max(0.5, mult||1)) * Math.abs(m) * (crit ? 1.5 : 1);
+  return groggyAdd(sf, b, m<0 ? amt : -amt);
+}
+// 결계석(유적파수꾼)이 부서지면 게이지 크게 깎기
+function groggyWardBroken(sf){
+  const b = sf.enemyUnits.find(u=>u.isBoss && u.alive); const r = groggyRuleOf(sf, b);
+  if(!b || !r || b.gimmick!=='ruinGuardian') return;
+  pushLog(sf, '🗿 결계석 파괴! 그로기 게이지 −35');
+  groggyAdd(sf, b, -35);
+}
+// 라운드 시작: 그로기 해제 + 게이지 가득 / 재생형 보스는 게이지 회복
+function groggyRoundStart(sf){
+  sf.enemyUnits.forEach(b=>{
+    if(!b.isBoss || !b.alive) return;
+    const r = groggyRuleOf(sf, b); if(!r) return;
+    ensureGroggy(b);
+    if(b.groggy){ b.groggy = false; b.gauge = GROGGY_MAX; pushLog(sf, skillUnitName('enemy', b)+'이(가) 정신을 차렸다'); }
+    else if(r.regen) b.gauge = Math.min(GROGGY_MAX, b.gauge + r.regen);
+  });
 }
 function bossWaveGrade(rounds){ if(rounds<=18) return 'S'; if(rounds<=24) return 'A'; if(rounds<=30) return 'B'; return 'C'; }
 function resolveBossWaveVictory(sf){
@@ -2906,17 +3131,15 @@ function resolveBossWaveVictory(sf){
   const grade = bossWaveGrade(totalRounds), already = state.stageBest[stageIdx];
   const gradeRank = {C:1,B:2,A:3,S:4};
   const chapterNum = bossChapter(stageIdx);
-  const baseReward = Math.round(20 + stageIdx*1.2);
+  const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
+  if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', '챕터 '+chapterNum+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage'); // (v179) 보스도 첫 클리어 보상(눌러서 수령)
   if(!already || gradeRank[grade] > gradeRank[already]){
     improved = true;
     const prevRank = already ? gradeRank[already] : 0, newRank = gradeRank[grade];
-    for(let r=prevRank+1; r<=newRank; r++){
-      const tier = STAGE_GRADE_ORDER[r-1];
-      equipCount += chapterNum; // 챕터가 높을수록 한 번에 주는 장비권도 늘어남(챕터1=1장 ... 챕터5=5장씩)
-      addPendingReward('stage_'+stageIdx+'_bossclear_'+tier, '🛡️', '챕터 '+chapterNum+' 보스 '+tier+'등급', 0, 0, 'stage', {equip: chapterNum});
-    }
+    equipCount = (newRank - prevRank) * chapterNum; // 챕터가 높을수록 한 번에 주는 장비권도 늘어남(챕터1=1장 ... 챕터5=5장씩)
+    addStageGradeRewards(stageIdx, prevRank, newRank);
     state.stageBest[stageIdx] = grade;
   }
   state.dailyStats.stagesCleared += 1;
@@ -2971,6 +3194,7 @@ function showBossInfo(stageIdx){
   const gi = BOSS_GIMMICK_INFO[bossGimmickFor(stageIdx)], el = bossFixedElementFor(stageIdx);
   openInfoOverlay(gi.icon+' '+gi.name, '<div style="text-align:center; margin-bottom:8px;">'+(el?ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name:'🔮 속성 변환')+'</div>'
     + '<div style="padding:8px; border-radius:10px; background:#ffffff0a; font-size:13px; line-height:1.5;">'+gi.desc+'</div>'
+    + '<div style="margin-top:6px; text-align:left;">'+groggyInfoHtml(bossGimmickFor(stageIdx))+'</div>'
     + '<div class="sub" style="margin-top:10px; font-size:12px; line-height:1.6;">• 웨이브 1·2 일반 적 → 웨이브 3 보스<br>• 6마리 그대로 3웨이브 연속 (체력 이어짐, 쓰러지면 이탈)</div>');
 }
 function showBossSquadPicker(stageIdx){
@@ -3091,17 +3315,12 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   const bs = document.getElementById('battleScreen'); if(!bs) return;
   const f = bs.querySelector('.bs-field'); if(!f) return;
   bs.style.setProperty('--k', '1');
-  const cols = [...f.querySelectorAll('.bs-col')];
-  if(!cols.length) return;
-  let kh = 9, kw = 9;
-  cols.forEach(c=>{
-    let need = 0, widest = 0;
-    [...c.children].forEach(ch=>{ if(getComputedStyle(ch).position==='absolute') return; need += ch.offsetHeight; const b = ch.querySelector('.bu-body'); if(b) widest = Math.max(widest, b.offsetWidth); });
-    const have = c.clientHeight - 18;
-    if(need>0 && have>0) kh = Math.min(kh, have*0.94/need);
-    if(widest>0) kw = Math.min(kw, c.clientWidth*0.86/widest);
-  });
-  const k = Math.max(0.45, Math.min(1.5, kh, kw));
+  const ar = f.querySelector('.bs-arena2'); if(!ar) return;
+  // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
+  const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
+  if(!W || !H) return;
+  const kw = W*0.23/72, kh = (H*rs - 44)/sz;
+  const k = Math.max(0.45, Math.min(1.5, kw, kh));
   bs.style.setProperty('--k', k.toFixed(3));
 }
 window.addEventListener('resize', ()=>{ if(document.getElementById('battleScreen')) fitBattleScreen(); });
@@ -3117,6 +3336,7 @@ function effLabel(tm){ return tm>1 ? '▲유리' : (tm<1 ? '▼불리' : ''); }
 // (v173) 상태 효과: 이로운 효과는 초록, 해로운 효과는 빨강 배지 · 전투 화면에서 배지를 누르면 설명
 function statusList(u){
   const s = u.st, o = [], r = x=> (x && x.r) ? ' · '+x.r+'R' : '';
+  if(u.isBoss && u.groggy) o.push({i:'💫', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
   if(s.shield>0) o.push({i:'🛡️', t:'보호막', d:fmtHp(s.shield)+' 피해 흡수'+(s.shieldR?' · '+s.shieldR+'R':''), good:true});
   if(s.taunt) o.push({i:'🎯', t:'도발', d:'적이 이 정령만 공격', good:true});
   if(s.haste) o.push({i:'⏩', t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
@@ -3155,14 +3375,21 @@ function battleUnitHtml(u, opts){
   const shPct = Math.min(100, (u.st.shield||0)/u.maxHp*100);
   const attr = (opts.sel || opts.can) ? ' data-tgt="'+u.side+':'+u.idx+'"' : '';
   const st = u.alive ? statusBadgesHtml(u) : '';
+  let gg = '';
+  if(u.isBoss && u.alive && typeof u.gauge==='number'){ // (v179) 그로기 게이지
+    const sf = state.skillFight, lock = sf ? groggyLockReason(sf, u) : '';
+    cls.push('bu-boss'); if(u.groggy) cls.push('bu-groggy');
+    gg = '<div class="bu-gg'+(u.groggy?' on':'')+(lock?' lock':'')+'" data-stat="'+u.side+':'+u.idx+'"><div style="width:'+(u.groggy?100:Math.max(0, u.gauge/GROGGY_MAX*100))+'%;"></div><span>'+(u.groggy?'💫 그로기!':(lock?'🔒 '+lock:'💫 '+Math.ceil(u.gauge)))+'</span></div>';
+  }else if(u.isBoss) cls.push('bu-boss');
   return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+ELEMENT_INFO[u.element].icon+'</div>'
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon || ELEMENT_INFO[u.element].icon)+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '👥' : '')+(u.dispName || sp.name)+eff+'</div>'
     + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="width:'+shPct+'%;"></i>':'')+'</div>'
     + '<div class="bu-hpnum">'+fmtHp(u.hp)+'/'+fmtHp(u.maxHp)+'</div>'
+    + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
     + '</div>';
 }
@@ -3184,6 +3411,50 @@ function showUnitKitInfo(u){
   h += row('스킬2 · 쿨 '+kit.s2.cd+(g<2?' · 에픽부터':''), kit.s2.name, kit.s2.icon, kit.s2.desc(Math.max(2,g)), g<2);
   h += row('패시브'+(g<1?' · 레어부터':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,g)), g<1);
   openInfoOverlay(sp.name, h);
+}
+// (v179) 전장 배치: 각 정령의 화면 위치(%) · 크기. 전열은 가운데 쪽, 후열은 바깥쪽, 같은 줄은 위아래로 엇갈리게.
+// 아래(가까이)에 있을수록 살짝 크게 그려 원근감. rs = 한 줄 세로 간격(화면 비율), sz = 기본 아이콘 크기
+function battleLayout(sf){
+  const slots = [], raid = sf.mode==='raid';
+  const put = (side, idx, x, y, size)=>{
+    if(!unitAt(sf, side, idx)) return;
+    slots.push({ side, idx, x: side==='me' ? x : 100-x, y, size, d: 0.9 + Math.max(0, Math.min(1, (y-12)/74))*0.16 });
+  };
+  const sz = raid ? 38 : 44;
+  if(raid){
+    const fy = [13,34,55,76], by = [21,42,63,84];
+    [0,1,2,3].forEach((idx,r)=>put('me', idx, 39+((r===1||r===2)?3:0), fy[r], sz));
+    [4,5,6,7].forEach((idx,r)=>put('me', idx, 14, by[r], sz));
+  }else{
+    const fy = [20,47,74], by = [29,56,83];
+    [0,1,2].forEach((idx,r)=>put('me', idx, 37+(r===1?4:0), fy[r], sz));
+    [3,4,5].forEach((idx,r)=>put('me', idx, 13, by[r], sz));
+  }
+  const ew = sideWidth(sf, 'enemy');
+  let enemyRows = false;
+  sf.enemyUnits.forEach(u=>{
+    if(u.isBoss){ put('enemy', u.idx, raid ? 26 : 20, raid ? 48 : 52, raid ? 96 : 84); return; }
+    enemyRows = true;
+    const front = isFrontRow(u.idx, ew), r = u.idx % ew;
+    if(front) put('enemy', u.idx, 37+(r===1?4:0), [20,47,74][r], 44);
+    else put('enemy', u.idx, 13, [29,56,83][r], 44);
+  });
+  const tags = [{x:13,t:'후열'},{x:raid?40:39,t:'전열'}];
+  if(enemyRows) tags.push({x:61,t:'전열'},{x:87,t:'후열'});
+  return { slots, tags, rs: raid ? 0.21 : 0.27, sz };
+}
+// (v179) 전투 배경: 스테이지는 챕터 지역(설원·화산·숲·사막·동굴), 레이드는 보스마다, 출정은 들판 길, 결투는 투기장
+const BATTLE_THEMES = ['snow','volcano','forest','desert','cave'];
+const DARK_THEMES = ['volcano','cave','raid-infernoDrake','raid-abyssEye','raid-eldertree']; // 어두운 배경은 글자를 밝게
+function battleThemeOf(sf){
+  if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
+  if(sf.mode==='expedition') return 'plains';
+  if(sf.mode==='duel') return 'arena';
+  const ch = Math.max(0, Math.min(MAX_CHAPTERS-1, Math.floor((sf.stageIdx||0)/CHAPTER_LENGTH)));
+  return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
+}
+function battleSceneHtml(theme){
+  return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
 function showSkillStageScreen(){
   const sf = state.skillFight; if(!sf) return;
@@ -3239,15 +3510,16 @@ function showSkillStageScreen(){
     }
     return battleUnitHtml(u, o);
   };
-  // (v169) 좌우 대결 시점: 왼쪽 내 편(후열 | 전열) · 가운데 선 · 오른쪽 적(전열 | 후열). 격자 규칙(전열/후열·가로/관통)은 그대로, 그리는 방향만 바뀜
-  const col = (cls, tag, s, idxs, size)=> '<div class="bs-col '+cls+'"><span class="bs-coltag">'+tag+'</span>'+idxs.map(i=>cellHtml(s, i, size)).join('')+'</div>';
+  // (v179) AFK 아레나 느낌의 옆 시점: 판을 기울이지 않고 배경(땅) 위에 정령이 서 있음. 왼쪽 내 편 · 오른쪽 적, 줄마다 지그재그로 엇갈림.
+  // 격자 규칙(전열/후열·가로/관통)은 그대로, 그리는 위치만 바뀜
+  const lay = battleLayout(sf);
 
   let html = intro ? '<div class="bs-wipe"></div>' : '';
   const titleTxt = sf.mode==='boss' ? '👑 웨이브 '+sf.wave+'/'+BOSS_WAVE_COUNT+' · R'+sf.round
     : sf.mode==='expedition' ? '🗡️ 출정 · R'+sf.round
     : sf.mode==='duel' ? '⚔️ 결투 · vs '+(sf.duelName||'상대')
     : sf.mode==='raid' ? '⚔️ '+((raidBossById(sf.raidBossId)||{}).name||'레이드')+' · R'+sf.round
-    : '❄️ 스테이지 '+(sf.stageIdx+1)+' · R'+sf.round;
+    : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' 스테이지 '+(sf.stageIdx+1)+' · R'+sf.round;
   html += '<div class="bs-top"><button class="bs-exit" id="skillExitBtn">← 나가기</button>'
     + '<div class="bs-title">'+titleTxt+'</div>'
     + '<div style="display:flex; gap:4px;">'
@@ -3266,17 +3538,12 @@ function showSkillStageScreen(){
   }
   if(sf.special) html += '<div class="bs-special">📜 특수 규칙 · '+specialRuleLabel(sf.special)+'</div>';
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
-  const myFront = sf.mode==='raid' ? [0,1,2,3] : [0,1,2];
-  const myBack = sf.mode==='raid' ? [4,5,6,7] : [3,4,5];
-  const mySz = sf.mode==='raid' ? 38 : 44, isRaidBoss = sf.mode==='raid';
-  html += '<div class="bs-field side'+(anyCrit ? ' fx-shake' : '')+'"><div class="bs-snow"></div>'
+  const theme = battleThemeOf(sf);
+  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+'">'+battleSceneHtml(theme)
     + '<div class="bs-logtop"><div class="bs-log">'+((sf.log||[]).slice(-1)[0]||'')+'</div></div>'
-    + '<div class="bs-arena">'
-    + col('c-mb', '후열', 'me', myBack, mySz)
-    + col('c-mf', '전열', 'me', myFront, mySz)
-    + '<div class="bs-divider"></div>'
-    + col('c-ef', '전열', 'enemy', [0,1,2], isRaidBoss ? 62 : 44)
-    + (isRaidBoss ? '' : col('c-eb', '후열', 'enemy', [3,4,5], 44))
+    + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
+    + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
+    + lay.slots.map(p=>'<div class="bs-slot" style="left:'+p.x+'%; top:'+p.y+'%; z-index:'+(10+Math.round(p.y))+'; --d:'+p.d.toFixed(3)+';">'+cellHtml(p.side, p.idx, p.size)+'</div>').join('')
     + '</div><span class="bs-teamtag me">아군</span><span class="bs-teamtag en">적</span>'
     + (intro ? '<div class="bs-banner"><span>⚔️ 전투 개시</span></div>' : '')
     + (fx && fx.kind==='round' ? '<div class="bs-banner"><span>ROUND '+fx.round+'</span></div>' : '')
@@ -3412,9 +3679,9 @@ function skillResultOverlayHtml(sf){
     const info = r.info || {}, grade = info.grade || skillGradeForRounds(r.rounds);
     h += '<div class="bs-ricon">🏆</div><div class="bs-rtitle">승리!</div><div class="bs-rgrade g'+grade+'">'+grade+'</div>'
       + '<div class="bs-rsub">'+r.rounds+'라운드'+(info.improved && r.prevBest ? ' · '+r.prevBest+' → '+grade : '')+'</div>'
-      + '<div class="bs-rrew"><div>✨ +'+(info.baseReward||0)+'</div></div>'
+      + '<div class="bs-rrew"><div>🔁 기본 클리어 보상 ✨ +'+(info.baseReward||0)+'</div></div>'
       + (()=>{ const ids = (state.pendingRewards||[]).filter(x=> x.id.indexOf('stage_'+sf.stageIdx+'_')===0).map(x=>x); if(!ids.length) return '';
-          return '<div class="bs-claimbox">'+ids.map(x=>'<button class="bs-claim" data-res-claim="'+x.id+'">'+x.icon+' '+(x.essence?'✨'+x.essence:'')+(x.stone?' 🔩'+x.stone:'')+(x.items?' '+itemsShort(x.items):'')+'<b>받기</b></button>').join('')+'</div>'; })();
+          return '<div class="bs-claimbox">'+ids.map(x=>'<button class="bs-claim" data-res-claim="'+x.id+'">'+x.icon+' '+x.label.replace(/^(스테이지 \d+|챕터 \d+) /,'')+' · '+(x.essence?'✨'+x.essence:'')+(x.stone?' 🔩'+x.stone:'')+(x.items?' '+itemsShort(x.items):'')+'<b>받기</b></button>').join('')+'</div>'; })();
   }else{
     h += '<div class="bs-ricon">💀</div><div class="bs-rtitle">'+(r.timeout?'시간 초과':'패배')+'</div><div class="bs-rsub">'+r.rounds+'라운드</div>';
   }
@@ -3683,6 +3950,7 @@ function defaultState(){
     specialStageBonusClaimed: {},
     tickets: {summon:0, rare:0, epic:0, equip:0},
     bossBonusClaimed: {},
+    stageRewardsV179: false, // (v179) 등급 달성 보상 이전 처리 완료 여부
     equipOwned: {}, equipped: {}, equipSeen: {}, lifetimeEquipSummons: 0, lifetimeEquipFusions: 0,
     pendingRewards: [],
     settings: {bgmVolume:0.3, sfxVolume:0.35},
@@ -4384,11 +4652,9 @@ function gradeFor(ratio){
   if(ratio < 2.0) return 'A';
   return 'S'; // 상대 전투력의 200% 이상
 }
-// 스테이지/보스 보상도 탑과 동일한 단계별 누적-증분 방식: 처음 A로 깨면 C+B+A를 받고,
+// 스테이지/보스 등급 보상은 단계별 누적-증분 방식: 처음 A로 깨면 C+B+A를 받고,
 // 나중에 S로 올리면 이미 받은 C+B+A는 빼고 S분만 추가 지급
 const STAGE_GRADE_ORDER = ['C','B','A','S'];
-const STAGE_GRADE_WEIGHT = {C:1.0, B:0.3, A:0.3, S:0.6}; // 누적하면 S까지 총 2.2배(기존 S배율과 동일)
-function stageTierEssence(base, tier){ return Math.round(base*STAGE_GRADE_WEIGHT[tier]); }
 // ===================== 일일 의뢰 =====================
 const QUESTS = [
   {id:'q1', name:'정령 소환 1회 하기', reward:30, check:()=> state.dailyStats.summons>=1},
@@ -4992,23 +5258,24 @@ function slotHtml(idx){
   const sp = SPIRITS[key];
   return '<div class="slot filled" data-slot="'+idx+'"><div class="icon">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
 }
-function renderGradeLadderHtml(base, currentBestGrade, essenceFn, idPrefix){  const gradeRank = {C:1,B:2,A:3,S:4};
+// (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 ✅. labelFn(tier) = 보상 표기
+function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
+  const gradeRank = {C:1,B:2,A:3,S:4};
   const currentRank = currentBestGrade ? gradeRank[currentBestGrade] : 0;
   let html = '';
   STAGE_GRADE_ORDER.forEach(tier=>{
-    const amt = essenceFn(base, tier);
     const earned = gradeRank[tier] <= currentRank;
     const tierId = idPrefix+tier;
     const pending = earned && hasPendingFor(tierId);
-    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" data-claim-group="'+idPrefix+'" style="padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
+    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
     html += '<div'+claimAttr+'>'
       + (pending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
       + '<div style="font-weight:800; font-size:13px; text-align:center;">'+tier+'</div>'
-      + '<div class="sub" style="font-size:10px; text-align:center;">✨+'+amt+'</div>'
-      + (pending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(earned?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.3; text-align:center;">–</div>'))
+      + '<div class="sub" style="font-size:10px; text-align:center;">'+labelFn(tier)+'</div>'
+      + (pending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(earned?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.3; text-align:center;">🔒</div>'))
       + '</div>';
   });
-  return html;
+  return '<div style="display:flex; gap:4px;">'+html+'</div>';
 }
 // (v144) 등급 기준을 보상 창 맨 위에 한 줄로 표시 — 스테이지 종류마다 기준이 다름
 function stageGradeCriteriaHtml(stageIdx){
@@ -5020,19 +5287,20 @@ function stageGradeCriteriaHtml(stageIdx){
 function getStageRewardContent(stageIdx){
   // 스테이지 준비 화면의 "🎁 보상" 팝업에 들어갈 내용을 매번 최신 상태로 새로 계산.
   // 클레임 후 팝업을 닫지 않고 이 함수를 다시 호출해서 내용만 갱신하는 방식으로 씀.
-  const boss = isBossStage(stageIdx);
-  let ladder;
-  if(boss){
-    ladder = renderGradeLadderHtml((50+stageIdx*15)*1.5, state.stageBest[stageIdx], stageTierEssence, 'boss_'+stageIdx+'_tier_');
-  }else{
-    const fid = 'stage_'+stageIdx+'_first', fPend = hasPendingFor(fid), cleared = !!state.stageBest[stageIdx];
-    ladder = '<div'+(fPend ? ' data-claim-reward="'+fid+'"' : '')+' style="position:relative; padding:8px; border-radius:12px; text-align:center; cursor:'+(fPend?'pointer':'default')+'; background:'+(fPend?'#5b6bff33':(cleared?'#5b6bff22':'#2a2a38'))+'; border:1px solid '+(fPend?'#5b6bff':'#3a3a4a')+';">'
-      + (fPend?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
-      + '<div style="font-weight:800;">🎉 첫 클리어 보상</div><div class="sub" style="font-size:12px;">✨ +'+stageFirstReward(stageIdx)+'</div>'
-      + '<div style="font-size:11px; margin-top:2px; font-weight:700; color:'+(fPend?'#ffd24a':'var(--sub)')+';">'+(fPend?'눌러서 받기':(cleared?'✅ 받음':'🔒 첫 클리어 시'))+'</div></div>'
-      + '<div style="padding:8px; border-radius:12px; background:#2a2a38; border:1px solid #3a3a4a;"><div style="font-weight:800; text-align:center; font-size:13px;">🔁 클리어할 때마다 (등급별)</div>'
-      + '<div style="display:flex; gap:4px; margin-top:6px;">'+['C','B','A','S'].map(g=>'<div style="flex:1; text-align:center; padding:4px 0; border-radius:8px; background:#ffffff0a;"><b>'+g+'</b><div class="sub" style="font-size:11px;">✨'+stageRepeatReward(stageIdx, g)+'</div></div>').join('')+'</div></div>';
-  }
+  // (v179) 🎉 첫 클리어(1회·수령) / 🏅 등급 달성(등급마다 1회·수령) / 🔁 기본 클리어(매번 자동)
+  const boss = isBossStage(stageIdx), cleared = !!state.stageBest[stageIdx];
+  const box = (inner, extra)=> '<div style="padding:8px; border-radius:12px; background:#2a2a38; border:1px solid #3a3a4a;'+(extra||'')+'">'+inner+'</div>';
+  const head = t=> '<div style="font-weight:800; text-align:center; font-size:13px; margin-bottom:6px;">'+t+'</div>';
+  const fid = 'stage_'+stageIdx+'_first', fPend = hasPendingFor(fid);
+  const firstAmt = boss ? bossFirstReward(stageIdx) : stageFirstReward(stageIdx);
+  const first = '<div'+(fPend ? ' data-claim-reward="'+fid+'"' : '')+' style="position:relative; padding:8px; border-radius:12px; text-align:center; cursor:'+(fPend?'pointer':'default')+'; background:'+(fPend?'#5b6bff33':(cleared?'#5b6bff22':'#2a2a38'))+'; border:1px solid '+(fPend?'#5b6bff':'#3a3a4a')+';">'
+    + (fPend?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
+    + '<div style="font-weight:800;">🎉 첫 클리어 보상</div><div class="sub" style="font-size:12px;">✨ +'+firstAmt+'</div>'
+    + '<div style="font-size:11px; margin-top:2px; font-weight:700; color:'+(fPend?'#ffd24a':'var(--sub)')+';">'+(fPend?'눌러서 받기':(cleared?'✅ 받음':'🔒 첫 클리어 시'))+'</div></div>';
+  const grades = box(head('🏅 등급 달성 보상 <span class="sub" style="font-size:10px; font-weight:600;">· 등급마다 1번</span>')
+    + (boss ? renderGradeLadderHtml(state.stageBest[stageIdx], ()=>itemsShort({equip: bossChapter(stageIdx)}), 'stage_'+stageIdx+'_bossclear_')
+            : renderGradeLadderHtml(state.stageBest[stageIdx], t=>'✨+'+stageGradeReward(stageIdx, t), 'stage_'+stageIdx+'_grade_')));
+  const repeat = box('<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;"><b>🔁 기본 클리어 보상</b><span><b>✨ +'+(boss ? bossClearReward(stageIdx) : stageClearReward(stageIdx))+'</b> <span class="sub" style="font-size:10px;">매번 자동</span></span></div>');
   let specialBonusHtml = '';
   if(!boss && isSpecialStage(stageIdx)){
     const specialBonusEssence = 30+stageIdx*3, specialBonusStone = 8;
@@ -5043,28 +5311,14 @@ function getStageRewardContent(stageIdx){
       : ' style="padding:6px 2px; border-radius:10px; background:'+(specialBonusClaimed?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(specialBonusClaimed?'#5b6bff':'#3a3a4a')+'; position:relative;"';
     specialBonusHtml = '<div'+sbClaimAttr+'>'
       + (specialBonusPending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
-      + '<div style="font-weight:800; font-size:16px; text-align:center;">🌀</div>'
+      + '<div style="font-weight:800; font-size:13px; text-align:center;">🌀 특수 규칙 보너스</div>'
       + '<div class="sub" style="font-size:10px; text-align:center;">✨+'+specialBonusEssence+' · 🔩+'+specialBonusStone+'</div>'
       + (specialBonusPending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(specialBonusClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.3; text-align:center;">–</div>'))
       + '</div>';
   }
-  let bossBonusHtml = '';
-  if(boss){
-    const bbClaimed = !!state.bossBonusClaimed[stageIdx];
-    const bbPending = hasPendingFor('boss_'+stageIdx+'_bonus');
-    const bbAttr = bbPending
-      ? ' data-claim-reward="boss_'+stageIdx+'_bonus" style="padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"'
-      : ' style="padding:6px 2px; border-radius:10px; background:'+(bbClaimed?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(bbClaimed?'#5b6bff':'#3a3a4a')+'; position:relative;"';
-    bossBonusHtml = '<div'+bbAttr+'>'
-      + (bbPending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
-      + '<div style="font-weight:800; font-size:16px; text-align:center;">'+(bbClaimed?'🎟️':'❓')+'</div>'
-      + '<div class="sub" style="font-size:10px; text-align:center;">'+(bbClaimed?itemsShort({equip:1}):'???')+'</div>'
-      + (bbPending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(bbClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.3; text-align:center;">🔒</div>'))
-      + '</div>';
-  }
-  // 첫 클리어 보너스는 위 등급표 타일로 이미 보여주고 있으니, 아래 "대기 중 보상" 목록에서는 같은 항목을 다시 안 보여주도록 제외
-  const prefix = boss ? ('boss_'+stageIdx+'_') : ('stage_'+stageIdx+'_');
-  const pendingHere = pendingRewardsFor(prefix).filter(r=> boss ? (r.id.indexOf('_tier_')===-1 && !/_bonus$/.test(r.id)) : (!/_first$/.test(r.id) && !/_bonus$/.test(r.id)));
+  // 위 타일들에 이미 나온 항목(첫 클리어·등급·특수 보너스)은 아래 "대기 중 보상" 목록에서 빼고, 그 밖의 것만 보여줌
+  const pendingHere = pendingRewardsFor('stage_'+stageIdx+'_').concat(pendingRewardsFor('boss_'+stageIdx+'_'))
+    .filter(r=> !/_first$/.test(r.id) && !/_bonus$/.test(r.id) && r.id.indexOf('_grade_')===-1 && r.id.indexOf('_bossclear_')===-1 && r.id.indexOf('_tier_')===-1);
   const pendingTiles = pendingHere.length>0 ? '<div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">' + pendingHere.map(r=>
       '<div data-claim-reward="'+r.id+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; cursor:pointer; text-align:center;">'
       + '<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>'
@@ -5075,7 +5329,7 @@ function getStageRewardContent(stageIdx){
       + '<div style="font-size:11px; color:#ffd24a; font-weight:700;">받기</div>'
       + '</div>'
     ).join('') + '</div>' : '';
-  return stageGradeCriteriaHtml(stageIdx) + '<div style="display:flex; flex-direction:column; gap:6px;">' + ladder + specialBonusHtml + bossBonusHtml + '</div>' + pendingTiles;
+  return stageGradeCriteriaHtml(stageIdx) + '<div style="display:flex; flex-direction:column; gap:6px;">' + first + grades + repeat + specialBonusHtml + '</div>' + pendingTiles;
 }
 function typeWheelOnlyHtml(){
   return '<div class="cycle-wheel" style="width:80px; height:80px; margin:2px auto;">'
@@ -7248,6 +7502,18 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
 
 
 const TAB_IDS = ['home','summon','hearth','spirits','stage','expedition','tower','raid'];
+// (v179) 등급 달성 보상이 새로 생김 — 예전 세이브에서 이미 딴 등급의 보상과 보스 첫 격파 보상을 한 번만 수령 대기로 넣어 줌
+function migrateStageRewardsV179(){
+  if(state.stageRewardsV179) return;
+  const gradeRank = {C:1,B:2,A:3,S:4};
+  Object.keys(state.stageBest||{}).forEach(k=>{
+    const i = Number(k), g = state.stageBest[k];
+    if(!Number.isInteger(i) || !gradeRank[g]) return;
+    if(isBossStage(i)) addPendingReward('stage_'+i+'_first', '🎉', '챕터 '+bossChapter(i)+' 보스 첫 격파', bossFirstReward(i), 0, 'stage'); // 보스 등급 보상(장비권)은 예전부터 있었음
+    else addStageGradeRewards(i, 0, gradeRank[g]);
+  });
+  state.stageRewardsV179 = true;
+}
 function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
@@ -7415,6 +7681,7 @@ function sanitizeState(){
     const buffOk = Array.isArray(e.pendingBuffChoice) && e.pendingBuffChoice.length>0 && e.pendingBuffChoice.every(id=> EXPEDITION_BUFFS.some(b=>b.id===id));
     if(!buffOk || e.pendingKeep) e.pendingBuffChoice = null;
   }
+  migrateStageRewardsV179();
 }
 
 sanitizeState();
