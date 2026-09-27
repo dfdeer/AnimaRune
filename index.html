@@ -48,6 +48,7 @@
   .home-mbtn.pos-right{left:99%; width:19%; height:max(46px, calc(var(--car-h, 96px) * .667)); transform:translate(-100%,-50%); background:#1a1540ee; border:1px solid #8a74e066; opacity:.92; z-index:1;}
   .home-mbtn.jump{transition:none; opacity:0;}
   .home-mbtn .hm-ico{font-size:20px; line-height:1;} .home-mbtn.pos-center .hm-ico{font-size:24px;}
+  .home-mbtn .hm-ico .uic{margin:0 0 1px;} .home-mbtn.pos-center .hm-ico .uic{filter:drop-shadow(0 1px 1px #0006);}
   .home-mbtn .hm-name{font-weight:900; font-size:12px;} .home-mbtn.pos-center .hm-name{font-size:max(17px, calc(var(--car-h, 96px) * .23));}
   .home.car-s .home-mbtn.pos-center .hm-ico{font-size:18px;} .home.car-s .home-mbtn.pos-center .hm-sub{font-size:10px;} .home.car-xs .home-mbtn.pos-center .hm-sub{display:none;}
   .home-mbtn .hm-sub{display:none;} .home-mbtn.pos-center .hm-sub{display:block; font-size:11px; font-weight:800; opacity:.8; max-width:94%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -196,6 +197,12 @@
   nav button.locked .ico{position:relative;}
   nav button.locked .ico::after{content:'🔒'; position:absolute; right:-6px; bottom:-4px; font-size:9px;}
   nav button .ico{font-size:20px;}
+  /* (v200) 이모지 대신 쓰는 그림 아이콘 — 글자 크기(1em)에 맞춰 커지고 작아짐 */
+  .uic{width:1.25em; height:1.25em; object-fit:contain; display:inline-block; vertical-align:middle; margin:-.12em 0; pointer-events:none; -webkit-user-drag:none;}
+  nav button .ico .uic{width:28px; height:28px; margin:0;}
+  .home-ic .uic{width:30px; height:30px; margin:0;} .home.compact .home-ic .uic{width:26px; height:26px;}
+  header .essence .uic{width:18px; height:18px; margin:0;}
+  #headerFriendBtn .uic, #headerMenuBtn .uic{width:24px; height:24px; margin:0;}
   h2{font-size:15px; margin:4px 0 10px;}
   .card{background:linear-gradient(160deg,#22222f 0%,#1a1a26 100%); border-radius:14px; padding:12px; margin-bottom:10px; border:1px solid #ffffff0f; box-shadow:0 4px 14px #00000040;}
   .btn{background:linear-gradient(135deg,#6a7bff,#9a6bff); color:#fff; border:none; border-radius:12px; padding:12px; font-size:14px; font-weight:800; width:100%; box-shadow:0 4px 14px #7a5bff55, inset 0 1px 0 #ffffff33; transition:transform .08s ease, box-shadow .08s ease; letter-spacing:.2px;}
@@ -210,6 +217,13 @@
   .species-tile[data-manage]:active{transform:scale(0.96);}
   .species-tile[data-manage]::after{content:'›'; position:absolute; bottom:2px; right:5px; font-size:13px; font-weight:900; color:var(--sub); opacity:0.6;}
   .species-tile .icon{font-size:22px;}
+  /* (v200) 등급 테두리 그림 — 정령 아이콘을 정사각형 칸에 넣고 위에 등급 테두리를 씌움 (나중에 정령 그림이 들어갈 자리) */
+  .av{position:relative; display:inline-flex; align-items:center; justify-content:center; width:2.1em; height:2.1em; border-radius:22%; background:#15131f; line-height:1;}
+  .av::after{content:''; position:absolute; inset:-9%; background:center/contain no-repeat; pointer-events:none;}
+  .av.r-common::after{background-image:url(assets/ui/frame_common.webp);} .av.r-rare::after{background-image:url(assets/ui/frame_rare.webp);}
+  .av.r-epic::after{background-image:url(assets/ui/frame_epic.webp);} .av.r-legendary::after{background-image:url(assets/ui/frame_legendary.webp);}
+  .av.r-mythic::after{background-image:url(assets/ui/frame_mythic.webp);}
+  .species-tile .av{margin:2px 0 3px;} .slot .av{font-size:22px;}
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:4px; font-size:10px; background:#000a; padding:1px 5px; border-radius:8px;}
   .species-tile .passive-badge{position:absolute; top:2px; left:4px; font-size:11px;}
@@ -815,16 +829,16 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <body>
 <div id="app">
   <header>
-    <div class="title">🔮<span class="tname"> 아니마룬</span></div>
+    <div class="title"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="tname"> 아니마룬</span></div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <div class="essence" id="essenceInfoBtn" style="cursor:pointer; position:relative;">✨ <span id="essenceVal">0</span>
+      <div class="essence" id="essenceInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_essence.webp" alt="" draggable="false"><span id="essenceVal">0</span>
         <div id="essenceInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;">✨ 정수: 소환 · 에픽 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
-      <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;">🔩 <span id="stoneVal">0</span>
+      <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_stone.webp" alt="" draggable="false"><span id="stoneVal">0</span>
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;">🔩 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
-      <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;">👥<span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
-      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;">☰<span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span></button>
+      <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
+      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"><span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="achieve" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🏅 업적<span id="headerMenuAchieveDot" style="display:none; width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span></button>
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📖 가이드북</button>
@@ -841,9 +855,9 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
   <main id="main"></main>
   <nav>
-    <button data-tab="summon"><span class="ico" style="position:relative;">🔮<span class="navdot" data-navdot="summon"></span></span>소환</button>
-    <button data-tab="spirits"><span class="ico" style="position:relative;">📦</span>정령</button>
-    <button data-tab="hearth"><span class="ico" style="position:relative;">🔥</span>화로</button>
+    <button data-tab="summon"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="navdot" data-navdot="summon"></span></span>소환</button>
+    <button data-tab="spirits"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_spirits.webp" alt="" draggable="false"></span>정령</button>
+    <button data-tab="hearth"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_hearth.webp" alt="" draggable="false"></span>화로</button>
   </nav>
 </div>
 <div id="modalRoot"></div>
@@ -866,7 +880,7 @@ const RARITY_INFO = {
   rare:{name:'레어', mult:2.5, color:'var(--rare)'},
   epic:{name:'에픽', mult:6, color:'var(--epic)'},
   legendary:{name:'레전더리', mult:15, color:'var(--legendary)'},
-  mythic:{name:'신화', mult:35, color:'#ff4fd8'}
+  mythic:{name:'신화', mult:35, color:'#ff2f57'}
 };
 const NAMES = {
   // (v157) 짜치는 "속성+등급형용사+종" 반복 조합을 버리고 고유명사·신화 모티프 위주로 재작성
@@ -2293,7 +2307,7 @@ function homeRepSpirit(){
 function homeNextStage(){ for(let i=0;i<CHAPTER_LENGTH*MAX_CHAPTERS;i++){ if(!state.stageBest[i]) return i; } return CHAPTER_LENGTH*MAX_CHAPTERS-1; }
 // (v170) 홈 가운데 큰 버튼 = 지금 모드(기본 탐험). 양옆 버튼을 누르면 스르륵 넘어가며 배경이 페이드로 바뀜
 const HOME_MODES = ['raid','stage','expedition']; // 원형 순서: 탐험 기준 왼쪽 레이드 · 오른쪽 출정
-const HOME_MODE_INFO = { stage:{icon:'⚔️', name:'탐험'}, expedition:{icon:'🗡️', name:'출정'}, raid:{icon:'👹', name:'레이드'} };
+const HOME_MODE_INFO = { stage:{icon:'⚔️', img:'explore', name:'탐험'}, expedition:{icon:'🗡️', img:'expedition', name:'출정'}, raid:{icon:'👹', img:'raid', name:'레이드'} };
 let homeMode = 'stage'; // 앱을 켤 때는 항상 탐험부터
 function homeModeSub(m){
   if(m==='stage'){ const n = homeNextStage(); return '챕터 '+(Math.floor(n/CHAPTER_LENGTH)+1)+' · 스테이지 '+(n+1)+(isBossStage(n)?' 👑':''); }
@@ -2337,10 +2351,12 @@ function homeBgLayer(mode){
     + '</svg>';
 }
 function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MODES.indexOf(m); const d = (i - c + 3) % 3; return d===0 ? 'center' : (d===1 ? 'right' : 'left'); }
+// (v200) 그림 아이콘 — assets/ui/ic_<이름>.webp
+function uiIc(n){ return '<img class="uic" src="assets/ui/ic_'+n+'.webp" alt="" draggable="false">'; }
 function homeModeBtnHtml(m){
   const info = HOME_MODE_INFO[m], locked = m==='expedition' && !isUnlocked('expedition');
   return '<button class="home-mbtn pos-'+homeCarouselPos(m)+(locked?' locked':'')+'" data-hmode="'+m+'">'
-    + '<span class="hm-ico">'+info.icon+'</span><span class="hm-name">'+info.name+'</span><small class="hm-sub">'+homeModeSub(m)+'</small>'
+    + '<span class="hm-ico">'+uiIc(info.img)+'</span><span class="hm-name">'+info.name+'</span><small class="hm-sub">'+homeModeSub(m)+'</small>'
     + (homeModeDot(m) ? '<span class="home-dot"></span>' : '') + '</button>';
 }
 function homeRotateTo(m){
@@ -2364,8 +2380,8 @@ function renderHomeTab(){
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
   h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?ELEMENT_INFO[sp.element].icon:'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
-  h += '<div class="home-side left"><button class="home-ic" data-home="tower">🗼<small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest">📜<small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve">🏅<small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide">📖<small>가이드</small></button></div>';
-  h += '<div class="home-side right"><button class="home-ic" data-home="friends">👥<small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel">⚔️<small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings">⚙️<small>설정</small></button></div>';
+  h += '<div class="home-side left"><button class="home-ic" data-home="tower"><img class="uic" src="assets/ui/ic_tower.webp" alt="" draggable="false"><small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
+  h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+ELEMENT_INFO[sp.element].icon+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo">🔮</div><div class="home-name">첫 정령을 소환해보세요</div>')
@@ -4025,7 +4041,7 @@ function showBossPrepModal(stageIdx){
   });
 }
 // (v98) 출전 명단 초안 — 창을 닫았다 열어도(새로고침 포함) 남도록 세이브 상태에 보스별로 저장
-const RARITY_HEX = {common:'#b8bcc4', rare:'#4a90ff', epic:'#b04aff', legendary:'#ffb92a', mythic:'#ff4fd8'}; // 상단 CSS 변수(--common 등)와 같은 색
+const RARITY_HEX = {common:'#b8bcc4', rare:'#4a90ff', epic:'#b04aff', legendary:'#ffb92a', mythic:'#ff2f57'}; // 상단 CSS 변수(--common 등)와 같은 색
 const BOSS_MAX_COMBO_MULT = 2.2;
 function bossComboMult(matched, total){
   if(matched<=0) return 1;
@@ -5154,7 +5170,7 @@ function tile(key){
   return '<div class="species-tile" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0? '<div class="count">x'+owned+'</div>':'')
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon">'+ELEMENT_INFO[sp.element].icon+'</div>'
+    + '<div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div>'
     + '<div class="name">'+sp.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
     + (owned>0 && enhanceLevel(key)>0 ? '<div class="sub" style="margin-top:2px;">+'+enhanceLevel(key)+'</div>' : '')
@@ -5585,7 +5601,7 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 ✅. labelFn(tier) = 보상 표기
 function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
@@ -7268,7 +7284,7 @@ const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 �
   rare:     {c2:'#4ad0ff', stars:2, rev:0.6,  rays:0, particles:10, glow:24, flash:0.45, sfx:'summonRare'},
   epic:     {c2:'#6b6bff', stars:3, rev:0.95, rays:1, particles:20, glow:36, flash:0.75, sfx:'summonEpic'},
   legendary:{c2:'#ff7a2a', stars:4, rev:1.2,  rays:2, particles:30, glow:48, flash:1,    sfx:'summonLegend'},
-  mythic:   {c2:'#ff4fd8', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'}
+  mythic:   {c2:'#ffc94a', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'}
 };
 function summonVars(rarity, revOverride){ const hex = RARITY_HEX[rarity], t = SUMMON_THEME[rarity]; return '--rc:'+hex+'; --rc2:'+t.c2+'; --rca:'+hex+'66; --rcb:'+hex+'2e; --glow:'+t.glow+'px; --rev:'+(revOverride||t.rev)+'s; --flash:'+t.flash+';'; }
 function walletTicketHtml(opts){ const k = (opts && opts.ticketKey) || 'summon'; return ticketCount(k)>0 ? '<span>'+TICKET_INFO[k].icon+' '+ticketCount(k)+'</span>' : ''; }
