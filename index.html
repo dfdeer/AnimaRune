@@ -27,7 +27,12 @@
   header .title{font-weight:700; font-size:16px; white-space:nowrap;}
   @media (max-width:350px){ header{padding:10px 8px; gap:4px;} header .title{font-size:14px;} header .essence{padding:5px 7px; font-size:13px;} }
   header .essence{background:linear-gradient(135deg,#2c2c3e,#1f1f2c); padding:6px 10px; border-radius:20px; font-size:14px; font-weight:700; display:flex; align-items:center; gap:4px; border:1px solid #ffffff14; box-shadow:inset 0 1px 0 #ffffff0d;}
-  main{flex:1; padding:12px; padding-bottom:80px; overflow-y:auto;}
+  main{flex:1; min-height:0; padding:12px; padding-bottom:80px; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;}
+  /* (v187) 문서 전체가 아니라 헤더 아래 화면 영역만 스크롤 — 헤더는 항상 고정, 화면마다 위쪽(← 홈·제목·탭)은 고정하고 아래만 스크롤 */
+  html.lock-scroll #app{height:100%; min-height:0;}
+  .scr-top{position:sticky; top:-12px; z-index:8; margin:-12px -12px 8px; padding:12px 12px 8px; background:linear-gradient(180deg, var(--bg) 88%, #14141c00);}
+  .scr-top .home-back{margin-bottom:8px;}
+  .scr-top > :last-child{margin-bottom:0;}
   main.is-home{padding:0; padding-bottom:0; overflow:hidden;}
   .home{position:relative; height:480px; overflow:hidden; display:flex; flex-direction:column;}
   .home.compact .home-emo{font-size:64px;} .home.compact .home-name{margin-top:6px; font-size:15px;} .home.compact .home-side{top:62px; gap:6px;} .home.compact .home-ic{height:46px;}
@@ -111,6 +116,7 @@
   .ex-hero{position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%); font-size:26px; filter:drop-shadow(0 3px 3px #0009); animation:exHop 1.1s ease-in-out infinite; pointer-events:none;}
   @keyframes exHop{0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,-7px)}}
   .ex-veil{position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; background:#0b0f18a8; color:#fff; font-weight:800; font-size:14px; backdrop-filter:blur(1.5px);}
+  @media (max-height:640px){ .ex-legend{display:none !important;} .ex-head{padding:6px 8px;} .ex-name{font-size:16px;} }
   .ex-legend{display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:8px; font-size:11px; font-weight:700; color:var(--sub);}
   .ex-legend span{display:flex; align-items:center; gap:4px;} .ex-legend .lg{width:10px; height:10px; border-radius:50%; display:inline-block;}
   .ex-legend .lg.clear{background:var(--tc);} .ex-legend .lg.open{border:2px solid var(--tc);}
@@ -163,7 +169,7 @@
   .du-btns{display:flex; gap:6px; margin-top:8px;} .du-btns .btn{flex:1;}
   .home-back{background:#ffffff10; border:1px solid #ffffff22; color:var(--text); border-radius:10px; padding:5px 12px; font-size:12px; font-weight:700; margin-bottom:8px;}
   body:not(.on-home) nav{display:none;}
-  body:not(.on-home) main{padding-bottom:24px;}
+  body:not(.on-home) main{padding-bottom:14px;}
   html:has(body.on-home), body.on-home{overflow:hidden; overscroll-behavior:none; height:100%;}
   /* (v176) 한 화면에 딱 맞춰야 하는 곳(홈·전투)은 문서 자체를 고정 — iOS에서 안전영역 여백 때문에 생기던 스크롤·튕김 제거 */
   html.lock-scroll{position:fixed; inset:0; width:100%; height:100%; overflow:hidden; overscroll-behavior:none;}
@@ -686,6 +692,13 @@
 .modal.battle-modal{max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); padding:16px 18px;}
 .modal.battle-modal h3{margin-bottom:8px;}
 .btn.sticky-ok{position:sticky; bottom:8px; z-index:2;}
+/* (v187) 팝업도 폰 화면 높이(안전 영역 제외)에 맞춤 — 넘치면 팝업 안에서만 스크롤, 전투 시작 줄은 아래에 고정 */
+.modal-bg{padding-top:calc(20px + var(--sat)); padding-bottom:calc(20px + var(--sab));}
+.modal-bg.wide{padding-top:calc(8px + var(--sat)); padding-bottom:calc(8px + var(--sab));}
+.modal{max-height:calc(100vh - 40px - var(--sat) - var(--sab)); max-height:calc(100dvh - 40px - var(--sat) - var(--sab)); overscroll-behavior:contain;}
+.modal.roster-modal, .modal-bg.wide .modal{max-height:calc(100vh - 16px - var(--sat) - var(--sab)); max-height:calc(100dvh - 16px - var(--sat) - var(--sab));}
+.modal.battle-modal{max-height:calc(100dvh - 40px - var(--sat) - var(--sab));}
+.m-actions{position:sticky; bottom:-20px; z-index:3; margin:12px -20px -20px !important; padding:10px 20px 14px; background:linear-gradient(180deg,#1a1a2600,#1a1a26 22%);}
 @keyframes pulseDim{0%,100%{opacity:.25} 50%{opacity:.65}}
   .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:20px; color:var(--sub); background:none; border:none;}
   .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid #5b6bff; padding:10px 16px; border-radius:10px; z-index:60; font-size:14px; line-height:1.4; width:max-content; max-width:90vw; word-break:keep-all; text-align:center;}
@@ -2110,12 +2123,12 @@ function friendInviteRowHtml(k){
 }
 function renderFriendsTab(){
   let h = '<div class="fr"><div class="fr-title">👥 친구</div>';
-  if(!friendsAvailable() || !friendNet.on) return h + friendsOfflineHtml() + '</div>';
+  if(!friendsAvailable() || !friendNet.on) return h + '</div>' + TOP_MARK + friendsOfflineHtml();
   const fl = friendList().sort((a,b)=> (friendOnline(b)?1:0)-(friendOnline(a)?1:0) || raidNameOf(a).localeCompare(raidNameOf(b)));
   const invs = friendLiveInvites(), reqs = friendIncomingReqs(), nReq = invs.length + reqs.length;
   const rep = homeRepSpirit();
   h += '<div class="fr-me"><span class="fr-av big">'+(rep?ELEMENT_INFO[SPIRITS[rep].element].icon:'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">📋 복사</button></div>';
-  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div>';
+  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
@@ -2187,7 +2200,7 @@ function duelSlotHtml(d, i){
 }
 function renderDuelTab(){
   const d = myDuelDeck(), cp = d.reduce((a,k)=> a + ((k && SPIRITS[k] && ownedCount(k)>0) ? spiritCP(k) : 0), 0);
-  let h = '<div class="fr"><div class="du-hero"><div class="du-hero-ic">⚔️</div><div><div class="fr-title" style="margin:0;">결투</div><div class="sub">친구와 실시간 1:1 대결 · 보상 없이 실력 겨루기</div></div></div>';
+  let h = '<div class="du-hero"><div class="du-hero-ic">⚔️</div><div><div class="fr-title" style="margin:0;">결투</div><div class="sub">친구와 실시간 1:1 대결 · 보상 없이 실력 겨루기</div></div></div>' + TOP_MARK + '<div class="fr">';
   h += '<div class="fr-card"><div class="du-head"><b>🛡️ 내 결투 덱</b><span class="du-cp">💪 '+cp.toLocaleString()+'</span></div>'
     + '<div class="sub">칸을 눌러 정령을 바꿔요 · 결투는 항상 이 덱으로 싸워요</div>'
     + '<div class="du-row"><span class="du-lbl">전열</span>'+[0,1,2].map(i=>duelSlotHtml(d,i)).join('')+'</div>'
@@ -2352,7 +2365,22 @@ function fitHome(){ // 헤더와 하단 탭 사이 남는 높이에 홈을 딱 �
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
 // 앱으로 돌아옴, 글꼴 로딩. 처음 켤 때 잘리던 문제의 근본 대책
 let relayoutRaf = 0;
-function relayoutScreens(){ cancelAnimationFrame(relayoutRaf); relayoutRaf = requestAnimationFrame(()=>{ if(activeTab==='home') fitHome(); if(document.getElementById('battleScreen')) fitBattleScreen(); }); }
+function relayoutScreens(){ cancelAnimationFrame(relayoutRaf); relayoutRaf = requestAnimationFrame(()=>{ if(activeTab==='home') fitHome(); else fitRest(); if(document.getElementById('battleScreen')) fitBattleScreen(); }); }
+// (v187) .fit-rest 요소(탐험 지도·탑 층 목록)는 화면 영역에서 남은 높이에 딱 맞춤 — 폰 크기가 달라도 스크롤 없이 한 화면
+// data-below: 아래에 남겨 둘 높이(px) · data-min / data-max: 최소·최대 높이
+function fitRest(){
+  const main = document.getElementById('main'); if(!main) return;
+  const els = main.querySelectorAll('.fit-rest'); if(!els.length) return;
+  const mr = main.getBoundingClientRect(), padB = parseFloat(getComputedStyle(main).paddingBottom)||0;
+  els.forEach(el=>{
+    const top = el.getBoundingClientRect().top - mr.top + main.scrollTop;
+    let below = parseFloat(el.dataset.below)||0; // 'next' = 뒤따르는 요소들 실제 높이만큼 남김
+    if(el.dataset.below==='next'){ below = 0; for(let n = el.nextElementSibling; n; n = n.nextElementSibling){ if(n.offsetParent!==null) below += n.offsetHeight + (parseFloat(getComputedStyle(n).marginTop)||0); } }
+    let h = main.clientHeight - top - padB - below;
+    h = Math.max(parseFloat(el.dataset.min)||200, Math.min(parseFloat(el.dataset.max)||99999, Math.floor(h)));
+    if(el.style.height !== h+'px'){ el.style.height = h+'px'; el.style.maxHeight = 'none'; el.style.minHeight = '0'; }
+  });
+}
 window.addEventListener('resize', relayoutScreens);
 window.addEventListener('orientationchange', ()=>setTimeout(relayoutScreens, 250));
 window.addEventListener('pageshow', relayoutScreens);
@@ -3490,7 +3518,7 @@ function showSkillStagePrepModal(i){
   };
   const row = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(spSlot).join('')+'</div></div>';
   html += row('전열', frontIdx) + row('후열', backIdx);
-  html += '<div style="display:flex; gap:8px; margin-top:12px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button>'
+  html += '<div class="m-actions" style="display:flex; gap:8px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button>'
     + '<button class="btn" id="startSkillBattleBtn" style="flex:1;">⚔️ 전투 시작</button></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
@@ -3507,7 +3535,7 @@ function showSkillStagePrepModal(i){
   document.getElementById('startSkillBattleBtn').addEventListener('click', ()=>{ saveStageFormation(i); startSkillStageFight(i); });
 }
 // ---------- 전장 화면 ----------
-function updateScrollLock(){ document.documentElement.classList.toggle('lock-scroll', activeTab==='home' || !!document.getElementById('battleScreen') || document.body.classList.contains('in-battle')); }
+function updateScrollLock(){ document.documentElement.classList.add('lock-scroll'); } // (v187) 모든 화면에서 문서는 고정, 화면 영역(main)만 스크롤
 function mountBattleScreen(){
   let el = document.getElementById('battleScreen');
   if(!el){ el = document.createElement('div'); el.id = 'battleScreen'; document.getElementById('app').appendChild(el); }
@@ -4993,6 +5021,8 @@ function showGuideModal(){
     btn.addEventListener('click', ()=>{ guideCategory = btn.dataset.guideCat; window.__modalScrollReset = true; showGuideModal(); });
   });
 }
+const TOP_MARK = '<!--top-->'; // 화면 html에 넣으면 이 앞부분이 위쪽에 고정됨
+let lastRenderedTab = null;
 function render(){
   checkDailyRollover();
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
@@ -5027,11 +5057,17 @@ function render(){
   else if(activeTab==='friends') main.innerHTML = renderFriendsTab();
   else if(activeTab==='duel') main.innerHTML = renderDuelTab();
   else main.innerHTML = renderStageTab();
-  if(HOME_MODE_TABS.includes(activeTab)) main.insertAdjacentHTML('afterbegin', '<button class="home-back" id="homeBackBtn">← 홈</button>');
+  { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
+    const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">← 홈</button>' : '';
+    const html = main.innerHTML, k = html.indexOf(TOP_MARK);
+    if(back || k>=0) main.innerHTML = '<div class="scr-top">'+back+(k>=0 ? html.slice(0,k) : '')+'</div>'+(k>=0 ? html.slice(k+TOP_MARK.length) : html);
+    if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; }
+  }
   main.classList.toggle('is-home', activeTab==='home');
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
   updateScrollLock();
   attachHandlers();
+  fitRest();
   { const sc = document.getElementById('towerScroll');
     if(sc){
       if(towerScrollTop!==null) sc.scrollTop = towerScrollTop;
@@ -5097,7 +5133,7 @@ function ticketRowHtml(name, sub, own, btnHtml, first){
     + '<div><div>'+name+' <span class="sub">· 보유 '+own+'장</span></div><div class="sub">'+sub+'</div></div>'+btnHtml+'</div>';
 }
 function renderSummonTab(){
-  let html = summonPageHeaderHtml();
+  let html = summonPageHeaderHtml() + TOP_MARK;
   if(summonPage===1) return html + renderEquipSummonPage();
   const sw = summonWeights(), legendW = sw[3] ? sw[3].w : 0, pct = v => String(Math.round(v*100)/100);
   html += '<div class="card">';
@@ -5242,7 +5278,7 @@ function summonRateTableHtml(mode){
 }
 let spiritsSub = 'spirits'; // (v181) 정령 탭 안의 하위 탭: 정령 · 장비 · 룬
 function renderSpiritsTab(){
-  let html = '<div class="seg" style="margin-bottom:10px;">'+[['spirits','📦 정령'],['equip','🛡️ 장비'+(isEquipUnlocked()?'':' 🔒')],['runes','🔮 룬']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  let html = '<div class="seg">'+[['spirits','📦 정령'],['equip','🛡️ 장비'+(isEquipUnlocked()?'':' 🔒')],['runes','🔮 룬']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
     if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);">🛡️</div><div style="font-weight:800; margin-top:6px;">정령장비</div><div style="margin-top:10px;">🔒 챕터 1 보스 격파 시 해금</div></div>';
     return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon">🛡️ 장비 소환하러 가기 ›</button>';
@@ -6506,8 +6542,8 @@ function renderTowerTab(){
   if(!isUnlocked('tower')) return lockedFeatureScreenHtml('tower');
   const best = state.towerBest||0, frontier = towerFloor(), topFloor = frontier + 2; // 다음 도전 위로 2층은 미리보기
   let html = '<div style="text-align:center; margin:2px 0 10px;"><div style="font-size:17px; font-weight:900; color:#c9a8ff;">🗼 무한의 탑</div>'
-    + '<div class="sub">최고 '+best+'층 · 최고 전투력 '+fmtDmg(state.towerBestPower||0)+'</div></div>';
-  html += '<div id="towerScroll" style="position:relative; max-height:62vh; overflow-y:auto; border-radius:16px; background:linear-gradient(180deg,#1b1a33 0%,#14141c 70%); border:1px solid #ffffff14; padding:14px 8px 10px;">';
+    + '<div class="sub">최고 '+best+'층 · 최고 전투력 '+fmtDmg(state.towerBestPower||0)+'</div><div class="sub" style="font-size:11px; margin-top:2px;">층을 눌러 도전 · 보상은 층마다 처음 돌파할 때 1회</div></div>' + TOP_MARK;
+  html += '<div id="towerScroll" class="fit-rest" data-below="0" data-min="260" style="position:relative; max-height:62vh; overflow-y:auto; border-radius:16px; background:linear-gradient(180deg,#1b1a33 0%,#14141c 70%); border:1px solid #ffffff14; padding:14px 8px 10px;">';
   // 지붕
   html += '<div class="tw-row" style="height:50px;"><div style="height:100%; display:flex; justify-content:center; align-items:flex-end; position:relative;">'
     + '<div style="position:absolute; top:-2px; font-size:16px;">🚩</div>'
@@ -6523,7 +6559,7 @@ function renderTowerTab(){
   // 입구
   html += '<div class="tw-row" style="height:44px;"><div style="height:100%; display:flex; justify-content:center; align-items:center; font-size:22px; background:linear-gradient(180deg,#3b3860,#1f1d38); border:4px solid #17152b; border-top:0; border-radius:0 0 12px 12px;">🚪</div><div></div></div>';
   html += '</div>';
-  html += '<div class="card sub" style="margin-top:10px;">층을 눌러 도전 · 전투력이 탑보다 높으면 돌파(등급은 기록용). 층마다 보상은 1종류이고 처음 돌파할 때 1회만 — 오른쪽 보상을 눌러 수령. 지난 층 재도전은 최고 전투력 기록용.</div>';
+  // (v187) 안내 문구는 위쪽 고정 영역으로 옮김(층 목록이 화면에 딱 맞도록)
   return html;
 }
 function renderExpeditionTab(){
@@ -7121,8 +7157,8 @@ function renderStageTab(){
     + '<div class="ex-title"><div class="ex-ch">CHAPTER '+ch+'</div><div class="ex-name">'+theme.icon+' '+theme.name+'</div>'
     + '<div class="ex-bar"><i style="width:'+pct+'%;"></i></div><div class="ex-sub">'+(ch>cur?'🔒 미도달':(ch<cur?'✅ 클리어':'진행 중'))+' · '+clearCount+'/'+CHAPTER_LENGTH
     + ' <button class="ex-reward" data-chapter-reward-btn="'+ch+'">🎁 챕터 보상'+(hasPendingFor('ch'+ch+'_pct')?'<span class="ex-rdot"></span>':'')+'</button></div></div>'
-    + '<button class="ex-arrow" id="chapterNext" '+(ch>=MAX_CHAPTERS?'disabled':'')+'>▶'+arrowDot(pendAfter)+'</button></div>';
-  html += '<div class="ex-map scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+'" id="exMap" style="--tc:'+theme.color+';">'+battleSceneHtml(sceneTheme)
+    + '<button class="ex-arrow" id="chapterNext" '+(ch>=MAX_CHAPTERS?'disabled':'')+'>▶'+arrowDot(pendAfter)+'</button></div>' + TOP_MARK;
+  html += '<div class="ex-map fit-rest scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+'" data-below="next" data-min="220" data-max="640" id="exMap" style="--tc:'+theme.color+';">'+battleSceneHtml(sceneTheme)
     + '<div class="ex-shade"></div>'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
@@ -7625,7 +7661,7 @@ function attachHandlers(){
   const ms = document.getElementById('multiSummonBtn'); if(ms) ms.addEventListener('click', doMultiSummon);
   const dex = document.getElementById('openDex'); if(dex) dex.addEventListener('click', showDexModal);
   const rn = document.getElementById('openRunes'); if(rn) rn.addEventListener('click', showRuneHub);
-  document.querySelectorAll('[data-sp-sub]').forEach(el=>el.addEventListener('click', ()=>{ spiritsSub = el.dataset.spSub; render(); window.scrollTo(0,0); }));
+  document.querySelectorAll('[data-sp-sub]').forEach(el=>el.addEventListener('click', ()=>{ spiritsSub = el.dataset.spSub; render(); document.getElementById('main').scrollTop = 0; }));
   const ets = document.getElementById('equipToSpirits'); if(ets) ets.addEventListener('click', ()=>{ spiritsSub = 'equip'; activeTab = 'spirits'; render(); });
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
