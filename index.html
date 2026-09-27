@@ -2040,7 +2040,7 @@ async function friendInit(){
     }
   }
   await db.doc('players/'+uid).set({ name, code: code||'' });
-  friendNet.name = name; friendNet.code = code; friendNet.on = true;
+  friendNet.code = code; friendNet.on = true; friendSetName(name);
   const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
   friendNet.unsubs.push(db.doc('friends/'+uid).onSnapshot(s=>{ friendNet.friends = obj(s); friendRefresh(); }, ()=>{}));
   friendNet.unsubs.push(db.doc('friendReqs/'+uid).onSnapshot(s=>{ friendNet.reqs = obj(s); friendRefresh(); }, ()=>{}));
@@ -2068,6 +2068,18 @@ function friendRefresh(){ // 입력 중이면 탭을 다시 그리지 않음(글
     if(raidNet.code && raidNet.doc && raidNet.doc.status==='lobby' && document.getElementById('raidModal')){ showRaidLobbyModal(); return; }
     if(activeTab==='raid' && !raidNet.code && !document.getElementById('battleScreen') && !(ae && ae.tagName==='INPUT')) render();
   }, 150);
+}
+// (v194) 홈 프로필 이름 — 서버(친구) 연결 전 첫 화면에서 "소환사"로 뜨던 문제: 마지막 이름을 기기에 기억해두고, 연결되면 홈 이름표만 바로 갱신
+const NAME_CACHE_KEY = 'animarune_profile_name';
+function homeProfileName(){
+  if(typeof friendNet!=='undefined' && friendNet.on && friendNet.name) return friendNet.name;
+  try{ const c = localStorage.getItem(NAME_CACHE_KEY); if(c && c.trim()) return c.slice(0,12); }catch(e){}
+  return '소환사';
+}
+function friendSetName(name){
+  friendNet.name = name;
+  try{ localStorage.setItem(NAME_CACHE_KEY, name); }catch(e){}
+  const el = document.getElementById('homeProfName'); if(el) el.textContent = name;
 }
 function friendList(){ return Object.keys(friendNet.friends||{}).filter(k=>friendNet.friends[k]); }
 function friendOnline(id){ return friendNet.online.has(id); }
@@ -2098,7 +2110,7 @@ async function friendRemove(fuid){ try{ await raidNet.db.doc('friends/'+raidNet.
 async function friendRename(v){
   const name = String(v||'').trim().replace(/[<>&"]/g,'').slice(0,12);
   if(!name){ toast('이름을 입력해주세요'); return; }
-  try{ await raidNet.db.doc('players/'+raidNet.uid).update({ name }); friendNet.name = name; raidNet.names = {}; toast('이름을 바꿨어요'); if(document.getElementById('fNameInput')) document.getElementById('fNameInput').blur(); render(); }catch(e){ raidNetError(e); }
+  try{ await raidNet.db.doc('players/'+raidNet.uid).update({ name }); friendSetName(name); raidNet.names = {}; toast('이름을 바꿨어요'); if(document.getElementById('fNameInput')) document.getElementById('fNameInput').blur(); render(); }catch(e){ raidNetError(e); }
 }
 async function friendInvite(fuid, kindArg){
   if(!raidNet.code) return;
@@ -2332,10 +2344,10 @@ function homeRotateTo(m){
 }
 function renderHomeTab(){
   const rep = homeRepSpirit();
-  const name = (typeof friendNet!=='undefined' && friendNet.on && friendNet.name) ? friendNet.name : '소환사';
+  const name = homeProfileName();
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
-  h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?ELEMENT_INFO[sp.element].icon:'🔮')+'</span><div><b>'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
+  h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?ELEMENT_INFO[sp.element].icon:'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
   h += '<div class="home-side left"><button class="home-ic" data-home="tower">🗼<small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest">📜<small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve">🏅<small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide">📖<small>가이드</small></button></div>';
   h += '<div class="home-side right"><button class="home-ic" data-home="friends">👥<small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel">⚔️<small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings">⚙️<small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
