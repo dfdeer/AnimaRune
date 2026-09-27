@@ -1395,7 +1395,7 @@ function atkBonus(sf, a, d){
 function dmgReduction(sf, d){
   let r = 0;
   if(d.line==='wood_a' && d.g>=1) r += [0,.08,.10,.12,.15][d.g];
-  if(d.st && d.st.guard) r += d.st.guard.v; // (v192) 굳건함(대지의 포효)
+  if(d.st && d.st.guard) r += d.st.guard.v; // (v192) 굳건함(숲결 탱커 뿌리 내리기)
   r += runeDr(d);
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && f.line==='wood_a' && f.g>=4) r += 0.2; } }
   return r;
@@ -3023,13 +3023,13 @@ const LINE_KITS = {
       '받는 피해 −'+pctTxt([0,.08,.10,.12,.15][g]),
       g>=4?'전열에 있으면 바로 뒤 칸 아군의 받는 피해도 −20%':null
     ].filter(Boolean).join('<br>') },
-    // (v192) 탱커는 자기 몸에 거는 스킬로 — 아군 보호막+도발(예전 '뿌리 내리기')은 빛 보호막 서포터 스킬로 옮김
-    s1:{ name:'대지의 포효', icon:'🗿', cd:3, kind:'shield', self:true, tag:g=>'자신 · 도발 '+(g>=3?2:1)+'R',
+    // (v192) 탱커는 자기 몸에 거는 스킬로 — 예전엔 아군에게 보호막까지 줬는데, 아군 보호막은 빛 서포터(수호의 빛) 역할이라 뺌
+    s1:{ name:'뿌리 내리기', icon:'🌱', cd:3, kind:'shield', self:true, tag:g=>'자신 · 도발 '+(g>=3?2:1)+'R',
       desc:g=>[
         '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)',
         '자신이 받는 피해 −'+pctTxt([.20,.24,.28,.32,.40][g])+' (2라운드)'
       ].join('<br>'),
-      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🗿도발·굳건'); } },
+      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); } },
     s2:{ name:'가시 갑옷', icon:'🌵', cd:4, kind:'shield', tag:()=> '반사',
       desc:g=>'대상이 2라운드 동안 받는 피해의 '+pctTxt([0,0,.3,.4,.5][g])+'를 공격자에게 반사',
       run:C=>{ C.pos(C.t,st=>{ st.reflect={v:C.P([0,0,.3,.4,.5]),r:2}; },'🌵반사'); } } },
@@ -3056,13 +3056,12 @@ const LINE_KITS = {
       '보호막이 있는 아군의 공격력 +'+pctTxt([0,.08,.10,.12,.15][g]),
       g>=4?'전투당 1회, 쓰러진 아군을 체력 50%로 부활':null
     ].filter(Boolean).join('<br>') },
-    // (v192) 숲결 탱커에게 있던 '뿌리 내리기'(아군 보호막 + 시전자 도발)를 옮겨 옴 — 보호막 수치는 기존 수호의 빛 그대로
-    s1:{ name:'뿌리 내리기', icon:'🌱', cd:3, kind:'shield', tag:g=>'도발 '+(g>=3?2:1)+'R',
+    s1:{ name:'수호의 빛', icon:'🛡️', cd:3, kind:'shield', tag:g=>g>=3?'가로':'',
       desc:g=>[
-        '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+', 2라운드)',
-        '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)'
-      ].join('<br>'),
-      run:C=>{ C.shield(C.t,C.a.maxHp*C.P([.2,.24,.28,.32,.36])); C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; },'🎯도발'); } },
+        '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
+        g>=3?'양옆 대상에게도 절반만큼 보호막':null
+      ].filter(Boolean).join('<br>'),
+      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
     s2:{ name:'날개의 가호', icon:'🪽', cd:4, kind:'shield', tag:g=>'전체'+(g>=3?' · 면역':''),
       desc:g=>[
         '대상 편 전체에게 보호막 부여 (시전자 최대체력 '+pctTxt([0,0,.10,.13,.16][g])+')',
@@ -3581,7 +3580,7 @@ function statusList(u){
   if(u.isBoss && u.groggy) o.push({i:'💫', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
   if(s.shield>0) o.push({i:'🛡️', t:'보호막', d:fmtHp(s.shield)+' 피해 흡수'+(s.shieldR?' · '+s.shieldR+'R':''), good:true});
   if(s.taunt) o.push({i:'🎯', t:'도발', d:'적이 이 정령만 공격', good:true});
-  if(s.guard) o.push({i:'🗿', t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
+  if(s.guard) o.push({i:'🌱', t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
   if(s.haste) o.push({i:'⏩', t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
   if(s.buff || s.empower) o.push({i:'✨', t:'강화', d:'공격력 증가'+r(s.buff), good:true});
   if(s.regen) o.push({i:'💧', t:'재생', d:'라운드마다 체력 회복'+r(s.regen), good:true});
