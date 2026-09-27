@@ -91,8 +91,9 @@
   .ex-map .bs-parts{z-index:1;}
   .ex-reward{position:relative; margin-left:6px; padding:3px 9px; border-radius:10px; border:1px solid #ffd24a88; background:#ffd24a1f; color:#ffe7a0; font-size:11px; font-weight:800; vertical-align:middle;}
   .ex-paths{position:absolute; inset:0; width:100%; height:100%; z-index:2; pointer-events:none;}
-  .ex-path{stroke:#ffffff; stroke-opacity:.35; stroke-width:5; stroke-dasharray:2 9; stroke-linecap:round;}
-  .ex-path.open{stroke-opacity:.6; stroke-dasharray:6 7;}
+  .ex-road{stroke:#0b0f18; stroke-opacity:.32; stroke-width:11; stroke-linecap:round;}
+  .ex-path{stroke:#ffffff; stroke-opacity:.75; stroke-width:4; stroke-dasharray:2 9; stroke-linecap:round;}
+  .ex-path.open{stroke-opacity:.95; stroke-dasharray:6 7;}
   .ex-path.done{stroke:var(--tc); stroke-opacity:.95; stroke-width:7; stroke-dasharray:none; filter:drop-shadow(0 0 4px var(--tc));}
   .ex-node{position:absolute; z-index:3; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center;}
   .ex-node[data-stage]{cursor:pointer;}
@@ -7135,7 +7136,8 @@ function renderStageTab(){
   let paths = '';
   locals.forEach(a=>locals.forEach(b=>{ if(a<b && isAdjacentLocal(grid, a, b)){
     const done = !!state.stageBest[offset+a] && !!state.stageBest[offset+b], open = !!state.stageBest[offset+a] || !!state.stageBest[offset+b];
-    paths += '<line x1="'+P[a].x+'" y1="'+P[a].y+'" x2="'+P[b].x+'" y2="'+P[b].y+'" class="ex-path'+(done?' done':(open?' open':''))+'" vector-effect="non-scaling-stroke"/>'; } }));
+    const xy = 'x1="'+P[a].x+'" y1="'+P[a].y+'" x2="'+P[b].x+'" y2="'+P[b].y+'" vector-effect="non-scaling-stroke"';
+    paths += '<line '+xy+' class="ex-road"/><line '+xy+' class="ex-path'+(done?' done':(open?' open':''))+'"/>'; } })); // (v189) 어두운 길 바닥 위에 점선 — 설원처럼 밝은 배경에서도 보이게
   // 다음 도전 스테이지(열렸고 아직 안 깬 곳 중 가장 앞)
   const next = locals.map(l=>offset+l).find(i=>!state.stageBest[i] && isStageUnlockedGraph(i));
   const rep = homeRepSpirit();
