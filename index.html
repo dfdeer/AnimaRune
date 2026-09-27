@@ -210,6 +210,10 @@
   .bu-mine .bu-icon .spimg{transform:scaleX(-1);}
   @media (max-width:360px){ .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.02); height:calc(var(--sz) * var(--k,1) * 1.02); margin-bottom:calc(var(--sz) * var(--k,1) * .08);} } /* (v207) 좁은 폰에선 옆 칸 체력 글자를 덮지 않게 조금 작게 */
   [data-duel-pick], [data-rp-pick], [data-home-rep]{padding-top:12px !important;} /* 오른쪽 위 '덱'·ⓘ 표시가 그림에 겹치지 않게 */ /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
+  .home-empty{animation:none;} .home-emo.home-empty .spimg.hero{width:1.05em; height:1.05em; margin:-.1em auto 0; filter:drop-shadow(0 0 18px #b58cffcc) drop-shadow(0 6px 8px #0008); animation:emptyPulse 2.4s ease-in-out infinite;}
+  @keyframes emptyPulse{0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-6px) scale(1.04)}}
+  .home-cta{margin-top:4px; font-family:var(--fun); font-size:12px; color:#ffd35a; text-shadow:0 1px 0 #0b0a22, 0 0 6px #000;}
+  @media (prefers-reduced-motion: reduce){ .home-empty .spimg.hero{animation:none;} }
   .home-emo .spimg.hero{display:block; width:1.8em; height:1.8em; margin:-.8em -.4em 0;} /* 아래 끝이 이모지 때와 같은 자리(받침 위)에 오게 위로만 키움 */
   .sm-icon .spimg{width:1.7em; height:1.7em; margin:0;} .sm-src .spimg{width:1.4em; height:1.4em; margin:0;}
   /* (v200) 이모지 대신 쓰는 그림 아이콘 — 글자 크기(1em)에 맞춰 커지고 작아짐 */
@@ -2463,7 +2467,7 @@ function renderHomeTab(){
   h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
-          : '<div class="home-emo">🔮</div><div class="home-name">첫 정령을 소환해보세요</div>')
+          : '<div class="home-emo home-empty"><img class="spimg hero" src="assets/ui/ic_summon.webp" alt="" draggable="false"></div><div class="home-name">첫 정령을 소환해보세요</div><div class="home-cta">눌러서 소환하러 가기 ›</div>') // (v209) 정령이 없을 땐 소환 구슬 그림 — 누르면 소환 화면
     + '</div>';
   h += '<div class="home-bottom"><div class="home-car">'+HOME_MODES.map(homeModeBtnHtml).join('')+'</div></div>';
   h += '</div>';
@@ -2547,7 +2551,7 @@ function bindHomeTab(){
     else if(a==='quest') showQuestsModal();
     else if(a==='guide') showGuideModal();
     else if(a==='settings') showSettingsModal();
-    else if(a==='hero') showHomeSpiritPicker();
+    else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
     else if(a==='expedition' && !isUnlocked('expedition')){ activeTab = 'expedition'; render(); save(); }
     else { activeTab = a; render(); save(); }
   }));
