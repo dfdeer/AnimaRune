@@ -197,6 +197,16 @@
   nav button.locked .ico{position:relative;}
   nav button.locked .ico::after{content:'🔒'; position:absolute; right:-6px; bottom:-4px; font-size:9px;}
   nav button .ico{font-size:20px;}
+  /* (v205) 정령 그림 — 이모지 자리에 글자 크기 기준으로 들어감(칸 크기가 바뀌지 않게 위아래는 살짝 겹침) */
+  .spimg{width:1.5em; height:1.5em; object-fit:contain; display:inline-block; vertical-align:middle; margin:-.25em -.1em; pointer-events:none; -webkit-user-drag:none;}
+  .home-ava .spimg, .pk-ico .spimg, .bs-who .pic .spimg, .bs-order .oc .spimg, .ring .spimg, [data-recent-summon] .spimg{width:112%; height:112%; margin:0;}
+  .pk-ico, .bs-who .pic, .bs-order .oc, .home-ava{overflow:hidden;}
+  .oc-bimg{width:112%; height:112%; object-fit:contain;}
+  .eqimg{width:1.35em; height:1.35em; object-fit:contain; display:inline-block; vertical-align:middle; margin:-.2em 0; pointer-events:none;} .sm-icon .eqimg, .sm-src .eqimg{width:1.3em; height:1.3em; margin:0;}
+  .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.2); height:calc(var(--sz) * var(--k,1) * 1.2); margin:0 0 calc(var(--sz) * var(--k,1) * .2);}
+  .bu-mine .bu-icon .spimg{transform:scaleX(-1);} /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
+  .home-emo .spimg.hero{display:block; width:1.8em; height:1.8em; margin:-.8em -.4em 0;} /* 아래 끝이 이모지 때와 같은 자리(받침 위)에 오게 위로만 키움 */
+  .sm-icon .spimg{width:1.7em; height:1.7em; margin:0;} .sm-src .spimg{width:1.4em; height:1.4em; margin:0;}
   /* (v200) 이모지 대신 쓰는 그림 아이콘 — 글자 크기(1em)에 맞춰 커지고 작아짐 */
   .uic{width:1.25em; height:1.25em; object-fit:contain; display:inline-block; vertical-align:middle; margin:-.12em 0; pointer-events:none; -webkit-user-drag:none;}
   nav button .ico .uic{width:28px; height:28px; margin:0;}
@@ -224,6 +234,9 @@
   .av.r-epic::after{background-image:url(assets/ui/frame_epic.webp);} .av.r-legendary::after{background-image:url(assets/ui/frame_legendary.webp);}
   .av.r-mythic::after{background-image:url(assets/ui/frame_mythic.webp);}
   .species-tile .av{margin:2px 0 3px;} .slot .av{font-size:22px;}
+  /* (v205) 정령 그림을 칸에 꽉 채우고, 어두운 정령(거미·박쥐·까마귀)도 보이게 칸 바닥을 가운데가 밝은 원형으로 */
+  .av{background:radial-gradient(circle at 50% 45%, #4a4470 0%, #2c2746 55%, #1c1930 100%);} .av .spimg{width:100%; height:100%; margin:0;}
+  .spimg{filter:drop-shadow(0 0 1px #ffffff99) drop-shadow(0 0 3px #ffffff33);} /* 아주 옅은 밝은 테두리 — 어두운 배경에서 윤곽이 묻히지 않게 */
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:4px; font-size:10px; background:#000a; padding:1px 5px; border-radius:8px;}
   .species-tile .passive-badge{position:absolute; top:2px; left:4px; font-size:11px;}
@@ -1134,11 +1147,13 @@ function runeValid(r){ if(!r || typeof r!=='object') return false; if(r.tier==='
 function runeVal(r){ return (r && r.tier!=='boss' && RUNE_BASE[r.id]) ? RUNE_BASE[r.id].vals[r.tier] : 0; }
 function runeName(r){ return r.tier==='boss' ? bossRuneById(r.id).name : RUNE_BASE[r.id].name; }
 function runeIcon(r){ return r.tier==='boss' ? bossRuneById(r.id).icon : RUNE_BASE[r.id].icon; }
+// (v205) 화면용 룬 그림 — assets/ui/rune_<id>.webp (글·알림에는 runeIcon 이모지)
+function runeImg(r){ return '<img class="eqimg" src="assets/ui/rune_'+r.id+'.webp" alt="" draggable="false">'; }
 function runeDesc(r){ return r.tier==='boss' ? bossRuneById(r.id).desc : RUNE_BASE[r.id].fmt(runeVal(r)); }
 function runeChipHtml(r, extra){
   if(!r) return '<span class="rune-chip empty">빈 룬 칸</span>';
   const t = RUNE_TIERS[r.tier];
-  return '<span class="rune-chip" style="border-color:'+t.color+'; color:'+t.color+';">'+runeIcon(r)+' '+runeName(r)+' <small>'+t.name+'</small>'+(extra||'')+'</span>';
+  return '<span class="rune-chip" style="border-color:'+t.color+'; color:'+t.color+';">'+runeImg(r)+' '+runeName(r)+' <small>'+t.name+'</small>'+(extra||'')+'</span>';
 }
 function spiritRune(key){ const r = state.runes && state.runes[key]; return runeValid(r) ? r : null; }
 function rollRune(){ // 재각인(파편) — 일반 65% · 희귀 30% · 전설 5%
@@ -1191,7 +1206,7 @@ function showRuneReveal(r, stoneIcon, onDone, note){
   const t = RUNE_TIERS[r.tier];
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="rune-reveal tier-'+r.tier+'" style="--rc:'+t.color+';">'
     + '<div class="rr-stone">'+stoneIcon+'</div>'
-    + '<div class="rr-card"><div class="rr-ico">'+runeIcon(r)+'</div><div class="rr-tier">'+t.name+(r.tier==='boss'?' · 레이드 전용':'')+'</div><div class="rr-name">'+runeName(r)+'</div><div class="rr-desc">'+runeDesc(r)+'</div>'
+    + '<div class="rr-card"><div class="rr-ico">'+runeImg(r)+'</div><div class="rr-tier">'+t.name+(r.tier==='boss'?' · 레이드 전용':'')+'</div><div class="rr-name">'+runeName(r)+'</div><div class="rr-desc">'+runeDesc(r)+'</div>'
     + (note?'<div class="sub" style="font-size:11px; margin-top:6px;">'+note+'</div>':'')+'<button class="btn" id="rrOk" style="margin-top:12px;">확인</button></div></div></div>';
   sfx(r.tier==='boss' || r.tier==='legend' ? 'summonEpic' : 'summon');
   document.getElementById('rrOk').addEventListener('click', ()=>{ closeModal(); if(onDone) onDone(); });
@@ -2237,7 +2252,7 @@ async function duelChallenge(fuid){
 function duelSlotHtml(d, i){
   const k = d[i], sp = k && SPIRITS[k] && ownedCount(k)>0 ? SPIRITS[k] : null;
   return '<button class="du-slot'+(sp?'':' empty')+'" data-duel-slot="'+i+'"'+(sp?' style="border-color:'+RARITY_INFO[sp.rarity].color+'88;"':'')+'>'
-    + (sp ? '<span class="du-ic">'+ELEMENT_INFO[sp.element].icon+'</span><small>'+sp.name+'</small>' : '<span class="du-ic">＋</span><small>비어 있음</small>') + '</button>';
+    + (sp ? '<span class="du-ic">'+spArt(sp)+'</span><small>'+sp.name+'</small>' : '<span class="du-ic">＋</span><small>비어 있음</small>') + '</button>';
 }
 function renderDuelTab(){
   const d = myDuelDeck(), cp = d.reduce((a,k)=> a + ((k && SPIRITS[k] && ownedCount(k)>0) ? spiritCP(k) : 0), 0);
@@ -2264,7 +2279,7 @@ function showDuelSlotPicker(slot){
   let h = '<h3 style="text-align:center;">'+(slot<3?'전열':'후열')+' '+(slot%3+1)+'번 칸</h3><div class="sub" style="text-align:center; margin-bottom:8px;">결투 덱에 넣을 정령을 골라주세요</div>';
   if(!owned.length) h += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 정령이 없어요</div>';
   h += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur;
-    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#1f1f2c; border:2px solid '+(k===cur?'#ffd24a':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div style="font-size:22px;">'+ELEMENT_INFO[sp.element].icon+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+'</div></div>';
+    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#1f1f2c; border:2px solid '+(k===cur?'#ffd24a':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div style="font-size:22px;">'+spArt(sp)+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+'</div></div>';
   if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
@@ -2359,6 +2374,8 @@ function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MO
 const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.gimmick; const sf = state.skillFight; return (sf && sf.mode==='raid') ? sf.raidBossId : null; }
+// (v205) 정령 그림 — assets/spirits/<번호표>.webp (예: fire_mythic_b). 번호표가 없으면(장비 등) 속성 이모지
+function spArt(sp, cls){ return (sp && sp.key && SPIRITS[sp.key]) ? '<img class="spimg'+(cls?' '+cls:'')+'" src="assets/spirits/'+sp.key+'.webp" alt="" draggable="false">' : (sp ? ELEMENT_INFO[sp.element].icon : ''); }
 // (v200) 그림 아이콘 — assets/ui/ic_<이름>.webp
 function uiIc(n){ return '<img class="uic" src="assets/ui/ic_'+n+'.webp" alt="" draggable="false">'; }
 function homeModeBtnHtml(m){
@@ -2387,11 +2404,11 @@ function renderHomeTab(){
   const name = homeProfileName();
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
-  h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?ELEMENT_INFO[sp.element].icon:'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
+  h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
   h += '<div class="home-side left"><button class="home-ic" data-home="tower"><img class="uic" src="assets/ui/ic_tower.webp" alt="" draggable="false"><small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
   h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
-    + (sp ? '<div class="home-emo">'+ELEMENT_INFO[sp.element].icon+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
+    + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo">🔮</div><div class="home-name">첫 정령을 소환해보세요</div>')
     + '</div>';
   h += '<div class="home-bottom"><div class="home-car">'+HOME_MODES.map(homeModeBtnHtml).join('')+'</div></div>';
@@ -2402,7 +2419,7 @@ function showHomeSpiritPicker(){
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=> (RARITY_ORDER.indexOf(SPIRITS[c].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity)) || (unitAtk(c)-unitAtk(a)));
   if(!owned.length){ toast('아직 보유한 정령이 없어요'); return; }
   let h = '<h3 style="text-align:center;">대표 정령</h3><div class="sub" style="text-align:center; margin-bottom:8px;">홈에 보여줄 정령을 골라주세요</div><div class="roster-scroll"><div class="roster-grid">';
-  h += owned.map(k=>{ const sp = SPIRITS[k]; return '<button data-home-rep="'+k+'" style="padding:6px 2px; border-radius:10px; background:#1f1f2c; border:1px solid '+(k===homeRepSpirit()?'#ffd24a':'#ffffff1a')+'; color:var(--text);"><div style="font-size:22px;">'+ELEMENT_INFO[sp.element].icon+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div></button>'; }).join('');
+  h += owned.map(k=>{ const sp = SPIRITS[k]; return '<button data-home-rep="'+k+'" style="padding:6px 2px; border-radius:10px; background:#1f1f2c; border:1px solid '+(k===homeRepSpirit()?'#ffd24a':'#ffffff1a')+'; color:var(--text);"><div style="font-size:22px;">'+spArt(sp)+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div></button>'; }).join('');
   h += '</div></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
@@ -2595,7 +2612,7 @@ function showRaidPickModal(){
   h += owned.length ? owned.map(k=>{
     const sp = SPIRITS[k], used = raidNet.myPicks.includes(k);
     const fr = ENEMY_FRONT_LINES.includes(sp.element+'_'+sp.variant);
-    return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#1f1f2c; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div style="font-size:20px;">'+ELEMENT_INFO[sp.element].icon+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;">💪'+fmtCP(spiritCP(k))+'</div></button>';
+    return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#1f1f2c; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div style="font-size:20px;">'+spArt(sp)+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;">💪'+fmtCP(spiritCP(k))+'</div></button>';
   }).join('') : '<div class="sub">보유한 정령이 없어요</div>';
   h += '</div></div>';
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
@@ -3698,7 +3715,7 @@ function battleUnitHtml(u, opts){
   return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : ELEMENT_INFO[u.element].icon)+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : spArt(SPIRITS[u.key]))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '👥' : '')+(u.dispName || sp.name)+eff+'</div>'
@@ -3850,7 +3867,7 @@ function showSkillStageScreen(){
     upcomingOrder(sf, 9).forEach((x, k)=>{
       if(x.next && !sep){ html += '<span class="sep"></span>'; sep = true; }
       const isTg = skillSel && skillSel.side===x.e.side && skillSel.idx===x.e.idx;
-      html += '<span class="oc'+(x.e.side==='enemy'?' en':'')+(k===0 && !x.next?' now':'')+(x.next?' nx':'')+(isTg?' tg':'')+'">'+ELEMENT_INFO[x.u.element].icon+(isTg?'<i>🎯</i>':'')+'</span>';
+      html += '<span class="oc'+(x.e.side==='enemy'?' en':'')+(k===0 && !x.next?' now':'')+(x.next?' nx':'')+(isTg?' tg':'')+'">'+(x.u.bossIcon ? bossImg(unitBossId(x.u), 'oc-bimg', x.u.bossIcon) : spArt(SPIRITS[x.u.key]))+(isTg?'<i>🎯</i>':'')+'</span>';
     });
     html += '</div>';
   }
@@ -3876,7 +3893,7 @@ function showSkillStageScreen(){
     const sp = SPIRITS[curUnit.key], kit = kitOf(curUnit);
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
     const tm = typeMult(curUnit.element, tU.element);
-    html += '<div class="bs-who"><div class="pic">'+ELEMENT_INFO[sp.element].icon+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
+    html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
       + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '⚔️ 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
       + '<div class="bs-tgt">🎯 '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
       + '<button class="bs-info" id="skillKitBtn">ⓘ</button></div>';
@@ -4207,7 +4224,7 @@ function showDismantleModal(key){
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:center;">'
     + '<button class="close-x" id="modalClose">✕</button>'
-    + '<div style="font-size:44px;">'+ELEMENT_INFO[sp.element].icon+'</div>'
+    + '<div style="font-size:44px;">'+spArt(sp)+'</div>'
     + '<h3>♻️ '+sp.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">보유 '+max+'개 · 1개당 🔩 '+per+'</div>'
     + '<div style="font-size:22px; font-weight:800; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → 🔩 +<span id="dismantleGain">'+per+'</span> · 💠 +<span id="dismantleShard">'+DISMANTLE_SHARDS[RARITY_ORDER.indexOf(sp.rarity)]+'</span></div>'
@@ -4531,7 +4548,7 @@ const EQUIP_NAMES = {
 const EQUIP_SUMMON_COST = 200;
 function isEquipUnlocked(){ return chapter1BossCleared(); } // (v106) 정령장비는 챕터 1 보스 격파 시 해금
 function equipKey(slot, element, rarity){ return slot+'_'+element+'_'+rarity; }
-function equipInfo(key){ const p = key.split('_'); return { key, slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].icon }; }
+function equipInfo(key){ const p = key.split('_'); return { key, slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].icon, img:'<img class="eqimg" src="assets/ui/eq_'+p[0]+'_'+p[1]+'.webp" alt="" draggable="false">' }; } // (v205) img = 화면용 그림, icon = 글(알림)용 이모지
 function allEquipKeys(){ const out = []; RARITY_ORDER.forEach(r=>EQUIP_SLOTS.forEach(sl=>ELEMENTS.forEach(e=>out.push(equipKey(sl,e,r))))); return out; }
 function equipOwnedCount(key){ return (state.equipOwned && state.equipOwned[key]) || 0; }
 function equipUsedCount(key){
@@ -4582,7 +4599,7 @@ function rollEquipKey(rarity){ return equipKey(EQUIP_SLOTS[Math.floor(Math.rando
 function addEquip(key){ const isNew = !state.equipSeen[key]; state.equipOwned[key] = (state.equipOwned[key]||0) + 1; state.equipSeen[key] = true; return isNew; }
 function equipResultView(key){
   const i = equipInfo(key);
-  return { sp:{element:i.element, rarity:i.rarity, name:i.name, variant:'e'}, custom:{ icon:i.icon, sub:EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+' · '+equipEffectText(key), own:'보유 '+equipOwnedCount(key) } };
+  return { sp:{element:i.element, rarity:i.rarity, name:i.name, variant:'e'}, custom:{ icon:i.img, sub:EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+' · '+equipEffectText(key), own:'보유 '+equipOwnedCount(key) } };
 }
 function equipTileInfo(key){ const i = equipInfo(key); return { rarity:i.rarity, icon:i.icon, name:i.name }; }
 const EQUIP_RESULT_OPTS = { canAgain:()=>canEquipOnce(), againLabel:()=>'🛡️ 한 번 더 '+equipCostLabel(), ticketKey:'equip' };
@@ -4638,7 +4655,7 @@ function doEquipFuse(key){
   checkAchievements();
   save();
   const v = equipResultView(next); v.custom.own = i.name+' ×3 합성';
-  showResultModal(v.sp, isNew, null, { fuse:{element:i.element, name:i.name, icon:i.icon}, custom:v.custom, ticketKey:'equip' });
+  showResultModal(v.sp, isNew, null, { fuse:{element:i.element, name:i.name, icon:i.img}, custom:v.custom, ticketKey:'equip' });
   render();
 }
 
@@ -4662,7 +4679,7 @@ function showEquipDismantleModal(key){
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:center;">'
     + '<button class="close-x" id="modalClose">✕</button>'
-    + '<div style="font-size:44px;">'+i.icon+'</div>'
+    + '<div style="font-size:44px;">'+i.img+'</div>'
     + '<h3>♻️ '+i.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">장착 안 한 '+max+'개 · 1개당 🔩 '+per+'</div>'
     + '<div style="font-size:22px; font-weight:800; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → 🔩 +<span id="dismantleGain">'+per+'</span></div>'
@@ -4729,7 +4746,7 @@ function showEquipDexModal(){
     EQUIP_SLOTS.forEach(sl=>ELEMENTS.forEach(e=>{
       const k = equipKey(sl,e,r), seen = !!(state.equipSeen && state.equipSeen[k]), i = equipInfo(k);
       html += '<div data-dex-eq="'+k+'" style="text-align:center; padding:5px 1px; border-radius:8px; border:1px solid '+(seen?hex:'#2f2f3c')+'; background:'+(seen?hex+'22':'#1a1a24')+'; '+(seen?'':'opacity:.45;')+'">'
-        + '<div style="font-size:17px; line-height:1.2;">'+(seen ? i.icon : '❔')+'</div><div style="font-size:9px; line-height:1.15; min-height:21px; word-break:keep-all;">'+(seen ? i.name : '???')+'</div></div>';
+        + '<div style="font-size:17px; line-height:1.2;">'+(seen ? i.img : '❔')+'</div><div style="font-size:9px; line-height:1.15; min-height:21px; word-break:keep-all;">'+(seen ? i.name : '???')+'</div></div>';
     }));
     html += '</div>';
   });
@@ -4890,7 +4907,7 @@ function showFuseAllResultModal(results){
     + '<div class="sub" style="margin-bottom:8px;">'+results.length+'회 합성'+(anyNew?' · 신규 발견 있음 ✨':'')+'</div>';
   Object.keys(rows).forEach(key=>{
     const sp = SPIRITS[key], info = RARITY_INFO[sp.rarity];
-    html += '<div class="fuse-alert"><span>'+ELEMENT_INFO[sp.element].icon+' '+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></span><b>+'+rows[key]+'</b></div>';
+    html += '<div class="fuse-alert"><span>'+spArt(sp)+' '+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></span><b>+'+rows[key]+'</b></div>';
   });
   html += '<button class="btn sticky-ok" id="modalClose" style="margin-top:10px;">확인</button></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal">'+html+'</div></div>';
@@ -5181,7 +5198,7 @@ function tile(key){
   return '<div class="species-tile" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0? '<div class="count">x'+owned+'</div>':'')
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div>'
+    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+'</div>'
     + '<div class="name">'+sp.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
     + (owned>0 && enhanceLevel(key)>0 ? '<div class="sub" style="margin-top:2px;">+'+enhanceLevel(key)+'</div>' : '')
@@ -5198,7 +5215,7 @@ function recentSummonRowHtml(){
     const sp = SPIRITS[key];
     if(!sp) return;
     const info = RARITY_INFO[sp.rarity];
-    html += '<div data-recent-summon="'+key+'" style="cursor:pointer; flex-shrink:0; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--panel2); border:2px solid '+info.color+';">'+ELEMENT_INFO[sp.element].icon+'</div>';
+    html += '<div data-recent-summon="'+key+'" style="cursor:pointer; flex-shrink:0; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--panel2); border:2px solid '+info.color+'; overflow:hidden;">'+spArt(sp)+'</div>';
   });
   html += '</div></div>';
   return html;
@@ -5262,7 +5279,7 @@ function equipTileHtml(k){
   const i = equipInfo(k), hex = RARITY_HEX[i.rarity], n = equipOwnedCount(k), used = equipUsedCount(k);
   return '<div data-equip-key="'+k+'" style="position:relative; text-align:center; padding:8px 2px 6px; border-radius:12px; border:2px solid '+hex+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); cursor:pointer;">'
     + (canEquipFuse(k) ? '<div style="position:absolute; top:2px; right:5px; font-size:10px; color:#5cd65c; font-weight:900;">▲</div>' : '')
-    + '<div style="font-size:22px; line-height:1.15;">'+i.icon+'</div>'
+    + '<div style="font-size:22px; line-height:1.15;">'+i.img+'</div>'
     + '<div style="font-size:10px; font-weight:700; line-height:1.15; min-height:23px; display:flex; align-items:center; justify-content:center; word-break:keep-all;">'+i.name+'</div>'
     + '<div style="font-size:10px; font-weight:800; color:'+hex+';">×'+n+(used ? ' <span style="color:var(--sub); font-weight:600;">· 장착 '+used+'</span>' : '')+'</div></div>';
 }
@@ -5301,7 +5318,7 @@ function showEquipDetailModal(key){
   const i = equipInfo(key), info = RARITY_INFO[i.rarity], n = equipOwnedCount(key), used = equipUsedCount(key);
   if(n<=0){ closeModal(); return; }
   const users = Object.keys(state.equipped||{}).filter(sp=>ownedCount(sp)>0 && EQUIP_SLOTS.some(sl=>state.equipped[sp][sl]===key));
-  let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.icon+'</div>'
+  let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
     + '<h3>'+i.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
@@ -5331,7 +5348,7 @@ function showEquipPicker(spKey, slot){
   html += items.map(k=>{
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
     return '<div '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
-      + '<div style="font-size:22px;">'+i.icon+'</div>'
+      + '<div style="font-size:22px;">'+i.img+'</div>'
       + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+(k===bestKey?' ⭐':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
       + '<div style="text-align:right;"><b style="color:#ffd24a;">+'+eqPct(equipEffect(k,spKey))+'%</b>'
       + (k===cur ? '<div class="sub" style="font-size:10px; color:#fff;">착용 중</div>' : (free<=0 ? '<div class="sub" style="font-size:10px;">다른 정령 착용</div>' : ''))+'</div></div>';
@@ -5350,7 +5367,7 @@ function equipSlotsHtml(spKey){
     const any = allEquipKeys().some(x=>equipInfo(x).slot===slot && equipOwnedCount(x)>0);
     h += '<div data-equip-slot="'+slot+'" style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
-      + (k ? '<div style="font-size:18px;">'+equipInfo(k).icon+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
+      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
@@ -5391,7 +5408,7 @@ function renderSpiritsTab(){
       fusibleCount++;
       const sp = SPIRITS[key];
       const nextKey = sp.element+'_'+RARITY_ORDER[RARITY_ORDER.indexOf(sp.rarity)+1]+'_'+sp.variant;
-      fuseHtml += '<div class="fuse-alert"><span>'+ELEMENT_INFO[sp.element].icon+' '+sp.name+' x3 → '+SPIRITS[nextKey].name+'</span><button class="btn small" data-fuse="'+key+'">합성</button></div>';
+      fuseHtml += '<div class="fuse-alert"><span>'+spArt(sp)+' '+sp.name+' x3 → '+SPIRITS[nextKey].name+'</span><button class="btn small" data-fuse="'+key+'">합성</button></div>';
     }
   });
   if(fusibleCount>1) html += '<button class="btn secondary" id="fuseAllBtn" style="margin-bottom:8px;">⚡ 전체 합성 ('+fusibleCount+'건 가능, 연쇄 포함)</button>';
@@ -5612,7 +5629,7 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+ELEMENT_INFO[sp.element].icon+'</div><div>'+sp.name+'</div></div>';
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+spArt(sp)+'</div><div>'+sp.name+'</div></div>';
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 ✅. labelFn(tier) = 보상 표기
 function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
@@ -6338,7 +6355,7 @@ function showExpeditionSquadPicker(){
     const sp = SPIRITS[key], hpInfo = run.unitHp[key] || {hp:spiritMaxHpGrid(key), maxHp:spiritMaxHpGrid(key)};
     const dead = hpInfo.hp<=0;
     return '<div class="chip" style="opacity:'+(dead?0.4:1)+';">'
-      + '<div class="ring" style="border-color:'+ELEMENT_INFO[sp.element].color+'">'+ELEMENT_INFO[sp.element].icon+'</div>'
+      + '<div class="ring" style="border-color:'+ELEMENT_INFO[sp.element].color+'">'+spArt(sp)+'</div>'
       + '<div class="lab"><div class="k">'+sp.name+(dead?' 💀':' · 대기')+'</div><div class="v">'+fmtHp(Math.max(0,hpInfo.hp))+'/'+fmtHp(hpInfo.maxHp)+'</div></div></div>';
   };
   let html = '<h3 style="text-align:center; margin-bottom:4px;">'+(isBoss?'👑 보스 전투':'⚔️ 전투')+' 출전 배치</h3>'
@@ -7320,13 +7337,13 @@ function showResultModal(sp, isNew, again, opts){
     + '<div class="summon-stage" id="smStage">'
     + '<div class="sm-halo"></div>'
     + (t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
-    + (fuse ? '<div class="sm-title">✨ 합성 성공!</div>'+[[-120,-70],[120,-70],[0,120]].map(p=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+(fuse.icon || ELEMENT_INFO[fuse.element].icon)+'</div>').join('') : '')
+    + (fuse ? '<div class="sm-title">✨ 합성 성공!</div>'+[[-120,-70],[120,-70],[0,120]].map(p=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+(fuse.icon || spArt(fuse))+'</div>').join('') : '')
     + '<div class="sm-orb"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>' + fx
     + '<div class="sm-flash"></div>'
     + '<div class="sm-card'+(t.rays>=1||sp.rarity==='rare'?' shine':'')+'">'
     + (isNew ? '<div class="sm-new">NEW</div>' : '')
     + '<div class="sm-stars">'+stars+'</div>'
-    + '<div class="sm-icon">'+(custom ? custom.icon : ELEMENT_INFO[sp.element].icon)+'</div>'
+    + '<div class="sm-icon">'+(custom ? custom.icon : spArt(sp))+'</div>'
     + '<div class="sm-rarity">'+info.name+'</div>'
     + '<div class="sm-name">'+sp.name+'</div>'
     + '<div class="sm-pass">'+(custom ? custom.sub : ELEMENT_INFO[sp.element].name+(passive ? ' · '+passive.icon+' '+passive.name : ''))+'</div>'
@@ -7417,7 +7434,7 @@ function showSpiritInfoModal(key){
   const info = RARITY_INFO[sp.rarity];
   const passive = passiveFor(key);
   let html = '<div style="text-align:center;">';
-  html += '<div style="font-size:44px;">'+ELEMENT_INFO[sp.element].icon+'</div>';
+  html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
   html += '<div class="sub">'+ELEMENT_INFO[sp.element].name+' 속성</div>';
   if(passive){
@@ -7439,7 +7456,7 @@ function showManageModal(key){
   const cost = enhanceCost(key);
   const canEnhance = !maxed && state.essence>=cost.essence && (state.enhanceStone||0)>=cost.stone;
   let html = '<div style="text-align:center;">';
-  html += '<div style="font-size:44px;">'+ELEMENT_INFO[sp.element].icon+'</div>';
+  html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 강화 Lv.'+lvl+'/'+maxLvl+(maxed?' (최대)':'')+'</div>';
   html += '<div class="sub">정령력 '+fmtDmg(unitPower(key))+' · 💪 전투력 '+fmtCP(spiritCP(key))+'</div>';
@@ -7600,9 +7617,9 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     else if(lineup){ const t = lineupThreat(key, lineup); adv = t.weak>=2 ? '<span class="pk-adv down">약점 '+t.weak+'</span>' : (t.strong>=2 ? '<span class="pk-adv up">강점 '+t.strong+'</span>' : ''); }
     const rn = spiritRune(key);
     html += '<div class="pk-card '+(e.isCur?'cur':(free>0?'avail':'busy'))+'" data-pick="'+key+'">'
-      + '<div class="pk-ico" style="border-color:'+ELEMENT_INFO[sp.element].color+';">'+ELEMENT_INFO[sp.element].icon+'</div>'
+      + '<div class="pk-ico" style="border-color:'+ELEMENT_INFO[sp.element].color+';">'+spArt(sp)+'</div>'
       + '<div class="pk-main"><div class="pk-name">'+sp.name+' <span style="color:'+info.color+'; font-size:10px; font-weight:800;">'+info.name+'</span></div>'
-      + '<div class="pk-sub"><span class="pk-role '+(front?'f':'b')+'">'+kit.icon+' '+kit.role+' · '+(front?'전열':'후열')+'</span>'+(rn?' '+runeIcon(rn):'')+(e.isCur?' <b style="color:#ffd24a;">📍이 칸</b>':(free<=0?' <span style="color:#ff8a8a;">칸 '+e.users.join('·')+'</span>':''))+'</div></div>'
+      + '<div class="pk-sub"><span class="pk-role '+(front?'f':'b')+'">'+kit.icon+' '+kit.role+' · '+(front?'전열':'후열')+'</span>'+(rn?' '+runeImg(rn):'')+(e.isCur?' <b style="color:#ffd24a;">📍이 칸</b>':(free<=0?' <span style="color:#ff8a8a;">칸 '+e.users.join('·')+'</span>':''))+'</div></div>'
       + '<div class="pk-right">'+adv+'<div class="pk-cp">💪 '+fmtCP(spiritCP(key))+'</div></div>'
       + '<button class="pk-info" data-pk-info="'+key+'">ⓘ</button>'
       + '</div>';
@@ -7648,7 +7665,7 @@ function showMoveSourcePicker(key, targetSlot, sourceSlots, returnFn){
   let html = '<div class="sub" style="margin-bottom:10px;">'+sp.name+'을(를) 어느 슬롯에서 뺄지 선택</div>';
   sourceSlots.forEach(idx=>{
     html += '<div class="picker-item" data-movefrom="'+idx+'">'
-      + '<div style="font-size:22px;">'+ELEMENT_INFO[sp.element].icon+'</div>'
+      + '<div style="font-size:22px;">'+spArt(sp)+'</div>'
       + '<div style="flex:1;">'+slotLabel(idx)+'</div>'
       + '</div>';
   });
