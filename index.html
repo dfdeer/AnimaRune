@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<style>:root{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);} html{scroll-padding-top:env(safe-area-inset-top,0px);}</style>
+<style>:root{--sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px); box-sizing:border-box; padding-top:var(--sat); padding-bottom:var(--sab);} html{scroll-padding-top:env(safe-area-inset-top,0px);}</style>
 <title>아니마룬</title>
 <style>
   :root{
@@ -22,7 +22,7 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif; overscroll-behavior:none;}
-  #app{max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; position:relative;}
+  #app{max-width:480px; margin:0 auto; min-height:calc(100vh - var(--sat) - var(--sab)); min-height:calc(100dvh - var(--sat) - var(--sab)); display:flex; flex-direction:column; position:relative;}
   header{padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,#1e1e2e 0%,#2a2340 100%); border-bottom:1px solid #3d3a5a; position:sticky; top:0; z-index:5; box-shadow:0 2px 12px #00000055;}
   header .title{font-weight:700; font-size:16px; white-space:nowrap;}
   @media (max-width:350px){ header{padding:10px 8px; gap:4px;} header .title{font-size:14px;} header .essence{padding:5px 7px; font-size:13px;} }
@@ -73,7 +73,12 @@
   body:not(.on-home) nav{display:none;}
   body:not(.on-home) main{padding-bottom:24px;}
   html:has(body.on-home), body.on-home{overflow:hidden; overscroll-behavior:none; height:100%;}
-  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; display:flex; background:linear-gradient(180deg,#1e1e2a,#171720); border-top:1px solid #3d3a5a; z-index:10; box-shadow:0 -4px 16px #00000066;}
+  /* (v176) 한 화면에 딱 맞춰야 하는 곳(홈·전투)은 문서 자체를 고정 — iOS에서 안전영역 여백 때문에 생기던 스크롤·튕김 제거 */
+  html.lock-scroll{position:fixed; inset:0; width:100%; height:100%; overflow:hidden; overscroll-behavior:none;}
+  html.lock-scroll body{position:fixed; top:var(--sat); bottom:var(--sab); left:0; right:0; width:auto; height:auto; margin:0; overflow:hidden; overscroll-behavior:none;}
+  html, body{overscroll-behavior-y:none;}
+  .modal-bg{overscroll-behavior:contain;}
+  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; display:flex; padding-bottom:var(--sab); box-sizing:border-box; background:linear-gradient(180deg,#1e1e2a,#171720); border-top:1px solid #3d3a5a; z-index:10; box-shadow:0 -4px 16px #00000066;}
   nav button{flex:1; background:none; border:none; color:var(--sub); font-size:12px; padding:10px 0; display:flex; flex-direction:column; align-items:center; gap:2px;}
   nav button.active{color:#c8b8ff; font-weight:800; text-shadow:0 0 10px #8a5bff88;}
   nav button.active .ico{filter:drop-shadow(0 0 8px #8a5bffaa); transform:translateY(-2px);}
@@ -159,7 +164,7 @@
   /* ===== (v139) 전장 화면: 앱 화면 자체가 전장으로 바뀜 ===== */
   body.in-battle #app > :not(#battleScreen){display:none !important;}
   #battleScreen{position:relative; width:100%; max-width:480px; margin:0 auto; flex:none; box-sizing:border-box; padding:8px 8px 12px; display:flex; flex-direction:column; gap:6px; overflow:hidden;
-    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+    height:calc(100vh - var(--sat) - var(--sab)); height:calc(100dvh - var(--sat) - var(--sab));}
   /* (v168) 전장은 항상 화면 한 장에 딱 맞춤 — 페이지 스크롤 없음, 유닛 크기는 남는 높이에 맞춰 --k 배율로 조절 */
   html:has(body.in-battle), body.in-battle{overflow:hidden; height:100%;}
   body.in-battle #app{min-height:0;}
@@ -203,6 +208,8 @@
   .rd-chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:8px;} .rd-chip{font-size:11px; font-weight:800; padding:3px 8px; border-radius:9px;} .rd-chip.warn{background:#ffb02022; color:#ffd48a;} .rd-chip.rune{background:#ff5a7a22; color:#ff9ab0;}
   .rd-diffs{display:flex; gap:4px; margin-top:10px;} .rd-diffs button{position:relative; flex:1; padding:8px 0; border-radius:10px; border:1px solid #ffffff1a; background:#1f1f2c; color:var(--sub); font-size:12px; font-weight:900;}
   .rd-diffs button.on{border-color:var(--dc); color:var(--dc); background:#ffffff0f; box-shadow:0 0 8px var(--dc);} .rd-diffs i{position:absolute; top:-6px; right:-3px; font-size:10px; font-style:normal;}
+  @media (max-height:760px){ .rd{gap:6px; padding:6px 10px 8px;} .rd-card{padding:9px;} .rd-ico{font-size:30px;} .rd-name{font-size:15px;} .rd-chips{margin-top:5px;} .rd-diffs{margin-top:7px;} .rd-diffs button{padding:6px 0;} .rd-rew{margin-top:7px !important;} .rd-boss{padding:4px 2px;} .rd-boss span{font-size:18px;} .rd-tk, .rd-shop{padding:3px 8px;} }
+  @media (max-height:620px){ .rd-boss small{display:none;} .rd-card .sub{display:none;} .rd-rew span{font-size:11px; padding:3px 7px;} }
   .rd-rew{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:10px;} .rd-rew span{font-size:12px; padding:4px 9px; border-radius:9px; background:#ffffff0c;} .rd-rew span.done{opacity:.45; text-decoration:line-through;}
   .cp-bar{display:flex; justify-content:space-between; align-items:center; gap:6px; padding:7px 10px; margin:6px 0; border-radius:10px; background:#ffffff0c; font-size:12px; white-space:nowrap;}
   .cp-bar b{font-size:13px;} .cp-v{font-size:12px; font-weight:900; padding:2px 10px; border:1px solid; border-radius:10px;}
@@ -375,6 +382,10 @@
   .area-atk .bu-body::before{background:#ff3b3b55; box-shadow:0 0 14px #ff3b3b;} .area-deb .bu-body::before{background:#a45bff55; box-shadow:0 0 14px #a45bff;} .area-sup .bu-body::before{background:#2fe39a55; box-shadow:0 0 14px #2fe39a;}
   @keyframes areaPulse{0%,100%{opacity:.6} 50%{opacity:1}}
   .bu-area{border-radius:14px;} .bu-area.area-atk{background:#ff3b3b26; box-shadow:0 0 0 2px #ff3b3b, 0 0 14px #ff3b3baa;} .bu-area.area-deb{background:#a45bff26; box-shadow:0 0 0 2px #a45bff, 0 0 14px #a45bffaa;} .bu-area.area-sup{background:#2fe39a26; box-shadow:0 0 0 2px #2fe39a, 0 0 14px #2fe39aaa;}
+  .bs-selact{display:inline-block; margin:2px 0; padding:2px 9px; border-radius:9px; font-size:12px; font-weight:900;}
+  .bs-selact small{font-size:10px; opacity:.8; margin-left:3px;}
+  .bs-selact.sk-atk{background:#ff5a5a2e; color:#ffb0a8; border:1px solid #ff5a5a88;} .bs-selact.sk-deb{background:#a45bff2e; color:#dcb0ff; border:1px solid #a45bff88;} .bs-selact.sk-sup{background:#2fe39a2e; color:#9dffd8; border:1px solid #2fe39a88;}
+  .armtag.go{background:#ffd24a; color:#2a1800; animation:warnBlink 1s ease-in-out infinite;}
   .armtag{display:block; margin-top:3px; padding:1px 8px; border-radius:8px; background:#fff; color:#1a1a2a; font-size:10px; font-weight:900;}
   .bs-acts .btn.armed{transform:translateY(-3px); box-shadow:0 0 0 3px #fff, 0 6px 16px #0008;}
   .bu-sts{display:flex; flex-wrap:wrap; justify-content:center; gap:2px; margin-top:2px; max-width:84px; cursor:pointer;}
@@ -2459,9 +2470,11 @@ function ensureSkillSelection(sf, a){
   if(skillSel.key === key && skillTargetable(sf, skillSel.side, skillSel.idx)) return;
   const sticky = skillSel.sticky;
   const act0 = skillSel.key===key ? skillSel.act : defaultActFor(sf, a);
-  if(isSupportUnit(a)) skillSel = { key, side: a.side, idx: autoAllyTarget(sf, a), sticky, act: act0 };
-  else if(sticky!==undefined && sticky!==null && skillTargetable(sf, 'enemy', sticky)) skillSel = { key, side:'enemy', idx: sticky, sticky, act: act0 };
-  else skillSel = { key, side:'enemy', idx: recommendEnemyTarget(sf, a), sticky: null, act: act0 };
+  const armed0 = skillSel.key===key ? !!skillSel.armed : true; // (v178) 미리 선택된 행동은 한 번 누르면 바로 시전
+  const manual0 = skillSel.key===key ? !!skillSel.manual : false;
+  if(isSupportUnit(a)) skillSel = { key, side: a.side, idx: autoAllyTarget(sf, a), sticky, act: act0, armed: armed0, manual: manual0 };
+  else if(sticky!==undefined && sticky!==null && skillTargetable(sf, 'enemy', sticky)) skillSel = { key, side:'enemy', idx: sticky, sticky, act: act0, armed: armed0, manual: manual0 };
+  else skillSel = { key, side:'enemy', idx: recommendEnemyTarget(sf, a), sticky: null, act: act0, armed: armed0, manual: manual0 };
   retargetForAct(sf, a, skillSel.act);
 }
 function myTurnAction(act){
@@ -3067,10 +3080,11 @@ function showSkillStagePrepModal(i){
   document.getElementById('startSkillBattleBtn').addEventListener('click', ()=>{ saveStageFormation(i); startSkillStageFight(i); });
 }
 // ---------- 전장 화면 ----------
+function updateScrollLock(){ document.documentElement.classList.toggle('lock-scroll', activeTab==='home' || !!document.getElementById('battleScreen') || document.body.classList.contains('in-battle')); }
 function mountBattleScreen(){
   let el = document.getElementById('battleScreen');
   if(!el){ el = document.createElement('div'); el.id = 'battleScreen'; document.getElementById('app').appendChild(el); }
-  document.body.classList.add('in-battle');
+  document.body.classList.add('in-battle'); updateScrollLock();
   return el;
 }
 function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(--k) 계산
@@ -3091,7 +3105,7 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   bs.style.setProperty('--k', k.toFixed(3));
 }
 window.addEventListener('resize', ()=>{ if(document.getElementById('battleScreen')) fitBattleScreen(); });
-function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); }
+function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); }
 function upcomingOrder(sf, n){
   const out = [];
   for(let p=sf.queuePos; p<sf.queue.length && out.length<n; p++){ const e = sf.queue[p], u = unitAt(sf, e.side, e.idx); if(u && u.alive) out.push({e, u, next:false}); }
@@ -3277,6 +3291,7 @@ function showSkillStageScreen(){
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
     const tm = typeMult(curUnit.element, tU.element);
     html += '<div class="bs-who"><div class="pic">'+ELEMENT_INFO[sp.element].icon+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
+      + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '⚔️ 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
       + '<div class="bs-tgt">🎯 '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
       + '<button class="bs-info" id="skillKitBtn">ⓘ</button></div>';
     const btn = (act, label, icon)=>{
@@ -3292,8 +3307,8 @@ function showSkillStageScreen(){
         if(p.kill && !onAlly) kill = '<span class="killtag">💀 처치</span>';
         small = p.text;
       }
-      const armed = skillSel.act===act && ok;
-      return '<button class="btn sk-'+ty.k+(warn?' has-warn':'')+(armed?' armed':'')+'" data-act="'+act+'" '+((ok && !fxBusy)?'':'disabled')+'><span class="sktype">'+ty.i+' '+ty.t+'</span>'+kill+icon+' '+label+'<small>'+small+'</small>'+(armed?'<span class="armtag">▶ 사용</span>':'')+''+warn+'</button>';
+      const armed = skillSel.act===act && ok, ready = armed && !!skillSel.armed;
+      return '<button class="btn sk-'+ty.k+(warn?' has-warn':'')+(armed?' armed':'')+'" data-act="'+act+'" '+((ok && !fxBusy)?'':'disabled')+'><span class="sktype">'+ty.i+' '+ty.t+'</span>'+kill+icon+' '+label+'<small>'+small+'</small>'+(armed?'<span class="armtag'+(ready?' go':'')+'">'+(ready?'▶ 누르면 사용':'선택됨')+'</span>':'')+''+warn+'</button>';
     };
     const acts = [btn('basic', '기본 공격', '⚔️'), btn('s1', kit.s1.name, kit.s1.icon)];
     if(curUnit.g>=2) acts.push(btn('s2', kit.s2.name, kit.s2.icon));
@@ -3368,12 +3383,12 @@ function showSkillStageScreen(){
   root.querySelectorAll('[data-stat]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.stat.split(':'); const u = unitAt(sf, sd, parseInt(ix)); if(u) showStatusInfo(u); }));
   root.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click', ()=>{
     const act = el.dataset.act;
-    if(skillSel.act===act){ myTurnAction(act); return; }                 // 이미 고른 행동 → 사용
-    skillSel.act = act; if(curUnit) retargetForAct(sf, curUnit, act); showSkillStageScreen(); // 다른 행동 → 바꾸고 범위 표시
+    if(skillSel.act===act && skillSel.armed){ skillSel.armed = false; myTurnAction(act); return; } // 두 번째 터치 → 시전
+    skillSel.act = act; skillSel.armed = true; if(curUnit && !skillSel.manual) retargetForAct(sf, curUnit, act); showSkillStageScreen(); // 다른 행동 → 바꾸기만(직접 고른 대상은 유지)
   }));
   if(fxBusy && curUnit && !skillBusyTimer) skillBusyTimer = setTimeout(()=>{ skillBusyTimer = null; if(state.skillFight) showSkillStageScreen(); }, Math.max(30, skillFxBusyUntil - Date.now() + 20));
   root.querySelectorAll('[data-tgt]').forEach(el=>el.addEventListener('click', ()=>{
-    const [s, idx] = el.dataset.tgt.split(':'); skillSel.side = s; skillSel.idx = parseInt(idx); if(s==='enemy') skillSel.sticky = parseInt(idx); showSkillStageScreen();
+    const [s, idx] = el.dataset.tgt.split(':'); skillSel.side = s; skillSel.idx = parseInt(idx); skillSel.manual = true; if(s==='enemy') skillSel.sticky = parseInt(idx); showSkillStageScreen();
   }));
   pumpSkillFight();
 }
@@ -4536,6 +4551,7 @@ function render(){
   if(HOME_MODE_TABS.includes(activeTab)) main.insertAdjacentHTML('afterbegin', '<button class="home-back" id="homeBackBtn">← 홈</button>');
   main.classList.toggle('is-home', activeTab==='home');
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
+  updateScrollLock();
   attachHandlers();
   { const sc = document.getElementById('towerScroll');
     if(sc){
