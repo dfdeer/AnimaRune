@@ -3157,7 +3157,12 @@ const BOSS_ACTIVE_COUNT = GRID_SLOTS; // (v151) 그리드가 6칸이라 출전�
 const WAVE_FATIGUE_MAX = 0.15; // 연전 −5%/웨이브, 최대 −15% (WAVE_FATIGUE_STEP은 기존 상수 재사용)
 const BOSS_REST_HEAL = 0.2; // 한 웨이브 쉬면 체력 20% 회복
 const BOSS_HP_MULT = 7.5; // 일반 ENEMY_HP_MULT(2.5)보다 오래 버팀(7~8라운드 목표)
-const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보스 전투력 배율
+const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보스 전투력 배율 (레이드 보스 기준값)
+// (v188) 챕터 보스 전용 배율 — 예전 값(공격 1.6 · 체력 7.5)은 보스 체력이 그 챕터 마지막 일반 스테이지 적 6마리 합의 절반도 안 돼서
+// 1~2라운드 만에 녹았음(그로기·기믹을 쓸 틈이 없음). 레이드 보스는 위 값을 그대로 씀
+// 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
+// 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
+let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23]; // 챕터 1~5
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null]; // null=심연의 수정(매 라운드 변환)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal'];
 const BOSS_GIMMICK_INFO = {
@@ -3208,8 +3213,8 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
   }else{
     const type = bossGimmickFor(stageIdx), fixedEl = bossFixedElementFor(stageIdx);
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
-    const per = bossWaveNormalPower(stageIdx) * BOSS_POWER_MULT;
-    const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], BOSS_HP_MULT);
+    const bci = bossChapterIdx(stageIdx), per = bossWaveNormalPower(stageIdx) * CH_BOSS_ATK_MULTS[bci];
+    const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], CH_BOSS_HP_MULTS[bci]);
     boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss);
     if(type==='ruinGuardian'){
       const [we1, we2] = bossWardElements(stageIdx);
