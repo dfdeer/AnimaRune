@@ -2063,7 +2063,7 @@ function renderFriendsTab(){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
       return '<div class="fr-row"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(o?'접속 중':'오프라인')+'</small></div>'
-        + '<button class="btn small" data-f-duel="'+k+'">⚔️ 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div>';
+        + '<button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'>⚔️ 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div>';
     else h += '<div class="fr-empty">아직 친구가 없어요<br><button class="btn small" data-ftab="add" style="margin-top:10px;">＋ 친구 추가하기</button></div>';
   }else if(friendTab==='req'){
     if(!nReq) h += '<div class="fr-empty">받은 요청이 없어요</div>';
@@ -2117,6 +2117,7 @@ function duelResultOverlayHtml(sf){
 }
 // ===================== (v181) 결투 화면 — 내 결투 덱 편집 · 받은 신청 · 친구에게 신청 · 코드로 참가 =====================
 async function duelChallenge(fuid){
+  if(!friendOnline(fuid)){ toast('오프라인인 친구에게는 결투를 신청할 수 없어요'); return; } // (v183) 버튼이 비활성이어도 한 번 더 확인
   if(raidNet.code){ toast('이미 방에 들어가 있어요'); return; }
   closeModal();
   const ok = await raidCreateRoom('duel');
@@ -2139,9 +2140,9 @@ function renderDuelTab(){
   const invs = friendLiveInvites('duel');
   if(invs.length) h += '<div class="fr-cap">받은 결투 신청</div><div class="fr-list">'+invs.map(friendInviteRowHtml).join('')+'</div>';
   const fl = friendList().sort((a,b)=> (friendOnline(b)?1:0)-(friendOnline(a)?1:0) || raidNameOf(a).localeCompare(raidNameOf(b)));
-  h += '<div class="fr-cap">결투 신청하기 <span style="opacity:.7;">· 접속 중인 친구가 바로 받을 수 있어요</span></div>';
+  h += '<div class="fr-cap">결투 신청하기 <span style="opacity:.7;">· 접속 중인 친구에게만 신청할 수 있어요</span></div>';
   h += fl.length ? '<div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
-      return '<div class="fr-row'+(o?'':' dim')+'"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(o?'접속 중':'오프라인')+'</small></div><button class="btn small" data-f-duel="'+k+'">⚔️ 신청</button></div>'; }).join('')+'</div>'
+      return '<div class="fr-row'+(o?'':' dim')+'"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(o?'접속 중':'오프라인')+'</small></div><button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'>⚔️ 신청</button></div>'; }).join('')+'</div>'
     : '<div class="fr-empty">친구가 없어요<br><button class="btn small" id="duelToFriends" style="margin-top:10px;">👥 친구 추가하러 가기</button></div>';
   h += '<div class="fr-card"><b>방 코드로 참가</b><div class="fr-inrow"><input id="duelCodeInput" maxlength="6" placeholder="방 코드 6자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="duelJoinBtn">참가</button></div></div>';
   return h + '</div>';
