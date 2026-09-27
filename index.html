@@ -369,6 +369,9 @@
   .bs-rrew{margin:12px 0 4px; padding:8px 10px; background:#ffffff0a; border-radius:12px; text-align:left; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:4px;}
   .bs-rrew span{font-size:11px; font-weight:400; color:var(--sub); margin-left:4px;}
   .bs-rbtns{display:flex; gap:8px; margin-top:12px;}
+  .bs-rcard{position:relative;}
+  .bs-rgift{position:absolute; left:12px; top:12px; background:#00000055; border:1px solid #ffffff33; border-radius:10px; padding:5px 9px; font-size:16px;}
+  .bs-rgift i{position:absolute; top:-7px; right:-7px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:#ff4a4a; color:#fff; font-size:10px; font-style:normal; font-weight:900; line-height:17px; border:1.5px solid var(--panel);}
   .bs-rbtns .btn{flex:1; margin:0;}
   @keyframes bsFadeIn{from{opacity:0} to{opacity:1}}
   @keyframes bsPop{from{opacity:0; transform:scale(.85)} to{opacity:1; transform:none}}
@@ -406,9 +409,6 @@
   .killtag{position:absolute; top:-9px; right:-4px; padding:2px 7px; border-radius:9px; background:#ffd24a; color:#2a1800; font-size:10px; font-weight:900; box-shadow:0 2px 6px #000a;}
   .bs-order .oc.tg{border-color:#ffd24a !important; box-shadow:0 0 0 2px #ffd24a, 0 0 10px #ffd24a; position:relative;}
   .bs-order .oc.tg i{position:absolute; top:-8px; right:-6px; font-size:9px; font-style:normal;}
-  .bs-claimbox{display:flex; flex-direction:column; gap:6px; margin:8px 0 2px;}
-  .bs-claim{display:flex; align-items:center; justify-content:center; gap:6px; padding:8px; border-radius:12px; border:1px solid #ffd24a88; background:#ffd24a1a; color:var(--text); font-size:13px; font-weight:800;}
-  .bs-claim b{margin-left:6px; padding:2px 10px; border-radius:8px; background:#ffd24a; color:#2a1800;} .bs-claim.done{opacity:.6; border-color:#5cd65c88; background:#5cd65c1a;}
   .bs-special{padding:5px 10px; border-radius:10px; background:#ffb0201f; border:1px solid #ffb02088; color:#ffd9a0; font-size:11px; font-weight:800; text-align:center;}
   .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:10px; font-weight:900; padding:2px 8px; border-radius:8px;}
   .bs-teamtag.me{left:8px; background:#2f5bdccc; color:#fff;} .bs-teamtag.en{right:8px; background:#c0303acc; color:#fff;}
@@ -3319,7 +3319,7 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
   const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
   if(!W || !H) return;
-  const kw = W*0.23/72, kh = (H*rs - 44)/sz;
+  const kw = W*0.21/72, kh = (H*rs - 44)/sz; // 후열~전열 간격(22%)에 한 칸이 들어가도록
   const k = Math.max(0.45, Math.min(1.5, kw, kh));
   bs.style.setProperty('--k', k.toFixed(3));
 }
@@ -3423,24 +3423,24 @@ function battleLayout(sf){
   const sz = raid ? 38 : 44;
   if(raid){
     const fy = [13,34,55,76], by = [21,42,63,84];
-    [0,1,2,3].forEach((idx,r)=>put('me', idx, 39+((r===1||r===2)?3:0), fy[r], sz));
-    [4,5,6,7].forEach((idx,r)=>put('me', idx, 14, by[r], sz));
+    [0,1,2,3].forEach((idx,r)=>put('me', idx, 34+((r===1||r===2)?2:0), fy[r], sz));
+    [4,5,6,7].forEach((idx,r)=>put('me', idx, 12, by[r], sz));
   }else{
     const fy = [20,47,74], by = [29,56,83];
-    [0,1,2].forEach((idx,r)=>put('me', idx, 37+(r===1?4:0), fy[r], sz));
-    [3,4,5].forEach((idx,r)=>put('me', idx, 13, by[r], sz));
+    [0,1,2].forEach((idx,r)=>put('me', idx, 33+(r===1?2:0), fy[r], sz)); // (v180) 전열끼리 너무 붙어 보여서 가운데 간격을 넓힘
+    [3,4,5].forEach((idx,r)=>put('me', idx, 11, by[r], sz));
   }
   const ew = sideWidth(sf, 'enemy');
   let enemyRows = false;
   sf.enemyUnits.forEach(u=>{
-    if(u.isBoss){ put('enemy', u.idx, raid ? 26 : 20, raid ? 48 : 52, raid ? 96 : 84); return; }
+    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : 18, raid ? 48 : 52, raid ? 90 : 80); return; }
     enemyRows = true;
     const front = isFrontRow(u.idx, ew), r = u.idx % ew;
-    if(front) put('enemy', u.idx, 37+(r===1?4:0), [20,47,74][r], 44);
-    else put('enemy', u.idx, 13, [29,56,83][r], 44);
+    if(front) put('enemy', u.idx, 33+(r===1?2:0), [20,47,74][r], 44);
+    else put('enemy', u.idx, 11, [29,56,83][r], 44);
   });
-  const tags = [{x:13,t:'후열'},{x:raid?40:39,t:'전열'}];
-  if(enemyRows) tags.push({x:61,t:'전열'},{x:87,t:'후열'});
+  const tags = [{x:11,t:'후열'},{x:raid?35:34,t:'전열'}];
+  if(enemyRows) tags.push({x:66,t:'전열'},{x:89,t:'후열'});
   return { slots, tags, rs: raid ? 0.21 : 0.27, sz };
 }
 // (v179) 전투 배경: 스테이지는 챕터 지역(설원·화산·숲·사막·동굴), 레이드는 보스마다, 출정은 들판 길, 결투는 투기장
@@ -3646,7 +3646,10 @@ function showSkillStageScreen(){
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', restartSkillStageFight);
   }
   if(q('skillKitBtn')) q('skillKitBtn').addEventListener('click', ()=>showUnitKitInfo(curUnit));
-  root.querySelectorAll('[data-res-claim]').forEach(el=>el.addEventListener('click', ()=>{ claimPendingReward(el.dataset.resClaim); el.classList.add('done'); el.disabled = true; el.innerHTML = '✅ 받음'; }));
+  if(q('resRewardBtn')) q('resRewardBtn').addEventListener('click', ()=>{
+    const i = sf.stageIdx, refresh = ()=>{ const b = q('resRewardBtn'); if(b) b.outerHTML = resultRewardBtnHtml(i); const nb = q('resRewardBtn'); if(nb) nb.addEventListener('click', ()=>openInfoOverlay('🎁 보상', getStageRewardContent(i), refresh, ()=>getStageRewardContent(i))); };
+    openInfoOverlay('🎁 보상', getStageRewardContent(i), refresh, ()=>getStageRewardContent(i));
+  });
   root.querySelectorAll('[data-stat]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.stat.split(':'); const u = unitAt(sf, sd, parseInt(ix)); if(u) showStatusInfo(u); }));
   root.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click', ()=>{
     const act = el.dataset.act;
@@ -3672,6 +3675,10 @@ function expeditionResultOverlayHtml(sf){
   h += '<div class="bs-rbtns"><button class="btn" id="skillResultCloseBtn">확인</button></div></div></div>';
   return h;
 }
+function resultRewardBtnHtml(stageIdx){
+  const n = pendingRewardsFor('stage_'+stageIdx+'_').length;
+  return '<button class="bs-rgift" id="resRewardBtn">🎁'+(n?'<i>'+n+'</i>':'')+'</button>';
+}
 function skillResultOverlayHtml(sf){
   const r = sf.result;
   let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
@@ -3680,8 +3687,7 @@ function skillResultOverlayHtml(sf){
     h += '<div class="bs-ricon">🏆</div><div class="bs-rtitle">승리!</div><div class="bs-rgrade g'+grade+'">'+grade+'</div>'
       + '<div class="bs-rsub">'+r.rounds+'라운드'+(info.improved && r.prevBest ? ' · '+r.prevBest+' → '+grade : '')+'</div>'
       + '<div class="bs-rrew"><div>🔁 기본 클리어 보상 ✨ +'+(info.baseReward||0)+'</div></div>'
-      + (()=>{ const ids = (state.pendingRewards||[]).filter(x=> x.id.indexOf('stage_'+sf.stageIdx+'_')===0).map(x=>x); if(!ids.length) return '';
-          return '<div class="bs-claimbox">'+ids.map(x=>'<button class="bs-claim" data-res-claim="'+x.id+'">'+x.icon+' '+x.label.replace(/^(스테이지 \d+|챕터 \d+) /,'')+' · '+(x.essence?'✨'+x.essence:'')+(x.stone?' 🔩'+x.stone:'')+(x.items?' '+itemsShort(x.items):'')+'<b>받기</b></button>').join('')+'</div>'; })();
+      + resultRewardBtnHtml(sf.stageIdx); // (v180) 받을 보상은 목록 대신 카드 모서리 🎁 버튼 하나로(누르면 보상 창)
   }else{
     h += '<div class="bs-ricon">💀</div><div class="bs-rtitle">'+(r.timeout?'시간 초과':'패배')+'</div><div class="bs-rsub">'+r.rounds+'라운드</div>';
   }
