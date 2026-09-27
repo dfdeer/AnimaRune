@@ -212,6 +212,16 @@
   [data-duel-pick], [data-rp-pick], [data-home-rep]{padding-top:12px !important;} /* 오른쪽 위 '덱'·ⓘ 표시가 그림에 겹치지 않게 */ /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
   .home-empty{animation:none;} .home-emo.home-empty .spimg.hero{width:1.05em; height:1.05em; margin:-.1em auto 0; filter:drop-shadow(0 0 18px #b58cffcc) drop-shadow(0 6px 8px #0008); animation:emptyPulse 2.4s ease-in-out infinite;}
   @keyframes emptyPulse{0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-6px) scale(1.04)}}
+  .home-prof{cursor:pointer;} .home-prof:active{transform:scale(.97);}
+  .pf-top{display:flex; align-items:center; gap:12px; margin:6px 0 12px;} .pf-ava{font-size:48px; width:72px; height:72px; flex:none;} .pf-ava .spimg{width:100%; height:100%;}
+  .pf-name{font-family:var(--fun); font-size:20px; text-shadow:0 2px 0 var(--line); word-break:break-all;}
+  .pf-label{font-family:var(--fun); font-size:13px; color:#ffd35a; margin:10px 0 5px;}
+  .pf-row{display:flex; gap:8px; align-items:center;} .pf-row .btn{flex:none; width:auto; padding:9px 16px;}
+  .pf-in{flex:1; min-width:0; background:#12112e; border:2px solid var(--line); box-shadow:inset 0 2px 4px #0007; color:var(--text); border-radius:12px; padding:10px 12px; font-size:15px; font-family:var(--fun);}
+  .pf-in:focus{outline:2px solid #8f6bff; outline-offset:1px;}
+  .pf-code{flex:1; font-family:var(--fun); font-size:18px; letter-spacing:3px; text-align:center; background:#12112e; border:2px solid var(--line); border-radius:12px; padding:8px;}
+  .pf-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px;}
+  .pf-stat{background:#12112e; border:2px solid var(--line); border-radius:12px; padding:8px 2px; text-align:center;} .pf-stat b{display:block; font-family:var(--fun); font-weight:400; font-size:16px; color:#ffd35a;} .pf-stat small{font-size:10px; color:var(--sub);}
   .home-cta{margin-top:4px; font-family:var(--fun); font-size:12px; color:#ffd35a; text-shadow:0 1px 0 #0b0a22, 0 0 6px #000;}
   @media (prefers-reduced-motion: reduce){ .home-empty .spimg.hero{animation:none;} }
   .home-emo .spimg.hero{display:block; width:1.8em; height:1.8em; margin:-.8em -.4em 0;} /* 아래 끝이 이모지 때와 같은 자리(받침 위)에 오게 위로만 키움 */
@@ -2128,7 +2138,8 @@ async function friendInit(){
   const db = raidNet.db, uid = raidNet.uid;
   const me = await db.doc('players/'+uid).get();
   const d = (me.exists && me.data() && typeof me.data()==='object') ? me.data() : {};
-  const name = (typeof d.name==='string' && d.name.trim()) ? d.name.slice(0,12) : '소환사-'+uid.slice(0,4);
+  let pendName = ''; try{ pendName = cleanName(localStorage.getItem(NAME_PENDING_KEY)); }catch(e){}
+  const name = pendName || ((typeof d.name==='string' && d.name.trim()) ? d.name.slice(0,12) : '소환사-'+uid.slice(0,4));
   let code = (typeof d.code==='string' && /^[A-Z0-9]{8}$/.test(d.code)) ? d.code : null;
   if(!code){
     for(let t=0; t<6 && !code; t++){
@@ -2139,6 +2150,7 @@ async function friendInit(){
   }
   await db.doc('players/'+uid).set({ name, code: code||'' });
   friendNet.code = code; friendNet.on = true; friendSetName(name);
+  if(pendName){ try{ localStorage.removeItem(NAME_PENDING_KEY); }catch(e){} }
   const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
   friendNet.unsubs.push(db.doc('friends/'+uid).onSnapshot(s=>{ friendNet.friends = obj(s); friendRefresh(); }, ()=>{}));
   friendNet.unsubs.push(db.doc('friendReqs/'+uid).onSnapshot(s=>{ friendNet.reqs = obj(s); friendRefresh(); }, ()=>{}));
@@ -2205,6 +2217,16 @@ async function friendAccept(from, ok){
   }catch(e){ raidNetError(e); }
 }
 async function friendRemove(fuid){ try{ await raidNet.db.doc('friends/'+raidNet.uid+'/'+fuid).delete(); }catch(e){ raidNetError(e); } }
+// (v210) 프로필에서 닉네임 바꾸기 — 서버에 연결돼 있으면 바로 반영, 아니면 기기에 저장해 두고 다음 연결 때 반영
+const NAME_PENDING_KEY = 'animarune_profile_name_pending';
+function cleanName(v){ return String(v||'').trim().replace(/[<>&"]/g,'').slice(0,12); }
+async function profileRename(v){
+  const name = cleanName(v);
+  if(!name){ toast('이름을 입력해주세요'); return false; }
+  if(friendsAvailable() && friendNet.on){ await friendRename(name); return true; }
+  try{ localStorage.setItem(NAME_PENDING_KEY, name); }catch(e){}
+  friendSetName(name); toast('이름을 바꿨어요 (온라인 연결 시 친구에게도 반영)'); return true;
+}
 async function friendRename(v){
   const name = String(v||'').trim().replace(/[<>&"]/g,'').slice(0,12);
   if(!name){ toast('이름을 입력해주세요'); return; }
@@ -2462,7 +2484,7 @@ function renderHomeTab(){
   const name = homeProfileName();
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
-  h += '<div class="home-top"><div class="home-prof"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
+  h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
   h += '<div class="home-side left"><button class="home-ic" data-home="tower"><img class="uic" src="assets/ui/ic_tower.webp" alt="" draggable="false"><small>탑 '+towerFloor()+'층</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
   h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
@@ -2472,6 +2494,27 @@ function renderHomeTab(){
   h += '<div class="home-bottom"><div class="home-car">'+HOME_MODES.map(homeModeBtnHtml).join('')+'</div></div>';
   h += '</div>';
   return h;
+}
+function showProfileModal(){ // (v210) 홈 이름표를 누르면 뜨는 프로필
+  const rep = homeRepSpirit(), sp = rep ? SPIRITS[rep] : null, name = homeProfileName();
+  const own = Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length, dex = Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length;
+  const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
+  let h = '<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
+    + '<div class="pf-id"><div class="pf-name">'+escTxt(name)+'</div><div class="sub">계정 Lv.'+accountLevel()+(sp?' · 대표 '+sp.name:'')+'</div></div></div>';
+  h += '<div class="pf-label">닉네임</div><div class="pf-row"><input id="pfNameInput" class="pf-in" maxlength="12" value="'+escTxt(name)+'" placeholder="최대 12자"><button class="btn small" id="pfNameBtn">저장</button></div>';
+  h += '<div class="sub" style="font-size:11px; margin-top:4px;">친구 목록과 결투·레이드에서 이 이름으로 보여요</div>';
+  h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+Object.keys(SPIRITS).length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
+  if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
+  h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button><h3 style="text-align:center; margin-top:0;">프로필</h3>'+h+'</div></div>';
+  bindModalClose();
+  const inp = document.getElementById('pfNameInput');
+  const saveName = async ()=>{ if(await profileRename(inp.value)){ closeModal(); if(activeTab==='home') render(); } };
+  document.getElementById('pfNameBtn').addEventListener('click', saveName);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveName(); } });
+  const cb = document.getElementById('pfCodeBtn');
+  if(cb) cb.addEventListener('click', ()=>{ try{ navigator.clipboard.writeText(friendNet.code).then(()=>toast('친구 코드를 복사했어요'), ()=>toast('복사하지 못했어요 — 코드를 직접 적어주세요')); }catch(e){ toast('복사하지 못했어요 — 코드를 직접 적어주세요'); } });
+  document.getElementById('pfRepBtn').addEventListener('click', ()=>{ if(sp) showHomeSpiritPicker(); else { closeModal(); activeTab='summon'; render(); save(); } });
 }
 function showHomeSpiritPicker(){
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=> (RARITY_ORDER.indexOf(SPIRITS[c].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity)) || (unitAtk(c)-unitAtk(a)));
@@ -2551,6 +2594,7 @@ function bindHomeTab(){
     else if(a==='quest') showQuestsModal();
     else if(a==='guide') showGuideModal();
     else if(a==='settings') showSettingsModal();
+    else if(a==='profile') showProfileModal();
     else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
     else if(a==='expedition' && !isUnlocked('expedition')){ activeTab = 'expedition'; render(); save(); }
     else { activeTab = a; render(); save(); }
