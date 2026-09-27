@@ -2096,7 +2096,9 @@ function bindFriendPanel(){
 }
 // ===================== (v173) 결투 — 친구의 결투 덱과 한 판 (보상 없음) =====================
 function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k) } : null); }
-function myDuelDeck(){ const d = state.duelDeck; return (Array.isArray(d) && d.some(Boolean)) ? d.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6) : (state.formation||[]).slice(0,6).concat([null,null,null,null,null,null]).slice(0,6); }
+// (v182) 한 번이라도 덱을 정했으면(비운 것 포함) 그대로 씀 — 예전엔 다 비우면 '아직 안 정함'으로 보고 탐험 진형을 다시 채워 넣었음.
+// 아직 한 번도 안 정했을 때(null)만 탐험 진형으로 시작
+function myDuelDeck(){ const pad = a=> a.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6); const d = state.duelDeck; return Array.isArray(d) ? pad(d) : pad(state.formation||[]); }
 async function saveDuelDeck(keys, quiet){
   state.duelDeck = keys.slice(0,6); save();
   if(friendsAvailable()){ try{ await raidNet.db.doc('players/'+raidNet.uid+'/duel').set({ picks: duelPayload(state.duelDeck), t: Date.now() }); if(!quiet) toast('결투 덱을 저장했어요'); }catch(e){ raidNetError(e); } }
@@ -2165,7 +2167,7 @@ function bindDuelTab(){
   const q = id=>document.getElementById(id);
   document.querySelectorAll('[data-duel-slot]').forEach(el=>el.addEventListener('click', ()=>showDuelSlotPicker(parseInt(el.dataset.duelSlot))));
   if(q('duelRecBtn')) q('duelRecBtn').addEventListener('click', ()=>saveDuelDeck(recommendFormation([])));
-  if(q('duelClearBtn')) q('duelClearBtn').addEventListener('click', ()=>{ state.duelDeck = [null,null,null,null,null,null]; save(); render(); });
+  if(q('duelClearBtn')) q('duelClearBtn').addEventListener('click', ()=>saveDuelDeck([null,null,null,null,null,null], true)); // 서버의 결투 덱도 같이 비움
   if(q('duelToFriends')) q('duelToFriends').addEventListener('click', ()=>{ friendTab = 'add'; activeTab = 'friends'; render(); });
   if(q('duelJoinBtn')) q('duelJoinBtn').addEventListener('click', ()=>{ const v = q('duelCodeInput').value; raidJoinRoom(v); });
 }
@@ -4086,6 +4088,7 @@ function defaultState(){
     tickets: {summon:0, rare:0, epic:0, equip:0},
     bossBonusClaimed: {},
     stageRewardsV179: false, // (v179) 등급 달성 보상 이전 처리 완료 여부
+    duelDeck: null, // (v182) 결투 덱 — 기본값에 없어서 앱을 다시 켜면 편집한 덱이 사라지던 문제 수정
     equipOwned: {}, equipped: {}, equipSeen: {}, lifetimeEquipSummons: 0, lifetimeEquipFusions: 0,
     pendingRewards: [],
     settings: {bgmVolume:0.3, sfxVolume:0.35},
@@ -7741,6 +7744,7 @@ function sanitizeState(){
     else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_MAX, Math.floor(s.raidTickets.count)));
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
+    if(Array.isArray(s.duelDeck)) s.duelDeck = s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null); else s.duelDeck = null;
     { const P = {}; if(s.raidProgress && typeof s.raidProgress==='object') Object.keys(s.raidProgress).forEach(k=>{ if(raidBossById(k) && Array.isArray(s.raidProgress[k])) P[k] = s.raidProgress[k].filter(d=>RAID_DIFFS.some(x=>x.id===d)); }); s.raidProgress = P; }
     if(!raidBossById(s.raidBossSel)) s.raidBossSel = null;
   }
