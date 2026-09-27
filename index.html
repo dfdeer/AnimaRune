@@ -68,11 +68,13 @@
   .home-hero{position:absolute; z-index:2; left:50%; top:var(--hero-foot, 72%); transform:translateX(-50%); width:72%; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer;}
   .home-hero .home-emo{margin-top:-1em;}
   .home-bottom{margin-top:auto;}
-  .home-bg[data-img]{background-color:#7a6aa8; background-size:cover; background-repeat:no-repeat; background-position:50% var(--home-bg-y, 50%);}
+  .home-bg[data-img]{background-color:#6a6a9a; background-size:cover; background-repeat:no-repeat; background-position:50% 50%;}
+  .home-hero{transition:top .45s ease;} @media (prefers-reduced-motion: reduce){ .home-hero{transition:none;} }
   .home-emo{font-size:clamp(72px, 26vw, 120px); line-height:1; filter:drop-shadow(0 0 22px #b79cffaa); animation:homeFloat 3.2s ease-in-out infinite;}
   @keyframes homeFloat{0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)}}
   .home-name{margin-top:14px; font-size:18px; font-weight:900; text-shadow:0 2px 6px #000a;}
   .home-rar{font-size:12px; font-weight:800; margin-top:2px;}
+  .home-name, .home-rar{text-shadow:0 0 3px #000, 0 0 3px #000, 0 1px 2px #000, 0 2px 8px #000c;} /* (v199) 밝은 돌 받침 위에서도 읽히게 */
   .home-bottom{position:relative; z-index:3; padding:0 12px 12px; display:flex; flex-direction:column; gap:8px;}
   .home-modes{display:flex; gap:8px;}
   .home-mode{position:relative; flex:1; padding:9px 4px 8px; border-radius:14px; background:#1a1540ee; border:1px solid #8a74e066; color:var(--text); font-size:22px; display:flex; flex-direction:column; align-items:center; gap:1px;}
@@ -2299,10 +2301,15 @@ function homeModeSub(m){
   const n = RAID_BOSSES.filter((x,i)=>raidBossUnlocked(i)).length; return '보스 '+n+'/'+RAID_BOSSES.length+' 해금';
 }
 function homeModeDot(m){ return pendingRewardCount(m)>0 && (m!=='expedition' || isUnlocked('expedition')); } // (v184) 잠긴 화면엔 받을 곳이 없으니 점도 안 띄움
-// (v197) 일러스트가 준비된 홈 모드는 그림 배경을 씀 (1024×1536, 받침 중심 세로 74.9% — fitHome()의 정령 발끝 계산과 짝)
-const HOME_BG_IMAGES = { stage:'assets/home_stage.webp' };
+// (v197) 일러스트가 준비된 홈 모드는 그림 배경을 씀 (1024×1536). ped = 그림 속 받침(소환진) 가운데 마름모의 세로 위치 비율 — fitHome()이 정령 발끝을 여기에 맞춤
+const HOME_BG_IMAGES = {
+  stage:      { src:'assets/home_stage.webp',      ped:0.726 },
+  expedition: { src:'assets/home_expedition.webp', ped:0.664 },
+  raid:       { src:'assets/home_raid.webp',       ped:0.655 }
+};
+const HOME_BG_PED_DEFAULT = 0.72; // 그림이 없는(SVG) 모드용 대략값
 function homeBgLayer(mode){
-  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" data-img="1" style="background-image:url('+HOME_BG_IMAGES[mode]+');"></div>';
+  if(HOME_BG_IMAGES[mode]) return '<div class="home-bg" data-bg="'+mode+'" data-img="1" style="background-image:url('+HOME_BG_IMAGES[mode].src+');"></div>';
   let stars = '';
   for(let i=0;i<30;i++){ const x = (i*97.3)%400, y = (i*53.7)%260, r = (i%5===0)?1.6:0.9; stars += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="#fff" opacity="'+(0.3+(i%4)*0.15).toFixed(2)+'"/>'; }
   const P = {
@@ -2349,6 +2356,7 @@ function homeRotateTo(m){
     else el.className = el.className.replace(/pos-\w+/, 'pos-'+np);
   });
   document.querySelectorAll('.home-bg[data-bg]').forEach(b=>b.classList.toggle('on', b.dataset.bg===homeMode));
+  fitHome(); // (v199) 모드마다 받침 높이가 달라 정령 위치를 다시 맞춤
 }
 function renderHomeTab(){
   const rep = homeRepSpirit();
@@ -2389,16 +2397,19 @@ function fitHome(){ // 헤더와 하단 탭 사이 남는 높이에 홈을 딱 �
   const carH = Math.max(64, Math.min(96, Math.round(hgt*0.14)));
   el.style.setProperty('--car-h', carH+'px');
   el.classList.toggle('car-s', carH < 84); el.classList.toggle('car-xs', carH < 72);
-  // (v196) 배경 그림(1024×1536, cover) 속 받침 중심(세로 74.9%)이 이 상자에서 몇 px인지 계산해 정령 발끝을 맞춤.
+  // (v196) 배경 그림(1024×1536, cover) 속 받침 중심이 이 상자에서 몇 px인지 계산해 정령 발끝을 맞춤.
   // (v198) 받침이 버튼 줄에 가려질 만큼 낮으면, 그림이 위아래로 남는 범위 안에서 배경을 위로 올려 받침이 보이게 함
+  // (v199) 모드마다 그림 속 받침 높이가 달라서 배경마다 따로 계산하고, 정령은 지금 모드의 받침에 세움
   const W = el.clientWidth, sc = Math.max(W/1024, hgt/1536), dispH = 1536*sc;
   const barTop = hgt - ((el.querySelector('.home-bottom')||{}).offsetHeight || (carH+12));
   const nameH = hgt < 470 ? 46 : 60, emoH = hgt < 470 ? 64 : Math.min(120, Math.max(72, W*0.26));
   const want = barTop - nameH - 4;
-  let offY = (hgt - dispH)/2, ped = offY + 0.749*dispH;
-  if(ped > want){ const up = Math.min(ped - want, offY - (hgt - dispH)); offY -= up; ped -= up; }
-  el.style.setProperty('--home-bg-y', Math.round(offY)+'px');
-  const foot = Math.max(70 + emoH, Math.min(want, ped));
+  const place = ratio=>{ let offY = (hgt - dispH)/2, ped = offY + ratio*dispH;
+    if(ped > want){ const up = Math.min(ped - want, offY - (hgt - dispH)); offY -= up; ped -= up; }
+    return { offY, ped }; };
+  el.querySelectorAll('.home-bg[data-img]').forEach(b=>{ const im = HOME_BG_IMAGES[b.dataset.bg]; if(im) b.style.backgroundPosition = '50% '+Math.round(place(im.ped).offY)+'px'; });
+  const cur = place((HOME_BG_IMAGES[homeMode]||{}).ped || HOME_BG_PED_DEFAULT);
+  const foot = Math.max(70 + emoH, Math.min(want, cur.ped));
   el.style.setProperty('--hero-foot', Math.round(foot)+'px');
 }
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
