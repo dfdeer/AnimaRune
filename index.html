@@ -2207,7 +2207,7 @@ function homeModeSub(m){
   if(m==='expedition') return isUnlocked('expedition') ? '출정권 '+expTicketCount()+'장' : '🔒 챕터1 보스 클리어 후';
   const n = RAID_BOSSES.filter((x,i)=>raidBossUnlocked(i)).length; return '보스 '+n+'/'+RAID_BOSSES.length+' 해금';
 }
-function homeModeDot(m){ return pendingRewardCount(m)>0; }
+function homeModeDot(m){ return pendingRewardCount(m)>0 && (m!=='expedition' || isUnlocked('expedition')); } // (v184) 잠긴 화면엔 받을 곳이 없으니 점도 안 띄움
 function homeBgLayer(mode){
   let stars = '';
   for(let i=0;i<30;i++){ const x = (i*97.3)%400, y = (i*53.7)%260, r = (i%5===0)?1.6:0.9; stars += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" fill="#fff" opacity="'+(0.3+(i%4)*0.15).toFixed(2)+'"/>'; }
@@ -4490,7 +4490,7 @@ function spiritElementCount(el){ return RARITY_ORDER.reduce((n,r)=>n+VARIANTS.fi
 // 도감 보상 목록(정령/장비 공용): 수령 가능이면 🎁 받기, 받았으면 ✅, 아니면 진행도
 function dexRewardRow(id, title, progressText){
   const a = ACHIEVEMENTS.find(x=>x.id===id); if(!a) return '';
-  const pending = hasPendingFor('achieve_'+id), done = !!state.achievementsClaimed[id] && !pending;
+  const pending = hasPendingId('achieve_'+id), done = !!state.achievementsClaimed[id] && !pending;
   const right = pending ? '<button class="btn small" data-claim-reward="achieve_'+id+'">🎁 받기</button>' : (done ? '<span style="font-size:16px;">✅</span>' : '<span class="sub">'+progressText+'</span>');
   return '<div class="fuse-alert" style="align-items:center;"><span>'+title+'<div class="sub" style="font-size:10px;">'+rewardWords(a.reward)+'</div></span><span>'+right+'</span></div>';
 }
@@ -5420,7 +5420,7 @@ function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
   STAGE_GRADE_ORDER.forEach(tier=>{
     const earned = gradeRank[tier] <= currentRank;
     const tierId = idPrefix+tier;
-    const pending = earned && hasPendingFor(tierId);
+    const pending = earned && hasPendingId(tierId);
     const claimAttr = pending ? ' data-claim-reward="'+tierId+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
     html += '<div'+claimAttr+'>'
       + (pending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
@@ -5445,7 +5445,7 @@ function getStageRewardContent(stageIdx){
   const boss = isBossStage(stageIdx), cleared = !!state.stageBest[stageIdx];
   const box = (inner, extra)=> '<div style="padding:8px; border-radius:12px; background:#2a2a38; border:1px solid #3a3a4a;'+(extra||'')+'">'+inner+'</div>';
   const head = t=> '<div style="font-weight:800; text-align:center; font-size:13px; margin-bottom:6px;">'+t+'</div>';
-  const fid = 'stage_'+stageIdx+'_first', fPend = hasPendingFor(fid);
+  const fid = 'stage_'+stageIdx+'_first', fPend = hasPendingId(fid);
   const firstAmt = boss ? bossFirstReward(stageIdx) : stageFirstReward(stageIdx);
   const first = '<div'+(fPend ? ' data-claim-reward="'+fid+'"' : '')+' style="position:relative; padding:8px; border-radius:12px; text-align:center; cursor:'+(fPend?'pointer':'default')+'; background:'+(fPend?'#5b6bff33':(cleared?'#5b6bff22':'#2a2a38'))+'; border:1px solid '+(fPend?'#5b6bff':'#3a3a4a')+';">'
     + (fPend?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
@@ -5459,7 +5459,7 @@ function getStageRewardContent(stageIdx){
   if(!boss && isSpecialStage(stageIdx)){
     const specialBonusEssence = 30+stageIdx*3, specialBonusStone = 8;
     const specialBonusClaimed = !!state.specialStageBonusClaimed[stageIdx];
-    const specialBonusPending = hasPendingFor('stage_'+stageIdx+'_special_bonus');
+    const specialBonusPending = hasPendingId('stage_'+stageIdx+'_special_bonus');
     const sbClaimAttr = specialBonusPending
       ? ' data-claim-reward="stage_'+stageIdx+'_special_bonus" style="padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"'
       : ' style="padding:6px 2px; border-radius:10px; background:'+(specialBonusClaimed?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(specialBonusClaimed?'#5b6bff':'#3a3a4a')+'; position:relative;"';
@@ -5471,8 +5471,11 @@ function getStageRewardContent(stageIdx){
       + '</div>';
   }
   // 위 타일들에 이미 나온 항목(첫 클리어·등급·특수 보너스)은 아래 "대기 중 보상" 목록에서 빼고, 그 밖의 것만 보여줌
-  const pendingHere = pendingRewardsFor('stage_'+stageIdx+'_').concat(pendingRewardsFor('boss_'+stageIdx+'_'))
-    .filter(r=> !/_first$/.test(r.id) && !/_bonus$/.test(r.id) && r.id.indexOf('_grade_')===-1 && r.id.indexOf('_bossclear_')===-1 && r.id.indexOf('_tier_')===-1);
+  // (v184) 위 타일에 실제로 그린 보상만 빼고 나머지는 전부 여기에 — 어디에도 안 보이는 대기 보상 때문에 빨간 점만 남는 일이 없게
+  const shown = new Set([fid]);
+  STAGE_GRADE_ORDER.forEach(t=>{ if(state.stageBest[stageIdx] && {C:1,B:2,A:3,S:4}[t] <= {C:1,B:2,A:3,S:4}[state.stageBest[stageIdx]]) shown.add('stage_'+stageIdx+(boss?'_bossclear_':'_grade_')+t); });
+  if(!boss && isSpecialStage(stageIdx)) shown.add('stage_'+stageIdx+'_special_bonus');
+  const pendingHere = pendingRewardsFor('stage_'+stageIdx+'_').concat(pendingRewardsFor('boss_'+stageIdx+'_')).filter(r=>!shown.has(r.id));
   const pendingTiles = pendingHere.length>0 ? '<div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">' + pendingHere.map(r=>
       '<div data-claim-reward="'+r.id+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; cursor:pointer; text-align:center;">'
       + '<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>'
@@ -5550,7 +5553,7 @@ function chapterRewardLadderHtml(chapterNum){
     const id = 'ch'+chapterNum+'_pct'+Math.round(t*100);
     const rw = chapterPctReward(chapterNum, t);
     const claimed = !!state.chapterRewardsClaimed[id];
-    const pending = hasPendingFor(id);
+    const pending = hasPendingId(id);
     const claimAttr = pending
       ? ' data-claim-reward="'+id+'" style="padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"'
       : ' style="padding:6px 2px; border-radius:10px; background:'+(claimed?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(claimed?'#5b6bff':'#3a3a4a')+'; position:relative;"';
@@ -5681,7 +5684,16 @@ function pendingRewardsFor(prefix){
   if(!state.pendingRewards) return [];
   return state.pendingRewards.filter(r=>r.id.indexOf(prefix)===0);
 }
-function hasPendingFor(prefix){ return pendingRewardsFor(prefix).length>0; }
+function hasPendingFor(prefix){ return pendingRewardsFor(prefix).length>0; } // 앞부분 일치(묶음 검사용: 'stage_3_', 'achieve_dex_' 등)
+// (v184) 보상 하나를 가리킬 때는 반드시 정확히 일치로 검사 — 앞부분 일치로 보면 'achieve_expedition_clear'가
+// 'achieve_expedition_clear_3'에도 걸려서, 받을 게 없는 업적에 '받기'·빨간 점이 뜨고 눌러도 안 받아졌음
+function orphanAchievePending(){ const ids = new Set(ACHIEVEMENTS.map(a=>'achieve_'+a.id)); return (state.pendingRewards||[]).filter(r=>r.id.indexOf('achieve_')===0 && !ids.has(r.id)); }
+function hasPendingId(id){ return (state.pendingRewards||[]).some(r=>r.id===id); }
+function chapterHasPending(ch){ // 이 챕터에서 받을 보상(챕터 진행도 + 스테이지·보스 보상)이 있는지
+  if(hasPendingFor('ch'+ch+'_pct')) return true;
+  for(let i=(ch-1)*CHAPTER_LENGTH; i<ch*CHAPTER_LENGTH; i++) if(hasPendingForStage(i)) return true;
+  return false;
+}
 function hasPendingForStage(i){ return hasPendingFor('stage_'+i+'_') || hasPendingFor('boss_'+i+'_'); }
 function claimPendingReward(id){
   const idx = (state.pendingRewards||[]).findIndex(r=>r.id===id);
@@ -6955,6 +6967,7 @@ function isStageUnlockedGraph(stageIdx){
   const cur = currentChapterNum();
   if(ch<cur) return true; // 지난 챕터는 자유롭게 재도전 가능
   if(ch>cur) return false;
+  if(state.stageBest[stageIdx]) return true; // (v184) 이미 깬 스테이지는 항상 열림(그 스테이지 보상도 언제든 받을 수 있게)
   const offset = (ch-1)*CHAPTER_LENGTH;
   const localIdx = stageIdx-offset;
   if(localIdx===0) return true;
@@ -7018,13 +7031,16 @@ function renderStageTab(){
     tilesHtml += '<div '+(unlocked?('data-stage="'+stageIdx+'"'):'')+' style="position:absolute; left:'+(c.x+pad-size/2)+'px; top:'+(c.y+pad-size/2)+'px; width:'+size+'px; height:'+size+'px; border-radius:12px; background:'+bg+'; border:2px solid '+border+'; display:flex; align-items:center; justify-content:center; font-size:'+(boss?18:13)+'px; font-weight:800; color:'+textColor+'; opacity:'+(unlocked?1:0.45)+'; '+glow+'">'+content+specialBadge+rewardDot+'</div>';
   });
   let html = '<div class="card" style="display:flex; align-items:center; justify-content:space-between;">';
-  html += '<button class="btn secondary small" id="chapterPrev" '+(ch<=1?'disabled':'')+'>◀</button>';
+  // (v184) 다른 챕터에 받을 보상이 있으면 그쪽 화살표에 점 — 홈 탐험 버튼에 점이 떴는데 지금 챕터엔 없을 때 찾기 쉽게
+  const arrowDot = has=> has ? '<span style="position:absolute; top:-3px; right:-3px; width:8px; height:8px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span>' : '';
+  const pendBefore = [...Array(Math.max(0,ch-1))].some((_,k)=>chapterHasPending(k+1)), pendAfter = [...Array(Math.max(0,MAX_CHAPTERS-ch))].some((_,k)=>chapterHasPending(ch+1+k));
+  html += '<button class="btn secondary small" id="chapterPrev" style="position:relative;" '+(ch<=1?'disabled':'')+'>◀'+arrowDot(pendBefore)+'</button>';
   const clearCount = chapterClearCount(ch);
   html += '<div style="text-align:center;"><div style="font-weight:800; font-size:15px;">'+theme.icon+' 챕터 '+ch+' · '+theme.name+'</div><div class="sub">'+(ch>cur?'미도달':(ch<cur?'클리어':'진행 중'))+' · '+clearCount+'/'+CHAPTER_LENGTH+' ('+Math.round(clearCount/CHAPTER_LENGTH*100)+'%)</div></div>';
-  html += '<button class="btn secondary small" id="chapterNext" '+(ch>=MAX_CHAPTERS?'disabled':'')+'>▶</button>';
+  html += '<button class="btn secondary small" id="chapterNext" style="position:relative;" '+(ch>=MAX_CHAPTERS?'disabled':'')+'>▶'+arrowDot(pendAfter)+'</button>';
   html += '</div>';
   const chapterRewardBadge = '<button data-chapter-reward-btn="'+ch+'" style="position:absolute; left:8px; top:8px; z-index:2; background:#00000066; border:1px solid #ffffff33; border-radius:10px; padding:4px 8px; font-size:14px; display:flex; align-items:center; gap:4px;">🎁'
-    + (pendingRewardCount('stage')>0?'<span style="width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span>':'')
+    + (hasPendingFor('ch'+ch+'_pct')?'<span style="width:7px; height:7px; border-radius:50%; background:#ff4a4a;"></span>':'') // (v184) 예전엔 스테이지 보상 전체를 봐서 다 받은 챕터·못 채운 챕터에도 점이 떴음
     + '</button>';
   html += '<div style="position:relative; width:'+width+'px; height:'+height+'px; margin:0 auto 14px auto; border-radius:20px; background:'+theme.bg+'; border:1px solid #ffffff14; overflow:hidden;">'
     + '<div style="position:absolute; right:10px; top:6px; font-size:44px; opacity:0.10; pointer-events:none;">'+theme.mark+'</div>'
@@ -7285,7 +7301,7 @@ function showAchievementsModal(keep){
     const on = achievementCategory===c.id;
     const catPending = c.id==='daily'
       ? activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())
-      : ACHIEVEMENTS.some(a=>a.category===c.id && hasPendingFor('achieve_'+a.id));
+      : (ACHIEVEMENTS.some(a=>a.category===c.id && hasPendingId('achieve_'+a.id)) || (c.id==='general' && orphanAchievePending().length>0));
     tabHtml += '<button data-achieve-cat="'+c.id+'" style="flex:1; padding:6px 2px; font-size:11px; font-weight:700; border-radius:8px; border:1px solid '+(on?'#5b6bff':'#3a3a4a')+'; background:'+(on?'#5b6bff33':'transparent')+'; color:'+(on?'var(--text)':'var(--sub)')+'; position:relative;">'+c.icon+' '+c.name
       + (catPending?'<span style="position:absolute; top:-2px; right:-2px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span>':'')
       + '</button>';
@@ -7306,7 +7322,7 @@ function showAchievementsModal(keep){
   }else{
     ACHIEVEMENTS.filter(a=>a.category===achievementCategory).forEach(a=>{
       const done = state.achievementsClaimed[a.id];
-      const pending = hasPendingFor('achieve_'+a.id);
+      const pending = hasPendingId('achieve_'+a.id);
       // 탐구/도전형(secret)만 달성 전까지 이름/설명을 ???로 가림 — 평범하게 깨지는 업적은 전부 공개
       const revealed = !a.secret || done || pending;
       const label = revealed ? a.name : '???';
@@ -7317,6 +7333,10 @@ function showAchievementsModal(keep){
       else rightSide = '<div style="font-size:18px;">🔒</div>';
       html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+(done?'🏅 ':'')+label+'</div><div class="sub">'+descText+'</div><div>'+rewardPillsHtml(a.reward)+'</div></div>'
         + '<div style="flex-shrink:0; min-width:48px; text-align:center;">'+rightSide+'</div></div>';
+    });
+    if(achievementCategory==='general') orphanAchievePending().forEach(r=>{ // (v184) 지금은 없어진 업적의 받지 않은 보상도 받을 수 있게
+      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+r.label+'</div><div class="sub">지난 업적 보상</div><div>'+rewardPillsHtml({essence:r.essence, stone:r.stone, items:r.items})+'</div></div>'
+        + '<div style="flex-shrink:0; min-width:48px; text-align:center;"><button class="btn small" data-claim-reward="'+r.id+'">받기</button></div></div>';
     });
     if(ACHIEVEMENTS.filter(a=>a.category===achievementCategory).length===0){
       html += '<div class="sub" style="text-align:center; padding:20px 0;">이 카테고리에 업적 없음</div>';
@@ -7796,6 +7816,8 @@ function sanitizeState(){
     seen.add(r.id);
     r.essence = fin(r.essence) ? Math.max(0, r.essence) : 0; r.stone = fin(r.stone) ? Math.max(0, r.stone) : 0;
     if(typeof r.tab!=='string') r.tab = 'stage'; if(typeof r.icon!=='string') r.icon = '🎁'; if(typeof r.label!=='string') r.label = r.id;
+    // (v184) 보상 종류(id)에 맞는 탭으로 바로잡음 — 예전 세이브의 업적 보상은 'summon' 탭으로 저장돼 소환 탭에 받을 것 없는 빨간 점이 떴음
+    { const id = r.id; r.tab = id.indexOf('achieve_')===0 ? 'achieve' : id.indexOf('tower_')===0 ? 'tower' : id.indexOf('expedition_')===0 ? 'expedition' : (/^(stage_|boss_|ch\d+_pct)/.test(id) ? 'stage' : r.tab); }
     if(r.items && !isPlainObj(r.items)) r.items = null;
     else if(r.items){ Object.keys(r.items).forEach(k=>{ if(!TICKET_INFO[k] || !fin(r.items[k]) || r.items[k]<=0) delete r.items[k]; else r.items[k] = Math.floor(r.items[k]); }); if(!Object.keys(r.items).length) r.items = null; }
     else r.items = null;
