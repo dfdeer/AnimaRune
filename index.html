@@ -456,7 +456,19 @@
   .killtag{position:absolute; top:-9px; right:-4px; padding:2px 7px; border-radius:9px; background:#ffd24a; color:#2a1800; font-size:10px; font-weight:900; box-shadow:0 2px 6px #000a;}
   .bs-order .oc.tg{border-color:#ffd24a !important; box-shadow:0 0 0 2px #ffd24a, 0 0 10px #ffd24a; position:relative;}
   .bs-order .oc.tg i{position:absolute; top:-8px; right:-6px; font-size:9px; font-style:normal;}
-  .bs-special{padding:5px 10px; border-radius:10px; background:#ffb0201f; border:1px solid #ffb02088; color:#ffd9a0; font-size:11px; font-weight:800; text-align:center;}
+  .bs-special{display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:linear-gradient(90deg,#5a2a9a,#3a2066); border:1px solid #c98aff; box-shadow:0 0 12px #9a5bff66; color:#fff; font-size:12px; white-space:nowrap; overflow:hidden;}
+  .bs-special b{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;} .bs-special .sp-mine{font-size:11px; font-weight:900; color:#ffd24a;}
+  .sp-badge{flex-shrink:0; font-size:10px; font-weight:900; padding:2px 7px; border-radius:8px; background:#c98aff; color:#1f0a3a;}
+  .sp-card{margin-bottom:8px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#4a2280,#231437); border:1.5px solid #c98aff; box-shadow:0 0 16px #9a5bff55;}
+  .sp-top{display:flex; justify-content:space-between; align-items:center; gap:6px;}
+  .sp-bonus{font-size:11px; font-weight:800; color:#ffd24a;}
+  .sp-name{font-size:16px; font-weight:900; margin-top:6px;}
+  .sp-desc{font-size:12px; color:#e2d4ff; margin-top:2px; line-height:1.4;}
+  .sp-status{margin-top:8px; padding:6px 8px; border-radius:9px; font-size:12px; font-weight:800;}
+  .sp-status.ok{background:#2fe39a22; color:#9dffd8; border:1px solid #2fe39a66;} .sp-status.bad{background:#ff6a6a1f; color:#ffb0a8; border:1px solid #ff6a6a66;} .sp-status.info{background:#ffffff12; color:var(--text); border:1px solid #ffffff26;}
+  .bs-bsp{display:block; font-size:13px; letter-spacing:0; margin-top:3px; color:#e2c8ff;}
+  .bu-spm{position:absolute; top:calc(var(--sz) * var(--k,1) * .05); left:-6px; z-index:4; font-size:10px; font-weight:900; padding:1px 6px; border-radius:8px; white-space:nowrap; box-shadow:0 1px 4px #0008;}
+  .bu-spm.up{background:#ffd24a; color:#2a1a00;} .bu-spm.down{background:#ff6a6a; color:#2a0000;}
   .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:10px; font-weight:900; padding:2px 8px; border-radius:8px;}
   .bs-teamtag.me{left:8px; background:#2f5bdccc; color:#fff;} .bs-teamtag.en{right:8px; background:#c0303acc; color:#fff;}
 
@@ -3042,6 +3054,13 @@ function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 
     else addPendingReward('stage_'+i+'_grade_'+tier, '🏅', '스테이지 '+(i+1)+' '+tier+'등급 달성', stageGradeReward(i, tier), 0, 'stage');
   }
 }
+function specialBonusReward(i){ return { essence: 30+i*3, stone: 8 }; }
+function grantSpecialStageBonus(i){ // 특수 스테이지를 깼는데 보너스를 아직 안 받았으면 수령 대기로(한 번만)
+  if(!isSpecialStage(i) || !state.stageBest[i] || state.specialStageBonusClaimed[i]) return;
+  state.specialStageBonusClaimed[i] = true;
+  const rw = specialBonusReward(i);
+  addPendingReward('stage_'+i+'_special_bonus', '🌀', '스테이지 '+(i+1)+' 특수 규칙 보너스', rw.essence, rw.stone, 'stage');
+}
 function resolveSkillStageBattle(i, rounds){
   const grade = skillGradeForRounds(rounds);
   const already = state.stageBest[i];
@@ -3049,8 +3068,8 @@ function resolveSkillStageBattle(i, rounds){
   const baseReward = stageClearReward(i);
   state.essence += baseReward;
   let improved = false, reward = 0;
-  if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', '스테이지 '+(i+1)+' 첫 클리어', reward, 0, 'stage');
-    if(isSpecialStage(i) && !state.specialStageBonusClaimed[i]){ state.specialStageBonusClaimed[i] = true; addPendingReward('stage_'+i+'_special_bonus', '🌀', '스테이지 '+(i+1)+' 특수 규칙 보너스', 30+i*3, 8, 'stage'); } }
+  if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', '스테이지 '+(i+1)+' 첫 클리어', reward, 0, 'stage'); }
+  grantSpecialStageBonus(i); // (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음
   if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
   state.dailyStats.stagesCleared += 1;
   checkChapterPctRewards(Math.floor(i/CHAPTER_LENGTH)+1);
@@ -3411,14 +3430,20 @@ function showSkillStagePrepModal(i){
     + '<button id="rewardInfoBtn" style="flex-shrink:0; background:#00000055; border:1px solid #ffffff33; border-radius:10px; padding:5px 9px; font-size:14px; position:relative;">🎁'
     + (hasPendingForStage(i)?'<span style="position:absolute; top:-2px; right:-2px; width:7px; height:7px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></span>':'')
     + '</button><h3 style="flex:1; text-align:center; margin:0;">스테이지 '+(i+1)+' 준비</h3><div style="width:34px; flex-shrink:0;"></div></div>';
-  if(isSpecialStage(i)){ // (v146) 특수 규칙 이식 — 새 전투에서도 규칙 문구 표시
-    html += '<div class="card" style="padding:8px 10px; font-size:12px; text-align:center; margin-bottom:6px;">'+specialRuleLabel(specialStageSpec(i))+'</div>';
-  }
+  const spSpec = isSpecialStage(i) ? specialStageSpec(i) : null;
+  if(spSpec) html += specialCardHtml(i); // (v185) 한 줄 문구 → 눈에 띄는 카드(규칙 · 내 진형 충족 여부 · 보너스)
   html += '<div class="pq-enemy"><span class="pq-lbl">상대</span>'
     + '<span class="pq-grp"><span class="pq-cap">전열</span><span class="pq-icons">'+frontIdx.map(eIco).join('')+'</span></span><span class="pq-bar"></span>'
     + '<span class="pq-grp"><span class="pq-cap">후열</span><span class="pq-icons">'+backIdx.map(eIco).join('')+'</span></span></div>';
   { const pv = buildSkillStageFight(i); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '👹 상대', isSpecialStage(i) ? '특수 규칙 배율 반영' : ''); }
-  const row = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(k=>slotHtml(k)).join('')+'</div></div>';
+  const spMarks = spSpec ? specialSlotMarks(spSpec, state.formation.slice(0, GRID_SLOTS).map(k=>k&&SPIRITS[k]?SPIRITS[k].element:null), GRID_SLOTS, true) : [];
+  const spSlot = k=>{ // 규칙이 붙은 칸은 금색/붉은 테두리 + 배율 태그(빈 황금·봉인 칸도 표시)
+    if(spMarks[k] && state.formation[k]) return slotHtmlMarked(k, spMarks[k]);
+    if(spSpec && (spSpec.type==='goldenSlot' || spSpec.type==='sealedSlot') && spSpec.slot===k){ const up = spSpec.type==='goldenSlot';
+      return slotHtml(k).replace('class="slot"', 'class="slot bonus-'+(up?'up':'down')+'"').replace(/<\/div>$/, '<span class="bonus-tag '+(up?'up':'down')+'">'+(up?'⭐×1.8':'🔒×0.5')+'</span></div>'); }
+    return slotHtml(k);
+  };
+  const row = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(spSlot).join('')+'</div></div>';
   html += row('전열', frontIdx) + row('후열', backIdx);
   html += '<div style="display:flex; gap:8px; margin-top:12px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button>'
     + '<button class="btn" id="startSkillBattleBtn" style="flex:1;">⚔️ 전투 시작</button></div>';
@@ -3515,6 +3540,7 @@ function battleUnitHtml(u, opts){
   }else if(u.isBoss) cls.push('bu-boss');
   return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
+    + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon || ELEMENT_INFO[u.element].icon)+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
@@ -3668,7 +3694,8 @@ function showSkillStageScreen(){
     });
     html += '</div>';
   }
-  if(sf.special) html += '<div class="bs-special">📜 특수 규칙 · '+specialRuleLabel(sf.special)+'</div>';
+  if(sf.special){ const pr = specialRuleParts(sf.special), myM = (sf.myUnits||[]).map(u=>u.specialMult||1), best = Math.max(...myM, 1), worst = Math.min(...myM, 1);
+    html += '<div class="bs-special"><span class="sp-badge">🌀 특수</span><b>'+pr.name+'</b><span class="sp-mine">'+(best>1.0001 ? '우리 팀 최대 ×'+(Math.round(best*100)/100) : (worst<0.9999 ? '우리 팀 ×'+(Math.round(worst*100)/100)+' 있음' : '보너스 없음'))+'</span></div>'; } // (v185) 규칙 이름 + 우리 팀이 받는 배율
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
   html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+'">'+battleSceneHtml(theme)
@@ -3677,7 +3704,7 @@ function showSkillStageScreen(){
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
     + lay.slots.map(p=>'<div class="bs-slot" style="left:'+p.x+'%; top:'+p.y+'%; z-index:'+(10+Math.round(p.y))+'; --d:'+p.d.toFixed(3)+';">'+cellHtml(p.side, p.idx, p.size)+'</div>').join('')
     + '</div><span class="bs-teamtag me">아군</span><span class="bs-teamtag en">적</span>'
-    + (intro ? '<div class="bs-banner"><span>⚔️ 전투 개시</span></div>' : '')
+    + (intro ? '<div class="bs-banner"><span>⚔️ 전투 개시'+(sf.special ? '<small class="bs-bsp">🌀 '+specialRuleParts(sf.special).name+'</small>' : '')+'</span></div>' : '')
     + (fx && fx.kind==='round' ? '<div class="bs-banner"><span>ROUND '+fx.round+'</span></div>' : '')
     + '</div>';
 
@@ -5457,7 +5484,7 @@ function getStageRewardContent(stageIdx){
   const repeat = box('<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;"><b>🔁 기본 클리어 보상</b><span><b>✨ +'+(boss ? bossClearReward(stageIdx) : stageClearReward(stageIdx))+'</b> <span class="sub" style="font-size:10px;">매번 자동</span></span></div>');
   let specialBonusHtml = '';
   if(!boss && isSpecialStage(stageIdx)){
-    const specialBonusEssence = 30+stageIdx*3, specialBonusStone = 8;
+    const specialBonusEssence = specialBonusReward(stageIdx).essence, specialBonusStone = specialBonusReward(stageIdx).stone;
     const specialBonusClaimed = !!state.specialStageBonusClaimed[stageIdx];
     const specialBonusPending = hasPendingId('stage_'+stageIdx+'_special_bonus');
     const sbClaimAttr = specialBonusPending
@@ -5467,7 +5494,7 @@ function getStageRewardContent(stageIdx){
       + (specialBonusPending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
       + '<div style="font-weight:800; font-size:13px; text-align:center;">🌀 특수 규칙 보너스</div>'
       + '<div class="sub" style="font-size:10px; text-align:center;">✨+'+specialBonusEssence+' · 🔩+'+specialBonusStone+'</div>'
-      + (specialBonusPending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(specialBonusClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.3; text-align:center;">–</div>'))
+      + (specialBonusPending?'<div style="font-size:11px; color:#ffd24a; font-weight:700; text-align:center;">받기</div>':(specialBonusClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.5; text-align:center;">🔒 클리어 시</div>'))
       + '</div>';
   }
   // 위 타일들에 이미 나온 항목(첫 클리어·등급·특수 보너스)은 아래 "대기 중 보상" 목록에서 빼고, 그 밖의 것만 보여줌
@@ -6759,6 +6786,31 @@ function specialRuleLabel(r){
   if(r.type==='field') return '🌦️ 속성 필드형 · '+elLabel(r.up)+' ×1.3 · '+elLabel(r.down)+' ×0.7 · 적도 같음';
   return '⭐ 황금 슬롯형 · 슬롯 '+(r.slot+1)+' 공격력 ×1.8 · 적도 같음';
 }
+// (v185) 스테이지(6칸 격자)용 특수 규칙 표시 — 칸 번호 대신 '전열 2번'처럼, 이름/설명을 나눠서, 내 진형이 조건을 채웠는지까지
+function gridSlotName(idx){ return idx<3 ? '전열 '+(idx+1)+'번' : '후열 '+(idx-2)+'번'; }
+function specialRuleParts(r){
+  const lbl = specialRuleLabel(r).replace(/슬롯 (\d+)/g, (_,n)=>gridSlotName(Number(n)-1)+' 칸');
+  const cut = lbl.indexOf(' · ');
+  return { name: cut>0 ? lbl.slice(0,cut) : lbl, desc: cut>0 ? lbl.slice(cut+3) : '' };
+}
+function specialFormationStatus(spec){ // {cls:'ok'|'bad'|'info', text}
+  const f = state.formation.slice(0, GRID_SLOTS), els = f.map(k=>k&&SPIRITS[k]?SPIRITS[k].element:null);
+  const nm = idx=> f[idx] && SPIRITS[f[idx]] ? SPIRITS[f[idx]].name : '';
+  if(spec.type==='goldenSlot') return f[spec.slot] ? {cls:'ok', text:'⭐ '+gridSlotName(spec.slot)+' 칸의 '+nm(spec.slot)+' 공격력 ×1.8'} : {cls:'bad', text:'⭐ '+gridSlotName(spec.slot)+' 칸이 비어 있어요 · 강한 정령을 넣으면 공격력 ×1.8'};
+  if(spec.type==='sealedSlot') return f[spec.slot] ? {cls:'bad', text:'🔒 '+gridSlotName(spec.slot)+' 칸의 '+nm(spec.slot)+' 공격력 ×0.5 · 비워 두는 것도 방법'} : {cls:'ok', text:'🔒 봉인된 '+gridSlotName(spec.slot)+' 칸을 비워 뒀어요'};
+  if(spec.type==='field'){
+    const up = els.filter(e=>e===spec.up).length, down = els.filter(e=>e===spec.down).length;
+    return { cls: up>down ? 'ok' : (down>up ? 'bad' : 'info'), text:'▲ '+elLabel(spec.up)+' '+up+'마리 ×1.3 · ▼ '+elLabel(spec.down)+' '+down+'마리 ×0.7' };
+  }
+  const m = specialAggregateMultForFormation(spec, GRID_SLOTS);
+  return m>1.0001 ? {cls:'ok', text:'✅ 조건 충족 · 우리 팀 공격력 ×'+(Math.round(m*100)/100)} : {cls:'bad', text:'❌ 아직 조건 미충족 · 배치를 바꿔 보너스를 받아 보세요'};
+}
+function specialCardHtml(i){ // 준비창 맨 위 특수 규칙 카드
+  const spec = specialStageSpec(i), pr = specialRuleParts(spec), st = specialFormationStatus(spec), rw = specialBonusReward(i);
+  const got = !!state.specialStageBonusClaimed[i] && !hasPendingId('stage_'+i+'_special_bonus');
+  return '<div class="sp-card"><div class="sp-top"><span class="sp-badge">🌀 특수 스테이지</span><span class="sp-bonus">'+(got?'✅ 보너스 받음':'🎁 클리어 보너스 ✨'+rw.essence+' 🔩'+rw.stone)+'</span></div>'
+    + '<div class="sp-name">'+pr.name+'</div><div class="sp-desc">'+pr.desc+'</div><div class="sp-status '+st.cls+'">'+st.text+'</div></div>';
+}
 function baseSlotAtk(key, idx, enemyComp, special){
   if(!key) return 0;
   const sp = SPIRITS[key];
@@ -7864,6 +7916,7 @@ function sanitizeState(){
     if(!buffOk || e.pendingKeep) e.pendingBuffChoice = null;
   }
   migrateStageRewardsV179();
+  Object.keys(state.stageBest||{}).forEach(k=>grantSpecialStageBonus(Number(k))); // (v185) 예전에 깨고 못 받은 특수 규칙 보너스 보충
 }
 
 sanitizeState();
