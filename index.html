@@ -1395,6 +1395,7 @@ function atkBonus(sf, a, d){
 function dmgReduction(sf, d){
   let r = 0;
   if(d.line==='wood_a' && d.g>=1) r += [0,.08,.10,.12,.15][d.g];
+  if(d.st && d.st.guard) r += d.st.guard.v; // (v192) 굳건함(숲결 탱커 뿌리 내리기)
   r += runeDr(d);
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && f.line==='wood_a' && f.g>=4) r += 0.2; } }
   return r;
@@ -1477,7 +1478,7 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.burn = (u, n)=>{ const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
-  C.strip = u=>{ let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); return n; };
+  C.strip = u=>{ let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); return n; };
   C.actNext = u=>{
     if(!u.alive) return;
     const q = sf.queue;
@@ -2731,7 +2732,7 @@ function roundStartEffects(sf){
     if(s.poison){ loss += Math.round(u.maxHp * s.poison.pct); }
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true }); if(u.hp<=0){ killUnit(sf, u); return; } }
     if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, u.maxHp*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b }); }
-    ['slow','haste','curse','web','buff','regen','reflect'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
+    ['slow','haste','curse','web','buff','regen','reflect','guard'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
   });
@@ -2767,6 +2768,7 @@ function aiChooseAction(sf, a){
     if(!skillAvailable(a, act)) continue;
     const sk = act==='basic' ? null : kit[act];
     const kind = sk ? sk.kind : 'harm';
+    if(sk && sk.self){ if(a.st.taunt) continue; return { act, side:a.side, idx:a.idx }; } // (v192) 이미 도발 중이면 아껴 둠
     if(kind==='harm'){
       const t = aiPickFoeTarget(sf, a); if(!t) return null;
       if(a.line==='dark_a' && act==='s2' && t.hp/t.maxHp>0.3) continue; // 처형은 막타용
@@ -2808,6 +2810,7 @@ function defaultActFor(sf, a){
 }
 function retargetForAct(sf, a, act){ // 고른 행동의 종류에 맞게 대상 편을 바꿈(지원기 → 아군, 공격기 → 적)
   const sk = unitSkill(a, act), harm = !sk || sk.kind==='harm';
+  if(sk && sk.self){ skillSel.side = a.side; skillSel.idx = a.idx; return; } // (v192) 자기 몸에만 거는 스킬
   if(harm && skillSel.side!=='enemy'){ const st = skillSel.sticky; skillSel.side = 'enemy'; skillSel.idx = (st!==undefined && st!==null && skillTargetable(sf,'enemy',st)) ? st : recommendEnemyTarget(sf, a); }
   else if(!harm && skillSel.side!==a.side){ skillSel.side = a.side; skillSel.idx = autoAllyTarget(sf, a); }
 }
@@ -2920,6 +2923,7 @@ function restartSkillStageFight(){ const sf = state.skillFight; if(!sf) return; 
 // ---------- 예상 결과: 복사본에서 실제로 실행해 보고 차이를 요약(크리티컬 제외) ----------
 // (v174) 스킬 범위: 한 번 누르면 범위를 전장에 표시(공격 빨강·약화 보라·지원 초록), 한 번 더 누르면 사용
 function skillAreaCells(sf, a, act, tSide, tIdx){
+  { const sk = unitSkill(a, act); if(sk && sk.self) return new Set([a.side+':'+a.idx]); }
   const c = JSON.parse(JSON.stringify(sf)), rnd = Math.random; Math.random = ()=>0.999;
   let C; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; }
   const set = new Set();
@@ -3019,12 +3023,13 @@ const LINE_KITS = {
       '받는 피해 −'+pctTxt([0,.08,.10,.12,.15][g]),
       g>=4?'전열에 있으면 바로 뒤 칸 아군의 받는 피해도 −20%':null
     ].filter(Boolean).join('<br>') },
-    s1:{ name:'뿌리 내리기', icon:'🌱', cd:3, kind:'shield', tag:g=>'도발 '+(g>=3?2:1)+'R',
+    // (v192) 탱커는 자기 몸에 거는 스킬로 — 예전엔 아군에게 보호막까지 줬는데, 아군 보호막은 빛 서포터(수호의 빛) 역할이라 뺌
+    s1:{ name:'뿌리 내리기', icon:'🌱', cd:3, kind:'shield', self:true, tag:g=>'자신 · 도발 '+(g>=3?2:1)+'R',
       desc:g=>[
-        '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.15,.18,.21,.25,.30][g])+', 2라운드)',
-        '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)'
+        '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)',
+        '자신이 받는 피해 −'+pctTxt([.20,.24,.28,.32,.40][g])+' (2라운드)'
       ].join('<br>'),
-      run:C=>{ C.shield(C.t,C.a.maxHp*C.P([.15,.18,.21,.25,.30])); C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; },'🎯도발'); } },
+      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); } },
     s2:{ name:'가시 갑옷', icon:'🌵', cd:4, kind:'shield', tag:()=> '반사',
       desc:g=>'대상이 2라운드 동안 받는 피해의 '+pctTxt([0,0,.3,.4,.5][g])+'를 공격자에게 반사',
       run:C=>{ C.pos(C.t,st=>{ st.reflect={v:C.P([0,0,.3,.4,.5]),r:2}; },'🌵반사'); } } },
@@ -3575,6 +3580,7 @@ function statusList(u){
   if(u.isBoss && u.groggy) o.push({i:'💫', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
   if(s.shield>0) o.push({i:'🛡️', t:'보호막', d:fmtHp(s.shield)+' 피해 흡수'+(s.shieldR?' · '+s.shieldR+'R':''), good:true});
   if(s.taunt) o.push({i:'🎯', t:'도발', d:'적이 이 정령만 공격', good:true});
+  if(s.guard) o.push({i:'🌱', t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
   if(s.haste) o.push({i:'⏩', t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
   if(s.buff || s.empower) o.push({i:'✨', t:'강화', d:'공격력 증가'+r(s.buff), good:true});
   if(s.regen) o.push({i:'💧', t:'재생', d:'라운드마다 체력 회복'+r(s.regen), good:true});
@@ -3896,7 +3902,10 @@ function showSkillStageScreen(){
   }));
   if(fxBusy && curUnit && !skillBusyTimer) skillBusyTimer = setTimeout(()=>{ skillBusyTimer = null; if(state.skillFight) showSkillStageScreen(); }, Math.max(30, skillFxBusyUntil - Date.now() + 20));
   root.querySelectorAll('[data-tgt]').forEach(el=>el.addEventListener('click', ()=>{
-    const [s, idx] = el.dataset.tgt.split(':'); skillSel.side = s; skillSel.idx = parseInt(idx); skillSel.manual = true; if(s==='enemy') skillSel.sticky = parseInt(idx); showSkillStageScreen();
+    const [s, idx] = el.dataset.tgt.split(':');
+    { const sk = curUnit && skillSel.act ? unitSkill(curUnit, skillSel.act) : null; // (v192) 자기 몸 스킬을 고른 상태: 아군을 누르면 그대로 자신, 적을 누르면 기본 공격으로 바꿈
+      if(sk && sk.self){ if(s!=='enemy') return; skillSel.act = 'basic'; skillSel.armed = true; } }
+    skillSel.side = s; skillSel.idx = parseInt(idx); skillSel.manual = true; if(s==='enemy') skillSel.sticky = parseInt(idx); showSkillStageScreen();
   }));
   pumpSkillFight();
 }
@@ -5535,7 +5544,7 @@ function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
     const earned = gradeRank[tier] <= currentRank;
     const tierId = idPrefix+tier;
     const pending = earned && hasPendingId(tierId);
-    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
+    const claimAttr = pending ? ' data-claim-reward="'+tierId+'" data-claim-group="'+idPrefix+'" style="flex:1; padding:6px 2px; border-radius:10px; background:#5b6bff33; border:1px solid #5b6bff; position:relative; cursor:pointer;"' : ' style="flex:1; padding:6px 2px; border-radius:10px; background:'+(earned?'#5b6bff33':'#2a2a38')+'; border:1px solid '+(earned?'#5b6bff':'#3a3a4a')+'; position:relative;"';
     html += '<div'+claimAttr+'>'
       + (pending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff4a4a; border:1.5px solid var(--panel);"></div>':'')
       + '<div style="font-weight:800; font-size:13px; text-align:center;">'+tier+'</div>'
@@ -7622,9 +7631,10 @@ function openInfoOverlay(title, bodyHtml, onClaim, refreshBody){
       btn.dataset.bound = '1';
       btn.addEventListener('click', ()=>{
         if(btn.dataset.claimGroup){
-          const ids = [...overlay.querySelectorAll('[data-claim-reward][data-claim-group="'+btn.dataset.claimGroup+'"]')].map(x=>x.dataset.claimReward);
+          // (v191) 등급 보상은 어느 칸을 누르든 받을 수 있는 등급을 한 번에 — 알림도 합산해서 1번
+          const ids = pendingRewardsFor(btn.dataset.claimGroup).map(r=>r.id);
           const r = claimManyPending(ids);
-          if(r.n>0) toastReward({essence:r.essence, stone:r.stone, items:r.items}, '🎁 등급 보상 '+r.n+'개 획득');
+          if(r.n>0) toastReward({essence:r.essence, stone:r.stone, items:r.items}, '🏅 등급 보상 '+r.n+'개 획득');
         }else{
           claimPendingReward(btn.dataset.claimReward);
         }
