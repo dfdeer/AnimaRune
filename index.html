@@ -580,6 +580,11 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .sp-line{margin:6px 0 4px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 3px;} .sp-line > i{color:var(--sub); font-style:normal; font-size:11px;}
+  .sp-line-t{width:100%; font-size:11px; color:var(--sub); font-weight:800; margin-bottom:2px;}
+  .sp-line-i{display:flex; flex-direction:column; align-items:center; width:44px; padding:3px 0; border-radius:10px; border:1.5px solid transparent;} .sp-line-i .spimg{width:26px; height:26px; margin:0;} .sp-line-i b{height:26px; line-height:26px; color:var(--sub);}
+  .sp-line-i small{font-size:9px; line-height:1.1; color:var(--rc); white-space:nowrap;} .sp-line-i.cur{border-color:var(--rc); background:#ffffff10;}
+  .fz-rules{width:100%; border-collapse:collapse; font-size:12px; text-align:left;} .fz-rules td{padding:5px 4px; border-bottom:1px solid #ffffff12; vertical-align:top; line-height:1.45;} .fz-rules td:first-child{width:52px; color:var(--sub); font-weight:800; white-space:nowrap;}
   .fz-modes{display:flex; gap:6px; margin-bottom:10px;} .fz-modes button{flex:1; padding:7px 4px; border-radius:10px; border:1px solid #ffffff22; background:#ffffff0d; color:var(--sub); font-weight:800; font-size:12px;} .fz-modes button.on{background:#8f6bff33; border-color:#b9a4ff; color:var(--text);} .fz-modes button:disabled{opacity:.45;}
   .fz-slots{display:flex; align-items:center; justify-content:center; gap:4px;}
   .fz-plus{color:var(--sub); font-weight:900;}
@@ -5069,6 +5074,7 @@ function fuseFailChanceFor(nextRarity, streakKey){ const st = (state.fuseFailStr
 // 결과: 재료 하나하나가 1/3씩 → 같은 정령 85% · 같은 속성 다른 종 10% · 다른 속성 5%(나머지 8종에 고르게)
 // 장비: 같은 부위·같은 등급 재료 → 같은 속성 90% · 다른 속성 10%
 const FUSE_OUT = { same:0.85, sib:0.10, other:0.05 }, EQ_FUSE_OUT = { same:0.90, other:0.10 };
+const FUSE_INHERIT_DIV = 3; // 강화 계승: 재료 최고 강화 ÷ 3 (버림) — 등급이 높을수록 강화 비용이 비싸서
 let fuseMode = 'spirit', fuseSlots = [null, null, null];
 function isSpLocked(k){ return !!(state.lockedSpirits && state.lockedSpirits[k]); }
 function isEqLocked(k){ return !!(state.lockedEquip && state.lockedEquip[k]); }
@@ -5096,8 +5102,9 @@ function fuseSlotInfo(){ // 칸이 다 찼을 때 합성 정보
   const src = fuseSlotRarity(), nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
-  const inherit = fuseMode==='equip' ? 0 : Math.max(...keys.map(k=>enhanceLevel(k)));
-  return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit };
+  const inheritFrom = fuseMode==='equip' ? 0 : Math.max(...keys.map(k=>enhanceLevel(k)));
+  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // (v219) 한 등급 오를 때 강화 3단계 = 1단계로 환산 (일반 +3 → 레어 +1, +0~2 → +0)
+  return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit, inheritFrom };
 }
 function fuseFill(k, n){ for(let i=0;i<3 && n>0;i++) if(!fuseSlots[i]){ fuseSlots[i] = k; n--; } }
 function openFuseTab(mode, key){ // 다른 곳(정령 관리·장비 상세)에서 합성 탭으로 — 그 재료를 최대 3개까지 미리 넣음
@@ -5111,6 +5118,7 @@ function renderFuseTab(){
   let h = '<div class="card fz-card">';
   h += '<div class="fz-modes">'+[['spirit','📦 정령 합성'],['equip','🛡️ 장비 합성'+(isEquipUnlocked()?'':' 🔒')]].map(([k,t])=>'<button data-fz-mode="'+k+'" class="'+(fuseMode===k?'on':'')+'" '+(k==='equip' && !isEquipUnlocked()?'disabled':'')+'>'+t+'</button>').join('')+'</div>';
   const unit = fuseMode==='equip' ? '개' : '마리';
+  h += '<div style="text-align:right; margin:-4px 0 6px;"><button class="btn secondary small" id="fzRules" style="width:auto; padding:3px 10px;">ⓘ 합성 규칙</button></div>';
   h += '<div class="fz-slots">'+fuseSlots.map((k,i)=>'<button class="fz-slot'+(k?' on':'')+'" data-fz-rm="'+i+'">'+(k ? '<div class="icon av r-'+(fuseMode==='equip'?equipInfo(k).rarity:SPIRITS[k].rarity)+'">'+fuseArtOf(k)+'</div><small>'+fuseNameOf(k)+'</small>' : '<b>＋</b><small>재료 '+(i+1)+'</small>')+'</button>').join('<span class="fz-plus">+</span>')+'</div>';
   const info = fuseSlotInfo();
   if(!info){
@@ -5126,7 +5134,7 @@ function renderFuseTab(){
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
       + (info.rate<100 && RARITY_ORDER.indexOf(info.nr)>=RARITY_ORDER.indexOf(FUSE_GUARD_FROM) && ticketCount('fuseGuard')>0 ? '<div class="sub fz-small" style="color:#9fd8ff;">🔰 합성 보호권 '+ticketCount('fuseGuard')+'장 — 실패하면 자동 사용, 재료를 잃지 않아요</div>' : '')
-      + (info.inherit>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 이어받기 — 결과 정령이 최소 +'+info.inherit+'강이 돼요</div>' : '')
+      + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 +'+info.inheritFrom+' → '+RARITY_INFO[info.nr].name+' +'+info.inherit+'</div>' : '')
       + '</div>'
       + '<button class="btn gold" id="fzGo" style="margin-top:10px;">⚗️ 합성하기</button>';
   }
@@ -5148,6 +5156,21 @@ function renderFuseTab(){
     return '<button class="fz-pick'+(why?' off':'')+'" data-fz-add="'+k+'" '+(why||fuseSlots.every(Boolean)?'disabled':'')+'><div class="icon av r-'+r+'">'+fuseArtOf(k)+'</div><div class="fz-pnm">'+fuseNameOf(k)+'</div><div class="fz-pct">'+(why || '×'+av)+'</div></button>';
   }).join('')+'</div>';
   return h;
+}
+function fuseRulesHtml(){ // (v219) 합성·계승 규칙 한눈에 — 가이드북과 합성 탭 ⓘ에서 같이 씀
+  const row = (a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
+  const rates = ['rare','epic','legendary','mythic'].map(r=>RARITY_INFO[r].name+' '+Math.round((1-FUSE_FAIL[r])*100)+'%').join(' · ');
+  return '<table class="fz-rules">'
+    + row('재료', '같은 등급 3개 (정령끼리 섞기 가능 · 장비는 같은 부위)')
+    + row('성공', rates)
+    + row('결과', '넣은 정령마다 같은 정령 '+Math.round(FUSE_OUT.same*100)+'% · 같은 속성 다른 종 '+Math.round(FUSE_OUT.sib*100)+'% · 다른 속성 '+Math.round(FUSE_OUT.other*100)+'%<br>장비: 같은 속성 '+Math.round(EQ_FUSE_OUT.same*100)+'% · 다른 속성 '+Math.round(EQ_FUSE_OUT.other*100)+'%')
+    + row('실패', '무작위 1개만 남음')
+    + row('강등', '실패 시 에픽 재료 '+Math.round(FUSE_DOWN.epic*100)+'% → 레어 · 전설 재료 '+Math.round(FUSE_DOWN.legendary*100)+'% → 에픽')
+    + row('보정', '연속 실패마다 다음 성공 +'+Math.round(FUSE_PITY_STEP*100)+'%p')
+    + row('계승', '재료 최고 강화 ÷ '+FUSE_INHERIT_DIV+' (버림)<br>예) 일반 +3 → 레어 +1 · +0~2 → +0')
+    + row('보호권', '전설·신화 합성 실패 시 자동 사용, 재료 유지')
+    + row('잠금', '🔒 걸면 합성·분해 불가')
+    + '</table>';
 }
 function doSlotFuse(){
   checkDailyRollover();
@@ -5190,7 +5213,7 @@ function doSlotFuse(){
   checkAchievements(); save();
   if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img}, custom:v.custom, ticketKey:'equip' }); }
   else showResultModal(SPIRITS[res], isNew, null, {fuse: SPIRITS[info.keys[0]]});
-  if(inherited) setTimeout(()=>toast('⬆️ 강화 이어받기 · '+SPIRITS[res].name+' +'+inherited+'강'), 400);
+  if(inherited) setTimeout(()=>toast('⬆️ 강화 계승 · '+SPIRITS[res].name+' +'+inherited), 400);
   render();
 }
 function showManageModal_returnToSpirits(){} // 정령 탭은 이미 열려 있으므로 별도 전환 불필요(자리만 유지)
@@ -5355,7 +5378,7 @@ function guideSectionHtml(cat){
       + guideHeader('🔨 강화')
       + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' ('+ELEMENT_INFO.wood.name+' 계열 특성 보유 시 증가)', '레벨이 오를수록 비용 증가'])
       + guideHeader('✨ 합성')
-      + guideList(['정령 탭 › ⚗️ 합성: 같은 등급 정령 3마리를 칸에 넣어 상위 등급 1마리 (서로 다른 정령끼리도 가능)', '결과: 넣은 정령마다 같은 정령 85% · 같은 속성 다른 종 10% · 다른 속성 5%로 계산 (넣는 즉시 확률 표시)', '성공 확률: 레어 95% · 에픽 85% · 전설 75% · 신화 60% (결과 등급 기준)', '실패하면 재료 중 무작위 1마리만 남음 · 연속 실패할수록 다음 성공 확률 +10%p', '에픽 합성 실패 시 15% 확률로 남은 1마리가 레어로 · 전설 합성 실패 시 20% 확률로 에픽으로 강등', '⬆️ 강화 이어받기: 성공하면 결과 정령이 재료 중 가장 높은 강화 수치를 이어받음', '🔒 잠금: 정령·장비 관리 창에서 잠그면 합성·분해 재료로 쓰지 않음', '🔰 합성 보호권(레이드 상점): 전설·신화 합성 실패 시 자동 사용, 재료를 잃지 않음', '🛡️ 장비 합성: 같은 부위·같은 등급 3개 → 같은 속성 90% · 다른 속성 10%'])
+      + fuseRulesHtml()
       + guideHeader('♻️ 분해')
       + guideList(['필요 없는 정령 → 강화석 (등급이 높을수록 많이 환급)'])
       + guideHeader('🛡️ 정령장비')
@@ -7749,6 +7772,12 @@ function showSpiritInfoModal(key){
   bindModalClose();
 }
 let manageReturnFn = null; // (v129) 도감에서 열었으면 닫을 때 도감으로 복귀
+function spiritLineHtml(key){
+  const sp = SPIRITS[key];
+  const chain = RARITY_ORDER.map(r=>sp.element+'_'+r+'_'+sp.variant).filter(k=>SPIRITS[k]);
+  return '<div class="sp-line"><span class="sp-line-t">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' '+sp.variant.toUpperCase()+'종</span>'
+    + chain.map(k=>{ const s2 = SPIRITS[k], seen = state.discovered[k]; return '<span class="sp-line-i'+(k===key?' cur':'')+'" style="--rc:'+RARITY_INFO[s2.rarity].color+';">'+(seen ? spArt(s2) : '<b>?</b>')+'<small>'+(seen ? s2.name : '???')+'</small></span>'; }).join('<i>›</i>')+'</div>';
+}
 function showManageModal(key){
   const sp = SPIRITS[key];
   const info = RARITY_INFO[sp.rarity];
@@ -7760,6 +7789,7 @@ function showManageModal(key){
   let html = '<div style="text-align:center;">';
   html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
+  html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 강화 Lv.'+lvl+'/'+maxLvl+(maxed?' (최대)':'')+'</div>';
   html += '<div class="sub">정령력 '+fmtDmg(unitPower(key))+' · 💪 전투력 '+fmtCP(spiritCP(key))+'</div>';
   if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub">⚔️ 공격 +'+eqPct(weaponMult(key)-1)+'% · 🛡️ 체력 +'+eqPct(armorMult(key)-1)+'%</div>';
@@ -8146,6 +8176,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
   { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', doSlotFuse); }
+  { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('⚗️ 합성 규칙', fuseRulesHtml())); }
   document.querySelectorAll('[data-stage]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.stage);
