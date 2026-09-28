@@ -1014,6 +1014,10 @@
   .lack{color:#ff8a8a !important; font-weight:900;}
   .hm-n{margin-left:auto; min-width:18px; padding:0 5px; border-radius:9px; background:#ff5757; color:#fff; font-size:11px; line-height:18px; text-align:center;}
   #headerMenuBtn.has-dot::after{content:''; position:absolute; top:1px; right:1px; width:8px; height:8px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);}
+  .mail-modal{display:flex; flex-direction:column; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px - var(--sat) - var(--sab)); overflow:hidden;} .mail-list{flex:1 1 auto; min-height:120px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:2px; margin:0 -2px;} .mail-bar{flex-shrink:0; padding-top:10px; margin-top:6px; border-top:1px solid #ffffff14;}
+  .mail-row{display:flex; align-items:center; gap:8px; width:100%; padding:11px 12px; margin-bottom:6px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a; color:var(--text); text-align:left;} .mail-row b{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .mail-row small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-row.done{opacity:.5;} .mail-dot{flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#ff5757;}
+  .tk-pick.ep{filter:drop-shadow(0 0 2px #b657ff) drop-shadow(0 0 3px #b657ff);} .tk-pick.lg{filter:drop-shadow(0 0 2px #ffc857) drop-shadow(0 0 4px #ffc857);} .tk-pick.my{filter:drop-shadow(0 0 2px #ff5777) drop-shadow(0 0 4px #ff5777);} /* (v243) 전용 아이콘(요청서 블록 38) 전까지 등급 색 빛 */
+  .pick-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px;} .pick-cell{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; border-radius:12px; background:#ffffff0d; border:2px solid #ffffff1a; color:var(--text);} .pick-cell.on{border-color:#ffd557; background:#ffd5571f;} .pick-cell .av{width:52px; height:52px; font-size:30px;} .pick-cell b{font-size:13px;} .pick-cell small{font-size:10px; color:var(--sub);}
   .mail-card{padding:10px 12px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .mail-card.done{opacity:.55;} .mail-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;} .mail-top small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-body{font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5; word-break:keep-all;} .mail-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;}
   .ms-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px;} .ms-grid label{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--sub);} .ms-grid input{width:100%; padding:6px 8px; border-radius:8px; border:1px solid #ffffff2a; background:#0d0d14; color:var(--text); font-size:14px;}
   .inv-notice{position:fixed; top:calc(10px + var(--sat)); left:50%; transform:translateX(-50%); z-index:9000; display:flex; align-items:center; gap:8px; width:min(92vw, 420px); padding:10px 14px; border-radius:16px; border:2px solid #ffd557; background:linear-gradient(135deg,#3b2f7a,#26215c); color:var(--text); box-shadow:0 8px 24px #000a; text-align:left; animation:invIn .35s ease-out;} .inv-notice b{flex:1; font-size:14px;} .inv-notice small{color:#ffd557; font-weight:800; white-space:nowrap;} .inv-notice span{font-size:20px;}
@@ -4814,23 +4818,35 @@ function mailClaim(ids){
 function mailLeftTxt(m){ if(!m.exp) return ''; const d = Math.ceil((m.exp-Date.now())/86400000); return d<=1 ? '오늘까지' : d+'일 남음'; }
 function showMailboxModal(){
   const list = mailList(), open = list.filter(m=>!m.claimed);
-  let h = '<h3 style="text-align:center;">📬 우편함</h3>';
+  let h = '<h3 style="text-align:center; margin:0 0 8px;">📬 우편함</h3><div class="mail-list">';
   if(!raidNet.db) h += '<div class="sub" style="text-align:center; padding:20px 0;">온라인 연결 후에 우편을 받을 수 있어요</div>';
   else if(!list.length) h += '<div class="sub" style="text-align:center; padding:24px 0;">받은 우편이 없어요</div>';
-  else {
-    if(open.length>1) h += '<button class="btn gold" id="mailAll" style="margin-bottom:8px;">'+uiIc('gift')+' 모두 받기 · '+open.length+'개</button>';
-    h += list.map(m=>'<div class="mail-card'+(m.claimed?' done':'')+'"><div class="mail-top"><b>'+escTxt(m.title)+'</b><small>'+(m.scope==='a'?'전체':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):'')+'</small></div>'
-      + (m.body ? '<div class="mail-body">'+escTxt(m.body).replace(/\n/g,'<br>')+'</div>' : '')
-      + '<div class="mail-foot"><div>'+rewardPillsHtml(m.reward)+'</div>'+(m.claimed ? '<span class="sub">받음</span>' : '<button class="btn small" data-mail="'+m.id+'">받기</button>')+'</div></div>').join('');
-  }
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  else h += list.map(m=>'<button class="mail-row'+(m.claimed?' done':'')+'" data-mail-open="'+m.id+'">'+(m.claimed?'':'<i class="mail-dot"></i>')+'<b>'+escTxt(m.title)+'</b><small>'+(m.claimed?'받음':(m.scope==='a'?'전체':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):''))+'</small></button>').join('');
+  h += '</div>';
+  h += '<div class="mail-bar">'+(open.length ? '<button class="btn gold" id="mailAll">'+uiIc('gift')+' 모두 받기 · '+open.length+'개</button>' : '<div class="sub" style="text-align:center;">받을 우편이 없어요</div>')+'</div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
   const a = document.getElementById('mailAll'); if(a) a.addEventListener('click', ()=>{ mailClaim(open.map(m=>m.id)); showMailboxModal(); });
-  document.querySelectorAll('[data-mail]').forEach(b=>b.addEventListener('click', ()=>{ mailClaim([b.dataset.mail]); showMailboxModal(); }));
+  document.querySelectorAll('[data-mail-open]').forEach(b=>b.addEventListener('click', ()=>showMailDetail(b.dataset.mailOpen)));
+}
+function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내용·보상·받기
+  const m = mailList().find(x=>x.id===id); if(!m) return;
+  const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 210; o.id = 'mailDetail';
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:340px;"><button class="close-x" id="mdClose">✕</button>'
+    + '<h3 style="margin:0 28px 4px 0;">'+escTxt(m.title)+'</h3><div class="sub" style="font-size:11px;">'+(m.scope==='a'?'모든 플레이어에게':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):'')+'</div>'
+    + (m.body ? '<div class="mail-body" style="margin-top:10px; font-size:13px; color:var(--text);">'+escTxt(m.body).replace(/\n/g,'<br>')+'</div>' : '')
+    + (rewardPillsHtml(m.reward) ? '<div style="margin-top:10px;"><div class="sub" style="font-size:11px;">보상</div>'+rewardPillsHtml(m.reward)+'</div>' : '')
+    + (m.claimed ? '<div class="sub" style="text-align:center; margin-top:12px;">이미 받은 우편이에요</div>' : '<button class="btn gold" id="mdClaim" style="margin-top:12px;">받기</button>')
+    + '</div>';
+  document.body.appendChild(o);
+  const close = ()=>o.remove();
+  o.addEventListener('click', e=>{ if(e.target===o) close(); });
+  o.querySelector('#mdClose').addEventListener('click', close);
+  const c = o.querySelector('#mdClaim'); if(c) c.addEventListener('click', ()=>{ mailClaim([m.id]); close(); if(document.getElementById('mailBox')) showMailboxModal(); });
 }
 function showMailSendModal(){
   if(!isAdmin()){ toast('관리자만 쓸 수 있어요'); return; }
-  const tk = ['summon','rare','epic','equip'];
+  const tk = ['summon','rare','epic','equip','pick_epic','pick_legendary','pick_mythic'];
   let h = '<h3 style="text-align:center;">📮 우편 보내기</h3>'
     + '<div class="seg" id="msTo"><button data-to="all" class="on">모든 플레이어</button><button data-to="one">한 명 (친구 코드)</button></div>'
     + '<input id="msCode" class="fr-in code" maxlength="8" placeholder="받는 사람 친구 코드 8자리" style="display:none; margin-top:6px; width:100%;">'
@@ -4881,7 +4897,7 @@ function showAdminSetupModal(){
   document.getElementById('admApply').addEventListener('click', ()=>{
     const MAX = 9999999;
     state.essence = MAX; state.enhanceStone = MAX; state.shards = 99999; state.raidGems = 99999;
-    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','equip','fuseGuard'].forEach(k=>state.tickets[k] = 999);
+    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','equip','fuseGuard','pick_epic','pick_legendary','pick_mythic'].forEach(k=>state.tickets[k] = 999);
     Object.keys(SPIRITS).forEach(k=>{ if(!(state.owned[k]>0)) state.owned[k] = 1; state.discovered[k] = true; });
     state.adminUnlockAll = true;
     save(); closeModal(); render(); toast('🛠️ 관리자 세팅을 적용했어요');
@@ -6279,8 +6295,26 @@ function renderSummonTab(){
   html += ticketRowHtml(TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'),
     '<button class="btn small" id="epicTicketBtn" '+((ownEpic||state.essence>=EPIC_TICKET_COST)?'':'disabled')+'>'+(ownEpic?'사용':'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+EPIC_TICKET_COST)+'</button>');
   html += '</div>';
+  { const picks = ['pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
+    if(picks.length){ html += '<div class="card"><div style="font-weight:700; margin-bottom:8px;">🎟️ 정령 선택권</div>'
+      + picks.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', i===0)).join('') + '</div>'; } }
   html += recentSummonRowHtml();
   return html;
+}
+function showPickTicketModal(tk, sel){
+  const r = TICKET_INFO[tk].pick, keys = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity===r).sort((a,b)=>ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element) || (SPIRITS[a].variant<SPIRITS[b].variant?-1:1));
+  let h = '<h3 style="text-align:center;">'+TICKET_INFO[tk].icon+' '+TICKET_INFO[tk].name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">받을 정령을 골라주세요 · 보유 '+ticketCount(tk)+'장</div><div class="pick-grid">';
+  h += keys.map(k=>{ const sp = SPIRITS[k], kit = LINE_KITS[sp.element+'_'+sp.variant]; return '<button class="pick-cell'+(sel===k?' on':'')+'" data-pk="'+k+'"><span class="av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span><b>'+sp.name+'</b><small>'+kit.role+' · 보유 '+ownedCount(k)+'</small></button>'; }).join('');
+  h += '</div><button id="pickGo" class="btn gold sticky-ok" style="margin-top:10px;" '+(sel?'':'disabled')+'>'+(sel ? SPIRITS[sel].name+' 받기' : '정령을 골라주세요')+'</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  document.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(tk, b.dataset.pk)));
+  const go = document.getElementById('pickGo'); if(go && sel) go.addEventListener('click', ()=>{
+    if(ticketCount(tk)<=0){ toast('선택권이 없어요'); return; }
+    state.tickets[tk] -= 1; const isNew = !state.discovered[sel];
+    state.owned[sel] = (state.owned[sel]||0) + 1; state.discovered[sel] = true;
+    checkAchievements(); save(); render(); showResultModal(SPIRITS[sel], isNew, null, {});
+  });
 }
 function equipBtnHtml(id, label, costLabel, count, enough, extraStyle){
   return '<button class="btn" id="'+id+'" style="display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 10px;'+(extraStyle||'')+'" '+(enough?'':'disabled')+'>'
@@ -6909,7 +6943,11 @@ const TICKET_INFO = {
   rare:{icon:'<img class="uic" src="assets/ui/ic_tk_rare.webp" alt="">', name:'레어 정령 확정권'},
   epic:{icon:'<img class="uic" src="assets/ui/ic_pass.webp" alt="">', name:'에픽 정령 확정권'},
   equip:{icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'정령장비 소환권'},
-  fuseGuard:{icon:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', name:'합성 보호권'} // (v217) 전설·신화 합성 실패 시 정령을 잃지 않음(자동 사용)
+  fuseGuard:{icon:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', name:'합성 보호권'},
+  // (v243) 선택권 — 그 등급 정령 중 하나를 골라 받음 (지금은 우편으로만 지급)
+  pick_epic:{icon:'<img class="uic tk-pick ep" src="assets/ui/ic_pass.webp" alt="">', name:'에픽 선택권', pick:'epic'},
+  pick_legendary:{icon:'<img class="uic tk-pick lg" src="assets/ui/ic_pass.webp" alt="">', name:'레전더리 선택권', pick:'legendary'},
+  pick_mythic:{icon:'<img class="uic tk-pick my" src="assets/ui/ic_pass.webp" alt="">', name:'신화 선택권', pick:'mythic'} // (v217) 전설·신화 합성 실패 시 정령을 잃지 않음(자동 사용)
 };
 function ticketCount(k){ return (state.tickets && state.tickets[k]) || 0; }
 function grantItems(items){
@@ -8887,6 +8925,7 @@ function attachHandlers(){
   const hb = document.getElementById('collectHearthBtn'); if(hb) hb.addEventListener('click', collectHearth);
   const stb = document.getElementById('shopTicketBtn'); if(stb) stb.addEventListener('click', doShopTicket);
   const etb = document.getElementById('epicTicketBtn'); if(etb) etb.addEventListener('click', doEpicTicket);
+  document.querySelectorAll('[data-pick-tk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(b.dataset.pickTk)));
   document.querySelectorAll('[data-hearth-upgrade]').forEach(btn=>{
     btn.addEventListener('click', ()=>doHearthUpgrade(btn.dataset.hearthUpgrade));
   });
@@ -9044,7 +9083,7 @@ function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','equip','fuseGuard'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','equip','fuseGuard','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
