@@ -580,6 +580,11 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
+  .slot{position:relative;} .slot-info{position:absolute; top:3px; right:3px; z-index:3; width:18px; height:18px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff55; color:#fff; font-size:11px; line-height:16px; text-align:center; cursor:pointer;}
+  .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
+  .ud-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
+  .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
   .sp-line{margin:6px 0 4px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 3px;} .sp-line > i{color:var(--sub); font-style:normal; font-size:11px;}
   .sp-line-t{width:100%; font-size:11px; color:var(--sub); font-weight:800; margin-bottom:2px;}
   .sp-line-i{display:flex; flex-direction:column; align-items:center; width:44px; padding:3px 0; border-radius:10px; border:1.5px solid transparent;} .sp-line-i .spimg{width:26px; height:26px; margin:0;} .sp-line-i b{height:26px; line-height:26px; color:var(--sub);}
@@ -3721,7 +3726,8 @@ function showBossSquadPicker(stageIdx){
     + '<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;"><b>'+gi.icon+' '+gi.name+'</b><button class="bs-info" id="bossInfoBtn" style="width:26px; height:26px; font-size:13px;">ⓘ</button></div>';
   html += formationRowsHtml();
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="bossClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="bossRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
-  { const act = state.formation.slice(0, GRID_SLOTS), waves = [1,2,3].map(w=>buildBossWaveFight(stageIdx, w, act, {}));
+  let bossPv = null;
+  { const act = state.formation.slice(0, GRID_SLOTS), waves = [1,2,3].map(w=>buildBossWaveFight(stageIdx, w, act, {})); bossPv = waves[0];
     const my = teamCP(waves[0].myUnits), ens = waves.map(f=>teamCP(f.enemyUnits));
     // 체력이 이어지는 연전이라 세 웨이브를 합쳐서 비교(제곱합의 제곱근 — 시뮬레이션상 이 값 대비 0.9배 부근이 승률 50%)
     const total = Math.sqrt(ens.reduce((a,x)=>a+x*x, 0));
@@ -3729,6 +3735,7 @@ function showBossSquadPicker(stageIdx){
   html += '<button class="btn sticky-ok" id="startWaveBtn" style="margin-top:10px;">⚔️ 전투 시작</button>'
     + '<button class="btn secondary" id="bossGiveUpBtn" style="margin-top:8px; opacity:.7;">← 뒤로</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;">' + html + '</div></div>';
+  bindPrepUnitInfo(bossPv);
   document.querySelectorAll('[data-slot]').forEach(el=>{
     el.addEventListener('click', ()=>{
       const idx = parseInt(el.dataset.slot);
@@ -3783,7 +3790,8 @@ function showSkillStagePrepModal(i){
   setOpenView({t:'stage', idx:i});
   const lineup = enemyGridForStage(i).els; // (v145) 6칸: 전열 0~2 · 후열 3~5
   const frontIdx = [0,1,2], backIdx = [3,4,5];
-  const eIco = k=> lineup[k] ? '<span class="pq-e">'+ELEMENT_INFO[lineup[k]].icon+'</span>' : '<span class="pq-e" style="opacity:.25;">·</span>';
+  const grid0 = enemyGridForStage(i);
+  const eIco = k=> lineup[k] ? '<button class="pq-e pq-eb" data-unit-info="enemy:'+k+'">'+spArt(SPIRITS[lineup[k]+'_'+grid0.rv[k].rarity+'_'+grid0.rv[k].variant])+elIc(lineup[k],'pq-el')+'</button>' : '<span class="pq-e" style="opacity:.25;">·</span>'; // (v219) 누르면 상대 정보
   // (v143) 일반 스테이지 준비창과 같은 🎁 보상 버튼(수령할 게 있으면 빨간 점)
   let html = '<div style="display:flex; align-items:center; gap:8px; margin:0 30px 6px 0;">'
     + '<button id="rewardInfoBtn" style="flex-shrink:0; background:#00000055; border:1px solid #ffffff33; border-radius:10px; padding:5px 9px; font-size:14px; position:relative;">🎁'
@@ -3794,7 +3802,8 @@ function showSkillStagePrepModal(i){
   html += '<div class="pq-enemy"><span class="pq-lbl">상대</span>'
     + '<span class="pq-grp"><span class="pq-cap">전열</span><span class="pq-icons">'+frontIdx.map(eIco).join('')+'</span></span><span class="pq-bar"></span>'
     + '<span class="pq-grp"><span class="pq-cap">후열</span><span class="pq-icons">'+backIdx.map(eIco).join('')+'</span></span></div>';
-  { const pv = buildSkillStageFight(i); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '👹 상대', isSpecialStage(i) ? '특수 규칙 배율 반영' : ''); }
+  const pv = buildSkillStageFight(i); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '👹 상대', isSpecialStage(i) ? '특수 규칙 배율 반영' : '');
+  html += '<div class="sub" style="text-align:center; font-size:11px; margin:-2px 0 4px;">상대 그림·내 칸의 ⓘ를 누르면 자세한 정보</div>';
   const spMarks = spSpec ? specialSlotMarks(spSpec, state.formation.slice(0, GRID_SLOTS).map(k=>k&&SPIRITS[k]?SPIRITS[k].element:null), GRID_SLOTS, true) : [];
   const spSlot = k=>{ // 규칙이 붙은 칸은 금색/붉은 테두리 + 배율 태그(빈 황금·봉인 칸도 표시)
     if(spMarks[k] && state.formation[k]) return slotHtmlMarked(k, spMarks[k]);
@@ -3819,6 +3828,7 @@ function showSkillStagePrepModal(i){
     el.addEventListener('click', ()=>{ showSlotPicker(parseInt(el.dataset.slot), ()=>showSkillStagePrepModal(i), null, null, lineup); });
   });
   document.getElementById('startSkillBattleBtn').addEventListener('click', ()=>{ saveStageFormation(i); startSkillStageFight(i); });
+  bindPrepUnitInfo(pv);
 }
 // ---------- 전장 화면 ----------
 function updateScrollLock(){ document.documentElement.classList.add('lock-scroll'); } // (v187) 모든 화면에서 문서는 고정, 화면 영역(main)만 스크롤
@@ -3921,6 +3931,29 @@ function skillTypeOf(sk, u){
   if(sk.kind==='buff') return { k:'sup', i:'⏫', t:'강화' };
   const tag = (typeof sk.tag==='function' ? sk.tag(u ? u.g : 0) : '') || '';
   return DEBUFF_WORDS.some(w=>tag.indexOf(w)>=0) ? { k:'deb', i:'🧪', t:'약화' } : { k:'atk', i:'🗡️', t:'공격' };
+}
+// (v219) 준비창에서 정령(내 편·상대)을 누르면 능력치·스킬 전부 — 전투에 실제로 들어가는 값(pv: 미리 만든 전투)
+function unitDetailHtml(u){
+  const sp = SPIRITS[u.key], kit = kitOf(u), g = u.g, isBoss = !!u.isBoss;
+  const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
+  let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
+    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+'</div></div></div>';
+  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
+  if(u.side==='me' && !isBoss) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">정령력 '+fmtDmg(unitPower(u.key))+(enhanceLevel(u.key)?' · 강화 +'+enhanceLevel(u.key):'')+'</div>';
+  if(u.specialMult && Math.abs(u.specialMult-1)>0.001) h += '<div class="sub" style="text-align:center; font-size:11px; color:'+(u.specialMult>1?'#9fe8c0':'#ffb0a0')+';">🌀 특수 규칙 ×'+(Math.round(u.specialMult*100)/100)+'</div>';
+  if(!isBoss){
+    const row = (label, name, icon, desc, locked)=> '<div class="ud-sk'+(locked?' off':'')+'"><div><b>'+icon+' '+name+'</b> <small>'+label+'</small></div><div class="sub">'+desc+'</div></div>';
+    h += row('스킬1 · 쿨 '+kit.s1.cd, kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
+    h += row('스킬2 · 쿨 '+kit.s2.cd+(g<2?' · 에픽부터':''), kit.s2.name, kit.s2.icon, kit.s2.desc(Math.max(2,g)), g<2);
+    h += row('패시브'+(g<1?' · 레어부터':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,g)), g<1);
+  }
+  return h;
+}
+function showUnitDetail(u){ openInfoOverlay((u.side==='enemy'?'👹 상대':'🙂 내 정령'), unitDetailHtml(u)); }
+function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
+  const root = document.getElementById('modalRoot'); if(!root || !pv) return;
+  root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; el.appendChild(b); });
+  root.querySelectorAll('[data-unit-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.unitInfo.split(':'); const u = unitAt(pv, sd, +ix); if(u) showUnitDetail(u); }));
 }
 function showUnitKitInfo(u){
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
@@ -6690,7 +6723,9 @@ function showExpeditionSquadPicker(){
   const erow = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(expSlot).join('')+'</div></div>';
   html += erow('전열',[0,1,2]) + erow('후열',[3,4,5]); // (v173) 두 줄 + 전열/후열 표시
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
-  if(node){ const pv = buildExpeditionFight(run, node, isBoss); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), isBoss?'👑 보스':'👹 상대', '현재 체력·피로 반영'); }
+  let expPv = null;
+  if(node){ const pv = buildExpeditionFight(run, node, isBoss); expPv = pv; html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), isBoss?'👑 보스':'👹 상대', '현재 체력·피로 반영');
+    html += '<div class="pq-enemy"><span class="pq-lbl">상대</span><span class="pq-icons">'+pv.enemyUnits.map(u=>'<button class="pq-e pq-eb" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : spArt(SPIRITS[u.key])+elIc(u.element,'pq-el'))+'</button>').join('')+'</span></div>'; }
   html += '<div class="sub" style="text-align:center; margin:8px 0 4px;">대기 중 · 누르면 출전 칸과 바꿀 수 있어요</div>';
   html += '<div class="roster-scroll"><div class="roster-grid">'+(reserve.length?reserve.map(tile).join(''):'<div class="sub" style="text-align:center;">없음</div>')+'</div></div>';
   html += '<button class="btn sticky-ok" id="startExpBattleBtn" style="margin-top:10px;">⚔️ 전투 시작</button>'
@@ -6713,6 +6748,7 @@ function showExpeditionSquadPicker(){
     showSkillStageScreen();
   });
   document.getElementById('expSquadBackBtn').addEventListener('click', ()=>{ closeModal(); render(); });
+  bindPrepUnitInfo(expPv);
 }
 function buildExpeditionFight(run, node, isBoss){
   const nodeIndex = expeditionStepIndex(run);
