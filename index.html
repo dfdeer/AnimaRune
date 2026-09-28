@@ -581,11 +581,15 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .ud-sts{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px;} .ud-sts .sbg{font-size:11px; padding:1px 6px; width:auto; height:auto; border-radius:8px;}
+  .ud-st b small{font-size:10px; color:var(--sub);}
+  .bs-tgt[role=button]{cursor:pointer;} .bs-tgt[role=button]::after{content:' ⓘ'; font-size:11px; opacity:.7;}
+  .bs-slot .bu{-webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
   .rp-boss{display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:8px 10px; border-radius:14px; border:1px solid #ff8a8a55; background:linear-gradient(135deg,#4a1f3a,#2a1f4d); color:var(--text); text-align:left;}
   .rp-bimg{width:54px; height:54px; object-fit:contain; flex:none;} .rp-bt{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .rp-bt b{font-size:14px;} .rp-bt b small{font-size:10px; color:#ffb0a0;} .rp-bt .sub{font-size:11px;}
   .rp-chips{display:flex; flex-wrap:wrap; gap:3px;} .rp-chips i{font-style:normal; font-size:10px; padding:1px 6px; border-radius:7px; background:#ff6b6b26; color:#ffc0b8;} .rp-more{flex:none; width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; font-size:12px; line-height:20px; text-align:center;}
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
-  .slot{position:relative;} .slot-info{position:absolute; bottom:3px; right:3px; z-index:3; width:18px; height:18px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff55; color:#fff; font-size:11px; line-height:16px; text-align:center; cursor:pointer;}
+  .slot{position:relative;} .slot-info{display:inline-block; margin-left:3px; width:15px; height:15px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff66; color:#fff; font-size:10px; line-height:13px; text-align:center; vertical-align:1px; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
   .ud-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
   .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
@@ -3937,7 +3941,7 @@ function battleUnitHtml(u, opts){
     cls.push('bu-boss'); if(u.groggy) cls.push('bu-groggy');
     gg = '<div class="bu-gg'+(u.groggy?' on':'')+(lock?' lock':'')+'" data-stat="'+u.side+':'+u.idx+'"><div style="width:'+(u.groggy?100:Math.max(0, u.gauge/GROGGY_MAX*100))+'%;"></div><span>'+(u.groggy?'💫 그로기!':(lock?'🔒 '+lock:'💫 '+Math.ceil(u.gauge)))+'</span></div>';
   }else if(u.isBoss) cls.push('bu-boss');
-  return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
+  return '<div class="'+cls.join(' ')+'"'+attr+' data-u="'+u.side+':'+u.idx+'" style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : spArt(SPIRITS[u.key]))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
@@ -3966,13 +3970,17 @@ function unitDetailHtml(u, bossId){
   const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
   let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
     + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+'</div></div></div>';
-  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
+  const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
+  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
+  if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;">🛡️ 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
+  if(live){ const sts = statusList(u); if(sts.length) h += '<div class="ud-sts">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>'; }
   if(u.side==='me' && !isBoss) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">정령력 '+fmtDmg(unitPower(u.key))+(enhanceLevel(u.key)?' · 강화 +'+enhanceLevel(u.key):'')+'</div>';
   if(u.specialMult && Math.abs(u.specialMult-1)>0.001) h += '<div class="sub" style="text-align:center; font-size:11px; color:'+(u.specialMult>1?'#9fe8c0':'#ffb0a0')+';">🌀 특수 규칙 ×'+(Math.round(u.specialMult*100)/100)+'</div>';
   if(!isBoss){
     const row = (label, name, icon, desc, locked)=> '<div class="ud-sk'+(locked?' off':'')+'"><div><b>'+icon+' '+name+'</b> <small>'+label+'</small></div><div class="sub">'+desc+'</div></div>';
-    h += row('스킬1 · 쿨 '+kit.s1.cd, kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-    h += row('스킬2 · 쿨 '+kit.s2.cd+(g<2?' · 에픽부터':''), kit.s2.name, kit.s2.icon, kit.s2.desc(Math.max(2,g)), g<2);
+    const cdTxt = c=> live && c>0 ? ' · <b style="color:#ffb0a0;">'+c+'R 뒤 사용 가능</b>' : (live ? ' · <b style="color:#9fe8c0;">사용 가능</b>' : '');
+    h += row('스킬1 · 쿨 '+kit.s1.cd+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
+    h += row('스킬2 · 쿨 '+kit.s2.cd+(g<2?' · 에픽부터':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(Math.max(2,g)), g<2);
     h += row('패시브'+(g<1?' · 레어부터':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,g)), g<1);
   }
   return h;
@@ -3980,7 +3988,7 @@ function unitDetailHtml(u, bossId){
 function showUnitDetail(u){ openInfoOverlay((u.side==='enemy'?'👹 상대':'🙂 내 정령'), unitDetailHtml(u)); }
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
-  root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; el.appendChild(b); });
+  root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; (el.lastElementChild && !el.lastElementChild.classList.contains('icon') ? el.lastElementChild : el).appendChild(b); }); // 이름 줄 옆에 붙임 — 모서리에 두면 좁은 폰에서 그림과 겹쳤음
   root.querySelectorAll('[data-unit-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.unitInfo.split(':'); const u = unitAt(pv, sd, +ix); if(u) showUnitDetail(u); }));
 }
 function showUnitKitInfo(u){
@@ -4143,7 +4151,7 @@ function showSkillStageScreen(){
     const tm = typeMult(curUnit.element, tU.element);
     html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
       + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '⚔️ 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
-      + '<div class="bs-tgt">🎯 '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
+      + '<div class="bs-tgt" id="bsTgtInfo" role="button">🎯 '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
       + '<button class="bs-info" id="skillKitBtn">ⓘ</button></div>';
     const btn = (act, label, icon)=>{
       const sk = unitSkill(curUnit, act), kind = sk ? sk.kind : 'harm', ty = skillTypeOf(sk, curUnit);
@@ -4230,7 +4238,17 @@ function showSkillStageScreen(){
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leave);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', restartSkillStageFight);
   }
-  if(q('skillKitBtn')) q('skillKitBtn').addEventListener('click', ()=>showUnitKitInfo(curUnit));
+  if(q('skillKitBtn')) q('skillKitBtn').addEventListener('click', ()=>showUnitDetail(curUnit));
+  if(q('bsTgtInfo')) q('bsTgtInfo').addEventListener('click', ()=>{ const t = unitAt(sf, skillSel.side, skillSel.idx); if(t) showUnitDetail(t); });
+  // (v219) 전투 중 정령을 길게 누르면 정보(짧게 누르기는 지금처럼 대상 선택)
+  root.querySelectorAll('.bs-slot .bu[data-u]').forEach(el=>{
+    let tm = null, fired = false;
+    const clear = ()=>{ if(tm){ clearTimeout(tm); tm = null; } };
+    el.addEventListener('pointerdown', ()=>{ fired = false; clear(); tm = setTimeout(()=>{ tm = null; fired = true; const [sd, ix] = el.dataset.u.split(':'); const u = unitAt(sf, sd, +ix); if(u) showUnitDetail(u); }, 450); });
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev, clear));
+    el.addEventListener('click', e=>{ if(fired){ fired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    el.addEventListener('contextmenu', e=>e.preventDefault());
+  });
   if(q('resRewardBtn')) q('resRewardBtn').addEventListener('click', ()=>{
     const i = sf.stageIdx, refresh = ()=>{ const b = q('resRewardBtn'); if(b) b.outerHTML = resultRewardBtnHtml(i); const nb = q('resRewardBtn'); if(nb) nb.addEventListener('click', ()=>openInfoOverlay('🎁 보상', getStageRewardContent(i), refresh, ()=>getStageRewardContent(i))); };
     openInfoOverlay('🎁 보상', getStageRewardContent(i), refresh, ()=>getStageRewardContent(i));
