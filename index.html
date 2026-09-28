@@ -581,7 +581,6 @@
   .fz-row.ok{background:#3fbf7f1f;} .fz-row.bad{background:#ff6b6b1c;} .fz-row.guard{background:#5fb4ff1f;}
   .fz-tag{flex:none; font-size:11px; padding:1px 7px; border-radius:8px;} .fz-tag.ok{background:#3fbf7f33; color:#9fe8c0;} .fz-tag.bad{background:#ff6b6b33; color:#ffb0b0;} .fz-tag.guard{background:#5fb4ff33; color:#b8dcff;}
   .fz-new{color:#ffd557; font-size:10px;} .fz-down{color:#ff9a9a;}
-  .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
   .fz-log{margin:10px 0 2px; padding:6px 10px; border-radius:12px; background:#ffffff08; border:1px solid #ffffff14;} .fz-log summary{cursor:pointer; font-weight:800; font-size:13px; padding:4px 0;} .fz-log summary .sub{font-weight:600; font-size:11px;}
@@ -912,6 +911,8 @@
 #smAgain:disabled,#mAgain:disabled{opacity:.3; filter:grayscale(1); cursor:not-allowed;}
 #modalClose2{background:#34344a; border:1px solid #ffffff33;}
 .sm-src{position:absolute; left:50%; top:210px; margin:-22px 0 0 -22px; font-size:40px; z-index:1; filter:drop-shadow(0 0 10px var(--rc)); opacity:0; animation:smConv var(--rev) cubic-bezier(.5,0,.8,.4) forwards;}
+.sm-card.fail{background:linear-gradient(160deg,#3a3a4c,#1c1c2a 62%); border-color:#6d6d84; box-shadow:0 0 12px #0008;} .sm-card.fail .sm-rarity{background:#56566c; box-shadow:none;} .sm-card.fail .sm-icon{filter:grayscale(.55) drop-shadow(0 0 6px #0009);}
+.sm-flash.fail{background:radial-gradient(circle at 50% 44%, #d8d8e4 0%, #6d6d84 30%, transparent 70%);} .sm-title.fail{color:#c4c4d4; text-shadow:none;}
 .sm-title{position:absolute; top:4px; left:0; right:0; text-align:center; font-weight:900; font-size:18px; color:var(--rc); text-shadow:0 0 12px var(--rca); opacity:0; animation:smFade .3s ease-out calc(var(--rev) + .1s) forwards;}
 @keyframes smConv{0%{opacity:0; transform:translate(var(--sx),var(--sy)) scale(.8) rotate(0deg);} 15%{opacity:1;} 100%{opacity:0; transform:translate(0,0) scale(.2) rotate(360deg);}}
 @keyframes smFade{to{opacity:1;}}
@@ -1014,7 +1015,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
-      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"><span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></span></button>
+      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
@@ -5570,8 +5571,8 @@ function doSlotFuse(){
     }
     logFuse({ m:fuseMode, k:info.keys, ok:false, g:!!r.guard, r: r.guard ? null : (downTo || survivor), d: !!downTo, s: info.rate, t: Date.now() });
     if(!eq) cleanupFormation();
-    checkAchievements(); save(); sfx('fail');
-    showFuseFailModal({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
+    checkAchievements(); save();
+    showFuseFailResult({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
     render(); return;
   }
   info.keys.forEach(take);
@@ -5584,23 +5585,23 @@ function doSlotFuse(){
     cleanupFormation();
   }
   checkAchievements(); save();
-  if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img}, custom:v.custom, ticketKey:'equip' }); }
-  else showResultModal(SPIRITS[res], isNew, null, {fuse: SPIRITS[info.keys[0]]});
-  if(inherited) setTimeout(()=>toast('⬆️ 강화 계승 · '+SPIRITS[res].name+' +'+inherited), 400);
+  if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
+  else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
+  if(inherited) setTimeout(()=>toast('⬆️ 강화 계승 · '+SPIRITS[res].name+' +'+inherited), Math.round(Math.max(SUMMON_THEME[SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
   render();
 }
 function showManageModal_returnToSpirits(){} // 정령 탭은 이미 열려 있으므로 별도 전환 불필요(자리만 유지)
-function showFuseFailModal(r){
+// (v232) 합성 실패 결과 — 성공과 같은 모여드는 연출(목표 등급 색) 뒤에 회색 실패 카드
+function showFuseFailResult(r){
   const nm = k=> r.eq ? equipInfo(k).name : SPIRITS[k].name, art = k=> r.eq ? equipInfo(k).img : spArt(SPIRITS[k]);
-  const body = r.guard
-    ? '<div class="sub">'+RARITY_INFO[r.nr].name+' 합성에 실패했지만<br><b style="color:#9fd8ff;"><img class="uic" src="assets/ui/ic_guard.webp" alt=""> 합성 보호권</b>으로 재료 3'+r.unit+'를 모두 지켰어요</div>'
-    : '<div class="sub">'+nm(r.survivor)+' 1'+r.unit+'만 남았어요'+(r.downTo?'<br><b style="color:#ff9a9a;">⬇️ 남은 1'+r.unit+'가 '+nm(r.downTo)+'('+RARITY_INFO[r.eq ? equipInfo(r.downTo).rarity : SPIRITS[r.downTo].rarity].name+')(으)로 강등됐어요</b>':'')+'</div>';
+  const k0 = r.keys[0], el = r.eq ? equipInfo(k0).element : SPIRITS[k0].element;
+  const sub = r.guard ? '<img class="uic" src="assets/ui/ic_guard.webp" alt=""> 합성 보호권으로 재료 3'+r.unit+'를 모두 지켰어요'
+    : nm(r.survivor)+' 1'+r.unit+'만 남았어요'+(r.downTo ? '<br><b style="color:#ff9a9a;">⬇️ '+nm(r.downTo)+'('+RARITY_INFO[r.eq ? equipInfo(r.downTo).rarity : SPIRITS[r.downTo].rarity].name+')(으)로 강등</b>' : '');
   const next = Math.round((1-fuseFailChanceFor(r.nr, r.streakKey))*100);
-  const html = '<div style="text-align:center;"><div class="fz-failic">'+art(r.guard ? r.keys[0] : (r.downTo || r.survivor))+'</div><h3>'+(r.eq?'장비 ':'')+'합성 실패…</h3>'+body
-    + '<div class="sub" style="margin-top:8px; font-size:12px;">연속 실패 보정 · 다음 '+RARITY_INFO[r.nr].name+' '+(r.eq?'장비 ':'')+'합성 성공 확률 <b style="color:#ffd557;">'+next+'%</b></div>'
-    + '<button class="btn sticky-ok" id="modalClose" style="margin-top:12px;">확인</button></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal">'+html+'</div></div>';
-  document.getElementById('modalClose').addEventListener('click', closeModal);
+  showResultModal({ element: el, rarity: r.nr, variant:'a', name:'합성 실패…' }, false, null, {
+    fail: true, fuse: { icons: r.keys.map(art), name: '' },
+    custom: { icon: art(r.guard ? k0 : (r.downTo || r.survivor)), sub, own: '연속 실패 보정 · 다음 '+RARITY_INFO[r.nr].name+' '+(r.eq?'장비 ':'')+'합성 성공 <b style="color:#ffd557;">'+next+'%</b>' },
+    ticketKey: r.eq ? 'equip' : undefined });
 }
 // 특성 리롤: 에픽/레전더리는 variant(a/b)에 따라 패시브가 다르므로, 종 전체를 반대 variant로 전환할 수 있음
 function usedCountExcluding(key, excludeIdx){
@@ -5810,9 +5811,7 @@ function render(){
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
   document.getElementById('essenceVal').textContent = headerNum(state.essence); // (v193) 10만 이상은 '12.3만'처럼 — 좁은 폰에서 ☰ 버튼이 화면 밖으로 밀려나던 문제
   document.getElementById('stoneVal').textContent = headerNum(state.enhanceStone||0);
-  { const achOn = (hasPendingFor('achieve_') || activeQuests().some(q=>!state.questsClaimed[q.id] && q.check()));
-    document.getElementById('headerAchieveDot').style.display = achOn ? 'block' : 'none';
-    const md = document.getElementById('headerMenuAchieveDot'); if(md) md.style.display = achOn ? 'inline-block' : 'none'; }
+  // (v232) 메뉴(☰)에는 가이드·설정만 있어서 빨간 점을 띄우지 않음 — 의뢰·업적 알림은 홈의 의뢰·업적 버튼에 따로 뜸
   const lvl = accountLevel();
   const prevT = ACCOUNT_LEVEL_THRESHOLDS[lvl-1] || 0;
   const nextT = nextAccountThreshold();
@@ -8029,12 +8028,13 @@ function showResultModal(sp, isNew, again, opts){
   window.__modalScrollReset = true;
   const custom = opts && opts.custom; // 장비 등 정령이 아닌 대상: {icon, sub, own}
   const fuse = opts && opts.fuse; // 합성 연출: 재료 3개가 중앙으로 모여든 뒤 결과 카드 공개
+  const fail = !!(opts && opts.fail); // (v232) 합성 실패도 성공과 똑같이 모여드는 연출 뒤에 공개(처음부터 실패를 알 수 없게)
   const revT = fuse ? Math.max(SUMMON_THEME[sp.rarity].rev, 1.1) : SUMMON_THEME[sp.rarity].rev;
   const key = sp.element+'_'+sp.rarity+'_'+sp.variant;
   const t = SUMMON_THEME[sp.rarity], info = RARITY_INFO[sp.rarity], passive = custom ? null : passiveFor(key);
   const own = custom ? 0 : ownedCount(key);
   let fx = '';
-  for(let i=0;i<t.particles;i++){
+  for(let i=0;i<(fail?0:t.particles);i++){
     const ang = (i/t.particles)*Math.PI*2 + Math.random()*0.5, dist = 90 + Math.random()*110;
     fx += '<div class="sm-p" style="--dx:'+Math.round(Math.cos(ang)*dist)+'px; --dy:'+Math.round(Math.sin(ang)*dist)+'px; width:'+(5+Math.round(Math.random()*5))+'px; height:'+(5+Math.round(Math.random()*5))+'px;"></div>';
   }
@@ -8045,18 +8045,18 @@ function showResultModal(sp, isNew, again, opts){
     + '<div class="sm-wallet"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+state.essence+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+(state.enhanceStone||0)+'</span>'+walletTicketHtml(opts)+'</div>'
     + '<div class="summon-stage" id="smStage">'
     + '<div class="sm-halo"></div>'
-    + (t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
-    + (fuse ? '<div class="sm-title">✨ 합성 성공!</div>'+[[-120,-70],[120,-70],[0,120]].map(p=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+(fuse.icon || spArt(fuse))+'</div>').join('') : '')
+    + (!fail && t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (!fail && t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
+    + (fuse ? (fail ? '<div class="sm-title fail">💨 합성 실패…</div>' : '<div class="sm-title">✨ 합성 성공!</div>')+[[-120,-70],[120,-70],[0,120]].map((p,i)=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div>').join('') : '')
     + '<div class="sm-orb"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>' + fx
-    + '<div class="sm-flash"></div>'
-    + '<div class="sm-card'+(t.rays>=1||sp.rarity==='rare'?' shine':'')+'">'
+    + '<div class="sm-flash'+(fail?' fail':'')+'"></div>'
+    + '<div class="sm-card'+(fail?' fail':(t.rays>=1||sp.rarity==='rare'?' shine':''))+'">'
     + (isNew ? '<div class="sm-new">NEW</div>' : '')
-    + '<div class="sm-stars">'+stars+'</div>'
+    + '<div class="sm-stars">'+(fail?'':stars)+'</div>'
     + '<div class="sm-icon">'+(custom ? custom.icon : spArt(sp))+'</div>'
-    + '<div class="sm-rarity">'+info.name+'</div>'
+    + '<div class="sm-rarity">'+(fail?'실패':info.name)+'</div>'
     + '<div class="sm-name">'+sp.name+'</div>'
     + '<div class="sm-pass">'+(custom ? custom.sub : ELEMENT_INFO[sp.element].name+(passive ? ' · '+passive.icon+' '+passive.name : ''))+'</div>'
-    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? fuse.name+' ×3 합성'+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : '보유 '+own)))+'</div>'
+    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? (fuse.label || fuse.name+' ×3 합성')+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : '보유 '+own)))+'</div>'
     + '</div>'
     + '<div class="sm-actions">'
     + (again ? '<button class="btn" id="smAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 한 번 더 '+summonCostLabel())+'</button>' : '')
@@ -8065,7 +8065,7 @@ function showResultModal(sp, isNew, again, opts){
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('smAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
   sfx('summonCharge');
-  sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ sfx(t.sfx); if(fuse) sfx('fuse'); } });
+  sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ if(fail){ sfx('fail'); return; } sfx(t.sfx); if(fuse) sfx('fuse'); } });
 }
 function showMultiResultModal(keys, isNewFlags, again, opts){
   window.__modalScrollReset = true;
