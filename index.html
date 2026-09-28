@@ -4105,8 +4105,10 @@ function battleLayout(sf){
   }
   const ew = sideWidth(sf, 'enemy');
   let enemyRows = false;
+  const withBoss = sf.enemyUnits.some(u=>u.isBoss);
   sf.enemyUnits.forEach(u=>{
-    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : 18, raid ? 48 : 52, raid ? 90 : 80); return; }
+    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : (withBoss && sf.enemyUnits.length>1 ? 16 : 18), raid ? 48 : 52, raid ? 90 : 80); return; }
+    if(withBoss && !raid){ put('enemy', u.idx, 35, u.idx===0 ? 80 : 15, 44); enemyRows = true; return; } // (v228) 보스 옆 결계석 등은 보스 위·아래로(보스 그림에 가려지지 않게)
     enemyRows = true;
     const front = isFrontRow(u.idx, ew), r = u.idx % ew;
     if(front) put('enemy', u.idx, 33+(r===1?2:0), [26,51,76][r], 44);
