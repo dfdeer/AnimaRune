@@ -811,6 +811,11 @@
   .formation-row .slot, .pq-slots .slot{container-type:inline-size; aspect-ratio:auto; min-height:0; padding:5px 2px 6px; gap:3px;}
   @supports (width:1cqi){ .formation-row .slot .icon, .pq-slots .slot .icon{font-size:clamp(11px, 31cqi, 26px);} .formation-row .slot > div:not(.icon), .pq-slots .slot > div:not(.icon){font-size:clamp(9px, 15cqi, 12px);} }
   .formation-row .slot .bonus-tag{top:-6px; right:50%; transform:translateX(50%);}
+  /* (v221) 좁은 폰에서 제목·'상대'·이름+ⓘ가 두 줄로 꺾이지 않게 */
+  .prep-title{white-space:nowrap; font-size:clamp(15px, 5vw, 20px); min-width:0;}
+  .pq-lbl{white-space:nowrap;}
+  .formation-row .slot > div:not(.icon), .pq-slots .slot > div:not(.icon){white-space:nowrap;}
+  @supports (width:1cqi){ .formation-row .slot > div:not(.icon), .pq-slots .slot > div:not(.icon){font-size:clamp(8px, 14cqi, 12px);} }
   .tw-ewrap{width:min(44px, 100%); aspect-ratio:1;} .tw-eav{width:100%; height:100%;} /* (v221) 탑 상대 그림도 칸 너비 비율로 — 320px에서 5번째가 잘렸음 */
   .formation-row.front{grid-template-columns:repeat(2,1fr); width:70%; margin:0 auto;}
   .formation-row.back{grid-template-columns:repeat(3,1fr);}
@@ -3838,7 +3843,7 @@ function showSkillStagePrepModal(i){
   let html = '<div style="display:flex; align-items:center; gap:8px; margin:0 30px 6px 0;">'
     + '<button id="rewardInfoBtn" style="flex-shrink:0; background:#00000055; border:1px solid #ffffff33; border-radius:10px; padding:5px 9px; font-size:14px; position:relative;">🎁'
     + (hasPendingForStage(i)?'<span style="position:absolute; top:-2px; right:-2px; width:7px; height:7px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></span>':'')
-    + '</button><h3 style="flex:1; text-align:center; margin:0;">스테이지 '+(i+1)+' 준비</h3><div style="width:34px; flex-shrink:0;"></div></div>';
+    + '</button><h3 class="prep-title" style="flex:1; text-align:center; margin:0;">스테이지 '+(i+1)+' 준비</h3><div style="width:34px; flex-shrink:0;"></div></div>';
   const spSpec = isSpecialStage(i) ? specialStageSpec(i) : null;
   if(spSpec) html += specialCardHtml(i); // (v185) 한 줄 문구 → 눈에 띄는 카드(규칙 · 내 진형 충족 여부 · 보너스)
   html += '<div class="pq-enemy"><span class="pq-lbl">상대</span>'
