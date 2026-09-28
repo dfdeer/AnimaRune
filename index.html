@@ -156,6 +156,8 @@
   .fr-row .btn.small{width:auto; padding:7px 12px; flex-shrink:0;}
   .fr-dot{flex-shrink:0; width:10px; height:10px; border-radius:50%; background:#4a4a58; margin:0 4px;}
   .fr-dot.on{background:#5cd65c; box-shadow:0 0 8px #5cd65c;}
+  .acc-box{margin-top:10px; padding:10px 12px; border-radius:14px; background:#ffffff0d; text-align:left;} .acc-h{font-weight:800; margin-bottom:4px;}
+  .acc-pick{display:flex; flex-direction:column; gap:2px; width:100%; text-align:left; padding:10px 12px; margin-top:8px; border-radius:14px; background:#27235a; border:2px solid #3d3a5a; color:var(--text);} .acc-pick b{font-size:15px;} .acc-pick small{color:var(--sub); font-size:11px;} .acc-pick span{font-size:12px;}
   .fr-avw{position:relative; flex-shrink:0; display:flex;} .fr-avw .fr-dot{position:absolute; right:-3px; bottom:-3px; margin:0; border:2px solid var(--panel);}
   .fr-x{flex-shrink:0; padding:6px 9px; border-radius:9px; border:1px solid #ffffff1a; background:none; color:var(--sub); font-size:11px; font-weight:700;}
   .fr-x.warn{border-color:#ff6a6a; color:#ff8a8a;}
@@ -2970,10 +2972,28 @@ async function loadFirebaseKit(cfg){
   const [appM, authM, dbM] = await Promise.all([import(FIREBASE_SDK+'firebase-app.js'), import(FIREBASE_SDK+'firebase-auth.js'), import(FIREBASE_SDK+'firebase-database.js')]);
   const app = appM.initializeApp(cfg);
   const auth = authM.getAuth(app);
-  const cred = await authM.signInAnonymously(auth);
+  // (v230) 계정 연동: 저장된 로그인(구글 포함)을 먼저 확인하고, 없을 때만 익명으로 새로 시작
+  // 구글을 다른 방식(리디렉트)으로 연동하고 돌아온 경우 그 결과도 여기서 처리
+  if(auth.authStateReady) await auth.authStateReady();
+  let switched = false;
+  try{ await authM.getRedirectResult(auth); }
+  catch(e){ if(e && e.code==='auth/credential-already-in-use'){ const c = authM.GoogleAuthProvider.credentialFromError(e); if(c){ await authM.signInWithCredential(auth, c); switched = true; } } }
+  if(!auth.currentUser) await authM.signInAnonymously(auth);
   const rtdb = dbM.getDatabase(app);
-  return { uid: cred.user.uid, rtdb, ref: dbM.ref, get: dbM.get, set: dbM.set, update: dbM.update, remove: dbM.remove, onValue: dbM.onValue,
-    runTransaction: dbM.runTransaction, onDisconnect: dbM.onDisconnect };
+  const who = ()=>({ uid: auth.currentUser.uid, anon: auth.currentUser.isAnonymous, email: auth.currentUser.email || '' });
+  // 구글 연동: 지금 계정(익명)에 구글을 붙임 → 계정 번호 그대로. 그 구글이 이미 다른 계정에 붙어 있으면 그 계정으로 로그인(switched)
+  const linkGoogle = async ()=>{
+    const prov = new authM.GoogleAuthProvider();
+    try{ await authM.linkWithPopup(auth.currentUser, prov); return Object.assign(who(), { switched:false }); }
+    catch(e){
+      const code = e && e.code;
+      if(code==='auth/credential-already-in-use'){ const c = authM.GoogleAuthProvider.credentialFromError(e); if(!c) throw e; await authM.signInWithCredential(auth, c); return Object.assign(who(), { switched:true }); }
+      if(code==='auth/popup-blocked' || code==='auth/operation-not-supported-in-this-environment'){ await authM.linkWithRedirect(auth.currentUser, prov); return null; } // 페이지가 이동했다가 돌아옴
+      throw e;
+    }
+  };
+  return { uid: auth.currentUser.uid, rtdb, ref: dbM.ref, get: dbM.get, set: dbM.set, update: dbM.update, remove: dbM.remove, onValue: dbM.onValue,
+    runTransaction: dbM.runTransaction, onDisconnect: dbM.onDisconnect, who, linkGoogle, redirectSwitched: switched };
 }
 function fbFromArrays(v){ // RTDB는 배열의 빈칸(null)을 지우고 숫자 키 객체로 돌려주기도 함 → 숫자 키만 있는 객체는 배열로 되돌림
   if(Array.isArray(v)) return v.map(fbFromArrays);
@@ -3038,6 +3058,131 @@ function makeFirebaseNet(fb){
   } };
   return { db, user, room };
 }
+// ===================== (v230) 계정 연동 — 구글 로그인 · 서버 세이브 · 한 번에 한 기기 =====================
+// saves/<uid> = { rev, t, dev, data } (data = 세이브 코드) · sessions/<uid> = { dev, t } (지금 이 계정으로 하고 있는 기기)
+// 이 기기의 동기화 기록(localStorage): 어느 계정의 몇 번째 서버 세이브까지 받았는지(base) · 그때 기기 세이브 번호(savedRev)
+// 게스트(익명)는 지금처럼 기기에만 저장. 구글 연동 계정만 서버에 저장
+const ACC_META_KEY = 'animarune_cloud', ACC_DEV_KEY = 'animarune_dev';
+let acc = { on:false, linked:false, email:'', uid:null, dev:null, base:null, kicked:false, busy:false, timer:null, lastPush:0, unsub:null };
+function accDevId(){ let d = null; try{ d = localStorage.getItem(ACC_DEV_KEY); if(!d){ d = Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(ACC_DEV_KEY, d); } }catch(e){ d = d || 'tmp'+Math.random().toString(36).slice(2); } return d; }
+function accMeta(){ try{ const m = JSON.parse(localStorage.getItem(ACC_META_KEY)||'null'); return (m && m.uid===acc.uid) ? m : null; }catch(e){ return null; } }
+function accSetMeta(base){ acc.base = base; try{ localStorage.setItem(ACC_META_KEY, JSON.stringify({ uid: acc.uid, base, savedRev: state.saveRev||0 })); }catch(e){} }
+function accRef(p){ return raidNet.fb.ref(raidNet.fb.rtdb, p+'/'+acc.uid); }
+function accFresh(s){ return !(s.lifetimeSummons>0) && !Object.keys(s.stageBest||{}).some(k=>s.stageBest[k]); } // 아직 아무것도 안 한 세이브
+function accSummary(s){
+  const own = Object.keys(s.owned||{}).reduce((a,k)=>a+((s.owned[k]||0)>0?1:0), 0);
+  const cleared = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).length;
+  return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · '+uiIc('essence')+' '+Math.floor(s.essence||0)+' · 탑 '+(s.towerBest||0)+'층';
+}
+function accApply(parsed){ // 서버 세이브를 이 기기에 적용(적용 전 기기 세이브는 따로 보관)
+  try{ localStorage.setItem(SAVE_KEY+'_beforeCloud', JSON.stringify({ t: Date.now(), raw: localStorage.getItem(SAVE_KEY) })); }catch(e){}
+  state = mergeWithDefaults(defaultState(), parsed); sanitizeState(); save();
+}
+async function accInitial(){ // 켤 때: 서버 세이브와 맞추기
+  const fb = raidNet.fb, snap = await fb.get(accRef('saves'));
+  const cloud = snap.exists() ? snap.val() : null, meta = accMeta();
+  if(!cloud || !cloud.data){ accSetMeta(0); await accPush(true); return; }
+  let parsed = null; try{ parsed = decodeSaveString(cloud.data); }catch(e){}
+  if(!parsed){ accSetMeta(cloud.rev||0); return; }
+  const localChanged = !meta || (state.saveRev||0)!==meta.savedRev;
+  if(meta && meta.base===cloud.rev){ if(localChanged) await accPush(false); return; }          // 서버가 이 기기 기준 그대로 → 기기가 최신
+  if(!localChanged || accFresh(state)){ accApply(parsed); accSetMeta(cloud.rev); render(); if(meta) toast('서버에 저장된 진행을 불러왔어요'); return; } // 기기에 새 진행이 없으면 서버 것으로
+  accSetMeta(meta ? meta.base : 0);
+  accChooser(parsed, cloud);                                                                        // 양쪽 다 바뀜 → 고르기
+}
+function accChooser(parsed, cloud){
+  const t = cloud.t ? new Date(cloud.t) : null, tt = t ? (t.getMonth()+1)+'/'+t.getDate()+' '+t.getHours()+':'+String(t.getMinutes()).padStart(2,'0') : '';
+  const card = (id, title, sub, sum)=> '<button class="acc-pick" id="'+id+'"><b>'+title+'</b><small>'+sub+'</small><span>'+sum+'</span></button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
+    + '<h3 style="text-align:center;">어떤 진행으로 할까요?</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">이 기기와 서버의 진행이 달라요. 고르지 않은 쪽은 사라져요.</div>'
+    + card('accUseCloud', '☁️ 서버에 저장된 진행', tt ? '마지막 저장 '+tt : '', accSummary(parsed))
+    + card('accUseLocal', '📱 이 기기의 진행', '지금 기기에 있는 것', accSummary(state))
+    + '</div></div>';
+  document.getElementById('accUseCloud').addEventListener('click', ()=>{ accApply(parsed); accSetMeta(cloud.rev||0); closeModal(); render(); toast('서버 진행으로 바꿨어요'); });
+  document.getElementById('accUseLocal').addEventListener('click', async ()=>{ acc.base = cloud.rev||0; closeModal(); await accPush(true); toast('이 기기 진행을 서버에 저장했어요'); });
+}
+async function accPush(force){ // 서버에 저장 — 다른 기기가 그사이 더 새로 저장했으면 덮어쓰지 않음
+  if(!acc.on || !acc.linked || acc.kicked || acc.busy) return false;
+  acc.busy = true; clearTimeout(acc.timer);
+  try{
+    const data = encodeSaveString(), base = acc.base||0, dev = acc.dev;
+    let conflict = false;
+    const res = await raidNet.fb.runTransaction(accRef('saves'), cur=>{
+      if(cur && !force && (cur.rev||0)!==base){ conflict = true; return; }
+      conflict = false;
+      return { rev: Math.max(base, (cur && cur.rev)||0) + 1, t: Date.now(), dev, data };
+    });
+    if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1); acc.lastPush = Date.now(); return true; }
+    if(conflict){ acc.busy = false; await accInitial(); }
+    return false;
+  }catch(e){ return false; }
+  finally{ acc.busy = false; }
+}
+function accSchedule(){ if(acc.on && acc.linked && !acc.kicked){ clearTimeout(acc.timer); acc.timer = setTimeout(()=>accPush(false), 8000); } } // 저장할 때마다 8초 모아서 한 번
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden' && acc.timer) accPush(false); }); // 앱을 내릴 때 바로 저장
+function accClaimSession(){ return raidNet.fb.set(accRef('sessions'), { dev: acc.dev, t: Date.now() }).catch(()=>{}); }
+function accWatchSession(){
+  if(acc.unsub) acc.unsub();
+  acc.unsub = raidNet.fb.onValue(accRef('sessions'), s=>{
+    const v = s.val();
+    if(v && v.dev && v.dev!==acc.dev && !acc.kicked){ acc.kicked = true; clearTimeout(acc.timer); accKickedOverlay(); }
+  });
+}
+function accKickedOverlay(){
+  if(document.getElementById('accKick')) return;
+  const o = document.createElement('div'); o.id = 'accKick'; o.className = 'modal-bg'; o.style.zIndex = 9999;
+  o.innerHTML = '<div class="modal" style="text-align:center;"><div style="font-size:34px;">📱</div><h3>다른 기기에서 접속했어요</h3>'
+    + '<div class="sub" style="font-size:12px; line-height:1.5;">같은 계정은 한 번에 한 기기에서만 할 수 있어요.<br>여기서 이어 하면 다른 기기는 멈춰요.</div>'
+    + '<button class="btn" id="accTakeBack" style="margin-top:12px;">이 기기에서 이어 하기</button></div>';
+  document.body.appendChild(o);
+  o.querySelector('#accTakeBack').addEventListener('click', async ()=>{
+    const b = o.querySelector('#accTakeBack'); b.disabled = true; b.textContent = '불러오는 중…';
+    try{
+      const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null;
+      if(cloud && cloud.data){ const parsed = decodeSaveString(cloud.data); accApply(parsed); accSetMeta(cloud.rev||0); }
+      acc.kicked = false; await accClaimSession(); o.remove(); render(); toast('서버에서 최신 진행을 불러왔어요');
+    }catch(e){ b.disabled = false; b.textContent = '이 기기에서 이어 하기'; toast('연결 오류 — 다시 눌러주세요'); }
+  });
+}
+async function accInit(){
+  const fb = raidNet.fb; if(!fb || !fb.who) return;
+  const w = fb.who(); acc.uid = w.uid; acc.linked = !w.anon; acc.email = w.email; acc.dev = accDevId(); acc.on = true;
+  if(!acc.linked) return;
+  await accInitial();
+  await accClaimSession(); accWatchSession();
+}
+async function accountInit(){ try{ await accInit(); }catch(e){} }
+async function accLinkGoogle(){
+  const fb = raidNet.fb;
+  if(!fb || !fb.linkGoogle){ toast('온라인 연결 후에 할 수 있어요'); return; }
+  let r;
+  try{ r = await fb.linkGoogle(); }
+  catch(e){
+    const c = e && e.code;
+    toast(c==='auth/popup-closed-by-user' || c==='auth/cancelled-popup-request' ? '연동을 취소했어요'
+      : c==='auth/unauthorized-domain' ? '관리 화면에서 이 주소가 허용되지 않았어요 (승인된 도메인)'
+      : c==='auth/operation-not-allowed' ? '관리 화면에서 구글 로그인이 꺼져 있어요'
+      : '연동하지 못했어요 ('+(c||'오류')+')', 3500);
+    return;
+  }
+  if(!r) return; // 리디렉트로 이동 중
+  if(r.switched){ toast('이미 연동된 구글 계정이에요 — 그 계정으로 전환해요'); try{ localStorage.removeItem(ACC_META_KEY); }catch(e){} setTimeout(()=>location.reload(), 900); return; } // 계정이 바뀌면 새로 시작해서 서버 진행과 맞춤
+  acc.linked = true; acc.email = r.email; acc.uid = r.uid;
+  accSetMeta(0); await accPush(true); await accClaimSession(); accWatchSession();
+  toast('구글 계정과 연동했어요 — 이제 다른 기기에서도 이어서 할 수 있어요', 3500);
+  if(document.getElementById('accBox')) showSettingsModal();
+}
+function accountBoxHtml(){
+  let h = '<div id="accBox" class="acc-box"><div class="acc-h">👤 계정</div>';
+  if(!raidNet.fb || !acc.on) h += '<div class="sub">온라인 연결 중이거나 연결되지 않았어요</div>';
+  else if(!acc.linked) h += '<div class="sub">게스트 — 이 기기에만 저장돼요. 연동하면 폰·컴퓨터 어디서든 이어서 할 수 있어요.</div><button class="btn" id="accLinkBtn" style="margin-top:8px;">구글로 연동하기</button><div class="sub" style="font-size:11px; margin-top:4px;">다른 기기에서 이미 연동했다면 같은 버튼으로 불러와요</div>';
+  else h += '<div class="sub">구글 연동됨'+(acc.email?' · '+escTxt(acc.email):'')+'</div><div class="sub" style="font-size:11px;">자동으로 서버에 저장돼요'+(acc.lastPush?' · 마지막 '+new Date(acc.lastPush).toTimeString().slice(0,5):'')+'</div><button class="btn secondary" id="accPushBtn" style="margin-top:8px;">☁️ 지금 서버에 저장</button>';
+  return h + '</div>';
+}
+function bindAccountBox(){
+  const l = document.getElementById('accLinkBtn'); if(l) l.addEventListener('click', ()=>{ l.disabled = true; accLinkGoogle().finally(()=>{ l.disabled = false; }); });
+  const p = document.getElementById('accPushBtn'); if(p) p.addEventListener('click', async ()=>{ p.disabled = true; const ok = await accPush(false); toast(ok ? '서버에 저장했어요' : '저장하지 못했어요'); p.disabled = false; });
+}
 async function raidInitNet(){
   try{
     let db = null, user = null, room = null;
@@ -3047,7 +3192,7 @@ async function raidInitNet(){
     }
     if((!db || !user) && (window.__FB_TEST || FIREBASE_CONFIG)){
       const fb = window.__FB_TEST ? await window.__FB_TEST() : await loadFirebaseKit(FIREBASE_CONFIG);
-      const net = makeFirebaseNet(fb); db = net.db; user = net.user; room = net.room;
+      const net = makeFirebaseNet(fb); db = net.db; user = net.user; room = net.room; raidNet.fb = fb;
       raidNet.backend = 'firebase';
       const nm = '소환사-'+fb.uid.slice(0,4);
       fb.get(fb.ref(fb.rtdb, 'players/'+fb.uid+'/name')).then(s=>{ if(!s.exists()) fb.set(fb.ref(fb.rtdb, 'players/'+fb.uid), { name: nm }); }).catch(()=>{});
@@ -3058,6 +3203,7 @@ async function raidInitNet(){
     user.can('data.write').then(v=>{ raidNet.canWrite = v; if(activeTab==='raid' && !raidNet.code) render(); }).catch(()=>{});
     if(state.raidSession) await raidResume();
     friendInit().catch(()=>{});
+    accountInit().catch(()=>{});
   }catch(e){ raidNet.failed = true; raidNet.failReason = (e && e.message) || ''; state.raidSession = null; }
   if(activeTab==='raid' && !raidNet.code) render();
 }
@@ -4708,11 +4854,17 @@ function mergeWithDefaults(def, saved){
   return out;
 }
 let state = load();
+// (v229) 세이브 보호: 불러오기에 실패하면 새로 시작하기 전에 원본을 따로 보관(예전엔 다음 저장이 그대로 덮어써서 영영 사라졌음)
+// 하루 한 번 마지막으로 잘 읽힌 세이브도 따로 보관. 브라우저가 저장 공간 정리할 때 지우지 않게 '영구 저장'도 요청
+const SAVE_BROKEN_KEY = SAVE_KEY+'_broken', SAVE_DAILY_KEY = SAVE_KEY+'_daily';
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
 function load(){
+  let raw = null;
   try{
-    const raw = localStorage.getItem(SAVE_KEY);
+    raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return defaultState();
     const s = mergeWithDefaults(defaultState(), JSON.parse(raw));
+    try{ const d = JSON.parse(localStorage.getItem(SAVE_DAILY_KEY)||'null'); if(!d || d.date!==todayStr()) localStorage.setItem(SAVE_DAILY_KEY, JSON.stringify({ date: todayStr(), raw })); }catch(e){}
     // 날짜 롤오버 체크 (나머지 필드 보정은 mergeWithDefaults + sanitizeState가 담당)
     if(s.dailyStats.date !== todayStr()){
       s.dailyStats = {date: todayStr(), summons:0, fusions:0, stagesCleared:0, equipSummons:0};
@@ -4721,13 +4873,16 @@ function load(){
       s.questsClaimed = {date: todayStr(), q1:false, q2:false, q3:false};
     }
     return s;
-  }catch(e){ return defaultState(); }
+  }catch(e){
+    try{ if(raw) localStorage.setItem(SAVE_BROKEN_KEY, JSON.stringify({ t: Date.now(), raw })); }catch(_){}
+    return defaultState();
+  }
 }
 var saveFailWarned = false; // var: 스크립트 앞부분에서 save()가 먼저 불려도 안전하게
 function save(){
   state.saveRev = (state.saveRev||0) + 1;
   // (v193) 저장 실패(사파리 개인정보 보호 모드·저장 공간 부족 등)에도 게임이 멈추지 않게 — 예전엔 여기서 에러가 나면 하던 동작이 중간에 끊겼음
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); if(typeof accSchedule==='function') accSchedule(); }
   catch(e){ if(!saveFailWarned){ saveFailWarned = true; setTimeout(()=>{ try{ toast('⚠️ 기기에 저장하지 못했어요 (저장 공간·개인정보 보호 모드 확인)', 4000); }catch(_){} }, 0); } return; }
 }
 
@@ -5932,6 +6087,7 @@ function renderSpiritsTab(){
 function showSettingsModal(){
   const s = state.settings;
   let html = '<h3>⚙️ 설정</h3>';
+  html += accountBoxHtml();
   html += '<div style="margin-top:16px; text-align:left;">';
   html += '<div class="sub" style="margin-bottom:4px;">🎵 배경음악 볼륨</div>';
   html += '<input type="range" id="bgmVolumeSlider" min="0" max="100" value="'+Math.round(s.bgmVolume*100)+'" style="width:100%;">';
@@ -5959,6 +6115,7 @@ function showSettingsModal(){
     save();
   });
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
+  bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
   document.getElementById('openImportFromSettings').addEventListener('click', showImportModal);
   document.getElementById('openResetFromSettings').addEventListener('click', showResetConfirmModal);
