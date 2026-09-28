@@ -580,6 +580,9 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .rp-boss{display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:8px 10px; border-radius:14px; border:1px solid #ff8a8a55; background:linear-gradient(135deg,#4a1f3a,#2a1f4d); color:var(--text); text-align:left;}
+  .rp-bimg{width:54px; height:54px; object-fit:contain; flex:none;} .rp-bt{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .rp-bt b{font-size:14px;} .rp-bt b small{font-size:10px; color:#ffb0a0;} .rp-bt .sub{font-size:11px;}
+  .rp-chips{display:flex; flex-wrap:wrap; gap:3px;} .rp-chips i{font-style:normal; font-size:10px; padding:1px 6px; border-radius:7px; background:#ff6b6b26; color:#ffc0b8;} .rp-more{flex:none; width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; font-size:12px; line-height:20px; text-align:center;}
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
   .slot{position:relative;} .slot-info{position:absolute; top:3px; right:3px; z-index:3; width:18px; height:18px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff55; color:#fff; font-size:11px; line-height:16px; text-align:center; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
@@ -2783,9 +2786,14 @@ function showRaidPickModal(){
   let h = '<h3 style="text-align:center; margin-bottom:2px;">'+info.icon+' 정령 선택</h3>'
     + '<div class="sub" style="text-align:center; font-size:11px;">'+(solo ? '연습 모드 · AI 동료' : '시작되면 나갈 수 없어요 · 둘 다 준비하면 전투 시작')+'</div>';
   h += '<div class="card" style="padding:9px; margin-top:8px;"><div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px;"><span>👥 '+(solo?'AI 동료':raidNameOf(pid))+' '+(solo?'':raidDotHtml(raidNet.partnerOnline))+'</span><b style="color:'+(partnerReady?'#5cd65c':'var(--sub)')+';">'+(partnerReady?'✅ 준비 완료':'선택 중…')+'</b></div>'+raidMiniSquadHtml(partnerPicks)+'</div>';
+  let rpBoss = null;
   { const mineP = raidMyPickPayload(), other = solo ? raidAiPickPayload() : raidCleanPicks(partnerPicks);
     const pv = buildRaidFight(raidNet.role==='guest' ? other : mineP, raidNet.role==='guest' ? mineP : other, info.id, solo ? (state.raidDiff||'normal') : d.diff);
     const dd = raidDiffById(solo ? state.raidDiff : d.diff);
+    rpBoss = pv.enemyUnits.find(u=>u.isBoss) || pv.enemyUnits[0];
+    if(rpBoss) h += '<button class="rp-boss" id="rpBossInfo">'+bossImg(info.id, 'rp-bimg', info.icon)+'<span class="rp-bt"><b>'+info.name+' <small>'+dd.name+'</small></b>' // (v219) 보스 정보
+      + '<span class="sub">'+elIc(rpBoss.element)+' '+ELEMENT_INFO[rpBoss.element].name+' · 체력 '+fmtHp(rpBoss.maxHp)+' · 공격 '+fmtDmg(rpBoss.atk)+'</span>'
+      + '<span class="rp-chips">'+info.gimmicks.map(g=>'<i>'+g.name+'</i>').join('')+'</span></span><span class="rp-more">ⓘ</span></button>';
     h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '👑 '+dd.name, '팀 합산 · 기믹 미반영'); }
   if(!solo) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+(state.raidTicketFor===raidNet.code ? (state.raidTicketHad?'🎫 입장권 사용됨 · 보상 있음':'🎫 입장권 없음 · 보상 없이 참여') : (raidTicketCount()>0 ? '🎫 시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+RAID_TICKET_MAX+')' : '🎫 입장권이 없어 보상 없이 참여해요'))+'</div>';
   h += '<div class="sub" style="text-align:center; margin:8px 0 4px; font-weight:700;">내 정령 (칸을 누르고 아래에서 고르기)</div>';
@@ -2819,6 +2827,7 @@ function showRaidPickModal(){
     raidNet.selSlot = i; showRaidPickModal();
   }));
   document.querySelectorAll('[data-rp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.pickSort = el.dataset.rpSort; save(); showRaidPickModal(); }));
+  { const bi = document.getElementById('rpBossInfo'); if(bi && rpBoss) bi.addEventListener('click', ()=>openInfoOverlay('👑 '+info.name, unitDetailHtml(rpBoss, info.id)+'<div style="margin-top:8px; text-align:left;">'+info.gimmicks.map(g=>'<div class="ud-sk"><b>⚠️ '+g.name+'</b><div class="sub">'+g.desc+'</div></div>').join('')+groggyInfoHtml(info.id)+'</div>')); }
   document.querySelectorAll('[data-rp-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const k = el.dataset.rpInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }));
   document.querySelectorAll('[data-rp-pick]').forEach(el=>el.addEventListener('click', ()=>{
     if(myReady) return;
@@ -3933,10 +3942,10 @@ function skillTypeOf(sk, u){
   return DEBUFF_WORDS.some(w=>tag.indexOf(w)>=0) ? { k:'deb', i:'🧪', t:'약화' } : { k:'atk', i:'🗡️', t:'공격' };
 }
 // (v219) 준비창에서 정령(내 편·상대)을 누르면 능력치·스킬 전부 — 전투에 실제로 들어가는 값(pv: 미리 만든 전투)
-function unitDetailHtml(u){
+function unitDetailHtml(u, bossId){
   const sp = SPIRITS[u.key], kit = kitOf(u), g = u.g, isBoss = !!u.isBoss;
   const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
-  let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
+  let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
     + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+'</div></div></div>';
   h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
   if(u.side==='me' && !isBoss) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">정령력 '+fmtDmg(unitPower(u.key))+(enhanceLevel(u.key)?' · 강화 +'+enhanceLevel(u.key):'')+'</div>';
