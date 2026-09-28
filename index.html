@@ -203,11 +203,13 @@
   span .spimg, .fuse-alert .spimg{margin:-.25em 0;} /* 글 줄 안에 들어갈 때만 줄 높이를 안 늘리게 겹침 */
   .home-ava .spimg, .pk-ico .spimg, .bs-who .pic .spimg, .bs-order .oc .spimg, .ring .spimg, [data-recent-summon] .spimg{width:112%; height:112%; margin:0;}
   .pk-ico, .bs-who .pic, .bs-order .oc, .home-ava{overflow:hidden;}
+  .fr-av{overflow:hidden;} .fr-av .spimg{width:112%; height:112%; margin:0;}
   .oc-bimg{width:112%; height:112%; object-fit:contain;}
   .eqimg{width:1.35em; height:1.35em; object-fit:contain; display:inline-block; vertical-align:middle; margin:0; pointer-events:none;} div > .eqimg:only-child{display:block; margin:0 auto;} .rune-chip .eqimg, .pk-sub .eqimg{margin:-.2em 0;} .sm-icon .eqimg, .sm-src .eqimg{width:1.3em; height:1.3em; margin:0;}
   .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.2); height:calc(var(--sz) * var(--k,1) * 1.2); margin:0 0 calc(var(--sz) * var(--k,1) * .2);}
   .bs-slot .bu-marker{top:auto; bottom:calc(100% + var(--sz,40px) * var(--k,1) * .12 - 2px);} /* (v207) 그림이 몸통 칸보다 위로 커져서, 차례 표시(▼)는 그림 위쪽에 */
   .bu-mine .bu-icon .spimg{transform:scaleX(-1);}
+  .bu-icon .spimg{filter:drop-shadow(0 0 1px #ffffffaa);} /* (v213) 전투 정령은 그림자 필터를 하나만 — 필터가 겹치면 아이폰에서 공격 연출 때 버벅이고 화면이 잠깐 비는 원인이 됨 */
   @media (max-width:360px){ .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.02); height:calc(var(--sz) * var(--k,1) * 1.02); margin-bottom:calc(var(--sz) * var(--k,1) * .08);} } /* (v207) 좁은 폰에선 옆 칸 체력 글자를 덮지 않게 조금 작게 */
   [data-duel-pick], [data-rp-pick], [data-home-rep]{padding-top:12px !important;} /* 오른쪽 위 '덱'·ⓘ 표시가 그림에 겹치지 않게 */ /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
   .home-empty{animation:none;} .home-emo.home-empty .spimg.hero{width:1.05em; height:1.05em; margin:-.1em auto 0; filter:drop-shadow(0 0 18px #b58cffcc) drop-shadow(0 6px 8px #0008); animation:emptyPulse 2.4s ease-in-out infinite;}
@@ -705,6 +707,14 @@
   .bu-bimg{display:block; width:calc(var(--sz) * var(--k,1) * 1.3); height:calc(var(--sz) * var(--k,1) * 1.3); object-fit:contain; margin-bottom:calc(var(--sz) * var(--k,1) * .3); pointer-events:none;} /* (v201) 보스 그림 — 몸통 칸보다 커서 위로만 넘치게 */
   .ex-bimg{display:block; width:1.35em; height:1.35em; object-fit:contain; margin:-.2em;} .prep-bimg{display:block; width:96px; height:96px; object-fit:contain; margin:0 auto;}
   .rd-bimg{display:block; width:34px; height:34px; object-fit:contain; margin:0 auto;} .rd-bimg.big{width:64px; height:64px;} @media (max-height:760px){ .rd-bimg.big{width:50px; height:50px;} }
+  .elic{width:1.15em; height:1.15em; object-fit:contain; vertical-align:-0.2em; display:inline-block;}
+  .bu-el{position:absolute; left:calc(var(--sz) * var(--k,1) * -.2); bottom:calc(var(--sz) * var(--k,1) * -.14); z-index:2; width:calc(var(--sz) * var(--k,1) * .42); height:calc(var(--sz) * var(--k,1) * .42); filter:drop-shadow(0 1px 1.5px #000a); pointer-events:none;} /* (v213) 전투 정령 속성 표시 */
+  .av-el{position:absolute; left:-12%; bottom:-12%; z-index:2; width:40%; height:40%; filter:drop-shadow(0 1px 1.5px #000c); pointer-events:none;} /* (v213) 정령 칸 왼쪽 아래 속성 표시 */
+  .spw{position:relative; display:block; width:1.5em; margin:0 auto; line-height:0;} .spw .spimg{display:block;}
+  span.spw{display:inline-block;}
+  .spw-el{position:absolute; left:-22%; bottom:-10%; z-index:2; width:48%; height:48%; filter:drop-shadow(0 1px 1.5px #000c); pointer-events:none;}
+  .bu-dead .bu-el{opacity:.35; filter:grayscale(1);}
+  .bu-bel .elic{width:78%; height:78%;}
   .bu-bel{position:absolute; right:2%; bottom:4%; z-index:2; width:calc(var(--sz) * var(--k,1) * .3); height:calc(var(--sz) * var(--k,1) * .3); border-radius:50%; background:#1d1b48d0; border:1.5px solid #ffffff88; display:flex; align-items:center; justify-content:center; font-size:calc(var(--sz) * var(--k,1) * .18);}
   .bu-boss .bu-plate, .bs-field.side .bu-boss .bu-plate{font-size:12px; padding:2px 10px; max-width:none; overflow:visible; background:#7a1020e8;}
   .bu-boss .bu-hp{width:100%; height:10px; border-radius:5px; border:1px solid #00000055;}
@@ -957,6 +967,8 @@ const ELEMENT_INFO = {
   light:{name:'빛', icon:'🌟', color:'var(--light)'},
   dark:{name:'그림자', icon:'🌑', color:'var(--dark)'}
 };
+// (v213) 속성 아이콘을 그림으로 — 화면에 쓰는 icon은 그림 태그, 글자만 들어가는 곳(장비 이름 등)은 emo(이모지)
+Object.keys(ELEMENT_INFO).forEach(el=>{ const e = ELEMENT_INFO[el]; e.emo = e.icon; e.icon = '<img class="elic" src="assets/ui/ic_el_'+el+'.webp" alt="'+e.name+'" draggable="false">'; });
 const RARITY_ORDER = ['common','rare','epic','legendary','mythic'];
 // (v101) 속성 표기는 항상 '아이콘 + 공식 이름'(화염·물결·숲결·빛·그림자)으로 통일 — 문구에서 직접 '불/물/나무' 등을 쓰지 않고 이 함수를 사용
 function elLabel(el){ return ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name; }
@@ -2263,7 +2275,7 @@ function renderFriendsTab(){
   const fl = friendList().sort((a,b)=> (friendOnline(b)?1:0)-(friendOnline(a)?1:0) || raidNameOf(a).localeCompare(raidNameOf(b)));
   const invs = friendLiveInvites(), reqs = friendIncomingReqs(), nReq = invs.length + reqs.length;
   const rep = homeRepSpirit();
-  h += '<div class="fr-me"><span class="fr-av big">'+(rep?ELEMENT_INFO[SPIRITS[rep].element].icon:'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">📋 복사</button></div>';
+  h += '<div class="fr-me"><span class="fr-av big">'+(rep?spArt(SPIRITS[rep]):'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">📋 복사</button></div>';
   h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
@@ -2332,7 +2344,7 @@ async function duelChallenge(fuid){
 function duelSlotHtml(d, i){
   const k = d[i], sp = k && SPIRITS[k] && ownedCount(k)>0 ? SPIRITS[k] : null;
   return '<button class="du-slot'+(sp?'':' empty')+'" data-duel-slot="'+i+'"'+(sp?' style="border-color:'+RARITY_INFO[sp.rarity].color+'88;"':'')+'>'
-    + (sp ? '<span class="du-ic">'+spArt(sp)+'</span><small>'+sp.name+'</small>' : '<span class="du-ic">＋</span><small>비어 있음</small>') + '</button>';
+    + (sp ? '<span class="du-ic spw">'+spArt(sp)+elIc(sp.element,'spw-el')+'</span><small>'+sp.name+'</small>' : '<span class="du-ic">＋</span><small>비어 있음</small>') + '</button>';
 }
 function renderDuelTab(){
   const d = myDuelDeck(), cp = d.reduce((a,k)=> a + ((k && SPIRITS[k] && ownedCount(k)>0) ? spiritCP(k) : 0), 0);
@@ -2359,7 +2371,7 @@ function showDuelSlotPicker(slot){
   let h = '<h3 style="text-align:center;">'+(slot<3?'전열':'후열')+' '+(slot%3+1)+'번 칸</h3><div class="sub" style="text-align:center; margin-bottom:8px;">결투 덱에 넣을 정령을 골라주세요</div>';
   if(!owned.length) h += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 정령이 없어요</div>';
   h += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur;
-    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd24a':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div style="font-size:22px;">'+spArt(sp)+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+'</div></div>';
+    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd24a':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+'</div></div>';
   if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
@@ -2457,7 +2469,27 @@ function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.
 // (v205) 정령 그림 — assets/spirits/<번호표>.webp (예: fire_mythic_b). 번호표가 없으면(장비 등) 속성 이모지
 function spArt(sp, cls){ return (sp && sp.key && SPIRITS[sp.key]) ? '<img class="spimg'+(cls?' '+cls:'')+'" src="assets/spirits/'+sp.key+'.webp" alt="" draggable="false">' : (sp ? ELEMENT_INFO[sp.element].icon : ''); }
 // (v200) 그림 아이콘 — assets/ui/ic_<이름>.webp
+// (v213) 화면을 다시 그릴 때 같은 그림은 이미 불러온 <img>·배경 요소를 그대로 옮겨 씀
+// 새 <img>를 만들면 아이폰에서 그림을 다시 해석하는 동안 잠깐 비어 보여서 화면이 사라졌다 나타나는 것처럼 보였음
+function setHtmlKeepImgs(el, html){
+  const pool = new Map();
+  el.querySelectorAll('img').forEach(im=>{ if(!im.complete || !im.naturalWidth) return; const k = im.getAttribute('src'); if(!pool.has(k)) pool.set(k, []); pool.get(k).push(im); });
+  const bgs = [...el.querySelectorAll('.bs-scene, .home-bg')];
+  el.innerHTML = html;
+  if(pool.size) el.querySelectorAll('img').forEach(im=>{
+    const l = pool.get(im.getAttribute('src')); if(!l || !l.length) return;
+    const old = l.pop();
+    [...old.attributes].forEach(a=>{ if(a.name!=='src' && !im.hasAttribute(a.name)) old.removeAttribute(a.name); });
+    [...im.attributes].forEach(a=>{ if(a.name!=='src' && old.getAttribute(a.name)!==a.value) old.setAttribute(a.name, a.value); }); // src는 건드리지 않음(다시 불러오게 됨)
+    im.replaceWith(old);
+  });
+  const bgKey = n=> n.tagName+'|'+(n.getAttribute('data-bg')||'')+'|'+n.style.backgroundImage; // 배경 그림 요소(전투 배경·홈 배경)도 같은 그림이면 옛 요소를 그대로
+  const nbs = [...el.querySelectorAll('.bs-scene, .home-bg')];
+  bgs.forEach(ob=>{ const i = nbs.findIndex(n=>bgKey(n)===bgKey(ob)); if(i<0) return; const nb = nbs.splice(i,1)[0]; ob.setAttribute('class', nb.getAttribute('class')); nb.replaceWith(ob); });
+}
 function uiIc(n){ return '<img class="uic" src="assets/ui/ic_'+n+'.webp" alt="" draggable="false">'; }
+// (v213) 속성 아이콘 그림 — 정령 그림 옆에 붙여서 무슨 속성인지 바로 보이게
+function elIc(el, cls){ return ELEMENT_INFO[el] ? '<img class="elic'+(cls?' '+cls:'')+'" src="assets/ui/ic_el_'+el+'.webp" alt="'+ELEMENT_INFO[el].name+'" draggable="false">' : ''; }
 function homeModeBtnHtml(m){
   const info = HOME_MODE_INFO[m], locked = m==='expedition' && !isUnlocked('expedition');
   return '<button class="home-mbtn pos-'+homeCarouselPos(m)+(locked?' locked':'')+'" data-hmode="'+m+'">'
@@ -2673,7 +2705,7 @@ function showRaidLobbyModal(){
 }
 function raidMiniSquadHtml(picks){
   const cell = p=> '<div style="flex:1; min-width:0; padding:5px 2px; border-radius:9px; background:#ffffff0c; text-align:center;">'
-    + (p ? '<div style="font-size:18px;">'+ELEMENT_INFO[SPIRITS[p.key].element].icon+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+SPIRITS[p.key].name+'</div>' : '<div class="sub" style="font-size:18px;">·</div><div style="font-size:10px;">&nbsp;</div>') + '</div>';
+    + (p ? '<div class="spw" style="font-size:18px;">'+spArt(SPIRITS[p.key])+elIc(SPIRITS[p.key].element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+SPIRITS[p.key].name+'</div>' : '<div class="sub" style="font-size:18px;">·</div><div style="font-size:10px;">&nbsp;</div>') + '</div>';
   const ps = raidCleanPicks(picks);
   return '<div style="display:flex; gap:4px;"><span class="sub" style="font-size:10px; width:22px; align-self:center;">전열</span>'+cell(ps[0])+cell(ps[1])+'<span class="sub" style="font-size:10px; width:22px; align-self:center; text-align:right;">후열</span>'+cell(ps[2])+cell(ps[3])+'</div>';
 }
@@ -2703,18 +2735,18 @@ function showRaidPickModal(){
   const slotBtn = i=>{
     const k = raidNet.myPicks[i], sel = raidNet.selSlot===i && !myReady;
     return '<button data-rp-slot="'+i+'" style="flex:1; min-width:0; padding:7px 2px; border-radius:12px; background:'+(sel?'#ffd24a22':'#27235a')+'; border:2px '+(k?'solid':'dashed')+' '+(sel?'#ffd24a':'#3d3a5a')+'; color:var(--text);">'
-      + (k ? '<div style="font-size:22px;">'+ELEMENT_INFO[SPIRITS[k].element].icon+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+SPIRITS[k].name+'</div>' : '<div style="font-size:22px; color:var(--sub);">+</div><div style="font-size:10px;">&nbsp;</div>')+'</button>';
+      + (k ? '<div class="spw" style="font-size:22px;">'+spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+SPIRITS[k].name+'</div>' : '<div style="font-size:22px; color:var(--sub);">+</div><div style="font-size:10px;">&nbsp;</div>')+'</button>';
   };
   h += '<div style="display:flex; gap:6px; align-items:center;"><span class="sub" style="font-size:10px; width:22px;">전열</span>'+slotBtn(0)+slotBtn(1)+'</div>';
   h += '<div style="display:flex; gap:6px; align-items:center; margin-top:6px;"><span class="sub" style="font-size:10px; width:22px;">후열</span>'+slotBtn(2)+slotBtn(3)+'</div>';
   const rsb = state.pickSort || 'cp';
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=> rsb==='rarity' ? (RARITY_ORDER.indexOf(SPIRITS[c].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || spiritCP(c)-spiritCP(a)) : rsb==='element' ? (ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[c].element) || spiritCP(c)-spiritCP(a)) : rsb==='role' ? ((ENEMY_FRONT_LINES.includes(SPIRITS[c].element+'_'+SPIRITS[c].variant)?1:0)-(ENEMY_FRONT_LINES.includes(SPIRITS[a].element+'_'+SPIRITS[a].variant)?1:0) || spiritCP(c)-spiritCP(a)) : spiritCP(c)-spiritCP(a));
-  h += '<div class="pk-sort" style="margin-top:8px;">'+[['cp','💪'],['rarity','⭐ 등급'],['element','🔥 속성'],['role','🛡️ 역할']].map(([k,t])=>'<button data-rp-sort="'+k+'" class="'+(rsb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  h += '<div class="pk-sort" style="margin-top:8px;">'+[['cp','💪'],['rarity','⭐ 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','🛡️ 역할']].map(([k,t])=>'<button data-rp-sort="'+k+'" class="'+(rsb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
   h += '<div class="roster-scroll" style="margin-top:4px;"><div class="roster-grid">';
   h += owned.length ? owned.map(k=>{
     const sp = SPIRITS[k], used = raidNet.myPicks.includes(k);
     const fr = ENEMY_FRONT_LINES.includes(sp.element+'_'+sp.variant);
-    return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#27235a; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div style="font-size:20px;">'+spArt(sp)+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;">💪'+fmtCP(spiritCP(k))+'</div></button>';
+    return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#27235a; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div class="spw" style="font-size:20px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;">💪'+fmtCP(spiritCP(k))+'</div></button>';
   }).join('') : '<div class="sub">보유한 정령이 없어요</div>';
   h += '</div></div>';
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
@@ -3147,7 +3179,7 @@ function skillPreview(sf, a, act, tSide, tIdx){
 // kind: harm(피해·약화 — 원래 적에게 쓰는 것) / heal·shield·buff(원래 아군에게 쓰는 것) — 대상은 어느 편이든 찍은 대상에게 들어감
 const pctTxt = v=>Math.round(v*100)+'%';
 const LINE_KITS = {
-  fire_a: { role:'돌격', icon:'🔥',
+  fire_a: { role:'돌격', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'투지', desc:g=>[
       '체력이 50% 이하면 공격력 +'+pctTxt([0,.15,.20,.25,.30][g]),
       g>=3?'전투당 1회, 쓰러지면 체력 30%로 부활':null,
@@ -3165,7 +3197,7 @@ const LINE_KITS = {
         '양옆 대상에게 60%'
       ].join('<br>'),
       run:C=>{ C.hit(C.t, C.P([0,0,2.2,2.6,3.0])); C.around('row').forEach(u=>C.hit(u,0.6)); } } },
-  fire_b: { role:'화상', icon:'🔥',
+  fire_b: { role:'화상', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'잔불', desc:g=>[
       '기본 공격 시 '+pctTxt([0,.3,.4,.5,.6][g])+' 확률로 화상 1중첩',
       g>=4?'화상은 최대 8중첩까지 쌓임':null
@@ -3183,7 +3215,7 @@ const LINE_KITS = {
         g>=3?'터뜨린 뒤 십자 방향 대상에게 화상 1중첩':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
-  water_a: { role:'치유', icon:'💧',
+  water_a: { role:'치유', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'맑은 물', desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:'💧', cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
       desc:g=>[
@@ -3198,7 +3230,7 @@ const LINE_KITS = {
         '해로운 효과 '+(g>=4?'전부':'1개')+' 제거'
       ].join('<br>'),
       run:C=>{ const amt=C.a.maxHp*C.P([0,0,.12,.16,.20]); C.side(C.tSide).forEach(u=>{ C.heal(u,amt); C.cleanse(u, C.g>=4?99:1); }); } } },
-  water_b: { role:'빙결', icon:'💧',
+  water_b: { role:'빙결', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'한기', desc:g=>'공격한 대상 속도 −'+[0,5,6,8,10][g]+' (최대 3중첩)' },
     s1:{ name:'서리 화살', icon:'🏹', cd:3, kind:'harm', tag:()=> '둔화',
       desc:g=>'대상에게 공격력 '+pctTxt([1.0,1.1,1.2,1.35,1.5][g])+' + 둔화 부여 (속도 −15, 2라운드)',
@@ -3209,7 +3241,7 @@ const LINE_KITS = {
         g>=4?'양옆 대상도 함께 빙결':(g>=3?'양옆 대상은 둔화':null)
       ].filter(Boolean).join('<br>'),
       run:C=>{ C.hit(C.t,1.5); C.neg(C.t,st=>{ st.freeze=true; },'❄빙결'); if(C.g>=3) C.around('row').forEach(u=>{ if(C.g>=4) C.neg(u,st=>{ st.freeze=true; },'❄빙결'); else C.neg(u,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); }); } } },
-  wood_a: { role:'탱커', icon:'🌿',
+  wood_a: { role:'탱커', icon:ELEMENT_INFO.wood.icon,
     passive:{ name:'단단한 껍질', desc:g=>[
       '받는 피해 −'+pctTxt([0,.08,.10,.12,.15][g]),
       g>=4?'전열에 있으면 바로 뒤 칸 아군의 받는 피해도 −20%':null
@@ -3224,7 +3256,7 @@ const LINE_KITS = {
     s2:{ name:'가시 갑옷', icon:'🌵', cd:4, kind:'shield', tag:()=> '반사',
       desc:g=>'대상이 2라운드 동안 받는 피해의 '+pctTxt([0,0,.3,.4,.5][g])+'를 공격자에게 반사',
       run:C=>{ C.pos(C.t,st=>{ st.reflect={v:C.P([0,0,.3,.4,.5]),r:2}; },'🌵반사'); } } },
-  wood_b: { role:'독·거미줄', icon:'🌿',
+  wood_b: { role:'독·거미줄', icon:ELEMENT_INFO.wood.icon,
     passive:{ name:'퍼지는 포자', desc:g=>[
       '독 걸린 대상이 쓰러지면 '+pctTxt([0,.5,.65,.8,1][g])+' 확률로 옆 칸에 독 전염',
       g>=3?'독은 받는 치유를 완전히 막음':'독이 걸린 대상은 받는 치유가 절반으로 감소'
@@ -3242,7 +3274,7 @@ const LINE_KITS = {
         g>=4?'양옆 대상에게도 동일하게 적용':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const v=C.P([0,0,.15,.2,.25]); const f=u=>C.neg(u,st=>{ st.bind=true; st.web={v,r:2}; },'🕸속박'); f(C.t); if(C.g>=4) C.around('row').forEach(f); } } },
-  light_a: { role:'보호막', icon:'🌟',
+  light_a: { role:'보호막', icon:ELEMENT_INFO.light.icon,
     passive:{ name:'빛의 축복', desc:g=>[
       '보호막이 있는 아군의 공격력 +'+pctTxt([0,.08,.10,.12,.15][g]),
       g>=4?'전투당 1회, 쓰러진 아군을 체력 50%로 부활':null
@@ -3259,7 +3291,7 @@ const LINE_KITS = {
         g>=3?'해로운 효과를 1회 막아주는 보호 부여':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const amt=C.a.maxHp*C.P([0,0,.10,.13,.16]); C.side(C.tSide).forEach(u=>{ C.shield(u,amt); if(C.g>=3) u.st.ward=1; }); } } },
-  light_b: { role:'가속', icon:'🌟',
+  light_b: { role:'가속', icon:ELEMENT_INFO.light.icon,
     passive:{ name:'서약', desc:g=>'라운드 시작마다 가장 느린 아군의 속도 +'+[0,5,6,8,10][g] },
     s1:{ name:'별빛 가속', icon:'⭐', cd:3, kind:'buff', tag:g=>g>=4?'전체':'',
       desc:g=>[
@@ -3273,7 +3305,7 @@ const LINE_KITS = {
         g>=3?'그 행동의 공격력 +25%':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ C.actNext(C.t); if(C.g>=3) C.t.st.empower=0.25; C.hits.push({side:C.t.side, idx:C.t.idx, kind:'status', text:'📯즉시 행동'}); } } },
-  dark_a: { role:'흡혈·처형', icon:'🌑',
+  dark_a: { role:'흡혈·처형', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'굶주림', desc:g=>'대상이 잃은 체력 1%당 피해 +'+[0,.3,.4,.5,.6][g]+'%' },
     s1:{ name:'생명 흡수', icon:'🩸', cd:3, kind:'harm', tag:()=> '흡혈',
       desc:g=>[
@@ -3288,7 +3320,7 @@ const LINE_KITS = {
         g>=4?'처치하면 한 번 더 행동':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const low=C.t.hp/C.t.maxHp<=0.3; const r=C.hit(C.t, low?C.P([0,0,3,3.5,4]):1.2); if(r && !C.t.alive){ if(C.g>=3) C.heal(C.a, C.a.maxHp*0.15); if(C.g>=4) C.actNext(C.a); } } } },
-  dark_b: { role:'저주', icon:'🌑',
+  dark_b: { role:'저주', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'약점 간파', desc:g=>'저주 걸린 대상을 공격할 때 크리티컬 확률 +'+pctTxt([0,.10,.15,.20,.25][g]) },
     s1:{ name:'저주 표식', icon:'💀', cd:3, kind:'harm', tag:g=>'저주'+(g>=4?' · 전체':(g>=3?' · 십자':'')),
       desc:g=>[
@@ -3817,7 +3849,7 @@ function battleUnitHtml(u, opts){
   return '<div class="'+cls.join(' ')+'"'+attr+' style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'👹':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : spArt(SPIRITS[u.key]))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+ELEMENT_INFO[u.element].icon+'</span>' : '')
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : spArt(SPIRITS[u.key]))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : elIc(u.element, 'bu-el'))
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '👥' : '')+(u.dispName || sp.name)+eff+'</div>'
@@ -4028,7 +4060,7 @@ function showSkillStageScreen(){
   html += '</div>';
   if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
-  root.innerHTML = html;
+  setHtmlKeepImgs(root, html);
   fitBattleScreen();
   if(document.getElementById('raidVoteYes')) document.getElementById('raidVoteYes').addEventListener('click', ()=>raidSurrenderVote(true));
   if(document.getElementById('raidVoteNo')) document.getElementById('raidVoteNo').addEventListener('click', raidSurrenderClear);
@@ -4650,7 +4682,7 @@ const EQUIP_NAMES = {
 const EQUIP_SUMMON_COST = 200;
 function isEquipUnlocked(){ return chapter1BossCleared(); } // (v106) 정령장비는 챕터 1 보스 격파 시 해금
 function equipKey(slot, element, rarity){ return slot+'_'+element+'_'+rarity; }
-function equipInfo(key){ const p = key.split('_'); return { key, slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].icon, img:'<img class="eqimg" src="assets/ui/eq_'+p[0]+'_'+p[1]+'.webp" alt="" draggable="false">' }; } // (v205) img = 화면용 그림, icon = 글(알림)용 이모지
+function equipInfo(key){ const p = key.split('_'); return { key, slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].emo, img:'<img class="eqimg" src="assets/ui/eq_'+p[0]+'_'+p[1]+'.webp" alt="" draggable="false">' }; } // (v205) img = 화면용 그림, icon = 글(알림)용 이모지
 function allEquipKeys(){ const out = []; RARITY_ORDER.forEach(r=>EQUIP_SLOTS.forEach(sl=>ELEMENTS.forEach(e=>out.push(equipKey(sl,e,r))))); return out; }
 function equipOwnedCount(key){ return (state.equipOwned && state.equipOwned[key]) || 0; }
 function equipUsedCount(key){
@@ -5148,10 +5180,10 @@ function guideSectionHtml(cat){
     return '<div class="sub">'
       + guideHeader('⚔️ 상성 배율')
       + guideList(['🟢 유리 → 공격력 <b>×1.3</b>', '🔴 불리 → 공격력 <b>×0.8</b>', '⚪ 무관 → 공격력 <b>×1.0</b>', '공격하는 정령 속성 vs 맞는 대상 속성으로 판정 (적도 똑같이 적용)', '탑에서는 같은 번호 칸끼리 비교'])
-      + guideHeader('🔥🌿💧 삼원 순환')
+      + guideHeader(ELEMENT_INFO.fire.icon+ELEMENT_INFO.wood.icon+ELEMENT_INFO.water.icon+' 삼원 순환')
       + typeWheelOnlyHtml()
       + guideList([elLabel('fire')+' > '+elLabel('wood')+' > '+elLabel('water')+' > '+elLabel('fire')])
-      + guideHeader('🌟🌑 '+ELEMENT_INFO.light.name+' · '+ELEMENT_INFO.dark.name)
+      + guideHeader(ELEMENT_INFO.light.icon+ELEMENT_INFO.dark.icon+' '+ELEMENT_INFO.light.name+' · '+ELEMENT_INFO.dark.name)
       + lightDarkChainHtml()
       + guideList([
         elLabel('light')+': '+ELEMENT_INFO.dark.name+'에게만 유리 (×1.3). 약점 없음',
@@ -5260,20 +5292,12 @@ function render(){
   });
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
   const main = document.getElementById('main');
-  if(activeTab==='summon') main.innerHTML = renderSummonTab();
-  else if(activeTab==='hearth') main.innerHTML = renderHearthTab();
-  else if(activeTab==='spirits') main.innerHTML = renderSpiritsTab();
-  else if(activeTab==='tower') main.innerHTML = renderTowerTab();
-  else if(activeTab==='expedition') main.innerHTML = renderExpeditionTab();
-  else if(activeTab==='raid') main.innerHTML = renderRaidTab();
-  else if(activeTab==='home') main.innerHTML = renderHomeTab();
-  else if(activeTab==='friends') main.innerHTML = renderFriendsTab();
-  else if(activeTab==='duel') main.innerHTML = renderDuelTab();
-  else main.innerHTML = renderStageTab();
+  const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, expedition:renderExpeditionTab, raid:renderRaidTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
+    // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
     const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">← 홈</button>' : '';
-    const html = main.innerHTML, k = html.indexOf(TOP_MARK);
-    if(back || k>=0) main.innerHTML = '<div class="scr-top">'+back+(k>=0 ? html.slice(0,k) : '')+'</div>'+(k>=0 ? html.slice(k+TOP_MARK.length) : html);
+    const html = (TAB_RENDER[activeTab] || renderStageTab)(), k = html.indexOf(TOP_MARK);
+    setHtmlKeepImgs(main, (back || k>=0) ? '<div class="scr-top">'+back+(k>=0 ? html.slice(0,k) : '')+'</div>'+(k>=0 ? html.slice(k+TOP_MARK.length) : html) : html);
     if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; }
   }
   main.classList.toggle('is-home', activeTab==='home');
@@ -5300,7 +5324,7 @@ function tile(key){
   return '<div class="species-tile" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0? '<div class="count">x'+owned+'</div>':'')
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+'</div>'
+    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name">'+sp.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
     + (owned>0 && enhanceLevel(key)>0 ? '<div class="sub" style="margin-top:2px;">+'+enhanceLevel(key)+'</div>' : '')
@@ -5519,7 +5543,7 @@ function renderSpiritsTab(){
 
   html += '<h2>보유 정령</h2>';
   { const sb = state.spiritSort || 'rarity';
-    html += '<div class="pk-sort" id="spSortBar">'+[['rarity','⭐ 등급'],['element','🔥 속성'],['role','🛡️ 역할'],['cp','💪 전투력']].map(([k,t])=>'<button data-sp-sort="'+k+'" class="'+(sb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+    html += '<div class="pk-sort" id="spSortBar">'+[['rarity','⭐ 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','🛡️ 역할'],['cp','💪 전투력']].map(([k,t])=>'<button data-sp-sort="'+k+'" class="'+(sb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
     let keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
     const rOf = k=> LINE_KITS[SPIRITS[k].element+'_'+SPIRITS[k].variant];
     const fr = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
@@ -5732,7 +5756,7 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+spArt(sp)+'</div><div>'+sp.name+'</div></div>';
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div>'+sp.name+'</div></div>';
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 ✅. labelFn(tier) = 보상 표기
 function renderGradeLadderHtml(currentBestGrade, labelFn, idPrefix){
@@ -7360,7 +7384,7 @@ function renderStageTab(){
       + (best ? '<span class="ex-grade g'+best+'">'+best+'</span>' : '')
       + (special ? '<span class="ex-sp">🌀</span>' : '')
       + (hasPendingForStage(i) ? '<div class="ex-dot" style="background:#ff4a4a;"></div>' : '')
-      + (i===next && rep ? '<div class="ex-hero">'+ELEMENT_INFO[SPIRITS[rep].element].icon+'</div>' : '')
+      + (i===next && rep ? '<div class="ex-hero">'+spArt(SPIRITS[rep])+'</div>' : '')
       + '</div>';
   });
   const clearCount = chapterClearCount(ch), pct = Math.round(clearCount/CHAPTER_LENGTH*100);
@@ -7709,7 +7733,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     element:(a,b)=>ELEMENTS.indexOf(SPIRITS[a.key].element)-ELEMENTS.indexOf(SPIRITS[b.key].element) || spiritCP(b.key)-spiritCP(a.key),
     role:(a,b)=> (ENEMY_FRONT_LINES.includes(SPIRITS[b.key].element+'_'+SPIRITS[b.key].variant)?1:0)-(ENEMY_FRONT_LINES.includes(SPIRITS[a.key].element+'_'+SPIRITS[a.key].variant)?1:0) || roleOf(a.key).localeCompare(roleOf(b.key)) || spiritCP(b.key)-spiritCP(a.key) }[sortBy] || ((a,b)=>0);
   entries.sort((a,b)=> (b.isCur - a.isCur) || ((b.free>0) - (a.free>0)) || cmp(a,b));
-  html += '<div class="pk-sort">'+[['cp','💪 전투력'],['rarity','⭐ 등급'],['element','🔥 속성'],['role','🛡️ 역할']].map(([k,t])=>'<button data-pk-sort="'+k+'" class="'+(sortBy===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  html += '<div class="pk-sort">'+[['cp','💪 전투력'],['rarity','⭐ 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','🛡️ 역할']].map(([k,t])=>'<button data-pk-sort="'+k+'" class="'+(sortBy===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
   let busyDivider = false;
   entries.forEach(e=>{
     const key = e.key, free = e.free, sp = SPIRITS[key], info = RARITY_INFO[sp.rarity];
