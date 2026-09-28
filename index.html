@@ -7184,7 +7184,10 @@ function renderTowerTab(){
   if(!isUnlocked('tower')) return lockedFeatureScreenHtml('tower');
   const best = state.towerBest||0, frontier = towerFloor(), topFloor = frontier + 2; // 다음 도전 위로 2층은 미리보기
   let html = '<div style="text-align:center; margin:2px 0 10px;"><div style="font-size:17px; font-weight:900; color:#ffd35a; text-shadow:0 2px 0 var(--line); display:flex; align-items:center; justify-content:center; gap:6px;">'+uiIc('tower')+' 무한의 탑</div>'
-    + '<div class="sub">최고 '+best+'층 · 최고 전투력 '+fmtDmg(state.towerBestPower||0)+'</div><div class="sub" style="font-size:11px; margin-top:2px;">층을 눌러 도전 · 보상은 층마다 처음 돌파할 때 1회</div></div>' + TOP_MARK;
+    + '<div class="sub">최고 '+best+'층 · 최고 전투력 '+fmtDmg(state.towerBestPower||0)+'</div><div class="sub" style="font-size:11px; margin-top:2px;">층을 눌러 도전 · 보상은 층마다 처음 돌파할 때 1회</div></div>';
+  { const tp = pendingRewardsFor('tower_'); // (v225) 받을 보상이 있으면 한 번에 받기
+    if(tp.length) html += '<button class="btn gold" id="towerClaimAll" style="margin:0 0 10px;">'+uiIc('gift')+' 탑 보상 모두 받기 · '+tp.length+'개</button>'; }
+  html += TOP_MARK;
   html += '<div id="towerScroll" class="fit-rest" data-below="0" data-min="260" style="position:relative; max-height:62vh; overflow-y:auto; border-radius:16px; background:linear-gradient(180deg,#2a2660 0%,#1a1844 70%); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d; border:2px solid #0b0a22; padding:14px 8px 10px;">';
   // 지붕
   html += '<div class="tw-row" style="height:50px;"><div style="height:100%; display:flex; justify-content:center; align-items:flex-end; position:relative;">'
@@ -8341,6 +8344,10 @@ function attachHandlers(){
       viewingTowerFloor = f; applyTowerFormation(f); showTowerPrepModal();
     });
   });
+  { const ca = document.getElementById('towerClaimAll'); if(ca) ca.addEventListener('click', ()=>{
+    const r = claimManyPending(pendingRewardsFor('tower_').map(x=>x.id));
+    if(r.n>0){ toastReward({essence:r.essence, stone:r.stone, items:r.items}, uiIc('tower')+' 탑 보상 '+r.n+'개 획득'); sfx('claim'); }
+    render(); }); }
   document.querySelectorAll('[data-tower-reward]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ claimPendingReward('tower_'+btn.dataset.towerReward); sfx('claim'); render(); });
   });
