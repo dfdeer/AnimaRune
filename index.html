@@ -1553,7 +1553,8 @@ function buildSkillStageFight(i){
     enemyUnits.push(makeBattleUnit('enemy', idx, key, per*ELEMENT_ATK_MULT[el], ENEMY_HP_MULT, m));
   });
   const sf = { v:147, stageIdx: i, round: 1, phase: 'acting', queue: [], queuePos: 0, myUnits, enemyUnits,
-    log: ['전투 시작!'], result: null, fxSeq: 0, lastFx: null, special: spec };
+    log: ['전투 시작!'], result: null, fxSeq: 0, lastFx: null, special: spec,
+    specialMet: spec ? specialFormationStatus(spec).cls==='ok' : false }; // (v223) 특수 규칙을 충족한 채로 시작했는지 — 이걸로 깨야 보너스
   startRoundQueue(sf);
   return sf;
 }
@@ -3019,7 +3020,7 @@ function checkSkillStageOutcome(sf){
   if(!aliveUnits(sf.enemyUnits).length){
     const prevBest = state.stageBest[sf.stageIdx] || null;
     sf.result = { win:true, rounds: sf.round, prevBest };
-    sf.result.info = resolveSkillStageBattle(sf.stageIdx, sf.round);
+    sf.result.info = resolveSkillStageBattle(sf.stageIdx, sf.round, !!sf.specialMet);
     return true;
   }
   if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round }; return true; }
@@ -3474,7 +3475,7 @@ function grantSpecialStageBonus(i){ // 특수 스테이지를 깼는데 보너�
   const rw = specialBonusReward(i);
   addPendingReward('stage_'+i+'_special_bonus', '🌀', '스테이지 '+(i+1)+' 특수 규칙 보너스', rw.essence, rw.stone, 'stage');
 }
-function resolveSkillStageBattle(i, rounds){
+function resolveSkillStageBattle(i, rounds, specialMet){
   const grade = skillGradeForRounds(rounds);
   const already = state.stageBest[i];
   const gradeRank = {C:1,B:2,A:3,S:4};
@@ -3483,7 +3484,7 @@ function resolveSkillStageBattle(i, rounds){
   let improved = false, reward = 0;
   if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', '스테이지 '+(i+1)+' 첫 클리어', reward, 0, 'stage'); }
   if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
-  grantSpecialStageBonus(i); // (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음 · (v216 버그수정) 클리어 기록(stageBest)을 남긴 뒤에 불러야 함 — 앞에서 부르면 첫 클리어 땐 '아직 안 깸'으로 보고 지나쳤음
+  if(specialMet) grantSpecialStageBonus(i); else if(isSpecialStage(i) && !state.specialStageBonusClaimed[i]) setTimeout(()=>toast('🌀 특수 규칙 조건을 충족하고 깨야 보너스를 받아요'), 900); // (v223) 조건 충족 클리어만 · (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음 · (v216 버그수정) 클리어 기록(stageBest)을 남긴 뒤에 불러야 함 — 앞에서 부르면 첫 클리어 땐 '아직 안 깸'으로 보고 지나쳤음
   state.dailyStats.stagesCleared += 1;
   checkChapterPctRewards(Math.floor(i/CHAPTER_LENGTH)+1);
   checkAchievements();
@@ -3877,7 +3878,7 @@ function showSkillStagePrepModal(i){
     openInfoOverlay('🎁 보상', getStageRewardContent(i), ()=>{ render(); refreshRewardBtnDot(i); }, ()=>getStageRewardContent(i));
   });
   document.getElementById('clearFormationBtn').addEventListener('click', ()=>{ state.formation = state.formation.map(()=>null); save(); showSkillStagePrepModal(i); });
-  document.getElementById('recFormationBtn').addEventListener('click', ()=>{ state.formation = recommendFormation(enemyGridForStage(i).els); save(); showSkillStagePrepModal(i); });
+  document.getElementById('recFormationBtn').addEventListener('click', ()=>{ state.formation = recommendFormation(enemyGridForStage(i).els); if(spSpec && spSpec.type==='sealedSlot') state.formation[spSpec.slot] = null; save(); showSkillStagePrepModal(i); }); // (v223) 봉인 칸은 비워 둬야 특수 보너스 조건 충족
   document.querySelectorAll('#modalRoot [data-slot]').forEach(el=>{
     el.addEventListener('click', ()=>{ showSlotPicker(parseInt(el.dataset.slot), ()=>showSkillStagePrepModal(i), null, null, lineup); });
   });
@@ -6116,7 +6117,7 @@ function getStageRewardContent(stageIdx){
       + (specialBonusPending?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></div>':'')
       + '<div style="font-weight:800; font-size:13px; text-align:center;">🌀 특수 규칙 보너스</div>'
       + '<div class="sub" style="font-size:10px; text-align:center;"><img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+specialBonusEssence+' · <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+specialBonusStone+'</div>'
-      + (specialBonusPending?'<div style="font-size:11px; color:#ffd557; font-weight:700; text-align:center;">받기</div>':(specialBonusClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.5; text-align:center;">🔒 클리어 시</div>'))
+      + (specialBonusPending?'<div style="font-size:11px; color:#ffd557; font-weight:700; text-align:center;">받기</div>':(specialBonusClaimed?'<div style="font-size:11px; text-align:center;">✅</div>':'<div style="font-size:11px; opacity:0.5; text-align:center;">🔒 조건 충족 클리어</div>'))
       + '</div>';
   }
   // 위 타일들에 이미 나온 항목(첫 클리어·등급·특수 보너스)은 아래 "대기 중 보상" 목록에서 빼고, 그 밖의 것만 보여줌
@@ -7480,7 +7481,7 @@ function specialFormationStatus(spec){ // {cls:'ok'|'bad'|'info', text}
 function specialCardHtml(i){ // 준비창 맨 위 특수 규칙 카드
   const spec = specialStageSpec(i), pr = specialRuleParts(spec), st = specialFormationStatus(spec), rw = specialBonusReward(i);
   const got = !!state.specialStageBonusClaimed[i] && !hasPendingId('stage_'+i+'_special_bonus');
-  return '<div class="sp-card"><div class="sp-top"><span class="sp-badge">🌀 특수 스테이지</span><span class="sp-bonus">'+(got?'✅ 보너스 받음':'🎁 클리어 보너스 <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">'+rw.essence+' <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">'+rw.stone)+'</span></div>'
+  return '<div class="sp-card"><div class="sp-top"><span class="sp-badge">🌀 특수 스테이지</span><span class="sp-bonus">'+(got?'✅ 보너스 받음':'🎁 조건 충족 클리어 보너스 <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">'+rw.essence+' <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">'+rw.stone)+'</span></div>'
     + '<div class="sp-name">'+pr.name+'</div><div class="sp-desc">'+pr.desc+'</div><div class="sp-status '+st.cls+'">'+st.text+'</div></div>';
 }
 function baseSlotAtk(key, idx, enemyComp, special){
@@ -8611,7 +8612,7 @@ function sanitizeState(){
     if(!buffOk || e.pendingKeep) e.pendingBuffChoice = null;
   }
   migrateStageRewardsV179();
-  Object.keys(state.stageBest||{}).forEach(k=>grantSpecialStageBonus(Number(k))); // (v185) 예전에 깨고 못 받은 특수 규칙 보너스 보충
+  // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
 
 sanitizeState();
