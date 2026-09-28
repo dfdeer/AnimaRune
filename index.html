@@ -581,6 +581,10 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .fz-log{margin:10px 0 2px; padding:6px 10px; border-radius:12px; background:#ffffff08; border:1px solid #ffffff14;} .fz-log summary{cursor:pointer; font-weight:800; font-size:13px; padding:4px 0;} .fz-log summary .sub{font-weight:600; font-size:11px;}
+  .fz-log-row{display:flex; align-items:center; gap:5px; padding:4px 2px; border-top:1px solid #ffffff0c; font-size:12px;} .fz-log-row .spimg, .fz-log-row .eqimg{width:20px; height:20px; margin:0;}
+  .fz-log-m{display:flex; flex:none;} .fz-log-a{color:var(--sub);} .fz-log-r{flex:1; min-width:0; display:flex; align-items:center; gap:3px; flex-wrap:wrap;} .fz-log-r small{color:var(--sub);} .fz-log-s{flex:none; color:var(--sub); font-size:10px;}
+  .fz-log-row.bad .fz-log-r{color:#ffb0a0;} .fz-log-row.guard .fz-log-r{color:#9fd8ff;}
   .aw-stars{color:#ffd557; font-size:.8em; letter-spacing:-1px; margin-left:3px; text-shadow:0 0 4px #ffb02088;}
   .aw-box{margin-top:10px; padding:9px 10px; border-radius:12px; background:linear-gradient(135deg,#4a3a1a55,#2a2560); border:1px solid #ffd55744; text-align:center;} .aw-head{display:flex; align-items:center; gap:6px;} .aw-head .sub{flex:1; text-align:left; font-size:12px;} .aw-i{width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; background:none; color:var(--text); font-size:11px;}
   .aw-box .btn .uic{width:1.1em; height:1.1em;}
@@ -766,6 +770,7 @@
   .rd-bimg{display:block; width:34px; height:34px; object-fit:contain; margin:0 auto;} .rd-bimg.big{width:64px; height:64px;} @media (max-height:760px){ .rd-bimg.big{width:50px; height:50px;} }
   .elic{width:1.15em; height:1.15em; object-fit:contain; vertical-align:-0.2em; display:inline-block;}
   .bu-pel{width:1.35em; height:1.35em; margin:-.25em 2px -.2em -3px; vertical-align:middle; filter:drop-shadow(0 0 1px #0008);} /* (v214) 속성 표시는 이름표 앞에 — 그림 모서리에 두면 타겟·범위 표시와 겹쳤음 */
+  .av:has(> .av-el){margin-bottom:6px;} /* (v223) 아래로 삐져나온 속성 표시가 밑의 이름을 덮지 않게 */
   .av-el{position:absolute; left:-12%; bottom:-12%; z-index:2; width:40%; height:40%; filter:drop-shadow(0 1px 1.5px #000c); pointer-events:none;} /* (v213) 정령 칸 왼쪽 아래 속성 표시 */
   .spw{position:relative; display:block; width:1.5em; margin:0 auto; line-height:0;} .spw .spimg{display:block;}
   span.spw{display:inline-block;}
@@ -5271,6 +5276,7 @@ function renderFuseTab(){
     if(!isEquipUnlocked()) return h + '<div class="card sub" style="text-align:center;">🔒 챕터 1 보스 격파 시 해금</div>';
     keys = allEquipKeys().filter(k=>equipOwnedCount(k)>0 && equipInfo(k).rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
   }else keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0 && SPIRITS[k].rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
+  h += fuseLogHtml();
   h += '<h2>재료 고르기</h2>';
   if(!keys.length) return h + '<div class="card sub">'+(fuseMode==='equip'?'합성할 수 있는 장비가 없어요':'합성할 수 있는 정령이 없어요 — 신화는 합성할 수 없어요')+'</div>';
   h += '<div class="grid5 fz-grid">'+keys.map(k=>{
@@ -5295,6 +5301,23 @@ function fuseRulesHtml(){ // (v219) 합성·계승 규칙 한눈에 — 가이�
     + row('보호권', '전설·신화 합성 실패 시 자동 사용, 재료 유지')
     + row('잠금', '🔒 걸면 합성·분해 불가')
     + '</table>';
+}
+const FUSE_LOG_MAX = 20;
+function logFuse(e){ if(!Array.isArray(state.fuseLog)) state.fuseLog = []; state.fuseLog.unshift(e); if(state.fuseLog.length > FUSE_LOG_MAX) state.fuseLog.length = FUSE_LOG_MAX; }
+function fuseLogHtml(){ // (v223) 최근 합성 기록: 넣은 재료 → 결과 · 그때 확률
+  const L = (state.fuseLog||[]).filter(e=>e && e.m===fuseMode);
+  if(!L.length) return '';
+  const nm = k=> fuseMode==='equip' ? (equipInfo(k)||{}).name : (SPIRITS[k]||{}).name;
+  const art = k=> fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k]);
+  const pct = v=> (v*100 >= 10 ? Math.round(v*100) : Math.round(v*1000)/10)+'%';
+  const rows = L.map(e=>{
+    const mats = e.k.map(art).join('');
+    const res = e.ok ? art(e.r)+' <b>'+nm(e.r)+'</b> <small>('+pct(e.p)+')</small>'
+      : (e.g ? '🔰 보호 · 재료 유지' : '❌ 실패 · '+nm(e.r)+' 1'+(fuseMode==='equip'?'개':'마리')+' 남음'+(e.d?' ⬇️강등':''));
+    return '<div class="fz-log-row '+(e.ok?'ok':(e.g?'guard':'bad'))+'"><span class="fz-log-m">'+mats+'</span><span class="fz-log-a">→</span><span class="fz-log-r">'+res+'</span><small class="fz-log-s">성공 '+e.s+'%</small></div>';
+  }).join('');
+  const ok = L.filter(e=>e.ok), same = ok.filter(e=>e.k.includes(e.r) || e.k.some(k=> fuseMode==='equip' ? false : SPIRITS[k].element+'_'+SPIRITS[k].variant===SPIRITS[e.r].element+'_'+SPIRITS[e.r].variant));
+  return '<details class="fz-log"><summary>🧾 최근 합성 기록 <span class="sub">('+L.length+'회 · 성공 '+ok.length+(fuseMode==='equip'?'':' · 넣은 정령 그대로 '+same.length)+')</span></summary>'+rows+'</details>';
 }
 function doSlotFuse(){
   checkDailyRollover();
@@ -5321,6 +5344,7 @@ function doSlotFuse(){
       }
       give(downTo || survivor);
     }
+    logFuse({ m:fuseMode, k:info.keys, ok:false, g:!!r.guard, r: r.guard ? null : (downTo || survivor), d: !!downTo, s: info.rate, t: Date.now() });
     if(!eq) cleanupFormation();
     checkAchievements(); save(); sfx('fail');
     showFuseFailModal({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
@@ -5328,6 +5352,7 @@ function doSlotFuse(){
   }
   info.keys.forEach(take);
   const res = fusePick(info.out), isNew = give(res);
+  logFuse({ m:fuseMode, k:info.keys, ok:true, r:res, p:info.out[res], s:info.rate, t:Date.now() });
   let inherited = 0;
   if(!eq){
     const cap = Math.min(info.inherit, maxEnhanceFor(res));
@@ -8415,6 +8440,9 @@ function sanitizeState(){
   Object.keys(s.owned).forEach(k=>{ if(s.owned[k]>0) s.discovered[k] = true; });
   Object.keys(s.enhanceLevel).forEach(k=>{ const v = s.enhanceLevel[k]; if(!SPIRITS[k] || !fin(v) || v<=0) delete s.enhanceLevel[k]; else s.enhanceLevel[k] = Math.min(Math.floor(v), maxEnhanceFor(k)); });
   s.recentSummons = s.recentSummons.filter(k=>typeof k==='string' && SPIRITS[k]).slice(0,8);
+  // (v223) 합성 기록
+  if(!Array.isArray(s.fuseLog)) s.fuseLog = [];
+  s.fuseLog = s.fuseLog.filter(e=>e && typeof e==='object' && Array.isArray(e.k) && e.k.length===3 && (e.m==='spirit' ? e.k.every(k=>SPIRITS[k]) && (!e.r || SPIRITS[e.r]) : e.m==='equip')).slice(0, 20);
   // (v222) 각성
   if(!s.awaken || typeof s.awaken!=='object' || Array.isArray(s.awaken)) s.awaken = {};
   Object.keys(s.awaken).forEach(k=>{ const v = s.awaken[k]; if(!SPIRITS[k] || !fin(v) || v<=0) delete s.awaken[k]; else s.awaken[k] = Math.min(AWAKEN_MAX, Math.floor(v)); });
