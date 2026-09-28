@@ -1503,6 +1503,9 @@ function cpBarHtml(my, en, enLabel, note){
 function unitPG(u){ const p = u.pg; return (Number.isInteger(p) && p>=0 && p<=4) ? p : (u.g>=1 ? u.g : 0); }
 function unitS2On(u){ return u.s2on===true || u.g>=2; }
 function unitSG(u){ return Math.max(2, u.g); }
+// (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
+function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
+function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0)); }
 function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity);
   // (v225) 각성: ★1 패시브 · ★3 스킬2가 등급과 상관없이 열림 · ★5 스킬 효과 한 등급 위. 레이드·결투 상대는 보내온 값(awOverride)
@@ -1714,7 +1717,7 @@ function performAction(sf, a, act, tSide, tIdx){
     const sk = unitSkill(a, act);
     if(act==='s2'){ const sg = unitSG(a); C.g = sg; C.P = arr=>arr[sg]; } // (v225) 각성으로 연 스킬2는 에픽 수치부터
     sk.run(C);
-    if(act==='s1') a.cd1 = sk.cd; else a.cd2 = sk.cd;
+    if(act==='s1') a.cd1 = unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
     pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' '+sk.name+' → '+skillUnitName(tSide, C.t));
   }
   if(a.st.empower) delete a.st.empower;
@@ -2593,6 +2596,14 @@ function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; 
 function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.gimmick; const sf = state.skillFight; return (sf && sf.mode==='raid') ? sf.raidBossId : null; }
 // (v205) 정령 그림 — assets/spirits/<번호표>.webp (예: fire_mythic_b). 번호표가 없으면(장비 등) 속성 이모지
 function spArt(sp, cls){ return (sp && sp.key && SPIRITS[sp.key]) ? '<img class="spimg'+(cls?' '+cls:'')+'" src="assets/spirits/'+sp.key+'.webp" alt="" draggable="false">' : (sp ? ELEMENT_INFO[sp.element].icon : ''); }
+// (v227) 그림을 못 불러오면(모바일 통신 끊김 등) 잠깐 뒤 두 번까지 다시 불러옴 — 깨진 그림 아이콘으로 남지 않게
+document.addEventListener('error', e=>{
+  const im = e.target;
+  if(!im || im.tagName!=='IMG' || !/assets\//.test(im.getAttribute('src')||'')) return;
+  const n = +(im.dataset.retry||0); if(n>=2) return;
+  im.dataset.retry = n+1;
+  setTimeout(()=>{ const src = im.getAttribute('src').replace(/[?#].*$/, ''); im.src = src + '?r=' + (n+1); }, 600*(n+1));
+}, true);
 // (v200) 그림 아이콘 — assets/ui/ic_<이름>.webp
 // (v213) 화면을 다시 그릴 때 같은 그림은 이미 불러온 <img>·배경 요소를 그대로 옮겨 씀
 // 새 <img>를 만들면 아이폰에서 그림을 다시 해석하는 동안 잠깐 비어 보여서 화면이 사라졌다 나타나는 것처럼 보였음
@@ -4049,8 +4060,8 @@ function unitDetailHtml(u, bossId){
   if(!isBoss){
     const row = (label, name, icon, desc, locked)=> '<div class="ud-sk'+(locked?' off':'')+'"><div><b>'+icon+' '+name+'</b> <small>'+label+'</small></div><div class="sub">'+desc+'</div></div>';
     const cdTxt = c=> live && c>0 ? ' · <b style="color:#ffb0a0;">'+c+'R 뒤 사용 가능</b>' : (live ? ' · <b style="color:#9fe8c0;">사용 가능</b>' : '');
-    h += row('스킬1 · 쿨 '+kit.s1.cd+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-    h += row('스킬2 · 쿨 '+kit.s2.cd+(!unitS2On(u)?' · 에픽 또는 각성★3':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+    h += row('스킬1 · 쿨 '+cdLbl(u,'s1')+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
+    h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
     h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
   }
   return h;
@@ -4065,8 +4076,8 @@ function showUnitKitInfo(u){
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
   const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div style="font-weight:800; font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
   let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[sp.rarity].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
-  h += row('스킬1 · 쿨 '+kit.s1.cd, kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-  h += row('스킬2 · 쿨 '+kit.s2.cd+(!unitS2On(u)?' · 에픽 또는 각성★3':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+  h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
+  h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
   h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
   openInfoOverlay(sp.name, h);
 }
@@ -4461,12 +4472,12 @@ function awakenStars(key){ const lv = awakenLevel(key); return lv ? '<span class
 // (v225) 이 단계에서 새로 생기는 스킬 효과(이미 등급으로 열려 있으면 없음)
 function awakenPerkText(key, lv){
   const g0 = gradeOf(SPIRITS[key].rarity);
-  const t = lv===1 && g0<1 ? '패시브 열림' : (lv===3 && g0<2 ? '스킬2 열림' : (lv===5 ? (g0<4 ? '스킬 효과 한 등급 위' : '') : ''));
+  const t = lv===1 ? (g0<1 ? '패시브 열림' : '') : lv===2 ? '스킬1 쿨 −1' : lv===3 ? (g0<2 ? '스킬2 열림' : '') : lv===4 ? '스킬2 쿨 −1' : (g0<4 ? '스킬 효과 한 등급 위' : '');
   return t ? ' · <b style="color:#ffd557;">'+t+'</b>' : '';
 }
 function awakenRulesHtml(){
   const row = (a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
-  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '★1 패시브 열림 · ★3 스킬2 열림 (등급 무관)<br>★5 스킬 효과 한 등급 위')+row('단계', '★1 ~ ★'+AWAKEN_MAX)+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
+  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '★1 패시브 열림 · ★2 스킬1 쿨 −1<br>★3 스킬2 열림 (등급 무관) · ★4 스킬2 쿨 −1<br>★5 스킬 효과 한 등급 위')+row('단계', '★1 ~ ★'+AWAKEN_MAX)+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
 }
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
