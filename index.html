@@ -3812,6 +3812,9 @@ function stageClearReward(i){ return Math.round((5 + i*0.4) * 1.4); }
 function stageFirstReward(i){ return Math.round((50 + i*15) * 1.6); }
 function stageGradeReward(i, tier){ return Math.round(stageFirstReward(i) * STAGE_GRADE_SHARE[tier]); }
 function bossFirstReward(i){ return Math.round(stageFirstReward(i) * 1.5); }
+// (v245) 챕터 보스 첫 격파 선택권 — 1: 레어 1 · 2: 에픽 1 · 3: 레어 3+에픽 1 · 4: 에픽 3 · 5: 레전더리 1
+const BOSS_FIRST_ITEMS = { 1:{pick_rare:1}, 2:{pick_epic:1}, 3:{pick_rare:3, pick_epic:1}, 4:{pick_epic:3}, 5:{pick_legendary:1} };
+function bossFirstItems(i){ const it = BOSS_FIRST_ITEMS[bossChapter(i)]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
   for(let r=fromRank+1; r<=toRank; r++){
@@ -4057,7 +4060,7 @@ function resolveBossWaveVictory(sf){
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
-  if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', '챕터 '+chapterNum+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage'); // (v179) 보스도 첫 클리어 보상(눌러서 수령)
+  if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', '챕터 '+chapterNum+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx)); // (v179) 보스도 첫 클리어 보상(눌러서 수령)
   if(!already || gradeRank[grade] > gradeRank[already]){
     improved = true;
     const prevRank = already ? gradeRank[already] : 0, newRank = gradeRank[grade];
@@ -4845,7 +4848,7 @@ function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내�
 }
 function showMailSendModal(){
   if(!isAdmin()){ toast('관리자만 쓸 수 있어요'); return; }
-  const tk = ['summon','rare','epic','equip','pick_epic','pick_legendary','pick_mythic'];
+  const tk = ['summon','rare','epic','equip','pick_rare','pick_epic','pick_legendary','pick_mythic'];
   let h = '<h3 style="text-align:center;">📮 우편 보내기</h3>'
     + '<div class="seg" id="msTo"><button data-to="all" class="on">모든 플레이어</button><button data-to="one">한 명 (친구 코드)</button></div>'
     + '<input id="msCode" class="fr-in code" maxlength="8" placeholder="받는 사람 친구 코드 8자리" style="display:none; margin-top:6px; width:100%;">'
@@ -4896,7 +4899,7 @@ function showAdminSetupModal(){
   document.getElementById('admApply').addEventListener('click', ()=>{
     const MAX = 9999999;
     state.essence = MAX; state.enhanceStone = MAX; state.shards = 99999; state.raidGems = 99999;
-    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','equip','fuseGuard','pick_epic','pick_legendary','pick_mythic'].forEach(k=>state.tickets[k] = 999);
+    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>state.tickets[k] = 999);
     Object.keys(SPIRITS).forEach(k=>{ if(!(state.owned[k]>0)) state.owned[k] = 1; state.discovered[k] = true; });
     state.adminUnlockAll = true;
     save(); closeModal(); render(); toast('🛠️ 관리자 세팅을 적용했어요');
@@ -6294,7 +6297,7 @@ function renderSummonTab(){
   html += ticketRowHtml(TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'),
     '<button class="btn small" id="epicTicketBtn" '+((ownEpic||state.essence>=EPIC_TICKET_COST)?'':'disabled')+'>'+(ownEpic?'사용':'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+EPIC_TICKET_COST)+'</button>');
   html += '</div>';
-  { const picks = ['pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
+  { const picks = ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
     if(picks.length){ html += '<div class="card"><div style="font-weight:700; margin-bottom:8px;">🎟️ 정령 선택권</div>'
       + picks.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', i===0)).join('') + '</div>'; } }
   html += recentSummonRowHtml();
@@ -6730,7 +6733,7 @@ function getStageRewardContent(stageIdx){
   const firstAmt = boss ? bossFirstReward(stageIdx) : stageFirstReward(stageIdx);
   const first = '<div'+(fPend ? ' data-claim-reward="'+fid+'"' : '')+' style="position:relative; padding:8px; border-radius:12px; text-align:center; cursor:'+(fPend?'pointer':'default')+'; background:'+(fPend?'#5b6bff33':(cleared?'#5b6bff22':'#2d2a62'))+'; border:1px solid '+(fPend?'#5b6bff':'#3a3a4a')+';">'
     + (fPend?'<div style="position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></div>':'')
-    + '<div style="font-weight:800;">🎉 첫 클리어 보상</div><div class="sub" style="font-size:12px;"><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+firstAmt+'</div>'
+    + '<div style="font-weight:800;">🎉 첫 클리어 보상</div><div class="sub" style="font-size:12px;"><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+firstAmt+(boss && bossFirstItems(stageIdx) ? ' '+itemsShort(bossFirstItems(stageIdx)) : '')+'</div>'
     + '<div style="font-size:11px; margin-top:2px; font-weight:700; color:'+(fPend?'#ffd557':'var(--sub)')+';">'+(fPend?'눌러서 받기':(cleared?'<img class="uic" src="assets/ui/ic_check.webp" alt=""> 받음':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 첫 클리어 시'))+'</div></div>';
   const grades = box(head('<img class="uic" src="assets/ui/ic_medal.webp" alt=""> 등급 달성 보상 <span class="sub" style="font-size:10px; font-weight:600;">· 등급마다 1번</span>')
     + (boss ? renderGradeLadderHtml(state.stageBest[stageIdx], ()=>itemsShort({equip: bossChapter(stageIdx)}), 'stage_'+stageIdx+'_bossclear_')
@@ -6943,7 +6946,8 @@ const TICKET_INFO = {
   epic:{icon:'<img class="uic" src="assets/ui/ic_pass.webp" alt="">', name:'에픽 정령 확정권'},
   equip:{icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'정령장비 소환권'},
   fuseGuard:{icon:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', name:'합성 보호권'},
-  // (v243) 선택권 — 그 등급 정령 중 하나를 골라 받음 (지금은 우편으로만 지급)
+  // (v243) 선택권 — 그 등급 정령 중 하나를 골라 받음 · (v245) 레어~레전더리는 보스 첫 격파·탑 보상으로도, 신화는 우편 전용
+  pick_rare:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_rare.webp" alt="">', name:'레어 선택권', pick:'rare'},
   pick_epic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', pick:'epic'},
   pick_legendary:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt="">', name:'레전더리 선택권', pick:'legendary'},
   pick_mythic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt="">', name:'신화 선택권', pick:'mythic'} // (v217) 전설·신화 합성 실패 시 정령을 잃지 않음(자동 사용)
@@ -7196,9 +7200,13 @@ function challengeTower(floor){
 }
 // (v155) 경제 구조: 스테이지=정수, 탑=강화석+층 소환권, 보스=장비권, 출정=장비·재료(강화석) — 층 보상은 정수 대신 강화석이 기본
 function towerFloorReward(f){
-  if(f%25===0) return {items:{epic:1}};   // 25, 50, 75… 에픽 확정권
+  // (v245) 선택권 층: 100층마다 레전더리 · 50층마다 에픽 · 30층마다 레어 (그 층의 확정권 대신)
+  if(f%100===0) return {items:{pick_legendary:1}};  // 100, 200…
+  if(f%50===0) return {items:{pick_epic:1}};        // 50, 150…
+  if(f%25===0) return {items:{epic:1}};   // 25, 75, 125… 에픽 확정권
   const m = f%10;
-  if(m===0) return {items:{rare:1}};      // 10, 20, 30… 레어 확정권
+  if(f%30===0) return {items:{pick_rare:1}};        // 30, 60, 90, 120…
+  if(m===0) return {items:{rare:1}};      // 10, 20, 40… 레어 확정권
   if(m===5) return {items:{summon:1}};    // 5, 15, 35… 정령 소환권
   if(m===9) return {items:{equip:1}};     // 9, 19, 29… 정령장비 소환권
   if(m===2 || m===4 || m===7) return {stone: 14+4*f};  // 예전엔 정수 소량 곁들였지만 이제 전부 강화석
@@ -9073,16 +9081,29 @@ function migrateStageRewardsV179(){
   Object.keys(state.stageBest||{}).forEach(k=>{
     const i = Number(k), g = state.stageBest[k];
     if(!Number.isInteger(i) || !gradeRank[g]) return;
-    if(isBossStage(i)) addPendingReward('stage_'+i+'_first', '🎉', '챕터 '+bossChapter(i)+' 보스 첫 격파', bossFirstReward(i), 0, 'stage'); // 보스 등급 보상(장비권)은 예전부터 있었음
+    if(isBossStage(i)) addPendingReward('stage_'+i+'_first', '🎉', '챕터 '+bossChapter(i)+' 보스 첫 격파', bossFirstReward(i), 0, 'stage', bossFirstItems(i)); // 보스 등급 보상(장비권)은 예전부터 있었음
     else addStageGradeRewards(i, 0, gradeRank[g]);
   });
   state.stageRewardsV179 = true;
+}
+// (v245) 보스 첫 격파에 선택권이 새로 생김 — 이미 잡은 보스: 아직 안 받은 첫 격파 보상엔 합쳐 주고, 받은 경우엔 선택권만 따로 수령 대기
+function migrateBossPicksV245(){
+  if(state.bossPicksV245) return;
+  Object.keys(state.stageBest||{}).forEach(k=>{
+    const i = Number(k);
+    if(!Number.isInteger(i) || !isBossStage(i) || !state.stageBest[k]) return;
+    const items = bossFirstItems(i); if(!items) return;
+    const first = (state.pendingRewards||[]).find(r=>r.id==='stage_'+i+'_first');
+    if(first){ first.items = first.items || {}; Object.keys(items).forEach(t=>{ if(!first.items[t]) first.items[t] = items[t]; }); }
+    else addPendingReward('boss_'+i+'_pick', '🎉', '챕터 '+bossChapter(i)+' 보스 첫 격파 선택권', 0, 0, 'stage', items);
+  });
+  state.bossPicksV245 = true;
 }
 function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','equip','fuseGuard','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
@@ -9263,6 +9284,7 @@ function sanitizeState(){
     if(!buffOk || e.pendingKeep) e.pendingBuffChoice = null;
   }
   migrateStageRewardsV179();
+  migrateBossPicksV245();
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
 
