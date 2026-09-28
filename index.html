@@ -208,7 +208,7 @@
   .eqimg{width:1.35em; height:1.35em; object-fit:contain; display:inline-block; vertical-align:middle; margin:0; pointer-events:none;} div > .eqimg:only-child{display:block; margin:0 auto;} .rune-chip .eqimg, .pk-sub .eqimg{margin:-.2em 0;} .sm-icon .eqimg, .sm-src .eqimg{width:1.3em; height:1.3em; margin:0;}
   .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.2); height:calc(var(--sz) * var(--k,1) * 1.2); margin:0 0 calc(var(--sz) * var(--k,1) * .2);}
   .bs-slot .bu-marker{top:auto; bottom:calc(100% + var(--sz,40px) * var(--k,1) * .12 - 2px);} /* (v207) 그림이 몸통 칸보다 위로 커져서, 차례 표시(▼)는 그림 위쪽에 */
-  .bu-mine .bu-icon .spimg{transform:scaleX(-1);}
+  .bu-flip .bu-icon img{transform:scaleX(-1);} /* (v219) 그림마다 원래 바라보는 방향이 달라서, 상대 쪽을 보도록 필요한 것만 뒤집음(ART_FACE) */
   .bu-icon .spimg{filter:drop-shadow(0 0 1px #ffffffaa);} /* (v213) 전투 정령은 그림자 필터를 하나만 — 필터가 겹치면 아이폰에서 공격 연출 때 버벅이고 화면이 잠깐 비는 원인이 됨 */
   @media (max-width:360px){ .bu-icon .spimg{width:calc(var(--sz) * var(--k,1) * 1.02); height:calc(var(--sz) * var(--k,1) * 1.02); margin-bottom:calc(var(--sz) * var(--k,1) * .08);} } /* (v207) 좁은 폰에선 옆 칸 체력 글자를 덮지 않게 조금 작게 */
   [data-duel-pick], [data-rp-pick], [data-home-rep]{padding-top:12px !important;} /* 오른쪽 위 '덱'·ⓘ 표시가 그림에 겹치지 않게 */ /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
@@ -2508,6 +2508,10 @@ function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MO
 // (v201) 보스 그림 — assets/boss/<챕터 보스 기믹 id 또는 레이드 보스 id>.webp (없으면 기존 이모지)
 const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
+// (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
+const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R',
+  dark_rare_b:'L', fire_common_a:'L', fire_epic_a:'L', fire_legendary_a:'L', fire_mythic_a:'L', fire_rare_a:'L', fire_rare_b:'L', light_common_b:'L', water_common_b:'L', water_epic_b:'L', water_legendary_b:'L', water_mythic_b:'L', wood_rare_a:'L' };
+function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; return u.side==='enemy' ? f==='R' : f==='L'; }
 function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.gimmick; const sf = state.skillFight; return (sf && sf.mode==='raid') ? sf.raidBossId : null; }
 // (v205) 정령 그림 — assets/spirits/<번호표>.webp (예: fire_mythic_b). 번호표가 없으면(장비 등) 속성 이모지
 function spArt(sp, cls){ return (sp && sp.key && SPIRITS[sp.key]) ? '<img class="spimg'+(cls?' '+cls:'')+'" src="assets/spirits/'+sp.key+'.webp" alt="" draggable="false">' : (sp ? ELEMENT_INFO[sp.element].icon : ''); }
@@ -3872,6 +3876,7 @@ function battleUnitHtml(u, opts){
   const isEnemy = u.side==='enemy', sp = SPIRITS[u.key];
   const cls = ['bu', isEnemy?'bu-enemy':'bu-mine'];
   if(!u.alive) cls.push('bu-dead');
+  if(artFlipFor(u)) cls.push('bu-flip');
   if(opts.cur) cls.push('bu-cur');
   if(opts.sel) cls.push('bu-target');
   if(opts.sel || opts.can) cls.push('bu-tap');
