@@ -539,7 +539,8 @@
   /* ===== (v145) 6칸 격자 · 상태 아이콘 · 스킬 3버튼 ===== */
   .bu-empty{visibility:hidden; height:1px;}
   .bu-hp{position:relative;}
-  .bu-hp > i{position:absolute; left:0; top:0; height:100%; background:#ffffffc8; border-right:1px solid #fff;}
+  .bu-hp > i{position:absolute; top:0; height:100%; background:linear-gradient(90deg,#9fe6ff,#d8f6ff); box-shadow:inset 1px 0 0 #ffffffcc;} /* (v219) 쉴드: 체력 뒤에 이어 붙인 하늘색 구간 */
+  .bu-hpnum .bu-sh{color:#2a9fd6; font-weight:900;} .bs-field.scene.dark .bu-hpnum .bu-sh{color:#8fdcff;}
   .bu-st{font-size:9px; letter-spacing:-1px;}
   /* (v173) 상태 배지 · 차례 표시 · 스킬 종류 · 경고 · 처치 · 대상 */
   .bu-area .bu-body::before{content:''; position:absolute; left:50%; bottom:-6px; width:calc(var(--sz) * var(--k,1) * 1.3); height:calc(var(--sz) * var(--k,1) * .5); transform:translateX(-50%); border-radius:50%; z-index:0; animation:areaPulse .9s ease-in-out infinite;}
@@ -3924,8 +3925,10 @@ function battleUnitHtml(u, opts){
   if(opts.area) cls.push('bu-area', 'area-'+opts.area);
   if(opts.fx && opts.fx.cls) cls.push(opts.fx.cls);
   const eff = opts.eff ? ' <b class="bu-effin '+(opts.eff>1?'up':'down')+'">'+effLabel(opts.eff)+'</b>' : '';
-  const hpPct = Math.max(0, u.hp/u.maxHp*100);
-  const shPct = Math.min(100, (u.st.shield||0)/u.maxHp*100);
+  // (v219) 체력 뒤에 쉴드를 이어 붙여 그림(합이 최대 체력을 넘으면 막대를 합에 맞춰 줄임) · 숫자는 '체력/최대 🛡쉴드'
+  const shV = Math.max(0, u.st.shield||0), hpDen = Math.max(u.maxHp, Math.max(0,u.hp) + shV);
+  const hpPct = Math.max(0, u.hp/hpDen*100);
+  const shPct = Math.min(100-hpPct, shV/hpDen*100);
   const attr = (opts.sel || opts.can) ? ' data-tgt="'+u.side+':'+u.idx+'"' : '';
   const st = u.alive ? statusBadgesHtml(u) : '';
   let gg = '';
@@ -3941,8 +3944,8 @@ function battleUnitHtml(u, opts){
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+(u.bossIcon ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '👥' : '')+(u.dispName || sp.name)+eff+'</div>'
-    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="width:'+shPct+'%;"></i>':'')+'</div>'
-    + '<div class="bu-hpnum">'+fmtHp(u.hp)+'/'+fmtHp(u.maxHp)+'</div>'
+    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+'</div>'
+    + '<div class="bu-hpnum">'+fmtHp(Math.max(0,u.hp))+'/'+fmtHp(u.maxHp)+(shV>0 && u.alive?' <b class="bu-sh">🛡'+fmtHp(shV)+'</b>':'')+'</div>'
     + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
     + '</div>';
