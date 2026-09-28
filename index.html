@@ -1497,7 +1497,12 @@ function foeOf(side){ return side==='me' ? 'enemy' : 'me'; }
 function unitAt(sf, side, idx){ return sideUnits(sf, side).find(u=>u.idx===idx); }
 function aliveUnits(list){ return list.filter(u=>u.alive); }
 function frontFirst(list, width){ const a = aliveUnits(list), f = a.filter(u=>isFrontRow(u.idx, width)); return f.length ? f : a; }
-function validEnemyTargets(sf){ return frontFirst(sf.enemyUnits, sideWidth(sf,'enemy')).map(u=>u.idx); }
+function validEnemyTargets(sf){
+  // (v216 버그수정) 적이 도발 중이면 도발한 정령만 고를 수 있음 — 예전엔 적 AI만 도발을 따르고 내 쪽 대상 고르기는 무시해서 다른 정령이 골라지고 공격까지 됐음
+  const taunt = aliveUnits(sf.enemyUnits).filter(u=>u.st && u.st.taunt);
+  if(taunt.length) return taunt.map(u=>u.idx);
+  return frontFirst(sf.enemyUnits, sideWidth(sf,'enemy')).map(u=>u.idx);
+}
 function skillUnitName(side, u){ return (side==='enemy' ? '적 ' : '')+(u.dispName || SPIRITS[u.key].name); }
 function skillTargetable(sf, side, idx){
   const u = unitAt(sf, side, idx);
@@ -1863,7 +1868,9 @@ function raidHostApplyRemote(a){
   const u = unitAt(sf, gSide, cur.idx); if(!u || !u.alive) return;
   if(!['basic','s1','s2'].includes(a.act) || !skillAvailable(u, a.act)) return;
   let tSide = duel ? (a.tSide==='me' ? 'enemy' : (a.tSide==='enemy' ? 'me' : a.tSide)) : a.tSide, tIdx = a.tIdx; // 손님 화면은 좌우가 뒤집혀 있음
-  if(!['me','enemy'].includes(tSide) || !Number.isInteger(tIdx) || !skillTargetable(sf, tSide, tIdx)){ const c = aiChooseAction(sf, u); if(!c) return; tSide = c.side; tIdx = c.idx; }
+  const gSk = unitSkill(u, a.act), gHarm = !gSk || gSk.kind==='harm';
+  const tauntT = (tSide===foeOf(gSide) && gHarm) ? aliveUnits(sideUnits(sf, tSide)).filter(x=>x.st.taunt) : []; // (v216) 결투에서 친구가 공격할 때도 내 편 도발을 따름
+  if(!['me','enemy'].includes(tSide) || !Number.isInteger(tIdx) || !skillTargetable(sf, tSide, tIdx) || (tauntT.length && !tauntT.some(x=>x.idx===tIdx))){ const c = aiChooseAction(sf, u); if(!c) return; tSide = c.side; tIdx = c.idx; }
   clearTimeout(skillPumpTimer); skillPumpTimer = null;
   performAction(sf, u, a.act, tSide, tIdx);
   sf.queuePos++;
@@ -3375,8 +3382,8 @@ function resolveSkillStageBattle(i, rounds){
   state.essence += baseReward;
   let improved = false, reward = 0;
   if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', '스테이지 '+(i+1)+' 첫 클리어', reward, 0, 'stage'); }
-  grantSpecialStageBonus(i); // (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음
   if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
+  grantSpecialStageBonus(i); // (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음 · (v216 버그수정) 클리어 기록(stageBest)을 남긴 뒤에 불러야 함 — 앞에서 부르면 첫 클리어 땐 '아직 안 깸'으로 보고 지나쳤음
   state.dailyStats.stagesCleared += 1;
   checkChapterPctRewards(Math.floor(i/CHAPTER_LENGTH)+1);
   checkAchievements();
