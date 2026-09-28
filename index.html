@@ -525,6 +525,7 @@
     border:1px solid #ffffff22; box-shadow:0 12px 40px #000a; animation:bsPop .4s cubic-bezier(.2,1.4,.4,1) .75s both;}
   .bs-rcard.win{border-color:#ffd55788;} .bs-rcard.lose{border-color:#ff6a6a55;}
   .bs-ricon{font-size:40px; line-height:1.1;}
+  .bs-ricon .uic{display:block; margin:0 auto 8px;} /* (v236) 결과 카드 아이콘과 제목 사이 간격 — 글자용 아이콘의 음수 여백 때문에 붙어 보였음 */
   .bs-rtitle{font-size:20px; font-weight:900; margin-top:2px;}
   .bs-rgrade{display:inline-block; margin:8px 0 2px; width:52px; height:52px; line-height:52px; border-radius:50%; font-size:28px; font-weight:900; color:#1d1b48; background:#b8bcc4;}
   .bs-rgrade.gS{background:linear-gradient(135deg,#ffe066,#ffc857);} .bs-rgrade.gA{background:linear-gradient(135deg,#d6a8ff,#b657ff); color:#fff;}
@@ -591,7 +592,7 @@
   .fz-log-row{display:flex; align-items:center; gap:5px; padding:4px 2px; border-top:1px solid #ffffff0c; font-size:12px;} .fz-log-row .spimg, .fz-log-row .eqimg{width:20px; height:20px; margin:0;}
   .fz-log-m{display:flex; flex:none;} .fz-log-a{color:var(--sub);} .fz-log-r{flex:1; min-width:0; display:flex; align-items:center; gap:3px; flex-wrap:wrap;} .fz-log-r small{color:var(--sub);} .fz-log-s{flex:none; color:var(--sub); font-size:10px;}
   .fz-log-row.bad .fz-log-r{color:#ffb0a0;} .fz-log-row.guard .fz-log-r{color:#9fd8ff;}
-  .aw-stars{color:#ffd557; font-size:.8em; letter-spacing:-1px; margin-left:3px; text-shadow:0 0 4px #ffb02088;}
+  .aw-stars{display:inline-flex; align-items:center; gap:1px; margin-left:4px; color:#ff9be8; font-size:.85em; font-weight:900; text-shadow:0 0 4px #c850ff88; vertical-align:middle;} .aw-stars .uic{width:1.25em; height:1.25em; margin:0;} /* (v236) 각성: 등급 별과 헷갈리지 않게 불꽃 아이콘 + 숫자 */
   .aw-box{margin-top:10px; padding:9px 10px; border-radius:12px; background:linear-gradient(135deg,#4a3a1a55,#2a2560); border:1px solid #ffd55744; text-align:center;} .aw-head{display:flex; align-items:center; gap:6px;} .aw-head .sub{flex:1; text-align:left; font-size:12px;} .aw-i{width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; background:none; color:var(--text); font-size:11px;}
   .aw-box .btn .uic{width:1.1em; height:1.1em;}
   /* (v220) 긴 목록의 카드는 화면 밖에 있으면 배치·그리기를 건너뜀(정령 50장 목록이 폰에서 멈칫하던 원인) */
@@ -4236,7 +4237,7 @@ function unitDetailHtml(u, bossId){
   const sp = SPIRITS[u.key], kit = kitOf(u), g = u.g, isBoss = !!u.isBoss;
   const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
   let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
-    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+(u.aw?' <span class="aw-stars">'+'★'.repeat(u.aw)+'</span>':'')+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
+    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
   h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
@@ -4247,9 +4248,9 @@ function unitDetailHtml(u, bossId){
     const row = (label, name, icon, desc, locked)=> '<div class="ud-sk'+(locked?' off':'')+'"><div><b>'+icon+' '+name+'</b> <small>'+label+'</small></div><div class="sub">'+desc+'</div></div>';
     const cdTxt = c=> live && c>0 ? ' · <b style="color:#ffb0a0;">'+c+'R 뒤 사용 가능</b>' : (live ? ' · <b style="color:#9fe8c0;">사용 가능</b>' : '');
     h += row('스킬1 · 쿨 '+cdLbl(u,'s1')+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-    h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
-    h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
-    if(AWAKEN5[u.line]) h += row('각성 ★5'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, '🌟', AWAKEN5[u.line].d, !aw5(u));
+    h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+    h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+    if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
   }
   return h;
 }
@@ -4264,9 +4265,9 @@ function showUnitKitInfo(u){
   const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div style="font-weight:800; font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
   let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[sp.rarity].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
   h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-  h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
-  h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
-  if(AWAKEN5[u.line]) h += row('각성 ★5'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, '🌟', AWAKEN5[u.line].d, !aw5(u));
+  h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+  h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+  if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
   openInfoOverlay(sp.name, h);
 }
 // (v179) 전장 배치: 각 정령의 화면 위치(%) · 크기. 전열은 가운데 쪽, 후열은 바깥쪽, 같은 줄은 위아래로 엇갈리게.
@@ -4656,9 +4657,10 @@ function doAwaken(key){
   if(!state.awaken) state.awaken = {};
   state.awaken[key] = awakenLevel(key) + 1;
   cleanupFormation(); checkAchievements(); save(); sfx('enhance');
-  toast('🌟 각성 ★'+state.awaken[key]+' · '+SPIRITS[key].name);
+  toast(uiIc('awaken')+' 각성 '+state.awaken[key]+'단계 · '+SPIRITS[key].name);
 }
-function awakenStars(key){ const lv = awakenLevel(key); return lv ? '<span class="aw-stars">'+'★'.repeat(lv)+'</span>' : ''; }
+function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv+'단계">'+uiIc('awaken')+lv+'</span>' : ''; }
+function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 // (v225) 이 단계에서 새로 생기는 스킬 효과(이미 등급으로 열려 있으면 없음)
 function awakenPerkText(key, lv){
   const g0 = gradeOf(SPIRITS[key].rarity);
@@ -4667,7 +4669,7 @@ function awakenPerkText(key, lv){
 }
 function awakenRulesHtml(){
   const row = (a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
-  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '★1 패시브 열림 · ★2 스킬1 쿨 −1<br>★3 스킬2 열림 (등급 무관) · ★4 스킬2 쿨 −1<br>★5 스킬 효과 한 등급 위 + 계열 고유 효과')+row('단계', '★1 ~ ★'+AWAKEN_MAX)+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
+  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '1단계 패시브 열림 · 2단계 스킬1 쿨 −1<br>3단계 스킬2 열림 (등급 무관) · 4단계 스킬2 쿨 −1<br>5단계 스킬 효과 한 등급 위 + 계열 고유 효과')+row('단계', '1 ~ '+AWAKEN_MAX+'단계 ('+uiIc('awaken')+'숫자로 표시)')+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
 }
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
@@ -5787,7 +5789,7 @@ function guideSectionHtml(cat){
       + guideList(['정령의 기본 힘', '공격력과 보스전 체력의 바탕'])
       + guideHeader('🔨 강화')
       + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' ('+ELEMENT_INFO.wood.name+' 계열 특성 보유 시 증가)', '레벨이 오를수록 비용 증가'])
-      + guideHeader('🌟 각성') + awakenRulesHtml()
+      + guideHeader(uiIc('awaken')+' 각성') + awakenRulesHtml()
       + guideHeader('✨ 합성')
       + fuseRulesHtml()
       + guideHeader('<img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해')
@@ -8222,8 +8224,8 @@ function showManageModal(key){
     html += '<button class="btn" id="enhanceBtn" style="margin-top:12px;" '+(canEnhance?'':'disabled')+'>강화하기 (정수 '+cost.essence+' · 강화석 '+cost.stone+')</button>';
   }
   { const ac = awakenCost(key), lv = awakenLevel(key); // (v222) 각성
-    html += '<div class="aw-box"><div class="aw-head"><b>🌟 각성 '+(lv?'★'+lv:'')+'</b><span class="sub">'+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%</span><button class="aw-i" id="awRules">ⓘ</button></div>'
-      + (ac ? '<button class="btn gold" id="awakenBtn" style="margin-top:6px;" '+(awakenSpare(key)>=ac.copies && state.essence>=ac.essence?'':'disabled')+'>★'+(lv+1)+' 각성 · 같은 정령 '+ac.copies+'마리 ('+awakenSpare(key)+'/'+ac.copies+') · '+uiIc('essence')+' '+ac.essence+'</button><div class="sub" style="font-size:11px; margin-top:3px;">각성하면 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'+awakenPerkText(key, lv+1)+'</div>' : '<div class="sub" style="margin-top:4px;">최대 각성</div>')
+    html += '<div class="aw-box"><div class="aw-head"><b>'+uiIc('awaken')+' 각성 '+(lv?lv+'단계':'')+'</b><span class="sub">'+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%</span><button class="aw-i" id="awRules">ⓘ</button></div>'
+      + (ac ? '<button class="btn gold" id="awakenBtn" style="margin-top:6px;" '+(awakenSpare(key)>=ac.copies && state.essence>=ac.essence?'':'disabled')+'>'+uiIc('awaken')+' '+(lv+1)+'단계 각성 · 같은 정령 '+ac.copies+'마리 ('+awakenSpare(key)+'/'+ac.copies+') · '+uiIc('essence')+' '+ac.essence+'</button><div class="sub" style="font-size:11px; margin-top:3px;">각성하면 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'+awakenPerkText(key, lv+1)+'</div>' : '<div class="sub" style="margin-top:4px;">최대 각성</div>')
       + '</div>'; }
   if(sp.rarity!=='mythic') html += '<button class="btn secondary" id="toFuseBtn" style="margin-top:8px;" '+(isSpLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성에 넣기</button>';
   html += '<button class="btn secondary" id="spLockBtn" style="margin-top:8px;">'+(isSpLocked(key)?'🔓 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
