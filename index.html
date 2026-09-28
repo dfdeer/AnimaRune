@@ -5308,11 +5308,25 @@ function equipUsedCount(key){
 }
 function equipFreeCount(key){ return equipOwnedCount(key) - equipUsedCount(key); }
 function equippedKey(spKey, slot){ return (state.equipped && state.equipped[spKey] && state.equipped[spKey][slot]) || null; }
-function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * (SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); }
+// (v241) 장비 강화: 종류별 기록 · 1단계마다 기본 효과 +10% · 등급별 최대 단계
+const EQ_ENH_STEP = 0.10, EQ_ENH_MAX = { common:3, rare:5, epic:7, legendary:9, mythic:10 };
+function equipEnhLevel(k){ return (state.equipEnh && state.equipEnh[k]) || 0; }
+function equipEnhMax(k){ return EQ_ENH_MAX[equipInfo(k).rarity] || 0; }
+function equipEnhMult(k){ return 1 + EQ_ENH_STEP*equipEnhLevel(k); }
+function equipEnhCost(k){ const lv = equipEnhLevel(k), r = RARITY_ORDER.indexOf(equipInfo(k).rarity); return { essence: 40 + lv*25 + r*20, stone: 3 + lv*3 + r*2 }; }
+function eqEnhTag(k){ const n = equipEnhLevel(k); return n>0 ? '<span class="enh-tag">+'+n+'</span>' : ''; }
+function doEquipEnhance(k){
+  const lv = equipEnhLevel(k); if(lv>=equipEnhMax(k)) return false;
+  const c = equipEnhCost(k); if(state.essence<c.essence || (state.enhanceStone||0)<c.stone) return false;
+  state.essence -= c.essence; state.enhanceStone -= c.stone;
+  if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[k] = lv+1;
+  checkAchievements(); save(); sfx('enhance'); return true;
+}
+function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * equipEnhMult(eqKey) * (SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); }
 function weaponMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'weapon'), spKey); }
 function armorMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'armor'), spKey); }
 function eqPct(v){ const x = Math.round(v*1000)/10; return (x%1===0 ? x.toFixed(0) : x.toFixed(1)); } // 0.225 → '22.5'
-function equipEffectText(key){ const i = equipInfo(key), b = EQUIP_BONUS[i.rarity]; return EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(b)+'% (속성 일치 +'+eqPct(b*EQUIP_MATCH_MULT)+'%)'; }
+function equipEffectText(key){ const i = equipInfo(key), b = EQUIP_BONUS[i.rarity]*equipEnhMult(key); return EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(b)+'% (속성 일치 +'+eqPct(b*EQUIP_MATCH_MULT)+'%)'; }
 function equipItem(spKey, slot, key){ if(!state.equipped[spKey]) state.equipped[spKey] = {}; state.equipped[spKey][slot] = key; save(); render(); }
 function unequipItem(spKey, slot){ if(state.equipped[spKey]){ state.equipped[spKey][slot] = null; } save(); render(); }
 function cleanupEquipment(){ // 보유하지 않게 된 정령의 장착 정보 정리, 장착 수가 보유 수를 넘으면 초과분 해제
@@ -5659,7 +5673,7 @@ function fuseSlotInfo(){ // 칸이 다 찼을 때 합성 정보
   const src = fuseSlotRarity(), nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
-  const inheritFrom = fuseMode==='equip' ? 0 : Math.max(...keys.map(k=>enhanceLevel(k)));
+  const inheritFrom = Math.max(...keys.map(k=> fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k))); // (v241) 장비도 강화 계승
   const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // (v219) 한 등급 오를 때 강화 3단계 = 1단계로 환산 (일반 +3 → 레어 +1, +0~2 → +0)
   const awFrom = fuseMode==='equip' ? 0 : Math.max(...keys.map(k=>awakenLevel(k))), awInherit = Math.max(0, awFrom-1); // (v238) 각성 계승: 재료 최고 각성 − 1단계
   return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit, inheritFrom, awFrom, awInherit };
@@ -5791,10 +5805,11 @@ function doSlotFuse(){
     if(cap > enhanceLevel(res)){ if(!state.enhanceLevel) state.enhanceLevel = {}; state.enhanceLevel[res] = cap; inherited = cap; }
     cleanupFormation();
   }
+  if(eq){ const cap = Math.min(info.inherit, equipEnhMax(res)); if(cap > equipEnhLevel(res)){ if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[res] = cap; inherited = cap; } }
   checkAchievements(); save();
   if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
   else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
-  if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+SPIRITS[res].name), Math.round(Math.max(SUMMON_THEME[SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
+  if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+(eq ? equipInfo(res).name : SPIRITS[res].name)), Math.round(Math.max(SUMMON_THEME[eq ? equipInfo(res).rarity : SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
   render();
 }
 function showManageModal_returnToSpirits(){} // 정령 탭은 이미 열려 있으므로 별도 전환 불필요(자리만 유지)
@@ -6152,6 +6167,7 @@ function equipTileHtml(k){
   return '<div data-equip-key="'+k+'" style="position:relative; text-align:center; padding:8px 2px 6px; border-radius:12px; border:2px solid '+hex+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); cursor:pointer;">'
     + (canEquipFuse(k) ? '<div style="position:absolute; top:2px; right:5px; font-size:10px; color:#5cd65c; font-weight:900;">▲</div>' : '')
     + (isEqLocked(k) ? '<div class="lock-mark"><img class="uic" src="assets/ui/ic_lock.webp" alt=""></div>' : '')
+    + (equipEnhLevel(k) ? '<div style="position:absolute; top:3px; left:4px;">'+eqEnhTag(k)+'</div>' : '')
     + '<div style="font-size:22px; line-height:1.15;">'+i.img+'</div>'
     + '<div style="font-size:10px; font-weight:700; line-height:1.15; min-height:23px; display:flex; align-items:center; justify-content:center; word-break:keep-all;">'+i.name+'</div>'
     + '<div style="font-size:10px; font-weight:800; color:'+hex+';">×'+n+(used ? ' <span style="color:var(--sub); font-weight:600;">· 장착 '+used+'</span>' : '')+'</div></div>';
@@ -6192,22 +6208,47 @@ function showEquipDetailModal(key){
   if(n<=0){ closeModal(); return; }
   const users = Object.keys(state.equipped||{}).filter(sp=>ownedCount(sp)>0 && EQUIP_SLOTS.some(sl=>state.equipped[sp][sl]===key));
   let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
-    + '<h3>'+i.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
+    + '<h3>'+i.name+' '+eqEnhTag(key)+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
     + '<div style="margin-top:8px; padding:8px; background:var(--panel2); border-radius:10px;"><div style="font-weight:700;">'+equipEffectText(key)+'</div></div></div>';
   if(users.length){
     html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(equipEffect(key,sp))+'%</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
   }
+  { const lv = equipEnhLevel(key), mx = equipEnhMax(key), c = equipEnhCost(key), can = lv<mx && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone;
+    html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?'🔓 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+html+'</div></div>';
   bindModalClose();
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
+  { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
   const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>openFuseTab('equip', key));
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
   document.querySelectorAll('[data-unequip]').forEach(b=>b.addEventListener('click', ()=>{ unequipItem(b.dataset.unequip, i.slot); showEquipDetailModal(key); }));
+}
+function showEquipEnhanceModal(key, fxLabel){
+  const i = equipInfo(key), lv = equipEnhLevel(key), mx = equipEnhMax(key), maxed = lv>=mx, c = equipEnhCost(key), b = EQUIP_BONUS[i.rarity];
+  const now = b*(1+EQ_ENH_STEP*lv), nxt = b*(1+EQ_ENH_STEP*(lv+1)), st = EQUIP_SLOT_INFO[i.slot].stat;
+  let h = '<button class="aw-back" id="eeBack">‹ 장비 정보</button>';
+  h += '<div class="aw-top"><div class="av r-'+i.rarity+' up-host" id="upHost" style="font-size:40px;">'+i.img+'</div><div><b style="font-size:17px;">'+i.name+' '+eqEnhTag(key)+'</b><div class="sub">'+RARITY_INFO[i.rarity].name+' '+EQUIP_SLOT_INFO[i.slot].name+' · 강화 '+lv+' / '+mx+'</div></div></div>';
+  h += '<div class="en-bar"><i style="width:'+Math.round(lv/Math.max(1,mx)*100)+'%"></i></div>';
+  if(!maxed){
+    const okE = state.essence>=c.essence, okS = (state.enhanceStone||0)>=c.stone;
+    h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+st+' +'+eqPct(now)+'%</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+st+' +'+eqPct(nxt)+'%</b></div></div>';
+    h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">같은 속성 정령이 끼면 ×'+EQUIP_MATCH_MULT+' (+'+eqPct(nxt*EQUIP_MATCH_MULT)+'%) · 이 장비를 낀 모든 정령에 적용</div>';
+    h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
+      + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
+      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
+      + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 강화 ÷ '+FUSE_INHERIT_DIV+' 계승</div></div>';
+    h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
+  }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화예요</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+eqPct(now)+'%</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
+  const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } });
+  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
 }
 function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
@@ -6219,7 +6260,7 @@ function showEquipPicker(spKey, slot){
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
     return '<div '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
       + '<div style="font-size:22px;">'+i.img+'</div>'
-      + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
+      + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
       + '<div style="text-align:right;"><b style="color:#ffd557;">+'+eqPct(equipEffect(k,spKey))+'%</b>'
       + (k===cur ? '<div class="sub" style="font-size:10px; color:#fff;">착용 중</div>' : (free<=0 ? '<div class="sub" style="font-size:10px;">다른 정령 착용</div>' : ''))+'</div></div>';
   }).join('');
@@ -6237,7 +6278,7 @@ function equipSlotsHtml(spKey){
     const any = allEquipKeys().some(x=>equipInfo(x).slot===slot && equipOwnedCount(x)>0);
     h += '<div data-equip-slot="'+slot+'" style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
-      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
+      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
@@ -8955,6 +8996,7 @@ function sanitizeState(){
     else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_MAX, Math.floor(s.raidTickets.count)));
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
+    { const E = {}; if(s.equipEnh && typeof s.equipEnh==='object') Object.keys(s.equipEnh).forEach(k=>{ const p = k.split('_'); const v = s.equipEnh[k]; if(p.length===3 && EQUIP_SLOTS.includes(p[0]) && ELEMENTS.includes(p[1]) && EQ_ENH_MAX[p[2]] && Number.isInteger(v) && v>0) E[k] = Math.min(v, EQ_ENH_MAX[p[2]]); }); s.equipEnh = E; } // (v241) 장비 강화
     { const F = {}; if(s.friendSent && typeof s.friendSent==='object') Object.keys(s.friendSent).slice(0,50).forEach(k=>{ const v = s.friendSent[k]; if(/^[A-Za-z0-9_-]{4,64}$/.test(k) && v && typeof v==='object') F[k] = { t: Number.isFinite(v.t) ? v.t : 0, code: typeof v.code==='string' ? v.code.slice(0,8) : '' }; }); s.friendSent = F; } // (v238) 보낸 친구 요청
     if(Array.isArray(s.duelDeck)) s.duelDeck = s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null); else s.duelDeck = null;
     { const P = {}; if(s.raidProgress && typeof s.raidProgress==='object') Object.keys(s.raidProgress).forEach(k=>{ if(raidBossById(k) && Array.isArray(s.raidProgress[k])) P[k] = s.raidProgress[k].filter(d=>RAID_DIFFS.some(x=>x.id===d)); }); s.raidProgress = P; }
