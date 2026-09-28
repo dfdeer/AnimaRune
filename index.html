@@ -807,6 +807,11 @@
   .formation-wrap{display:flex; flex-direction:column; gap:8px; margin-bottom:14px;}
   .formation-row{display:grid; gap:8px; grid-auto-columns:minmax(0,1fr);}
   .formation-row .slot .icon{font-size:clamp(14px, 6.5vw, 26px);}
+  /* (v221) 칸 수가 많아져도(탑 5칸 등) 그림·이름을 칸 너비 비율로 — 예전엔 화면 너비 기준이라 좁은 칸에서 그림이 칸을 다 채우고 이름이 가려졌음 */
+  .formation-row .slot{container-type:inline-size; aspect-ratio:auto; min-height:0; padding:5px 2px 6px; gap:3px;}
+  @supports (width:1cqi){ .formation-row .slot .icon{font-size:clamp(11px, 31cqi, 26px);} .formation-row .slot > div:not(.icon){font-size:clamp(9px, 17cqi, 12px);} }
+  .formation-row .slot .bonus-tag{top:-6px; right:50%; transform:translateX(50%);}
+  .tw-ewrap{width:min(44px, 100%); aspect-ratio:1;} .tw-eav{width:100%; height:100%;} /* (v221) 탑 상대 그림도 칸 너비 비율로 — 320px에서 5번째가 잘렸음 */
   .formation-row.front{grid-template-columns:repeat(2,1fr); width:70%; margin:0 auto;}
   .formation-row.back{grid-template-columns:repeat(3,1fr);}
   .modal-bg{position:fixed; inset:0; background:#000c; z-index:50; display:flex; align-items:center; justify-content:center; padding:20px;}
@@ -7250,9 +7255,9 @@ function showTowerPrepModal(){
     let eAtk = baseEnemySlotAtk(idx, towerSlotPower(floor), special, el, passive);
     eAtk = Math.round(eAtk);
     enemyPower += eAtk;
-    html += '<div data-enemy-inspect style="flex:1; text-align:center; cursor:pointer;" data-enemy-element="'+el+'" data-enemy-rarity="'+rv.rarity+'" data-enemy-variant="'+rv.variant+'" data-enemy-atk="'+eAtk+'">'
-      + '<div style="position:relative; width:44px; height:44px; margin:0 auto;">'
-      + '<div style="width:44px; height:44px; border-radius:50%; background:#1b1942; border:3px solid '+ringColor+'; box-shadow:0 0 12px '+ringColor+'99; display:flex; align-items:center; justify-content:center; font-size:22px; overflow:hidden;">'+spArt(SPIRITS[el+'_'+rv.rarity+'_'+rv.variant], 'fill')+'</div>'
+    html += '<div data-enemy-inspect style="flex:1; min-width:0; text-align:center; cursor:pointer;" data-enemy-element="'+el+'" data-enemy-rarity="'+rv.rarity+'" data-enemy-variant="'+rv.variant+'" data-enemy-atk="'+eAtk+'">'
+      + '<div class="tw-ewrap" style="position:relative; margin:0 auto;">'
+      + '<div class="tw-eav" style="border-radius:50%; background:#1b1942; border:3px solid '+ringColor+'; box-shadow:0 0 12px '+ringColor+'99; display:flex; align-items:center; justify-content:center; font-size:22px; overflow:hidden;">'+spArt(SPIRITS[el+'_'+rv.rarity+'_'+rv.variant], 'fill')+'</div>'
       + (passive?'<div style="position:absolute; right:-3px; bottom:-3px; width:16px; height:16px; border-radius:50%; background:#1b1942; border:1px solid #ffffff55; font-size:9px; display:flex; align-items:center; justify-content:center;">'+passive.icon+'</div>':'')
       + '</div>'
       + '<div style="font-size:10px; font-weight:800; color:'+ringColor+'; margin-top:3px;">'+advLabel+'</div>'
