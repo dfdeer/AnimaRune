@@ -3185,7 +3185,7 @@ const LINE_KITS = {
       g>=3?'전투당 1회, 쓰러지면 체력 30%로 부활':null,
       g>=4?'부활할 때 상대 전체에게 공격력 80%로 폭발':null
     ].filter(Boolean).join('<br>') },
-    s1:{ name:'불꽃 돌진', icon:'🔥', cd:3, kind:'harm', tag:g=>g>=3?'관통':'',
+    s1:{ name:'불꽃 돌진', icon:ELEMENT_INFO.fire.icon, cd:3, kind:'harm', tag:g=>g>=3?'관통':'',
       desc:g=>[
         '대상에게 공격력 '+pctTxt([1.5,1.7,1.9,2.2,2.5][g]),
         g>=3?'바로 뒤 칸 대상에게도 50%':null
@@ -3217,7 +3217,7 @@ const LINE_KITS = {
       run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'맑은 물', desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
-    s1:{ name:'치유의 물결', icon:'💧', cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
+    s1:{ name:'치유의 물결', icon:ELEMENT_INFO.water.icon, cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
       desc:g=>[
         '대상 회복 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
@@ -3514,24 +3514,24 @@ function bossDefenseAdjust(sf, a, d, v){
 // 다음 라운드 시작 때 그로기가 풀리고 게이지가 다시 가득 참.
 const GROGGY_MAX = 100, GROGGY_DMG_MULT = 2;
 const GROGGY_RULES = {
-  frostGiant:   { desc:'🔥 화염 공격은 게이지를 2배로 깎음',
+  frostGiant:   { desc:''+ELEMENT_INFO.fire.icon+' 화염 공격은 게이지를 2배로 깎음',
     mult:(sf,a)=> a.element==='fire' ? 2 : 1 },
-  lavaLord:     { desc:'💧 물결 공격은 게이지 2배 · 🔥 화염 공격은 오히려 게이지를 채움',
+  lavaLord:     { desc:''+ELEMENT_INFO.water.icon+' 물결 공격은 게이지 2배 · '+ELEMENT_INFO.fire.icon+' 화염 공격은 오히려 게이지를 채움',
     mult:(sf,a)=> a.element==='water' ? 2 : (a.element==='fire' ? -1 : 1) },
-  ancientTree:  { desc:'평소엔 🔒 잠김 · 덩굴을 뻗는 짝수 라운드에만 뿌리가 드러나 열림(🔥 화염 2배)',
+  ancientTree:  { desc:'평소엔 🔒 잠김 · 덩굴을 뻗는 짝수 라운드에만 뿌리가 드러나 열림('+ELEMENT_INFO.fire.icon+' 화염 2배)',
     lock:(sf)=> sf.round%2!==0 ? '짝수R에 열림' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1 },
   ruinGuardian: { desc:'결계석이 남아 있는 동안 🔒 잠김 · 결계석을 하나 부술 때마다 게이지 −35',
     lock:(sf)=> sf.enemyUnits.some(u=>u.isWard && u.alive) ? '결계석' : '', mult:()=>1 },
   abyssCrystal: { desc:'지금 속성에 유리한 공격은 게이지 3배 · 불리한 공격은 절반',
     mult:(sf,a,b)=>{ const t = typeMult(a.element, b.element); return t>1 ? 3 : (t<1 ? 0.5 : 1); } },
   // 레이드 보스
-  frostTyrant:  { desc:'🔥 화염 공격 2배 · 얼음 껍질(보호막)이 있는 동안 🔒 잠김 · 껍질을 깨면 게이지 −30',
+  frostTyrant:  { desc:''+ELEMENT_INFO.fire.icon+' 화염 공격 2배 · 얼음 껍질(보호막)이 있는 동안 🔒 잠김 · 껍질을 깨면 게이지 −30',
     lock:(sf,b)=> (sf.raidShellUsed && b.st.shield>0) ? '얼음 껍질' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1, shellBreak:30 },
-  infernoDrake: { desc:'💧 물결 공격 2배 · 격노하는 라운드(4의 배수)엔 🔒 잠김',
+  infernoDrake: { desc:''+ELEMENT_INFO.water.icon+' 물결 공격 2배 · 격노하는 라운드(4의 배수)엔 🔒 잠김',
     lock:(sf)=> sf.round%4===0 ? '격노 중' : '', mult:(sf,a)=> a.element==='water' ? 2 : 1 },
-  abyssEye:     { desc:'응시(저주)를 받은 정령의 공격은 게이지 3배 · 🌟 빛 공격 2배',
+  abyssEye:     { desc:'응시(저주)를 받은 정령의 공격은 게이지 3배 · '+ELEMENT_INFO.light.icon+' 빛 공격 2배',
     mult:(sf,a)=> (a.st.curse ? 3 : 1) * (a.element==='light' ? 2 : 1) },
-  eldertree:    { desc:'🔥 화염 공격 2배 · 매 라운드 게이지 10 재생 · 껍질 경화(보호막) 중엔 🔒 잠김',
+  eldertree:    { desc:''+ELEMENT_INFO.fire.icon+' 화염 공격 2배 · 매 라운드 게이지 10 재생 · 껍질 경화(보호막) 중엔 🔒 잠김',
     lock:(sf,b)=> (sf.raidShellUsed && b.st.shield>0) ? '껍질 경화' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1, regen:10 },
   dawnJudge:    { desc:'판결이 내려지는 라운드(3의 배수)엔 빈틈이 생겨 게이지 2배',
     mult:(sf)=> sf.round%3===0 ? 2 : 1 }
@@ -4246,20 +4246,20 @@ const ELEMENT_PASSIVE = {
   fire: {
     epic: {
       a: { icon:'💥', name:'폭발', desc:'20% 확률로 공격력 x1.5', crit:{chance:0.2, mult:1.5} },
-      b: { icon:'🔥', name:'돌진', desc:'공격력 +10%', atkMult:1.10 }
+      b: { icon:'💨', name:'돌진', desc:'공격력 +10%', atkMult:1.10 }
     },
     legendary: {
       a: { icon:'💥', name:'대폭발', desc:'35% 확률로 공격력 x2.0', crit:{chance:0.35, mult:2.0} },
-      b: { icon:'🔥', name:'광란', desc:'공격력 +35%', atkMult:1.35 }
+      b: { icon:'😡', name:'광란', desc:'공격력 +35%', atkMult:1.35 }
     }
   },
   water: {
     epic: {
-      a: { icon:'💧', name:'완화', desc:'패배 시 정수 +10 획득', reviveBonus:10 },
+      a: { icon:'🩹', name:'완화', desc:'패배 시 정수 +10 획득', reviveBonus:10 },
       b: { icon:'🌊', name:'적응', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 }
     },
     legendary: {
-      a: { icon:'💧', name:'회생', desc:'패배 시 정수 +20 획득', reviveBonus:20 },
+      a: { icon:'💖', name:'회생', desc:'패배 시 정수 +20 획득', reviveBonus:20 },
       b: { icon:'🌊', name:'해일', desc:'상성 무시', unfavorableFloor:1.0 }
     }
   },
@@ -4276,21 +4276,21 @@ const ELEMENT_PASSIVE = {
   light: {
     epic: {
       a: { icon:'🕊️', name:'정화', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 },
-      b: { icon:'🌟', name:'광휘', desc:'공격력 +8%', atkMult:1.08 }
+      b: { icon:'💡', name:'광휘', desc:'공격력 +8%', atkMult:1.08 }
     },
     legendary: {
       a: { icon:'⚖️', name:'심판', desc:'상성 무시', unfavorableFloor:1.0 },
-      b: { icon:'🌟', name:'서광', desc:'공격력 +15%', atkMult:1.15 }
+      b: { icon:'🌅', name:'서광', desc:'공격력 +15%', atkMult:1.15 }
     }
   },
   dark: {
     epic: {
       a: { icon:'🖤', name:'탐욕', desc:'전투 승리 시 정수 보상 +15%', rewardBonus:0.15 },
-      b: { icon:'🌑', name:'침식', desc:'공격력 +10%', atkMult:1.10 }
+      b: { icon:'🌀', name:'침식', desc:'공격력 +10%', atkMult:1.10 }
     },
     legendary: {
       a: { icon:'💀', name:'파멸의 탐식', desc:'전투 승리 시 정수 보상 +30%', rewardBonus:0.3 },
-      b: { icon:'🌑', name:'황폐', desc:'공격력 +20%', atkMult:1.20 }
+      b: { icon:'🥀', name:'황폐', desc:'공격력 +20%', atkMult:1.20 }
     }
   }
 };
@@ -6107,7 +6107,7 @@ function doHearthUpgrade(key){
   if(!state.hearthUpgrades) state.hearthUpgrades = {};
   state.hearthUpgrades[key] = lvl+1;
   save();
-  toast('🔥 화로 '+u.name+' Lv.'+(lvl+1)+'!');
+  toast(uiIc('hearth')+' 화로 '+u.name+' Lv.'+(lvl+1)+'!', 2200, true);
   render();
 }
 function HEARTH_MAX(){ return 12 + hearthUpgradeLevel('capacity')*2; } // 12~24
@@ -6137,7 +6137,7 @@ function collectHearth(){
   state.hearth.lastCollect = wasFull ? Date.now() : state.hearth.lastCollect + sparks*HEARTH_INTERVAL_MS();
   save();
   sfx('claim');
-  toastReward({essence:essenceGain, stone:stoneGain}, '🔥 화로 수확');
+  toastReward({essence:essenceGain, stone:stoneGain}, uiIc('hearth')+' 화로 수확');
   render();
 }
 function renderHearthTab(){
@@ -6152,7 +6152,7 @@ function renderHearthTab(){
   html += '<button class="btn" id="collectHearthBtn" style="margin-top:14px;" '+(sparks<=0?'disabled':'')+'>거두기</button>';
   html += '<div style="display:flex; justify-content:center; gap:14px; margin-top:8px; font-size:13px; font-weight:700;"><span>✨ +'+(sparks*HEARTH_ESSENCE_PER_SPARK())+'</span><span>🔩 +'+(sparks*HEARTH_STONE_PER_SPARK())+'</span></div>';
   html += '</div>';
-  html += '<div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub);">🔥 1 = ✨'+HEARTH_ESSENCE_PER_SPARK()+' + 🔩'+HEARTH_STONE_PER_SPARK()+'</div>';
+  html += '<div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub);">'+uiIc('hearth')+' 1 = ✨'+HEARTH_ESSENCE_PER_SPARK()+' + 🔩'+HEARTH_STONE_PER_SPARK()+'</div>';
 
   html += '<h2 style="margin-top:16px;">업그레이드</h2>';
   Object.keys(HEARTH_UPGRADES).forEach(key=>{
@@ -6328,7 +6328,7 @@ function playTowerBattleAnimation(floor, playerPower, enemyPower, grade, slotDet
     }else{
       const rewardLine = outcome.firstClear ? '' : '<div class="sub">이미 첫 돌파 보상을 받은 층 (기록 갱신용 재도전)</div>';
       const xpLine = outcome.frontierAdvanced ? '<div class="sub" style="color:#c9a8ff;">+2xp</div>' : '';
-      box.innerHTML = '<div style="font-size:36px;">🌟</div><h3>'+floor+'층 돌파! ('+grade+'등급)</h3>'
+      box.innerHTML = '<div style="font-size:36px;">🏆</div><h3>'+floor+'층 돌파! ('+grade+'등급)</h3>'
         + rewardLine
         + xpLine
         + '<div class="sub" style="margin-top:4px;">다음: '+(floor+1)+'층</div>'
@@ -6862,7 +6862,7 @@ function renderExpeditionTab(){
     html += '<div class="card" style="margin-top:10px; border:1px solid #ffd24a88; background:linear-gradient(160deg,#2f2a1c,#1c1a14);">';
     html += '<div style="text-align:center; font-weight:800; font-size:16px;">🏆 사이클 '+(run.cycle||1)+' 완주!</div>';
     html += '<button class="btn" id="cashOutBtn" style="margin-top:10px;">💰 수령하고 종료 · 🔩'+Math.round(pot.stone*keepMult)+' 🛡️'+Math.round((pot.equip||0)*keepMult)+'</button>';
-    html += '<button class="btn secondary" id="keepBtn" style="margin-top:8px;">🔥 킵하고 계속</button>';
+    html += '<button class="btn secondary" id="keepBtn" style="margin-top:8px;">📌 킵하고 계속</button>';
     html += '<div class="sub" style="margin-top:8px; line-height:1.5;">킵 → 보상 보류, 다음 사이클로 (적 강화 · 버프 1개 선택)<br>다음 완주 시 배율 ×'+keepMult.toFixed(2)+' → ×'+nextMult.toFixed(2)+', 수령액 약 🔩'+Math.round(nS*nextMult)+' 🛡️'+Math.round(nEq*nextMult)+'<br><span style="color:#ff8a8a;">도중에 지면 쌓인 보상을 전부 잃어요</span></div>';
     html += '</div>';
     return html;
