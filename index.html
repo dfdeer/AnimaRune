@@ -3081,6 +3081,7 @@ function accApply(parsed){ // 서버 세이브를 이 기기에 적용(적용 �
 async function accInitial(){ // 켤 때: 서버 세이브와 맞추기
   const fb = raidNet.fb, snap = await fb.get(accRef('saves'));
   const cloud = snap.exists() ? snap.val() : null, meta = accMeta();
+  if(meta) acc.base = meta.base; // (v231 버그수정) 이 기기 기록을 안 읽어서 저장할 때마다 '충돌'로 보고 끝없이 다시 시도 → 화면이 멈췄음
   if(!cloud || !cloud.data){ accSetMeta(0); await accPush(true); return; }
   let parsed = null; try{ parsed = decodeSaveString(cloud.data); }catch(e){}
   if(!parsed){ accSetMeta(cloud.rev||0); return; }
@@ -3113,7 +3114,11 @@ async function accPush(force){ // 서버에 저장 — 다른 기기가 그사�
       return { rev: Math.max(base, (cur && cur.rev)||0) + 1, t: Date.now(), dev, data };
     });
     if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1); acc.lastPush = Date.now(); return true; }
-    if(conflict){ acc.busy = false; await accInitial(); }
+    if(conflict){ // 다른 기기가 더 새로 저장함 → 한 번만 다시 맞춰봄(계속 충돌하면 고르기 창으로, 무한 반복 금지)
+      acc.busy = false;
+      if(acc.retrying){ acc.retrying = false; const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null; let parsed = null; try{ parsed = cloud && cloud.data ? decodeSaveString(cloud.data) : null; }catch(e){} if(parsed && !document.querySelector('.acc-pick')) accChooser(parsed, cloud); return false; }
+      acc.retrying = true; try{ await accInitial(); } finally{ acc.retrying = false; }
+    }
     return false;
   }catch(e){ return false; }
   finally{ acc.busy = false; }
