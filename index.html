@@ -839,9 +839,10 @@
   .modal h3{margin-top:0;}
 /* (v95) 전투 연출 모달: 슬롯 5칸에서도 확인 버튼이 화면 밖으로 밀리지 않게 높이 여유를 늘리고, 버튼은 스크롤해도 하단에 고정 */
 .modal-bg.wide{padding:8px;}
-.modal.roster-modal{display:flex; flex-direction:column; overflow:hidden; max-height:calc(100vh - 24px);}
+.modal.roster-modal{display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; max-height:calc(100vh - 24px); max-height:calc(100dvh - 16px - var(--sat) - var(--sab));} /* (v237) 폰의 100vh는 주소창이 숨었을 때 높이라 실제 화면보다 커서 아래 버튼이 잘리고 스크롤도 안 됐음 → 보이는 높이 기준 + 넘치면 창 전체 스크롤 */
 .modal.roster-modal > *{flex-shrink:0;}
-.modal.roster-modal > .roster-scroll{flex:1 1 auto; flex-shrink:1; min-height:150px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d14; border-radius:14px; padding:8px; box-shadow:inset 0 3px 10px #000c, inset 0 0 0 1px #ffffff14; margin-top:4px;}
+.modal.roster-modal > .rp-foot{position:sticky; bottom:-20px; z-index:4; margin:8px -12px -20px; padding:8px 12px 14px; background:linear-gradient(180deg,#221f4dee,#1d1b48 30%); border-top:1px solid #ffffff14;} /* (v237) 아래 버튼 줄은 항상 창 바닥에 보이게 */
+.modal.roster-modal > .roster-scroll{flex:1 1 auto; flex-shrink:1; min-height:110px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d14; border-radius:14px; padding:8px; box-shadow:inset 0 3px 10px #000c, inset 0 0 0 1px #ffffff14; margin-top:4px;}
 .modal.wide{max-width:440px; padding-left:12px; padding-right:12px;}
 .modal.battle-modal{max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); padding:16px 18px;}
 .modal.battle-modal h3{margin-bottom:8px;}
@@ -2947,11 +2948,12 @@ function showRaidPickModal(){
     return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#27235a; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div class="spw" style="font-size:20px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(k))+'</div></button>';
   }).join('') : '<div class="sub">보유한 정령이 없어요</div>';
   h += '</div></div>';
-  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
+  h += '<div class="rp-foot"><div style="display:flex; gap:6px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
     + '<button class="btn" id="raidReadyBtn" style="flex:2;">'+(solo ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작' : (myReady ? '↩ 준비 취소' : '<img class="uic" src="assets/ui/ic_check.webp" alt=""> 준비 완료'))+'</button></div>';
   if(solo) h += '<button class="btn secondary" id="raidSoloExitBtn" style="margin-top:6px; opacity:.8;">나가기</button>';
   if(!solo) h += '<button class="btn secondary" id="raidPickLeaveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.role==='host'?'방 닫기':'나가기')+'</button>';
   if(solo){} else if(raidPartnerGone() || (!raidNet.roomH && raidNet.doc)) h += '<button class="btn secondary" id="raidDissolveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.roomH?'팀원 연결 끊김 — 레이드 해산':'레이드 해산')+'</button>';
+  h += '</div>'; // rp-foot
   raidModalShell(h);
   document.querySelectorAll('[data-rp-slot]').forEach(el=>el.addEventListener('click', ()=>{
     if(myReady) return;
