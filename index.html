@@ -581,6 +581,9 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  .aw-stars{color:#ffd557; font-size:.8em; letter-spacing:-1px; margin-left:3px; text-shadow:0 0 4px #ffb02088;}
+  .aw-box{margin-top:10px; padding:9px 10px; border-radius:12px; background:linear-gradient(135deg,#4a3a1a55,#2a2560); border:1px solid #ffd55744; text-align:center;} .aw-head{display:flex; align-items:center; gap:6px;} .aw-head .sub{flex:1; text-align:left; font-size:12px;} .aw-i{width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; background:none; color:var(--text); font-size:11px;}
+  .aw-box .btn .uic{width:1.1em; height:1.1em;}
   /* (v220) 긴 목록의 카드는 화면 밖에 있으면 배치·그리기를 건너뜀(정령 50장 목록이 폰에서 멈칫하던 원인) */
   .pk-card{content-visibility:auto; contain-intrinsic-size:auto 60px;} .roster-grid > *, .grid5 > .species-tile, .fz-grid > .fz-pick{content-visibility:auto; contain-intrinsic-size:auto 96px;}
   .ud-sts{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px;} .ud-sts .sbg{font-size:11px; padding:1px 6px; width:auto; height:auto; border-radius:8px;}
@@ -1005,7 +1008,6 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
       <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"><span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></span></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
-        <button data-hmenu="achieve" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🏅 업적<span id="headerMenuAchieveDot" style="display:none; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📖 가이드북</button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
       </div>
@@ -4385,14 +4387,35 @@ function enhanceLevel(key){ return (state.enhanceLevel && state.enhanceLevel[key
 const MAX_ENHANCE = 10;
 function maxEnhanceFor(key){
   const passive = passiveFor(key);
-  return MAX_ENHANCE + ((passive && passive.enhanceCapBonus) || 0);
+  return MAX_ENHANCE + ((passive && passive.enhanceCapBonus) || 0) + awakenLevel(key); // (v222) 각성마다 +1
 }
 // (v93) 정령력 = 정령의 기본 힘(등급·속성 보정·강화 반영). 정령 상세에는 이 값 하나만 보여줌.
 // 공격력·팀 체력은 정령력에서 나옴: 전투 공격력 = 정령력 x (상성·특성 등 전투 효과), 체력 = 정령력 x 속성 체력 비율 x 배수.
+// ===================== (v222) 각성: 같은 정령 중복을 먹여 그 정령 그대로 더 강하게 =====================
+// ★1~★5 · 단계마다 정령력 +8% · 강화 한도 +1 · 비용은 같은 정령(중복)과 정수 — 좋아하는 낮은 등급 정령도 계속 키울 수 있게
+const AWAKEN_MAX = 5, AWAKEN_POWER = 0.08, AWAKEN_COPIES = [1,1,2,2,3];
+function awakenLevel(key){ return (state.awaken && state.awaken[key]) || 0; }
+function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: (80 + 120*RARITY_ORDER.indexOf(SPIRITS[key].rarity)) * (lv+1) }; }
+function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
+function doAwaken(key){
+  const c = awakenCost(key); if(!c) return;
+  if(awakenSpare(key) < c.copies){ toast('같은 정령이 '+c.copies+'마리 더 필요해요'); return; }
+  if(state.essence < c.essence){ toast('정수 부족 ('+c.essence+' 필요)'); return; }
+  state.essence -= c.essence; state.owned[key] -= c.copies;
+  if(!state.awaken) state.awaken = {};
+  state.awaken[key] = awakenLevel(key) + 1;
+  cleanupFormation(); checkAchievements(); save(); sfx('enhance');
+  toast('🌟 각성 ★'+state.awaken[key]+' · '+SPIRITS[key].name);
+}
+function awakenStars(key){ const lv = awakenLevel(key); return lv ? '<span class="aw-stars">'+'★'.repeat(lv)+'</span>' : ''; }
+function awakenRulesHtml(){
+  const row = (a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
+  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('단계', '★1 ~ ★'+AWAKEN_MAX)+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
+}
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
   const base = BASE_ATK * RARITY_INFO[sp.rarity].mult * ELEMENT_ATK_MULT[sp.element];
-  return base * (1 + 0.05*enhanceLevel(speciesKey)); // 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
+  return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + AWAKEN_POWER*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
 function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey); } // (v104) 무기 배율 반영
@@ -5478,6 +5501,7 @@ function guideSectionHtml(cat){
       + guideList(['정령의 기본 힘', '공격력과 보스전 체력의 바탕'])
       + guideHeader('🔨 강화')
       + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' ('+ELEMENT_INFO.wood.name+' 계열 특성 보유 시 증가)', '레벨이 오를수록 비용 증가'])
+      + guideHeader('🌟 각성') + awakenRulesHtml()
       + guideHeader('✨ 합성')
       + fuseRulesHtml()
       + guideHeader('♻️ 분해')
@@ -5593,7 +5617,7 @@ function tile(key){
     + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name">'+(owned>0 && isSpLocked(key)?'🔒':'')+sp.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
-    + (owned>0 && enhanceLevel(key)>0 ? '<div class="sub" style="margin-top:2px;">+'+enhanceLevel(key)+'</div>' : '')
+    + (owned>0 && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+(enhanceLevel(key)?'+'+enhanceLevel(key)+' ':'')+awakenStars(key)+'</div>' : '')
     + '</div>';
 }
 
@@ -7894,7 +7918,7 @@ function showManageModal(key){
   const canEnhance = !maxed && state.essence>=cost.essence && (state.enhanceStone||0)>=cost.stone;
   let html = '<div style="text-align:center;">';
   html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
-  html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
+  html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+awakenStars(key)+'</h3>';
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 강화 Lv.'+lvl+'/'+maxLvl+(maxed?' (최대)':'')+'</div>';
   html += '<div class="sub">정령력 '+fmtDmg(unitPower(key))+' · 💪 전투력 '+fmtCP(spiritCP(key))+'</div>';
@@ -7907,6 +7931,10 @@ function showManageModal(key){
   if(!maxed){
     html += '<button class="btn" id="enhanceBtn" style="margin-top:12px;" '+(canEnhance?'':'disabled')+'>강화하기 (정수 '+cost.essence+' · 강화석 '+cost.stone+')</button>';
   }
+  { const ac = awakenCost(key), lv = awakenLevel(key); // (v222) 각성
+    html += '<div class="aw-box"><div class="aw-head"><b>🌟 각성 '+(lv?'★'+lv:'')+'</b><span class="sub">'+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%</span><button class="aw-i" id="awRules">ⓘ</button></div>'
+      + (ac ? '<button class="btn gold" id="awakenBtn" style="margin-top:6px;" '+(awakenSpare(key)>=ac.copies && state.essence>=ac.essence?'':'disabled')+'>★'+(lv+1)+' 각성 · 같은 정령 '+ac.copies+'마리 ('+awakenSpare(key)+'/'+ac.copies+') · '+uiIc('essence')+' '+ac.essence+'</button><div class="sub" style="font-size:11px; margin-top:3px;">각성하면 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1</div>' : '<div class="sub" style="margin-top:4px;">최대 각성</div>')
+      + '</div>'; }
   if(sp.rarity!=='mythic') html += '<button class="btn secondary" id="toFuseBtn" style="margin-top:8px;" '+(isSpLocked(key)?'disabled':'')+'>⚗️ 합성에 넣기</button>';
   html += '<button class="btn secondary" id="spLockBtn" style="margin-top:8px;">'+(isSpLocked(key)?'🔓 잠금 풀기':'🔒 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="dismantleBtn" style="margin-top:8px;" '+(ownedCount(key)<=0 || isSpLocked(key)?'disabled':'')+'>♻️ 분해하기'+(isSpLocked(key)?' (🔒 잠금 중)':'')+'</button>';
@@ -7919,6 +7947,7 @@ function showManageModal(key){
   if(eBtn) eBtn.addEventListener('click', ()=>{ doEnhance(key); showManageModal(key); });
   const dBtn = document.getElementById('dismantleBtn');
   if(dBtn) dBtn.addEventListener('click', ()=>showDismantleModal(key));
+  { const ab = document.getElementById('awakenBtn'); if(ab) ab.addEventListener('click', ()=>{ doAwaken(key); render(); showManageModal(key); }); const ar = document.getElementById('awRules'); if(ar) ar.addEventListener('click', ()=>openInfoOverlay('🌟 각성 규칙', awakenRulesHtml())); }
   const lkBtn = document.getElementById('spLockBtn');
   if(lkBtn) lkBtn.addEventListener('click', ()=>{ if(!state.lockedSpirits) state.lockedSpirits = {}; if(state.lockedSpirits[key]) delete state.lockedSpirits[key]; else state.lockedSpirits[key] = true; save(); render(); showManageModal(key); });
   const tfBtn = document.getElementById('toFuseBtn');
@@ -8386,6 +8415,9 @@ function sanitizeState(){
   Object.keys(s.owned).forEach(k=>{ if(s.owned[k]>0) s.discovered[k] = true; });
   Object.keys(s.enhanceLevel).forEach(k=>{ const v = s.enhanceLevel[k]; if(!SPIRITS[k] || !fin(v) || v<=0) delete s.enhanceLevel[k]; else s.enhanceLevel[k] = Math.min(Math.floor(v), maxEnhanceFor(k)); });
   s.recentSummons = s.recentSummons.filter(k=>typeof k==='string' && SPIRITS[k]).slice(0,8);
+  // (v222) 각성
+  if(!s.awaken || typeof s.awaken!=='object' || Array.isArray(s.awaken)) s.awaken = {};
+  Object.keys(s.awaken).forEach(k=>{ const v = s.awaken[k]; if(!SPIRITS[k] || !fin(v) || v<=0) delete s.awaken[k]; else s.awaken[k] = Math.min(AWAKEN_MAX, Math.floor(v)); });
   // (v218) 잠금
   if(!s.lockedSpirits || typeof s.lockedSpirits!=='object' || Array.isArray(s.lockedSpirits)) s.lockedSpirits = {};
   Object.keys(s.lockedSpirits).forEach(k=>{ if(!SPIRITS[k] || !s.lockedSpirits[k]) delete s.lockedSpirits[k]; else s.lockedSpirits[k] = true; });
