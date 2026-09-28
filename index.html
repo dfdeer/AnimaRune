@@ -581,6 +581,8 @@
   .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
+  /* (v220) 긴 목록의 카드는 화면 밖에 있으면 배치·그리기를 건너뜀(정령 50장 목록이 폰에서 멈칫하던 원인) */
+  .pk-card{content-visibility:auto; contain-intrinsic-size:auto 60px;} .roster-grid > *, .grid5 > .species-tile, .fz-grid > .fz-pick{content-visibility:auto; contain-intrinsic-size:auto 96px;}
   .ud-sts{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px;} .ud-sts .sbg{font-size:11px; padding:1px 6px; width:auto; height:auto; border-radius:8px;}
   .ud-st b small{font-size:10px; color:var(--sub);}
   .bs-tgt[role=button]{cursor:pointer;} .bs-tgt[role=button]::after{content:' ⓘ'; font-size:11px; opacity:.7;}
@@ -771,6 +773,11 @@
   .bu-boss.bu-target .bu-plate, .bs-field.side .bu-boss.bu-target .bu-plate{background:#ffdb57; color:#2a1a00;} /* (v214) 타겟이 된 보스 이름표도 노랗게 — 어두운 빨강 위 어두운 글자라 안 보였음 */
   .bu-boss .bu-hp{width:100%; height:10px; border-radius:5px; border:1px solid #00000055;}
   .bu-boss .bu-hpnum{font-size:11px;}
+  /* (v220) 글자 칸도 화면 비율(--ts, 0.72~1)에 맞춰 — 보스는 제외 */
+  .bs-slot .bu:not(.bu-boss) .bu-plate{font-size:calc(10px * var(--ts,1)); padding:calc(1px * var(--ts,1)) calc(6px * var(--ts,1));}
+  .bs-slot .bu:not(.bu-boss) .bu-hp{width:calc(56px * var(--ts,1)); height:calc(6px * var(--ts,1));}
+  .bs-slot .bu:not(.bu-boss) .bu-hpnum{font-size:calc(9px * var(--ts,1));}
+  .bs-slot .bu:not(.bu-boss) .sbg{min-width:calc(17px * var(--ts,1)); height:calc(17px * var(--ts,1)); font-size:calc(10px * var(--ts,1));}
   .bu-gg{position:relative; margin-top:3px; width:100%; height:13px; border-radius:7px; background:#1a1024cc; border:1px solid #ffd55788; overflow:hidden; cursor:pointer;}
   .bu-gg > div{height:100%; background:linear-gradient(90deg,#ffc357,#ffe066); transition:width .3s;}
   .bu-gg span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000;}
@@ -2542,7 +2549,7 @@ function spArt(sp, cls){ return (sp && sp.key && SPIRITS[sp.key]) ? '<img class=
 document.addEventListener('DOMContentLoaded', ()=>{ const mr = document.getElementById('modalRoot'); if(mr && window.MutationObserver) new MutationObserver(()=>tameAnims(mr, false)).observe(mr, {childList:true, subtree:true}); });
 function tameAnims(root, finishFinite){
   if(!root || !document.getAnimations) return;
-  let list; try{ list = document.getAnimations(); }catch(e){ return; }
+  let list; try{ list = root.getAnimations ? root.getAnimations({subtree:true}) : document.getAnimations(); }catch(e){ return; } // (v220) 문서 전체가 아니라 다시 그린 영역만
   list.forEach(a=>{
     const t = a.effect && a.effect.target; if(!t || a.__tamed || !root.contains(t)) return;
     a.__tamed = true;
@@ -3871,14 +3878,19 @@ function mountBattleScreen(){
 function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(--k) 계산
   const bs = document.getElementById('battleScreen'); if(!bs) return;
   const f = bs.querySelector('.bs-field'); if(!f) return;
-  bs.style.setProperty('--k', '1');
-  const ar = f.querySelector('.bs-arena2'); if(!ar) return;
+  const ar = f.querySelector('.bs-arena2'); if(!ar) return; // (v220) 예전엔 --k를 1로 되돌렸다 다시 재서 레이아웃을 두 번씩 했음(전장 크기는 --k와 무관)
   // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
   const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
   if(!W || !H) return;
-  const kw = W*0.21/72, kh = (H*rs - (rs < 0.22 ? 40 : 46))/(sz*1.25); // 후열~전열 간격(22%)에 한 칸이 들어가도록 · (v212) 그림 높이(아이콘의 1.2배+여백)까지 계산해서 같은 열 위아래 정령이 겹치지 않게 · (v214) 범위 테두리끼리도 안 닿게 여유 6px(레이드는 8마리라 정령이 너무 작아지지 않게 예전 그대로)
-  const k = Math.max(0.45, Math.min(1.5, kw, kh));
-  bs.style.setProperty('--k', k.toFixed(3));
+  const T0 = 40, PAD = rs < 0.22 ? 0 : 9; // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
+  let kw = W*0.21/72, kh = (H*rs - T0 - PAD)/(sz*1.25); // 후열~전열 간격(22%)에 한 칸이 들어가도록 · (v212) 그림 높이(아이콘의 1.2배+여백)까지 계산해서 같은 열 위아래 정령이 겹치지 않게 · (v214) 범위 테두리끼리도 안 닿게 여유 6px(레이드는 8마리라 정령이 너무 작아지지 않게 예전 그대로)
+  let k = Math.max(0.45, Math.min(1.5, kw, kh));
+  // (v220) 좁은 화면에선 글자 칸(이름표·체력)도 같은 비율로 줄임(최소 72%) — 예전엔 그림만 줄고 글자는 고정 크기라 320px 레이드에서 겹쳤음
+  const ts = Math.max(0.72, Math.min(1, k));
+  if(ts < 1){ kh = (H*rs - T0*ts - PAD)/(sz*1.25); k = Math.max(0.45, Math.min(1.5, kw, kh)); }
+  const ks = k.toFixed(3), tss = ts.toFixed(3);
+  if(bs.style.getPropertyValue('--k')!==ks) bs.style.setProperty('--k', ks);
+  if(bs.style.getPropertyValue('--ts')!==tss) bs.style.setProperty('--ts', tss);
 }
 function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); }
 function upcomingOrder(sf, n){
