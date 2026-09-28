@@ -547,7 +547,8 @@
   .bs-selact.sk-atk{background:#ff5a5a2e; color:#ffb0a8; border:1px solid #ff5a5a88;} .bs-selact.sk-deb{background:#a45bff2e; color:#dcb0ff; border:1px solid #a45bff88;} .bs-selact.sk-sup{background:#4de3a62e; color:#9dffd8; border:1px solid #4de3a688;}
   .armtag.go{background:#ffd557; color:#2a1800; animation:warnBlink 1s ease-in-out infinite;}
   .armtag{display:block; margin-top:3px; padding:1px 8px; border-radius:8px; background:#fff; color:#1a1a2a; font-size:10px; font-weight:900;}
-  .bs-acts .btn.armed{transform:translateY(-3px); box-shadow:0 0 0 3px #fff, 0 6px 16px #0008;}
+  .bs-acts .btn.armed{transform:translateY(-4px) scale(1.03); z-index:1; filter:brightness(1.08); box-shadow:0 0 0 3px #ffe38a, 0 0 18px #ffd55799, 0 8px 16px #0007;} /* (v215) 고른 스킬: 금빛 테두리 + 은은한 빛 + 살짝 커짐 */
+  .bs-acts:has(.btn.armed) .btn:not(.armed):not(:disabled){filter:saturate(.75) brightness(.88);} /* 고르지 않은 스킬은 한 톤 가라앉혀 고른 스킬이 돋보이게 */
   .bu-sts{display:flex; flex-wrap:wrap; justify-content:center; gap:2px; margin-top:2px; max-width:84px; cursor:pointer;}
   .sbg{position:relative; display:inline-flex; align-items:center; justify-content:center; min-width:17px; height:17px; padding:0 2px; border-radius:6px; font-size:10px; line-height:1;}
   .sbg.g{background:#1f7a4acc; box-shadow:0 0 0 1px #6dffb0aa;} .sbg.b{background:#8a1f2acc; box-shadow:0 0 0 1px #ff8a8aaa;}
@@ -563,6 +564,8 @@
   .bs-acts .btn.has-warn{outline:3px solid #ff5757; outline-offset:-1px; animation:warnBlink 1s ease-in-out infinite;}
   @keyframes warnBlink{0%,100%{box-shadow:0 0 0 #ff575700} 50%{box-shadow:0 0 16px #ff5757}}
   .warnbig{display:block; margin-top:3px; padding:2px 8px; border-radius:8px; background:#ff5757; color:#fff; font-size:11px; font-weight:900;}
+  .bs-acts .btn .armtag, .bs-acts .btn .killtag, .bs-acts .btn .warnbig, .bs-acts .btn .sktype{text-shadow:none;} /* (v215) 버튼 글자 그림자가 밝은 칩 위 어두운 글자에 붙어 두 겹으로 보였음 */
+  .bs-acts .btn .sk-nm{display:inline-flex; align-items:center; gap:3px;} /* 스킬 아이콘(그림)과 이름을 한 줄로 */
   .killtag{position:absolute; top:-9px; right:-4px; padding:2px 7px; border-radius:9px; background:#ffd557; color:#2a1800; font-size:10px; font-weight:900; box-shadow:0 2px 6px #000a;}
   .bs-order .oc.tg{border-color:#ffd557 !important; box-shadow:0 0 0 2px #ffd557, 0 0 10px #ffd557; position:relative;}
   .bs-order .oc.tg i{position:absolute; top:-8px; right:-6px; font-size:9px; font-style:normal;}
@@ -4046,7 +4049,8 @@ function showSkillStageScreen(){
         small = p.text;
       }
       const armed = skillSel.act===act && ok, ready = armed && !!skillSel.armed;
-      return '<button class="btn sk-'+ty.k+(warn?' has-warn':'')+(armed?' armed':'')+'" data-act="'+act+'" '+((ok && !fxBusy)?'':'disabled')+'><span class="sktype">'+ty.i+' '+ty.t+'</span>'+kill+icon+' '+label+'<small>'+small+'</small>'+(armed?'<span class="armtag'+(ready?' go':'')+'">'+(ready?'▶ 누르면 사용':'선택됨')+'</span>':'')+''+warn+'</button>';
+      if(!armed) warn = ''; // (v215) 경고는 고른 스킬에만 — 안 고른 지원기는 누르면 대상이 아군으로 바뀌어서 '적에게 사용' 경고가 틀린 말이었고, 빨간 테두리가 고른 스킬보다 더 눈에 띄었음
+      return '<button class="btn sk-'+ty.k+(warn?' has-warn':'')+(armed?' armed':'')+'" data-act="'+act+'" '+((ok && !fxBusy)?'':'disabled')+'><span class="sktype">'+ty.i+' '+ty.t+'</span>'+kill+'<span class="sk-nm">'+icon+' '+label+'</span><small>'+small+'</small>'+(armed?'<span class="armtag'+(ready?' go':'')+'">'+(ready?'▶ 누르면 사용':'선택됨')+'</span>':'')+''+warn+'</button>';
     };
     const acts = [btn('basic', '기본 공격', '⚔️'), btn('s1', kit.s1.name, kit.s1.icon)];
     if(curUnit.g>=2) acts.push(btn('s2', kit.s2.name, kit.s2.icon));
