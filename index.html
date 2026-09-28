@@ -275,6 +275,10 @@
 .roster-pick .pick-check{position:absolute; top:-7px; right:-6px; z-index:2; width:20px; height:20px; border-radius:50%; background:#fff; color:#4956d8; font-size:12px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 2px 6px #0009;}
 .roster-pick.picked{box-shadow:0 0 0 2px #fff, 0 0 14px #8a9bffaa; transform:translateY(-1px);}
 .roster-pick.picked .pick-check{display:flex;}
+.roster-pick{color:var(--text);} .roster-pick .ico .av{margin:0;} .roster-pick .av .spimg{width:100%; height:100%;} .roster-pick .nm{margin-top:8px;} .roster-pick .av-el{left:-16%; bottom:-14%; width:38%; height:38%;}
+.roster-pick[style-dead]{opacity:.4; filter:grayscale(.7);}
+.exp-cnt{text-align:center; margin:6px 0 2px; font-size:13px; color:var(--sub);} .exp-cnt b{font-size:18px; color:#ffd557;}
+.exp-hp{height:4px; margin:4px 6px 0; border-radius:3px; background:#ffffff1a; overflow:hidden;} .exp-hp i{display:block; height:100%; background:linear-gradient(90deg,#5fd18f,#9be7b5);}
 .roster-head{position:sticky; top:0; z-index:3; background:#2a2660; padding:8px 0 7px; margin:0 0 8px; border-bottom:1px solid #ffffff14;}
 .roster-boss{display:flex; justify-content:center; align-items:center; gap:24px;}
 .roster-boss .chip{display:flex; align-items:center; gap:8px;}
@@ -6540,7 +6544,7 @@ function expTicketTimeText(ms){
   const m = Math.max(1, Math.ceil(ms/60000)), h = Math.floor(m/60);
   return h>0 ? h+'시간 '+(m%60)+'분' : m+'분';
 }
-function startExpedition(){
+function startExpedition(roster){
   if(expTicketCount() <= 0){ toast('출정권이 없어요'); return false; }
   expTicketState().count -= 1; // 가득 찬 상태에서 쓰면 이 시점부터 충전 타이머가 돌기 시작
   expeditionAbandonArmed = false;
@@ -6548,8 +6552,56 @@ function startExpedition(){
     cycle: 1, keeps: 0, totalCleared: 0, pendingKeep: false, pot: {essence:0, stone:0, equip:0},
     currentRoom: null, roomChoices: null, // (v164) 미리 정해진 경로 대신 매 단계 2~3개 중 하나를 고르는 방식
     roster: null, unitHp: {}, consecutive: {}, formationInit: false }; // (v153) 8마리 로스터(6 출전+2 대기)는 첫 전투 진입 시 채움
+  if(Array.isArray(roster) && roster.length){ // (v219) 출정 시작 때 고른 출정대
+    const run = state.expedition; run.roster = roster.slice(0, EXP_ROSTER_MAX);
+    run.roster.forEach(k=>{ run.unitHp[k] = {hp:spiritMaxHpGrid(k), maxHp:spiritMaxHpGrid(k)}; run.consecutive[k] = 0; });
+  }
   save();
   return true;
+}
+// (v219) 출정대 고르기 — 예전엔 출정 시작을 누르면 공격력 높은 8마리가 자동으로 정해져 바로 시작됐음
+const EXP_ROSTER_MAX = 8;
+let expRosterPick = null;
+function rosterPickTileHtml(k, picked, extra){
+  const sp = SPIRITS[k];
+  return '<button class="roster-pick r-'+sp.rarity+(picked?' picked':'')+'" data-exp-pick="'+k+'" style="border-color:'+RARITY_INFO[sp.rarity].color+'88; background:linear-gradient(160deg,'+RARITY_INFO[sp.rarity].color+'2a,#1e1c40 80%);">'
+    + '<span class="pick-check">✓</span><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
+    + '<div class="nm">'+sp.name+'</div>'+(extra || '<div class="pw">💪'+fmtCP(spiritCP(k))+(enhanceLevel(k)?'<span class="lv">+'+enhanceLevel(k)+'</span>':'')+'</div>')+'</button>';
+}
+function showExpeditionRosterPicker(){
+  if(expTicketCount() <= 0){ toast('출정권이 없어요'); return; }
+  const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=>spiritCP(c)-spiritCP(a));
+  if(!owned.length){ toast('정령이 없어요 — 먼저 소환해 주세요'); return; }
+  const max = Math.min(EXP_ROSTER_MAX, owned.length), need = Math.min(GRID_SLOTS, owned.length);
+  if(!expRosterPick) expRosterPick = owned.slice(0, max);
+  expRosterPick = expRosterPick.filter(k=>ownedCount(k)>0);
+  let html = '<h3 style="text-align:center; margin-bottom:2px;">🗡️ 출정대 고르기</h3>'
+    + '<div class="sub" style="text-align:center; font-size:12px; line-height:1.5;">함께 떠날 정령을 골라요 · 전투마다 6마리 출전, 나머지는 대기하며 회복<br>출정 중엔 이 정령들만 싸워요</div>'
+    + '<div class="exp-cnt"><b>'+expRosterPick.length+'</b> / '+max+'</div>';
+  html += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>rosterPickTileHtml(k, expRosterPick.includes(k))).join('')+'</div></div>';
+  html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expPickClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expPickRec" style="flex:1; margin:0;">✨ 추천 '+max+'마리</button></div>'
+    + '<button class="btn sticky-ok" id="expPickGo" style="margin-top:8px;" '+(expRosterPick.length>=need?'':'disabled')+'>🗡️ 이 정령들로 출정 (🎟️ 1장 사용)</button>'
+    + (expRosterPick.length<need ? '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">최소 '+need+'마리를 골라 주세요</div>' : '')
+    + '<button class="btn secondary" id="expPickBack" style="margin-top:8px; opacity:.7;">← 취소</button>';
+  const sc = document.querySelector('.roster-modal .roster-scroll'), top = sc ? sc.scrollTop : 0;
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;">'+html+'</div></div>';
+  const sc2 = document.querySelector('.roster-modal .roster-scroll'); if(sc2) sc2.scrollTop = top;
+  document.querySelectorAll('[data-exp-pick]').forEach(b=>b.addEventListener('click', ()=>{
+    const k = b.dataset.expPick, i = expRosterPick.indexOf(k);
+    if(i>=0) expRosterPick.splice(i,1);
+    else if(expRosterPick.length>=max){ toast(max+'마리까지 고를 수 있어요'); return; }
+    else expRosterPick.push(k);
+    showExpeditionRosterPicker();
+  }));
+  document.getElementById('expPickClear').addEventListener('click', ()=>{ expRosterPick = []; showExpeditionRosterPicker(); });
+  document.getElementById('expPickRec').addEventListener('click', ()=>{ expRosterPick = owned.slice(0, max); showExpeditionRosterPicker(); });
+  document.getElementById('expPickBack').addEventListener('click', ()=>{ closeModal(); });
+  document.getElementById('expPickGo').addEventListener('click', ()=>{
+    if(expRosterPick.length < need) return;
+    const roster = expRosterPick.slice(); expRosterPick = null;
+    closeModal();
+    if(startExpedition(roster)) render();
+  });
 }
 let expeditionAbandonArmed = false;
 function currentExpeditionNode(){
@@ -6598,12 +6650,9 @@ function showExpeditionSquadPicker(){
   const activeSet = new Set(state.formation.filter(Boolean));
   const reserve = run.roster.filter(k=>!activeSet.has(k));
   const node = currentExpeditionNode(), isBoss = node && node.type==='boss';
-  const tile = (key)=>{
-    const sp = SPIRITS[key], hpInfo = run.unitHp[key] || {hp:spiritMaxHpGrid(key), maxHp:spiritMaxHpGrid(key)};
-    const dead = hpInfo.hp<=0;
-    return '<div class="chip" style="opacity:'+(dead?0.4:1)+';">'
-      + '<div class="ring" style="border-color:'+ELEMENT_INFO[sp.element].color+'">'+spArt(sp)+'</div>'
-      + '<div class="lab"><div class="k">'+sp.name+(dead?' 💀':' · 대기')+'</div><div class="v">'+fmtHp(Math.max(0,hpInfo.hp))+'/'+fmtHp(hpInfo.maxHp)+'</div></div></div>';
+  const tile = (key)=>{ // (v219) 대기 칸 — 다른 정령 칸과 같은 모양(등급 테두리 + 이름 + 체력 막대)
+    const hpInfo = run.unitHp[key] || {hp:spiritMaxHpGrid(key), maxHp:spiritMaxHpGrid(key)}, dead = hpInfo.hp<=0, pct = Math.max(0, Math.min(100, hpInfo.hp/hpInfo.maxHp*100));
+    return rosterPickTileHtml(key, false, '<div class="exp-hp"><i style="width:'+pct+'%;"></i></div><div class="pw">'+(dead?'💀 쓰러짐':fmtHp(Math.max(0,hpInfo.hp))+'/'+fmtHp(hpInfo.maxHp))+'</div>').replace('data-exp-pick=', (dead?'style-dead ':'')+'data-exp-res=');
   };
   let html = '<h3 style="text-align:center; margin-bottom:4px;">'+(isBoss?'👑 보스 전투':'⚔️ 전투')+' 출전 배치</h3>'
     + '<div class="sub" style="text-align:center; margin-bottom:8px;">8마리 중 6마리를 슬롯에 배치(탭해서 교체) · 대기 2마리는 피로 해소 + 체력 20% 회복 · 2전투 연속 출전부터 공격력 −5%씩(최대 −15%)</div>';
@@ -6614,7 +6663,7 @@ function showExpeditionSquadPicker(){
   html += erow('전열',[0,1,2]) + erow('후열',[3,4,5]); // (v173) 두 줄 + 전열/후열 표시
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
   if(node){ const pv = buildExpeditionFight(run, node, isBoss); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), isBoss?'👑 보스':'👹 상대', '현재 체력·피로 반영'); }
-  html += '<div class="sub" style="text-align:center; margin:8px 0 4px;">대기 중</div>';
+  html += '<div class="sub" style="text-align:center; margin:8px 0 4px;">대기 중 · 누르면 출전 칸과 바꿀 수 있어요</div>';
   html += '<div class="roster-scroll"><div class="roster-grid">'+(reserve.length?reserve.map(tile).join(''):'<div class="sub" style="text-align:center;">없음</div>')+'</div></div>';
   html += '<button class="btn sticky-ok" id="startExpBattleBtn" style="margin-top:10px;">⚔️ 전투 시작</button>'
     + '<button class="btn secondary" id="expSquadBackBtn" style="margin-top:8px; opacity:.7;">← 뒤로</button>';
@@ -6622,6 +6671,7 @@ function showExpeditionSquadPicker(){
   document.querySelectorAll('[data-slot]').forEach(el=>{
     el.addEventListener('click', ()=>{ const idx = parseInt(el.dataset.slot); showSlotPicker(idx, showExpeditionSquadPicker, null, run.roster); });
   });
+  document.querySelectorAll('[data-exp-res]').forEach(el=>el.addEventListener('click', ()=>{ const i = state.formation.findIndex(k=>!k); showSlotPicker(i>=0 ? i : 0, showExpeditionSquadPicker, null, run.roster); }));
   document.getElementById('expClearBtn').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showExpeditionSquadPicker(); });
   document.getElementById('expRecBtn').addEventListener('click', ()=>{ const alive = run.roster.filter(k=>!run.unitHp[k] || run.unitHp[k].hp>0); state.formation = recommendFormation(node ? node.enemyComp : [], alive); save(); showExpeditionSquadPicker(); });
   document.getElementById('startExpBattleBtn').addEventListener('click', ()=>{
@@ -6946,7 +6996,7 @@ function renderExpeditionTab(){
     html += '<div style="margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffffff0d; display:flex; justify-content:space-between; align-items:center;">'
       + '<span style="font-weight:800;">🎟️ 출정권 '+tk+'/'+EXP_TICKET_MAX+'</span>'
       + '<span class="sub">'+(tk<EXP_TICKET_MAX ? '다음 충전까지 '+expTicketTimeText(expTicketNextMs()) : '가득 참')+'</span></div>';
-    html += '<button class="btn" id="startExpeditionBtn" style="margin-top:10px;" '+(tk<=0?'disabled':'')+'>🗡️ 출정 시작 (🎟️ 1장 사용)</button>';
+    html += '<button class="btn" id="startExpeditionBtn" style="margin-top:10px;" '+(tk<=0?'disabled':'')+'>🗡️ 출정대 고르고 출정하기</button>';
     if(tk<EXP_TICKET_MAX){
       html += '<button class="btn secondary" id="buyExpTicketBtn" style="margin-top:8px;" '+(price===null?'disabled':'')+'>'
         + (price===null ? '오늘 충전 끝' : '<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> 정수 '+price+'으로 출정권 충전')+' <span class="sub">(오늘 '+expTicketState().buys+'/'+EXP_TICKET_BUY_PRICES.length+')</span></button>';
@@ -8048,7 +8098,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-tower-reward]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ claimPendingReward('tower_'+btn.dataset.towerReward); sfx('claim'); render(); });
   });
-  const seb = document.getElementById('startExpeditionBtn'); if(seb) seb.addEventListener('click', ()=>{ startExpedition(); render(); });
+  const seb = document.getElementById('startExpeditionBtn'); if(seb) seb.addEventListener('click', ()=>{ expRosterPick = null; showExpeditionRosterPicker(); }); // (v219) 출정대부터 고름
   const bet = document.getElementById('buyExpTicketBtn'); if(bet) bet.addEventListener('click', ()=>{ if(buyExpTicket()) sfx('claim'); render(); });
   const cob = document.getElementById('cashOutBtn'); if(cob) cob.addEventListener('click', ()=>{ cashOutExpedition(); sfx('claim'); render(); });
   const kpb = document.getElementById('keepBtn'); if(kpb) kpb.addEventListener('click', ()=>{ keepExpedition(); sfx('enhance'); render(); });
