@@ -107,14 +107,14 @@
   .ex-path.done{stroke:var(--tc); stroke-opacity:.95; stroke-width:7; stroke-dasharray:none; filter:drop-shadow(0 0 4px var(--tc));}
   .ex-node{position:absolute; z-index:3; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center;}
   .ex-node[data-stage]{cursor:pointer;}
-  .ex-disc{position:relative; width:clamp(46px, 14vw, 60px); height:clamp(46px, 14vw, 60px); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900;
+  .ex-disc{position:relative; width:var(--nd, clamp(46px, 14vw, 60px)); height:var(--nd, clamp(46px, 14vw, 60px)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:900;
     background:radial-gradient(circle at 35% 30%, #3a3a52, #1d1b48); border:3px solid #5a5a72; color:#cfd2e0; box-shadow:0 6px 12px #0009, inset 0 -4px 8px #0006;}
   .ex-node.clear .ex-disc{background:radial-gradient(circle at 35% 30%, #ffffffaa, transparent 60%), var(--tc); border-color:#fff; color:#17153a; box-shadow:0 0 14px var(--tc), 0 6px 12px #0008, inset 0 -4px 8px #0003;}
   .ex-node.open .ex-disc{background:radial-gradient(circle at 35% 30%, #34304e, #16142a); border-color:var(--tc); color:#fff; box-shadow:0 0 0 4px #ffffff22, 0 0 18px var(--tc);}
   .ex-node.next .ex-disc{animation:nodepulse 1.4s ease-in-out infinite;}
   .ex-node.lock .ex-disc{filter:grayscale(.6) brightness(.75);}
   .ex-lock{position:absolute; bottom:-4px; right:-4px; font-size:13px;}
-  .ex-node.boss .ex-disc{width:clamp(66px, 20vw, 86px); height:clamp(66px, 20vw, 86px); border-color:var(--legendary); border-width:4px; background:radial-gradient(circle at 35% 30%, #5a3a10, #1e1408);}
+  .ex-node.boss .ex-disc{width:var(--bd, clamp(66px, 20vw, 86px)); height:var(--bd, clamp(66px, 20vw, 86px)); border-color:var(--legendary); border-width:4px; background:radial-gradient(circle at 35% 30%, #5a3a10, #1e1408);}
   .ex-node.boss.clear .ex-disc{background:radial-gradient(circle at 35% 30%, #ffe08a, #e0af4c); box-shadow:0 0 20px var(--legendary);}
   .ex-node.boss.open .ex-disc{box-shadow:0 0 0 5px #ffc85744, 0 0 26px var(--legendary);}
   .ex-bicon{font-size:clamp(32px, 10vw, 44px); line-height:1; filter:drop-shadow(0 2px 3px #0008);}
@@ -225,7 +225,7 @@
   .pf-in{flex:1; min-width:0; background:#12112e; border:2px solid var(--line); box-shadow:inset 0 2px 4px #0007; color:var(--text); border-radius:12px; padding:10px 12px; font-size:15px; font-family:var(--fun);}
   .pf-in:focus{outline:2px solid #8f6bff; outline-offset:1px;}
   .pf-code{flex:1; font-family:var(--fun); font-size:18px; letter-spacing:3px; text-align:center; background:#12112e; border:2px solid var(--line); border-radius:12px; padding:8px;}
-  .pf-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px;}
+  .pf-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin-top:12px;}
   .pf-stat{background:#12112e; border:2px solid var(--line); border-radius:12px; padding:8px 2px; text-align:center;} .pf-stat b{display:block; font-family:var(--fun); font-weight:400; font-size:16px; color:#ffd35a;} .pf-stat small{font-size:10px; color:var(--sub);}
   .home-cta{margin-top:4px; font-family:var(--fun); font-size:12px; color:#ffd35a; text-shadow:0 1px 0 #0b0a22, 0 0 6px #000;}
   @media (prefers-reduced-motion: reduce){ .home-empty .spimg.hero{animation:none;} }
@@ -245,7 +245,7 @@
   .btn.secondary{background:linear-gradient(135deg,#332f72,#2a2660); color:var(--text); box-shadow:0 2px 8px #00000044, inset 0 1px 0 #ffffff0d; border:1px solid #ffffff12;}
   .btn.small{padding:8px; font-size:12px; width:auto;}
   .row{display:flex; gap:8px;}
-  .grid5{display:grid; grid-template-columns:repeat(5,1fr); gap:6px;}
+  .grid5{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px;}
   .species-tile{background:var(--panel2); border-radius:10px; padding:16px 4px 8px; text-align:center; position:relative; border:2px solid transparent;} /* (v207) 위 16px은 개수·특성 표시 자리 — 테두리와 겹치지 않게 */
   .species-tile[data-manage]{cursor:pointer; border-color:#ffffff1a; box-shadow:0 2px 6px #00000055; transition:transform .1s ease, border-color .15s ease;}
   .species-tile[data-manage]:active{transform:scale(0.96);}
@@ -525,6 +525,7 @@
     border:1px solid #ffffff22; box-shadow:0 12px 40px #000a; animation:bsPop .4s cubic-bezier(.2,1.4,.4,1) .75s both;}
   .bs-rcard.win{border-color:#ffd55788;} .bs-rcard.lose{border-color:#ff6a6a55;}
   .bs-ricon{font-size:40px; line-height:1.1;}
+  .bs-ricon .uic{display:block; margin:0 auto 8px;} /* (v236) 결과 카드 아이콘과 제목 사이 간격 — 글자용 아이콘의 음수 여백 때문에 붙어 보였음 */
   .bs-rtitle{font-size:20px; font-weight:900; margin-top:2px;}
   .bs-rgrade{display:inline-block; margin:8px 0 2px; width:52px; height:52px; line-height:52px; border-radius:50%; font-size:28px; font-weight:900; color:#1d1b48; background:#b8bcc4;}
   .bs-rgrade.gS{background:linear-gradient(135deg,#ffe066,#ffc857);} .bs-rgrade.gA{background:linear-gradient(135deg,#d6a8ff,#b657ff); color:#fff;}
@@ -550,7 +551,11 @@
   .area-atk .bu-body::before{background:#ff575755; box-shadow:0 0 14px #ff5757;} .area-deb .bu-body::before{background:#a45bff55; box-shadow:0 0 14px #a45bff;} .area-sup .bu-body::before{background:#4de3a655; box-shadow:0 0 14px #4de3a6;}
   @keyframes areaPulse{0%,100%{opacity:.6} 50%{opacity:1}}
   .bu-area::before{content:''; position:absolute; top:calc(var(--sz) * var(--k,1) * -.2 - 2px * min(var(--k,1), 1)); left:calc(-8px * min(var(--k,1), 1)); right:calc(-8px * min(var(--k,1), 1)); bottom:-1px; z-index:-1; border-radius:16px; pointer-events:none;} /* (v214) 범위 테두리는 정령 칸 바깥으로 한 겹 — 타겟 꺾쇠와 선이 겹치지 않게 */
-  .bu-area.area-atk::before{background:#ff575726; box-shadow:0 0 0 2px #ff5757, 0 0 14px #ff5757aa;} .bu-area.area-deb::before{background:#a45bff26; box-shadow:0 0 0 2px #a45bff, 0 0 14px #a45bffaa;} .bu-area.area-sup::before{background:#4de3a626; box-shadow:0 0 0 2px #4de3a6, 0 0 14px #4de3a6aa;}
+  /* (v235) 네모 범위 테두리는 가까운 정령끼리 겹쳐서 없앰 → 발밑 빛 타원 + 그림 둘레 빛 + 이름표 테두리 색으로 표시 */
+  .bu-area::before{display:none;}
+  .bu-area{--ac:#ff5757;} .bu-area.area-deb{--ac:#a45bff;} .bu-area.area-sup{--ac:#4de3a6;}
+  .bu-area .bu-body img{filter:drop-shadow(0 0 3px var(--ac)) drop-shadow(0 0 7px var(--ac));}
+  .bu-area .bu-plate{box-shadow:0 0 0 2px var(--ac), 0 0 8px var(--ac);}
   .bs-selact{display:inline-block; margin:2px 0; padding:2px 9px; border-radius:9px; font-size:12px; font-weight:900;}
   .bs-selact small{font-size:10px; opacity:.8; margin-left:3px;}
   .bs-selact.sk-atk{background:#ff5a5a2e; color:#ffb0a8; border:1px solid #ff5a5a88;} .bs-selact.sk-deb{background:#a45bff2e; color:#dcb0ff; border:1px solid #a45bff88;} .bs-selact.sk-sup{background:#4de3a62e; color:#9dffd8; border:1px solid #4de3a688;}
@@ -581,18 +586,17 @@
   .fz-row.ok{background:#3fbf7f1f;} .fz-row.bad{background:#ff6b6b1c;} .fz-row.guard{background:#5fb4ff1f;}
   .fz-tag{flex:none; font-size:11px; padding:1px 7px; border-radius:8px;} .fz-tag.ok{background:#3fbf7f33; color:#9fe8c0;} .fz-tag.bad{background:#ff6b6b33; color:#ffb0b0;} .fz-tag.guard{background:#5fb4ff33; color:#b8dcff;}
   .fz-new{color:#ffd557; font-size:10px;} .fz-down{color:#ff9a9a;}
-  .fz-failic{font-size:56px; filter:grayscale(.6) brightness(.85); margin:4px 0;} .fz-failic .eqimg{width:1.4em; height:1.4em; display:block; margin:0 auto;}
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
   .fz-log{margin:10px 0 2px; padding:6px 10px; border-radius:12px; background:#ffffff08; border:1px solid #ffffff14;} .fz-log summary{cursor:pointer; font-weight:800; font-size:13px; padding:4px 0;} .fz-log summary .sub{font-weight:600; font-size:11px;}
   .fz-log-row{display:flex; align-items:center; gap:5px; padding:4px 2px; border-top:1px solid #ffffff0c; font-size:12px;} .fz-log-row .spimg, .fz-log-row .eqimg{width:20px; height:20px; margin:0;}
   .fz-log-m{display:flex; flex:none;} .fz-log-a{color:var(--sub);} .fz-log-r{flex:1; min-width:0; display:flex; align-items:center; gap:3px; flex-wrap:wrap;} .fz-log-r small{color:var(--sub);} .fz-log-s{flex:none; color:var(--sub); font-size:10px;}
   .fz-log-row.bad .fz-log-r{color:#ffb0a0;} .fz-log-row.guard .fz-log-r{color:#9fd8ff;}
-  .aw-stars{color:#ffd557; font-size:.8em; letter-spacing:-1px; margin-left:3px; text-shadow:0 0 4px #ffb02088;}
+  .aw-stars{display:inline-flex; align-items:center; gap:1px; margin-left:4px; color:#ff9be8; font-size:.85em; font-weight:900; text-shadow:0 0 4px #c850ff88; vertical-align:middle;} .aw-stars .uic{width:1.25em; height:1.25em; margin:0;} /* (v236) 각성: 등급 별과 헷갈리지 않게 불꽃 아이콘 + 숫자 */
   .aw-box{margin-top:10px; padding:9px 10px; border-radius:12px; background:linear-gradient(135deg,#4a3a1a55,#2a2560); border:1px solid #ffd55744; text-align:center;} .aw-head{display:flex; align-items:center; gap:6px;} .aw-head .sub{flex:1; text-align:left; font-size:12px;} .aw-i{width:22px; height:22px; border-radius:50%; border:1px solid #ffffff55; background:none; color:var(--text); font-size:11px;}
   .aw-box .btn .uic{width:1.1em; height:1.1em;}
   /* (v220) 긴 목록의 카드는 화면 밖에 있으면 배치·그리기를 건너뜀(정령 50장 목록이 폰에서 멈칫하던 원인) */
-  .pk-card{content-visibility:auto; contain-intrinsic-size:auto 60px;} .roster-grid > *, .grid5 > .species-tile, .fz-grid > .fz-pick{content-visibility:auto; contain-intrinsic-size:auto 96px;}
+  .pk-card{content-visibility:auto; contain-intrinsic-size:auto 1px auto 60px;} .roster-grid > *, .grid5 > .species-tile, .fz-grid > .fz-pick{content-visibility:auto; contain-intrinsic-size:auto 1px auto 96px;}
   .ud-sts{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px;} .ud-sts .sbg{font-size:11px; padding:1px 6px; width:auto; height:auto; border-radius:8px;}
   .ud-st b small{font-size:10px; color:var(--sub);}
   .bs-tgt[role=button]{cursor:pointer;} .bs-tgt[role=button]::after{content:' ⓘ'; font-size:11px; opacity:.7;}
@@ -603,7 +607,7 @@
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
   .slot{position:relative;} .slot-info{display:inline-block; margin-left:3px; width:15px; height:15px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff66; color:#fff; font-size:10px; line-height:13px; text-align:center; vertical-align:1px; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
-  .ud-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
+  .ud-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
   .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
   .sp-line{margin:6px 0 4px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 3px;} .sp-line > i{color:var(--sub); font-style:normal; font-size:11px;}
   .sp-line-t{width:100%; font-size:11px; color:var(--sub); font-weight:800; margin-bottom:2px;}
@@ -835,9 +839,10 @@
   .modal h3{margin-top:0;}
 /* (v95) 전투 연출 모달: 슬롯 5칸에서도 확인 버튼이 화면 밖으로 밀리지 않게 높이 여유를 늘리고, 버튼은 스크롤해도 하단에 고정 */
 .modal-bg.wide{padding:8px;}
-.modal.roster-modal{display:flex; flex-direction:column; overflow:hidden; max-height:calc(100vh - 24px);}
+.modal.roster-modal{display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; max-height:calc(100vh - 24px); max-height:calc(100dvh - 16px - var(--sat) - var(--sab));} /* (v237) 폰의 100vh는 주소창이 숨었을 때 높이라 실제 화면보다 커서 아래 버튼이 잘리고 스크롤도 안 됐음 → 보이는 높이 기준 + 넘치면 창 전체 스크롤 */
 .modal.roster-modal > *{flex-shrink:0;}
-.modal.roster-modal > .roster-scroll{flex:1 1 auto; flex-shrink:1; min-height:150px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d14; border-radius:14px; padding:8px; box-shadow:inset 0 3px 10px #000c, inset 0 0 0 1px #ffffff14; margin-top:4px;}
+.modal.roster-modal > .rp-foot{position:sticky; bottom:-20px; z-index:4; margin:8px -12px -20px; padding:8px 12px 14px; background:linear-gradient(180deg,#221f4dee,#1d1b48 30%); border-top:1px solid #ffffff14;} /* (v237) 아래 버튼 줄은 항상 창 바닥에 보이게 */
+.modal.roster-modal > .roster-scroll{flex:1 1 auto; flex-shrink:1; min-height:110px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d14; border-radius:14px; padding:8px; box-shadow:inset 0 3px 10px #000c, inset 0 0 0 1px #ffffff14; margin-top:4px;}
 .modal.wide{max-width:440px; padding-left:12px; padding-right:12px;}
 .modal.battle-modal{max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); padding:16px 18px;}
 .modal.battle-modal h3{margin-bottom:8px;}
@@ -912,6 +917,8 @@
 #smAgain:disabled,#mAgain:disabled{opacity:.3; filter:grayscale(1); cursor:not-allowed;}
 #modalClose2{background:#34344a; border:1px solid #ffffff33;}
 .sm-src{position:absolute; left:50%; top:210px; margin:-22px 0 0 -22px; font-size:40px; z-index:1; filter:drop-shadow(0 0 10px var(--rc)); opacity:0; animation:smConv var(--rev) cubic-bezier(.5,0,.8,.4) forwards;}
+.sm-card.fail{background:linear-gradient(160deg,#3a3a4c,#1c1c2a 62%); border-color:#6d6d84; box-shadow:0 0 12px #0008;} .sm-card.fail .sm-rarity{background:#56566c; box-shadow:none;} .sm-card.fail .sm-icon{filter:grayscale(.55) drop-shadow(0 0 6px #0009);}
+.sm-flash.fail{background:radial-gradient(circle at 50% 44%, #d8d8e4 0%, #6d6d84 30%, transparent 70%);} .sm-title.fail{color:#c4c4d4; text-shadow:none;}
 .sm-title{position:absolute; top:4px; left:0; right:0; text-align:center; font-weight:900; font-size:18px; color:var(--rc); text-shadow:0 0 12px var(--rca); opacity:0; animation:smFade .3s ease-out calc(var(--rev) + .1s) forwards;}
 @keyframes smConv{0%{opacity:0; transform:translate(var(--sx),var(--sy)) scale(.8) rotate(0deg);} 15%{opacity:1;} 100%{opacity:0; transform:translate(0,0) scale(.2) rotate(360deg);}}
 @keyframes smFade{to{opacity:1;}}
@@ -1014,7 +1021,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화예요</div>
       </div>
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
-      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"><span id="headerAchieveDot" style="display:none; position:absolute; top:1px; right:1px; width:7px; height:7px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);"></span></button>
+      <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
@@ -1505,6 +1512,20 @@ function cpBarHtml(my, en, enLabel, note){
 function unitPG(u){ const p = u.pg; return (Number.isInteger(p) && p>=0 && p<=4) ? p : (u.g>=1 ? u.g : 0); }
 function unitS2On(u){ return u.s2on===true || u.g>=2; }
 function unitSG(u){ return Math.max(2, u.g); }
+// (v234) 각성 ★5 계열 고유 효과 — 같은 계열(일반~신화)이면 같은 효과
+const AWAKEN5 = {
+  fire_a:{ t:'연쇄 돌진', d:'불꽃 돌진으로 처치하면 불꽃 돌진 쿨타임 초기화' },
+  fire_b:{ t:'짙은 불씨', d:'화상을 걸 때 1중첩 더' },
+  water_a:{ t:'넘치는 샘', d:'치유의 물결 회복 대상 1명 더 (체력 비율이 가장 낮은 다른 아군)' },
+  water_b:{ t:'혹한', d:'서리 화살이 25% 확률로 빙결' },
+  wood_a:{ t:'깊은 뿌리', d:'뿌리 내리기 도발 1라운드 더' },
+  wood_b:{ t:'맹독', d:'독 지속 1라운드 더 (3 → 4라운드)' },
+  light_a:{ t:'정화의 빛', d:'수호의 빛이 해로운 효과 1개도 제거' },
+  light_b:{ t:'긴 별빛', d:'별빛 가속 지속 1라운드 더 (2 → 3라운드)' },
+  dark_a:{ t:'탐욕', d:'생명 흡수 흡혈량 40% → 60%' },
+  dark_b:{ t:'깊은 저주', d:'저주 지속 1라운드 더' }
+};
+function aw5(u){ return !!u && (u.aw||0)>=5; }
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
 function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0)); }
@@ -1694,8 +1715,8 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
   C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); };
-  C.burn = (u, n)=>{ const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
-  C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:3, pct, srcG:a.g }; }, '☠독'); };
+  C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
+  C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
   C.strip = u=>{ let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); return n; };
   C.actNext = u=>{
@@ -1719,7 +1740,7 @@ function performAction(sf, a, act, tSide, tIdx){
     const sk = unitSkill(a, act);
     if(act==='s2'){ const sg = unitSG(a); C.g = sg; C.P = arr=>arr[sg]; } // (v225) 각성으로 연 스킬2는 에픽 수치부터
     sk.run(C);
-    if(act==='s1') a.cd1 = unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
+    if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
     pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' '+sk.name+' → '+skillUnitName(tSide, C.t));
   }
   if(a.st.empower) delete a.st.empower;
@@ -2740,6 +2761,11 @@ function fitHome(){ // 헤더와 하단 탭 사이 남는 높이에 홈을 딱 �
   const foot = Math.max(70 + emoH, Math.min(want, cur.ped));
   el.style.setProperty('--hero-foot', Math.round(foot)+'px');
 }
+// (v233) 아이폰은 '확대 금지'를 무시하고 두 손가락 확대를 허용함 → 게임 화면이 커졌다 작아졌다 하지 않게 막음
+['gesturestart','gesturechange'].forEach(ev=>document.addEventListener(ev, e=>e.preventDefault(), {passive:false}));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>{ // 이미 확대된 상태면 배율 설정을 다시 넣어 원래대로
+  if(window.visualViewport.scale > 1.01){ const m = document.querySelector('meta[name=viewport]'); if(m){ const c = m.getAttribute('content'); m.setAttribute('content', c+', minimum-scale=1'); setTimeout(()=>m.setAttribute('content', c), 50); } }
+});
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
 // 앱으로 돌아옴, 글꼴 로딩. 처음 켤 때 잘리던 문제의 근본 대책
 let relayoutRaf = 0;
@@ -2758,6 +2784,17 @@ function fitRest(){
     h = Math.max(parseFloat(el.dataset.min)||200, Math.min(parseFloat(el.dataset.max)||99999, Math.floor(h)));
     if(el.style.height !== h+'px'){ el.style.height = h+'px'; el.style.maxHeight = 'none'; el.style.minHeight = '0'; }
   });
+  fitMapNodes();
+}
+// (v235) 탐험 지도: 줄·칸 간격에 맞춰 동그라미 크기를 줄임 — 줄이 많은 챕터(5)나 작은 폰에서 노드·등급 배지·보스가 겹치던 문제
+function fitMapNodes(){
+  const el = document.getElementById('exMap'); if(!el) return;
+  const rows = +el.dataset.rows||0, cols = +el.dataset.cols||0, h = el.clientHeight, w = el.clientWidth; if(!h || !w) return;
+  const rowGap = rows ? h*0.74/rows : 999, colGap = cols ? w*0.74/cols : 999;
+  const base = Math.max(46, Math.min(60, window.innerWidth*0.14));
+  const nd = Math.max(30, Math.min(base, (rowGap-20)/1.15, colGap*0.8)); // 보스(1.4배)와 이웃 줄 노드 사이에도 등급 배지 자리가 남게
+  const bd = Math.max(40, Math.min(nd*1.3, Math.max(66, Math.min(86, window.innerWidth*0.2))));
+  el.style.setProperty('--nd', Math.round(nd)+'px'); el.style.setProperty('--bd', Math.round(bd)+'px');
 }
 window.addEventListener('resize', relayoutScreens);
 window.addEventListener('orientationchange', ()=>setTimeout(relayoutScreens, 250));
@@ -2911,11 +2948,12 @@ function showRaidPickModal(){
     return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#27235a; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div class="spw" style="font-size:20px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(k))+'</div></button>';
   }).join('') : '<div class="sub">보유한 정령이 없어요</div>';
   h += '</div></div>';
-  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
+  h += '<div class="rp-foot"><div style="display:flex; gap:6px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
     + '<button class="btn" id="raidReadyBtn" style="flex:2;">'+(solo ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작' : (myReady ? '↩ 준비 취소' : '<img class="uic" src="assets/ui/ic_check.webp" alt=""> 준비 완료'))+'</button></div>';
   if(solo) h += '<button class="btn secondary" id="raidSoloExitBtn" style="margin-top:6px; opacity:.8;">나가기</button>';
   if(!solo) h += '<button class="btn secondary" id="raidPickLeaveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.role==='host'?'방 닫기':'나가기')+'</button>';
   if(solo){} else if(raidPartnerGone() || (!raidNet.roomH && raidNet.doc)) h += '<button class="btn secondary" id="raidDissolveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.roomH?'팀원 연결 끊김 — 레이드 해산':'레이드 해산')+'</button>';
+  h += '</div>'; // rp-foot
   raidModalShell(h);
   document.querySelectorAll('[data-rp-slot]').forEach(el=>el.addEventListener('click', ()=>{
     if(myReady) return;
@@ -3504,7 +3542,7 @@ const LINE_KITS = {
         '대상에게 공격력 '+pctTxt([1.5,1.7,1.9,2.2,2.5][g]),
         g>=3?'바로 뒤 칸 대상에게도 50%':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const m=C.P([1.5,1.7,1.9,2.2,2.5]); C.hit(C.t,m); if(C.g>=3) C.around('pierce').forEach(u=>C.hit(u,m*0.5)); } },
+      run:C=>{ const m=C.P([1.5,1.7,1.9,2.2,2.5]); C.hit(C.t,m); if(aw5(C.a) && !C.t.alive) C.resetCd1 = true; if(C.g>=3) C.around('pierce').forEach(u=>C.hit(u,m*0.5)); } },
     s2:{ name:'분화', icon:'🌋', cd:4, kind:'harm', tag:()=> '가로',
       desc:g=>[
         '대상에게 공격력 '+pctTxt([0,0,2.2,2.6,3.0][g]),
@@ -3537,7 +3575,7 @@ const LINE_KITS = {
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 5% 부여':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
+      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
         '대상 편 전체 회복 (시전자 최대체력 '+pctTxt([0,0,.12,.16,.20][g])+')',
@@ -3548,7 +3586,7 @@ const LINE_KITS = {
     passive:{ name:'한기', desc:g=>'공격한 대상 속도 −'+[0,5,6,8,10][g]+' (최대 3중첩)' },
     s1:{ name:'서리 화살', icon:'🏹', cd:3, kind:'harm', tag:()=> '둔화',
       desc:g=>'대상에게 공격력 '+pctTxt([1.0,1.1,1.2,1.35,1.5][g])+' + 둔화 부여 (속도 −15, 2라운드)',
-      run:C=>{ C.hit(C.t,C.P([1.0,1.1,1.2,1.35,1.5])); C.neg(C.t,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); } },
+      run:C=>{ C.hit(C.t,C.P([1.0,1.1,1.2,1.35,1.5])); C.neg(C.t,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); if(aw5(C.a) && C.t.alive && Math.random()<0.25) C.neg(C.t,st=>{ st.freeze=true; },'❄빙결'); } },
     s2:{ name:'빙결', icon:'❄️', cd:4, kind:'harm', tag:g=>'빙결'+(g>=4?' · 가로':(g>=3?' · 가로 둔화':'')),
       desc:g=>[
         '대상에게 공격력 150% + 빙결 부여 (다음 행동 1회 못 함)',
@@ -3566,7 +3604,7 @@ const LINE_KITS = {
         '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)',
         '자신이 받는 피해 −'+pctTxt([.20,.24,.28,.32,.40][g])+' (2라운드)'
       ].join('<br>'),
-      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1; st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); } },
+      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1+(aw5(C.a)?1:0); st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); } },
     s2:{ name:'가시 갑옷', icon:'🌵', cd:4, kind:'shield', tag:()=> '반사',
       desc:g=>'대상이 2라운드 동안 받는 피해의 '+pctTxt([0,0,.3,.4,.5][g])+'를 공격자에게 반사',
       run:C=>{ C.pos(C.t,st=>{ st.reflect={v:C.P([0,0,.3,.4,.5]),r:2}; },'🌵반사'); } } },
@@ -3598,7 +3636,7 @@ const LINE_KITS = {
         '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'양옆 대상에게도 절반만큼 보호막':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
+      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(aw5(C.a)) C.cleanse(C.t,1); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
     s2:{ name:'날개의 가호', icon:'🪽', cd:4, kind:'shield', tag:g=>'전체'+(g>=3?' · 면역':''),
       desc:g=>[
         '대상 편 전체에게 보호막 부여 (시전자 최대체력 '+pctTxt([0,0,.10,.13,.16][g])+')',
@@ -3612,7 +3650,7 @@ const LINE_KITS = {
         '대상에게 속도 +15, 공격력 +'+pctTxt([.10,.12,.15,.18,.20][g])+' 부여 (2라운드)',
         g>=4?'대상 편 전체에게 적용':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const f=u=>C.pos(u,st=>{ st.haste={v:15,r:2}; st.buff={v,r:2}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
+      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw5(C.a)?3:2; const f=u=>C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
     s2:{ name:'여명의 호령', icon:'📯', cd:4, kind:'buff', tag:()=> '즉시 행동',
       desc:g=>[
         '대상이 즉시 다음 차례로 행동',
@@ -3626,7 +3664,7 @@ const LINE_KITS = {
         '대상에게 공격력 '+pctTxt([1.3,1.45,1.6,1.75,1.9][g]),
         '준 피해의 40%만큼 체력 회복'
       ].join('<br>'),
-      run:C=>{ const r=C.hit(C.t,C.P([1.3,1.45,1.6,1.75,1.9])); if(r) C.heal(C.a, r.total*0.4); } },
+      run:C=>{ const r=C.hit(C.t,C.P([1.3,1.45,1.6,1.75,1.9])); if(r) C.heal(C.a, r.total*(aw5(C.a)?0.6:0.4)); } },
     s2:{ name:'처형', icon:'⚰️', cd:4, kind:'harm', tag:()=> '처형',
       desc:g=>[
         '대상 체력이 30% 이하면 공격력 '+pctTxt([0,0,3,3.5,4][g])+', 아니면 120%',
@@ -3641,7 +3679,7 @@ const LINE_KITS = {
         '대상에게 공격력 80% + 저주 '+(g>=3?3:2)+'라운드 (받는 피해 +'+pctTxt([.15,.18,.20,.23,.25][g])+')',
         g>=4?'대상 편 전체에게 저주 부여':(g>=3?'십자 방향 대상에게도 저주 부여':null)
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const v=C.P([.15,.18,.20,.23,.25]), r=C.g>=3?3:2; const f=u=>C.neg(u,st=>{ st.curse={v,r}; },'<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); C.hit(C.t,0.8); f(C.t);
+      run:C=>{ const v=C.P([.15,.18,.20,.23,.25]), r=(C.g>=3?3:2)+(aw5(C.a)?1:0); const f=u=>C.neg(u,st=>{ st.curse={v,r}; },'<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); C.hit(C.t,0.8); f(C.t);
         if(C.g>=4) C.side(C.tSide).filter(u=>u!==C.t).forEach(f); else if(C.g>=3) C.around('cross').forEach(f); } },
     s2:{ name:'악몽 포식', icon:'👁️', cd:4, kind:'harm', tag:()=> '이로운 효과 제거',
       desc:g=>[
@@ -4201,7 +4239,7 @@ function unitDetailHtml(u, bossId){
   const sp = SPIRITS[u.key], kit = kitOf(u), g = u.g, isBoss = !!u.isBoss;
   const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
   let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
-    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+(u.aw?' <span class="aw-stars">'+'★'.repeat(u.aw)+'</span>':'')+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
+    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
   h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
@@ -4212,8 +4250,9 @@ function unitDetailHtml(u, bossId){
     const row = (label, name, icon, desc, locked)=> '<div class="ud-sk'+(locked?' off':'')+'"><div><b>'+icon+' '+name+'</b> <small>'+label+'</small></div><div class="sub">'+desc+'</div></div>';
     const cdTxt = c=> live && c>0 ? ' · <b style="color:#ffb0a0;">'+c+'R 뒤 사용 가능</b>' : (live ? ' · <b style="color:#9fe8c0;">사용 가능</b>' : '');
     h += row('스킬1 · 쿨 '+cdLbl(u,'s1')+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-    h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
-    h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+    h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+    h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+    if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
   }
   return h;
 }
@@ -4228,8 +4267,9 @@ function showUnitKitInfo(u){
   const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div style="font-weight:800; font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
   let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[sp.rarity].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
   h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
-  h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성★3':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
-  h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성★1':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+  h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
+  h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, '✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
+  if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
   openInfoOverlay(sp.name, h);
 }
 // (v179) 전장 배치: 각 정령의 화면 위치(%) · 크기. 전열은 가운데 쪽, 후열은 바깥쪽, 같은 줄은 위아래로 엇갈리게.
@@ -4619,18 +4659,19 @@ function doAwaken(key){
   if(!state.awaken) state.awaken = {};
   state.awaken[key] = awakenLevel(key) + 1;
   cleanupFormation(); checkAchievements(); save(); sfx('enhance');
-  toast('🌟 각성 ★'+state.awaken[key]+' · '+SPIRITS[key].name);
+  toast(uiIc('awaken')+' 각성 '+state.awaken[key]+'단계 · '+SPIRITS[key].name);
 }
-function awakenStars(key){ const lv = awakenLevel(key); return lv ? '<span class="aw-stars">'+'★'.repeat(lv)+'</span>' : ''; }
+function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv+'단계">'+uiIc('awaken')+lv+'</span>' : ''; }
+function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 // (v225) 이 단계에서 새로 생기는 스킬 효과(이미 등급으로 열려 있으면 없음)
 function awakenPerkText(key, lv){
   const g0 = gradeOf(SPIRITS[key].rarity);
-  const t = lv===1 ? (g0<1 ? '패시브 열림' : '') : lv===2 ? '스킬1 쿨 −1' : lv===3 ? (g0<2 ? '스킬2 열림' : '') : lv===4 ? '스킬2 쿨 −1' : (g0<4 ? '스킬 효과 한 등급 위' : '');
+  const t = lv===1 ? (g0<1 ? '패시브 열림' : '') : lv===2 ? '스킬1 쿨 −1' : lv===3 ? (g0<2 ? '스킬2 열림' : '') : lv===4 ? '스킬2 쿨 −1' : ((g0<4 ? '스킬 효과 한 등급 위 · ' : '')+'고유 효과 「'+((AWAKEN5[SPIRITS[key].element+'_'+SPIRITS[key].variant]||{}).t||'')+'」');
   return t ? ' · <b style="color:#ffd557;">'+t+'</b>' : '';
 }
 function awakenRulesHtml(){
   const row = (a,b)=>'<tr><td>'+a+'</td><td>'+b+'</td></tr>';
-  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '★1 패시브 열림 · ★2 스킬1 쿨 −1<br>★3 스킬2 열림 (등급 무관) · ★4 스킬2 쿨 −1<br>★5 스킬 효과 한 등급 위')+row('단계', '★1 ~ ★'+AWAKEN_MAX)+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
+  return '<table class="fz-rules">'+row('효과', '단계마다 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1')+row('스킬', '1단계 패시브 열림 · 2단계 스킬1 쿨 −1<br>3단계 스킬2 열림 (등급 무관) · 4단계 스킬2 쿨 −1<br>5단계 스킬 효과 한 등급 위 + 계열 고유 효과')+row('단계', '1 ~ '+AWAKEN_MAX+'단계 ('+uiIc('awaken')+'숫자로 표시)')+row('재료', '같은 정령 '+AWAKEN_COPIES.join(' → ')+'마리 (1마리는 남김) + 정수')+row('유지', '종류별로 기록 — 합성·분해해도 각성은 남음')+'</table>';
 }
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
@@ -5570,8 +5611,8 @@ function doSlotFuse(){
     }
     logFuse({ m:fuseMode, k:info.keys, ok:false, g:!!r.guard, r: r.guard ? null : (downTo || survivor), d: !!downTo, s: info.rate, t: Date.now() });
     if(!eq) cleanupFormation();
-    checkAchievements(); save(); sfx('fail');
-    showFuseFailModal({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
+    checkAchievements(); save();
+    showFuseFailResult({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
     render(); return;
   }
   info.keys.forEach(take);
@@ -5584,23 +5625,23 @@ function doSlotFuse(){
     cleanupFormation();
   }
   checkAchievements(); save();
-  if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img}, custom:v.custom, ticketKey:'equip' }); }
-  else showResultModal(SPIRITS[res], isNew, null, {fuse: SPIRITS[info.keys[0]]});
-  if(inherited) setTimeout(()=>toast('⬆️ 강화 계승 · '+SPIRITS[res].name+' +'+inherited), 400);
+  if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
+  else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
+  if(inherited) setTimeout(()=>toast('⬆️ 강화 계승 · '+SPIRITS[res].name+' +'+inherited), Math.round(Math.max(SUMMON_THEME[SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
   render();
 }
 function showManageModal_returnToSpirits(){} // 정령 탭은 이미 열려 있으므로 별도 전환 불필요(자리만 유지)
-function showFuseFailModal(r){
+// (v232) 합성 실패 결과 — 성공과 같은 모여드는 연출(목표 등급 색) 뒤에 회색 실패 카드
+function showFuseFailResult(r){
   const nm = k=> r.eq ? equipInfo(k).name : SPIRITS[k].name, art = k=> r.eq ? equipInfo(k).img : spArt(SPIRITS[k]);
-  const body = r.guard
-    ? '<div class="sub">'+RARITY_INFO[r.nr].name+' 합성에 실패했지만<br><b style="color:#9fd8ff;"><img class="uic" src="assets/ui/ic_guard.webp" alt=""> 합성 보호권</b>으로 재료 3'+r.unit+'를 모두 지켰어요</div>'
-    : '<div class="sub">'+nm(r.survivor)+' 1'+r.unit+'만 남았어요'+(r.downTo?'<br><b style="color:#ff9a9a;">⬇️ 남은 1'+r.unit+'가 '+nm(r.downTo)+'('+RARITY_INFO[r.eq ? equipInfo(r.downTo).rarity : SPIRITS[r.downTo].rarity].name+')(으)로 강등됐어요</b>':'')+'</div>';
+  const k0 = r.keys[0], el = r.eq ? equipInfo(k0).element : SPIRITS[k0].element;
+  const sub = r.guard ? '<img class="uic" src="assets/ui/ic_guard.webp" alt=""> 합성 보호권으로 재료 3'+r.unit+'를 모두 지켰어요'
+    : nm(r.survivor)+' 1'+r.unit+'만 남았어요'+(r.downTo ? '<br><b style="color:#ff9a9a;">⬇️ '+nm(r.downTo)+'('+RARITY_INFO[r.eq ? equipInfo(r.downTo).rarity : SPIRITS[r.downTo].rarity].name+')(으)로 강등</b>' : '');
   const next = Math.round((1-fuseFailChanceFor(r.nr, r.streakKey))*100);
-  const html = '<div style="text-align:center;"><div class="fz-failic">'+art(r.guard ? r.keys[0] : (r.downTo || r.survivor))+'</div><h3>'+(r.eq?'장비 ':'')+'합성 실패…</h3>'+body
-    + '<div class="sub" style="margin-top:8px; font-size:12px;">연속 실패 보정 · 다음 '+RARITY_INFO[r.nr].name+' '+(r.eq?'장비 ':'')+'합성 성공 확률 <b style="color:#ffd557;">'+next+'%</b></div>'
-    + '<button class="btn sticky-ok" id="modalClose" style="margin-top:12px;">확인</button></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal">'+html+'</div></div>';
-  document.getElementById('modalClose').addEventListener('click', closeModal);
+  showResultModal({ element: el, rarity: r.nr, variant:'a', name:'합성 실패…' }, false, null, {
+    fail: true, fuse: { icons: r.keys.map(art), name: '' },
+    custom: { icon: art(r.guard ? k0 : (r.downTo || r.survivor)), sub, own: '연속 실패 보정 · 다음 '+RARITY_INFO[r.nr].name+' '+(r.eq?'장비 ':'')+'합성 성공 <b style="color:#ffd557;">'+next+'%</b>' },
+    ticketKey: r.eq ? 'equip' : undefined });
 }
 // 특성 리롤: 에픽/레전더리는 variant(a/b)에 따라 패시브가 다르므로, 종 전체를 반대 variant로 전환할 수 있음
 function usedCountExcluding(key, excludeIdx){
@@ -5750,7 +5791,7 @@ function guideSectionHtml(cat){
       + guideList(['정령의 기본 힘', '공격력과 보스전 체력의 바탕'])
       + guideHeader('🔨 강화')
       + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' ('+ELEMENT_INFO.wood.name+' 계열 특성 보유 시 증가)', '레벨이 오를수록 비용 증가'])
-      + guideHeader('🌟 각성') + awakenRulesHtml()
+      + guideHeader(uiIc('awaken')+' 각성') + awakenRulesHtml()
       + guideHeader('✨ 합성')
       + fuseRulesHtml()
       + guideHeader('<img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해')
@@ -5810,9 +5851,7 @@ function render(){
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
   document.getElementById('essenceVal').textContent = headerNum(state.essence); // (v193) 10만 이상은 '12.3만'처럼 — 좁은 폰에서 ☰ 버튼이 화면 밖으로 밀려나던 문제
   document.getElementById('stoneVal').textContent = headerNum(state.enhanceStone||0);
-  { const achOn = (hasPendingFor('achieve_') || activeQuests().some(q=>!state.questsClaimed[q.id] && q.check()));
-    document.getElementById('headerAchieveDot').style.display = achOn ? 'block' : 'none';
-    const md = document.getElementById('headerMenuAchieveDot'); if(md) md.style.display = achOn ? 'inline-block' : 'none'; }
+  // (v232) 메뉴(☰)에는 가이드·설정만 있어서 빨간 점을 띄우지 않음 — 의뢰·업적 알림은 홈의 의뢰·업적 버튼에 따로 뜸
   const lvl = accountLevel();
   const prevT = ACCOUNT_LEVEL_THRESHOLDS[lvl-1] || 0;
   const nextT = nextAccountThreshold();
@@ -7979,7 +8018,7 @@ function renderStageTab(){
     + '<div class="ex-bar"><i style="width:'+pct+'%;"></i></div><div class="ex-sub">'+(ch>cur?'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 미도달':(ch<cur?'<img class="uic" src="assets/ui/ic_check.webp" alt=""> 클리어':'진행 중'))+' · '+clearCount+'/'+CHAPTER_LENGTH
     + ' <button class="ex-reward" data-chapter-reward-btn="'+ch+'"><img class="uic" src="assets/ui/ic_gift.webp" alt=""> 챕터 보상'+(hasPendingFor('ch'+ch+'_pct')?'<span class="ex-rdot"></span>':'')+'</button></div></div>'
     + '<button class="ex-arrow" id="chapterNext" '+(ch>=MAX_CHAPTERS?'disabled':'')+'>▶'+arrowDot(pendAfter)+'</button></div>' + TOP_MARK;
-  html += '<div class="ex-map fit-rest scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+'" data-below="next" data-min="220" data-max="640" id="exMap" style="--tc:'+theme.color+';">'+battleSceneHtml(sceneTheme)
+  html += '<div class="ex-map fit-rest scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+'" data-below="next" data-min="'+Math.max(220, maxRow*62+100)+'" data-max="640" id="exMap" data-rows="'+maxRow+'" data-cols="'+maxCol+'" style="--tc:'+theme.color+';">'+battleSceneHtml(sceneTheme)
     + '<div class="ex-shade"></div>'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
@@ -8029,12 +8068,13 @@ function showResultModal(sp, isNew, again, opts){
   window.__modalScrollReset = true;
   const custom = opts && opts.custom; // 장비 등 정령이 아닌 대상: {icon, sub, own}
   const fuse = opts && opts.fuse; // 합성 연출: 재료 3개가 중앙으로 모여든 뒤 결과 카드 공개
+  const fail = !!(opts && opts.fail); // (v232) 합성 실패도 성공과 똑같이 모여드는 연출 뒤에 공개(처음부터 실패를 알 수 없게)
   const revT = fuse ? Math.max(SUMMON_THEME[sp.rarity].rev, 1.1) : SUMMON_THEME[sp.rarity].rev;
   const key = sp.element+'_'+sp.rarity+'_'+sp.variant;
   const t = SUMMON_THEME[sp.rarity], info = RARITY_INFO[sp.rarity], passive = custom ? null : passiveFor(key);
   const own = custom ? 0 : ownedCount(key);
   let fx = '';
-  for(let i=0;i<t.particles;i++){
+  for(let i=0;i<(fail?0:t.particles);i++){
     const ang = (i/t.particles)*Math.PI*2 + Math.random()*0.5, dist = 90 + Math.random()*110;
     fx += '<div class="sm-p" style="--dx:'+Math.round(Math.cos(ang)*dist)+'px; --dy:'+Math.round(Math.sin(ang)*dist)+'px; width:'+(5+Math.round(Math.random()*5))+'px; height:'+(5+Math.round(Math.random()*5))+'px;"></div>';
   }
@@ -8045,18 +8085,18 @@ function showResultModal(sp, isNew, again, opts){
     + '<div class="sm-wallet"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+state.essence+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+(state.enhanceStone||0)+'</span>'+walletTicketHtml(opts)+'</div>'
     + '<div class="summon-stage" id="smStage">'
     + '<div class="sm-halo"></div>'
-    + (t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
-    + (fuse ? '<div class="sm-title">✨ 합성 성공!</div>'+[[-120,-70],[120,-70],[0,120]].map(p=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+(fuse.icon || spArt(fuse))+'</div>').join('') : '')
+    + (!fail && t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (!fail && t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
+    + (fuse ? (fail ? '<div class="sm-title fail">💨 합성 실패…</div>' : '<div class="sm-title">✨ 합성 성공!</div>')+[[-120,-70],[120,-70],[0,120]].map((p,i)=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div>').join('') : '')
     + '<div class="sm-orb"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>' + fx
-    + '<div class="sm-flash"></div>'
-    + '<div class="sm-card'+(t.rays>=1||sp.rarity==='rare'?' shine':'')+'">'
+    + '<div class="sm-flash'+(fail?' fail':'')+'"></div>'
+    + '<div class="sm-card'+(fail?' fail':(t.rays>=1||sp.rarity==='rare'?' shine':''))+'">'
     + (isNew ? '<div class="sm-new">NEW</div>' : '')
-    + '<div class="sm-stars">'+stars+'</div>'
+    + '<div class="sm-stars">'+(fail?'':stars)+'</div>'
     + '<div class="sm-icon">'+(custom ? custom.icon : spArt(sp))+'</div>'
-    + '<div class="sm-rarity">'+info.name+'</div>'
+    + '<div class="sm-rarity">'+(fail?'실패':info.name)+'</div>'
     + '<div class="sm-name">'+sp.name+'</div>'
     + '<div class="sm-pass">'+(custom ? custom.sub : ELEMENT_INFO[sp.element].name+(passive ? ' · '+passive.icon+' '+passive.name : ''))+'</div>'
-    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? fuse.name+' ×3 합성'+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : '보유 '+own)))+'</div>'
+    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? (fuse.label || fuse.name+' ×3 합성')+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : '보유 '+own)))+'</div>'
     + '</div>'
     + '<div class="sm-actions">'
     + (again ? '<button class="btn" id="smAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 한 번 더 '+summonCostLabel())+'</button>' : '')
@@ -8065,7 +8105,7 @@ function showResultModal(sp, isNew, again, opts){
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('smAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
   sfx('summonCharge');
-  sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ sfx(t.sfx); if(fuse) sfx('fuse'); } });
+  sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ if(fail){ sfx('fail'); return; } sfx(t.sfx); if(fuse) sfx('fuse'); } });
 }
 function showMultiResultModal(keys, isNewFlags, again, opts){
   window.__modalScrollReset = true;
@@ -8186,8 +8226,8 @@ function showManageModal(key){
     html += '<button class="btn" id="enhanceBtn" style="margin-top:12px;" '+(canEnhance?'':'disabled')+'>강화하기 (정수 '+cost.essence+' · 강화석 '+cost.stone+')</button>';
   }
   { const ac = awakenCost(key), lv = awakenLevel(key); // (v222) 각성
-    html += '<div class="aw-box"><div class="aw-head"><b>🌟 각성 '+(lv?'★'+lv:'')+'</b><span class="sub">'+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%</span><button class="aw-i" id="awRules">ⓘ</button></div>'
-      + (ac ? '<button class="btn gold" id="awakenBtn" style="margin-top:6px;" '+(awakenSpare(key)>=ac.copies && state.essence>=ac.essence?'':'disabled')+'>★'+(lv+1)+' 각성 · 같은 정령 '+ac.copies+'마리 ('+awakenSpare(key)+'/'+ac.copies+') · '+uiIc('essence')+' '+ac.essence+'</button><div class="sub" style="font-size:11px; margin-top:3px;">각성하면 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'+awakenPerkText(key, lv+1)+'</div>' : '<div class="sub" style="margin-top:4px;">최대 각성</div>')
+    html += '<div class="aw-box"><div class="aw-head"><b>'+uiIc('awaken')+' 각성 '+(lv?lv+'단계':'')+'</b><span class="sub">'+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%</span><button class="aw-i" id="awRules">ⓘ</button></div>'
+      + (ac ? '<button class="btn gold" id="awakenBtn" style="margin-top:6px;" '+(awakenSpare(key)>=ac.copies && state.essence>=ac.essence?'':'disabled')+'>'+uiIc('awaken')+' '+(lv+1)+'단계 각성 · 같은 정령 '+ac.copies+'마리 ('+awakenSpare(key)+'/'+ac.copies+') · '+uiIc('essence')+' '+ac.essence+'</button><div class="sub" style="font-size:11px; margin-top:3px;">각성하면 정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'+awakenPerkText(key, lv+1)+'</div>' : '<div class="sub" style="margin-top:4px;">최대 각성</div>')
       + '</div>'; }
   if(sp.rarity!=='mythic') html += '<button class="btn secondary" id="toFuseBtn" style="margin-top:8px;" '+(isSpLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성에 넣기</button>';
   html += '<button class="btn secondary" id="spLockBtn" style="margin-top:8px;">'+(isSpLocked(key)?'🔓 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
