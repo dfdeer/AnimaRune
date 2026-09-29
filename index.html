@@ -911,7 +911,7 @@
   .dg-bar{position:relative; height:7px; border-radius:4px; background:#0006; margin:6px 0 4px;} .dg-bar > div{height:100%; border-radius:4px; background:var(--ec); box-shadow:0 0 6px var(--ec);} .dg-bar i{position:absolute; top:-3px; width:3px; height:13px; margin-left:-2px; border-radius:2px; background:#ffffff55;} .dg-bar i.got{background:#ffd557;}
   .dg-sub{font-size:11px; color:var(--sub); display:flex; align-items:center; gap:3px; flex-wrap:wrap;} .dg-sub .uic{width:12px; height:12px;}
   .dg-rule{text-align:center; font-size:12px; color:#ffe7a0; margin:6px 0 8px;} .dg-rule .elic{width:14px; height:14px; vertical-align:-2px;}
-  .dg-foes{display:flex; justify-content:center; gap:6px; margin-bottom:8px;} .dg-foe{width:38px; height:38px; border-radius:10px; overflow:hidden; background:#0005; border:1px solid #ffffff22; cursor:pointer;} .dg-foe.g{border:2px solid #ffd557; box-shadow:0 0 8px #ffd55788;} .dg-foe .spimg{width:100%; height:100%; object-fit:cover;}
+  .dg-foes{display:flex; justify-content:center; gap:6px; margin-bottom:8px;} .dg-foes{gap:10px; flex-wrap:wrap;} .dg-foe{font-size:20px; cursor:pointer; margin-bottom:4px;} .dg-foe.g{box-shadow:0 0 0 2px #ffd557, 0 0 10px #ffd557aa;} /* (v266) 등급 테두리·속성 표시가 있는 칸으로 — 그림만 있으니 잘려 보이고 휑했음 */
   .dg-rw{margin-top:8px; font-size:12px; text-align:center; color:var(--sub);}
   .ch-card{position:relative; display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2e2a6a,#1d1b48); border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d;} .ch-card > .uic{width:40px; height:40px;} .ch-card span{flex:1; display:flex; flex-direction:column; gap:2px;} .ch-card b{font-size:15px;} .ch-card small{font-size:11px; color:var(--sub);} .ch-card em{font-style:normal; font-size:22px; color:var(--sub);} .ch-card em .uic{width:18px; height:18px;} .ch-card.lock{opacity:.6;} .ch-dot{position:absolute; top:8px; left:8px; width:9px; height:9px; border-radius:50%; background:#ff5757;}
   .upd-bar{position:fixed; left:50%; transform:translateX(-50%); top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:998; padding:8px 14px; border-radius:999px; border:1px solid #ffd557; background:#2b2760f0; color:#ffe7a0; font-size:13px; font-weight:800; box-shadow:0 6px 18px #000a; white-space:nowrap; cursor:pointer;}
@@ -8550,7 +8550,7 @@ function showDungeonPrep(el, n, keep){
   const info = ELEMENT_INFO[el], cells = dungeonEnemyGrid(el, n), pv = buildDungeonFight(el, n), rw = dungeonReward(n), first = n > dungeonBest(el);
   let h = '<h3 style="text-align:center; margin:0;">'+info.icon+' '+info.name+' 던전 · '+n+'단계</h3>';
   h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적도 전부 '+info.name+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
-  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe'+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[el+'_'+c.rarity+'_'+c.variant])+'</span>' : '').join('')+'</div>';
+  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[el+'_'+c.rarity+'_'+c.variant])+elIc(el,'av-el')+'</span>' : '').join('')+'</div>';
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', pool.length ? '상대 '+fmtCP(teamCP(pv.enemyUnits)) : info.name+' 정령 없음 — 소환·합성으로 모으기', dungeonRecCP(el, n));
@@ -8819,7 +8819,7 @@ function leaveTrialFight(){ state.skillFight = null; unmountBattleScreen(); acti
 function showTrialPrep(id){
   const t = trialDef(id); if(!t) return;
   const pv = buildTrialFight(t);
-  const icons = list=>list.map(u=>'<span class="dg-foe" data-unit-info="'+u.side+':'+u.idx+'">'+spArt(SPIRITS[u.key])+'</span>').join('');
+  const icons = list=>list.map(u=>{ const sp = SPIRITS[u.key]; return '<span class="dg-foe av r-'+sp.rarity+'" data-unit-info="'+u.side+':'+u.idx+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span>'; }).join('');
   let h = '<h3 style="text-align:center; margin:0;">🧩 '+t.nm+'</h3>';
   if(t.intro) h += '<div class="tr-intro">'+t.intro+'</div>';
   h += trialGoalHtml(t);
