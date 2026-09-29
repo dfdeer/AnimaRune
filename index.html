@@ -134,6 +134,19 @@
   .ex-mode button.on{background:#5b6bff33; border-color:#8a96ff; color:var(--text);} .ex-mode button.hard.on{background:linear-gradient(135deg,#6a1428,#3a1030); border-color:#ff5a6a; color:#ffd0d6; box-shadow:0 0 12px #ff3a5a55;} .ex-mode button.lock{opacity:.55;} .ex-mode .uic{width:14px; height:14px;}
   @media (max-height:700px){ .ex-mode{margin-bottom:3px;} .ex-mode button{padding:2px 0; font-size:11px; border-radius:9px;} }
   .ex-head.hard{background:linear-gradient(160deg,#3a1030,#1d1030) !important; border-color:#ff5a6a66 !important;} .ex-map.hard .ex-shade{background:radial-gradient(ellipse at center, #0000 40%, #5a001a66 100%), #3a001522 !important;}
+  #main.ex-full .scr-top{background:none;}
+  .ex-bgfull{position:fixed; left:0; right:0; bottom:0; top:0; z-index:0; overflow:hidden; pointer-events:none;}
+  .ex-bgfull .bs-scene.bs-img{background-size:cover; background-position:50% 50%;}
+  .ex-bgfull .ex-shade{z-index:1; background:linear-gradient(180deg, #0b0a24aa 0%, #0b0a2400 22%, #0b0a2400 78%, #0b0a24aa 100%), radial-gradient(ellipse 90% 70% at 50% 55%, transparent 55%, #0006 100%);}
+  .ex-bgfull.hard .ex-shade{background:linear-gradient(180deg, #2a0616bb 0%, #2a061600 25%, #2a061600 75%, #2a0616bb 100%), radial-gradient(ellipse at center, #0000 40%, #5a001a66 100%), #3a001522;}
+  #main.ex-full .scr-top, #main.ex-full .ex-map, #main.ex-full .ex-legend, #main.ex-full > .card{position:relative; z-index:1;}
+  #main.ex-full .scr-top{z-index:8;}
+  #main.ex-full .ex-head{background:#14112ec4 !important; border-color:#ffffff2e !important; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  #main.ex-full .ex-head.hard{background:#3a1030c8 !important;}
+  #main.ex-full .ex-mode{background:#0a0a1ab0; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  #main.ex-full .ex-map{border:0; border-radius:0; box-shadow:none; background:none; overflow:visible;}
+  #main.ex-full .ex-veil{position:fixed; left:0; right:0; bottom:0; top:0; z-index:2; border-radius:0; font-size:15px;}
+  #main.ex-full .ex-legend{width:max-content; max-width:100%; margin:8px auto 0; padding:5px 12px; border-radius:999px; background:#0a0a1ab8; color:#d9dcef;}
   .ex-veil{position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; background:#0b0f18a8; color:#fff; font-weight:800; font-size:14px; backdrop-filter:blur(1.5px);}
   @media (max-height:640px){ .ex-legend{display:none !important;} .ex-head{padding:6px 8px;} .ex-name{font-size:16px;} }
   .ex-legend{display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:8px; font-size:11px; font-weight:700; color:var(--sub);}
@@ -910,6 +923,11 @@
 .modal-bg.wide{padding:8px;}
 .modal.roster-modal{display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; max-height:calc(100vh - 24px); max-height:calc(100dvh - 16px - var(--sat) - var(--sab));} /* (v237) 폰의 100vh는 주소창이 숨었을 때 높이라 실제 화면보다 커서 아래 버튼이 잘리고 스크롤도 안 됐음 → 보이는 높이 기준 + 넘치면 창 전체 스크롤 */
 .modal.roster-modal > *{flex-shrink:0;}
+.modal.framed{display:flex; flex-direction:column; overflow:hidden;}
+.modal.framed > .m-head{flex:none; margin-bottom:8px;} .modal.framed > .m-head > h3, .modal.framed > .m-head > h2{margin-top:0;} .modal.framed > .m-head > h3:last-child{margin-bottom:0;}
+.modal.framed > .m-body{flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d1488; border-radius:14px; padding:10px; margin:0 -8px; box-shadow:inset 0 3px 10px #000a, inset 0 0 0 1px #ffffff12;}
+.modal.framed > .m-foot{flex:none; margin-top:10px;} .modal.framed > .m-foot > .btn:first-child{margin-top:0;} .modal.framed > .m-foot .sticky-ok{position:static;}
+.modal.framed > .rp-foot, .modal.framed > .m-foot > .rp-foot{position:static; margin:0; padding:0; background:none; border:0;}
 .modal.roster-modal > .rp-foot{position:sticky; bottom:-20px; z-index:4; margin:8px -12px -20px; padding:8px 12px 14px; background:linear-gradient(180deg,#221f4dee,#1d1b48 30%); border-top:1px solid #ffffff14;} /* (v237) 아래 버튼 줄은 항상 창 바닥에 보이게 */
 .modal.roster-modal > .roster-scroll{flex:1 1 auto; flex-shrink:1; min-height:110px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; background:#0d0d14; border-radius:14px; padding:8px; box-shadow:inset 0 3px 10px #000c, inset 0 0 0 1px #ffffff14; margin-top:4px;}
 .modal.wide{max-width:440px; padding-left:12px; padding-right:12px;}
@@ -1661,9 +1679,9 @@ function showRaidShop(){
     }).join('') + '</div>';
   });
   h += '<div class="sub" style="font-size:11px; text-align:center; margin-top:10px;">룬석: 입장권을 쓴 레이드 승리 · 이지 2 · 노말 4 · 하드 7 · 익스트림 12</div>';
-  const keep = document.querySelector('#modalRoot .modal'), top = keep && keep.querySelector('.shop-grid') ? keep.scrollTop : 0; // 사고 나서 다시 그려도 스크롤 위치 유지
+  const keep = document.querySelector('#modalRoot .modal'), top = keep && keep.querySelector('.shop-grid') ? modalScroller(keep).scrollTop : 0; // 사고 나서 다시 그려도 스크롤 위치 유지
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
-  const m = document.querySelector('#modalRoot .modal'); if(m && top) m.scrollTop = top;
+  const m = document.querySelector('#modalRoot .modal'); if(m && top) modalScroller(m).scrollTop = top;
   bindModalClose();
   document.querySelectorAll('[data-shop-open]').forEach(el=>el.addEventListener('click', ()=>showShopBuyModal(el.dataset.shopOpen)));
 }
@@ -2471,7 +2489,7 @@ async function friendInit(){
   const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
   mailInit();
   friendNet.unsubs.push(db.doc('friends/'+uid).onSnapshot(s=>{ friendNet.friends = obj(s); friendWatchSync(); friendRefresh(); }, ()=>{}));
-  friendPushRep(); friendSeenPing(true);
+  friendPushRep(); watchServerOffset(); friendSeenPing(true);
   friendNet.unsubs.push(db.doc('friendReqs/'+uid).onSnapshot(s=>{ friendNet.reqs = obj(s); friendHandleReplies(); friendRefresh(); }, ()=>{}));
   friendNet.unsubs.push(db.doc('invites/'+uid).onSnapshot(s=>{
     const v = obj(s), prev = friendNet.invites; friendNet.invites = v;
@@ -2540,7 +2558,7 @@ function friendOnline(id){ return friendNet.online.has(id); }
 function friendSeenTxt(id){
   if(friendOnline(id)) return '접속 중';
   const t = friendNet.seen[id]; if(!t) return '오프라인';
-  const m = Math.max(0, Math.floor((Date.now()-t)/60000));
+  const m = Math.max(0, Math.floor((serverNow()-t)/60000));
   return m<2 ? '방금 전 접속' : m<60 ? m+'분 전 접속' : m<1440 ? Math.floor(m/60)+'시간 전 접속' : Math.floor(m/1440)+'일 전 접속';
 }
 // (v263) 친구 프로필: 내 기록(계정 레벨·보유 정령·도감·클리어·탑)을 players/<나>/prof 에 올려 둠 — 바뀐 때만
@@ -2568,12 +2586,15 @@ async function showFriendProfile(k){
     const el = document.getElementById('infoOverlayBody'); if(el && ok) el.innerHTML = body({lv:Math.floor(v.lv), own:Math.floor(v.own), dex:Math.floor(v.dex), clear:Math.floor(v.clear), tower:Math.floor(v.tower)});
   }catch(e){}
 }
+// (v264) 서버 시각 = 내 시계 + 서버와의 차이(.info/serverTimeOffset)
+function serverNow(){ return Date.now() + (raidNet.tOff||0); }
+function watchServerOffset(){ const fb = raidNet.fb; if(!fb || raidNet.tOffOn) return; raidNet.tOffOn = true; try{ fb.onValue(fb.ref(fb.rtdb, '.info/serverTimeOffset'), s=>{ const v = s.val(); raidNet.tOff = Number.isFinite(v) ? v : 0; }); }catch(e){} }
 let friendSeenLast = 0;
 function friendSeenPing(force){
   if(!friendNet.on || !friendsAvailable() || !raidNet.db) return;
   if(!force && (document.visibilityState!=='visible' || Date.now()-friendSeenLast < 55000)) return;
   friendSeenLast = Date.now();
-  raidNet.db.doc('players/'+raidNet.uid+'/seen').set(Date.now()).catch(()=>{});
+  raidNet.db.doc('players/'+raidNet.uid+'/seen').set({'.sv':'timestamp'}).catch(()=>{}); // (v264) 서버 시각 — 기기 시계가 틀려도 'N분 전'이 맞게
   friendPushProf();
 }
 setInterval(()=>{ friendSeenPing(); if(typeof activeTab!=='undefined' && document.querySelector('.fr-list')) friendRefresh(); }, 60000);
@@ -3064,7 +3085,7 @@ if(window.visualViewport) window.visualViewport.addEventListener('resize', ()=>{
 // (v181) 화면 크기가 바뀌는 모든 경우에 홈·전장 크기를 다시 맞춤: 창 크기, 주소창/안전 영역 변화, 헤더 높이 변화(재화 숫자·이름),
 // 앱으로 돌아옴, 글꼴 로딩. 처음 켤 때 잘리던 문제의 근본 대책
 let relayoutRaf = 0;
-function relayoutScreens(){ cancelAnimationFrame(relayoutRaf); relayoutRaf = requestAnimationFrame(()=>{ if(activeTab==='home') fitHome(); else fitRest(); if(document.getElementById('battleScreen')) fitBattleScreen(); }); }
+function relayoutScreens(){ cancelAnimationFrame(relayoutRaf); relayoutRaf = requestAnimationFrame(()=>{ if(activeTab==='home') fitHome(); else fitRest(); if(document.getElementById('battleScreen')) fitBattleScreen(); placeExBg(); }); }
 // (v187) .fit-rest 요소(탐험 지도·탑 층 목록)는 화면 영역에서 남은 높이에 딱 맞춤 — 폰 크기가 달라도 스크롤 없이 한 화면
 // data-below: 아래에 남겨 둘 높이(px) · data-min / data-max: 최소·최대 높이
 function fitRest(){
@@ -3400,7 +3421,10 @@ function makeFirebaseNet(fb){
     const unsubs = [];
     // (v173 버그수정) 앱을 잠깐 나갔다 오면 연결이 끊기며 접속 표시가 지워지는데 다시 켜지 않던 문제 — 연결될 때마다 다시 등록
     unsubs.push(fb.onValue(fb.ref(fb.rtdb, '.info/connected'), snap=>{ if(snap.val()===true){ fb.onDisconnect(me).remove().catch(()=>{}); fb.set(me, pres).catch(()=>{}); } }));
-    const onVis = ()=>{ if(document.visibilityState==='visible') fb.set(me, pres).catch(()=>{}); };
+    // (v264) 친구 접속 표시(online 방)는 앱이 뒤로 가는 순간 지움 — 서버가 끊김을 알아채기까지 몇 분 걸려서, 끈 친구가 한동안 '접속 중'이다가 'N분 전'으로 바뀌었음
+    const dropOnHide = name==='online';
+    const onVis = ()=>{ if(document.visibilityState==='visible') fb.set(me, pres).catch(()=>{}); else if(dropOnHide) fb.remove(me).catch(()=>{}); };
+    if(dropOnHide){ const onHide = ()=>{ fb.remove(me).catch(()=>{}); }; window.addEventListener('pagehide', onHide); unsubs.push(()=>window.removeEventListener('pagehide', onHide)); }
     document.addEventListener('visibilitychange', onVis); unsubs.push(()=>document.removeEventListener('visibilitychange', onVis));
     return { name,
       presence: async patch=>{ pres = Object.assign({}, pres, patch); await fb.set(me, pres); },
@@ -4609,7 +4633,7 @@ function snapBossSideUnits(ar){
     if(Math.abs(d) > 0.5) s.style.top = (s.offsetTop + d)+'px';
   });
 }
-function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); }
+function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
 function upcomingOrder(sf, n){
   const out = [];
   for(let p=sf.queuePos; p<sf.queue.length && out.length<n; p++){ const e = sf.queue[p], u = unitAt(sf, e.side, e.idx); if(u && u.alive) out.push({e, u, next:false}); }
@@ -6738,6 +6762,7 @@ function render(){
     if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; }
   }
   main.classList.toggle('is-home', activeTab==='home');
+  main.classList.toggle('ex-full', activeTab==='stage'); placeExBg();
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
   updateScrollLock();
   attachHandlers();
@@ -8880,6 +8905,9 @@ function isStageUnlockedGraph(stageIdx){
   return false;
 }
 let viewingChapter = null;
+// (v265) 탐험 전체 배경: 화면(헤더 아래~바닥)에 고정 — 스크롤해도 배경은 그대로
+function placeExBg(){ const m = document.getElementById('main'); if(!m) return; const t = Math.max(0, m.getBoundingClientRect().top)+'px'; m.querySelectorAll('.ex-bgfull, .ex-veil').forEach(el=>{ el.style.top = t; }); }
+window.addEventListener('resize', placeExBg);
 function renderStageTab(){
   // (v186) 탐험 지도 개편: 화면 폭 전체 · 지역별 풍경 배경 · 스테이지를 잇는 길 · 큰 원형 노드 · 다음 도전 위에 내 정령 · 좌우로 밀어 챕터 이동
   const curN = currentChapterNum();
@@ -8932,12 +8960,13 @@ function renderStageTab(){
     + '<div class="ex-hfoot"><span class="ex-pips">'+pips+'</span><span class="ex-cnt">'+(ch>cur?uiIc('lock'):(ch<cur?uiIc('check'):''))+' '+clearCount+'/'+CHAPTER_LENGTH+'</span><div class="ex-bar"><i style="width:'+pct+'%;"></i></div>'
     + '<button class="ex-reward" data-chapter-reward-btn="'+ch+'">'+uiIc('gift')+' 보상'+(hasPendingFor('ch'+ch+'_pct')?'<span class="ex-rdot"></span>':'')+'</button></div>'
     + '</div>' + TOP_MARK;
-  html += '<div class="ex-map fit-rest scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+(hard?' hard':'')+'" data-below="next" data-min="'+Math.max(220, maxRow*62+100)+'" data-max="640" id="exMap" data-rows="'+maxRow+'" data-cols="'+maxCol+'" style="--tc:'+theme.color+';">'+battleSceneHtml(sceneTheme)
-    + '<div class="ex-shade"></div>'
+  // (v265) 지도 풍경을 탐험 화면 전체 배경으로 — 상자 안에 가두지 않고, 버튼·챕터 카드는 그 위에 반투명 판으로
+  html += '<div class="ex-bgfull scene bg-'+sceneTheme+(DARK_THEMES.includes(sceneTheme)?' dark':'')+(hard?' hard':'')+'">'+battleSceneHtml(sceneTheme)+'<div class="ex-shade"></div></div>';
+  html += '<div class="ex-map fit-rest'+(hard?' hard':'')+'" data-below="next" data-min="'+Math.max(220, maxRow*62+100)+'" data-max="640" id="exMap" data-rows="'+maxRow+'" data-cols="'+maxCol+'" style="--tc:'+theme.color+';">'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
-    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : '')
-    + '</div>';
+    + '</div>'
+    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : ''); // (v265) 잠금 가림막도 화면 전체로(지도 상자 기준 X)
   html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
   if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
   return html;
@@ -8949,15 +8978,44 @@ function renderStageTab(){
 //  · 하위 창(정령 선택·정보 등)으로 갔다가 돌아오면 원래 창의 위치 복원
 //  · 창을 완전히 닫으면 기억을 버림(다시 열면 맨 위부터) / 카테고리 전환·새 결과 창은 window.__modalScrollReset 로 맨 위부터
 let modalScrollStack = [];
+// (v264) 창 틀 정리: 위(✕·제목·탭)와 아래(확인·뒤로 버튼)는 틀에 고정, 가운데 내용은 한 겹 들어간 상자(.m-body) 안에서만 스크롤
+// 창을 새로 그릴 때마다 자동으로 나눔 — 정령 고르기처럼 이미 안쪽 스크롤 상자(.roster-scroll)가 있는 창은 그대로
+function modalScroller(m){ return (m && m.querySelector(':scope > .m-body')) || m; }
+function frameModal(m){
+  if(!m || m.dataset.noframe || m.querySelector('.roster-scroll')) return;
+  const body = m.querySelector(':scope > .m-body');
+  if(body){ [...m.children].forEach(k=>{ if(!/(^| )m-(head|body|foot)( |$)/.test(k.className)) body.appendChild(k); }); return; }
+  const H = k=>/^H[1-4]$/.test(k.tagName);
+  const tabRow = k=>k.tagName==='DIV' && (k.classList.contains('seg') || (k.children.length>=2 && k.children.length<=8 && [...k.children].every(c=>c.tagName==='BUTTON' && !c.classList.contains('btn'))));
+  const isHead = (k, prev)=> k.classList.contains('close-x') || H(k) || tabRow(k)
+    || (k.tagName==='DIV' && k.querySelector(':scope > h2, :scope > h3') && k.children.length<=3 && !k.querySelector('.card'))
+    || (prev && H(prev) && k.classList.contains('sub') && k.textContent.length < 60 && !k.children.length);
+  const btnRow = k=>k.tagName==='DIV' && k.children.length>=1 && k.children.length<=3 && [...k.children].every(c=>c.tagName==='BUTTON' && c.classList.contains('btn'));
+  const isFoot = k=> (k.tagName==='BUTTON' && k.classList.contains('btn')) || k.classList.contains('rp-foot') || btnRow(k);
+  const kids = [...m.children]; let i = 0, j = kids.length;
+  while(i<kids.length && isHead(kids[i], kids[i-1])) i++;
+  while(j>i && isFoot(kids[j-1])) j--;
+  if(j<=i) return;
+  const mk = (cls, list)=>{ const d = document.createElement('div'); d.className = cls; list.forEach(k=>d.appendChild(k)); m.appendChild(d); return d; };
+  m.classList.add('framed');
+  if(i>0) mk('m-head', kids.slice(0,i));
+  mk('m-body', kids.slice(i,j));
+  if(j<kids.length) mk('m-foot', kids.slice(j));
+}
+function frameModalsIn(root){ if(!root || root.nodeType!==1) return; if(root.classList.contains('modal')) frameModal(root); root.querySelectorAll('.modal').forEach(frameModal); }
+if(typeof MutationObserver!=='undefined') new MutationObserver(recs=>{
+  recs.forEach(r=>{ if(r.target.nodeType===1 && r.target.classList.contains('modal') && r.target.classList.contains('framed')) frameModal(r.target); r.addedNodes.forEach(n=>{ if(n.nodeType===1 && (n.classList.contains('modal') || n.classList.contains('modal-bg'))) frameModalsIn(n); }); });
+}).observe(document.body, {childList:true, subtree:true});
 function installModalScrollKeeper(){
   const mr = document.getElementById('modalRoot'); if(!mr) return;
   const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
   const keyOf = m => m ? (((m.querySelector('h3')||{}).textContent)||'').trim() : '';
   Object.defineProperty(mr, 'innerHTML', { configurable: true, get(){ return desc.get.call(this); }, set(v){
-    const old = this.querySelector('.modal'), oldTop = old ? old.scrollTop : 0, oldKey = keyOf(old);
+    const old = this.querySelector('.modal'), oldTop = old ? modalScroller(old).scrollTop : 0, oldKey = keyOf(old);
     const reset = !!window.__modalScrollReset; window.__modalScrollReset = false;
     desc.set.call(this, v);
-    const nw = this.querySelector('.modal'), newKey = keyOf(nw);
+    frameModalsIn(this); // (v264) 바로 틀 나눔(스크롤 위치를 안쪽 상자에 되돌리려면 먼저 나눠야 함)
+    const nw0 = this.querySelector('.modal'), newKey = keyOf(nw0), nw = nw0 && modalScroller(nw0);
     if(!nw){ modalScrollStack = []; return; }          // 완전히 닫힘
     if(reset){ modalScrollStack = []; return; }
     if(old && oldKey && oldKey===newKey){ if(oldTop>0) nw.scrollTop = oldTop; return; } // 같은 창 재렌더
@@ -9626,7 +9684,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
   new MutationObserver(()=>{
     const r = document.getElementById('battleResult');
     if(!r || !r.children.length || r.querySelector('[data-placeholder]')) return; // 연출 중 안내 문구만 있을 땐 스크롤하지 않음
-    const m = r.closest('.modal');
+    const m = modalScroller(r.closest('.modal'));
     if(m && m.scrollHeight > m.clientHeight) m.scrollTo({top: m.scrollHeight, behavior: 'smooth'});
   }).observe(mr, {childList:true, subtree:true});
 })();
@@ -9890,7 +9948,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 264;
+const APP_BUILD = 265;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
@@ -9907,16 +9965,37 @@ async function appUpdateNow(){
   try{ await Promise.all([fetch('./', {cache:'reload'}), fetch('index.html', {cache:'reload'})]); }catch(e){} // 브라우저에 남은 옛 페이지 대신 새로 받게
   setTimeout(()=>location.reload(), 500);
 }
-// 켜 둔 채로 새 버전이 올라오면(앱은 껐다 켜야 반영됐음) 위에 알림 — 눌러서 바로 적용
-let updCheckedAt = 0;
+// (v265) 게임을 켜거나 다시 열었을 때 새 버전이 있으면 알림 창(지금 업데이트 / 나중에)
+// 전투·레이드 방·보스 연전 중이면 창을 띄우지 않고 위에 작은 막대만 → 전투 화면을 나오면 그때 알림 창
+var updLatest = 0, updSnoozed = false, updCheckedAt = 0; // var: 전투 화면 정리(unmountBattleScreen)가 이 줄보다 먼저 불려도 안전하게
+function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
+function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b>'; } }
+function updBar(text){
+  let b = document.getElementById('updBar');
+  if(!b){ b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.addEventListener('click', ()=>{ if(updBusy()) toast('전투가 끝나면 업데이트'); else showUpdatePopup(true); }); document.body.appendChild(b); }
+  b.textContent = text;
+}
+function showUpdatePopup(force){
+  if(!updLatest || updLatest <= APP_BUILD || (updSnoozed && !force)) return;
+  if(updBusy()){ updBar('🔄 새 버전 '+verTxt(updLatest)+' · 전투 끝나면 알림'); return; }
+  const bar = document.getElementById('updBar'); if(bar) bar.remove();
+  if(document.getElementById('updPop')) return;
+  openInfoOverlay('🔄 업데이트',
+    '<div style="text-align:center; line-height:1.6;"><div style="font-size:15px; font-weight:900;">새 버전 <b style="color:#ffd557;">'+verTxt(updLatest)+'</b> 준비됨</div>'
+    + '<div class="sub" style="font-size:12px;">지금 '+verTxt(APP_BUILD)+' · 업데이트하면 잠깐 새로 불러옴<br>진행 상황은 그대로 남음</div></div>'
+    + '<div id="updPop" style="display:flex; gap:6px; margin-top:12px;"><button class="btn secondary" id="updLater" style="flex:1; margin:0;">나중에</button><button class="btn" id="updNow" style="flex:1.4; margin:0;">지금 업데이트</button></div>');
+  const close = ()=>{ const o = document.getElementById('updPop'); const bg = o && o.closest('.modal-bg'); if(bg) bg.remove(); };
+  document.getElementById('updLater').addEventListener('click', ()=>{ updSnoozed = true; close(); updMarkMenu(); });
+  document.getElementById('updNow').addEventListener('click', ()=>{ close(); appUpdateNow(); });
+}
 async function checkAppUpdate(){
-  if(Date.now() - updCheckedAt < 10*60000 || document.getElementById('updBar')) return;
+  if(Date.now() - updCheckedAt < 5*60000) { showUpdatePopup(); return; }
   updCheckedAt = Date.now();
   const latest = await latestBuild(); if(!latest || latest <= APP_BUILD) return;
-  const b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.innerHTML = '🔄 새 버전 '+verTxt(latest)+' — 눌러서 적용';
-  b.addEventListener('click', appUpdateNow); document.body.appendChild(b);
+  if(latest > updLatest){ updLatest = latest; updSnoozed = false; } // 더 새 버전이 또 나오면 다시 알림
+  updMarkMenu(); showUpdatePopup();
 }
-setTimeout(checkAppUpdate, 4000);
+setTimeout(checkAppUpdate, 1500);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppUpdate(); });
 
 // 폰의 뒤로가기(안드로이드 버튼·아이폰 왼쪽 끝 밀기) — 열린 창 닫기 → 하위 화면 → 홈 → (홈에서 두 번) 종료
@@ -9942,26 +10021,48 @@ function appBack(){
   if(activeTab!=='home'){ activeTab = 'home'; render(); save(); return true; }
   return false;
 }
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+// 안드로이드(뒤로 버튼·제스처): 브라우저 기록에 '가드' 한 칸을 두고 뒤로 가기를 가로채서 앱 안에서 처리
+// 아이폰: 기록을 쓰면 사파리식으로 화면이 통째로 밀려나고(같은 화면이라 어색) 기기 제스처와 겹쳐 두 번 뒤로 가며 흰 화면 → 새로고침까지 됐음
+//   → 기록을 쓰지 않고, 왼쪽 끝에서 밀면 화살표가 따라 나오다 놓으면 뒤로(앱 안 처리)
 function backGuardPush(){ try{ history.pushState({arBack:1}, ''); }catch(e){} }
-if(!(history.state && history.state.arBack)){ try{ history.replaceState({arRoot:1}, ''); }catch(e){} backGuardPush(); }
-window.addEventListener('popstate', e=>{
-  lastPopAt = Date.now();
-  if(e.state && e.state.arBack) return; // 앞으로 가기로 다시 들어온 경우
-  if(appBack()){ backGuardPush(); return; }
-  if(Date.now() - exitArmAt < 2000){ history.back(); return; } // 홈에서 한 번 더 → 앱 종료(이전 페이지)
-  exitArmAt = Date.now(); toast('한 번 더 누르면 종료'); backGuardPush();
-});
-// 아이폰 홈 화면 앱(standalone)은 사파리의 뒤로 밀기가 없음 → 왼쪽 끝에서 오른쪽으로 밀면 뒤로
-// 기기가 스스로 뒤로 가기를 처리한 경우(popstate가 먼저 옴)는 한 번 더 하지 않음
-if(window.navigator.standalone === true){
-  let sx = -1, sy = 0, st = 0, fired = false;
-  document.addEventListener('touchstart', e=>{ const t = e.touches[0]; if(e.touches.length===1 && t.clientX <= 22){ sx = t.clientX; sy = t.clientY; st = Date.now(); fired = false; } else sx = -1; }, {passive:true});
+if(!IS_IOS){
+  if(!(history.state && history.state.arBack)){ try{ history.replaceState({arRoot:1}, ''); }catch(e){} backGuardPush(); }
+  window.addEventListener('popstate', e=>{
+    lastPopAt = Date.now();
+    if(e.state && e.state.arBack) return; // 앞으로 가기로 다시 들어온 경우
+    if(appBack()){ backGuardPush(); return; }
+    if(Date.now() - exitArmAt < 2000){ history.back(); return; } // 홈에서 한 번 더 → 앱 종료
+    exitArmAt = Date.now(); toast('한 번 더 누르면 종료'); backGuardPush();
+  });
+}else{
+  // 아이폰: 왼쪽 끝에서 밀면 맨 위 창(없으면 지금 화면)이 손가락을 따라 오른쪽으로 끌려가고, 3분의 1 넘게 밀거나 빠르게 튕기면 닫힘(뒤로)
+  // 덜 밀고 놓으면 제자리로 돌아옴 — 아이폰 앱의 '밀어서 뒤로'와 같은 느낌. 홈·전투 중엔 끌리지 않음
+  let sx = -1, sy = 0, st = 0, dx = 0, tgt = null, bg = null, drag = false;
+  const pick = ()=>{
+    const mods = [...document.querySelectorAll('.modal-bg')].filter(m=>getComputedStyle(m).display!=='none');
+    if(mods.length){ const z = m=>parseInt(getComputedStyle(m).zIndex)||0; const top = mods.reduce((a,b)=> z(b) >= z(a) ? b : a); return { el: top.querySelector('.modal') || top, bg: top }; }
+    if(document.getElementById('battleScreen') || activeTab==='home') return null;
+    const mn = document.getElementById('main'); return mn ? { el: mn, bg: null } : null;
+  };
+  const setX = (x, anim)=>{ if(!tgt) return; tgt.style.transition = anim ? 'transform .22s cubic-bezier(.2,.8,.2,1)' : 'none'; tgt.style.transform = x ? 'translateX('+x+'px)' : ''; tgt.style.boxShadow = x ? '-10px 0 24px #0008' : '';
+    if(bg){ bg.style.transition = anim ? 'background-color .22s' : 'none'; bg.style.backgroundColor = 'rgba(0,0,0,'+(0.55*(1 - Math.min(1, x/window.innerWidth)))+')'; } };
+  const reset = el=>{ if(!el) return; el.style.transition = ''; el.style.transform = ''; el.style.boxShadow = ''; };
+  document.addEventListener('touchstart', e=>{ const t = e.touches[0]; drag = false; tgt = null; if(e.touches.length===1 && t.clientX <= 24){ sx = t.clientX; sy = t.clientY; st = Date.now(); dx = 0; } else sx = -1; }, {passive:true});
   document.addEventListener('touchmove', e=>{
-    if(sx<0 || fired) return; const t = e.touches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
-    if(dy > 60){ sx = -1; return; }
-    if(dx > 70){ fired = true; const t0 = st; setTimeout(()=>{ if(lastPopAt < t0) history.back(); }, 250); }
+    if(sx<0) return; const t = e.touches[0]; dx = Math.max(0, t.clientX - sx);
+    if(!drag){ if(Math.abs(t.clientY - sy) > 30 && dx < 20){ sx = -1; return; } if(dx < 10) return; const p = pick(); if(!p){ sx = -1; return; } tgt = p.el; bg = p.bg; drag = true; }
+    setX(dx, false);
   }, {passive:true});
-  document.addEventListener('touchend', ()=>{ sx = -1; }, {passive:true});
+  const end = ()=>{
+    if(sx<0 || !drag){ sx = -1; return; } sx = -1; drag = false;
+    const el = tgt, b = bg, v = dx / Math.max(1, Date.now() - st), go = dx > window.innerWidth/3 || (v > 0.6 && dx > 40);
+    if(!go){ setX(0, true); setTimeout(()=>{ reset(el); if(b){ b.style.transition = ''; b.style.backgroundColor = ''; } }, 240); tgt = null; return; }
+    setX(window.innerWidth, true);
+    setTimeout(()=>{ appBack(); reset(el); if(b){ b.style.transition = ''; b.style.backgroundColor = ''; } const mn = document.getElementById('main'); if(el===mn){ mn.style.opacity = '0'; requestAnimationFrame(()=>{ mn.style.transition = 'opacity .18s'; mn.style.opacity = ''; setTimeout(()=>{ mn.style.transition = ''; }, 200); }); } }, 200);
+    tgt = null;
+  };
+  document.addEventListener('touchend', end, {passive:true}); document.addEventListener('touchcancel', ()=>{ if(drag){ setX(0, true); const el = tgt; setTimeout(()=>reset(el), 240); } sx = -1; drag = false; tgt = null; }, {passive:true});
 }
 </script>
 <script>
