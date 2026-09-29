@@ -30,4 +30,4 @@
 - 브라우저 테스트:
   - 저장소 루트에서 `python3 -m http.server 8765`로 서버를 띄워.
   - Playwright(`playwright-core`, `executablePath: '/opt/pw-browsers/chromium'`)로 페이지 에러가 0건인지 확인해.
-- 보스 밸런스: `tools/boss_winrate_sim.js`를 써. 사용법은 파일 맨 위에 적혀 있어.
+- 보스 밸런스: 챕터 보스는 `tools/boss_winrate_sim.js`, 레이드는 `tools/raid_winrate_sim.js`를 써. 사용법은 파일 맨 위에 적혀 있어.
