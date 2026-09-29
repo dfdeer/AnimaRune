@@ -270,7 +270,9 @@
   .btn.small{padding:8px; font-size:12px; width:auto;}
   .row{display:flex; gap:8px;}
   .grid5{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px;}
-  @media (max-width:360px){ .grid5{grid-template-columns:repeat(4,minmax(0,1fr));} } /* (v266) 좁은 폰에서 5칸이면 '요르문간드' 같은 이름이 잘렸음 */
+  @media (max-width:360px){ .grid5{grid-template-columns:repeat(4,minmax(0,1fr));} }
+  .grid5.dex4{grid-template-columns:repeat(4,minmax(0,1fr));} /* (v268) 도감은 항상 4칸 */
+  .dex-grp{grid-column:1/-1; display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:8px 2px 0; padding-bottom:3px; border-bottom:1px solid #ffffff1a; font-size:12.5px; font-weight:800;} .dex-grp:first-child{margin-top:0;} .dex-grp b{font-weight:800;} .dex-grp > span{font-size:11px; color:var(--sub); font-weight:700;} /* (v266) 좁은 폰에서 5칸이면 '요르문간드' 같은 이름이 잘렸음 */
   .species-tile{background:var(--panel2); border-radius:10px; padding:16px 4px 8px; text-align:center; position:relative; border:2px solid transparent;} /* (v207) 위 16px은 개수·특성 표시 자리 — 테두리와 겹치지 않게 */
   .species-tile[data-manage]{cursor:pointer; border-color:#ffffff1a; box-shadow:0 2px 6px #00000055; transition:transform .1s ease, border-color .15s ease;}
   .species-tile[data-manage]:active{transform:scale(0.96);}
@@ -898,7 +900,7 @@
   .tr-goal{margin:8px 0; padding:8px 10px; border-radius:12px; background:#ffd55714; border:1px solid #ffd55744; display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--sub);}
   .tr-goal > div{display:flex; gap:6px; align-items:flex-start; line-height:1.4;} .tr-goal b{color:#ffe7a0; font-size:12.5px;}
   .tr-lbl{font-size:11px; font-weight:900; color:var(--sub); text-align:center; margin:6px 0 4px;}
-  .tr-hint{text-align:center; margin-top:8px;} .tr-hinttxt{font-size:12px; color:#cfe8ff; background:#57d3ff14; border:1px solid #57d3ff44; border-radius:10px; padding:7px 9px; text-align:left;}
+  .tr-hint{text-align:center; margin-top:8px;} .tr-rhint{margin-top:8px; text-align:center;} .tr-rhint summary{display:inline-block; cursor:pointer; list-style:none; font-size:12px; font-weight:800; color:#9fdcff; padding:5px 12px; border:1px solid #57d3ff55; border-radius:999px;} .tr-rhint summary::-webkit-details-marker{display:none;} .tr-rhint[open] summary{display:none;} .tr-hinttxt{font-size:12px; color:#cfe8ff; background:#57d3ff14; border:1px solid #57d3ff44; border-radius:10px; padding:7px 9px; text-align:left;}
   .tr-card{display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border-radius:14px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .tr-card.done{border-color:#9fe8c066;} .tr-no{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; background:#ffffff14; flex:none;} .tr-card .dg-mid{display:flex; flex-direction:column; gap:1px;} .tr-card b{font-size:14px;} .tr-card small{font-size:11px; color:var(--sub);} .tr-stars{color:#ffd557 !important;} .tr-stars i{font-style:normal; color:#ffffff22;} .tr-card em{font-style:normal; font-size:20px; color:var(--sub);} .tr-card em .uic{width:18px; height:18px;}
   .wb-card{position:relative; display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; margin:6px 0 8px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#4a1a3a,#1d1b48); border:2px solid #ff7a9a88; box-shadow:0 0 16px #ff5a8a33, inset 0 2px 0 #ffffff14;} .wb-card.off{display:block; opacity:.7;} .wb-card.off small{display:block; font-size:11px; color:var(--sub);}
   .wb-img{width:52px; height:52px; object-fit:contain; flex:none;} .wb-mid{flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;} .wb-mid b{font-size:14px;} .wb-mid small{font-size:11px; color:var(--sub); display:flex; align-items:center; gap:3px;} .wb-mid .elic{width:14px; height:14px;} .wb-card em{font-style:normal; font-size:22px; color:var(--sub);}
@@ -4530,6 +4532,8 @@ function resolveBossWaveVictory(sf){
   const grade = bossWaveGrade(totalRounds), already = state.stageBest[stageIdx];
   const gradeRank = {C:1,B:2,A:3,S:4};
   const chapterNum = bossChapter(stageIdx);
+  { const ks = (bf.roster||[]).filter(k=>k && SPIRITS[k]); // (v268) 히든 업적 — 레어 이하만으로 하드 보스
+    if(isHardStage(stageIdx) && ks.length && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)){ hidMark('hardLowRare'); if(stageIdx===HARD_BASE+MAX_CHAPTERS*CHAPTER_LENGTH-1) hidMark('hardLowRare5'); } }
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
@@ -7627,6 +7631,7 @@ const ACHIEVEMENTS = [
   {id:'chapter3_clear', name:'챕터3 클리어', desc:'챕터3 보스 격파', reward:{essence:400}, category:'stage', check:()=> !!state.stageBest[CHAPTER_LENGTH*3-1]},
   {id:'chapter4_clear', name:'챕터4 클리어', desc:'챕터4 보스 격파', reward:{essence:500}, category:'stage', check:()=> !!state.stageBest[CHAPTER_LENGTH*4-1]},
   {id:'chapter5_clear', name:'모험의 끝', desc:'챕터5 보스 격파(전체 클리어)', reward:{stone:150}, category:'stage', check:()=> !!state.stageBest[CHAPTER_LENGTH*5-1]},
+  {id:'hard_perfect', name:'지옥의 지배자', desc:'모든 챕터의 하드 보스 격파하기', reward:{essence:2000, items:{pick_legendary:1}}, category:'stage', check:()=> [509,519,529,539,549].every(i=> !!state.stageBest[i])}, // (v268) 히든 → 일반 · S 조건 뺌
   {id:'tower_10', name:'탑의 초입', desc:'무한의 탑 10층 돌파', reward:{essence:200}, category:'tower', basic:true, check:()=> (state.towerBest||0)>=10},
   {id:'tower_25', name:'탑의 중턱', desc:'무한의 탑 25층 돌파', reward:{essence:400}, category:'tower', check:()=> (state.towerBest||0)>=25},
   {id:'tower_50', name:'탑의 정상', desc:'무한의 탑 50층 돌파', reward:{stone:120}, category:'tower', check:()=> (state.towerBest||0)>=50},
@@ -7639,17 +7644,18 @@ const ACHIEVEMENTS = [
   // 탐구/도전형 — 달성 전까지 이름/설명을 가려두고 보상은 두둑하게
   {id:'perfect_boss', name:'완벽한 제압', desc:'보스 하나를 S등급으로 격파하기', reward:{essence:500}, category:'stage', secret:true, check:()=> Object.entries(state.stageBest||{}).some(([k,v])=> v==='S' && isBossStage(parseInt(k)))},
   {id:'perfect_tower', name:'완벽한 한 층', desc:'무한의 탑에서 아무 층이나 S등급으로 돌파하기', reward:{stone:200}, category:'tower', secret:true, check:()=> Object.values(state.towerFloorGrades||{}).includes('S')},
-  {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
+  {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 노말 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
   // (v266) 히든 업적 추가 — secret:true = 이름만 보이고 조건은 ??? · secret:'full' = 이름·조건 모두 ??? (조건 빡빡·보상 후함)
   {id:'tower_transcend', name:'탑의 초월자', desc:'무한의 탑 1~100층을 전부 S등급으로 돌파하기', reward:{stone:1500, items:{pick_mythic:1, pick_legendary:1}}, category:'tower', secret:true, check:()=> { const g = state.towerFloorGrades||{}; for(let f=1; f<=100; f++) if(g[f]!=='S') return false; return true; }},
   {id:'tower_mono', name:'순혈주의', desc:'한 속성 정령만으로 무한의 탑 25층 이상 돌파하기', reward:{stone:300}, category:'tower', secret:true, check:()=> hidHas('towerMono')},
   {id:'tower_solo', name:'고독한 등반가', desc:'정령 딱 1마리로 무한의 탑 30층 이상 돌파하기', reward:{stone:800, items:{pick_legendary:1}}, category:'tower', secret:'full', check:()=> hidHas('towerSolo')},
   {id:'stage_clutch', name:'간발의 차', desc:'우리 편이 1마리만 남고 그 체력도 10% 이하인 채로 스테이지 승리하기', reward:{essence:400}, category:'stage', secret:true, check:()=> hidHas('stageClutch')},
-  {id:'hard_perfect', name:'지옥의 지배자', desc:'하드 1~5 보스를 전부 S등급으로 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> [509,519,529,539,549].every(i=> state.stageBest[i]==='S')},
+  {id:'hard_lowrare', name:'잡초의 반란', desc:'레어 이하 정령만으로 하드 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('hardLowRare')}, // (v268)
+  {id:'hard_lowrare5', name:'다윗과 골리앗', desc:'레어 이하 정령만으로 챕터 5 하드 보스 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> hidHas('hardLowRare5')}, // (v268)
   {id:'exp_relic8', name:'유물 수집광', desc:'한 번의 출정에서 유물 8개 모으기', reward:{stone:200}, category:'expedition', secret:true, check:()=> hidHas('relic8')},
   {id:'exp_clutch', name:'벼랑 끝', desc:'우리 편이 1마리만 남은 채로 출정 보스 처치하기', reward:{stone:250}, category:'expedition', secret:true, check:()=> hidHas('expClutch')},
   {id:'exp_greed', name:'욕심쟁이', desc:'한 번의 출정에서 킵 5번 하기', reward:{stone:300, items:{rare:2}}, category:'expedition', secret:true, check:()=> hidHas('keep5') || !!(state.expedition && (state.expedition.keeps||0)>=5)},
-  {id:'exp_abyss', name:'끝을 본 자', desc:'출정에서 35단계(5사이클)까지 돌파하기', reward:{stone:1000, items:{pick_legendary:1}}, category:'expedition', secret:'full', check:()=> (state.expeditionBestReach||0)>=35},
+  {id:'exp_greed_fall', name:'욕심의 대가', desc:'킵 5번 한 출정에서 패배해 쌓인 보상을 전부 잃기', reward:{stone:1000, items:{pick_legendary:1}}, category:'expedition', secret:'full', check:()=> hidHas('greedFall')}, // (v268) '끝을 본 자'(35단계)는 욕심쟁이와 겹쳐서 교체
   {id:'betray_1', name:'배신의 서막', desc:'내 정령으로 내 정령을 쓰러뜨리기', reward:{essence:300}, category:'general', secret:true, check:()=> hidHas('selfKill')},
   {id:'fuse_unlucky', name:'불운의 연금술사', desc:'같은 등급 합성에서 3번 연속 실패하기', reward:{items:{fuseGuard:2}}, category:'general', secret:true, check:()=> hidHas('fuseFail3')},
   {id:'betray_2', name:'배신의 완성', desc:'레이드에서 파티원의 정령을 내 정령으로 쓰러뜨리기', reward:{essence:2000, items:{pick_legendary:1}}, category:'general', secret:'full', check:()=> hidHas('raidFriendKill')},
@@ -8299,6 +8305,7 @@ function checkExpeditionOutcome(sf){
   if(!aliveUnits(sf.myUnits).length){
     sf.result = { win:false, rounds: sf.round };
     persistExpeditionWaveState(sf);
+    if(state.expedition && (state.expedition.keeps||0)>=5) hidMark('greedFall'); // (v268) 히든 업적
     resolveExpeditionBattle(state.expedition, false, false); // 패배 → 런 종료(진행 보상만 지급, 쌓인 완주 보상은 잃음)
     return true;
   }
@@ -8863,6 +8870,7 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
 ];
 function trialDef(id){ return TRIALS.find(t=>t.id===id) || null; }
 function trialCleared(id){ return !!(state.trialClear && state.trialClear[id]); }
+function trialHintOpen(id){ return trialCleared(id) || !!(state.trialTried && state.trialTried[id]); } // (v268) 힌트는 한 번 실패하거나 통과한 뒤에 열림
 function trialClearCount(){ return TRIALS.filter(t=>trialCleared(t.id)).length; }
 function buildTrialFight(t){
   const myUnits = t.allies.map(a=>makeBattleUnit('me', a.idx, a.key, a.atk||1000, ALLY_HP_MULT, 1, 1, null, a.aw||0));
@@ -8881,7 +8889,7 @@ function trialRuleFail(sf){
 function checkTrialOutcome(sf){
   if(sf.result) return true;
   const fail = trialRuleFail(sf);
-  if(fail){ sf.result = { win:false, rounds: sf.round, reason: fail }; return true; }
+  if(fail){ sf.result = { win:false, rounds: sf.round, reason: fail }; trialMarkTried(sf); return true; }
   if(!aliveUnits(sf.enemyUnits).length){
     const t = trialDef(sf.trialId), first = !trialCleared(sf.trialId);
     sf.result = { win:true, rounds: sf.round, first };
@@ -8889,9 +8897,10 @@ function checkTrialOutcome(sf){
       state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); grantItems(rw.items); checkAchievements(); save(); }
     return true;
   }
-  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round, reason:'전멸' }; return true; }
+  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round, reason:'전멸' }; trialMarkTried(sf); return true; }
   return false;
 }
+function trialMarkTried(sf){ if(!sf.trialId || (state.trialTried && state.trialTried[sf.trialId])) return; state.trialTried = Object.assign({}, state.trialTried, {[sf.trialId]: true}); save(); }
 function trialRulesTxt(t){ return [t.maxRounds ? t.maxRounds+'라운드 안에 적 전부 처치' : '', t.noDeath ? '우리 편 전원 생존' : ''].filter(Boolean).join(' · '); }
 function trialGoalHtml(t){ // (v266) 들어가면 보이는 목표 — 한 줄씩
   const rows = ['<div><span>🎯</span><b>'+(t.maxRounds ? t.maxRounds+'라운드 안에 적을 모두 쓰러뜨리기' : '적을 모두 쓰러뜨리기')+'</b></div>'];
@@ -8903,7 +8912,8 @@ function trialResultOverlayHtml(sf){
   let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
   if(r.win) h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""></div><div class="bs-rtitle">시련 통과!</div><div class="bs-rsub">'+t.nm+' · '+r.rounds+'라운드</div>'
     + (r.first && r.reward ? '<div class="bs-rrew"><div>🎉 첫 통과 보상</div><div style="margin-top:4px;">'+rewardPillsHtml(r.reward)+'</div></div>' : '<div class="bs-rsub">이미 통과한 시련</div>');
-  else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_skull.webp" alt=""></div><div class="bs-rtitle">실패</div><div class="bs-rsub">'+(r.reason||'')+' · '+t.nm+'</div>';
+  else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_skull.webp" alt=""></div><div class="bs-rtitle">실패</div><div class="bs-rsub">'+(r.reason||'')+' · '+t.nm+'</div>'
+    + (t.hint ? '<details class="tr-rhint"><summary>💡 힌트 보기</summary><div class="tr-hinttxt">'+t.hint+'</div></details>' : ''); // (v268) 실패하면 힌트 열림
   h += '<div class="bs-rbtns"><button class="btn secondary" id="skillRetryBtn">🔁 다시</button><button class="btn" id="skillResultCloseBtn">나가기</button></div></div></div>';
   return h;
 }
@@ -8918,7 +8928,7 @@ function showTrialPrep(id){
   h += '<div class="tr-lbl">아군 (고정)</div><div class="dg-foes">'+icons(pv.myUnits)+'</div>';
   h += '<div class="tr-lbl">적</div><div class="dg-foes">'+icons(pv.enemyUnits)+'</div>';
   h += '<div class="sub" style="text-align:center; font-size:11px;">그림을 누르면 능력치·스킬 확인</div>';
-  h += '<div class="tr-hint" id="trHint">'+(t.hint ? '<button class="btn secondary small" id="trHintBtn">💡 힌트 보기</button>' : '')+'</div>';
+  h += '<div class="tr-hint" id="trHint">'+(!t.hint ? '' : trialHintOpen(id) ? '<button class="btn secondary small" id="trHintBtn">💡 힌트 보기</button>' : '<button class="btn secondary small" disabled style="opacity:.5;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 힌트 · 한 번 실패하면 열림</button>')+'</div>';
   h += '<div class="dg-rw">'+(trialCleared(id) ? '이미 통과 · 보상 없음' : '🎉 첫 통과 보상 '+rewardPillsHtml(t.reward))+'</div>';
   h += '<button class="btn sticky-ok" id="trStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 도전</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
@@ -8959,11 +8969,11 @@ function trialPlayout(t, pick){ // pick(sf, a, options) → option · 반환 {wi
   return { win: !!(sf.result && sf.result.win), seq, reason: sf.result && sf.result.reason };
 }
 function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 · 해법 한 가지
-  const keep = state.trialClear; state.trialClear = {}; const ess = state.essence, st = state.enhanceStone, tk = JSON.stringify(state.tickets);
+  const keep = state.trialClear, keepTried = state.trialTried; state.trialClear = {}; const ess = state.essence, st = state.enhanceStone, tk = JSON.stringify(state.tickets);
   let wins = 0, sol = null;
   for(let i=0;i<tries;i++){ const r = trialPlayout(t, (sf,a,ops)=> ops[Math.floor(Math.random()*ops.length)]); if(r.win){ wins++; if(!sol) sol = r.seq; } }
   const ai = trialPlayout(t, (sf,a,ops)=>{ const c = aiChooseAction(sf, a); return c ? [c.act, c.side, c.idx] : ops[0]; });
-  state.trialClear = keep; state.essence = ess; state.enhanceStone = st; state.tickets = JSON.parse(tk);
+  state.trialClear = keep; state.trialTried = keepTried; state.essence = ess; state.enhanceStone = st; state.tickets = JSON.parse(tk);
   return { rate: wins/tries, wins, ai: ai.win, aiReason: ai.reason, sol };
 }
 // ===================== (v266) 월드 보스 =====================
@@ -10198,9 +10208,26 @@ function showManageModal(key){
   const riBtn = document.getElementById('runeInvBtn');
   if(riBtn) riBtn.addEventListener('click', ()=>showRuneInvPicker(key));
 }
+// (v268) 도감: 4칸 + 정렬(등급·속성·역할) — 정렬 기준마다 묶음 제목으로 구분
 function showDexModal(){
-  let html = '<div class="grid5">';
-  Object.keys(SPIRITS).forEach(key=>{ html += dexTile(key); });
+  const sortBy = ['rarity','element','role'].includes(state.dexSort) ? state.dexSort : 'rarity';
+  const keys = Object.keys(SPIRITS), ri = k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity), ei = k=> ELEMENTS.indexOf(SPIRITS[k].element), line = k=> SPIRITS[k].element+'_'+SPIRITS[k].variant;
+  const lines = Object.keys(LINE_KITS);
+  const groupOf = { rarity: k=> SPIRITS[k].rarity, element: k=> SPIRITS[k].element, role: k=> line(k) }[sortBy];
+  const order = { rarity:(a,b)=> ri(b)-ri(a) || ei(a)-ei(b) || line(a).localeCompare(line(b)),
+    element:(a,b)=> ei(a)-ei(b) || ri(b)-ri(a) || line(a).localeCompare(line(b)),
+    role:(a,b)=> lines.indexOf(line(a))-lines.indexOf(line(b)) || ri(b)-ri(a) }[sortBy];
+  const titleOf = g=> sortBy==='rarity' ? '<span style="color:'+RARITY_INFO[g].color+';">'+RARITY_INFO[g].name+'</span>'
+    : sortBy==='element' ? ELEMENT_INFO[g].icon+' '+ELEMENT_INFO[g].name : LINE_KITS[g].icon+' '+LINE_KITS[g].role;
+  let html = '<div class="pk-sort">'+[['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 역할']].map(([k,t])=>'<button data-dex-sort="'+k+'" class="'+(sortBy===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  html += '<div class="grid5 dex4">';
+  let prev = null;
+  keys.sort(order).forEach(key=>{
+    const g = groupOf(key);
+    if(g!==prev){ prev = g; const n = keys.filter(k=>groupOf(k)===g), got = n.filter(k=>state.discovered[k]).length;
+      html += '<div class="dex-grp"><b>'+titleOf(g)+'</b><span>'+got+'/'+n.length+'</span></div>'; }
+    html += dexTile(key);
+  });
   html += '</div>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
@@ -10210,6 +10237,7 @@ function showDexModal(){
   document.querySelectorAll('[data-manage]').forEach(el=>{
     el.addEventListener('click', ()=>{ manageReturnFn = showDexModal; showManageModal(el.dataset.manage); });
   });
+  document.querySelectorAll('[data-dex-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.dexSort = el.dataset.dexSort; save(); showDexModal(); }));
 }
 const ACHIEVEMENT_CATEGORIES = [
   {id:'general', name:'일반', icon:'<img class="uic" src="assets/ui/ic_medal.webp" alt="">'},
@@ -10729,6 +10757,7 @@ function sanitizeState(){
   migrateHardV253();
   migrateBossReworkV263();
   if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
+  if(!isPlainObj(s.trialTried)) s.trialTried = {}; // (v268) 시련 힌트 열림
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
