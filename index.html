@@ -836,6 +836,7 @@
   .bu-gg{position:relative; margin-top:3px; width:100%; height:13px; border-radius:7px; background:#1a1024cc; border:1px solid #ffd55788; overflow:hidden; cursor:pointer;}
   .bu-gg > div{height:100%; background:linear-gradient(90deg,#ffc357,#ffe066); transition:width .3s;}
   .bu-gg span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000;}
+  .upd-bar{position:fixed; left:50%; transform:translateX(-50%); top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:998; padding:8px 14px; border-radius:999px; border:1px solid #ffd557; background:#2b2760f0; color:#ffe7a0; font-size:13px; font-weight:800; box-shadow:0 6px 18px #000a; white-space:nowrap; cursor:pointer;}
   .rw-tip{position:fixed; z-index:999; max-width:260px; padding:6px 10px; border-radius:9px; background:#0d0b22f0; border:1px solid #ffd55788; color:#fff; font-size:12px; font-weight:700; line-height:1.4; box-shadow:0 4px 14px #0008; pointer-events:none; animation:rwTip .15s ease-out;}
   @keyframes rwTip{from{opacity:0; transform:translateY(4px);}}
   .gm-head{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:#ffffff08; margin-bottom:4px;}
@@ -1150,6 +1151,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</button>
         <button data-hmenu="mail" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📬 우편함<span id="hmMailN" class="hm-n" style="display:none;"></span></button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
+        <button data-hmenu="update" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔄 업데이트 <small id="hmVer" style="color:var(--sub); font-weight:600; margin-left:auto;"></small></button>
         <button data-hmenu="mailsend" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">📮 우편 보내기 <small style="color:#ffd557;">관리자</small></button>
         <button data-hmenu="mode" class="hm-admin hm-mode" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">🔁 <span id="hmModeTx">일반 모드로</span></button>
         <button data-hmenu="admin" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">🛠️ 관리자 세팅</button>
@@ -2541,12 +2543,38 @@ function friendSeenTxt(id){
   const m = Math.max(0, Math.floor((Date.now()-t)/60000));
   return m<2 ? '방금 전 접속' : m<60 ? m+'분 전 접속' : m<1440 ? Math.floor(m/60)+'시간 전 접속' : Math.floor(m/1440)+'일 전 접속';
 }
+// (v263) 친구 프로필: 내 기록(계정 레벨·보유 정령·도감·클리어·탑)을 players/<나>/prof 에 올려 둠 — 바뀐 때만
+function myProfileStats(){
+  return { lv: accountLevel(), own: Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length,
+    dex: Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length, clear: totalStagesCleared(), tower: state.towerBest||0 };
+}
+let friendProfSent = '';
+function friendPushProf(){
+  if(!friendNet.on || !friendsAvailable() || !raidNet.db) return;
+  const p = myProfileStats(), j = JSON.stringify(p); if(j===friendProfSent) return;
+  friendProfSent = j; raidNet.db.doc('players/'+raidNet.uid+'/prof').set(p).catch(()=>{ friendProfSent = ''; });
+}
+async function showFriendProfile(k){
+  const rep = friendNet.reps[k], sp = rep ? SPIRITS[rep] : null;
+  const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
+  const body = p=>'<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
+    + '<div class="pf-id"><div class="pf-name">'+escTxt(raidNameOf(k))+'</div><div class="sub">'+(p?'계정 Lv.'+p.lv:'계정 Lv.—')+(sp?' · 대표 '+sp.name:'')+'</div><div class="sub" style="font-size:11px;">'+friendSeenTxt(k)+'</div></div></div>'
+    + '<div class="pf-stats">'+stat('보유 정령', p?p.own:'—')+stat('도감', p?p.dex+'/'+Object.keys(SPIRITS).length:'—')+stat('클리어', p?p.clear:'—')+stat('탑 최고', p?p.tower+'층':'—')+'</div>'
+    + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">친구가 최신 버전으로 접속하면 기록이 보임</div>');
+  openInfoOverlay('프로필', body(null));
+  try{
+    const s = await raidNet.db.doc('players/'+k+'/prof').get(), v = (s && s.exists) ? s.data() : null;
+    const ok = v && typeof v==='object' && ['lv','own','dex','clear','tower'].every(x=>Number.isFinite(v[x]));
+    const el = document.getElementById('infoOverlayBody'); if(el && ok) el.innerHTML = body({lv:Math.floor(v.lv), own:Math.floor(v.own), dex:Math.floor(v.dex), clear:Math.floor(v.clear), tower:Math.floor(v.tower)});
+  }catch(e){}
+}
 let friendSeenLast = 0;
 function friendSeenPing(force){
   if(!friendNet.on || !friendsAvailable() || !raidNet.db) return;
   if(!force && (document.visibilityState!=='visible' || Date.now()-friendSeenLast < 55000)) return;
   friendSeenLast = Date.now();
   raidNet.db.doc('players/'+raidNet.uid+'/seen').set(Date.now()).catch(()=>{});
+  friendPushProf();
 }
 setInterval(()=>{ friendSeenPing(); if(typeof activeTab!=='undefined' && document.querySelector('.fr-list')) friendRefresh(); }, 60000);
 document.addEventListener('visibilitychange', ()=>{ friendSeenPing(true); });
@@ -2678,7 +2706,7 @@ function renderFriendsTab(){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
       const fr = friendNet.reps[k];
-      return '<div class="fr-row"><span class="fr-avw"><span class="fr-av">'+(fr?spArt(SPIRITS[fr]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div>'
+      return '<div class="fr-row"><span class="fr-avw" data-f-prof="'+k+'" style="cursor:pointer;"><span class="fr-av">'+(fr?spArt(SPIRITS[fr]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span></span><div class="fr-nm" data-f-prof="'+k+'" style="cursor:pointer;"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div>'
         + '<button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div>';
     else h += '<div class="fr-empty">아직 친구 없음<br><button class="btn small" data-ftab="add" style="margin-top:10px;">＋ 친구 추가하기</button></div>';
   }else if(friendTab==='req'){
@@ -2714,6 +2742,7 @@ function bindFriendPanel(){
     friendRemove(el.dataset.fRemove);
   }));
   document.querySelectorAll('[data-f-duel]').forEach(el=>el.addEventListener('click', ()=>duelChallenge(el.dataset.fDuel)));
+  document.querySelectorAll('[data-f-prof]').forEach(el=>el.addEventListener('click', ()=>showFriendProfile(el.dataset.fProf))); // (v263) 친구 프로필
 }
 // ===================== (v173) 결투 — 친구의 결투 덱과 한 판 (보상 없음) =====================
 function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k) } : null); }
@@ -4353,6 +4382,13 @@ function resolveBossWaveVictory(sf){
   state.essence += baseReward;
   let improved = false, equipCount = 0;
   if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', chapterLabel(chapterNum)+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx));
+  let rework = false;
+  if(already && bossReclearPending(stageIdx)){ // (v263) 기믹 개편 뒤 다시 잡음 → 첫 격파 보상 한 번 더
+    delete state.bossReclear[stageIdx]; rework = true;
+    const id = hasPendingId('stage_'+stageIdx+'_first') ? 'stage_'+stageIdx+'_first_v263' : 'stage_'+stageIdx+'_first';
+    addPendingReward(id, '🎉', chapterLabel(chapterNum)+' 보스 첫 격파 (기믹 개편)', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx));
+    setTimeout(()=>toast('🎉 기믹 개편 보스 격파 — 첫 격파 보상 한 번 더 · 보상 창에서 수령', 3500), 1200);
+  }
   if(!already && stageIdx===CHAPTER_LENGTH*MAX_CHAPTERS-1) setTimeout(()=>toast('🔥 하드 모드 열림 · 탐험 지도 위 "하드"', 4000), 1800); // (v251) // (v179) 보스도 첫 클리어 보상(눌러서 수령)
   if(!already || gradeRank[grade] > gradeRank[already]){
     improved = true;
@@ -4365,7 +4401,7 @@ function resolveBossWaveVictory(sf){
   checkChapterPctRewards(chapterNum);
   checkAchievements();
   save();
-  return { grade, improved, reward: equipCount, baseReward, prevBest: already, isEquipReward: true };
+  return { grade, improved, reward: equipCount, baseReward, prevBest: already, isEquipReward: true, rework };
 }
 function checkBossWaveOutcome(sf){
   if(sf.result) return true;
@@ -7221,7 +7257,7 @@ function getStageRewardContent(stageIdx){
   const fid = 'stage_'+stageIdx+'_first', pid = 'boss_'+stageIdx+'_pick';
   const firstIds = [fid, pid].filter(hasPendingId);
   const firstItems = boss ? bossFirstItems(stageIdx) : null;
-  let once = rwRow({ lead:'🎉', name:'첫 클리어', gain: ess(boss ? bossFirstReward(stageIdx) : stageFirstReward(stageIdx)) + (firstItems ? ' '+itemsShort(firstItems) : ''),
+  let once = rwRow({ lead:'🎉', name:'첫 클리어', sub:(boss && bossReclearPending(stageIdx) && !firstIds.length) ? '기믹 개편 — 다시 깨면 한 번 더' : '', gain: ess(boss ? bossFirstReward(stageIdx) : stageFirstReward(stageIdx)) + (firstItems ? ' '+itemsShort(firstItems) : ''),
     st: firstIds.length ? 'get' : (cleared ? 'done' : 'lock'), attrs: firstIds.length ? ' data-claim-reward="'+firstIds[0]+'" data-claim-ids="'+firstIds.join(',')+'"' : '' });
   const shown = new Set([fid, pid]);
   if(!boss && isSpecialStage(stageIdx)){
@@ -9167,9 +9203,9 @@ function rewardPillsHtml(rw){
   // (v260) 누르면 무슨 보상인지 말풍선(data-rtip) — 아이콘만으론 어떤 권인지 헷갈림
   const pill = (t, tip)=>'<span class="rw-pill" data-rtip="'+tip+'" style="display:inline-block; padding:1px 8px; margin:3px 4px 0 0; border-radius:9px; background:#ffffff14; font-size:11px; font-weight:700; white-space:nowrap; cursor:pointer;">'+t+'</span>';
   let h = '';
-  if(rw.essence) h += pill('<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+rw.essence, '정수 '+rw.essence);
-  if(rw.stone) h += pill('<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+rw.stone, '강화석 '+rw.stone);
-  if(rw.items) Object.keys(rw.items).forEach(k=>{ const ti = TICKET_INFO[k]; if(!ti) return; h += pill(ti.icon+' ×'+rw.items[k], ti.name+' ×'+rw.items[k]+(ti.pick ? ' — 그 등급 정령 중 골라 받음' : (/확정권$/.test(ti.name) ? ' — 그 등급 정령 중 무작위 1마리' : ''))); });
+  if(rw.essence) h += pill('<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+rw.essence, '정수');
+  if(rw.stone) h += pill('<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+rw.stone, '강화석');
+  if(rw.items) Object.keys(rw.items).forEach(k=>{ const ti = TICKET_INFO[k]; if(!ti) return; h += pill(ti.icon+' ×'+rw.items[k], ti.name); });
   return h;
 }
 let achieveMode = 'ach'; // (v173) 일일 의뢰와 업적을 따로 엶
@@ -9581,7 +9617,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
-    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, settings:showSettingsModal, mail:showMailboxModal, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
+    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, settings:showSettingsModal, mail:showMailboxModal, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
 // (v95) 전투 결과가 표시되면, 모달이 화면보다 길 때 결과와 확인 버튼이 보이도록 맨 아래로 스크롤
@@ -9622,6 +9658,14 @@ function migrateBossPicksV245(){
   });
   state.bossPicksV245 = true;
 }
+// (v263) 보스 기믹 개편 — 이미 잡은 보스(노말·하드)는 다시 잡으면 첫 격파 보상을 한 번 더 (등급 보상은 그대로)
+function migrateBossReworkV263(){
+  const s = state; if(s.bossReworkV263) return;
+  s.bossReclear = {};
+  Object.keys(s.stageBest||{}).forEach(k=>{ const i = Number(k); if(Number.isInteger(i) && isBossStage(i) && s.stageBest[k]) s.bossReclear[i] = 1; });
+  s.bossReworkV263 = true;
+}
+function bossReclearPending(i){ return !!(state.bossReclear && state.bossReclear[i]); }
 // (v253) v251~252에서 하드는 스테이지 50~99·챕터 6~10을 썼음 → 500~549·51~55로 옮김 (노말 챕터를 늘릴 자리 확보)
 function migrateHardV253(){
   const s = state; if(s.hardV253) return;
@@ -9639,6 +9683,7 @@ function migrateHardV253(){
 function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   migrateHardV253();
+  migrateBossReworkV263();
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
@@ -9842,6 +9887,81 @@ function resumeLastView(){
 installModalScrollKeeper();
 resumeLastView();
 raidInitNet();
+
+// ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
+// APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
+const APP_BUILD = 263;
+{ const v = document.getElementById('hmVer'); if(v) v.textContent = 'v'+APP_BUILD; }
+async function latestBuild(){
+  try{ const t = await (await fetch('sw.js?t='+Date.now(), {cache:'no-store'})).text(); const m = t.match(/animarune-v(\d+)/); return m ? +m[1] : null; }catch(e){ return null; }
+}
+async function appUpdateNow(){
+  toast('최신 버전 확인 중…');
+  const latest = await latestBuild();
+  if(latest===null){ toast('확인 실패 — 인터넷 연결 확인'); return; }
+  if(latest <= APP_BUILD){ toast('이미 최신 버전 (v'+APP_BUILD+')'); return; }
+  toast('v'+latest+' 적용 중…');
+  try{ save(); }catch(e){}
+  try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }catch(e){}
+  try{ await Promise.all([fetch('./', {cache:'reload'}), fetch('index.html', {cache:'reload'})]); }catch(e){} // 브라우저에 남은 옛 페이지 대신 새로 받게
+  setTimeout(()=>location.reload(), 500);
+}
+// 켜 둔 채로 새 버전이 올라오면(앱은 껐다 켜야 반영됐음) 위에 알림 — 눌러서 바로 적용
+let updCheckedAt = 0;
+async function checkAppUpdate(){
+  if(Date.now() - updCheckedAt < 10*60000 || document.getElementById('updBar')) return;
+  updCheckedAt = Date.now();
+  const latest = await latestBuild(); if(!latest || latest <= APP_BUILD) return;
+  const b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.innerHTML = '🔄 새 버전 v'+latest+' — 눌러서 적용';
+  b.addEventListener('click', appUpdateNow); document.body.appendChild(b);
+}
+setTimeout(checkAppUpdate, 4000);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppUpdate(); });
+
+// 폰의 뒤로가기(안드로이드 버튼·아이폰 왼쪽 끝 밀기) — 열린 창 닫기 → 하위 화면 → 홈 → (홈에서 두 번) 종료
+let backArmAt = 0, exitArmAt = 0, lastPopAt = 0;
+function appBack(){
+  document.querySelectorAll('.rw-tip').forEach(x=>x.remove());
+  const hm = document.getElementById('headerMenu'); if(hm && hm.style.display==='block'){ hm.style.display = 'none'; return true; }
+  const mods = [...document.querySelectorAll('.modal-bg')].filter(m=>getComputedStyle(m).display!=='none');
+  if(mods.length){
+    const z = m=>parseInt(getComputedStyle(m).zIndex)||0;
+    const top = mods.reduce((a,b)=> z(b) >= z(a) ? b : a); // 같은 높이면 나중에 붙은 창
+    const x = top.querySelector('.close-x, #modalClose') || [...top.querySelectorAll('button')].find(b=>/^\s*(←|‹)|뒤로|닫기|취소/.test(b.textContent));
+    if(x) x.click();
+    return true; // 닫을 버튼이 없는 창(꼭 골라야 하는 창)은 그대로 둠
+  }
+  if(document.getElementById('battleScreen')){
+    const done = document.getElementById('skillResultCloseBtn'); if(done){ done.click(); return true; }
+    if(Date.now() - backArmAt < 2000){ backArmAt = 0; const ex = document.getElementById('skillExitBtn'); if(ex) ex.click(); }
+    else { backArmAt = Date.now(); toast('한 번 더 누르면 전투에서 나감'); }
+    return true;
+  }
+  if(activeTab==='raid' && typeof raidView!=='undefined' && raidView==='detail'){ const rb = document.getElementById('raidBack'); if(rb){ rb.click(); return true; } }
+  if(activeTab!=='home'){ activeTab = 'home'; render(); save(); return true; }
+  return false;
+}
+function backGuardPush(){ try{ history.pushState({arBack:1}, ''); }catch(e){} }
+if(!(history.state && history.state.arBack)){ try{ history.replaceState({arRoot:1}, ''); }catch(e){} backGuardPush(); }
+window.addEventListener('popstate', e=>{
+  lastPopAt = Date.now();
+  if(e.state && e.state.arBack) return; // 앞으로 가기로 다시 들어온 경우
+  if(appBack()){ backGuardPush(); return; }
+  if(Date.now() - exitArmAt < 2000){ history.back(); return; } // 홈에서 한 번 더 → 앱 종료(이전 페이지)
+  exitArmAt = Date.now(); toast('한 번 더 누르면 종료'); backGuardPush();
+});
+// 아이폰 홈 화면 앱(standalone)은 사파리의 뒤로 밀기가 없음 → 왼쪽 끝에서 오른쪽으로 밀면 뒤로
+// 기기가 스스로 뒤로 가기를 처리한 경우(popstate가 먼저 옴)는 한 번 더 하지 않음
+if(window.navigator.standalone === true){
+  let sx = -1, sy = 0, st = 0, fired = false;
+  document.addEventListener('touchstart', e=>{ const t = e.touches[0]; if(e.touches.length===1 && t.clientX <= 22){ sx = t.clientX; sy = t.clientY; st = Date.now(); fired = false; } else sx = -1; }, {passive:true});
+  document.addEventListener('touchmove', e=>{
+    if(sx<0 || fired) return; const t = e.touches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+    if(dy > 60){ sx = -1; return; }
+    if(dx > 70){ fired = true; const t0 = st; setTimeout(()=>{ if(lastPopAt < t0) history.back(); }, 250); }
+  }, {passive:true});
+  document.addEventListener('touchend', ()=>{ sx = -1; }, {passive:true});
+}
 </script>
 <script>
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
