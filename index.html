@@ -9097,7 +9097,9 @@ function expRankHtml(){
 function expMapHtml(run){
   const map = run.map; if(!map) return '';
   const S = map.steps.length, reach = new Set(run.currentRoom || run.pendingBuffChoice || run.pendingKeep ? [] : expReachable(run)), path = run.path || [];
-  const X = (i, n)=> n===1 ? 50 : 16 + i/(n-1)*68, Y = s=> 94 - s/(S-1)*88;
+  // (v266) 줄 간격을 px 로 고정(줄 수만큼 지도 높이가 늘어남) — 예전엔 330px 에 8줄이 몰려 빽빽했고 맨 위 보스 칸이 잘렸음
+  const GAP = 74, PAD_T = 44, PAD_B = 34, H = PAD_T + PAD_B + (S-1)*GAP;
+  const X = (i, n)=> n===1 ? 50 : 16 + i/(n-1)*68, Y = s=> (PAD_T + (S-1-s)*GAP) / H * 100;
   let lines = '';
   map.edges.forEach((ed, s)=> ed.forEach((tos, i)=> tos.forEach(j=>{ const on = path[s]===i && path[s+1]===j; lines += '<line x1="'+X(i,map.steps[s].length)+'" y1="'+Y(s)+'" x2="'+X(j,map.steps[s+1].length)+'" y2="'+Y(s+1)+'" class="xp-edge'+(on?' on':'')+'" vector-effect="non-scaling-stroke"/>'; })));
   let nodes = '';
@@ -9107,7 +9109,7 @@ function expMapHtml(run){
     const ic = n.type==='boss' && n.gimmick ? bossImg(n.gimmick, 'xp-bimg', BOSS_GIMMICK_INFO[n.gimmick].icon) : info.ic;
     nodes += '<button class="xp-node t-'+n.type.replace('?','q')+(done?' done':'')+(here?' here':'')+(can?' can':'')+(s>run.currentIndex?' later':'')+'" style="left:'+X(i,row.length)+'%; top:'+Y(s)+'%;"'+(can?' data-xp-go="'+i+'"':' disabled')+'><span>'+ic+'</span><small>'+(n.type==='boss' && n.gimmick ? BOSS_GIMMICK_INFO[n.gimmick].name : info.nm)+'</small></button>';
   }));
-  return '<div class="xp-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+lines+'</svg>'+nodes+'</div>';
+  return '<div class="xp-map" style="height:'+H+'px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+lines+'</svg>'+nodes+'</div>';
 }
 function renderExpeditionTab(){
   if(!isUnlocked('expedition')) return lockedFeatureScreenHtml('expedition');
