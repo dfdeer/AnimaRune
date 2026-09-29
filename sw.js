@@ -22,7 +22,9 @@ self.addEventListener('fetch', e=>{
     return;
   }
   // (v263) 화면 이동(페이지) 요청은 브라우저 HTTP 캐시를 거치지 않고 서버에 확인(no-cache) — 옛 index.html 이 몇 분씩 남던 문제
-  const net = req.mode==='navigate' ? fetch(req.url, {cache:'no-cache', credentials:'same-origin'}) : fetch(req);
+  // (v266) 주소가 넘어간(리다이렉트) 응답을 페이지로 그대로 주면 Safari 는 'WebKit 내부 오류', 크롬은 ERR_FAILED 로 막힘 → 깨끗한 응답으로 다시 만들어서 줌
+  const unredirect = res=> (res && res.redirected) ? res.blob().then(body=> new Response(body, { status:res.status, statusText:res.statusText, headers:res.headers })) : res;
+  const net = req.mode==='navigate' ? fetch(req.url, {cache:'no-cache', credentials:'same-origin'}).then(unredirect) : fetch(req);
   e.respondWith(
     net.then(save).catch(()=> caches.match(req).then(r=> r || (req.mode==='navigate' ? caches.match('./index.html') : Response.error())))
   );
