@@ -894,7 +894,6 @@
   .al-sec{font-family:var(--fun); font-size:14px; margin:12px 0 6px; display:flex; align-items:center;}
   .al-parts > div, .al-perks > div{display:flex; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px solid #ffffff10; font-size:12.5px;} .al-parts small{color:var(--sub);} .al-perks > div{opacity:.55;} .al-perks > div.on{opacity:1;} .al-perks > div.on b{color:#7dffb0;}
   .al-rw{display:flex; flex-direction:column; gap:5px;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
-  #levelBar.has-rw::after{content:'받을 보상'; font-size:10px; font-weight:800; color:#2a1800; background:#ffd557; border-radius:8px; padding:1px 6px; white-space:nowrap;} /* (v269) 레벨 보상이 있으면 표시 */
   .pn{margin-top:8px; border-radius:12px; background:#ffffff0a; border:1px solid #ffffff14; padding:8px 12px;} .pn summary{cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px;} .pn summary::-webkit-details-marker{display:none;} .pn summary b{font-size:16px;} .pn summary small{color:var(--sub); font-size:11px;} .pn summary::after{content:'▾'; margin-left:auto; color:var(--sub);} .pn[open] summary::after{content:'▴';}
   .ask-it{padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff14; margin-top:6px; text-align:left;} .ask-it.done{opacity:.6;} .ask-h{font-size:12.5px; color:var(--text); display:flex; gap:6px; align-items:baseline; flex-wrap:wrap;} .ask-h small{color:var(--sub); font-size:10.5px;} .ask-q{font-size:12.5px; color:#e3e1ff; margin-top:3px; white-space:pre-wrap; word-break:break-all;} .ask-a{font-size:12px; color:#9fe8c0; margin-top:4px; white-space:pre-wrap;} .ask-w{font-size:11px; color:var(--sub); margin-top:3px;} /* (v269) 문의 */
   .pn-t{font-size:13px; color:#ffd35a; margin:10px 0 4px;} .pn ul{margin:0; padding-left:18px;} .pn li{font-size:12.5px; line-height:1.5; margin:3px 0; color:#e3e1ff;}
@@ -1282,7 +1281,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <button id="headerResetBtn" style="display:none; background:none; border:none; color:var(--sub); font-size:16px; padding:4px; cursor:pointer; line-height:1;">⚙️</button>
     </div>
   </header>
-  <div id="levelBar" style="display:flex; align-items:center; gap:8px; padding:4px 14px 8px; background:var(--panel);">
+  <div id="levelBar" style="display:flex; align-items:center; gap:8px; padding:9px 16px 10px; background:var(--panel);">
     <div style="font-size:11px; font-weight:800; color:#c9a8ff; white-space:nowrap;">Lv.<span id="acctLevelVal">1</span></div>
     <div style="flex:1; height:5px; border-radius:3px; background:#2d2a62; overflow:hidden;"><div id="acctLevelFill" style="height:100%; width:0%; background:linear-gradient(90deg,#9a6bff,#e0a8ff);"></div></div>
   </div>
@@ -7092,7 +7091,7 @@ function render(){
   const pct = nextT===null ? 100 : Math.min(100, ((pts-prevT)/(nextT-prevT))*100);
   document.getElementById('acctLevelVal').textContent = lvl;
   document.getElementById('acctLevelFill').style.width = pct+'%';
-  { const lb = document.getElementById('levelBar'); if(lb){ lb.classList.toggle('has-rw', accountLvClaimable().length>0); if(!lb.__al){ lb.__al = true; lb.style.cursor = 'pointer'; lb.addEventListener('click', ()=>showAccountLevelModal()); } } } // (v269)
+  { const lb = document.getElementById('levelBar'); if(lb){ if(!lb.__al){ lb.__al = true; lb.style.cursor = 'pointer'; lb.addEventListener('click', ()=>showAccountLevelModal()); } } } // (v269)
   if(lvl > (state.lvSeen||0)){ if(state.lvSeen) toast('🎉 계정 Lv.'+lvl+' 달성 — 프로필의 레벨 보상에서 받기', 3200); state.lvSeen = lvl; }
   document.querySelectorAll('nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===activeTab || (b.dataset.tab==='home' && HOME_MODE_TABS.includes(activeTab)));
@@ -7799,7 +7798,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:272, v:'2.72', date:'2026-09-29', secs:[
     { t:'바뀐 것', items:[
-      '창 닫기 X 표시도 주아체로 통일'
+      '창 닫기 X 표시도 주아체로 통일',
+      '위 레벨 줄 여백을 넓힘 · 레벨 줄의 "받을 보상" 표시는 없앰 (홈 이름표의 빨간 점과 프로필의 레벨 보상 탭에서 확인)'
     ]}
   ]},
   { build:271, v:'2.71', date:'2026-09-29', secs:[
