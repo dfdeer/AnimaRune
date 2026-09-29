@@ -1965,6 +1965,7 @@ function dealDamage(sf, a, d, mult, opts){
   runeOnHit(sf, a, d, total);
   if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); if(a.hp<=0) killUnit(sf, a); }
   const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
+  if(d.hp<=0 && d.alive && a && a!==d && a.side===d.side) hidFriendlyKill(sf, a, d); // (v266) 히든 업적: 같은 편을 쓰러뜨림
   if(d.hp<=0) killUnit(sf, d);
   return { total, crit, groggy };
 }
@@ -3698,6 +3699,16 @@ async function raidInitNet(){
 }
 
 function checkSkillStageOutcome(sf){
+  const r = checkSkillStageOutcome0(sf);
+  if(r && sf.result && sf.result.win && !sf.hidWin){ sf.hidWin = true; try{ hidOnWin(sf); }catch(e){} }
+  return r;
+}
+function hidOnWin(sf){ // (v266) 이긴 판 히든 업적
+  const alive = aliveUnits(sf.myUnits);
+  if(!sf.mode && alive.length===1 && alive[0].hp/alive[0].maxHp <= 0.1) hidMark('stageClutch');
+  if(sf.mode==='expedition' && sf.enemyUnits.some(u=>u.isBoss) && alive.length===1) hidMark('expClutch');
+}
+function checkSkillStageOutcome0(sf){
   if(sf.mode==='boss') return checkBossWaveOutcome(sf);
   if(sf.mode==='expedition') return checkExpeditionOutcome(sf);
   if(sf.mode==='dungeon') return checkDungeonOutcome(sf); // (v266)
@@ -3871,7 +3882,9 @@ function myTurnAction(act){
   if(!skillTargetable(sf, skillSel.side, skillSel.idx)) return;
   if(sf.mode==='raid' || (sf.mode==='duel' && raidIsNet())){
     if(!raidMine(a.idx)) return; // 팀원 정령은 팀원만 조작
-    if(raidNet.role==='guest'){ skillLastAct[lastActKey(sf, a)] = act; raidGuestSubmit(act, skillSel.side, skillSel.idx); return; }
+    if(raidNet.role==='guest'){ skillLastAct[lastActKey(sf, a)] = act;
+      { const t = unitAt(sf, skillSel.side, skillSel.idx), sk = unitSkill(a, act); if(sf.mode==='raid' && skillSel.side==='me' && t && t!==a && (!sk || sk.kind==='harm')) hidPendingFF = { side:'me', idx:skillSel.idx, key:t.key, round:sf.round, friend: !raidMine(skillSel.idx) }; } // (v266)
+      raidGuestSubmit(act, skillSel.side, skillSel.idx); return; }
   }
   skillLastAct[lastActKey(sf, a)] = act;
   performAction(sf, a, act, skillSel.side, skillSel.idx);
@@ -4944,6 +4957,7 @@ function battleSceneHtml(theme){
 }
 function showSkillStageScreen(){
   const sf = state.skillFight; if(!sf) return;
+  if(hidPendingFF) hidCheckPending(sf); // (v266) 레이드 파티원 쪽 히든 업적
   if(document.getElementById('modalRoot').innerHTML) closeModal();
   const firstMount = !document.getElementById('battleScreen');
   const root = mountBattleScreen();
@@ -6368,6 +6382,7 @@ function fuseRoll(srcRarity, nextRarity, streakKey){
   const st = state.fuseFailStreak[streakKey] || 0, fail = Math.max(0, (FUSE_FAIL[nextRarity]||0) - st*FUSE_PITY_STEP);
   if(!(Math.random() < fail)){ state.fuseFailStreak[streakKey] = 0; return { ok:true }; }
   state.fuseFailStreak[streakKey] = st + 1;
+  if(st + 1 >= 3) hidMark('fuseFail3'); // (v266) 히든 업적
   if(fuseGuardOn && fuseGuardEligible(nextRarity) && ticketCount('fuseGuard')>0){ state.tickets.fuseGuard -= 1; if(ticketCount('fuseGuard')<=0) fuseGuardOn = false; return { ok:false, guard:true }; }
   return { ok:false, down: !!FUSE_DOWN[srcRarity] && Math.random() < FUSE_DOWN[srcRarity] };
 }
@@ -6407,8 +6422,8 @@ function fuseInfoFor(keys){ // (v250) 재료 3개 → 합성 정보 (칸 합성�
   const src = fuseMode==='equip' ? equipInfo(keys[0]).rarity : SPIRITS[keys[0]].rarity, nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
-  const inheritFrom = keys.reduce((t,k)=> t + (fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k)), 0); // (v266) 재료 3개 강화의 합 (장비도 같음)
-  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // 합 ÷ 3 = 평균 (버림) — +10·+10·+10 → +10, +10·+0·+0 → +3
+  const inheritFrom = [...new Set(keys)].reduce((t,k)=> t + (fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k)), 0); // (v266) 재료 강화의 합 — 같은 정령(장비)은 강화를 함께 쓰니 한 번만 셈
+  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // 합 ÷ 3 (버림) — 서로 다른 +10 셋 → +10 · 같은 +10 셋 → +3
   const awFrom = 0, awInherit = 0; // (v266) 각성은 계승 안 함 — 낮은 등급에서 각성을 다 하고 올리면 너무 쉬워서
   return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit, inheritFrom, awFrom, awInherit };
 }
@@ -6479,7 +6494,7 @@ function fuseRulesHtml(){ // (v219) 합성·계승 규칙 한눈에 — 가이�
       {ic:'📈', nm:'보정', d:'실패할 때마다 다음 성공률 +'+Math.round(FUSE_PITY_STEP*100)+'%p'},
       {ic:'🛡️', nm:'보호권', d:'체크하면 실패해도 재료 유지 ('+RN('legendary')+'·'+RN('mythic')+')'}])
     + gmSectionHtml('강화·각성 계승', [
-      {ic:'⬆️', nm:'강화', d:'재료 3개의 평균만큼 이어받음 · 예) +10·+10·+10 → +10'},
+      {ic:'⬆️', nm:'강화', d:'재료 강화를 모아 이어받음 · 같은 정령은 한 번만 셈<br>예) 서로 다른 +10 셋 → +10 · 같은 정령 +10 셋 → +3'},
       {ic:'⭐', nm:'각성', d:'이어받지 않음'}])
     + gmSectionHtml('기타', [{ic:'<img class="uic" src="assets/ui/ic_lock.webp" alt="">', nm:'잠금', d:'잠근 정령·장비는 재료로 안 쓰임'}]);
 }
@@ -7090,7 +7105,7 @@ function showEquipEnhanceModal(key, fxLabel){
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
-      + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화 평균만큼 계승</div></div>';
+      + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화를 모아 계승 (같은 장비는 한 번만 셈)</div></div>';
     h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+eqPct(now)+'%</div></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
@@ -7542,6 +7557,28 @@ function isUnlocked(feature){
   if(need===undefined) return true;
   return accountLevel() >= need;
 }
+// (v266) 같은 편 처치 — 내가 조작하는 정령이 우리 편을 쓰러뜨렸을 때만 (레이드는 행동한 사람 기준, 진짜 파티원일 때만 '배신의 완성')
+function hidFriendlyKill(sf, a, d){
+  if(!sf || a.side!=='me' || ['trial'].includes(sf.mode)) return;
+  if(sf.mode==='raid'){
+    const me = (typeof raidNet!=='undefined' && raidNet.role) ? raidNet.role : 'host';
+    if(a.owner && a.owner!==me) return; // 방장이 대신 계산하는 파티원의 행동은 방장 몫이 아님
+    if(d.owner && d.owner!==(a.owner||me)){ if(typeof raidIsNet==='function' && raidIsNet()) hidMark('raidFriendKill'); return; }
+  }
+  if(sf.mode==='duel' && typeof raidIsNet==='function' && raidIsNet() && typeof raidMine==='function' && !raidMine(a.idx)) return;
+  hidMark('selfKill');
+}
+// (v266) 레이드 파티원(손님) 쪽: 계산은 방장이 해서, 내가 파티원 정령을 노린 뒤 그 정령이 쓰러진 걸 화면에서 확인
+let hidPendingFF = null;
+function hidCheckPending(sf){
+  if(!hidPendingFF || !sf) return;
+  const p = hidPendingFF, u = unitAt(sf, p.side, p.idx);
+  if(sf.round > p.round + 1){ hidPendingFF = null; return; }
+  if(u && !u.alive && u.key===p.key){ hidPendingFF = null; hidMark(p.friend ? 'raidFriendKill' : 'selfKill'); }
+}
+// (v266) 히든 업적용 기록 — 한 번 해낸 일만 표시(되돌리지 않음)
+function hidHas(k){ return !!(state.hid && state.hid[k]); }
+function hidMark(k){ if(hidHas(k)) return; state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
 const ACHIEVEMENTS = [
   {id:'first_summon', name:'첫 소환', desc:'정령을 처음 소환하기', reward:{essence:50}, category:'general', basic:true, check:()=> (state.lifetimeSummons||0)>=1},
   {id:'summon_10', name:'정령 애호가', desc:'정령 10회 소환하기', reward:{essence:100}, category:'general', check:()=> (state.lifetimeSummons||0)>=10},
@@ -7581,8 +7618,21 @@ const ACHIEVEMENTS = [
   {id:'expedition_deep_21', name:'끝없는 출정', desc:'출정에서 21단계까지 돌파하기', reward:{items:{rare:1}}, category:'expedition', check:()=> (state.expeditionBestReach||0)>=21},
   // 탐구/도전형 — 달성 전까지 이름/설명을 가려두고 보상은 두둑하게
   {id:'perfect_boss', name:'완벽한 제압', desc:'보스 하나를 S등급으로 격파하기', reward:{essence:500}, category:'stage', secret:true, check:()=> Object.entries(state.stageBest||{}).some(([k,v])=> v==='S' && isBossStage(parseInt(k)))},
-  {id:'perfect_tower', name:'탑의 초월자', desc:'무한의 탑에서 아무 층이나 S등급으로 돌파하기', reward:{stone:200}, category:'tower', secret:true, check:()=> Object.values(state.towerFloorGrades||{}).includes('S')},
+  {id:'perfect_tower', name:'완벽한 한 층', desc:'무한의 탑에서 아무 층이나 S등급으로 돌파하기', reward:{stone:200}, category:'tower', secret:true, check:()=> Object.values(state.towerFloorGrades||{}).includes('S')},
   {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
+  // (v266) 히든 업적 추가 — secret:true = 이름만 보이고 조건은 비밀 · secret:'full' = 이름·조건 모두 ??? (조건 빡빡·보상 후함)
+  {id:'tower_transcend', name:'탑의 초월자', desc:'무한의 탑 1~100층을 전부 S등급으로 돌파하기', reward:{stone:1500, items:{pick_mythic:1, pick_legendary:1}}, category:'tower', secret:true, check:()=> { const g = state.towerFloorGrades||{}; for(let f=1; f<=100; f++) if(g[f]!=='S') return false; return true; }},
+  {id:'tower_mono', name:'순혈주의', desc:'한 속성 정령만으로 무한의 탑 25층 이상 돌파하기', reward:{stone:300}, category:'tower', secret:true, check:()=> hidHas('towerMono')},
+  {id:'tower_solo', name:'고독한 등반가', desc:'정령 딱 1마리로 무한의 탑 30층 이상 돌파하기', reward:{stone:800, items:{pick_legendary:1}}, category:'tower', secret:'full', check:()=> hidHas('towerSolo')},
+  {id:'stage_clutch', name:'간발의 차', desc:'우리 편이 1마리만 남고 그 체력도 10% 이하인 채로 스테이지 승리하기', reward:{essence:400}, category:'stage', secret:true, check:()=> hidHas('stageClutch')},
+  {id:'hard_perfect', name:'지옥의 지배자', desc:'하드 1~5 보스를 전부 S등급으로 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> [509,519,529,539,549].every(i=> state.stageBest[i]==='S')},
+  {id:'exp_relic8', name:'유물 수집광', desc:'한 번의 출정에서 유물 8개 모으기', reward:{stone:200}, category:'expedition', secret:true, check:()=> hidHas('relic8')},
+  {id:'exp_clutch', name:'벼랑 끝', desc:'우리 편이 1마리만 남은 채로 출정 보스 처치하기', reward:{stone:250}, category:'expedition', secret:true, check:()=> hidHas('expClutch')},
+  {id:'exp_greed', name:'욕심쟁이', desc:'한 번의 출정에서 킵 5번 하기', reward:{stone:300, items:{rare:2}}, category:'expedition', secret:true, check:()=> hidHas('keep5') || !!(state.expedition && (state.expedition.keeps||0)>=5)},
+  {id:'exp_abyss', name:'끝을 본 자', desc:'출정에서 35단계(5사이클)까지 돌파하기', reward:{stone:1000, items:{pick_legendary:1}}, category:'expedition', secret:'full', check:()=> (state.expeditionBestReach||0)>=35},
+  {id:'betray_1', name:'배신의 서막', desc:'내 정령으로 내 정령을 쓰러뜨리기', reward:{essence:300}, category:'general', secret:true, check:()=> hidHas('selfKill')},
+  {id:'fuse_unlucky', name:'불운의 연금술사', desc:'같은 등급 합성에서 3번 연속 실패하기', reward:{items:{fuseGuard:2}}, category:'general', secret:true, check:()=> hidHas('fuseFail3')},
+  {id:'betray_2', name:'배신의 완성', desc:'레이드에서 파티원의 정령을 내 정령으로 쓰러뜨리기', reward:{essence:2000, items:{pick_legendary:1}}, category:'general', secret:'full', check:()=> hidHas('raidFriendKill')},
   {id:'rune_master', name:'룬 각인사', desc:'룬을 5번 새기기', reward:{stone:150}, category:'general', check:()=> (state.lifetimeEngraves||0)>=5},
   {id:'wood_bloom_max', name:'천년의 나이테', desc:'만개/천년수 특성을 가진 정령을 최대 레벨까지 강화하기', reward:{essence:600}, category:'general', secret:true, check:()=> Object.keys(state.enhanceLevel||{}).some(k=>{ const p=passiveFor(k); return p && p.enhanceCapBonus && enhanceLevel(k)>=maxEnhanceFor(k); })}
 ];
@@ -7869,6 +7919,9 @@ function towerFloorReward(f){
 }
 function resolveTowerBattle(floor, playerPower, grade){
   if(playerPower > (state.towerBestPower||0)) state.towerBestPower = dmgRound(playerPower);
+  if(grade){ const fk = state.formation.slice(0, towerSlotCount(floor)).filter(k=>k && SPIRITS[k]); // (v266) 히든 업적
+    if(floor>=25 && fk.length && fk.every(k=>SPIRITS[k].element===SPIRITS[fk[0]].element)) hidMark('towerMono');
+    if(floor>=30 && fk.length===1) hidMark('towerSolo'); }
   let reward = 0, stoneReward = 0, firstClear = false;
   let frontierAdvanced = false;
   if(grade){
@@ -8280,7 +8333,7 @@ function cashOutExpedition(){
 function keepExpedition(){
   const run = state.expedition;
   if(!run || !run.pendingKeep) return;
-  run.keeps = (run.keeps||0) + 1;
+  run.keeps = (run.keeps||0) + 1; if(run.keeps>=5) hidMark('keep5'); // (v266)
   run.cycle = (run.cycle||1) + 1;
   run.currentIndex = 0;
   run.currentRoom = null; run.roomChoices = null; // (v164) 새 사이클도 방 선택부터 다시 시작
@@ -8303,7 +8356,7 @@ function pickExpeditionBuffChoices(kind){ // (v266) 능력치 버프 + 유물 �
 function chooseExpeditionBuff(buffId){
   const run = state.expedition;
   if(!run || !run.pendingBuffChoice) return;
-  if(String(buffId).indexOf('r:')===0){ const id = buffId.slice(2); if(EXP_RELICS.some(r=>r.id===id) && !expHasRelic(run, id)) run.relics = (run.relics||[]).concat(id); } // (v266) 유물
+  if(String(buffId).indexOf('r:')===0){ const id = buffId.slice(2); if(EXP_RELICS.some(r=>r.id===id) && !expHasRelic(run, id)) run.relics = (run.relics||[]).concat(id); if(run.relics.length>=8) hidMark('relic8'); } // (v266) 유물
   const buff = EXPEDITION_BUFFS.find(b=>b.id===buffId);
   if(buff) buff.apply(run);
   run.pendingBuffChoice = null;
@@ -9144,13 +9197,13 @@ function expRestChoose(kind){
 function expShopBuy(i){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='shop') return;
   if(i==='heal'){ if(room.heal) return; if((run.gold||0) < 45){ toast('금화 부족'); return; } run.gold -= 45; room.heal = true; run.roster.forEach(k=>{ const c = run.unitHp[k]; if(c) c.hp = Math.min(c.maxHp, Math.max(c.hp,0) + Math.round(c.maxHp*0.5)); }); toast('🧪 출정대 체력 50% 회복'); }
-  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; run.relics = (run.relics||[]).concat(it.id); const r = EXP_RELICS.find(x=>x.id===it.id); toast(r.ic+' '+r.nm+' 획득'); }
+  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; run.relics = (run.relics||[]).concat(it.id); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===it.id); toast(r.ic+' '+r.nm+' 획득'); }
   save(); render();
 }
 function expTreasureTake(){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='treasure') return;
   if(!room.relic){ const pool = EXP_RELICS.filter(r=>!expHasRelic(run, r.id)); room.relic = pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null; }
-  if(room.relic){ run.relics = (run.relics||[]).concat(room.relic); const r = EXP_RELICS.find(x=>x.id===room.relic); toast(r.ic+' 보물 — '+r.nm+' 획득'); }
+  if(room.relic){ run.relics = (run.relics||[]).concat(room.relic); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===room.relic); toast(r.ic+' 보물 — '+r.nm+' 획득'); }
   expGold(run, 30);
   advanceExpeditionAfterRoom(run);
 }
@@ -10182,8 +10235,8 @@ function showAchievementsModal(keep){
       const pending = hasPendingId('achieve_'+a.id);
       // 탐구/도전형(secret)만 달성 전까지 이름/설명을 ???로 가림 — 평범하게 깨지는 업적은 전부 공개
       const revealed = !a.secret || done || pending;
-      const label = revealed ? a.name : '???';
-      const descText = revealed ? a.desc : '미발견 업적';
+      const label = (revealed || a.secret===true) ? a.name : '???'; // (v266) 히든 업적은 이름은 보이고 조건만 비밀 · 'full'은 이름도 ???
+      const descText = revealed ? a.desc : (a.secret===true ? '조건 비밀' : '???');
       let rightSide;
       if(pending) rightSide = '<button class="btn small" data-claim-reward="achieve_'+a.id+'">받기</button>';
       else if(done) rightSide = '<div style="font-size:18px;"><img class="uic" src="assets/ui/ic_check.webp" alt=""></div>';
@@ -10629,6 +10682,7 @@ function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   migrateHardV253();
   migrateBossReworkV263();
+  if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
