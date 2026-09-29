@@ -971,7 +971,7 @@
   .bu-cast span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000;}
   .bu-cast.done{animation:none; border-color:#9fe8c0;} .bu-cast.done > div{background:linear-gradient(90deg,#3fcf8e,#9fe8c0);}
   @keyframes castPulse{50%{box-shadow:0 0 8px #7fd8ff;}}
-  .add-art{display:grid; place-items:center; width:100%; height:100%; font-size:calc(var(--sz,60px)*0.62); line-height:1; filter:drop-shadow(0 0 8px #9fe3ff);} /* (v272) 레이드 얼음 기둥·씨앗 */
+  .add-art{display:grid; place-items:center; width:100%; height:100%; line-height:1;} .add-art svg{width:92%; height:92%;} .add-art.pillar svg{filter:drop-shadow(0 0 6px #9fe3ff);} .add-art.seed svg{filter:drop-shadow(0 0 5px #b6ff8a88);} /* (v272) 레이드 얼음 기둥·씨앗 · (v273) 직접 그린 물체 */
   .bu-next{margin-top:2px; font-size:9.5px; font-weight:800; color:#e8dcff; text-align:center; white-space:nowrap; text-shadow:0 1px 2px #000; cursor:pointer;} .bu-next .elic{width:12px; height:12px; vertical-align:-2px;} .bu-next .inv{color:#ffb86b;}
   .bu-gg.lock{border-color:#8a8fa0aa;} .bu-gg.lock > div{background:repeating-linear-gradient(45deg,#6b7080 0 5px,#565a68 5px 10px);}
   .bu-gg.on{border-color:#ff5ad2; box-shadow:0 0 10px #ff5ad2; animation:ggPulse .8s ease-in-out infinite;} .bu-gg.on > div{background:linear-gradient(90deg,#c457ff,#ff5ad2);}
@@ -3156,7 +3156,8 @@ function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MO
 const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 // (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
-const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R',
+const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음
+  fire_common_b:'L', fire_epic_b:'L', wood_epic_a:'L', wood_mythic_a:'L',
   dark_rare_b:'L', fire_common_a:'L', fire_epic_a:'L', fire_legendary_a:'L', fire_mythic_a:'L', fire_rare_a:'L', fire_rare_b:'L', light_common_b:'L', water_common_b:'L', water_epic_b:'L', water_legendary_b:'L', water_mythic_b:'L', wood_rare_a:'L' };
 function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; return u.side==='enemy' ? f==='R' : f==='L'; }
 function unitBossId(u){ if(!u || !u.isBoss) return null; if(u.gimmick) return u.gimmick; const sf = state.skillFight; return (sf && sf.mode==='raid') ? sf.raidBossId : null; }
@@ -5012,6 +5013,7 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
 function snapBossSideUnits(ar){
   const slots = [...ar.querySelectorAll('.bs-slot')], bossSlot = slots.find(s=>s.querySelector('.bu-enemy.bu-boss'));
   if(!bossSlot || slots.filter(s=>s.querySelector('.bu-enemy')).length > 3) return; // 레이드(보스 혼자)·일반 전투는 해당 없음
+  if(state.skillFight && state.skillFight.mode==='raid') return; // (v273) 레이드 기둥·씨앗은 보스 앞 줄에 따로 둠
   const bb = bossSlot.querySelector('.bu').getBoundingClientRect(), ab = ar.getBoundingClientRect(), GAP = 6;
   slots.forEach(s=>{
     const u = s.querySelector('.bu-enemy'); if(!u || s===bossSlot) return;
@@ -5068,6 +5070,11 @@ function showStatusInfo(u){
   const l = statusList(u);
   openInfoOverlay((u.side==='enemy'?'적 ':'')+(u.dispName||SPIRITS[u.key].name)+' · 상태 효과', l.length ? l.map(x=>'<div style="display:flex; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sbg '+(x.good?'g':'b')+'" style="font-size:16px;">'+x.i+'</span><div><b style="font-size:13px;">'+x.t+'</b><div class="sub" style="font-size:12px;">'+x.d+'</div></div></div>').join('') : '<div class="sub" style="text-align:center;">걸린 효과 없음</div>');
 }
+// (v273) 레이드 얼음 기둥·씨앗 그림 — 정령 칸처럼 보이지 않게 직접 그린 물체
+function addArtHtml(kind){
+  if(kind==='pillar') return '<span class="add-art pillar"><svg viewBox="0 0 60 80" aria-hidden="true"><ellipse cx="30" cy="74" rx="22" ry="5" fill="#0006"/><polygon points="18,72 14,30 22,10 30,4 38,12 46,28 42,72" fill="#bfeaff" stroke="#3a8fc7" stroke-width="2.5" stroke-linejoin="round"/><polygon points="30,4 38,12 36,70 30,72" fill="#8fd3f7"/><polygon points="22,10 26,40 20,70 18,72 14,30" fill="#e8f8ff"/><polygon points="8,72 6,52 12,44 16,56 15,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><polygon points="45,72 46,50 52,42 55,58 52,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><path d="M24 22 L27 36 M34 30 L32 48" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg></span>';
+  return '<span class="add-art seed"><svg viewBox="0 0 60 80" aria-hidden="true"><ellipse cx="30" cy="74" rx="20" ry="5" fill="#0006"/><path d="M30 40 C30 30 30 24 30 18" stroke="#3f8a2e" stroke-width="3" fill="none"/><path d="M30 26 C22 16 12 18 10 22 C16 28 24 30 30 26 Z" fill="#7ccf4a" stroke="#2f6e22" stroke-width="2"/><path d="M30 20 C38 8 50 10 52 14 C46 22 36 24 30 20 Z" fill="#8fe05a" stroke="#2f6e22" stroke-width="2"/><ellipse cx="30" cy="56" rx="17" ry="18" fill="#a8743a" stroke="#5a3a16" stroke-width="2.5"/><path d="M19 50 C25 46 35 46 41 50 M18 60 C25 64 35 64 42 60" stroke="#7a4f22" stroke-width="2" fill="none"/><ellipse cx="24" cy="50" rx="4" ry="6" fill="#d9a05c" opacity=".7"/></svg></span>';
+}
 function wardArt(el){ return '<span class="ward-art" style="--wc:'+ELEMENT_INFO[el].color+';">'+uiIc('runestone')+'<i>'+elIc(el)+'</i></span>'; } // (v259) 결계석 그림
 function battleUnitHtml(u, opts){
   const isEnemy = u.side==='enemy', sp = SPIRITS[u.key];
@@ -5111,10 +5118,10 @@ function battleUnitHtml(u, opts){
   return '<div class="'+cls.join(' ')+'"'+attr+' data-u="'+u.side+':'+u.idx+'" style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addIc ? '<span class="add-art">'+u.addIc+'</span>' : spArt(SPIRITS[u.key]))))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
-    + '<div class="bu-plate">'+(u.bossIcon ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
+    + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
     + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+'</div>'
     + '<div class="bu-hpnum">'+fmtHp(Math.max(0,u.hp))+'/'+fmtHp(u.maxHp)+(shV>0 && u.alive?' <b class="bu-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(shV)+'</b>':'')+'</div>'
     + gg
@@ -5135,7 +5142,7 @@ function skillTypeOf(sk, u){
 function unitDetailHtml(u, bossId){
   if(u.addKind){ // (v272) 레이드 얼음 기둥·씨앗 — 정령이 아니라 기믹 대상
     const sts = statusList(u);
-    return '<div class="ud-top"><div class="ud-art av"><span class="add-art" style="--sz:64px;">'+u.addIc+'</span></div><div class="ud-nm"><b>'+u.dispName+'</b><div class="sub">레이드 기믹 · 행동 안 함 · 🔥화염 공격 2배</div></div></div>'
+    return '<div class="ud-top"><div class="ud-art av">'+addArtHtml(u.addKind)+'</div><div class="ud-nm"><b>'+u.dispName+'</b><div class="sub">레이드 기믹 · 행동 안 함 · 🔥화염 공격 2배</div></div></div>'
       + '<div class="ud-stats"><div class="ud-st"><small>체력</small><b>'+fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small></b></div></div>'
       + (sts.length ? '<div class="ud-sts">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>' : '')
       + '<div class="sub" style="margin-top:8px;">'+(u.addKind==='pillar' ? '갇힌 정령을 구하려면 붕괴 전에 깨야 함 · 깨면 보스 그로기 게이지 −15' : '살아 있는 동안 보스가 받는 피해 −30% · 개화 전에 부숴야 함')+'</div>';
@@ -5193,14 +5200,14 @@ function battleLayout(sf){
     slots.push({ side, idx, x: side==='me' ? x : 100-x, y, size, d: 0.9 + Math.max(0, Math.min(1, (y-12)/74))*0.16 });
   };
   const alone = raid && !!sf.alone; // (v225) 혼자 레이드: 4마리를 가운데 두 줄에 일반 크기로
-  const sz = raid && !alone ? 38 : 44;
+  const sz = raid && !alone ? 34 : 44; // (v273) 레이드 8마리 칸을 줄여 보스 앞에 기둥·씨앗 자리를 만듦
   if(alone){
     [0,1].forEach((idx,r)=>put('me', idx, 34, [37,62][r], sz));
     [4,5].forEach((idx,r)=>put('me', idx, 12, [31,56][r], sz));
   }else if(raid){
     const fy = [23,42,61,80], by = [18,37,56,75]; // (v225) 전열이 후열보다 살짝 아래로 엇갈리게 // (v212) 맨 위·아래 정령이 '전열'·'아군' 표시와 배경 모서리에 걸리지 않게 세로 간격을 좁힘 · (v219) 앞뒤 줄 엇갈림을 7%→2%로 — 맨 위 앞줄이 땅 위가 아니라 위쪽에 떠 보였음
-    [0,1,2,3].forEach((idx,r)=>put('me', idx, 34+((r===1||r===2)?2:0), fy[r], sz));
-    [4,5,6,7].forEach((idx,r)=>put('me', idx, 12, by[r], sz));
+    [0,1,2,3].forEach((idx,r)=>put('me', idx, 31+((r===1||r===2)?2:0), fy[r], sz));
+    [4,5,6,7].forEach((idx,r)=>put('me', idx, 11, by[r], sz));
   }else{
     const fy = [26,51,76], by = [18,43,68]; // (v225) 전열이 후열보다 아래로 엇갈리게(앞줄이 화면 앞쪽=아래) // (v212) 맨 아래 후열이 배경 모서리 바위·'아군' 표시에 걸려서 세로 간격을 좁히고 위로 올림
     [0,1,2].forEach((idx,r)=>put('me', idx, 33+(r===1?2:0), fy[r], sz)); // (v180) 전열끼리 너무 붙어 보여서 가운데 간격을 넓힘
@@ -5212,14 +5219,15 @@ function battleLayout(sf){
   sf.enemyUnits.forEach(u=>{
     if(u.hidden) return; // (v260) 아직 안 나온 용암 정령
     // (v257) 챕터 보스: 적 쪽 절반 가운데에 조금 작게(80→64) — 예전엔 후열 칸에 커다랗게 있어서 전열까지 넘어옴. 결계석은 보스 앞쪽 위·아래
-    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : 22, raid ? 48 : 50, raid ? 90 : 80); return; }
+    if(u.isBoss){ put('enemy', u.idx, raid ? 19 : 22, raid ? 50 : 50, raid ? 76 : 80); return; }
+    if(raid && u.addKind){ put('enemy', u.idx, 41, u.idx===0 ? 24 : 76, 38); return; } // (v273) 레이드 얼음 기둥·씨앗: 보스 앞(가운데 쪽) 위·아래 — 보스와 겹치지 않게
     if(withBoss && !raid){ put('enemy', u.idx, 36, u.idx===0 ? 84 : 16, 40); return; } // 결계석은 가운데 선에서 떨어뜨려 보스 앞쪽 위·아래 대칭으로 — (v260) 그린 뒤 snapBossSideUnits가 보스에 붙임
     enemyRows = true;
     const front = isFrontRow(u.idx, ew), r = u.idx % ew;
     if(front) put('enemy', u.idx, 33+(r===1?2:0), [26,51,76][r], 44);
     else put('enemy', u.idx, 11, [18,43,68][r], 44);
   });
-  const tags = [{x:11,t:'후열'},{x:raid&&!alone?35:34,t:'전열'}];
+  const tags = [{x:11,t:'후열'},{x:raid&&!alone?32:34,t:'전열'}];
   if(enemyRows) tags.push({x:66,t:'전열'},{x:89,t:'후열'});
   else if(withBoss && !raid) tags.push({x:77,t:'보스'});
   return { slots, tags, rs: raid && !alone ? 0.19 : 0.25, sz };
@@ -5239,8 +5247,17 @@ function battleThemeOf(sf){
 }
 // (v201) 그림이 준비된 전투 배경 — 그 외 테마는 CSS로 그린 기존 배경
 const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp' };
+// (v273) 배경마다 바닥이 있는 높이가 달라서 확대·위치를 따로 — 정령이 하늘·벽이 아니라 바닥 위에 서게. flip: 좌우 반전
+const BATTLE_BG_FIT = {
+  'raid-frostTyrant':  { size:145, y:65, flip:true },
+  'raid-infernoDrake': { size:150, y:72 },
+  'raid-abyssEye':     { size:155, y:56 },
+  'raid-eldertree':    { size:160, y:75 },
+  'raid-dawnJudge':    { size:160, y:72 }
+};
 function battleSceneHtml(theme){
-  if(BATTLE_BG_IMAGES[theme]) return '<div class="bs-scene bs-img" style="background-image:url('+BATTLE_BG_IMAGES[theme]+');"></div><div class="bs-parts"></div>';
+  const fit = BATTLE_BG_FIT[theme];
+  if(BATTLE_BG_IMAGES[theme]) return '<div class="bs-scene bs-img" style="background-image:url('+BATTLE_BG_IMAGES[theme]+');'+(fit ? ' background-size:'+fit.size+'% auto; background-position:50% '+fit.y+'%;'+(fit.flip?' transform:scaleX(-1);':'') : '')+'"></div><div class="bs-parts"></div>';
   return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
 function showSkillStageScreen(){
@@ -7898,6 +7915,14 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:273, v:'2.73', date:'2026-09-29', secs:[
+    { t:'바뀐 것', items:[
+      '레이드 전장 배치 — 아군 칸과 보스를 조금 줄이고, 얼음 기둥·씨앗은 보스 앞줄 위·아래에 따로 둠 (보스·상태 표시와 겹치던 문제)',
+      '얼음 기둥·씨앗을 정령처럼 보이지 않게 전용 그림으로 바꿈',
+      '레이드 배경을 보스마다 확대·위치 조정 — 정령이 하늘이 아니라 바닥 위에 섬 · 혹한의 폭군 배경은 좌우 반전',
+      '겁화룡·새벽의 심판관·심연의 눈이 왼쪽(아군 쪽)을 보게 · 정령 일부(유니콘·불사조 계열 등)도 상대 쪽을 보게 방향 수정'
+    ]}
+  ]},
   { build:272, v:'2.72', date:'2026-09-29', secs:[
     { t:'바뀐 것', items:[
       '창 닫기 X 표시도 주아체로 통일',
@@ -11542,7 +11567,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 272;
+const APP_BUILD = 273;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
