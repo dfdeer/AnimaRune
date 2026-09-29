@@ -1953,6 +1953,7 @@ function dmgReduction(sf, d){
 }
 function killUnit(sf, u){
   if(!u.alive) return; // 이미 쓰러진 유닛을 다시 처리하지 않음
+  if(u.hp>0) hidHurt(sf, u, u.hp); // (v270) 즉사도 체력을 잃은 것
   u.hp = 0; u.alive = false;
   if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
@@ -1999,9 +2000,10 @@ function dealDamage(sf, a, d, mult, opts){
   const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; }
   d.hp = Math.max(0, d.hp - rest);
+  if(rest>0) hidHurt(sf, d, rest); // (v270)
   if(d.cast && total>0 && a.side!==d.side) d.cast.dealt += total; // (v260) 절대영도 저지 피해
   runeOnHit(sf, a, d, total);
-  if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); if(a.hp<=0) killUnit(sf, a); }
+  if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); }
   const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
   if(d.hp<=0 && d.alive && a && a!==d && a.side===d.side) hidFriendlyKill(sf, a, d); // (v266) 히든 업적: 같은 편을 쓰러뜨림
   if(d.hp<=0) killUnit(sf, d);
@@ -2047,6 +2049,7 @@ function makeActCtx(sf, a, tSide, tIdx){
 function performAction(sf, a, act, tSide, tIdx){
   const C = makeActCtx(sf, a, tSide, tIdx);
   if(!C.t) return C;
+  if(a.side==='me' && act!=='basic'){ const sk = kitOf(a) && kitOf(a)[act]; if(sk && sk.kind==='harm') sf.meHarmSkill = true; } // (v270) 평화주의자
   const empBefore = a.st.empower || 0; // (v269) 이번 행동 전부터 있던 강화만 이번 행동에서 소모
   const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
@@ -3764,7 +3767,12 @@ function checkSkillStageOutcome(sf){
   if(r && sf.result && sf.result.win && !sf.hidWin){ sf.hidWin = true; try{ hidOnWin(sf); }catch(e){} }
   return r;
 }
+function hidHurt(sf, u, loss){ // (v270) 무혈 입성 — 우리 정령이 체력을 잃었는지 (보스전은 웨이브를 넘어 기억)
+  if(!sf || !u || u.side!=='me' || !(loss>0)) return;
+  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight) state.bossFight.hurt = true;
+}
 function hidOnWin(sf){ // (v266) 이긴 판 히든 업적
+  if(sf.mode!=='trial' && !(sf.result && sf.result.waveClear) && !sf.meHarmSkill && sf.round>=5) hidMark('pacifist'); // (v270) 평화주의자
   const alive = aliveUnits(sf.myUnits);
   if(!sf.mode && alive.length===1 && alive[0].hp/alive[0].maxHp <= 0.1) hidMark('stageClutch');
   if(sf.mode==='expedition' && sf.enemyUnits.some(u=>u.isBoss) && alive.length===1) hidMark('expClutch');
@@ -3828,7 +3836,7 @@ function roundStartEffects(sf){
     let loss = 0;
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
     if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
-    if(loss>0){ u.hp = Math.max(0, u.hp - loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
+    if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
     if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧재생' }); }
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
@@ -4683,6 +4691,7 @@ function resolveBossWaveVictory(sf){
   const chapterNum = bossChapter(stageIdx);
   { const ks = (bf.roster||[]).filter(k=>k && SPIRITS[k]); // (v268) 히든 업적 — 레어 이하만으로 하드 보스
     if(ks.length && !isHardStage(stageIdx) && ks.every(k=> SPIRITS[k].rarity==='common')) hidMark('normalCommon'); // (v269) 잡초의 반란: 일반 등급만으로 노말 보스
+    if(isHardStage(stageIdx) && !bf.hurt && !sf.meHurt) hidMark('hardFlawless'); // (v270) 무혈 입성
     if(ks.length && stageIdx===HARD_BASE+MAX_CHAPTERS*CHAPTER_LENGTH-1 && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)) hidMark('hardLowRare5'); } // 다윗과 골리앗: 레어 이하로 챕터 5 하드
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
@@ -7807,7 +7816,7 @@ const PATCH_NOTES = [
     { t:'월드 보스', items:[
       '주간 체력 300만 → 150만 (지금 참여 인원에 맞춤) — 이번 주 남은 체력·달성 보상 진행도도 바로 새 기준으로 계산됨'
     ]},
-    { t:'업적', items:[ '특정 업적의 조건 변경' ]},
+    { t:'업적', items:[ '특정 업적의 조건 변경', '히든 업적 2개 추가' ]},
     { t:'고친 것', items:[
       '아직 안 연 레이드 보스 방에는 들어갈 수 없음 (방장에게도 알림)',
       '레이드 초대가 안 보이던 경우(같은 방에서 다시 초대 · 폰 시계가 어긋난 경우)',
@@ -8005,6 +8014,8 @@ const ACHIEVEMENTS = [
   {id:'stage_clutch', name:'간발의 차', desc:'우리 편이 1마리만 남고 그 체력도 10% 이하인 채로 스테이지 승리하기', reward:{essence:400}, category:'stage', secret:true, check:()=> hidHas('stageClutch')},
   {id:'normal_common', name:'잡초의 반란', desc:'일반 등급 정령만으로 노말 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('normalCommon')}, // (v268)
   {id:'hard_lowrare5', name:'다윗과 골리앗', desc:'레어 이하 정령만으로 챕터 5 하드 보스 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> hidHas('hardLowRare5')}, // (v268)
+  {id:'hard_flawless', name:'무혈 입성', desc:'하드 보스전(3웨이브 내내)에서 우리 정령이 체력을 한 번도 잃지 않고 격파하기 (보호막으로 막는 건 괜찮음)', reward:{essence:3000, items:{pick_legendary:1}}, category:'stage', secret:true, check:()=> hidHas('hardFlawless')}, // (v270)
+  {id:'pacifist', name:'평화주의자', desc:'공격 스킬을 한 번도 쓰지 않고 5라운드 이상 걸린 전투에서 승리하기 (기본 공격·아군에게 쓰는 스킬은 괜찮음 · 시련 제외)', reward:{essence:1500, items:{pick_epic:1}}, category:'general', secret:true, check:()=> hidHas('pacifist')}, // (v270)
   {id:'exp_relic8', name:'유물 수집광', desc:'한 번의 출정에서 유물 8개 모으기', reward:{stone:200}, category:'expedition', secret:true, check:()=> hidHas('relic8')},
   {id:'exp_clutch', name:'벼랑 끝', desc:'우리 편이 1마리만 남은 채로 출정 보스 처치하기', reward:{stone:250}, category:'expedition', secret:true, check:()=> hidHas('expClutch')},
   {id:'exp_greed', name:'욕심쟁이', desc:'한 번의 출정에서 킵 5번 하기', reward:{stone:300, items:{rare:2}}, category:'expedition', secret:true, check:()=> hidHas('keep5') || !!(state.expedition && (state.expedition.keeps||0)>=5)},
