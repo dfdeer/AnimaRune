@@ -4906,12 +4906,22 @@ async function adminModeSwitch(){
 let mailNet = { all:{}, mine:{}, on:false };
 function mailInit(){
   if(mailNet.on || !raidNet.db) return; mailNet.on = true;
-  const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
-  // (v247) 읽기가 막히면(서버 규칙) 예전엔 조용히 빈 우편함이었음 → 오류를 기억해서 우편함에 표시
-  const onErr = k=> e=>{ mailNet.err = mailNet.err || {}; mailNet.err[k] = (e && (e.code||e.message)) || 'error'; if(document.getElementById('mailBox')) showMailboxModal(); };
-  friendNet.unsubs.push(raidNet.db.doc('mail/all').onSnapshot(s=>{ mailNet.all = obj(s); if(mailNet.err) delete mailNet.err.all; mailBadgeUpdate(); if(document.getElementById('mailBox')) showMailboxModal(); }, onErr('all')));
-  friendNet.unsubs.push(raidNet.db.doc('mail/user/'+raidNet.uid).onSnapshot(s=>{ mailNet.mine = obj(s); if(mailNet.err) delete mailNet.err.mine; mailBadgeUpdate(); if(document.getElementById('mailBox')) showMailboxModal(); }, onErr('mine')));
+  mailListen('all', 'mail/all'); mailListen('mine', 'mail/user/'+raidNet.uid);
 }
+// (v248) 서버 읽기가 한 번 거절되면(규칙을 나중에 고친 경우 등) Firebase가 그 듣기를 영영 끊음 → 오류를 기억하고 잠시 뒤·우편함 열 때 다시 연결
+function mailListen(k, path){
+  const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
+  mailNet.unsub = mailNet.unsub || {};
+  if(mailNet.unsub[k]){ try{ mailNet.unsub[k](); }catch(e){} }
+  const refresh = ()=>{ mailBadgeUpdate(); if(document.getElementById('mailBox')) showMailboxModal('refresh'); };
+  mailNet.unsub[k] = raidNet.db.doc(path).onSnapshot(s=>{
+    mailNet[k] = obj(s); if(mailNet.err) delete mailNet.err[k]; mailNet.tries = 0; refresh();
+  }, e=>{
+    mailNet.err = mailNet.err || {}; mailNet.err[k] = (e && (e.code||e.message)) || 'error'; mailNet.unsub[k] = null; refresh();
+    mailNet.tries = (mailNet.tries||0) + 1; if(mailNet.tries <= 6) setTimeout(()=>{ if(!mailNet.unsub[k]) mailListen(k, path); }, 15000*mailNet.tries);
+  });
+}
+function mailRetry(){ if(!raidNet.db || !mailNet.on || !mailNet.err) return; if(mailNet.err.all) mailListen('all', 'mail/all'); if(mailNet.err.mine) mailListen('mine', 'mail/user/'+raidNet.uid); }
 function mailClean(m){
   if(!m || typeof m!=='object') return null;
   const n = v=> Number.isFinite(v) ? Math.max(0, Math.min(1e7, Math.floor(v))) : 0, tm = v=> Number.isFinite(v) && v>0 ? Math.floor(v) : 0; // 시간(밀리초)은 자르지 않음
@@ -4943,7 +4953,8 @@ function mailClaim(ids){
   toastReward({ essence, stone, items: Object.keys(items).length ? items : null }, '📬 우편 '+ms.length+'개 보상 받음');
 }
 function mailLeftTxt(m){ if(!m.exp) return ''; const d = Math.ceil((m.exp-Date.now())/86400000); return d<=1 ? '오늘까지' : d+'일 남음'; }
-function showMailboxModal(){
+function showMailboxModal(why){
+  if(why!=='refresh' && mailNet.err && Object.keys(mailNet.err).length && Date.now()-(mailNet.lastRetry||0) > 5000){ mailNet.lastRetry = Date.now(); mailRetry(); } // 열 때 막혔던 연결 다시 시도 (5초에 한 번)
   const list = mailList(), open = list.filter(m=>!m.claimed);
   let h = '<h3 style="text-align:center; margin:0 0 8px;">📬 우편함</h3><div class="mail-list">';
   if(!raidNet.db) h += '<div class="sub" style="text-align:center; padding:20px 0;">온라인 연결 후 우편 수령 가능</div>';
