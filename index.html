@@ -1288,7 +1288,7 @@ function stageEnemyComposition(i){
 // (v168) ×3은 너무 가팔라서 ×1.25로 완화 — +5강 단일등급 6마리 기준: 레어는 챕터1 일반 스테이지까지(보스는 에픽 필요), 에픽은 챕터2 후반, 레전더리는 챕터4 중반, 신화는 전부 클리어
 const CHAPTER_ENEMY_START = [10, 48, 187.5, 231.25, 506.25]; // 노말 챕터 1~5 (챕터를 늘리면 여기 뒤에 이어 붙임)
 // (v253) 하드는 스테이지 번호를 500번대로 따로 씀 → 노말 챕터를 늘려도 번호가 안 겹침. 규칙: 하드 N ≈ 노말 N+5 수준 (하드 1 시작 800 > 노말 5 끝 722.5)
-const HARD_ENEMY_START = [800, 1000, 1250, 1550, 1900], HARD_ENEMY_END = [1000, 1250, 1550, 1900, 2350]; // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
+const HARD_ENEMY_START = [1040, 1300, 1625, 2015, 2470], HARD_ENEMY_END = [1300, 1625, 2015, 2470, 3055]; // (v256) 빨리 못 깨게 약 30% 올림 // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
 const CHAPTER_ENEMY_END   = [34, 165, 227.5, 506.25, 722.5];
 function enemySlotPower(i){
   const li = stageLocal(i), local = li % CHAPTER_LENGTH;
@@ -3999,7 +3999,7 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 // 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
 // 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
 let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23]; // 챕터 1~5
-const HARD_BOSS_ATK_MULTS = [2.4, 2.4, 2.4, 2.4, 2.4], HARD_BOSS_HP_MULTS = [18, 20, 27, 30, 28]; // (v253) 하드 1~5
+const HARD_BOSS_ATK_MULTS = [2.4, 2.4, 2.4, 2.4, 2.4], HARD_BOSS_HP_MULTS = [16, 25, 44, 38, 35]; // (v253) 하드 1~5 · (v256) 체력 약 25% 올림
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null]; // null=심연의 수정(매 라운드 변환)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal'];
 const BOSS_GIMMICK_INFO = {
@@ -4008,6 +4008,14 @@ const BOSS_GIMMICK_INFO = {
   ancientTree: {name:'고대수목', icon:'🌳', desc:'2라운드마다 덩굴로 아군 후열 하나를 전열로 끌어냄 · 매 라운드 자체 재생'},
   ruinGuardian:{name:'유적파수꾼', icon:'🗿', desc:'서로 다른 속성의 결계석 2개가 살아있는 동안 보스 무적 — 결계석부터 파괴해야 함'},
   abyssCrystal:{name:'심연의 수정', icon:'🔮', desc:'매 라운드 속성이 바뀜 · 다음 라운드 속성이 미리 표시됨'}
+};
+// (v256) 하드 보스 추가 기믹 — 원래 기믹 위에 하나씩 더
+const HARD_BOSS_EXTRA = {
+  frostGiant:  {name:'눈보라', desc:'3라운드마다 아군 전체에 공격력 50% 피해 + 둔화'},
+  lavaLord:    {name:'분화', desc:'3라운드마다 아군 전체에 공격력 70% 피해'},
+  ancientTree: {name:'가시 껍질', desc:'체력이 절반 아래로 떨어지면 한 번, 최대체력 25% 보호막'},
+  ruinGuardian:{name:'결계 재생', desc:'결계석이 모두 깨지면 4라운드 뒤 결계석 하나가 다시 생김 (한 번)'},
+  abyssCrystal:{name:'심연 응시', desc:'매 라운드 공격력이 가장 높은 아군에게 저주 (받는 피해 +25%, 2라운드)'}
 };
 function bossChapterIdx(stageIdx){ return Math.floor(stageLocal(stageIdx)/CHAPTER_LENGTH); } // 0~4 (하드도 같은 챕터 번호)
 function bossWaveNormalPower(stageIdx){ return (isHardStage(stageIdx) ? HARD_ENEMY_END : CHAPTER_ENEMY_END)[bossChapterIdx(stageIdx)] * 0.55; } // (v150) 보스 1·2웨이브는 그 챕터 막바지보다 약간 낮게 — 3웨이브 보스에서 진짜 승부를 봄
@@ -4062,7 +4070,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     }else{
       enemyUnits = [boss];
     }
-    gimmick = { type, nextElement: type==='abyssCrystal' ? ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)] : null };
+    gimmick = { type, nextElement: type==='abyssCrystal' ? ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)] : null, hard: isHardStage(stageIdx) };
   }
   const sf = { v:150, mode:'boss', stageIdx, wave, round:1, phase:'acting', queue:[], queuePos:0, myUnits, enemyUnits,
     log:['웨이브 '+wave+' 시작!'], result:null, fxSeq:0, lastFx:null, gimmick };
@@ -4073,6 +4081,7 @@ function applyBossGimmick(sf){
   const g = sf.gimmick; if(!g) return;
   const boss = sf.enemyUnits.find(u=>u.isBoss && u.alive);
   if(!boss) return;
+  if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss);
   if(g.type==='frostGiant'){
     if(sf.round % 3 === 0){
       const alive = aliveUnits(sf.myUnits);
@@ -4107,6 +4116,21 @@ function applyBossGimmick(sf){
     g.nextElement = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
     pushLog(sf, '🔮 심연의 수정이 '+ELEMENT_INFO[boss.element].name+' 속성으로 변했다!');
   }
+}
+function applyHardBossExtra(sf, g, boss){
+  const allies = aliveUnits(sf.myUnits); if(!allies.length) return;
+  const r = sf.round, ex = HARD_BOSS_EXTRA[g.type]; if(!ex) return;
+  if(g.type==='frostGiant' && r%3===0){ allies.forEach(u=>{ dealDamage(sf, boss, u, 0.5, {noCrit:true}); if(u.alive) u.st.slow = {v:15, r:2}; }); pushLog(sf, '🌨️ '+ex.name+'!'); }
+  else if(g.type==='lavaLord' && r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.7, {noCrit:true})); pushLog(sf, '🌋 '+ex.name+'!'); }
+  else if(g.type==='ancientTree' && !g.hardShell && boss.hp/boss.maxHp < 0.5){ g.hardShell = true; boss.st.shield = (boss.st.shield||0) + Math.round(boss.maxHp*0.25); pushLog(sf, '🌳 '+ex.name+'!'); }
+  else if(g.type==='ruinGuardian' && !g.wardReborn){
+    const wards = sf.enemyUnits.filter(u=>u.isWard);
+    if(wards.length && wards.every(w=>!w.alive)){
+      if(g.wardDownAt==null) g.wardDownAt = r;
+      else if(r - g.wardDownAt >= 4){ const w = wards[0]; w.alive = true; w.hp = Math.round(w.maxHp*0.6); w.st = {}; g.wardReborn = true; pushLog(sf, '🗿 '+ex.name+' — 결계석이 다시 섰다!'); }
+    }
+  }
+  else if(g.type==='abyssCrystal'){ const t = allies.reduce((x,y)=> y.atk>x.atk ? y : x); t.st.curse = {v:0.25, r:2}; pushLog(sf, '👁️ '+ex.name+' → '+skillUnitName('me', t)); }
 }
 // 보스 기믹으로 인한 방어측 배율/특수 판정 — dealDamage에서 typeMult 적용 직후 호출
 function bossDefenseAdjust(sf, a, d, v){
@@ -4262,6 +4286,7 @@ function showBossInfo(stageIdx){
   const gi = BOSS_GIMMICK_INFO[bossGimmickFor(stageIdx)], el = bossFixedElementFor(stageIdx);
   openInfoOverlay(gi.icon+' '+gi.name, '<div style="text-align:center; margin-bottom:8px;">'+(el?ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name:'🔮 속성 변환')+'</div>'
     + '<div style="padding:8px; border-radius:10px; background:#ffffff0a; font-size:13px; line-height:1.5;">'+gi.desc+'</div>'
+    + (isHardStage(stageIdx) && HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)] ? '<div style="margin-top:6px; padding:8px; border-radius:10px; background:#ff3a5a1f; border:1px solid #ff5a6a66; font-size:13px; line-height:1.5;"><b style="color:#ff8a9a;">🔥 하드 · '+HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)].name+'</b><br>'+HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)].desc+'</div>' : '')
     + '<div style="margin-top:6px; text-align:left;">'+groggyInfoHtml(bossGimmickFor(stageIdx))+'</div>'
     + '<div class="sub" style="margin-top:10px; font-size:12px; line-height:1.6;">• 웨이브 1·2 일반 적 → 웨이브 3 보스<br>• 6마리 그대로 3웨이브 연속 (체력 이어짐, 쓰러지면 이탈)</div>');
 }
@@ -9311,7 +9336,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
     const toHard = b.dataset.stageMode==='h';
     if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 노말 챕터 '+hardNormalReq(1)+' 보스를 쓰러뜨리면 하드 열림'); return; }
-    viewingChapter = toHard ? Math.min(currentHardChapterNum(), HARD_CH_BASE+MAX_CHAPTERS) : Math.min(currentChapterNum(), MAX_CHAPTERS);
+    viewingChapter = (toHard ? HARD_CH_BASE : 0) + chapterBase(viewingChapter||1); // (v256) 보던 챕터 번호 그대로 (잠겨 있으면 지도에 안내)
     render();
   }));
   document.querySelectorAll('[data-ch-jump]').forEach(b=>b.addEventListener('click', ()=>{ viewingChapter = parseInt(b.dataset.chJump); render(); }));
