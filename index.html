@@ -244,7 +244,7 @@
   [data-duel-pick], [data-rp-pick], [data-home-rep]{padding-top:12px !important;} /* 오른쪽 위 '덱'·ⓘ 표시가 그림에 겹치지 않게 */ /* 그림은 왼쪽을 보고 그려져 있어서, 왼쪽에 선 아군은 뒤집어 적을 보게 함 */
   .home-empty{animation:none;} .home-emo.home-empty .spimg.hero{width:1.05em; height:1.05em; margin:-.1em auto 0; filter:drop-shadow(0 0 18px #b58cffcc) drop-shadow(0 6px 8px #0008); animation:emptyPulse 2.4s ease-in-out infinite;}
   @keyframes emptyPulse{0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-6px) scale(1.04)}}
-  .home-prof{cursor:pointer;} .home-prof:active{transform:scale(.97);}
+  .home-prof{cursor:pointer; position:relative;} .home-prof:active{transform:scale(.97);}
   .pf-top{display:flex; align-items:center; gap:12px; margin:6px 0 12px;} .pf-ava{font-size:48px; width:72px; height:72px; flex:none;} .pf-ava .spimg{width:100%; height:100%;}
   .pf-name{font-family:var(--fun); font-size:20px; text-shadow:0 2px 0 var(--line); word-break:break-all;}
   .pf-label{font-family:var(--fun); font-size:13px; color:#ffd35a; margin:10px 0 5px;}
@@ -893,7 +893,7 @@
   .al-bar{height:8px; border-radius:4px; background:#2d2a62; overflow:hidden; margin:6px 0 4px;} .al-bar i{display:block; height:100%; background:linear-gradient(90deg,#9a6bff,#e0a8ff);}
   .al-sec{font-family:var(--fun); font-size:14px; margin:12px 0 6px; display:flex; align-items:center;}
   .al-parts > div, .al-perks > div{display:flex; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px solid #ffffff10; font-size:12.5px;} .al-parts small{color:var(--sub);} .al-perks > div{opacity:.55;} .al-perks > div.on{opacity:1;} .al-perks > div.on b{color:#7dffb0;}
-  .al-rw{display:flex; flex-direction:column; gap:5px; max-height:40vh; overflow-y:auto;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
+  .al-rw{display:flex; flex-direction:column; gap:5px;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
   #levelBar.has-rw::after{content:'받을 보상'; font-size:10px; font-weight:800; color:#2a1800; background:#ffd557; border-radius:8px; padding:1px 6px; white-space:nowrap;} /* (v269) 레벨 보상이 있으면 표시 */
   .pn{margin-top:8px; border-radius:12px; background:#ffffff0a; border:1px solid #ffffff14; padding:8px 12px;} .pn summary{cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px;} .pn summary::-webkit-details-marker{display:none;} .pn summary b{font-size:16px;} .pn summary small{color:var(--sub); font-size:11px;} .pn summary::after{content:'▾'; margin-left:auto; color:var(--sub);} .pn[open] summary::after{content:'▴';}
   .ask-it{padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff14; margin-top:6px; text-align:left;} .ask-it.done{opacity:.6;} .ask-h{font-size:12.5px; color:var(--text); display:flex; gap:6px; align-items:baseline; flex-wrap:wrap;} .ask-h small{color:var(--sub); font-size:10.5px;} .ask-q{font-size:12.5px; color:#e3e1ff; margin-top:3px; white-space:pre-wrap; word-break:break-all;} .ask-a{font-size:12px; color:#9fe8c0; margin-top:4px; white-space:pre-wrap;} .ask-w{font-size:11px; color:var(--sub); margin-top:3px;} /* (v269) 문의 */
@@ -3157,7 +3157,7 @@ function renderHomeTab(){
   const name = homeProfileName();
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
-  h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div></div></div>';
+  h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
   h += '<div class="home-side left"><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
   h += '<div class="home-side right"><button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">🧭</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
@@ -3168,19 +3168,30 @@ function renderHomeTab(){
   h += '</div>';
   return h;
 }
-function showProfileModal(){ // (v210) 홈 이름표를 누르면 뜨는 프로필
-  const rep = homeRepSpirit(), sp = rep ? SPIRITS[rep] : null, name = homeProfileName();
-  const own = Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length, dex = Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length;
-  const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
+// (v271) 프로필 안에 탭 3개 — 프로필 · 계정 레벨(점수·혜택) · 레벨 보상. 예전엔 계정 레벨 창 하나에 전부 있어서 너무 길었음
+let pfTab = 'info';
+function showProfileModal(tab){ // (v210) 홈 이름표를 누르면 뜨는 프로필
+  if(tab) pfTab = tab;
+  const rep = homeRepSpirit(), sp = rep ? SPIRITS[rep] : null, name = homeProfileName(), nRw = accountLvClaimable().length;
   let h = '<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
     + '<div class="pf-id"><div class="pf-name">'+escTxt(name)+'</div><div class="sub">계정 Lv.'+accountLevel()+(sp?' · 대표 '+sp.name:'')+'</div></div></div>';
-  h += '<div class="pf-label">닉네임</div><div class="pf-row"><input id="pfNameInput" class="pf-in" maxlength="12" value="'+escTxt(name)+'" placeholder="최대 12자"><button class="btn small" id="pfNameBtn">저장</button></div>';
-  h += '<div class="sub" style="font-size:11px; margin-top:4px;">친구 목록·결투·레이드에 보이는 이름</div>';
-  h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+Object.keys(SPIRITS).length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
-  if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
-  h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
+  h += '<div class="seg" style="margin-bottom:10px;">'+[['info','프로필'],['level','계정 레벨'],['reward','레벨 보상']].map(([k,t])=>'<button data-pftab="'+k+'" class="'+(pfTab===k?'on':'')+'">'+t+(k==='reward'&&nRw>0?' <i class="hot">'+nRw+'</i>':'')+'</button>').join('')+'</div>';
+  if(pfTab==='level') h += accountLevelTabHtml();
+  else if(pfTab==='reward') h += accountRewardTabHtml();
+  else {
+    const own = Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length, dex = Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length;
+    const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
+    h += '<div class="pf-label">닉네임</div><div class="pf-row"><input id="pfNameInput" class="pf-in" maxlength="12" value="'+escTxt(name)+'" placeholder="최대 12자"><button class="btn small" id="pfNameBtn">저장</button></div>';
+    h += '<div class="sub" style="font-size:11px; margin-top:4px;">친구 목록·결투·레이드에 보이는 이름</div>';
+    h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+Object.keys(SPIRITS).length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
+    if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
+    h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
+  }
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button><h3 style="text-align:center; margin-top:0;">프로필</h3>'+h+'</div></div>';
   bindModalClose();
+  document.querySelectorAll('[data-pftab]').forEach(b=>b.addEventListener('click', ()=>{ if(b.dataset.pftab!==pfTab) showProfileModal(b.dataset.pftab); }));
+  if(pfTab==='level') return;
+  if(pfTab==='reward'){ bindAccountRewardTab(); return; }
   const inp = document.getElementById('pfNameInput');
   const saveName = async ()=>{ if(await profileRename(inp.value)){ closeModal(); if(activeTab==='home') render(); } };
   document.getElementById('pfNameBtn').addEventListener('click', saveName);
@@ -3300,7 +3311,7 @@ function bindHomeTab(){
     else if(a==='quest') showQuestsModal();
     else if(a==='guide') showGuideModal();
     else if(a==='settings') showSettingsModal();
-    else if(a==='profile') showProfileModal();
+    else if(a==='profile') showProfileModal('info');
     else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
     else if(a==='expedition' && !isUnlocked('expedition')){ activeTab = 'expedition'; render(); save(); }
     else { activeTab = a; render(); save(); }
@@ -7082,7 +7093,7 @@ function render(){
   document.getElementById('acctLevelVal').textContent = lvl;
   document.getElementById('acctLevelFill').style.width = pct+'%';
   { const lb = document.getElementById('levelBar'); if(lb){ lb.classList.toggle('has-rw', accountLvClaimable().length>0); if(!lb.__al){ lb.__al = true; lb.style.cursor = 'pointer'; lb.addEventListener('click', ()=>showAccountLevelModal()); } } } // (v269)
-  if(lvl > (state.lvSeen||0)){ if(state.lvSeen) toast('🎉 계정 Lv.'+lvl+' 달성 — 위 레벨 줄을 눌러 보상 받기', 3200); state.lvSeen = lvl; }
+  if(lvl > (state.lvSeen||0)){ if(state.lvSeen) toast('🎉 계정 Lv.'+lvl+' 달성 — 프로필의 레벨 보상에서 받기', 3200); state.lvSeen = lvl; }
   document.querySelectorAll('nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===activeTab || (b.dataset.tab==='home' && HOME_MODE_TABS.includes(activeTab)));
     if(b.dataset.requires) b.classList.toggle('locked', !isUnlocked(b.dataset.requires));
@@ -7786,6 +7797,13 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:271, v:'2.71', date:'2026-09-29', secs:[
+    { t:'바뀐 것', items:[
+      '계정 레벨 창을 프로필 안으로 옮김 — 프로필 · 계정 레벨(점수 얻는 법·레벨 혜택) · 레벨 보상 탭으로 나눔',
+      '위 레벨 줄을 누르면 프로필의 계정 레벨 탭이 열림 (받을 보상이 있으면 레벨 보상 탭)',
+      '받을 레벨 보상이 있으면 홈 이름표와 레벨 보상 탭에 표시'
+    ]}
+  ]},
   { build:270, v:'2.70', date:'2026-09-29', secs:[
     { t:'새 기능', items:[
       '패치노트 — 메뉴(☰)에서 업데이트 내용 확인 · 새 패치노트가 있으면 N 표시',
@@ -7917,23 +7935,36 @@ function showPatchNotes(){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
 }
-function showAccountLevelModal(){
+function accountLevelBarHtml(){
   const lv = accountLevel(), pts = accountPoints(), nextT = nextAccountThreshold(), prevT = ACCOUNT_LEVEL_THRESHOLDS[lv-1] || 0;
-  const pct = nextT===null ? 100 : Math.min(100, (pts-prevT)/(nextT-prevT)*100), can = accountLvClaimable(), c = state.lvClaimed || {};
-  let h = '<h3 style="text-align:center;">계정 Lv.'+lv+'</h3>'
-    + '<div class="al-bar"><i style="width:'+pct+'%"></i></div><div class="sub" style="text-align:center; font-size:12px;">'+(nextT===null ? '최고 레벨' : '점수 '+pts+' / '+nextT+' · 다음 레벨까지 '+(nextT-pts))+'</div>';
+  const pct = nextT===null ? 100 : Math.min(100, (pts-prevT)/(nextT-prevT)*100);
+  return '<div class="al-bar"><i style="width:'+pct+'%"></i></div><div class="sub" style="text-align:center; font-size:12px;">'+(nextT===null ? '최고 레벨' : '점수 '+pts+' / '+nextT+' · 다음 레벨까지 '+(nextT-pts))+'</div>';
+}
+function accountLevelTabHtml(){ // (v271) 프로필 > 계정 레벨 탭: 점수·혜택
+  const lv = accountLevel();
+  let h = accountLevelBarHtml();
   h += '<div class="al-sec">점수 얻는 법</div><div class="al-parts">'+accountPointParts().map(x=>'<div><span>'+x.nm+' <small>×'+x.per+'</small></span><b>'+x.n+' → '+x.pts+'점</b></div>').join('')+'</div>';
   h += '<div class="al-sec">레벨 혜택</div><div class="al-perks">'+ACCOUNT_PERKS.map(p=>'<div class="'+(lv>=p.lv?'on':'')+'"><span>'+p.ic+' '+p.nm+'</span><b>'+(lv>=p.lv?'적용 중':'Lv.'+p.lv)+'</b></div>').join('')+'</div>';
+  return h;
+}
+function accountRewardTabHtml(){ // (v271) 프로필 > 레벨 보상 탭
+  const lv = accountLevel(), can = accountLvClaimable(), c = state.lvClaimed || {};
+  let h = accountLevelBarHtml();
   h += '<div class="al-sec">레벨 보상'+(can.length?' <button class="btn small" id="alAll" style="width:auto; margin-left:6px; padding:4px 10px;">모두 받기 ('+can.length+')</button>':'')+'</div><div class="al-rw">';
   for(let L=2; L<=ACCOUNT_MAX_LEVEL; L++){ const got = c[L], ok = L<=lv && !got;
-    h += '<div class="al-row'+(got?' got':'')+(L>lv?' lock':'')+'"><b>Lv.'+L+'</b><span>'+rewardPillsHtml(accountLvReward(L))+'</span>'+(ok ? '<button class="btn small" data-al="'+L+'">받기</button>' : '<em>'+(got?'✓':'🔒')+'</em>')+'</div>'; }
-  h += '</div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
-  bindModalClose();
-  const after = ()=>{ save(); sfx('claim'); render(); showAccountLevelModal(); };
+    h += '<div class="al-row'+(got?' got':'')+(L>lv?' lock':'')+'" data-alrow="'+L+'"><b>Lv.'+L+'</b><span>'+rewardPillsHtml(accountLvReward(L))+'</span>'+(ok ? '<button class="btn small" data-al="'+L+'">받기</button>' : '<em>'+(got?'✓':'🔒')+'</em>')+'</div>'; }
+  return h + '</div>';
+}
+function bindAccountRewardTab(){
+  const after = ()=>{ save(); sfx('claim'); render(); showProfileModal('reward'); };
   document.querySelectorAll('[data-al]').forEach(b=>b.addEventListener('click', ()=>{ if(accountLvClaim(+b.dataset.al)) after(); }));
   { const a = document.getElementById('alAll'); if(a) a.addEventListener('click', ()=>{ accountLvClaimable().forEach(L=>accountLvClaim(L)); after(); }); }
+  // 받을 보상이 있으면 그 줄, 없으면 지금 레벨 근처로 목록을 내려 줌
+  const can = accountLvClaimable(), row = document.querySelector('[data-alrow="'+(can.length ? can[0] : Math.max(2, accountLevel()))+'"]');
+  if(row && row.scrollIntoView) row.scrollIntoView({block:'nearest'});
 }
+// (v271) 위 레벨 줄을 누르면 프로필의 계정 레벨 탭(받을 보상이 있으면 레벨 보상 탭)
+function showAccountLevelModal(){ showProfileModal(accountLvClaimable().length ? 'reward' : 'level'); }
 function isUnlocked(feature){
   if(state.adminUnlockAll) return true; // (v242) 관리자 세팅: 모든 기능 해금
   if(feature==='tower') return true; // (v154) 탑은 처음부터 개방
@@ -11392,7 +11423,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 270;
+const APP_BUILD = 271;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
