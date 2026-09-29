@@ -1037,6 +1037,13 @@
   .fz-guard .uic{width:28px; height:28px;} .fz-guard.on{background:#3aa0ff26; border:2px solid #9fd8ff; box-shadow:0 0 12px #6cc4ff55;} .fz-guard:disabled{opacity:.5; cursor:default;}
   .fz-gchk{flex:0 0 22px; height:22px; border-radius:7px; border:2px solid #9fd8ff; display:grid; place-items:center; font-size:14px; font-weight:900; color:#0b2a44; background:#ffffff10;} .fz-guard.on .fz-gchk{background:#9fd8ff;}
   .fz-gtx{flex:1; min-width:0; line-height:1.25;} .fz-gtx b{font-size:13px;} .fz-gtx small{display:block; font-size:11px; color:var(--sub);}
+  .af-sec{font-size:12px; font-weight:800; color:var(--sub); margin:12px 0 5px; display:flex; align-items:center; gap:6px;} .af-row{display:flex; flex-wrap:wrap; gap:5px;}
+  .af-chip{padding:6px 10px; border-radius:99px; border:1px solid #ffffff22; background:#ffffff0a; color:var(--sub); font-size:12px; font-weight:800;} .af-chip.on{background:#5b6bff44; border-color:#8a96ff; color:var(--text);}
+  .af-all{padding:1px 8px; border-radius:8px; border:1px solid #ffffff22; background:none; color:var(--sub); font-size:10px;}
+  .af-plan{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:12px;} .af-plan span{font-size:12px; font-weight:700; padding:5px 10px; border-radius:10px; background:#ffffff0c;}
+  .af-got{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; margin-top:12px;} .af-g{position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px; border-radius:12px; background:#ffffff0a; min-width:0;}
+  .af-g small{font-size:10px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .af-g b{font-size:12px;} .af-g i{position:absolute; top:-5px; right:-3px; font-style:normal; font-size:9px; font-weight:900; padding:1px 5px; border-radius:6px; background:#ff5a7a; color:#fff;}
+  .af-open{background:linear-gradient(135deg,#7d5bff,#5b6bff);}
   .shop-top{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;} .shop-top .sub{font-size:11px;}
   .shop-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
   .shop-tile{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 6px; border-radius:12px; background:#ffffff0b; border:1px solid #ffffff12; text-align:center; min-width:0;}
@@ -5962,7 +5969,10 @@ function fuseOutcomes(keys){ // {결과키: 확률}
 function fusePick(out){ let r = Math.random(), last = null; for(const k in out){ last = k; r -= out[k]; if(r < 0) return k; } return last; }
 function fuseSlotInfo(){ // 칸이 다 찼을 때 합성 정보
   const keys = fuseSlots.slice(); if(keys.some(k=>!k)) return null;
-  const src = fuseSlotRarity(), nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
+  return fuseInfoFor(keys);
+}
+function fuseInfoFor(keys){ // (v250) 재료 3개 → 합성 정보 (칸 합성·자동 합성 공통)
+  const src = fuseMode==='equip' ? equipInfo(keys[0]).rarity : SPIRITS[keys[0]].rarity, nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
   const inheritFrom = Math.max(...keys.map(k=> fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k))); // (v241) 장비도 강화 계승
@@ -5982,7 +5992,7 @@ function renderFuseTab(){
   let h = '<div class="card fz-card">';
   h += '<div class="fz-modes">'+[['spirit','📦 정령 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 합성'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')]].map(([k,t])=>'<button data-fz-mode="'+k+'" class="'+(fuseMode===k?'on':'')+'" '+(k==='equip' && !isEquipUnlocked()?'disabled':'')+'>'+t+'</button>').join('')+'</div>';
   const unit = fuseMode==='equip' ? '개' : '마리';
-  h += '<div style="text-align:right; margin:-4px 0 6px;"><button class="btn secondary small" id="fzRules" style="width:auto; padding:3px 10px;">ⓘ 합성 규칙</button></div>';
+  h += '<div style="display:flex; justify-content:space-between; gap:6px; margin:-4px 0 6px;"><button class="btn small af-open" id="fzAuto" style="width:auto; padding:4px 12px;">⚡ 자동 합성</button><button class="btn secondary small" id="fzRules" style="width:auto; padding:3px 10px;">ⓘ 합성 규칙</button></div>';
   h += '<div class="fz-slots">'+fuseSlots.map((k,i)=>'<button class="fz-slot'+(k?' on':'')+'" data-fz-rm="'+i+'">'+(k ? '<div class="icon av r-'+(fuseMode==='equip'?equipInfo(k).rarity:SPIRITS[k].rarity)+'">'+fuseArtOf(k)+'</div><small>'+fuseNameOf(k)+'</small>' : '<b>＋</b><small>재료 '+(i+1)+'</small>')+'</button>').join('<span class="fz-plus">+</span>')+'</div>';
   const info = fuseSlotInfo();
   if(!info){
@@ -6058,20 +6068,17 @@ function fuseLogHtml(){ // (v223) 최근 합성 기록: 넣은 재료 → 결과
   const ok = L.filter(e=>e.ok), same = ok.filter(e=>e.k.includes(e.r) || e.k.some(k=> fuseMode==='equip' ? false : SPIRITS[k].element+'_'+SPIRITS[k].variant===SPIRITS[e.r].element+'_'+SPIRITS[e.r].variant));
   return '<details class="fz-log"><summary>🧾 최근 합성 기록 <span class="sub">('+L.length+'회 · 성공 '+ok.length+(fuseMode==='equip'?'':' · 넣은 정령 그대로 '+same.length)+')</span></summary>'+rows+'</details>';
 }
-function doSlotFuse(){
-  checkDailyRollover();
-  const info = fuseSlotInfo(); if(!info) return;
-  const eq = fuseMode==='equip', unit = eq ? '개' : '마리';
-  // 재료 다시 확인(잠금·수량·같은 등급·같은 부위)
+// (v250) 합성 한 번 실행(재료 확인·판정·지급·계승·기록) — 화면 없이 결과만 돌려줌. 칸 합성·자동 합성 공통
+function fuseExecute(keys){
+  const info = fuseInfoFor(keys), eq = fuseMode==='equip';
   const cnt = {}; info.keys.forEach(k=>cnt[k]=(cnt[k]||0)+1);
   const bad = Object.keys(cnt).some(k=> (eq ? isEqLocked(k) || equipFreeCount(k)<cnt[k] || equipInfo(k).rarity!==info.src || equipInfo(k).slot!==equipInfo(info.keys[0]).slot : isSpLocked(k) || ownedCount(k)<cnt[k] || SPIRITS[k].rarity!==info.src));
-  if(bad){ fuseSlots = [null,null,null]; render(); toast('재료가 바뀌어 칸을 비움'); return; }
+  if(bad) return { bad:true, info };
   if(eq) state.lifetimeEquipFusions = (state.lifetimeEquipFusions||0) + 1;
   else { state.dailyStats.fusions += 1; state.lifetimeFusions = (state.lifetimeFusions||0) + 1; }
   const r = fuseRoll(info.src, info.nr, info.streakKey);
   const take = k=>{ if(eq) state.equipOwned[k] -= 1; else state.owned[k] -= 1; };
   const give = k=>{ if(eq) return addEquip(k); const isNew = !state.discovered[k]; state.owned[k] = (state.owned[k]||0) + 1; state.discovered[k] = true; return isNew; };
-  fuseSlots = [null,null,null];
   if(!r.ok){
     let survivor = null, downTo = null;
     if(!r.guard){
@@ -6084,10 +6091,7 @@ function doSlotFuse(){
       give(downTo || survivor);
     }
     logFuse({ m:fuseMode, k:info.keys, ok:false, g:!!r.guard, r: r.guard ? null : (downTo || survivor), d: !!downTo, s: info.rate, t: Date.now() });
-    if(!eq) cleanupFormation();
-    checkAchievements(); save();
-    showFuseFailResult({ eq, unit, guard: !!r.guard, keys: info.keys, survivor, downTo, nr: info.nr, streakKey: info.streakKey });
-    render(); return;
+    return { ok:false, guard: !!r.guard, survivor, downTo, info };
   }
   info.keys.forEach(take);
   const res = fusePick(info.out), isNew = give(res);
@@ -6097,14 +6101,109 @@ function doSlotFuse(){
     if(info.awInherit > awakenLevel(res)){ if(!state.awaken) state.awaken = {}; state.awaken[res] = Math.min(AWAKEN_MAX, info.awInherit); awInh = state.awaken[res]; } // 결과 정령이 이미 더 높으면 그대로
     const cap = Math.min(info.inherit, maxEnhanceFor(res));
     if(cap > enhanceLevel(res)){ if(!state.enhanceLevel) state.enhanceLevel = {}; state.enhanceLevel[res] = cap; inherited = cap; }
-    cleanupFormation();
-  }
-  if(eq){ const cap = Math.min(info.inherit, equipEnhMax(res)); if(cap > equipEnhLevel(res)){ if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[res] = cap; inherited = cap; } }
+  }else{ const cap = Math.min(info.inherit, equipEnhMax(res)); if(cap > equipEnhLevel(res)){ if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[res] = cap; inherited = cap; } }
+  return { ok:true, res, isNew, inherited, awInh, info };
+}
+function doSlotFuse(){
+  checkDailyRollover();
+  const info = fuseSlotInfo(); if(!info) return;
+  const eq = fuseMode==='equip', unit = eq ? '개' : '마리';
+  const x = fuseExecute(info.keys);
+  fuseSlots = [null,null,null];
+  if(x.bad){ render(); toast('재료가 바뀌어 칸을 비움'); return; }
+  if(!eq) cleanupFormation();
   checkAchievements(); save();
+  if(!x.ok){ showFuseFailResult({ eq, unit, guard: x.guard, keys: info.keys, survivor: x.survivor, downTo: x.downTo, nr: info.nr, streakKey: info.streakKey }); render(); return; }
+  const res = x.res, isNew = x.isNew, inherited = x.inherited, awInh = x.awInh;
   if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
   else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
   if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+(eq ? equipInfo(res).name : SPIRITS[res].name)), Math.round(Math.max(SUMMON_THEME[eq ? equipInfo(res).rarity : SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
   render();
+}
+// ===================== (v250) 자동 합성: 등급·속성·종(장비는 부위) 필터 + 남길 수량 → 3개씩 묶어 한 번에 =====================
+function autoFuseCfg(){
+  const eq = fuseMode==='equip', key = eq ? 'autoFuseEq' : 'autoFuse';
+  const d = { r:['common','rare'], el:ELEMENTS.slice(), v: eq ? EQUIP_SLOTS.slice() : ['a','b'], keep:1, guard:false };
+  const c = state[key] && typeof state[key]==='object' ? state[key] : {};
+  const arr = (x, all)=> Array.isArray(x) ? x.filter(v=>all.includes(v)) : null;
+  state[key] = { r: arr(c.r, ['common','rare','epic','legendary']) || d.r, el: arr(c.el, ELEMENTS) || d.el, v: arr(c.v, eq ? EQUIP_SLOTS : ['a','b']) || d.v,
+    keep: Number.isFinite(c.keep) ? Math.max(0, Math.min(9, Math.floor(c.keep))) : d.keep, guard: !!c.guard };
+  return state[key];
+}
+function autoFusePlan(cfg){ // → [[k,k,k], ...]
+  const eq = fuseMode==='equip', groups = [];
+  const keys = (eq ? allEquipKeys().filter(k=>equipOwnedCount(k)>0) : Object.keys(SPIRITS).filter(k=>ownedCount(k)>0)).filter(k=>{
+    if(eq){ const i = equipInfo(k); return !isEqLocked(k) && cfg.r.includes(i.rarity) && cfg.el.includes(i.element) && cfg.v.includes(i.slot); }
+    const sp = SPIRITS[k]; return !isSpLocked(k) && cfg.r.includes(sp.rarity) && cfg.el.includes(sp.element) && cfg.v.includes(sp.variant);
+  });
+  const bucket = {}; // 같은 등급(장비는 같은 부위까지)끼리만 섞임
+  keys.forEach(k=>{
+    const spare = (eq ? equipFreeCount(k) : ownedCount(k)) - cfg.keep; if(spare<=0) return;
+    const b = eq ? equipInfo(k).rarity+'|'+equipInfo(k).slot : SPIRITS[k].rarity;
+    (bucket[b] = bucket[b] || []).push({ k, n: spare });
+  });
+  Object.keys(bucket).forEach(b=>{
+    const list = bucket[b], rest = [];
+    list.forEach(x=>{ for(let i=0;i<Math.floor(x.n/3);i++) groups.push([x.k, x.k, x.k]); for(let i=0;i<x.n%3;i++) rest.push(x.k); }); // 같은 것 3개 먼저
+    rest.sort((a,c)=>{ const ea = eq ? equipInfo(a).element : SPIRITS[a].element, ec = eq ? equipInfo(c).element : SPIRITS[c].element; return ELEMENTS.indexOf(ea)-ELEMENTS.indexOf(ec); }); // 남은 것은 같은 속성끼리 가깝게
+    for(let i=0; i+2<rest.length; i+=3) groups.push(rest.slice(i, i+3));
+  });
+  return groups;
+}
+function showAutoFuseModal(){
+  const eq = fuseMode==='equip', cfg = autoFuseCfg(), unit = eq ? '개' : '마리';
+  const chip = (grp, v, label, on)=>'<button class="af-chip'+(on?' on':'')+'" data-af="'+grp+'" data-v="'+v+'">'+label+'</button>';
+  const plan = autoFusePlan(cfg), by = {};
+  plan.forEach(g=>{ const r = eq ? equipInfo(g[0]).rarity : SPIRITS[g[0]].rarity; by[r] = (by[r]||0) + 1; });
+  const risky = plan.some(g=>{ const r = eq ? equipInfo(g[0]).rarity : SPIRITS[g[0]].rarity; return r==='legendary' || r==='epic'; });
+  let h = '<h3 style="text-align:center; margin-bottom:4px;">⚡ 자동 합성 · '+(eq?'장비':'정령')+'</h3><div class="sub" style="text-align:center; font-size:11px;">조건에 맞는 재료를 같은 등급 3'+unit+'씩 묶어 한 번에 합성 · 잠금 제외</div>'
+    + '<div class="af-sec">등급</div><div class="af-row">'+['common','rare','epic','legendary'].map(r=>chip('r', r, RARITY_INFO[r].name+' → '+RARITY_INFO[RARITY_ORDER[RARITY_ORDER.indexOf(r)+1]].name, cfg.r.includes(r))).join('')+'</div>'
+    + '<div class="af-sec">속성 <button class="af-all" data-af-all="el">전체</button></div><div class="af-row">'+ELEMENTS.map(e=>chip('el', e, ELEMENT_INFO[e].icon+' '+ELEMENT_INFO[e].name, cfg.el.includes(e))).join('')+'</div>'
+    + '<div class="af-sec">'+(eq?'부위':'종')+'</div><div class="af-row">'+(eq ? EQUIP_SLOTS.map(sl=>chip('v', sl, EQUIP_SLOT_INFO[sl].icon+' '+EQUIP_SLOT_INFO[sl].name, cfg.v.includes(sl))).join('') : ['a','b'].map(v=>chip('v', v, v.toUpperCase()+'종', cfg.v.includes(v))).join(''))+'</div>'
+    + '<div class="af-sec">'+(eq?'장비':'정령')+'마다 남길 수</div><div class="sbm-qty" style="margin-top:4px;"><button id="afKeepMin" '+(cfg.keep<=0?'disabled':'')+'>−</button><b>'+cfg.keep+'</b><button id="afKeepPlus" '+(cfg.keep>=9?'disabled':'')+'>＋</button></div>'
+    + (cfg.keep===0 ? '<div class="sub" style="text-align:center; color:#ff9a9a; font-size:11px;">0이면 마지막 1'+unit+'까지 재료로 씀 (강화·각성은 결과로 계승)</div>' : '')
+    + ((cfg.r.includes('epic') || cfg.r.includes('legendary')) ? '<button class="fz-guard'+(cfg.guard && ticketCount('fuseGuard')>0?' on':'')+'" id="afGuard" style="margin-top:10px;" '+(ticketCount('fuseGuard')>0?'':'disabled')+'><span class="fz-gchk">'+(cfg.guard && ticketCount('fuseGuard')>0?'✔':'')+'</span>'+uiIc('guard')+'<span class="fz-gtx"><b>합성 보호권 사용</b><small>전설·신화 결과가 실패하면 1장씩 사용 · 보유 '+ticketCount('fuseGuard')+'장</small></span></button>' : '')
+    + '<div class="af-plan">'+(plan.length ? Object.keys(by).sort((a,b)=>RARITY_ORDER.indexOf(a)-RARITY_ORDER.indexOf(b)).map(r=>'<span>'+RARITY_INFO[r].name+' → '+RARITY_INFO[RARITY_ORDER[RARITY_ORDER.indexOf(r)+1]].name+' <b>×'+by[r]+'</b></span>').join('') : '<span class="sub">조건에 맞는 재료 부족 (같은 등급 3'+unit+' 필요)</span>')+'</div>'
+    + (risky ? '<div class="sub" style="text-align:center; font-size:11px; color:#ffb89a;">에픽 이상은 실패하면 1'+unit+'만 남고 강등될 수 있음</div>' : '')
+    + '<button class="btn gold" id="afGo" style="margin-top:10px;" '+(plan.length?'':'disabled')+'>'+uiIc('fuse')+' '+plan.length+'번 합성</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  const redraw = ()=>{ save(); showAutoFuseModal(); };
+  document.querySelectorAll('[data-af]').forEach(b=>b.addEventListener('click', ()=>{ const g = b.dataset.af, v = b.dataset.v, a = cfg[g]; const i = a.indexOf(v); if(i>=0) a.splice(i,1); else a.push(v); redraw(); }));
+  document.querySelectorAll('[data-af-all]').forEach(b=>b.addEventListener('click', ()=>{ cfg.el = cfg.el.length===ELEMENTS.length ? [] : ELEMENTS.slice(); redraw(); }));
+  document.getElementById('afKeepMin').addEventListener('click', ()=>{ cfg.keep = Math.max(0, cfg.keep-1); redraw(); });
+  document.getElementById('afKeepPlus').addEventListener('click', ()=>{ cfg.keep = Math.min(9, cfg.keep+1); redraw(); });
+  { const g = document.getElementById('afGuard'); if(g) g.addEventListener('click', ()=>{ cfg.guard = !cfg.guard; redraw(); }); }
+  document.getElementById('afGo').addEventListener('click', ()=>{ if(plan.length) runAutoFuse(plan, cfg); });
+}
+function runAutoFuse(plan, cfg){
+  checkDailyRollover();
+  const eq = fuseMode==='equip', prevGuard = fuseGuardOn;
+  fuseGuardOn = !!cfg.guard && ticketCount('fuseGuard')>0;
+  const got = {}, news = new Set(); let ok = 0, fail = 0, guard = 0, down = 0, skip = 0;
+  plan.forEach(g=>{
+    const x = fuseExecute(g);
+    if(x.bad){ skip++; return; }
+    if(x.ok){ ok++; got[x.res] = (got[x.res]||0) + 1; if(x.isNew) news.add(x.res); }
+    else if(x.guard) guard++;
+    else { fail++; if(x.downTo) down++; }
+    if(fuseGuardOn && ticketCount('fuseGuard')<=0) fuseGuardOn = false;
+  });
+  fuseGuardOn = prevGuard && ticketCount('fuseGuard')>0;
+  fuseSlots = [null,null,null];
+  if(!eq) cleanupFormation();
+  checkAchievements(); save(); render();
+  sfx(ok ? 'fuse' : 'fail');
+  const art = k=> eq ? equipInfo(k).img : spArt(SPIRITS[k]), nm = k=> eq ? equipInfo(k).name : SPIRITS[k].name, rar = k=> eq ? equipInfo(k).rarity : SPIRITS[k].rarity;
+  const list = Object.keys(got).sort((a,b)=>RARITY_ORDER.indexOf(rar(b))-RARITY_ORDER.indexOf(rar(a)) || got[b]-got[a]);
+  const h = '<h3 style="text-align:center;">⚡ 자동 합성 결과</h3>'
+    + '<div class="af-plan"><span>성공 <b>'+ok+'</b></span><span>실패 <b>'+fail+'</b>'+(down?' (강등 '+down+')':'')+'</span>'+(guard?'<span>'+uiIc('guard')+' 보호 <b>'+guard+'</b></span>':'')+(skip?'<span>건너뜀 '+skip+'</span>':'')+'</div>'
+    + (list.length ? '<div class="af-got">'+list.map(k=>'<div class="af-g'+(news.has(k)?' new':'')+'"><div class="icon av r-'+rar(k)+'">'+art(k)+'</div><small>'+nm(k)+'</small><b>×'+got[k]+'</b>'+(news.has(k)?'<i>NEW</i>':'')+'</div>').join('')+'</div>' : '')
+    + '<button class="btn gold" id="afAgain" style="margin-top:10px;">⚡ 다시 설정</button><button class="btn secondary" id="afDone" style="margin-top:6px;">확인</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  document.getElementById('afAgain').addEventListener('click', showAutoFuseModal);
+  document.getElementById('afDone').addEventListener('click', closeModal);
 }
 function showManageModal_returnToSpirits(){} // 정령 탭은 이미 열려 있으므로 별도 전환 불필요(자리만 유지)
 // (v232) 합성 실패 결과 — 성공과 같은 모여드는 연출(목표 등급 색) 뒤에 회색 실패 카드
@@ -9114,6 +9213,7 @@ function attachHandlers(){
   { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', doSlotFuse); }
   { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; sfx('tap'); render(); }); }
   { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 규칙', fuseRulesHtml())); }
+  { const af = document.getElementById('fzAuto'); if(af) af.addEventListener('click', showAutoFuseModal); }
   document.querySelectorAll('[data-stage]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.stage);
