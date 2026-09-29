@@ -7640,7 +7640,7 @@ const ACHIEVEMENTS = [
   {id:'perfect_boss', name:'완벽한 제압', desc:'보스 하나를 S등급으로 격파하기', reward:{essence:500}, category:'stage', secret:true, check:()=> Object.entries(state.stageBest||{}).some(([k,v])=> v==='S' && isBossStage(parseInt(k)))},
   {id:'perfect_tower', name:'완벽한 한 층', desc:'무한의 탑에서 아무 층이나 S등급으로 돌파하기', reward:{stone:200}, category:'tower', secret:true, check:()=> Object.values(state.towerFloorGrades||{}).includes('S')},
   {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
-  // (v266) 히든 업적 추가 — secret:true = 이름만 보이고 조건은 비밀 · secret:'full' = 이름·조건 모두 ??? (조건 빡빡·보상 후함)
+  // (v266) 히든 업적 추가 — secret:true = 이름만 보이고 조건은 ??? · secret:'full' = 이름·조건 모두 ??? (조건 빡빡·보상 후함)
   {id:'tower_transcend', name:'탑의 초월자', desc:'무한의 탑 1~100층을 전부 S등급으로 돌파하기', reward:{stone:1500, items:{pick_mythic:1, pick_legendary:1}}, category:'tower', secret:true, check:()=> { const g = state.towerFloorGrades||{}; for(let f=1; f<=100; f++) if(g[f]!=='S') return false; return true; }},
   {id:'tower_mono', name:'순혈주의', desc:'한 속성 정령만으로 무한의 탑 25층 이상 돌파하기', reward:{stone:300}, category:'tower', secret:true, check:()=> hidHas('towerMono')},
   {id:'tower_solo', name:'고독한 등반가', desc:'정령 딱 1마리로 무한의 탑 30층 이상 돌파하기', reward:{stone:800, items:{pick_legendary:1}}, category:'tower', secret:'full', check:()=> hidHas('towerSolo')},
@@ -10281,7 +10281,7 @@ function showAchievementsModal(keep){
       // 탐구/도전형(secret)만 달성 전까지 이름/설명을 ???로 가림 — 평범하게 깨지는 업적은 전부 공개
       const revealed = !a.secret || done || pending;
       const label = (revealed || a.secret===true) ? a.name : '???'; // (v266) 히든 업적은 이름은 보이고 조건만 비밀 · 'full'은 이름도 ???
-      const descText = revealed ? a.desc : (a.secret===true ? '조건 비밀' : '???');
+      const descText = revealed ? a.desc : '???'; // (v268) 조건은 히든 전부 ???
       let rightSide;
       if(pending) rightSide = '<button class="btn small" data-claim-reward="achieve_'+a.id+'">받기</button>';
       else if(done) rightSide = '<div style="font-size:18px;"><img class="uic" src="assets/ui/ic_check.webp" alt=""></div>';
@@ -10955,7 +10955,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 267;
+const APP_BUILD = 268;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
