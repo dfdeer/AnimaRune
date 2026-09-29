@@ -5545,16 +5545,16 @@ function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv
 function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
   const A = uiIc('awaken');
-  return gmSectionHtml('각성할 때마다', [{ic:'💪', nm:'정령력 +'+Math.round(AWAKEN_POWER*100)+'%', d:'강화 최대 단계도 +1'}])
-    + gmSectionHtml('단계별로 열리는 것', [
-      {ic:A, nm:'1단계', d:'패시브가 켜짐'},
-      {ic:A, nm:'2단계', d:'스킬1 대기 시간 1라운드 줄어듦'},
-      {ic:A, nm:'3단계', d:'스킬2가 열림 (등급과 상관없이)'},
-      {ic:A, nm:'4단계', d:'스킬2 대기 시간 1라운드 줄어듦'},
-      {ic:A, nm:'5단계', d:'스킬 효과가 한 등급 위로 + 계열 고유 효과'}])
-    + gmSectionHtml('재료와 이어짐', [
-      {ic:'🧬', nm:'같은 정령 사본 + 정수', d:'단계마다 사본 '+AWAKEN_COPIES.join(' → ')+'마리 · 마지막 1마리는 재료로 안 쓰임'},
-      {ic:'📌', nm:'정령 종류에 기록', d:'사본을 합성·분해해도 각성은 그대로 · 합성으로 윗등급을 만들면 한 단계 낮춰서 이어짐'}]);
+  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'}])
+    + gmSectionHtml('단계별 해금', [
+      {ic:A, nm:'1단계', d:'패시브'},
+      {ic:A, nm:'2단계', d:'스킬1 대기 −1'},
+      {ic:A, nm:'3단계', d:'스킬2'},
+      {ic:A, nm:'4단계', d:'스킬2 대기 −1'},
+      {ic:A, nm:'5단계', d:'스킬 한 등급 위 + 계열 효과'}])
+    + gmSectionHtml('재료', [
+      {ic:'🧬', nm:'사본 + 정수', d:'단계마다 같은 정령 '+AWAKEN_COPIES.join('·')+'마리 (1마리는 남김)'},
+      {ic:'📌', nm:'합성', d:'각성은 합성 결과로 이어지지 않음'}]);
 }
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
@@ -6376,7 +6376,7 @@ function fuseFailChanceFor(nextRarity, streakKey){ const st = (state.fuseFailStr
 // 결과: 재료 하나하나가 1/3씩 → 같은 정령 85% · 같은 속성 다른 종 10% · 다른 속성 5%(나머지 8종에 고르게)
 // 장비: 같은 부위·같은 등급 재료 → 같은 속성 90% · 다른 속성 10%
 const FUSE_OUT = { same:0.85, sib:0.10, other:0.05 }, EQ_FUSE_OUT = { same:0.90, other:0.10 };
-const FUSE_INHERIT_DIV = 3; // 강화 계승: 재료 최고 강화 ÷ 3 (버림) — 등급이 높을수록 강화 비용이 비싸서
+const FUSE_INHERIT_DIV = 3; // (v266) 강화 계승: 재료 3개 강화의 합 ÷ 3 (= 평균, 버림) — 셋 다 +10이면 +10
 let fuseMode = 'spirit', fuseSlots = [null, null, null];
 function isSpLocked(k){ return !!(state.lockedSpirits && state.lockedSpirits[k]); }
 function isEqLocked(k){ return !!(state.lockedEquip && state.lockedEquip[k]); }
@@ -6407,9 +6407,9 @@ function fuseInfoFor(keys){ // (v250) 재료 3개 → 합성 정보 (칸 합성�
   const src = fuseMode==='equip' ? equipInfo(keys[0]).rarity : SPIRITS[keys[0]].rarity, nr = RARITY_ORDER[RARITY_ORDER.indexOf(src)+1];
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
-  const inheritFrom = Math.max(...keys.map(k=> fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k))); // (v241) 장비도 강화 계승
-  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // (v219) 한 등급 오를 때 강화 3단계 = 1단계로 환산 (일반 +3 → 레어 +1, +0~2 → +0)
-  const awFrom = fuseMode==='equip' ? 0 : Math.max(...keys.map(k=>awakenLevel(k))), awInherit = Math.max(0, awFrom-1); // (v238) 각성 계승: 재료 최고 각성 − 1단계
+  const inheritFrom = keys.reduce((t,k)=> t + (fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k)), 0); // (v266) 재료 3개 강화의 합 (장비도 같음)
+  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // 합 ÷ 3 = 평균 (버림) — +10·+10·+10 → +10, +10·+0·+0 → +3
+  const awFrom = 0, awInherit = 0; // (v266) 각성은 계승 안 함 — 낮은 등급에서 각성을 다 하고 올리면 너무 쉬워서
   return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit, inheritFrom, awFrom, awInherit };
 }
 function fuseFill(k, n){ for(let i=0;i<3 && n>0;i++) if(!fuseSlots[i]){ fuseSlots[i] = k; n--; } }
@@ -6439,8 +6439,7 @@ function renderFuseTab(){
       + '<div class="fz-outs">'+top.map(k=>'<div class="fz-out"><span class="fz-oart">'+(fuseMode==='equip'?equipInfo(k).img:spArt(SPIRITS[k]))+'</span><span class="fz-onm">'+fuseNameOf(k)+'</span><b>'+pct(info.out[k])+'</b></div>').join('')
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
-      + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 +'+info.inheritFrom+' → '+RARITY_INFO[info.nr].name+' +'+info.inherit+'</div>' : '')
-      + (info.awFrom>0 ? '<div class="sub fz-small" style="color:#ff9be8;">'+uiIc('awaken')+' 각성 계승 '+info.awFrom+'단계 → '+RARITY_INFO[info.nr].name+' '+info.awInherit+'단계</div>' : '')
+      + (info.inherit>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+'</div>' : '')
       + '</div>'
       + (info.rate<100 && fuseGuardEligible(info.nr) ? (()=>{ const n = ticketCount('fuseGuard'), on = fuseGuardOn && n>0; // (v247) 보호권은 체크했을 때만 사용 — 합성 버튼 바로 위, 눈에 띄게
           return '<button class="fz-guard'+(on?' on':'')+'" id="fzGuard" '+(n>0?'':'disabled')+'><span class="fz-gchk">'+(on?'✔':'')+'</span>'+uiIc('guard')
@@ -6470,24 +6469,19 @@ function renderFuseTab(){
 function fuseRulesHtml(){ // (v219) 합성·계승 규칙 한눈에 — 가이드북과 합성 탭 ⓘ에서 같이 씀 · (v260) 표 → 묶음별 카드
   const pc = v=>Math.round(v*100)+'%', RN = r=>RARITY_INFO[r].name;
   const rates = '<div class="gm-rates">'+['rare','epic','legendary','mythic'].map(r=>'<span style="--rc:'+RARITY_HEX[r]+';"><small>'+RN(r)+'</small><b>'+pc(1-FUSE_FAIL[r])+'</b></span>').join('')+'</div>';
-  const ex = n=>'+'+n+' → +'+Math.floor(n/FUSE_INHERIT_DIV);
-  return gmSectionHtml('합성하는 법', [
-      {ic:'🧪', nm:'같은 등급 3개 → 한 등급 위 1개', d:'정령은 종류가 달라도 됨 · 장비는 같은 부위끼리'},
-      {ic:'🎯', nm:'성공 확률 (나오는 등급 기준)', d:rates},
-      {ic:'🎲', nm:'무엇이 나오나', d:'넣은 정령의 윗단계 '+pc(FUSE_OUT.same)+' · 같은 속성 다른 계열 '+pc(FUSE_OUT.sib)+' · 다른 속성 '+pc(FUSE_OUT.other)
-        +'<br><span style="opacity:.8;">재료 3개가 똑같이 1/3씩 기준이 됨 · 장비는 같은 속성 '+pc(EQ_FUSE_OUT.same)+'</span>'}])
-    + gmSectionHtml('실패하면', [
-      {ic:'💔', nm:'재료 3개 중 1개만 돌아옴', d:'무엇이 돌아올지는 무작위'},
-      {ic:'⬇️', nm:'가끔 등급이 내려감', d:'돌아온 1개가 '+RN('epic')+'면 '+pc(FUSE_DOWN.epic)+', '+RN('legendary')+'면 '+pc(FUSE_DOWN.legendary)+' 확률로 한 등급 아래로'},
-      {ic:'📈', nm:'실패할수록 쉬워짐', d:'같은 등급 합성에서 실패할 때마다 다음 성공 확률 +'+Math.round(FUSE_PITY_STEP*100)+'%p · 성공하면 원래대로'},
-      {ic:'🛡️', nm:'합성 보호권', d:RN('legendary')+'·'+RN('mythic')+'가 나오는 합성에서 체크해 두면, 실패해도 보호권 1장만 쓰고 재료 3개는 그대로'}])
-    + gmSectionHtml('강화·각성은 이렇게 이어짐', [
-      {ic:'⬆️', nm:'강화: 재료 최고 강화의 1/'+FUSE_INHERIT_DIV, d:'소수점은 버림 · 예) '+ex(10)+' · '+ex(6)+' · '+ex(2)
-        +'<br><span style="opacity:.8;">나온 정령이 이미 더 높게 강화돼 있으면 그대로</span>'},
-      {ic:'⭐', nm:'각성: 재료 최고 각성에서 한 단계 아래', d:'예) ★5 → ★4 · ★1 → 없음'
-        +'<br><span style="opacity:.8;">나온 정령이 이미 더 높게 각성돼 있으면 그대로</span>'},
-      {ic:'🔗', nm:'강화·각성은 정령마다 하나', d:'같은 정령이 여러 마리여도 단계는 함께 씀 — 사본을 재료로 써도 남은 정령의 단계는 그대로'}])
-    + gmSectionHtml('기타', [{ic:'<img class="uic" src="assets/ui/ic_lock.webp" alt="">', nm:'잠금', d:'잠근 정령·장비는 합성·분해 재료로 안 쓰임'}]);
+  return gmSectionHtml('합성 방법', [
+      {ic:'🧪', nm:'재료', d:'같은 등급 3개 → 한 등급 위 1개'},
+      {ic:'🎯', nm:'성공률', d:rates},
+      {ic:'🎲', nm:'결과', d:'넣은 정령의 윗단계 '+pc(FUSE_OUT.same)+' · 같은 속성 다른 계열 '+pc(FUSE_OUT.sib)+' · 다른 속성 '+pc(FUSE_OUT.other)}])
+    + gmSectionHtml('합성 실패', [
+      {ic:'💔', nm:'재료', d:'무작위 1개만 남음'},
+      {ic:'⬇️', nm:'강등', d:'남은 1개가 '+RN('epic')+' '+pc(FUSE_DOWN.epic)+' · '+RN('legendary')+' '+pc(FUSE_DOWN.legendary)+' 확률로 한 등급 아래로'},
+      {ic:'📈', nm:'보정', d:'실패할 때마다 다음 성공률 +'+Math.round(FUSE_PITY_STEP*100)+'%p'},
+      {ic:'🛡️', nm:'보호권', d:'체크하면 실패해도 재료 유지 ('+RN('legendary')+'·'+RN('mythic')+')'}])
+    + gmSectionHtml('강화·각성 계승', [
+      {ic:'⬆️', nm:'강화', d:'재료 3개의 평균만큼 이어받음 · 예) +10·+10·+10 → +10'},
+      {ic:'⭐', nm:'각성', d:'이어받지 않음'}])
+    + gmSectionHtml('기타', [{ic:'<img class="uic" src="assets/ui/ic_lock.webp" alt="">', nm:'잠금', d:'잠근 정령·장비는 재료로 안 쓰임'}]);
 }
 const FUSE_LOG_MAX = 20;
 function logFuse(e){ if(!Array.isArray(state.fuseLog)) state.fuseLog = []; state.fuseLog.unshift(e); if(state.fuseLog.length > FUSE_LOG_MAX) state.fuseLog.length = FUSE_LOG_MAX; }
@@ -6605,7 +6599,7 @@ function showAutoFuseModal(){
             + ELEMENTS.map(e=>'<div class="af-lcol"><button class="af-el" data-af-el="'+e+'">'+ELEMENT_INFO[e].icon+'</button>'+['a','b'].map(v=>{ const l = e+'_'+v, sp = SPIRITS[e+'_'+rr+'_'+v];
               return '<button class="af-line'+(cfg.v.includes(l)?' on':'')+'" data-af="v" data-v="'+l+'"><span class="icon av r-'+rr+'">'+spArt(sp)+'</span><small>'+sp.name+'</small></button>'; }).join('')+'</div>').join('')+'</div>'; })())
     + '<div class="af-sec">'+(eq?'장비':'정령')+'마다 남길 수</div><div class="sbm-qty" style="margin-top:4px;"><button id="afKeepMin" '+(cfg.keep<=0?'disabled':'')+'>−</button><b>'+cfg.keep+'</b><button id="afKeepPlus" '+(cfg.keep>=9?'disabled':'')+'>＋</button></div>'
-    + (cfg.keep===0 ? '<div class="sub" style="text-align:center; color:#ff9a9a; font-size:11px;">0이면 마지막 1'+unit+'까지 재료로 씀 (강화·각성은 결과로 계승)</div>' : '')
+    + (cfg.keep===0 ? '<div class="sub" style="text-align:center; color:#ff9a9a; font-size:11px;">0이면 마지막 1'+unit+'까지 재료로 씀 (강화는 결과로 계승)</div>' : '')
     + ((cfg.r.includes('epic') || cfg.r.includes('legendary')) ? '<button class="fz-guard'+(cfg.guard && ticketCount('fuseGuard')>0?' on':'')+'" id="afGuard" style="margin-top:10px;" '+(ticketCount('fuseGuard')>0?'':'disabled')+'><span class="fz-gchk">'+(cfg.guard && ticketCount('fuseGuard')>0?'✔':'')+'</span>'+uiIc('guard')+'<span class="fz-gtx"><b>합성 보호권 사용</b><small>전설·신화 결과가 실패하면 1장씩 사용 · 보유 '+ticketCount('fuseGuard')+'장</small></span></button>' : '')
     + '<div class="af-plan">'+(plan.length ? Object.keys(by).sort((a,b)=>RARITY_ORDER.indexOf(a)-RARITY_ORDER.indexOf(b)).map(r=>'<span>'+RARITY_INFO[r].name+' → '+RARITY_INFO[RARITY_ORDER[RARITY_ORDER.indexOf(r)+1]].name+' <b>×'+by[r]+'</b></span>').join('') : '<span class="sub">조건에 맞는 재료 부족 (같은 등급 3'+unit+' 필요)</span>')+'</div>'
     + (risky ? '<div class="sub" style="text-align:center; font-size:11px; color:#ffb89a;">에픽 이상은 실패하면 1'+unit+'만 남고 강등될 수 있음</div>' : '')
@@ -7096,7 +7090,7 @@ function showEquipEnhanceModal(key, fxLabel){
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
-      + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 강화 ÷ '+FUSE_INHERIT_DIV+' 계승</div></div>';
+      + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화 평균만큼 계승</div></div>';
     h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+eqPct(now)+'%</div></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
