@@ -4580,8 +4580,9 @@ function battleLayout(sf){
   let enemyRows = false;
   const withBoss = sf.enemyUnits.some(u=>u.isBoss);
   sf.enemyUnits.forEach(u=>{
-    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : (withBoss && sf.enemyUnits.length>1 ? 16 : 18), raid ? 48 : 52, raid ? 90 : 80); return; }
-    if(withBoss && !raid){ put('enemy', u.idx, 35, u.idx===0 ? 80 : 15, 44); enemyRows = true; return; } // (v228) 보스 옆 결계석 등은 보스 위·아래로(보스 그림에 가려지지 않게)
+    // (v257) 챕터 보스: 적 쪽 절반 가운데에 조금 작게(80→64) — 예전엔 후열 칸에 커다랗게 있어서 전열까지 넘어옴. 결계석은 보스 앞쪽 위·아래
+    if(u.isBoss){ put('enemy', u.idx, raid ? 24 : 23, raid ? 48 : 50, raid ? 90 : 64); return; }
+    if(withBoss && !raid){ put('enemy', u.idx, 42, u.idx===0 ? 79 : 21, 40); return; }
     enemyRows = true;
     const front = isFrontRow(u.idx, ew), r = u.idx % ew;
     if(front) put('enemy', u.idx, 33+(r===1?2:0), [26,51,76][r], 44);
@@ -4589,6 +4590,7 @@ function battleLayout(sf){
   });
   const tags = [{x:11,t:'후열'},{x:raid&&!alone?35:34,t:'전열'}];
   if(enemyRows) tags.push({x:66,t:'전열'},{x:89,t:'후열'});
+  else if(withBoss && !raid) tags.push({x:77,t:'보스'});
   return { slots, tags, rs: raid && !alone ? 0.19 : 0.25, sz };
 }
 // (v179) 전투 배경: 스테이지는 챕터 지역(설원·화산·숲·사막·동굴), 레이드는 보스마다, 출정은 들판 길, 결투는 투기장
