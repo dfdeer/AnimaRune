@@ -5066,7 +5066,7 @@ function showMailSendModal(){
 }
 function showAdminSetupModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
-  const h = '<h3 style="text-align:center;">🛠️ 관리자 세팅</h3><div class="sub" style="line-height:1.6;">· 정수·강화석·파편·룬석·티켓을 최대치로<br>· 모든 기능 해금<br>· 모든 정령 1마리씩 (이미 있으면 그대로)<br>· 강화·각성은 그대로</div>'
+  const h = '<h3 style="text-align:center;">🛠️ 관리자 세팅</h3><div class="sub" style="line-height:1.6;">· 정수·강화석·파편·룬석·티켓을 최대치로<br>· 모든 기능·모든 스테이지(노말·하드) 해금<br>· 모든 정령 1마리씩 (이미 있으면 그대로)<br>· 강화·각성은 그대로</div>'
     + '<button class="btn gold" id="admApply" style="margin-top:12px;">적용하기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
@@ -5554,7 +5554,7 @@ function toast(msg, ms, html){
   el.className = 'toast';
   if(html) el.innerHTML = msg;
   else if(String(msg).indexOf('<img class="uic"')>=0){ // (v219) 재화 아이콘(그림)이 들어간 글자 알림 — 아이콘 태그만 살리고 나머지는 글자로
-    el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/ic_[a-z_]+\.webp" alt="[^"<>]*">)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
+    el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/ic_[a-z_]+\.webp" alt="[^"<>]*"(?: draggable="false")?>)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
   }else el.textContent = msg;
   document.body.appendChild(el);
   const all = document.querySelectorAll('.toast'); if(all.length>5) all[0].remove();
@@ -8557,7 +8557,10 @@ function chapterBase(ch){ return isHardChapter(ch) ? ch - HARD_CH_BASE : ch; }  
 function stageEff(i){ return isHardStage(i) ? stageLocal(i) + CHAPTER_LENGTH*MAX_CHAPTERS : i; } // 난이도·보상 기준 위치: 하드 N = 노말 N+5
 function chapterEff(ch){ return isHardChapter(ch) ? chapterBase(ch) + MAX_CHAPTERS : ch; }
 function isValidStage(n){ return Number.isInteger(n) && ((n>=0 && n<CHAPTER_LENGTH*MAX_CHAPTERS) || (n>=HARD_BASE && n<HARD_BASE+CHAPTER_LENGTH*MAX_CHAPTERS)); }
-function hardUnlocked(){ return !!state.stageBest[CHAPTER_LENGTH*MAX_CHAPTERS-1]; }
+function hardUnlocked(){ return !!state.adminUnlockAll || !!state.stageBest[CHAPTER_LENGTH*MAX_CHAPTERS-1]; } // 하드 탭이 열리는 조건 = 하드 1 조건
+// (v253) 하드 N 해금: 노말 min(N+4, 마지막 노말 챕터) 보스 + 하드 N−1 보스 — 하드 N ≈ 노말 N+5 수준이라 그 바로 전 노말까지 깨야 열림. 노말 챕터를 늘리면 자동으로 따라감
+function hardNormalReq(base){ return Math.min(base + MAX_CHAPTERS - 1, MAX_CHAPTERS); }
+function hardChapterOpen(ch){ const b = chapterBase(ch); if(state.adminUnlockAll) return true; if(!state.stageBest[hardNormalReq(b)*CHAPTER_LENGTH-1]) return false; return b===1 || !!state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]; }
 function currentHardChapterNum(){ let b = 1; while(b<=MAX_CHAPTERS && state.stageBest[HARD_BASE + b*CHAPTER_LENGTH - 1]) b++; return HARD_CH_BASE + b; }
 function chapterLabel(ch){ return '챕터 '+chapterBase(ch)+(isHardChapter(ch) ? ' 하드' : ''); }
 function stageLabel(i){ return (isHardStage(i) ? '하드 ' : '')+'스테이지 '+(stageLocal(i)+1); }
@@ -8604,7 +8607,8 @@ function isAdjacentLocal(grid, a,b){
 function isStageUnlockedGraph(stageIdx){
   const ch = Math.floor(stageIdx/CHAPTER_LENGTH)+1;
   if(chapterBase(ch)>MAX_CHAPTERS) return false;
-  if(isHardChapter(ch) && !hardUnlocked()) return false;
+  if(state.adminUnlockAll) return true; // (v253) 관리자 세팅: 모든 스테이지 열림
+  if(isHardChapter(ch) && !hardChapterOpen(ch)) return false;
   const cur = isHardChapter(ch) ? currentHardChapterNum() : currentChapterNum();
   if(ch<cur) return true; // 지난 챕터는 자유롭게 재도전 가능
   if(ch>cur) return false;
@@ -8676,7 +8680,7 @@ function renderStageTab(){
     + '<div class="ex-shade"></div>'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
-    + (ch>cur ? '<div class="ex-veil"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 앞 챕터 보스를 쓰러뜨리면 열림</div>' : '')
+    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+(hard ? (chapterBase(ch)>1 ? '하드 '+(chapterBase(ch)-1)+' 보스' : '')+(hard && !state.stageBest[hardNormalReq(chapterBase(ch))*CHAPTER_LENGTH-1] ? (chapterBase(ch)>1?' · ':'')+'노말 챕터 '+hardNormalReq(chapterBase(ch))+' 보스' : '')+'를 쓰러뜨리면 열림' : '앞 챕터 보스를 쓰러뜨리면 열림')+'</div>' : '')
     + '</div>';
   html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
   if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
@@ -9291,7 +9295,7 @@ function attachHandlers(){
   });
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
     const toHard = b.dataset.stageMode==='h';
-    if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 노말 챕터 5 보스를 쓰러뜨리면 열림'); return; }
+    if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 노말 챕터 '+hardNormalReq(1)+' 보스를 쓰러뜨리면 하드 열림'); return; }
     viewingChapter = toHard ? Math.min(currentHardChapterNum(), HARD_CH_BASE+MAX_CHAPTERS) : Math.min(currentChapterNum(), MAX_CHAPTERS);
     render();
   }));
