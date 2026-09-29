@@ -1038,7 +1038,7 @@
 .modal.battle-modal{max-height:calc(100dvh - 40px - var(--sat) - var(--sab));}
 .m-actions{position:sticky; bottom:-20px; z-index:3; margin:12px -20px -20px !important; padding:10px 20px 14px; background:linear-gradient(180deg,#1d1b4800,#1d1b48 22%);}
 @keyframes pulseDim{0%,100%{opacity:.25} 50%{opacity:.65}}
-  .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:20px; color:var(--sub); background:none; border:none;}
+  .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:22px; color:var(--sub); background:none; border:none; font-family:var(--fun, 'Jua'); line-height:1;} /* (v272) X도 주아체 — 주아 글꼴에 ✕ 기호가 없어 알파벳 X를 씀 */
   .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid #5b6bff; padding:10px 16px; border-radius:10px; z-index:60; font-size:14px; line-height:1.4; width:max-content; max-width:90vw; word-break:keep-all; text-align:center;}
   .toast .tt{opacity:.9;}
   .toast .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
@@ -1633,7 +1633,7 @@ function showRuneReveal(r, stoneIcon, onDone, note){
   document.getElementById('rrOk').addEventListener('click', ()=>{ closeModal(); if(onDone) onDone(); });
 }
 function showRuneHub(){
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button><h3 style="text-align:center;">🔮 룬</h3>'+runeHubHtml()+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button><h3 style="text-align:center;">🔮 룬</h3>'+runeHubHtml()+'</div></div>';
   bindModalClose();
 }
 function runeHubHtml(){
@@ -1662,7 +1662,7 @@ function showRuneInvPicker(key){
   const inv = state.runeInv || [];
   let h = '<h3 style="text-align:center;">룬 새기기</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+SPIRITS[key].name+'에 새길 룬 선택'+(spiritRune(key)?' · 지금 룬은 보관함으로':'')+'</div>';
   h += '<div style="display:flex; flex-direction:column; gap:6px;">'+inv.map((r,i)=>'<button data-rune-inv="'+i+'" style="display:flex; justify-content:space-between; align-items:center; gap:6px; padding:8px; border-radius:10px; background:#27235a; border:1px solid #ffffff1a; color:var(--text);">'+runeChipHtml(r)+'<span class="sub" style="font-size:11px;">'+runeDesc(r)+'</span></button>').join('')+'</div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose(()=>showManageModal(key));
   document.querySelectorAll('[data-rune-inv]').forEach(el=>el.addEventListener('click', ()=>runeEngraveFromInv(key, parseInt(el.dataset.runeInv))));
 }
@@ -1756,7 +1756,7 @@ function showShopBuyModal(id){
       + '<div class="sbm-total">합계 '+uiIc('runestone')+' <b>'+(it.price*n)+'</b> <span class="sub">(보유 '+(state.raidGems||0)+')</span></div>'
       + '<button class="btn gold" id="sbmGo" '+(max>=1?'':'disabled')+'>'+(max>=1 ? '구입하기' : (left===0 ? '이번 주 한도 도달' : '룬석 부족'))+'</button>'
       + '<button class="btn secondary" id="sbmBack" style="margin-top:6px;">상점으로</button></div>';
-    document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:320px;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+    document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:320px;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
     bindModalClose(showRaidShop);
     const q = x=>document.getElementById(x);
     q('sbmMin').addEventListener('click', ()=>{ n--; draw(); });
@@ -1783,7 +1783,7 @@ function showRaidShop(){
   });
   h += '<div class="sub" style="font-size:11px; text-align:center; margin-top:10px;">룬석: 입장권을 쓴 레이드 승리 · 이지 2 · 노말 4 · 하드 7 · 익스트림 12</div>';
   const keep = document.querySelector('#modalRoot .modal'), top = keep && keep.querySelector('.shop-grid') ? modalScroller(keep).scrollTop : 0; // 사고 나서 다시 그려도 스크롤 위치 유지
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   const m = document.querySelector('#modalRoot .modal'); if(m && top) modalScroller(m).scrollTop = top;
   bindModalClose();
   document.querySelectorAll('[data-shop-open]').forEach(el=>el.addEventListener('click', ()=>showShopBuyModal(el.dataset.shopOpen)));
@@ -2862,7 +2862,7 @@ async function friendHandleReplies(){
 function friendInviteRowHtml(k){
   const iv = friendNet.invites[k];
   return '<div class="fr-row hot"><span class="fr-av">'+(iv.kind==='duel'?'<img class="uic" src="assets/ui/ic_atk.webp" alt="">':'📨')+'</span><div class="fr-nm"><b>'+escTxt(String(iv.name||raidNameOf(k)).slice(0,12))+'</b><small>'+(iv.kind==='duel'?'결투 신청':'레이드 초대')+'</small></div>'
-    + '<button class="btn small" data-f-join="'+k+'">참가</button><button class="fr-x" data-f-dismiss="'+k+'">✕</button></div>';
+    + '<button class="btn small" data-f-join="'+k+'">참가</button><button class="fr-x" data-f-dismiss="'+k+'">X</button></div>';
 }
 function renderFriendsTab(){
   let h = '<div class="fr"><div class="fr-title">'+uiIc('friends')+' 친구</div>';
@@ -2975,7 +2975,7 @@ function showDuelSlotPicker(slot){
   h += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur;
     return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
   if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-duel-pick]').forEach(el=>el.addEventListener('click', ()=>{
     const k = el.dataset.duelPick, nd = d.slice(), other = nd.indexOf(k);
@@ -3187,7 +3187,7 @@ function showProfileModal(tab){ // (v210) 홈 이름표를 누르면 뜨는 프�
     if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
     h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
   }
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button><h3 style="text-align:center; margin-top:0;">프로필</h3>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button><h3 style="text-align:center; margin-top:0;">프로필</h3>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-pftab]').forEach(b=>b.addEventListener('click', ()=>{ if(b.dataset.pftab!==pfTab) showProfileModal(b.dataset.pftab); }));
   if(pfTab==='level') return;
@@ -3206,7 +3206,7 @@ function showHomeSpiritPicker(){
   let h = '<h3 style="text-align:center;">대표 정령</h3><div class="sub" style="text-align:center; margin-bottom:8px;">홈에 보여줄 정령 선택</div><div class="roster-scroll"><div class="roster-grid">';
   h += owned.map(k=>{ const sp = SPIRITS[k]; return '<button data-home-rep="'+k+'" style="padding:6px 2px; border-radius:10px; background:#27235a; border:1px solid '+(k===homeRepSpirit()?'#ffd557':'#ffffff1a')+'; color:var(--text);"><div style="font-size:22px;">'+spArt(sp)+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div></button>'; }).join('');
   h += '</div></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-home-rep]').forEach(el=>el.addEventListener('click', ()=>{ state.homeSpirit = el.dataset.homeRep; save(); friendPushRep(); closeModal(); render(); }));
 }
@@ -4883,7 +4883,7 @@ function showSkillStagePrepModal(i){
   html += '<div class="m-actions" style="display:flex; gap:8px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button>'
     + '<button class="btn" id="startSkillBattleBtn" style="flex:1;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.getElementById('rewardInfoBtn').addEventListener('click', (e)=>{
     e.stopPropagation();
@@ -5450,7 +5450,7 @@ function showBossPrepModal(stageIdx){
   html += '<button class="btn" id="startBossFightBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 명단 배치</button>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   const rewardBtn = document.getElementById('rewardInfoBtn');
   if(rewardBtn) rewardBtn.addEventListener('click', (e)=>{
@@ -5525,7 +5525,7 @@ function showModeSwitchModal(){
   const h = '<div style="text-align:center;"><div style="font-size:34px;">🔁</div><h3>'+(toAdmin?'관리자 모드로':'일반 모드로')+'</h3>'
     + '<div class="sub" style="line-height:1.6;">관리자·일반 진행은 따로 저장<br>'+(fresh ? '일반 모드 첫 시작 — 새 게임으로 시작' : '전환하면 '+(toAdmin?'관리자':'일반')+' 진행을 불러옴')+'<br>'+(toAdmin?'':'일반 모드에선 관리자 메뉴 숨김')+'</div>'
     + '<button class="btn gold" id="modeGo" style="margin-top:12px;">전환</button><button class="btn secondary" id="modeNo" style="margin-top:8px;">취소</button></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('modeNo').addEventListener('click', closeModal);
   document.getElementById('modeGo').addEventListener('click', async (ev)=>{ ev.currentTarget.disabled = true; await adminModeSwitch(); });
@@ -5604,14 +5604,14 @@ function showMailboxModal(why){
   h += '</div>';
   // (v247) 빈 우편함에서 "받은 우편 없음"과 "받을 우편 없음"이 같이 보이던 것 → 아래 줄은 우편이 있을 때만
   if(open.length) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">우편을 눌러 내용 확인 후 받기</div>'; // (v254) 모두 받기 없앰 — 한 통씩 읽고 받게
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-mail-open]').forEach(b=>b.addEventListener('click', ()=>showMailDetail(b.dataset.mailOpen)));
 }
 function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내용·보상·받기
   const m = mailList().find(x=>x.id===id); if(!m) return;
   const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 210; o.id = 'mailDetail';
-  o.innerHTML = '<div class="modal" style="position:relative; max-width:340px;"><button class="close-x" id="mdClose">✕</button>'
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:340px;"><button class="close-x" id="mdClose">X</button>'
     + '<h3 style="margin:0 28px 4px 0;">'+escTxt(m.title)+'</h3><div class="sub" style="font-size:11px;">'+(m.scope==='a'?'모든 플레이어에게':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):'')+'</div>'
     + (m.body ? '<div class="mail-body" style="margin-top:10px; font-size:13px; color:var(--text);">'+escTxt(m.body).replace(/\n/g,'<br>')+'</div>' : '')
     + (rewardPillsHtml(m.reward) ? '<div style="margin-top:10px;"><div class="sub" style="font-size:11px;">보상</div>'+rewardPillsHtml(m.reward)+'</div>' : '')
@@ -5641,7 +5641,7 @@ function showMailSendModal(){
     + '<button class="btn gold" id="msSend" style="margin-top:10px;">보내기</button>';
   const all = Object.keys(mailNet.all||{}).map(id=>Object.assign(mailClean(mailNet.all[id])||{}, {raw:id})).filter(m=>m.title).sort((a,b)=>b.t-a.t);
   if(all.length) h += '<div class="fr-cap" style="margin-top:14px;">보낸 전체 우편</div>'+all.map(m=>'<div class="mail-card"><div class="mail-top"><b>'+escTxt(m.title)+'</b><small>'+(m.exp && m.exp<Date.now()?'만료':mailLeftTxt(m))+'</small></div><div class="mail-foot"><div>'+rewardPillsHtml(m.reward)+'</div><button class="fr-x" data-mdel="'+m.raw+'">삭제</button></div></div>').join('');
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   let to = 'all'; const q = id=>document.getElementById(id);
   document.querySelectorAll('#msTo [data-to]').forEach(b=>b.addEventListener('click', ()=>{ to = b.dataset.to; document.querySelectorAll('#msTo [data-to]').forEach(x=>x.classList.toggle('on', x===b)); q('msCode').style.display = to==='one' ? 'block' : 'none'; }));
@@ -5679,7 +5679,7 @@ function showAdminSetupModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
   const h = '<h3 style="text-align:center;">🛠️ 관리자 세팅</h3><div class="sub" style="line-height:1.6;">· 정수·강화석·파편·룬석·티켓을 최대치로<br>· 모든 기능·모든 스테이지(노말·하드) 해금<br>· 모든 정령 1마리씩 (이미 있으면 그대로)<br>· 강화·각성은 그대로</div>'
     + '<button class="btn gold" id="admApply" style="margin-top:12px;">적용하기</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('admApply').addEventListener('click', ()=>{
     const MAX = 9999999;
@@ -5715,7 +5715,7 @@ function showEnhanceModal(key, fxLabel){
       + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 정령력 +5% · 각성하면 한도 +1</div></div>';
     h += '<button class="btn gold" id="enDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b>'+(awakenCost(key)?'<div class="sub" style="font-size:12px; margin-top:4px;">각성하면 한도 +1</div>':'')+'</div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('enBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('enDo'); if(d) d.addEventListener('click', ()=>{ const before = enhanceLevel(key); doEnhance(key, true); render(); showEnhanceModal(key, enhanceLevel(key)>before ? '+'+enhanceLevel(key) : null); });
@@ -5749,7 +5749,7 @@ function showAwakenModal(key, fxLabel){
       + '<div class="sub" style="font-size:11px; margin-top:4px;">같은 정령은 1마리를 남기고 사용 (보유 '+ownedCount(key)+'마리)</div></div>';
     h += '<button class="btn gold sticky-ok" id="awDo" '+(okC&&okE?'':'disabled')+'>'+uiIc('awaken')+' '+(lv+1)+'단계 각성하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 각성</b></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('awBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); });
@@ -5897,7 +5897,7 @@ function showDismantleModal(key){
   if(max<=0){ closeModal(); return; }
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:center;">'
-    + '<button class="close-x" id="modalClose">✕</button>'
+    + '<button class="close-x" id="modalClose">X</button>'
     + '<div style="font-size:44px;">'+spArt(sp)+'</div>'
     + '<h3><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> '+sp.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">보유 '+max+'개 · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
@@ -6365,7 +6365,7 @@ function showEquipDismantleModal(key){
   if(max<=0){ showEquipDetailModal(key); return; }
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:center;">'
-    + '<button class="close-x" id="modalClose">✕</button>'
+    + '<button class="close-x" id="modalClose">X</button>'
     + '<div style="font-size:44px;">'+i.img+'</div>'
     + '<h3><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> '+i.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">장착 안 한 '+max+'개 · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
@@ -6437,7 +6437,7 @@ function showEquipDexModal(){
     }));
     html += '</div>';
   });
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+dexRewardBtnHtml('equip')+html+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+dexRewardBtnHtml('equip')+html+'</div></div>';
   bindModalClose();
   bindDexRewardBtn('equip');
 }
@@ -6822,7 +6822,7 @@ function showAutoFuseModal(){
     + '<div class="af-plan">'+(plan.length ? Object.keys(by).sort((a,b)=>RARITY_ORDER.indexOf(a)-RARITY_ORDER.indexOf(b)).map(r=>'<span>'+RARITY_INFO[r].name+' → '+RARITY_INFO[RARITY_ORDER[RARITY_ORDER.indexOf(r)+1]].name+' <b>×'+by[r]+'</b></span>').join('') : '<span class="sub">조건에 맞는 재료 부족 (같은 등급 3'+unit+' 필요)</span>')+'</div>'
     + (risky ? '<div class="sub" style="text-align:center; font-size:11px; color:#ffb89a;">에픽 이상은 실패하면 1'+unit+'만 남고 강등될 수 있음</div>' : '')
     + '<button class="btn gold" id="afGo" style="margin-top:10px;" '+(plan.length?'':'disabled')+'>'+uiIc('fuse')+' '+plan.length+'번 합성</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   const redraw = ()=>{ save(); showAutoFuseModal(); };
   document.querySelectorAll('[data-af]').forEach(b=>b.addEventListener('click', ()=>{ const g = b.dataset.af, v = b.dataset.v, a = cfg[g]; const i = a.indexOf(v); if(i>=0) a.splice(i,1); else a.push(v); redraw(); }));
@@ -6857,7 +6857,7 @@ function runAutoFuse(plan, cfg){
     + '<div class="af-plan"><span>성공 <b>'+ok+'</b></span><span>실패 <b>'+fail+'</b>'+(down?' (강등 '+down+')':'')+'</span>'+(guard?'<span>'+uiIc('guard')+' 보호 <b>'+guard+'</b></span>':'')+(skip?'<span>건너뜀 '+skip+'</span>':'')+'</div>'
     + (list.length ? '<div class="af-got">'+list.map(k=>'<div class="af-g'+(news.has(k)?' new':'')+'"><div class="icon av r-'+rar(k)+'">'+art(k)+'</div><small>'+nm(k)+'</small><b>×'+got[k]+'</b>'+(news.has(k)?'<i>NEW</i>':'')+'</div>').join('')+'</div>' : '')
     + '<button class="btn gold" id="afAgain" style="margin-top:10px;">⚡ 다시 설정</button><button class="btn secondary" id="afDone" style="margin-top:6px;">확인</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('afAgain').addEventListener('click', showAutoFuseModal);
   document.getElementById('afDone').addEventListener('click', closeModal);
@@ -7069,7 +7069,7 @@ function showGuideModal(){
   const html = '<h3 style="text-align:center;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</h3>' + tabHtml + guideSectionHtml(guideCategory);
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-guide-cat]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ guideCategory = btn.dataset.guideCat; window.__modalScrollReset = true; showGuideModal(); });
@@ -7234,7 +7234,7 @@ function showPickTicketModal(tk, sel){
   let h = '<h3 style="text-align:center;">'+TICKET_INFO[tk].icon+' '+TICKET_INFO[tk].name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">받을 정령 선택 · 보유 '+ticketCount(tk)+'장</div><div class="pick-grid">';
   h += keys.map(k=>{ const sp = SPIRITS[k], kit = LINE_KITS[sp.element+'_'+sp.variant]; return '<button class="pick-cell'+(sel===k?' on':'')+'" data-pk="'+k+'"><span class="av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span><b>'+sp.name+'</b><small>'+kit.role+' · 보유 '+ownedCount(k)+'</small></button>'; }).join('');
   h += '</div><button id="pickGo" class="btn gold sticky-ok" style="margin-top:10px;" '+(sel?'':'disabled')+'>'+(sel ? SPIRITS[sel].name+' 받기' : '정령 선택')+'</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(tk, b.dataset.pk)));
   const go = document.getElementById('pickGo'); if(go && sel) go.addEventListener('click', ()=>{
@@ -7308,7 +7308,7 @@ function showEquipDetailModal(key){
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?'🔓 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+html+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+html+'</div></div>';
   bindModalClose();
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
   { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
@@ -7332,7 +7332,7 @@ function showEquipEnhanceModal(key, fxLabel){
       + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화를 모아 계승 (같은 장비는 한 번만 셈)</div></div>';
     h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+eqPct(now)+'%</div></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
   const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } });
@@ -7353,7 +7353,7 @@ function showEquipPicker(spKey, slot){
       + (k===cur ? '<div class="sub" style="font-size:10px; color:#fff;">착용 중</div>' : (free<=0 ? '<div class="sub" style="font-size:10px;">다른 정령 착용</div>' : ''))+'</div></div>';
   }).join('');
   if(cur) html += '<button class="btn secondary" id="unequipBtn" style="margin-top:6px;">해제</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+html+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+html+'</div></div>';
   bindModalClose(()=>showManageModal(spKey));
   document.querySelectorAll('[data-pick-eq]').forEach(el=>el.addEventListener('click', ()=>{ equipItem(spKey, slot, el.dataset.pickEq); showManageModal(spKey); }));
   const ub = document.getElementById('unequipBtn'); if(ub) ub.addEventListener('click', ()=>{ unequipItem(spKey, slot); showManageModal(spKey); });
@@ -7442,7 +7442,7 @@ function showSettingsModal(){
   html += '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.getElementById('bgmVolumeSlider').addEventListener('input', (e)=>{
     state.settings.bgmVolume = (+e.target.value)/100;
@@ -7517,7 +7517,7 @@ function showExportModal(){
   html += '<button class="btn" id="copyExportBtn" style="margin-top:10px; width:100%;">📋 복사하기</button>';
   html += '<button class="btn secondary" id="downloadExportBtn" style="margin-top:8px; width:100%;">💾 파일로 저장</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.getElementById('exportText').value = code;
   document.getElementById('copyExportBtn').addEventListener('click', ()=>{
@@ -7548,7 +7548,7 @@ function showImportModal(){
   html += '<button class="btn secondary" id="pasteImportBtn" style="margin-top:8px; width:100%;">📋 클립보드에서 붙여넣기</button>';
   html += '<button class="btn" id="applyImportBtn" style="margin-top:8px; width:100%;">불러오기 적용</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.getElementById('pasteImportBtn').addEventListener('click', async ()=>{
     try{
@@ -7593,7 +7593,7 @@ function showImportModal(){
 function showResetConfirmModal(){
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="text-align:center; position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>'
+    + '<button class="close-x" id="modalClose">X</button>'
     + '<div style="font-size:36px;">⚠️</div>'
     + '<h3>정말 초기화?</h3>'
     + '<div class="sub">보유 정령, 정수, 강화, 스테이지 진행이 전부 삭제되고 처음부터 다시 시작됨. 되돌릴 수 없음.</div>'
@@ -7797,6 +7797,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:272, v:'2.72', date:'2026-09-29', secs:[
+    { t:'바뀐 것', items:[
+      '창 닫기 X 표시도 주아체로 통일'
+    ]}
+  ]},
   { build:271, v:'2.71', date:'2026-09-29', secs:[
     { t:'바뀐 것', items:[
       '계정 레벨 창을 프로필 안으로 옮김 — 프로필 · 계정 레벨(점수 얻는 법·레벨 혜택) · 레벨 보상 탭으로 나눔',
@@ -7882,7 +7887,7 @@ async function showAskModal(){
       + '<button class="btn" id="askSend" style="margin-top:8px;">보내기</button>'
       + '<div class="al-sec" style="margin-top:14px;">내가 보낸 문의</div><div id="askMine" class="sub">불러오는 중…</div>';
   }
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   if(!askOnline()) return;
   document.querySelectorAll('[data-ac]').forEach(b=>b.addEventListener('click', ()=>{ askCat = b.dataset.ac; document.querySelectorAll('[data-ac]').forEach(x=>x.classList.toggle('on', x===b)); }));
@@ -7909,7 +7914,7 @@ async function showAskModal(){
 async function showInboxModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
   let h = '<h3 style="text-align:center;">📥 문의함</h3><div id="ibList" class="sub">불러오는 중…</div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   let all = [];
   try{ const s = await raidNet.db.doc('inquiries').get(); const v = (s && s.exists && s.data()) || {};
@@ -7932,7 +7937,7 @@ function showPatchNotes(){
     h += '<details class="pn"'+(i===0?' open':'')+'><summary><b>v'+n.v+'</b><small>'+n.date+'</small></summary>'
       + n.secs.map(sec=>'<div class="pn-t">'+sec.t+'</div><ul>'+sec.items.map(x=>'<li>'+x+'</li>').join('')+'</ul>').join('') + '</details>';
   });
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
 }
 function accountLevelBarHtml(){
@@ -9028,7 +9033,7 @@ function showDungeonPrep(el, n, keep){
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', pool.length ? '상대 '+fmtCP(teamCP(pv.enemyUnits)) : info.name+' 정령 없음 — 소환·합성으로 모으기', dungeonRecCP(el, n));
   h += '<div class="dg-rw">'+(first ? '🎉 첫 돌파 보상 '+rewardPillsHtml(rw) : '이미 돌파한 단계 · 보상 없음 (연습)')+'</div>';
   h += '<button class="btn sticky-ok" id="dgStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   bindPrepUnitInfo(pv);
   document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.dungeonForms[el] = state.formation.slice(); save(); showDungeonPrep(el, n, true); }, null, pool.concat(dispatchAwayKeys().filter(k=>SPIRITS[k].element===el))))); // (v267) 파견 중인 같은 속성 정령도 표시
@@ -9193,7 +9198,7 @@ function showDispatchPicker(mid, keep){
   h += '<div class="dg-rw">'+(met ? '<b style="color:#9fe8c0;">조건 달성 · ×1.5</b> ' : '')+rewardPillsHtml(rw)+'</div>';
   h += '<div class="roster-scroll" style="margin-top:8px;"><div class="roster-grid">'+(spare.length ? spare.map(k=>rosterPickTileHtml(k, !!cnt[k], '<div class="pw" style="white-space:nowrap;">'+(cnt[k] ? '<b style="color:#9fe8c0;">✓'+cnt[k]+'</b> ' : '')+'남은 '+(dispatchAvail(k)-(cnt[k]||0))+(state.formation.includes(k) ? ' <span title="진형에 있음">⚔️</span>' : '')+'</div>')).join('') : '<div class="sub" style="text-align:center; padding:14px;">보낼 수 있는 정령 없음</div>')+'</div></div>';
   h += '<div class="rp-foot"><button class="btn sticky-ok" id="dpGo"'+(dpPick.length===m.need?'':' disabled')+'>🧭 보내기 ('+m.dur+'시간)</button></div>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-exp-pick]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.expPick;
     // (v267) 같은 정령도 여유 사본만큼 여러 마리 보낼 수 있게 — 누를 때마다 한 마리씩 추가, 더 넣을 수 없으면 한 마리 빼기 (위 칸을 눌러도 빠짐)
@@ -9329,7 +9334,7 @@ function showTrialPrep(id){
   h += '<div class="tr-hint" id="trHint">'+(!t.hint ? '' : trialHintOpen(id) ? '<button class="btn secondary small" id="trHintBtn">💡 힌트 보기</button>' : '<button class="btn secondary small" disabled style="opacity:.5;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 힌트 · 한 번 실패하면 열림</button>')+'</div>';
   h += '<div class="dg-rw">'+(trialCleared(id) ? '이미 통과 · 보상 없음' : '🎉 첫 통과 보상 '+rewardPillsHtml(t.reward))+'</div>';
   h += '<button class="btn sticky-ok" id="trStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 도전</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose(); bindPrepUnitInfo(pv);
   { const hb = document.getElementById('trHintBtn'); if(hb) hb.addEventListener('click', ()=>{ document.getElementById('trHint').innerHTML = '<div class="tr-hinttxt">💡 '+t.hint+'</div>'; }); }
   document.getElementById('trStart').addEventListener('click', ()=>{ closeModal(); state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; state.skillAuto = false; save(); showSkillStageScreen(); });
@@ -9497,7 +9502,7 @@ function showWorldBossPrep(){
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="wbClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="wbRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
   h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">내 전투력 '+fmtCP(teamCP(pv.myUnits))+' · 도전하면 1회 사용</div>';
   h += '<button class="btn sticky-ok" id="wbStart" style="margin-top:10px;">⚔️ 도전</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">X</button>'+h+'</div></div>';
   bindModalClose(); bindPrepUnitInfo(pv);
   document.querySelectorAll('[data-slot]').forEach(el=>el.addEventListener('click', ()=>showSlotPicker(parseInt(el.dataset.slot), showWorldBossPrep, null, null)));
   document.getElementById('wbClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showWorldBossPrep(); });
@@ -9722,7 +9727,7 @@ function xpSyncActionModal(){
   if(!want){ if(cur) root.innerHTML = ''; return; }
   if(root.children.length && !cur) return;
   const sc = cur ? cur.querySelector('.modal').scrollTop : 0;
-  root.innerHTML = '<div class="modal-bg" id="xpActBg"><div class="modal xp-act" style="position:relative;"><button class="close-x" id="xpActClose" aria-label="닫고 지도 보기">✕</button>'+xpActionHtml+'</div></div>';
+  root.innerHTML = '<div class="modal-bg" id="xpActBg"><div class="modal xp-act" style="position:relative;"><button class="close-x" id="xpActClose" aria-label="닫고 지도 보기">X</button>'+xpActionHtml+'</div></div>';
   root.querySelector('.modal').scrollTop = sc;
   const close = ()=>{ xpActDismissed = xpActKey(); root.innerHTML = ''; render(); };
   document.getElementById('xpActClose').addEventListener('click', close);
@@ -9938,7 +9943,7 @@ function showTowerPrepModal(){
   html += '<button class="btn" id="startTowerBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 도전 시작</button>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-enemy-inspect]').forEach(el=>{
     el.addEventListener('click', (e)=>{
@@ -10577,7 +10582,7 @@ function showSpiritInfoModal(key){
   html += '</div>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose();
 }
 let manageReturnFn = null; // (v129) 도감에서 열었으면 닫을 때 도감으로 복귀
@@ -10617,7 +10622,7 @@ function showManageModal(key){
       + (lk ? '<div class="sub" style="font-size:10px; text-align:center; margin-top:4px;">잠근 정령은 합성·분해 재료에서 제외</div>' : ''); }
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>' + html + '</div></div>';
   bindModalClose(manageReturnFn ? ()=>{ const f = manageReturnFn; manageReturnFn = null; f(); } : undefined);
   document.querySelectorAll('[data-equip-slot]').forEach(el=>el.addEventListener('click', ()=>showEquipPicker(key, el.dataset.equipSlot)));
   { const eo = document.getElementById('enhOpenBtn'); if(eo) eo.addEventListener('click', ()=>showEnhanceModal(key)); }
@@ -10663,7 +10668,7 @@ function showDexModal(){
   html += '</div>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button>'+dexRewardBtnHtml('spirit')+'<h3><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 정령 도감</h3>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button>'+dexRewardBtnHtml('spirit')+'<h3><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 정령 도감</h3>' + html + '</div></div>';
   bindModalClose();
   bindDexRewardBtn('spirit');
   document.querySelectorAll('[data-manage]').forEach(el=>{
@@ -10759,7 +10764,7 @@ function showAchievementsModal(keep){
   }
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button><h3>'+(achieveMode==='quest'?'📜 일일 의뢰':'<img class="uic" src="assets/ui/ic_medal.webp" alt=""> 업적')+'</h3>' + tabHtml + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button><h3>'+(achieveMode==='quest'?'📜 일일 의뢰':'<img class="uic" src="assets/ui/ic_medal.webp" alt=""> 업적')+'</h3>' + tabHtml + html + '</div></div>';
   bindModalClose();
   bindClaimButtons(()=>{ showAchievementsModal(true); render(); });
   document.querySelectorAll('[data-claim]').forEach(btn=>{
@@ -10814,7 +10819,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
   html += dispatchAwayHtml(rosterFilter); // (v267) 파견 가서 지금 못 쓰는 정령
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button><h3>정령 배치 · '+(slotIdx<3?'전열':'후열')+'</h3>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button><h3>정령 배치 · '+(slotIdx<3?'전열':'후열')+'</h3>' + html + '</div></div>';
   bindModalClose(returnFn);
   document.querySelectorAll('[data-pk-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.pickSort = el.dataset.pkSort; save(); showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup); }));
   document.querySelectorAll('[data-pk-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const k = el.dataset.pkInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }));
@@ -10858,7 +10863,7 @@ function showMoveSourcePicker(key, targetSlot, sourceSlots, returnFn){
   });
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
-    + '<button class="close-x" id="modalClose">✕</button><h3>슬롯 선택</h3>' + html + '</div></div>';
+    + '<button class="close-x" id="modalClose">X</button><h3>슬롯 선택</h3>' + html + '</div></div>';
   bindModalClose(returnFn);
   document.querySelectorAll('[data-movefrom]').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -10901,7 +10906,7 @@ function openInfoOverlay(title, bodyHtml, onClaim, refreshBody){
   overlay.className = 'modal-bg';
   overlay.style.zIndex = '200';
   overlay.innerHTML = '<div class="modal" style="position:relative; max-width:310px;">'
-    + '<button class="close-x" id="infoOverlayClose">✕</button>'
+    + '<button class="close-x" id="infoOverlayClose">X</button>'
     + '<h3 style="text-align:center; margin-top:0;">'+title+'</h3>'
     + '<div id="infoOverlayBody">' + bodyHtml + '</div></div>';
   document.body.appendChild(overlay);
@@ -11423,7 +11428,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 271;
+const APP_BUILD = 272;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
