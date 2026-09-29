@@ -9891,7 +9891,8 @@ raidInitNet();
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
 const APP_BUILD = 263;
-{ const v = document.getElementById('hmVer'); if(v) v.textContent = 'v'+APP_BUILD; }
+function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
+{ const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
   try{ const t = await (await fetch('sw.js?t='+Date.now(), {cache:'no-store'})).text(); const m = t.match(/animarune-v(\d+)/); return m ? +m[1] : null; }catch(e){ return null; }
 }
@@ -9899,8 +9900,8 @@ async function appUpdateNow(){
   toast('최신 버전 확인 중…');
   const latest = await latestBuild();
   if(latest===null){ toast('확인 실패 — 인터넷 연결 확인'); return; }
-  if(latest <= APP_BUILD){ toast('이미 최신 버전 (v'+APP_BUILD+')'); return; }
-  toast('v'+latest+' 적용 중…');
+  if(latest <= APP_BUILD){ toast('이미 최신 버전 ('+verTxt(APP_BUILD)+')'); return; }
+  toast(verTxt(latest)+' 적용 중…');
   try{ save(); }catch(e){}
   try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }catch(e){}
   try{ await Promise.all([fetch('./', {cache:'reload'}), fetch('index.html', {cache:'reload'})]); }catch(e){} // 브라우저에 남은 옛 페이지 대신 새로 받게
@@ -9912,7 +9913,7 @@ async function checkAppUpdate(){
   if(Date.now() - updCheckedAt < 10*60000 || document.getElementById('updBar')) return;
   updCheckedAt = Date.now();
   const latest = await latestBuild(); if(!latest || latest <= APP_BUILD) return;
-  const b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.innerHTML = '🔄 새 버전 v'+latest+' — 눌러서 적용';
+  const b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.innerHTML = '🔄 새 버전 '+verTxt(latest)+' — 눌러서 적용';
   b.addEventListener('click', appUpdateNow); document.body.appendChild(b);
 }
 setTimeout(checkAppUpdate, 4000);
