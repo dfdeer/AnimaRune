@@ -145,7 +145,7 @@
   #main.ex-full .ex-head.hard{background:#3a1030c8 !important;}
   #main.ex-full .ex-mode{background:#0a0a1ab0; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
   #main.ex-full .ex-map{border:0; border-radius:0; box-shadow:none; background:none; overflow:visible;}
-  #main.ex-full .ex-veil{border-radius:18px;}
+  #main.ex-full .ex-veil{position:fixed; left:0; right:0; bottom:0; top:0; z-index:2; border-radius:0; font-size:15px;}
   #main.ex-full .ex-legend{width:max-content; max-width:100%; margin:8px auto 0; padding:5px 12px; border-radius:999px; background:#0a0a1ab8; color:#d9dcef;}
   .ex-veil{position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; background:#0b0f18a8; color:#fff; font-weight:800; font-size:14px; backdrop-filter:blur(1.5px);}
   @media (max-height:640px){ .ex-legend{display:none !important;} .ex-head{padding:6px 8px;} .ex-name{font-size:16px;} }
@@ -8906,7 +8906,7 @@ function isStageUnlockedGraph(stageIdx){
 }
 let viewingChapter = null;
 // (v265) 탐험 전체 배경: 화면(헤더 아래~바닥)에 고정 — 스크롤해도 배경은 그대로
-function placeExBg(){ const m = document.getElementById('main'), bg = m && m.querySelector('.ex-bgfull'); if(!bg) return; bg.style.top = Math.max(0, m.getBoundingClientRect().top)+'px'; }
+function placeExBg(){ const m = document.getElementById('main'); if(!m) return; const t = Math.max(0, m.getBoundingClientRect().top)+'px'; m.querySelectorAll('.ex-bgfull, .ex-veil').forEach(el=>{ el.style.top = t; }); }
 window.addEventListener('resize', placeExBg);
 function renderStageTab(){
   // (v186) 탐험 지도 개편: 화면 폭 전체 · 지역별 풍경 배경 · 스테이지를 잇는 길 · 큰 원형 노드 · 다음 도전 위에 내 정령 · 좌우로 밀어 챕터 이동
@@ -8965,8 +8965,8 @@ function renderStageTab(){
   html += '<div class="ex-map fit-rest'+(hard?' hard':'')+'" data-below="next" data-min="'+Math.max(220, maxRow*62+100)+'" data-max="640" id="exMap" data-rows="'+maxRow+'" data-cols="'+maxCol+'" style="--tc:'+theme.color+';">'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
-    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : '')
-    + '</div>';
+    + '</div>'
+    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : ''); // (v265) 잠금 가림막도 화면 전체로(지도 상자 기준 X)
   html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
   if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
   return html;
