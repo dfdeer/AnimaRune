@@ -4633,7 +4633,7 @@ function snapBossSideUnits(ar){
     if(Math.abs(d) > 0.5) s.style.top = (s.offsetTop + d)+'px';
   });
 }
-function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); }
+function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
 function upcomingOrder(sf, n){
   const out = [];
   for(let p=sf.queuePos; p<sf.queue.length && out.length<n; p++){ const e = sf.queue[p], u = unitAt(sf, e.side, e.idx); if(u && u.alive) out.push({e, u, next:false}); }
@@ -9965,16 +9965,37 @@ async function appUpdateNow(){
   try{ await Promise.all([fetch('./', {cache:'reload'}), fetch('index.html', {cache:'reload'})]); }catch(e){} // 브라우저에 남은 옛 페이지 대신 새로 받게
   setTimeout(()=>location.reload(), 500);
 }
-// 켜 둔 채로 새 버전이 올라오면(앱은 껐다 켜야 반영됐음) 위에 알림 — 눌러서 바로 적용
-let updCheckedAt = 0;
+// (v265) 게임을 켜거나 다시 열었을 때 새 버전이 있으면 알림 창(지금 업데이트 / 나중에)
+// 전투·레이드 방·보스 연전 중이면 창을 띄우지 않고 위에 작은 막대만 → 전투 화면을 나오면 그때 알림 창
+var updLatest = 0, updSnoozed = false, updCheckedAt = 0; // var: 전투 화면 정리(unmountBattleScreen)가 이 줄보다 먼저 불려도 안전하게
+function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
+function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b>'; } }
+function updBar(text){
+  let b = document.getElementById('updBar');
+  if(!b){ b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.addEventListener('click', ()=>{ if(updBusy()) toast('전투가 끝나면 업데이트'); else showUpdatePopup(true); }); document.body.appendChild(b); }
+  b.textContent = text;
+}
+function showUpdatePopup(force){
+  if(!updLatest || updLatest <= APP_BUILD || (updSnoozed && !force)) return;
+  if(updBusy()){ updBar('🔄 새 버전 '+verTxt(updLatest)+' · 전투 끝나면 알림'); return; }
+  const bar = document.getElementById('updBar'); if(bar) bar.remove();
+  if(document.getElementById('updPop')) return;
+  openInfoOverlay('🔄 업데이트',
+    '<div style="text-align:center; line-height:1.6;"><div style="font-size:15px; font-weight:900;">새 버전 <b style="color:#ffd557;">'+verTxt(updLatest)+'</b> 준비됨</div>'
+    + '<div class="sub" style="font-size:12px;">지금 '+verTxt(APP_BUILD)+' · 업데이트하면 잠깐 새로 불러옴<br>진행 상황은 그대로 남음</div></div>'
+    + '<div id="updPop" style="display:flex; gap:6px; margin-top:12px;"><button class="btn secondary" id="updLater" style="flex:1; margin:0;">나중에</button><button class="btn" id="updNow" style="flex:1.4; margin:0;">지금 업데이트</button></div>');
+  const close = ()=>{ const o = document.getElementById('updPop'); const bg = o && o.closest('.modal-bg'); if(bg) bg.remove(); };
+  document.getElementById('updLater').addEventListener('click', ()=>{ updSnoozed = true; close(); updMarkMenu(); });
+  document.getElementById('updNow').addEventListener('click', ()=>{ close(); appUpdateNow(); });
+}
 async function checkAppUpdate(){
-  if(Date.now() - updCheckedAt < 10*60000 || document.getElementById('updBar')) return;
+  if(Date.now() - updCheckedAt < 5*60000) { showUpdatePopup(); return; }
   updCheckedAt = Date.now();
   const latest = await latestBuild(); if(!latest || latest <= APP_BUILD) return;
-  const b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.innerHTML = '🔄 새 버전 '+verTxt(latest)+' — 눌러서 적용';
-  b.addEventListener('click', appUpdateNow); document.body.appendChild(b);
+  if(latest > updLatest){ updLatest = latest; updSnoozed = false; } // 더 새 버전이 또 나오면 다시 알림
+  updMarkMenu(); showUpdatePopup();
 }
-setTimeout(checkAppUpdate, 4000);
+setTimeout(checkAppUpdate, 1500);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppUpdate(); });
 
 // 폰의 뒤로가기(안드로이드 버튼·아이폰 왼쪽 끝 밀기) — 열린 창 닫기 → 하위 화면 → 홈 → (홈에서 두 번) 종료
