@@ -1066,7 +1066,7 @@
   .shop-tile{color:var(--text); cursor:pointer;} .shop-tile.cant .shop-price{opacity:.5;} .shop-price{margin-top:3px; font-size:12px; font-weight:900; padding:3px 10px; border-radius:99px; background:#5b6bff; color:#fff;} .shop-price .uic{width:14px; height:14px;}
   .sbm{text-align:center;} .sbm-ic{font-size:44px; line-height:1;} .sbm-ic .uic{width:64px; height:64px;} .sbm h3{margin:6px 0 4px;} .sbm-desc{font-size:13px; line-height:1.5; padding:8px 10px; border-radius:12px; background:#ffffff0b;}
   .sbm-meta{display:flex; justify-content:center; gap:10px; margin-top:8px; font-size:12px; color:var(--sub); font-weight:700;}
-  .sbm-qty{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px;} .sbm-qty button{width:42px; height:42px; border-radius:12px; border:1px solid #ffffff22; background:#27235a; color:var(--text); font-size:22px; font-weight:900;} .sbm-qty button.mx{width:auto; padding:0 12px; font-size:13px;} .sbm-qty button:disabled{opacity:.35;} .sbm-qty b{min-width:44px; font-size:26px;}
+  .sbm-qty{display:flex; align-items:center; justify-content:center; gap:10px; margin-top:12px;} .sbm-qty button{width:42px; height:42px; border-radius:12px; border:1px solid #ffffff22; background:#27235a; color:var(--text); font-size:22px; font-weight:900;} .sbm-qty button.mx{width:auto; padding:0 12px; font-size:13px;} .sbm-qty button:disabled{opacity:.35;} .sbm-qty b{min-width:44px; font-size:26px; text-align:center; display:inline-block;}
   .sbm-total{margin:10px 0; font-size:14px; font-weight:800;}
   .mail-modal{display:flex; flex-direction:column; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px - var(--sat) - var(--sab)); overflow:hidden;} .mail-list{flex:1 1 auto; min-height:120px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:2px; margin:0 -2px;} .mail-bar{flex-shrink:0; padding-top:10px; margin-top:6px; border-top:1px solid #ffffff14;}
   .mail-row{display:flex; align-items:center; gap:8px; width:100%; padding:11px 12px; margin-bottom:6px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a; color:var(--text); text-align:left;} .mail-row b{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .mail-row small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-row.done{opacity:.5;} .mail-dot{flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#ff5757;}
@@ -2410,7 +2410,7 @@ function raidStartSolo(alone){
 // ===================== (v168) 친구 — Firebase(깃헙 버전)에서만 동작 =====================
 // players/<uid> = {name, code} · friendCodes/<8자리> = uid · friends/<나>/<친구> = true(내 목록은 나만 수정)
 // friendReqs/<받는사람>/<보낸사람> = 친구 요청 · invites/<받는사람>/<보낸사람> = 레이드 초대 · 접속 표시는 'online' 방 presence
-let friendNet = { on:false, code:null, name:'', friends:{}, reqs:{}, invites:{}, online:new Set(), unsubs:[], roomH:null, busy:false, reps:{}, watch:{}, repSent:null };
+let friendNet = { on:false, code:null, name:'', friends:{}, reqs:{}, invites:{}, online:new Set(), unsubs:[], roomH:null, busy:false, reps:{}, watch:{}, repSent:null, seen:{} };
 function friendsAvailable(){ return raidNet.ready && raidNet.backend==='firebase'; }
 function friendCleanCode(v){ return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8); }
 async function friendInit(){
@@ -2435,7 +2435,7 @@ async function friendInit(){
   const obj = s=> (s && s.exists && s.data() && typeof s.data()==='object') ? s.data() : {};
   mailInit();
   friendNet.unsubs.push(db.doc('friends/'+uid).onSnapshot(s=>{ friendNet.friends = obj(s); friendWatchSync(); friendRefresh(); }, ()=>{}));
-  friendPushRep();
+  friendPushRep(); friendSeenPing(true);
   friendNet.unsubs.push(db.doc('friendReqs/'+uid).onSnapshot(s=>{ friendNet.reqs = obj(s); friendHandleReplies(); friendRefresh(); }, ()=>{}));
   friendNet.unsubs.push(db.doc('invites/'+uid).onSnapshot(s=>{
     const v = obj(s), prev = friendNet.invites; friendNet.invites = v;
@@ -2462,7 +2462,8 @@ function friendWatchSync(){
     const db = raidNet.db, val = s=> (s && s.exists) ? s.data() : null;
     friendNet.watch[id] = [
       db.doc('players/'+id+'/name').onSnapshot(s=>{ const v = val(s); if(typeof v==='string' && v.trim()){ const n = v.slice(0,12); if(raidNet.names[id]!==n){ raidNet.names[id] = n; friendRefresh(); } } }, ()=>{}),
-      db.doc('players/'+id+'/rep').onSnapshot(s=>{ const v = val(s), k = (typeof v==='string' && SPIRITS[v]) ? v : null; if(friendNet.reps[id]!==k){ friendNet.reps[id] = k; friendRefresh(); } }, ()=>{})
+      db.doc('players/'+id+'/rep').onSnapshot(s=>{ const v = val(s), k = (typeof v==='string' && SPIRITS[v]) ? v : null; if(friendNet.reps[id]!==k){ friendNet.reps[id] = k; friendRefresh(); } }, ()=>{}),
+      db.doc('players/'+id+'/seen').onSnapshot(s=>{ const v = val(s); friendNet.seen[id] = Number.isFinite(v) ? v : 0; friendRefresh(); }, ()=>{}) // (v254) 마지막 접속 시각
     ];
   });
 }
@@ -2499,6 +2500,22 @@ function friendSetName(name){
 }
 function friendList(){ return Object.keys(friendNet.friends||{}).filter(k=>friendNet.friends[k]); }
 function friendOnline(id){ return friendNet.online.has(id); }
+// (v254) 마지막 접속: 켜져 있는 동안 1분마다 players/<나>/seen 에 시각 기록 → 친구 목록에 "N분 전"
+function friendSeenTxt(id){
+  if(friendOnline(id)) return '접속 중';
+  const t = friendNet.seen[id]; if(!t) return '오프라인';
+  const m = Math.max(0, Math.floor((Date.now()-t)/60000));
+  return m<2 ? '방금 전 접속' : m<60 ? m+'분 전 접속' : m<1440 ? Math.floor(m/60)+'시간 전 접속' : Math.floor(m/1440)+'일 전 접속';
+}
+let friendSeenLast = 0;
+function friendSeenPing(force){
+  if(!friendNet.on || !friendsAvailable() || !raidNet.db) return;
+  if(!force && (document.visibilityState!=='visible' || Date.now()-friendSeenLast < 55000)) return;
+  friendSeenLast = Date.now();
+  raidNet.db.doc('players/'+raidNet.uid+'/seen').set(Date.now()).catch(()=>{});
+}
+setInterval(()=>{ friendSeenPing(); if(typeof activeTab!=='undefined' && document.querySelector('.fr-list')) friendRefresh(); }, 60000);
+document.addEventListener('visibilitychange', ()=>{ friendSeenPing(true); });
 async function friendAddByCode(input){
   const code = friendCleanCode(input);
   if(code.length!==8){ toast('친구 코드는 8자리'); return; }
@@ -2627,7 +2644,7 @@ function renderFriendsTab(){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
       const fr = friendNet.reps[k];
-      return '<div class="fr-row"><span class="fr-avw"><span class="fr-av">'+(fr?spArt(SPIRITS[fr]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(o?'접속 중':'오프라인')+'</small></div>'
+      return '<div class="fr-row"><span class="fr-avw"><span class="fr-av">'+(fr?spArt(SPIRITS[fr]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div>'
         + '<button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div>';
     else h += '<div class="fr-empty">아직 친구 없음<br><button class="btn small" data-ftab="add" style="margin-top:10px;">＋ 친구 추가하기</button></div>';
   }else if(friendTab==='req'){
@@ -2712,7 +2729,7 @@ function renderDuelTab(){
   const fl = friendList().sort((a,b)=> (friendOnline(b)?1:0)-(friendOnline(a)?1:0) || raidNameOf(a).localeCompare(raidNameOf(b)));
   h += '<div class="fr-cap">결투 신청하기 <span style="opacity:.7;">· 접속 중인 친구에게만 신청 가능</span></div>';
   h += fl.length ? '<div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
-      return '<div class="fr-row'+(o?'':' dim')+'"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(o?'접속 중':'오프라인')+'</small></div><button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 신청</button></div>'; }).join('')+'</div>'
+      return '<div class="fr-row'+(o?'':' dim')+'"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div><button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 신청</button></div>'; }).join('')+'</div>'
     : '<div class="fr-empty">친구 없음<br><button class="btn small" id="duelToFriends" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_party.webp" alt=""> 친구 추가하러 가기</button></div>';
   h += '<div class="fr-card"><b>방 코드로 참가</b><div class="fr-inrow"><input id="duelCodeInput" maxlength="6" placeholder="방 코드 6자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="duelJoinBtn">참가</button></div></div>';
   return h + '</div>';
@@ -4991,11 +5008,9 @@ function showMailboxModal(why){
   else h += list.map(m=>'<button class="mail-row'+(m.claimed?' done':'')+'" data-mail-open="'+m.id+'">'+(m.claimed?'':'<i class="mail-dot"></i>')+'<b>'+escTxt(m.title)+'</b><small>'+(m.claimed?'받음':(m.scope==='a'?'전체':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):''))+'</small></button>').join('');
   h += '</div>';
   // (v247) 빈 우편함에서 "받은 우편 없음"과 "받을 우편 없음"이 같이 보이던 것 → 아래 줄은 우편이 있을 때만
-  if(open.length) h += '<div class="mail-bar"><button class="btn gold" id="mailAll">'+uiIc('gift')+' 모두 받기 · '+open.length+'개</button></div>';
-  else if(list.length) h += '<div class="mail-bar"><button class="btn gold" disabled>'+uiIc('check')+' 모두 받음</button></div>';
+  if(open.length) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">우편을 눌러 내용 확인 후 받기</div>'; // (v254) 모두 받기 없앰 — 한 통씩 읽고 받게
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
-  const a = document.getElementById('mailAll'); if(a) a.addEventListener('click', ()=>{ mailClaim(open.map(m=>m.id)); showMailboxModal(); });
   document.querySelectorAll('[data-mail-open]').forEach(b=>b.addEventListener('click', ()=>showMailDetail(b.dataset.mailOpen)));
 }
 function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내용·보상·받기
