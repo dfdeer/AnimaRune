@@ -3071,7 +3071,7 @@ function raidListHtml(){
   h += '<button class="rd-shopbar" id="raidShopBtn"><span class="rd-sb-ic">🛒</span><span class="rd-sb-tx"><b>레이드 상점</b><small>선택권 · 정수 · 강화석 · 룬</small></span><span class="rd-sb-gem">'+uiIc('runestone')+' '+(state.raidGems||0)+'</span><span class="rd-go">›</span></button>';
   h += '<div class="rw-sec-t" style="margin-top:4px;">레이드 보스</div><div class="rd-list">' + RAID_BOSSES.map((x,i)=>{
     const un = raidBossUnlocked(i), p = (state.raidProgress && state.raidProgress[x.id]) || [], el = ELEMENT_INFO[x.element];
-    if(!un) return '<div class="rd-row lock"><span class="rd-rart">'+uiIc('lock')+'</span><span class="rd-rinfo"><b>???</b><small>앞 보스를 한 번 이기면 해금</small></span></div>';
+    if(!un) return '<div class="rd-row lock"><span class="rd-rart">'+uiIc('lock')+'</span><span class="rd-rinfo"><b>???</b><small>'+RAID_BOSSES[i-1].name+' 처치 시 해금</small></span></div>';
     return '<button class="rd-row" data-raid-open="'+x.id+'" style="--ec:'+el.color+';"><span class="rd-rart">'+bossImg(x.id, 'rd-bimg', x.icon)+'</span>'
       + '<span class="rd-rinfo"><b>'+x.name+'</b><small style="color:'+el.color+';">'+el.icon+' '+el.name+' · '+x.gimmicks.map(g=>g.name).join(' · ')+'</small>'
       + '<span class="rd-pips">'+RAID_DIFFS.map(d=>'<i title="'+d.name+'" style="--dc:'+d.color+';" class="'+(p.includes(d.id)?'on':'')+'">'+d.name+'</i>').join('')+'</span></span><span class="rd-go">›</span></button>';
@@ -5739,7 +5739,7 @@ function performEquipSummon(againFn){
   render();
 }
 function doEquipSummon(){
-  if(!isEquipUnlocked()){ toast('챕터 1 보스 격파 시 해금'); return; }
+  if(!isEquipUnlocked()){ toast(uiIc('lock')+' '+bossUnlockTxt(1)); return; }
   const byTicket = ticketCount('equip') > 0;
   if(!byTicket && state.essence < EQUIP_SUMMON_COST){ toast('정수 부족 ('+EQUIP_SUMMON_COST+' 필요)'); return; }
   if(byTicket) state.tickets.equip -= 1; else state.essence -= EQUIP_SUMMON_COST;
@@ -5747,7 +5747,7 @@ function doEquipSummon(){
 }
 function doEquipMultiSummon(){
   checkDailyRollover();
-  if(!isEquipUnlocked()){ toast('챕터 1 보스 격파 시 해금'); return; }
+  if(!isEquipUnlocked()){ toast(uiIc('lock')+' '+bossUnlockTxt(1)); return; }
   const cost = multiEquipCost(), byTicket = ticketCount('equip') >= MULTI_SUMMON_COUNT;
   if(!byTicket && state.essence < cost){ toast('정수 부족 ('+cost+' 필요)'); return; }
   if(byTicket) state.tickets.equip -= MULTI_SUMMON_COUNT; else state.essence -= cost;
@@ -6092,7 +6092,7 @@ function renderFuseTab(){
   const rar = fuseSlotRarity(), slotOf = fuseSlots.find(Boolean);
   let keys;
   if(fuseMode==='equip'){
-    if(!isEquipUnlocked()) return h + '<div class="card sub" style="text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 챕터 1 보스 격파 시 해금</div>';
+    if(!isEquipUnlocked()) return h + '<div class="card sub" style="text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div>';
     keys = allEquipKeys().filter(k=>equipOwnedCount(k)>0 && equipInfo(k).rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
   }else keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0 && SPIRITS[k].rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
   h += fuseLogHtml();
@@ -6665,7 +6665,7 @@ function equipTileHtml(k){
 }
 function renderEquipSummonPage(){
   if(!isEquipUnlocked()){ // 잠긴 탭은 흐리게 + 잠금 표시
-    return '<div class="card" style="text-align:center; opacity:.6;"><div style="font-size:48px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:4px;">정령장비 소환</div><div style="margin-top:14px; font-size:15px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 챕터 1 보스 격파 시 해금</div><div class="sub" style="margin-top:6px;">스테이지 '+(CHAPTER1_BOSS_STAGE+1)+' 보스</div></div>';
+    return '<div class="card" style="text-align:center; opacity:.6;"><div style="font-size:48px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:4px;">정령장비 소환</div><div style="margin-top:14px; font-size:15px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div><div class="sub" style="margin-top:6px;">챕터 1 · 스테이지 '+(CHAPTER1_BOSS_STAGE+1)+'</div></div>';
   }
   const w = equipWeights(), lg = w[3] ? w[3].w : 0, pct = v => String(Math.round(v*100)/100);
   const lv = equipSummonLevel(), prog = ((state.lifetimeEquipSummons||0)%20);
@@ -6762,7 +6762,7 @@ function showEquipPicker(spKey, slot){
   const ub = document.getElementById('unequipBtn'); if(ub) ub.addEventListener('click', ()=>{ unequipItem(spKey, slot); showManageModal(spKey); });
 }
 function equipSlotsHtml(spKey){
-  if(!isEquipUnlocked()) return '<div class="sub" style="margin-top:10px; opacity:.6; text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 장비 슬롯 — 챕터 1 보스 격파 시 해금</div>';
+  if(!isEquipUnlocked()) return '<div class="sub" style="margin-top:10px; opacity:.6; text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 장비 슬롯 — '+bossUnlockTxt(1)+'</div>';
   let h = '<div style="display:flex; gap:8px; margin-top:10px;">';
   EQUIP_SLOTS.forEach(slot=>{
     const k = equippedKey(spKey, slot), si = EQUIP_SLOT_INFO[slot];
@@ -6793,7 +6793,7 @@ let spiritsSub = 'spirits'; // (v181) 정령 탭 안의 하위 탭: 정령 · �
 function renderSpiritsTab(){
   let html = '<div class="seg">'+[['spirits','📦 정령'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
-    if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 챕터 1 보스 격파 시 해금</div></div>';
+    if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
     return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
   }
   if(spiritsSub==='runes') return html + '<div class="card">'+runeHubHtml()+'</div>';
@@ -8060,7 +8060,7 @@ function lockedFeatureScreenHtml(feature){
     + '<div style="font-weight:800; font-size:16px; margin-bottom:4px;">'+FEATURE_LABEL[feature]+' 잠김</div>'
     + '<div class="sub" style="margin-bottom:12px;">아래 조건을 모두 충족하면 해금</div>'
     + '<div style="display:flex; flex-direction:column; gap:8px; text-align:left;">'
-    + (feature==='tower' ? '' : row(lvlOk, '계정 Lv.'+ACCOUNT_UNLOCK_LEVEL[feature]+' 이상 (현재 Lv.'+accountLevel()+')') + row(bossOk, '챕터1 보스(스테이지 '+CHAPTER_LENGTH+') 클리어'))
+    + (feature==='tower' ? '' : row(lvlOk, '계정 Lv.'+ACCOUNT_UNLOCK_LEVEL[feature]+' 이상 (현재 Lv.'+accountLevel()+')') + row(bossOk, chapterBossName(1)+' 처치 (챕터 1 보스)'))
     + '</div></div>';
 }
 let towerScrollTop = null;
@@ -8604,6 +8604,15 @@ function hardUnlocked(){ return !!state.adminUnlockAll || !!state.stageBest[CHAP
 function hardNormalReq(base){ return Math.min(base + MAX_CHAPTERS - 1, MAX_CHAPTERS); }
 function hardChapterOpen(ch){ const b = chapterBase(ch); if(state.adminUnlockAll) return true; if(!state.stageBest[hardNormalReq(b)*CHAPTER_LENGTH-1]) return false; return b===1 || !!state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]; }
 function currentHardChapterNum(){ let b = 1; while(b<=MAX_CHAPTERS && state.stageBest[HARD_BASE + b*CHAPTER_LENGTH - 1]) b++; return HARD_CH_BASE + b; }
+// (v257) 잠금 안내는 보스 이름으로 — "서리거인 처치 시 해금", 하드는 "서리거인(하드) 처치 시 해금"
+function chapterBossName(ch){ const g = CHAPTER_BOSS_GIMMICK[chapterBase(ch)-1], n = g && BOSS_GIMMICK_INFO[g] ? BOSS_GIMMICK_INFO[g].name : '보스'; return n + (isHardChapter(ch) ? '(하드)' : ''); }
+function bossUnlockTxt(ch){ return chapterBossName(ch)+' 처치 시 해금'; }
+function chapterLockTxt(ch){ // 이 챕터가 잠겨 있을 때 무엇을 잡아야 하는지
+  if(isHardChapter(ch)){ const b = chapterBase(ch);
+    if(b>1 && !state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]) return bossUnlockTxt(ch-1);
+    return bossUnlockTxt(hardNormalReq(b)); }
+  return bossUnlockTxt(ch-1);
+}
 function chapterLabel(ch){ return '챕터 '+chapterBase(ch)+(isHardChapter(ch) ? ' 하드' : ''); }
 function stageLabel(i){ return (isHardStage(i) ? '하드 ' : '')+'스테이지 '+(stageLocal(i)+1); }
 const CHAPTER_MASKS = [
@@ -8722,7 +8731,7 @@ function renderStageTab(){
     + '<div class="ex-shade"></div>'
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
-    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+(hard ? (chapterBase(ch)>1 ? '하드 '+(chapterBase(ch)-1)+' 보스' : '')+(hard && !state.stageBest[hardNormalReq(chapterBase(ch))*CHAPTER_LENGTH-1] ? (chapterBase(ch)>1?' · ':'')+'노말 챕터 '+hardNormalReq(chapterBase(ch))+' 보스' : '')+'를 쓰러뜨리면 열림' : '앞 챕터 보스를 쓰러뜨리면 열림')+'</div>' : '')
+    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : '')
     + '</div>';
   html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
   if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
@@ -9337,7 +9346,7 @@ function attachHandlers(){
   });
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
     const toHard = b.dataset.stageMode==='h';
-    if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 노말 챕터 '+hardNormalReq(1)+' 보스를 쓰러뜨리면 하드 열림'); return; }
+    if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 하드 모드: '+bossUnlockTxt(hardNormalReq(1))); return; }
     viewingChapter = (toHard ? HARD_CH_BASE : 0) + chapterBase(viewingChapter||1); // (v256) 보던 챕터 번호 그대로 (잠겨 있으면 지도에 안내)
     render();
   }));
