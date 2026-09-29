@@ -872,6 +872,10 @@
   .dp-bar{height:5px; border-radius:3px; background:#0006; overflow:hidden;} .dp-bar div{height:100%; background:linear-gradient(90deg,#57d3ff,#9fe8c0);} .dp-slot small{color:var(--sub); font-size:10px;} .dp-slot .btn{margin:0; padding:4px 0;}
   .dp-mis{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .dp-mis.used{opacity:.5;} .dp-mic{font-size:28px; width:36px; text-align:center;}
   .dp-pickrow{display:flex; justify-content:center; gap:8px; margin:8px 0;} .dp-pk{width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; border:2px dashed #ffffff33; color:var(--sub); font-size:20px; background:#0003; padding:0; overflow:hidden;} .dp-pk.on{border:2px solid #ffd557;} .dp-pk .spimg{width:100%; height:100%; object-fit:cover;}
+  .tr-rule{text-align:center; margin:6px 0; padding:6px 8px; border-radius:10px; background:#ffd55718; border:1px solid #ffd55755; color:#ffe7a0; font-size:12px; font-weight:800;}
+  .tr-lbl{font-size:11px; font-weight:900; color:var(--sub); text-align:center; margin:6px 0 4px;}
+  .tr-hint{text-align:center; margin-top:8px;} .tr-hinttxt{font-size:12px; color:#cfe8ff; background:#57d3ff14; border:1px solid #57d3ff44; border-radius:10px; padding:7px 9px; text-align:left;}
+  .tr-card{display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border-radius:14px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .tr-card.done{border-color:#9fe8c066;} .tr-no{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; background:#ffffff14; flex:none;} .tr-card .dg-mid{display:flex; flex-direction:column; gap:1px;} .tr-card b{font-size:14px;} .tr-card small{font-size:11px; color:var(--sub);} .tr-stars{color:#ffd557 !important;} .tr-stars i{font-style:normal; color:#ffffff22;} .tr-card em{font-style:normal; font-size:20px; color:var(--sub);} .tr-card em .uic{width:18px; height:18px;}
   .dg-title{font-size:17px; font-weight:900; color:#ffd35a; text-shadow:0 2px 0 var(--line); display:flex; align-items:center; justify-content:center; gap:6px;}
   .dg-week{display:flex; gap:4px; justify-content:center;} .dg-week span{flex:1; max-width:48px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 0; border-radius:10px; background:#ffffff0c; border:1px solid #ffffff14; font-size:10px; color:var(--sub);} .dg-week span.on{background:#ffd55722; border-color:#ffd557; color:#ffe7a0;} .dg-week .elic{width:16px; height:16px;} .dg-week b{font-size:9px; line-height:16px;}
   .dg-list, .ch-list{display:flex; flex-direction:column; gap:8px;}
@@ -1889,9 +1893,10 @@ function killUnit(sf, u){
   const angel = aliveUnits(sideUnits(sf, u.side)).find(x=>x.line==='light_a' && x.g>=4 && !x.reviveGiven);
   if(angel){ angel.reviveGiven = true; u.alive = true; u.hp = Math.round(u.maxHp*0.5); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
   // 숲결-b 패시브: 독 걸린 채 쓰러지면 옆 칸으로 독 전파
-  if(poisoned && poisoned.srcG>=1 && Math.random() < [0,.5,.65,.8,1][poisoned.srcG]){
+  const pch = poisoned ? [0,.5,.65,.8,1][poisoned.srcG] : 0;
+  if(poisoned && poisoned.srcG>=1 && (sf.noRng ? pch>=1 : Math.random() < pch)){ // (v266) 시련: 확률 전염 없음 · 100%면 첫 이웃에게
     const nb = gridNeighbors(u.idx, 'row').map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive);
-    if(nb.length){ const t = nb[Math.floor(Math.random()*nb.length)]; if(!t.st.ward) t.st.poison = {r:3, pct:poisoned.pct, srcG:poisoned.srcG}; else t.st.ward--; }
+    if(nb.length){ const t = nb[sf.noRng ? 0 : Math.floor(Math.random()*nb.length)]; if(!t.st.ward) t.st.poison = {r:3, pct:poisoned.pct, srcG:poisoned.srcG}; else t.st.ward--; }
   }
 }
 function dealDamage(sf, a, d, mult, opts){
@@ -1910,7 +1915,7 @@ function dealDamage(sf, a, d, mult, opts){
   if(d.groggy) v *= GROGGY_DMG_MULT; // (v179) 그로기: 받는 피해 2배
   let critCh = BASE_CRIT + runeCrit(a);
   if(a.line==='dark_b' && unitPG(a)>=1 && s.curse) critCh += [0,.10,.15,.20,.25][unitPG(a)];
-  const crit = !opts.noCrit && Math.random() < critCh;
+  const crit = !opts.noCrit && !sf.noRng && Math.random() < critCh; // (v266) 시련: 치명타 없음
   if(crit) v *= CRIT_MULT;
   const total = Math.max(0, Math.round(v));
   let rest = total;
@@ -1967,7 +1972,7 @@ function performAction(sf, a, act, tSide, tIdx){
   const name = SPIRITS[a.key].name;
   if(act==='basic'){
     C.hit(C.t, 1);
-    if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
+    if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && !sf.noRng && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
     pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' 공격 → '+skillUnitName(tSide, C.t));
   }else{
     const sk = unitSkill(a, act);
@@ -2905,7 +2910,7 @@ function friendInviteListHtml(){ // 로비(방장·팀원 없음)에서 접속 �
 }
 // ===================== (v169) 홈 화면 =====================
 // 대표 정령을 크게 보여주고, 탐험(메인 버튼)과 탑·출정·레이드로 가는 입구. 배경은 지금은 SVG로 그리고 나중에 일러스트로 교체 가능
-const HOME_MODE_TABS = ['tower','dungeon','challenge','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel']; // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
+const HOME_MODE_TABS = ['tower','dungeon','trial','challenge','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel']; // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
 function homeRepSpirit(){
   if(state.homeSpirit && SPIRITS[state.homeSpirit] && ownedCount(state.homeSpirit)>0) return state.homeSpirit;
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
@@ -3627,6 +3632,7 @@ function checkSkillStageOutcome(sf){
   if(sf.mode==='boss') return checkBossWaveOutcome(sf);
   if(sf.mode==='expedition') return checkExpeditionOutcome(sf);
   if(sf.mode==='dungeon') return checkDungeonOutcome(sf); // (v266)
+  if(sf.mode==='trial') return checkTrialOutcome(sf);
   if(sf.mode==='raid') return checkRaidOutcome(sf);
   if(sf.mode==='duel'){ if(sf.result) return true; if(!aliveUnits(sf.enemyUnits).length){ sf.result = {win:true, rounds:sf.round}; return true; } if(!aliveUnits(sf.myUnits).length){ sf.result = {win:false, rounds:sf.round}; return true; } return false; }
   if(sf.result) return true;
@@ -4852,6 +4858,7 @@ function battleThemeOf(sf){
   if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
+  if(sf.mode==='trial') return 'cave';
   if(sf.mode==='duel') return 'arena';
   const ch = Math.max(0, Math.floor(stageLocal(sf.stageIdx||0)/CHAPTER_LENGTH)) % MAX_CHAPTERS;
   return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
@@ -4923,6 +4930,7 @@ function showSkillStageScreen(){
   let html = intro ? '<div class="bs-wipe"></div>' : '';
   const titleTxt = sf.mode==='boss' ? '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 웨이브 '+sf.wave+'/'+BOSS_WAVE_COUNT+' · R'+sf.round
     : sf.mode==='expedition' ? '🗡️ 출정 · R'+sf.round
+    : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')+' · R'+sf.round+((trialDef(sf.trialId)||{}).maxRounds ? '/'+trialDef(sf.trialId).maxRounds : '')
     : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계 · R'+sf.round
     : sf.mode==='duel' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투 · vs '+(sf.duelName||'상대')
     : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')+' · R'+sf.round
@@ -4997,7 +5005,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
+  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
   setHtmlKeepImgs(root, html);
   fitBattleScreen();
@@ -5010,6 +5018,7 @@ function showSkillStageScreen(){
     if(sf.mode==='boss'){ endBossWaveRun(false); render(); openStagePrep(i); return; }
     if(sf.mode==='expedition'){ state.skillFight=null; unmountBattleScreen(); save(); render(); return; }
     if(sf.mode==='dungeon'){ leaveDungeonFight(); return; }
+    if(sf.mode==='trial'){ leaveTrialFight(); return; }
     if(sf.mode==='duel'){
       if(raidIsNet()){
         if(sf.result){ raidFinish().then(()=>{ activeTab='home'; render(); }); return; }
@@ -5048,6 +5057,9 @@ function showSkillStageScreen(){
         if(n && n.type!=='event') showExpeditionSquadPicker();
       }
     });
+  }else if(sf.mode==='trial'){ // (v266) 시련의 전당
+    if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveTrialFight);
+    if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
   }else if(sf.mode==='dungeon'){ // (v266) 요일 던전
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveDungeonFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const el = sf.dungeonEl, n = sf.dungeonN; state.skillFight = buildDungeonFight(el, n); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
@@ -6793,7 +6805,7 @@ function render(){
   });
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
   const main = document.getElementById('main');
-  const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
+  const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
     const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : '← 홈')+'</button>' : '';
@@ -7448,7 +7460,7 @@ function nextAccountThreshold(){
 function isUnlocked(feature){
   if(state.adminUnlockAll) return true; // (v242) 관리자 세팅: 모든 기능 해금
   if(feature==='tower') return true; // (v154) 탑은 처음부터 개방
-  if(feature==='dungeon' || feature==='dispatch') return chapter1BossCleared(); // (v266) 요일 던전·파견: 챕터 1 보스 처치 후
+  if(feature==='dungeon' || feature==='dispatch' || feature==='trial') return chapter1BossCleared(); // (v266) 요일 던전·파견: 챕터 1 보스 처치 후
   if(feature==='expedition'){
     return accountLevel()>=ACCOUNT_UNLOCK_LEVEL[feature] && chapter1BossCleared(); // (v168) 진형이 처음부터 6칸이라 슬롯 해금 조건 제거
   }
@@ -8615,6 +8627,151 @@ function bindDispatchTab(){
   document.querySelectorAll('[data-dp-claim]').forEach(b=>b.addEventListener('click', ()=>{ dispatchClaim(parseInt(b.dataset.dpClaim)); sfx('claim'); render(); }));
 }
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='dispatch' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간 갱신
+// ===================== (v266) 시련의 전당 =====================
+// 전투력과 상관없는 퍼즐 전투: 아군·적이 고정(내 정령·장비·룬·각성 무관), 치명타·확률 효과 없음 → 같은 행동이면 결과도 항상 같음
+// 규칙(N라운드 안에 · 아무도 쓰러지면 안 됨)을 지키며 이겨야 함. 각 퍼즐은 무작위로 눌러서는 거의 못 깨도록(수만 번 모의 실험) 적 체력을 맞춤
+// hp = 적 체력 배율(ENEMY_HP_MULT 대신) · 아군 공격력 1000 기준
+const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로 눌렀을 때 성공률(괄호) · 자동 전투로는 실패 · 해법이 항상 같은 결과로 재현됨을 확인
+  { id:'t2', nm:'처형의 사슬', diff:3, maxRounds:2, reward:{essence:1500, stone:60}, // (2.5%)
+    hint:'처형으로 쓰러뜨리면 한 번 더 움직임 — 처형할 대상을 먼저 만들어 두기',
+    allies:[{key:'dark_mythic_a', idx:1},{key:'wood_legendary_b', idx:4}],
+    enemies:[{key:'water_epic_a', idx:0, atk:650, hp:1.535},{key:'fire_epic_b', idx:1, atk:650, hp:1.535},{key:'water_rare_b', idx:2, atk:650, hp:1.535},{key:'fire_legendary_a', idx:4, atk:650, hp:1.535}] },
+  { id:'t4', nm:'두 번 쓰러지는 적', diff:3, maxRounds:4, noDeath:true, reward:{essence:1500, stone:60}, // (1.05%)
+    hint:'적 빛 정령은 쓰러진 동료를 한 번 되살리고, 화염 정령은 스스로 되살아나며 폭발함 — 누구를 먼저, 언제',
+    allies:[{key:'water_mythic_b', idx:1},{key:'dark_legendary_a', idx:0},{key:'light_epic_a', idx:4}],
+    enemies:[{key:'fire_mythic_a', idx:1, atk:780, hp:2.16},{key:'light_mythic_a', idx:4, atk:720, hp:2.16},{key:'wood_epic_b', idx:0, atk:720, hp:2.16}] },
+  { id:'t3', nm:'가시 너머', diff:4, maxRounds:4, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.41%)
+    hint:'가시 갑옷(반사)이 걸린 동안 세게 때리면 내가 다침 · 도발이 끝나는 때를 노리기',
+    allies:[{key:'fire_legendary_a', idx:1},{key:'water_epic_a', idx:4}],
+    enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:6.328},{key:'light_epic_b', idx:4, atk:700, hp:6.328},{key:'dark_rare_a', idx:3, atk:700, hp:6.328}] },
+  { id:'t5', nm:'얼어붙은 시간', diff:4, maxRounds:3, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.18%)
+    hint:'신화 빙결은 양옆까지 얼림 · 가장 위험한 적의 차례를 빼앗기',
+    allies:[{key:'water_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_epic_a', idx:0}],
+    enemies:[{key:'dark_mythic_a', idx:0, atk:750, hp:6.578},{key:'dark_mythic_a', idx:2, atk:750, hp:6.578},{key:'water_legendary_a', idx:4, atk:600, hp:6.578}] },
+  { id:'t6', nm:'독의 정원', diff:4, maxRounds:3, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.15%)
+    hint:'독 걸린 적이 쓰러지면 옆 칸으로 독이 번짐 · 가속으로 순서를 당기기',
+    allies:[{key:'wood_mythic_b', idx:1},{key:'light_mythic_b', idx:4}],
+    enemies:[{key:'water_epic_a', idx:0, atk:600, hp:0.993},{key:'water_rare_b', idx:1, atk:600, hp:0.993},{key:'water_epic_b', idx:2, atk:600, hp:0.993},{key:'light_rare_a', idx:3, atk:600, hp:0.993},{key:'water_legendary_b', idx:4, atk:600, hp:0.993}] },
+  { id:'t1', nm:'불씨 폭발', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.11%)
+    hint:'화상을 충분히 쌓은 뒤 터뜨리기 · 여명의 호령은 대상이 곧바로 한 번 더 움직이게 함',
+    allies:[{key:'fire_mythic_b', idx:1},{key:'light_legendary_b', idx:4}],
+    enemies:[{key:'wood_epic_a', idx:0, atk:700, hp:3.963},{key:'wood_legendary_b', idx:1, atk:700, hp:3.963},{key:'wood_epic_b', idx:2, atk:700, hp:3.963}] },
+  { id:'t8', nm:'빛의 장벽', diff:5, maxRounds:4, noDeath:true, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
+    hint:'적 화염 A 신화는 되살아나며 아군 전체를 폭발로 침 — 그 순간 보호막이 있어야 함',
+    allies:[{key:'light_mythic_a', idx:4},{key:'fire_legendary_b', idx:1},{key:'dark_epic_b', idx:0}],
+    enemies:[{key:'fire_mythic_a', idx:1, atk:700, hp:2.82},{key:'fire_mythic_b', idx:4, atk:700, hp:2.82},{key:'wood_rare_a', idx:0, atk:650, hp:2.82}] },
+  { id:'t9', nm:'저주받은 성채', diff:5, maxRounds:4, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
+    hint:'도발·반사 같은 이로운 효과는 악몽 포식으로 벗길 수 있음 · 치유사와 부활사가 뒤에 있음',
+    allies:[{key:'dark_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_legendary_b', idx:0}],
+    enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:8.313},{key:'water_mythic_a', idx:4, atk:600, hp:8.313},{key:'light_mythic_a', idx:3, atk:600, hp:8.313}] },
+  { id:'t7', nm:'처형자의 춤', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.12%)
+    hint:'부활시키는 적과 치유하는 적 — 무엇을 먼저 없앨지 · 호령으로 처형 기회를 이어 가기',
+    allies:[{key:'dark_mythic_a', idx:1},{key:'light_mythic_b', idx:4}],
+    enemies:[{key:'water_legendary_a', idx:4, atk:720, hp:2.165},{key:'light_epic_a', idx:3, atk:720, hp:2.165},{key:'fire_epic_b', idx:0, atk:780, hp:2.165},{key:'wood_legendary_a', idx:1, atk:780, hp:2.165}] },
+  { id:'t10', nm:'최후의 시련', diff:5, maxRounds:4, noDeath:true, reward:{essence:6000, stone:200, items:{pick_mythic:1}}, // (0.21%)
+    hint:'탱커·치유·부활·폭발이 다 모임 — 지금까지의 모든 요령을 순서대로',
+    allies:[{key:'water_mythic_a', idx:4},{key:'light_mythic_b', idx:3},{key:'dark_mythic_a', idx:1},{key:'fire_mythic_b', idx:0}],
+    enemies:[{key:'wood_mythic_a', idx:1, atk:650, hp:1.422},{key:'water_mythic_a', idx:4, atk:650, hp:1.422},{key:'light_mythic_a', idx:3, atk:650, hp:1.422},{key:'fire_mythic_a', idx:0, atk:700, hp:1.422},{key:'dark_legendary_b', idx:5, atk:650, hp:1.422},{key:'fire_epic_b', idx:2, atk:650, hp:1.422}] }
+];
+function trialDef(id){ return TRIALS.find(t=>t.id===id) || null; }
+function trialCleared(id){ return !!(state.trialClear && state.trialClear[id]); }
+function trialClearCount(){ return TRIALS.filter(t=>trialCleared(t.id)).length; }
+function buildTrialFight(t){
+  const myUnits = t.allies.map(a=>makeBattleUnit('me', a.idx, a.key, a.atk||1000, ALLY_HP_MULT, 1, 1, null, a.aw||0));
+  const enemyUnits = t.enemies.map(e=>{ const u = makeBattleUnit('enemy', e.idx, e.key, e.atk, e.hp, 1, 1, null, e.aw||0); if(e.nm) u.dispName = e.nm; return u; });
+  const sf = { v:266, mode:'trial', trialId: t.id, noRng: true, stageIdx: 0, round:1, phase:'acting', queue:[], queuePos:0, myUnits, enemyUnits,
+    log:['시련 시작!'], result:null, fxSeq:0, lastFx:null };
+  startRoundQueue(sf);
+  return sf;
+}
+function trialRuleFail(sf){
+  const t = trialDef(sf.trialId); if(!t) return '';
+  if(t.noDeath && sf.myUnits.some(u=>!u.alive)) return '아군이 쓰러짐';
+  if(t.maxRounds && sf.round > t.maxRounds) return t.maxRounds+'라운드 초과';
+  return '';
+}
+function checkTrialOutcome(sf){
+  if(sf.result) return true;
+  const fail = trialRuleFail(sf);
+  if(fail){ sf.result = { win:false, rounds: sf.round, reason: fail }; return true; }
+  if(!aliveUnits(sf.enemyUnits).length){
+    const t = trialDef(sf.trialId), first = !trialCleared(sf.trialId);
+    sf.result = { win:true, rounds: sf.round, first };
+    if(first && t){ state.trialClear = state.trialClear || {}; state.trialClear[t.id] = true; const rw = t.reward; sf.result.reward = rw;
+      state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); grantItems(rw.items); checkAchievements(); save(); }
+    return true;
+  }
+  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round, reason:'전멸' }; return true; }
+  return false;
+}
+function trialRulesTxt(t){ return [t.maxRounds ? t.maxRounds+'라운드 안에 전멸' : '', t.noDeath ? '아무도 쓰러지면 안 됨' : ''].filter(Boolean).join(' · '); }
+function trialResultOverlayHtml(sf){
+  const r = sf.result, t = trialDef(sf.trialId) || {nm:'시련'};
+  let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
+  if(r.win) h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""></div><div class="bs-rtitle">시련 통과!</div><div class="bs-rsub">'+t.nm+' · '+r.rounds+'라운드</div>'
+    + (r.first && r.reward ? '<div class="bs-rrew"><div>🎉 첫 통과 보상</div><div style="margin-top:4px;">'+rewardPillsHtml(r.reward)+'</div></div>' : '<div class="bs-rsub">이미 통과한 시련</div>');
+  else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_skull.webp" alt=""></div><div class="bs-rtitle">실패</div><div class="bs-rsub">'+(r.reason||'')+' · '+t.nm+'</div>';
+  h += '<div class="bs-rbtns"><button class="btn secondary" id="skillRetryBtn">🔁 다시</button><button class="btn" id="skillResultCloseBtn">나가기</button></div></div></div>';
+  return h;
+}
+function leaveTrialFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'trial'; save(); render(); }
+function showTrialPrep(id){
+  const t = trialDef(id); if(!t) return;
+  const pv = buildTrialFight(t);
+  const icons = list=>list.map(u=>'<span class="dg-foe" data-unit-info="'+u.side+':'+u.idx+'">'+spArt(SPIRITS[u.key])+'</span>').join('');
+  let h = '<h3 style="text-align:center; margin:0;">🧩 '+t.nm+'</h3>';
+  h += '<div class="tr-rule">📜 '+trialRulesTxt(t)+'</div>';
+  h += '<div class="tr-lbl">아군 (고정)</div><div class="dg-foes">'+icons(pv.myUnits)+'</div>';
+  h += '<div class="tr-lbl">적</div><div class="dg-foes">'+icons(pv.enemyUnits)+'</div>';
+  h += '<div class="sub" style="text-align:center; font-size:11px;">그림을 누르면 능력치·스킬 · 치명타·확률 효과 없음 (결과가 항상 같음)</div>';
+  h += '<div class="tr-hint" id="trHint">'+(t.hint ? '<button class="btn secondary small" id="trHintBtn">💡 힌트 보기</button>' : '')+'</div>';
+  h += '<div class="dg-rw">'+(trialCleared(id) ? '이미 통과 · 보상 없음' : '🎉 첫 통과 보상 '+rewardPillsHtml(t.reward))+'</div>';
+  h += '<button class="btn sticky-ok" id="trStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 도전</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose(); bindPrepUnitInfo(pv);
+  { const hb = document.getElementById('trHintBtn'); if(hb) hb.addEventListener('click', ()=>{ document.getElementById('trHint').innerHTML = '<div class="tr-hinttxt">💡 '+t.hint+'</div>'; }); }
+  document.getElementById('trStart').addEventListener('click', ()=>{ closeModal(); state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; state.skillAuto = false; save(); showSkillStageScreen(); });
+}
+function renderTrialTab(){
+  if(!isUnlocked('trial')) return lockedFeatureScreenHtml('trial');
+  const n = trialClearCount();
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧩 시련의 전당</div><div class="sub" style="font-size:11px;">정해진 정령으로 푸는 퍼즐 전투 · 육성과 무관 · '+n+'/'+TRIALS.length+' 통과</div></div>' + TOP_MARK;
+  h += '<div class="dg-list">'+TRIALS.map((t,i)=>{ const ok = trialCleared(t.id);
+    return '<button class="tr-card'+(ok?' done':'')+'" data-tr-go="'+t.id+'"><span class="tr-no">'+(i+1)+'</span><span class="dg-mid"><b>'+t.nm+'</b><small>'+trialRulesTxt(t)+'</small><small class="tr-stars">'+'★'.repeat(t.diff||3)+'<i>'+'★'.repeat(5-(t.diff||3))+'</i></small></span><em>'+(ok ? uiIc('check') : '›')+'</em></button>'; }).join('')+'</div>';
+  return h;
+}
+function bindTrialTab(){ document.querySelectorAll('[data-tr-go]').forEach(b=>b.addEventListener('click', ()=>showTrialPrep(b.dataset.trGo))); }
+function trialCard(){ const ok = isUnlocked('trial'); return { tab:'trial', img:'special', name:'시련의 전당', sub: ok ? trialClearCount()+'/'+TRIALS.length+' 통과 · 머리를 쓰는 퍼즐 전투' : chapterBossName(1)+' 처치 시 해금', lock:!ok }; }
+// 모의 실험(퍼즐 검증용): 내 차례마다 가능한 행동 중 무작위 → 이길 확률·해법 찾기. 게임에선 안 씀
+function trialMyOptions(sf, a){
+  const out = [];
+  ['basic','s1','s2'].forEach(act=>{
+    if(!skillAvailable(a, act)) return;
+    const sk = act==='basic' ? null : unitSkill(a, act), kind = sk ? sk.kind : 'harm';
+    if(sk && sk.self){ out.push([act,'me',a.idx]); return; }
+    if(kind==='harm') validEnemyTargets(sf).forEach(i=>out.push([act,'enemy',i]));
+    else aliveUnits(sf.myUnits).forEach(u=>out.push([act,'me',u.idx]));
+  });
+  return out;
+}
+function trialPlayout(t, pick){ // pick(sf, a, options) → option · 반환 {win, seq}
+  const sf = buildTrialFight(t), seq = []; let n = 0;
+  while(n++ < 3000 && !sf.result){
+    const side = settleQueue(sf);
+    if(side==='me'){ const a = unitAt(sf,'me',sf.queue[sf.queuePos].idx); const ops = trialMyOptions(sf, a); const o = pick(sf, a, ops); if(o){ seq.push(a.key.split('_')[0]+':'+o.join('/')); performAction(sf, a, o[0], o[1], o[2]); } sf.queuePos++; checkTrialOutcome(sf); }
+    else if(side==='enemy'){ const a = unitAt(sf,'enemy',sf.queue[sf.queuePos].idx); const c = aiChooseAction(sf, a); if(c) performAction(sf, a, c.act, c.side, c.idx); sf.queuePos++; checkTrialOutcome(sf); }
+    else { sf.round += 1; roundStartEffects(sf); if(!checkTrialOutcome(sf)) startRoundQueue(sf); }
+  }
+  return { win: !!(sf.result && sf.result.win), seq, reason: sf.result && sf.result.reason };
+}
+function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 · 해법 한 가지
+  const keep = state.trialClear; state.trialClear = {}; const ess = state.essence, st = state.enhanceStone, tk = JSON.stringify(state.tickets);
+  let wins = 0, sol = null;
+  for(let i=0;i<tries;i++){ const r = trialPlayout(t, (sf,a,ops)=> ops[Math.floor(Math.random()*ops.length)]); if(r.win){ wins++; if(!sol) sol = r.seq; } }
+  const ai = trialPlayout(t, (sf,a,ops)=>{ const c = aiChooseAction(sf, a); return c ? [c.act, c.side, c.idx] : ops[0]; });
+  state.trialClear = keep; state.essence = ess; state.enhanceStone = st; state.tickets = JSON.parse(tk);
+  return { rate: wins/tries, wins, ai: ai.win, aiReason: ai.reason, sol };
+}
 function renderTowerTab(){
   if(!isUnlocked('tower')) return lockedFeatureScreenHtml('tower');
   const best = state.towerBest||0, frontier = towerFloor(), topFloor = frontier + 2; // 다음 도전 위로 2층은 미리보기
@@ -9993,6 +10150,7 @@ function attachHandlers(){
   if(activeTab==='duel') bindDuelTab();
   if(activeTab==='dungeon') bindDungeonTab();
   if(activeTab==='dispatch') bindDispatchTab();
+  if(activeTab==='trial') bindTrialTab();
   if(activeTab==='challenge') bindChallengeTab();
   document.querySelectorAll('[data-enemy-inspect]').forEach(el=>{
     if(el.dataset.bound) return;
@@ -10131,7 +10289,7 @@ function attachHandlers(){
     });
   });
 }
-const FEATURE_LABEL = { expedition:'출정', tower:'탑', reroll:'특성 리롤', dungeon:'요일 던전', dispatch:'정령 파견' };
+const FEATURE_LABEL = { expedition:'출정', tower:'탑', reroll:'특성 리롤', dungeon:'요일 던전', dispatch:'정령 파견', trial:'시련의 전당' };
 document.querySelectorAll('nav button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     activeTab = btn.dataset.tab;
@@ -10335,6 +10493,8 @@ function sanitizeState(){
       modeOk = Number.isInteger(sf.stageIdx) && isValidStage(sf.stageIdx) && isBossStage(sf.stageIdx) && Number.isInteger(sf.wave) && sf.wave>=1 && sf.wave<=BOSS_WAVE_COUNT;
     }else if(sf && sf.mode==='expedition'){
       modeOk = true; // 출정은 stageIdx 없이도 유효
+    }else if(sf && sf.mode==='trial'){
+      modeOk = !!trialDef(sf.trialId);
     }else if(sf && sf.mode==='dungeon'){
       modeOk = ELEMENTS.includes(sf.dungeonEl) && Number.isInteger(sf.dungeonN) && sf.dungeonN>=1; // (v266) 요일 던전
     }else if(sf && sf.mode==='raid'){
