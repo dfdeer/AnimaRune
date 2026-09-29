@@ -1058,6 +1058,9 @@
   .af-el{padding:2px 0; border-radius:8px; border:1px solid #ffffff1a; background:#ffffff08; font-size:14px;}
   .af-line{display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 1px; border-radius:10px; border:1.5px solid #ffffff14; background:#ffffff06; color:var(--sub); min-width:0; filter:grayscale(1); opacity:.45;}
   .af-line.on{filter:none; opacity:1; border-color:#8a96ff; background:#5b6bff2a; color:var(--text);} .af-line .icon{width:40px; height:40px; font-size:22px;} .af-line small{font-size:9px; font-weight:800; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ward-art{position:relative; display:inline-grid; place-items:center; width:100%; height:100%;} .ward-art > .uic{width:78%; height:78%; filter:drop-shadow(0 0 6px var(--wc)) drop-shadow(0 0 2px var(--wc)); animation:wardPulse 2.4s ease-in-out infinite;}
+  .ward-art i{position:absolute; right:4%; bottom:4%; font-style:normal;} .ward-art i .uic{width:16px; height:16px;}
+  @keyframes wardPulse{0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)}}
   .shop-top{display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;} .shop-top .sub{font-size:11px;}
   .shop-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
   .shop-tile{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 6px; border-radius:12px; background:#ffffff0b; border:1px solid #ffffff12; text-align:center; min-width:0;}
@@ -3590,7 +3593,7 @@ function aiPickFoeTarget(sf, a){
 }
 function aiChooseAction(sf, a){
   const kit = kitOf(a), own = aliveUnits(sideUnits(sf, a.side));
-  for(const act of ['s2','s1','basic']){
+  for(const act of (a.isWard ? ['basic'] : ['s2','s1','basic'])){ // (v259) 결계석은 기본 공격만
     if(!skillAvailable(a, act)) continue;
     const sk = act==='basic' ? null : kit[act];
     const kind = sk ? sk.kind : 'harm';
@@ -4018,12 +4021,12 @@ const BOSS_EXTRA = {
   abyssCrystal:{name:'심연 응시', desc:'매 라운드 공격력이 가장 높은 아군에게 저주 (받는 피해 +25%, 2라운드)'}
 };
 // (v258) 하드 전용 기믹 — 위 추가 기믹 위에 하나 더
-const HARD_BOSS_EXTRA = {
-  frostGiant:  {name:'혹한', desc:'빙결 대상이 2명 (가장 빠른 둘)'},
-  lavaLord:    {name:'격노', desc:'4라운드마다 공격력 +25% (누적)'},
-  ancientTree: {name:'생명의 뿌리', desc:'재생 3% → 6%'},
-  ruinGuardian:{name:'결계 공명', desc:'결계석 체력 2배 · 결계석이 살아 있으면 보스가 매 라운드 체력 2% 회복'},
-  abyssCrystal:{name:'심연 파동', desc:'3라운드마다 아군 전체에 공격력 60% 피해'}
+const HARD_BOSS_EXTRA = { // (v259) 보스마다 여러 개 — 강화형 + 완전히 새 기믹
+  frostGiant:  [{name:'혹한', desc:'빙결 대상이 2명 (가장 빠른 둘)'}, {name:'동상', desc:'빙결된 아군은 받는 피해 +50%'}],
+  lavaLord:    [{name:'격노', desc:'4라운드마다 공격력 +25% (누적)'}],
+  ancientTree: [{name:'생명의 뿌리', desc:'재생 3% → 6%'}, {name:'포자', desc:'매 라운드 무작위 아군 2명에게 독 (라운드마다 최대체력 6%, 3라운드)'}],
+  ruinGuardian:[{name:'결계 공명', desc:'결계석 체력 2배 · 결계석이 살아 있으면 보스가 매 라운드 체력 2% 회복'}, {name:'석화의 눈', desc:'2라운드마다 체력이 가장 높은 아군 석화 (한 번 행동 불가)'}],
+  abyssCrystal:[{name:'심연 파동', desc:'3라운드마다 아군 전체에 공격력 60% 피해'}, {name:'혼돈', desc:'매 라운드 아군 1명의 이로운 효과(보호막·강화·가속) 전부 제거'}]
 };
 function bossChapterIdx(stageIdx){ return Math.floor(stageLocal(stageIdx)/CHAPTER_LENGTH); } // 0~4 (하드도 같은 챕터 번호)
 function bossWaveNormalPower(stageIdx){ return (isHardStage(stageIdx) ? HARD_ENEMY_END : CHAPTER_ENEMY_END)[bossChapterIdx(stageIdx)] * 0.55; } // (v150) 보스 1·2웨이브는 그 챕터 막바지보다 약간 낮게 — 3웨이브 보스에서 진짜 승부를 봄
@@ -4074,7 +4077,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
       const wHp = ENEMY_HP_MULT*1.4*(hardB ? 2 : 1); // (v258) 하드: 결계 공명 — 결계석 체력 2배
       const w1 = makeBattleUnit('enemy', 1, we1+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we1], wHp);
       const w2 = makeBattleUnit('enemy', 0, we2+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we2], wHp);
-      w1.isWard = true; w2.isWard = true;
+      w1.isWard = true; w2.isWard = true; w1.dispName = ELEMENT_INFO[we1].name+' 결계석'; w2.dispName = ELEMENT_INFO[we2].name+' 결계석'; // (v259) 정령이 아니라 결계석으로 보이게
       enemyUnits = [w1, w2, boss];
     }else{
       enemyUnits = [boss];
@@ -4090,8 +4093,11 @@ function applyBossGimmick(sf){
   const g = sf.gimmick; if(!g) return;
   const boss = sf.enemyUnits.find(u=>u.isBoss && u.alive);
   if(!boss) return;
+  applyBaseBossGimmick(sf, g, boss); // (v259) 기본 기믹 다음에 추가·하드 기믹 (동상이 방금 얼린 정령에도 걸리게)
   applyBossExtra(sf, g, boss);
   if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss);
+}
+function applyBaseBossGimmick(sf, g, boss){
   if(g.type==='frostGiant'){
     if(sf.round % 3 === 0){
       const alive = aliveUnits(sf.myUnits);
@@ -4129,12 +4135,28 @@ function applyBossGimmick(sf){
 }
 function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용
   const allies = aliveUnits(sf.myUnits); if(!allies.length) return;
-  const r = sf.round, ex = HARD_BOSS_EXTRA[g.type]; if(!ex) return;
-  if(g.type==='frostGiant' && r%3===0){ const s2 = allies.slice().sort((x,y)=>effSpeed(y)-effSpeed(x))[1]; if(s2){ s2.st.freeze = true; pushLog(sf, '🧊 '+ex.name+' — '+SPIRITS[s2.key].name+'도 얼었다!'); } }
-  else if(g.type==='lavaLord' && r%4===0){ boss.atk = Math.round(boss.atk*1.25); pushLog(sf, '🔥 '+ex.name+'! 공격력 상승'); }
-  else if(g.type==='ancientTree'){ boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.03)); }
-  else if(g.type==='ruinGuardian' && sf.enemyUnits.some(u=>u.isWard && u.alive)){ boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.02)); }
-  else if(g.type==='abyssCrystal' && r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.6, {noCrit:true})); pushLog(sf, '🌀 '+ex.name+'!'); }
+  const r = sf.round, exs = HARD_BOSS_EXTRA[g.type]; if(!exs) return;
+  const nm = i=> (exs[i]||exs[0]).name;
+  if(g.type==='frostGiant'){
+    if(r%3===0){ const s2 = allies.slice().sort((x,y)=>effSpeed(y)-effSpeed(x))[1]; if(s2){ s2.st.freeze = true; pushLog(sf, '🧊 '+nm(0)+' — '+SPIRITS[s2.key].name+'도 얼었다!'); } }
+    allies.forEach(u=>{ if(u.st.freeze) u.st.curse = { v: Math.max(0.5, (u.st.curse && u.st.curse.v)||0), r: 1 }; }); // 동상: 얼어 있는 동안 받는 피해 +50%
+  }
+  else if(g.type==='lavaLord' && r%4===0){ boss.atk = Math.round(boss.atk*1.25); pushLog(sf, '🔥 '+nm(0)+'! 공격력 상승'); }
+  else if(g.type==='ancientTree'){
+    boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.03));
+    const pool = allies.slice().sort(()=>Math.random()-0.5).slice(0,2);
+    pool.forEach(u=>{ u.st.poison = { r:3, pct:0.06, srcG:2 }; }); if(pool.length) pushLog(sf, '🍄 '+nm(1)+' — '+pool.map(u=>SPIRITS[u.key].name).join('·')+' 중독');
+  }
+  else if(g.type==='ruinGuardian'){
+    if(sf.enemyUnits.some(u=>u.isWard && u.alive)) boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.02));
+    if(r%2===0){ const t = allies.reduce((x,y)=> y.hp>x.hp ? y : x); t.st.freeze = true; pushLog(sf, '🗿 '+nm(1)+' — '+SPIRITS[t.key].name+' 석화!'); }
+  }
+  else if(g.type==='abyssCrystal'){
+    if(r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.6, {noCrit:true})); pushLog(sf, '🌀 '+nm(0)+'!'); }
+    const BUFFS = ['shield','buff','haste','empower','ward','taunt','regen'];
+    const buffed = allies.filter(u=>BUFFS.some(k=>u.st[k])); const t = buffed.length ? buffed[Math.floor(Math.random()*buffed.length)] : null;
+    if(t){ BUFFS.forEach(k=>{ delete t.st[k]; }); pushLog(sf, '🌑 '+nm(1)+' — '+SPIRITS[t.key].name+'의 이로운 효과 제거'); }
+  }
 }
 function applyBossExtra(sf, g, boss){ // (v256) 추가 기믹 — (v258) 노말·하드 공통
   const allies = aliveUnits(sf.myUnits); if(!allies.length) return;
@@ -4306,7 +4328,7 @@ function showBossInfo(stageIdx){
   openInfoOverlay(gi.icon+' '+gi.name, '<div style="text-align:center; margin-bottom:8px;">'+(el?ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name:'🔮 속성 변환')+'</div>'
     + '<div style="padding:8px; border-radius:10px; background:#ffffff0a; font-size:13px; line-height:1.5;">'+gi.desc+'</div>'
     + (BOSS_EXTRA[bossGimmickFor(stageIdx)] ? '<div style="margin-top:6px; padding:8px; border-radius:10px; background:#ffffff0a; font-size:13px; line-height:1.5;"><b>⚠️ '+BOSS_EXTRA[bossGimmickFor(stageIdx)].name+'</b><br>'+BOSS_EXTRA[bossGimmickFor(stageIdx)].desc+'</div>' : '')
-    + (isHardStage(stageIdx) && HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)] ? '<div style="margin-top:6px; padding:8px; border-radius:10px; background:#ff3a5a1f; border:1px solid #ff5a6a66; font-size:13px; line-height:1.5;"><b style="color:#ff8a9a;">🔥 하드 · '+HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)].name+'</b><br>'+HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)].desc+'</div>' : '')
+    + (isHardStage(stageIdx) && HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)] ? HARD_BOSS_EXTRA[bossGimmickFor(stageIdx)].map(x=>'<div style="margin-top:6px; padding:8px; border-radius:10px; background:#ff3a5a1f; border:1px solid #ff5a6a66; font-size:13px; line-height:1.5;"><b style="color:#ff8a9a;">🔥 하드 · '+x.name+'</b><br>'+x.desc+'</div>').join('') : '')
     + '<div style="margin-top:6px; text-align:left;">'+groggyInfoHtml(bossGimmickFor(stageIdx))+'</div>'
     + '<div class="sub" style="margin-top:10px; font-size:12px; line-height:1.6;">• 웨이브 1·2 일반 적 → 웨이브 3 보스<br>• 6마리 그대로 3웨이브 연속 (체력 이어짐, 쓰러지면 이탈)</div>');
 }
@@ -4489,6 +4511,7 @@ function showStatusInfo(u){
   const l = statusList(u);
   openInfoOverlay((u.side==='enemy'?'적 ':'')+(u.dispName||SPIRITS[u.key].name)+' · 상태 효과', l.length ? l.map(x=>'<div style="display:flex; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sbg '+(x.good?'g':'b')+'" style="font-size:16px;">'+x.i+'</span><div><b style="font-size:13px;">'+x.t+'</b><div class="sub" style="font-size:12px;">'+x.d+'</div></div></div>').join('') : '<div class="sub" style="text-align:center;">걸린 효과 없음</div>');
 }
+function wardArt(el){ return '<span class="ward-art" style="--wc:'+ELEMENT_INFO[el].color+';">'+uiIc('runestone')+'<i>'+elIc(el)+'</i></span>'; } // (v259) 결계석 그림
 function battleUnitHtml(u, opts){
   const isEnemy = u.side==='enemy', sp = SPIRITS[u.key];
   const cls = ['bu', isEnemy?'bu-enemy':'bu-mine'];
@@ -4516,7 +4539,7 @@ function battleUnitHtml(u, opts){
   return '<div class="'+cls.join(' ')+'"'+attr+' data-u="'+u.side+':'+u.idx+'" style="--sz:'+opts.size+'px;">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : spArt(SPIRITS[u.key]))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
+    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(SPIRITS[u.key])))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + '</div>'
     + '<div class="bu-plate">'+(u.bossIcon ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
@@ -4540,8 +4563,8 @@ function skillTypeOf(sk, u){
 function unitDetailHtml(u, bossId){
   const sp = SPIRITS[u.key], kit = kitOf(u), g = u.g, isBoss = !!u.isBoss;
   const stat = (k,v)=>'<div class="ud-st"><small>'+k+'</small><b>'+v+'</b></div>';
-  let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : spArt(sp)+elIc(sp.element,'av-el'))+'</div>'
-    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':' · '+kit.role)+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
+  let h = '<div class="ud-top"><div class="ud-art av r-'+sp.rarity+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(sp)+elIc(sp.element,'av-el')))+'</div>'
+    + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[sp.rarity].name+(isBoss?' · 보스':(u.isWard?' · 결계석 (기본 공격만)':' · '+kit.role))+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
   h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
@@ -7805,7 +7828,7 @@ function showExpeditionSquadPicker(){
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
   let expPv = null;
   if(node){ const pv = buildExpeditionFight(run, node, isBoss); expPv = pv; html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스':'<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '현재 체력·피로 반영');
-    html += '<div class="pq-enemy"><span class="pq-lbl">상대</span><span class="pq-icons">'+pv.enemyUnits.map(u=>'<button class="pq-e pq-eb" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : spArt(SPIRITS[u.key])+elIc(u.element,'pq-el'))+'</button>').join('')+'</span></div>'; }
+    html += '<div class="pq-enemy"><span class="pq-lbl">상대</span><span class="pq-icons">'+pv.enemyUnits.map(u=>'<button class="pq-e pq-eb" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(SPIRITS[u.key])+elIc(u.element,'pq-el')))+'</button>').join('')+'</span></div>'; }
   html += '<div class="sub" style="text-align:center; margin:8px 0 4px;">대기 중 · 누르면 출전 칸과 교체</div>';
   html += '<div class="roster-scroll"><div class="roster-grid">'+(reserve.length?reserve.map(tile).join(''):'<div class="sub" style="text-align:center;">없음</div>')+'</div></div>';
   html += '<button class="btn sticky-ok" id="startExpBattleBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>'
