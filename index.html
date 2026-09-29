@@ -293,6 +293,7 @@
   .av{background:radial-gradient(circle at 50% 45%, #4a4470 0%, #2c2746 55%, #1c1930 100%);} .av .spimg{width:100%; height:100%; margin:0;}
   .spimg{filter:drop-shadow(0 0 1px #ffffff99) drop-shadow(0 0 3px #ffffff33);} /* 아주 옅은 밝은 테두리 — 어두운 배경에서 윤곽이 묻히지 않게 */
   #dexRewardBtn ~ h3{padding:0 42px;} /* (v266) 도감 제목이 왼쪽 🎁 버튼에 붙어 있었음 */
+  .species-tile.away{opacity:.6;}
   .species-tile.dx{padding:8px 3px 7px;} .species-tile.dx::after{display:none;} .species-tile.dx .name{font-weight:800; margin-top:4px;}
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:3px; font-size:10px; line-height:12px; background:#0b0a22; padding:0 5px; border-radius:8px; z-index:2;}
@@ -2858,7 +2859,7 @@ function bindFriendPanel(){
 function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k) } : null); }
 // (v182) 한 번이라도 덱을 정했으면(비운 것 포함) 그대로 씀 — 예전엔 다 비우면 '아직 안 정함'으로 보고 탐험 진형을 다시 채워 넣었음.
 // 아직 한 번도 안 정했을 때(null)만 탐험 진형으로 시작
-function myDuelDeck(){ const pad = a=> a.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6); const d = state.duelDeck; return Array.isArray(d) ? pad(d) : pad(state.formation||[]); }
+function myDuelDeck(){ const pad = a=> a.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? k : null); const d = state.duelDeck; return Array.isArray(d) ? pad(d) : pad(state.formation||[]); } // (v267) 파견 가서 없는 정령은 빈 칸으로
 async function saveDuelDeck(keys, quiet){
   state.duelDeck = keys.slice(0,6); save();
   if(friendsAvailable()){ try{ await raidNet.db.doc('players/'+raidNet.uid+'/duel').set({ picks: duelPayload(state.duelDeck), t: Date.now() }); if(!quiet) toast('결투 덱 저장'); }catch(e){ raidNetError(e); } }
@@ -2913,7 +2914,7 @@ function showDuelSlotPicker(slot){
   let h = '<h3 style="text-align:center;">'+(slot<3?'전열':'후열')+' '+(slot%3+1)+'번 칸</h3><div class="sub" style="text-align:center; margin-bottom:8px;">결투 덱에 넣을 정령 선택</div>';
   if(!owned.length) h += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 정령 없음</div>';
   h += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur;
-    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+'</div></div>';
+    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
   if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
@@ -3391,6 +3392,7 @@ function showRaidPickModal(){
     const fr = ENEMY_FRONT_LINES.includes(sp.element+'_'+sp.variant);
     return '<button data-rp-pick="'+k+'" style="position:relative; padding:5px 2px; border-radius:10px; background:#27235a; border:1px solid '+(used?'#5b6bff':'#ffffff1a')+'; color:var(--text); opacity:'+(used||myReady?0.45:1)+';"><span data-rp-info="'+k+'" style="position:absolute; top:1px; right:3px; font-size:10px; opacity:.8;">ⓘ</span><div class="spw" style="font-size:20px;">'+spArt(sp)+elIc(sp.element,'spw-el')+enhTag(k)+'</div><div style="font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div><div style="font-size:8px; font-weight:800; color:'+(fr?'#ffb89a':'#a8d4ff')+';">'+(fr?'전열':'후열')+'</div><div class="sub" style="font-size:9px;"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(k))+'</div></button>';
   }).join('') : '<div class="sub">보유한 정령 없음</div>';
+  h += dispatchAwayTilesHtml(); // (v267)
   h += '</div></div>';
   h += '<div class="rp-foot"><div style="display:flex; gap:6px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
     + '<button class="btn" id="raidReadyBtn" style="flex:2;">'+(solo ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작' : (myReady ? '↩ 준비 취소' : '<img class="uic" src="assets/ui/ic_check.webp" alt=""> 준비 완료'))+'</button></div>';
@@ -6921,7 +6923,25 @@ function render(){
     } }
 }
 
-function tile(key){
+function tile(key){ // 정령 탭 보유 목록·출정 대기 목록 — 개수·특성·등급·강화 표시
+  const owned = ownedCount(key), away = dispatchedCount(key);
+  const disc = state.discovered[key];
+  const sp = SPIRITS[key];
+  const info = RARITY_INFO[sp.rarity];
+  if(!disc){
+    return '<div class="species-tile undiscovered"><div class="icon">❔</div><div class="name">???</div></div>';
+  }
+  const passive = passiveFor(key);
+  return '<div class="species-tile'+(owned<=0 && away>0 ? ' away' : '')+'" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
+    + (owned>0 ? '<div class="count">x'+owned+'</div>' : (away>0 ? '<div class="count" style="color:#57d3ff;">🧭</div>' : ''))
+    + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
+    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+    + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
+    + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
+    + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+(enhanceLevel(key)?'+'+enhanceLevel(key)+' ':'')+awakenStars(key)+'</div>' : '')
+    + '</div>';
+}
+function dexTile(key){ // (v266) 도감 전용 — 그림·속성·이름만
   const owned = ownedCount(key);
   const disc = state.discovered[key];
   const sp = SPIRITS[key];
@@ -7182,7 +7202,7 @@ function renderSpiritsTab(){
   html += '<h2>보유 정령</h2>';
   { const sb = state.spiritSort || 'rarity';
     html += '<div class="pk-sort" id="spSortBar">'+[['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 역할'],['cp','<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력']].map(([k,t])=>'<button data-sp-sort="'+k+'" class="'+(sb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
-    let keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
+    let keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0 || dispatchedCount(k)>0); // (v267) 파견 가 있는 정령도 목록에 (파견 중 표시)
     const rOf = k=> LINE_KITS[SPIRITS[k].element+'_'+SPIRITS[k].variant];
     const fr = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
     if(sb==='rarity') keys.sort((a,b)=> RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
@@ -8112,7 +8132,7 @@ function showExpeditionRosterPicker(){
   let html = '<h3 style="text-align:center; margin-bottom:2px;">🗡️ 출정대 고르기</h3>'
     + '<div class="sub" style="text-align:center; font-size:12px; line-height:1.5;">함께 떠날 정령 선택 · 전투마다 6마리 출전, 나머지는 대기하며 회복<br>출정 중엔 이 정령들만 전투</div>'
     + '<div class="exp-cnt"><b>'+expRosterPick.length+'</b> / '+max+'</div>';
-  html += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>rosterPickTileHtml(k, expRosterPick.includes(k))).join('')+'</div></div>';
+  html += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>rosterPickTileHtml(k, expRosterPick.includes(k))).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expPickClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expPickRec" style="flex:1; margin:0;">✨ 추천 '+max+'마리</button></div>'
     + '<button class="btn sticky-ok" id="expPickGo" style="margin-top:8px;" '+(expRosterPick.length>=need?'':'disabled')+'>🗡️ 이 정령들로 출정 (<img class="uic" src="assets/ui/ic_tk_exp.webp" alt=""> 1장 사용)</button>'
     + (expRosterPick.length<need ? '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">최소 '+need+'마리 선택</div>' : '')
@@ -8606,7 +8626,7 @@ function showDungeonPrep(el, n, keep){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
   bindPrepUnitInfo(pv);
-  document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.dungeonForms[el] = state.formation.slice(); save(); showDungeonPrep(el, n, true); }, null, pool)));
+  document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.dungeonForms[el] = state.formation.slice(); save(); showDungeonPrep(el, n, true); }, null, pool.concat(dispatchAwayKeys().filter(k=>SPIRITS[k].element===el))))); // (v267) 파견 중인 같은 속성 정령도 표시
   document.getElementById('dgClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; showDungeonPrep(el, n, true); });
   document.getElementById('dgRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], pool); showDungeonPrep(el, n, true); });
   document.getElementById('dgStart').addEventListener('click', ()=>{
@@ -8655,7 +8675,7 @@ function renderDungeonTab(){
 }
 function bindDungeonTab(){ document.querySelectorAll('[data-dg-go]').forEach(b=>b.addEventListener('click', ()=>{ const el = b.dataset.dgGo; showDungeonPrep(el, dungeonBest(el) >= DUNGEON_MAX ? DUNGEON_MAX : 0); })); }
 // ===================== (v266) 정령 파견 =====================
-// 여유 사본(같은 정령 2마리 이상일 때 남는 것)을 몇 시간 동안 임무에 보냄 — 보낸 사본은 그동안 없는 것으로 침(ownedCount에서 빠짐)
+// 정령을 몇 시간 동안 임무에 보냄 — 보낸 정령은 그동안 없는 것으로 침(ownedCount에서 빠짐) · (v267) 1마리뿐이어도 보낼 수 있음
 // 임무는 하루 4개(자정 갱신) · 동시에 3개까지 · 조건을 맞추면 보상 ×1.5 · 높은 등급을 보내면 보상 조금 더
 const DISPATCH_SLOTS = 3, DISPATCH_BOARD = 4;
 const DISPATCH_TEMPLATES = [
@@ -8669,6 +8689,21 @@ function dispatchState(){
   if(!Array.isArray(d.slots)) d.slots = [];
   if(!d.done || typeof d.done!=='object') d.done = {};
   return d;
+}
+// (v267) 파견 가서 지금 못 쓰는 정령(남은 게 0마리) — 정령 고르기 목록 아래에 흐리게 "🧭 파견 중 · 남은 시간"
+function dispatchReturnLeft(k){ const d = state.dispatch; if(!d || !Array.isArray(d.slots)) return 0; let t = Infinity; d.slots.forEach(s=>{ if((s.keys||[]).includes(k)) t = Math.min(t, s.end - Date.now()); }); return t===Infinity ? 0 : t; }
+function dispatchAwayKeys(filter){ return Object.keys(SPIRITS).filter(k=> dispatchedCount(k)>0 && ownedCount(k)<=0 && (!filter || filter.includes(k))); }
+function dispatchAwayHtml(filter){
+  const ks = dispatchAwayKeys(filter); if(!ks.length) return '';
+  return '<div class="pk-div">🧭 파견 중 — 돌아오면 다시 쓸 수 있음</div>' + ks.map(k=>{ const sp = SPIRITS[k], info = RARITY_INFO[sp.rarity], left = dispatchReturnLeft(k);
+    return '<div class="pk-card busy away"><div class="pk-ico" style="border-color:'+ELEMENT_INFO[sp.element].color+';">'+spArt(sp)+'</div>'
+      + '<div class="pk-main"><div class="pk-name">'+sp.name+' <span style="color:'+info.color+'; font-size:10px; font-weight:800;">'+info.name+'</span></div>'
+      + '<div class="pk-sub"><b style="color:#57d3ff;">🧭 파견 중 · '+(left>0 ? fmtLeft(left)+' 남음' : '도착 — 파견에서 받기')+'</b></div></div></div>'; }).join('');
+}
+function dispatchAwayTilesHtml(filter){ // (v267) 격자형 고르기 창용 — 누를 수 없는 흐린 칸
+  return dispatchAwayKeys(filter).map(k=>{ const sp = SPIRITS[k], left = dispatchReturnLeft(k);
+    return '<div class="roster-pick away" style="opacity:.5; cursor:default; border-color:#57d3ff66; background:#1e1c40;"><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
+      + '<div class="nm">'+sp.name+'</div><div class="pw" style="color:#57d3ff; white-space:nowrap;">🧭 '+(left>0 ? fmtLeft(left) : '도착')+'</div></div>'; }).join('');
 }
 function dispatchedCount(k){ const d = state.dispatch; if(!d || !Array.isArray(d.slots)) return 0; let n = 0; d.slots.forEach(s=>(s.keys||[]).forEach(x=>{ if(x===k) n++; })); return n; }
 function dispatchBoard(){ // 오늘 임무 4개 — 날짜로 고정(새로고침해도 같음)
@@ -8694,16 +8729,21 @@ function dispatchReward(m, keys){
   const mult = (1 + g*0.1) * (dispatchCondMet(m, keys) ? 1.5 : 1);
   return { essence: Math.round(base.essence*mult), stone: Math.round(base.stone*mult), items: base.items ? Object.assign({}, base.items) : null };
 }
-function dispatchSpare(){ return Object.keys(SPIRITS).filter(k=>ownedCount(k) >= 2); } // 1마리는 남김
+// (v267) 1마리뿐인 정령도 보낼 수 있음 — 보낸 동안은 없는 것으로 쳐서 진형·합성·각성에서 빠지고, 돌아오면 다시 씀
+// 단 진행 중인 출정대에 든 정령은 그 1마리만큼 남겨 둠
+function dispatchReserved(k){ const r = state.expedition; return (r && Array.isArray(r.roster) && r.roster.includes(k)) ? 1 : 0; }
+function dispatchAvail(k){ return Math.max(0, ownedCount(k) - dispatchReserved(k)); }
+function dispatchSpare(){ return Object.keys(SPIRITS).filter(k=>dispatchAvail(k) >= 1); }
 function dispatchStart(m, keys){
   const d = dispatchState();
   if(d.slots.length >= DISPATCH_SLOTS){ toast('파견 칸 가득 참'); return false; }
   if(d.done[m.id] || d.slots.some(s=>s.mid===m.id)){ toast('오늘 이미 보낸 임무'); return false; }
   if(keys.length !== m.need){ toast(m.need+'마리 필요'); return false; }
-  const cnt = {}; for(const k of keys){ cnt[k] = (cnt[k]||0)+1; if(ownedCount(k) - cnt[k] < 1){ toast(SPIRITS[k].name+' 여유 사본 부족'); return false; } }
+  const cnt = {}; for(const k of keys){ cnt[k] = (cnt[k]||0)+1; if(dispatchAvail(k) - cnt[k] < 0){ toast(SPIRITS[k].name+' 보낼 수 있는 수 부족'); return false; } }
   const now = Date.now();
   d.slots.push({ mid: m.id, nm: m.nm, ic: m.ic, keys: keys.slice(), start: now, end: now + m.dur*3600000, rw: dispatchReward(m, keys), bonus: dispatchCondMet(m, keys) });
   d.done[m.id] = true;
+  cleanupFormation(); // (v267) 마지막 1마리를 보냈으면 진형에서 빠짐
   save(); return true;
 }
 function dispatchClaim(i){
@@ -8719,7 +8759,7 @@ function rwInline(rw){ return rewardBrief(rw); }
 function renderDispatchTab(){
   if(!isUnlocked('dispatch')) return lockedFeatureScreenHtml('dispatch');
   const d = dispatchState(), board = dispatchBoard();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧭 정령 파견</div><div class="sub" style="font-size:11px;">여유 사본을 임무에 보냄 · 1마리는 남김 · 조건 맞추면 보상 ×1.5</div></div>';
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧭 정령 파견</div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 돌아올 때까지 못 씀 · 조건 맞추면 보상 ×1.5</div></div>';
   h += '<div class="dp-slots">'+Array.from({length:DISPATCH_SLOTS}, (_,i)=>{ const s = d.slots[i];
     if(!s) return '<div class="dp-slot empty"><span>빈 칸</span></div>';
     const left = s.end - Date.now(), done = left<=0, pct = Math.min(100, (Date.now()-s.start)/(s.end-s.start)*100);
@@ -8744,13 +8784,18 @@ function showDispatchPicker(mid, keep){
   let h = '<h3 style="text-align:center; margin:0;">'+m.ic+' '+m.nm+'</h3><div class="sub" style="text-align:center; font-size:12px; margin:4px 0;">'+m.dur+'시간 · '+m.need+'마리 · 🎯 '+m.cond.txt+'</div>';
   h += '<div class="dp-pickrow">'+Array.from({length:m.need}, (_,i)=> dpPick[i] ? '<button class="dp-pk on" data-dp-un="'+i+'">'+spArt(SPIRITS[dpPick[i]])+'</button>' : '<span class="dp-pk">＋</span>').join('')+'</div>';
   const rw = dispatchReward(m, dpPick), met = dispatchCondMet(m, dpPick);
+  h += '<div class="sub" style="text-align:center; font-size:11px; margin:-2px 0 4px;">보낸 정령은 돌아올 때까지 진형·합성·각성에 못 씀 · 같은 정령은 누를 때마다 1마리씩</div>'; // (v267)
   h += '<div class="dg-rw">'+(met ? '<b style="color:#9fe8c0;">조건 달성 · ×1.5</b> ' : '')+rewardPillsHtml(rw)+'</div>';
-  h += '<div class="roster-scroll" style="margin-top:8px;"><div class="roster-grid">'+(spare.length ? spare.map(k=>rosterPickTileHtml(k, !!cnt[k], '<div class="pw">여유 '+(ownedCount(k)-1-(cnt[k]||0))+'</div>')).join('') : '<div class="sub" style="text-align:center; padding:14px;">여유 사본 없음 — 같은 정령이 2마리 이상일 때 보낼 수 있음</div>')+'</div></div>';
+  h += '<div class="roster-scroll" style="margin-top:8px;"><div class="roster-grid">'+(spare.length ? spare.map(k=>rosterPickTileHtml(k, !!cnt[k], '<div class="pw" style="white-space:nowrap;">'+(cnt[k] ? '<b style="color:#9fe8c0;">✓'+cnt[k]+'</b> ' : '')+'남은 '+(dispatchAvail(k)-(cnt[k]||0))+(state.formation.includes(k) ? ' <span title="진형에 있음">⚔️</span>' : '')+'</div>')).join('') : '<div class="sub" style="text-align:center; padding:14px;">보낼 수 있는 정령 없음</div>')+'</div></div>';
   h += '<div class="rp-foot"><button class="btn sticky-ok" id="dpGo"'+(dpPick.length===m.need?'':' disabled')+'>🧭 보내기 ('+m.dur+'시간)</button></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-exp-pick]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.expPick;
-    const i = dpPick.indexOf(k); if(i>=0){ dpPick.splice(i,1); } else { if(dpPick.length>=m.need){ toast(m.need+'마리까지'); return; } if(ownedCount(k)-1-(cnt[k]||0) < 1){ toast('여유 사본 없음'); return; } dpPick.push(k); }
+    // (v267) 같은 정령도 여유 사본만큼 여러 마리 보낼 수 있게 — 누를 때마다 한 마리씩 추가, 더 넣을 수 없으면 한 마리 빼기 (위 칸을 눌러도 빠짐)
+    const room = dpPick.length < m.need, left = dispatchAvail(k)-(cnt[k]||0);
+    if(room && left >= 1) dpPick.push(k);
+    else if(cnt[k]){ dpPick.splice(dpPick.lastIndexOf(k), 1); }
+    else { toast(room ? '더 보낼 수 있는 '+SPIRITS[k].name+' 없음' : m.need+'마리까지'); return; }
     showDispatchPicker(mid, true); }));
   document.querySelectorAll('[data-dp-un]').forEach(b=>b.addEventListener('click', ()=>{ dpPick.splice(parseInt(b.dataset.dpUn),1); showDispatchPicker(mid, true); }));
   document.getElementById('dpGo').addEventListener('click', ()=>{ if(dispatchStart(m, dpPick)){ closeModal(); toast(m.ic+' '+m.nm+' 출발 — '+m.dur+'시간 뒤 도착'); render(); } });
@@ -10155,7 +10200,7 @@ function showManageModal(key){
 }
 function showDexModal(){
   let html = '<div class="grid5">';
-  Object.keys(SPIRITS).forEach(key=>{ html += tile(key); });
+  Object.keys(SPIRITS).forEach(key=>{ html += dexTile(key); });
   html += '</div>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
@@ -10306,6 +10351,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
       + '</div>';
   });
   if(options.length===0) html = rosterFilter ? '<div class="sub">출전 명단에 남은 정령 없음 — 다른 슬롯에서 이동</div>' : '<div class="sub" style="text-align:center;">보유 정령 없음 — 소환 먼저</div>';
+  html += dispatchAwayHtml(rosterFilter); // (v267) 파견 가서 지금 못 쓰는 정령
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">✕</button><h3>정령 배치 · '+(slotIdx<3?'전열':'후열')+'</h3>' + html + '</div></div>';
@@ -10883,7 +10929,7 @@ function sanitizeState(){
     if(d && typeof d==='object'){ if(!Array.isArray(d.slots)) d.slots = []; if(!d.done || typeof d.done!=='object') d.done = {};
       d.slots = d.slots.filter(x=> x && typeof x==='object' && Array.isArray(x.keys) && x.keys.length && x.keys.every(k=>SPIRITS[k]) && fin(x.start) && fin(x.end) && x.rw && typeof x.rw==='object').slice(0, DISPATCH_SLOTS);
       const need = {}; d.slots.forEach(x=>x.keys.forEach(k=>{ need[k]=(need[k]||0)+1; }));
-      d.slots = d.slots.filter(x=> x.keys.every(k=> (s.owned[k]||0) - need[k] >= 1));
+      d.slots = d.slots.filter(x=> x.keys.every(k=> (s.owned[k]||0) - need[k] >= 0)); // (v267) 1마리뿐인 정령도 보낼 수 있음
     }else s.dispatch = null; }
   migrateStageRewardsV179();
   migrateBossPicksV245();
@@ -10909,7 +10955,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 266;
+const APP_BUILD = 267;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
