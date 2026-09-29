@@ -876,6 +876,10 @@
   .tr-lbl{font-size:11px; font-weight:900; color:var(--sub); text-align:center; margin:6px 0 4px;}
   .tr-hint{text-align:center; margin-top:8px;} .tr-hinttxt{font-size:12px; color:#cfe8ff; background:#57d3ff14; border:1px solid #57d3ff44; border-radius:10px; padding:7px 9px; text-align:left;}
   .tr-card{display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border-radius:14px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .tr-card.done{border-color:#9fe8c066;} .tr-no{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; background:#ffffff14; flex:none;} .tr-card .dg-mid{display:flex; flex-direction:column; gap:1px;} .tr-card b{font-size:14px;} .tr-card small{font-size:11px; color:var(--sub);} .tr-stars{color:#ffd557 !important;} .tr-stars i{font-style:normal; color:#ffffff22;} .tr-card em{font-style:normal; font-size:20px; color:var(--sub);} .tr-card em .uic{width:18px; height:18px;}
+  .wb-card{position:relative; display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; margin:6px 0 8px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#4a1a3a,#1d1b48); border:2px solid #ff7a9a88; box-shadow:0 0 16px #ff5a8a33, inset 0 2px 0 #ffffff14;} .wb-card.off{display:block; opacity:.7;} .wb-card.off small{display:block; font-size:11px; color:var(--sub);}
+  .wb-img{width:52px; height:52px; object-fit:contain; flex:none;} .wb-mid{flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;} .wb-mid b{font-size:14px;} .wb-mid small{font-size:11px; color:var(--sub); display:flex; align-items:center; gap:3px;} .wb-mid .elic{width:14px; height:14px;} .wb-card em{font-style:normal; font-size:22px; color:var(--sub);}
+  .wb-bar{position:relative; display:block; height:8px; border-radius:5px; background:#0007; overflow:hidden;} .wb-bar > span{display:block; height:100%; background:linear-gradient(90deg,#ff4a6a,#ffb84a);} .wb-bar i{position:absolute; top:0; bottom:0; width:2px; background:#ffffffaa;} .wb-bar.big{height:14px; margin:8px 0 4px;}
+  .wb-ms{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;} .wb-m{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff1a; color:var(--text); font-size:11px;} .wb-m b{font-size:13px;} .wb-m small{font-size:10px; color:var(--sub);} .wb-m .uic{width:13px; height:13px;} .wb-m.on{border-color:#ffd557;} .wb-m.on:not(.got) small{color:#ffd557; font-weight:800;} .wb-m.got{opacity:.5;}
   .dg-title{font-size:17px; font-weight:900; color:#ffd35a; text-shadow:0 2px 0 var(--line); display:flex; align-items:center; justify-content:center; gap:6px;}
   .dg-week{display:flex; gap:4px; justify-content:center;} .dg-week span{flex:1; max-width:48px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 0; border-radius:10px; background:#ffffff0c; border:1px solid #ffffff14; font-size:10px; color:var(--sub);} .dg-week span.on{background:#ffd55722; border-color:#ffd557; color:#ffe7a0;} .dg-week .elic{width:16px; height:16px;} .dg-week b{font-size:9px; line-height:16px;}
   .dg-list, .ch-list{display:flex; flex-direction:column; gap:8px;}
@@ -1969,7 +1973,7 @@ function makeActCtx(sf, a, tSide, tIdx){
 function performAction(sf, a, act, tSide, tIdx){
   const C = makeActCtx(sf, a, tSide, tIdx);
   if(!C.t) return C;
-  const name = SPIRITS[a.key].name;
+  const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
     C.hit(C.t, 1);
     if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && !sf.noRng && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
@@ -3192,6 +3196,7 @@ function renderRaidTab(){
 function raidListHtml(){
   let h = '<div class="rd">' + raidTopHtml();
   h += '<button class="rd-shopbar" id="raidShopBtn"><span class="rd-sb-ic">🛒</span><span class="rd-sb-tx"><b>레이드 상점</b><small>선택권 · 정수 · 강화석 · 룬</small></span><span class="rd-sb-gem">'+uiIc('runestone')+' '+(state.raidGems||0)+'</span><span class="rd-go">›</span></button>';
+  h += wbCardHtml(); // (v266) 월드 보스
   h += '<div class="rw-sec-t" style="margin-top:4px;">레이드 보스</div><div class="rd-list">' + RAID_BOSSES.map((x,i)=>{
     const un = raidBossUnlocked(i), p = (state.raidProgress && state.raidProgress[x.id]) || [], el = ELEMENT_INFO[x.element];
     if(!un) return '<div class="rd-row lock"><span class="rd-rart">'+uiIc('lock')+'</span><span class="rd-rinfo"><b>???</b><small>'+RAID_BOSSES[i-1].name+' 처치 시 해금</small></span></div>';
@@ -3222,6 +3227,7 @@ function raidDetailHtml(){
 }
 
 function bindRaidTab(){
+  { const w = document.getElementById('wbOpen'); if(w) w.addEventListener('click', showWorldBoss); } // (v266)
   const q = id=>document.getElementById(id);
   if(q('raidCreateBtn')) q('raidCreateBtn').addEventListener('click', ()=>raidCreateRoom('raid'));
   if(q('raidJoinBtn')) q('raidJoinBtn').addEventListener('click', ()=>raidJoinRoom(q('raidCodeInput').value));
@@ -3633,6 +3639,7 @@ function checkSkillStageOutcome(sf){
   if(sf.mode==='expedition') return checkExpeditionOutcome(sf);
   if(sf.mode==='dungeon') return checkDungeonOutcome(sf); // (v266)
   if(sf.mode==='trial') return checkTrialOutcome(sf);
+  if(sf.mode==='worldboss') return checkWorldBossOutcome(sf);
   if(sf.mode==='raid') return checkRaidOutcome(sf);
   if(sf.mode==='duel'){ if(sf.result) return true; if(!aliveUnits(sf.enemyUnits).length){ sf.result = {win:true, rounds:sf.round}; return true; } if(!aliveUnits(sf.myUnits).length){ sf.result = {win:false, rounds:sf.round}; return true; } return false; }
   if(sf.result) return true;
@@ -3669,10 +3676,12 @@ function settleQueue(sf){
   return 'end';
 }
 // 라운드 시작: 쿨다운 감소 · 지속 효과(화상·독·재생) · 지속 시간 감소 · 패시브(맑은 물·서약)
+// 최대체력 % 효과의 기준 체력 (월드 보스는 체력이 거대해서 별도 기준 사용)
+const pctHp = u=>u.pctHp || u.maxHp;
 function roundStartEffects(sf){
   sf.myUnits.concat(sf.enemyUnits).forEach(u=>{ if(u.alive && u.st.shield>0){ u.st.shieldR = (u.st.shieldR||2) - 1; if(u.st.shieldR<=0){ u.st.shield = 0; delete u.st.shieldR; } } }); // (v173) 보호막 지속시간
   groggyRoundStart(sf); // (v179) 그로기 해제·게이지 회복(기믹보다 먼저)
-  if(sf.mode==='boss' || (sf.mode==='expedition' && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정 보스도 기믹
+  if(sf.mode==='boss' || ((sf.mode==='expedition' || sf.mode==='worldboss') && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정·월드 보스도 기믹
   if(sf.mode==='raid') applyRaidGimmicks(sf);
   runeRoundStart(sf);
   const hits = [];
@@ -3683,9 +3692,9 @@ function roundStartEffects(sf){
     const s = u.st;
     let loss = 0;
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
-    if(s.poison){ loss += Math.round(u.maxHp * s.poison.pct); }
+    if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true }); if(u.hp<=0){ killUnit(sf, u); return; } }
-    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, u.maxHp*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b }); }
+    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b }); }
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
@@ -3695,7 +3704,7 @@ function roundStartEffects(sf){
     list.forEach(p=>{
       if(p.line==='water_a' && unitPG(p)>=1 && list.length){
         const low = aliveUnits(sideUnits(sf, side)).reduce((x,y)=> y.hp/y.maxHp < x.hp/x.maxHp ? y : x);
-        const b = low.hp; low.hp = Math.min(low.maxHp, low.hp + healAmount(low, low.maxHp*[0,.03,.04,.05,.06][unitPG(p)]));
+        const b = low.hp; low.hp = Math.min(low.maxHp, low.hp + healAmount(low, pctHp(low)*[0,.03,.04,.05,.06][unitPG(p)]));
         if(low.hp>b) hits.push({ side, idx:low.idx, kind:'heal', amount:low.hp-b });
       }
       if(p.line==='light_b' && unitPG(p)>=1){
@@ -3954,13 +3963,13 @@ const LINE_KITS = {
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 5% 부여':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
         '대상 편 전체 회복 (시전자 최대체력 '+pctTxt([0,0,.12,.16,.20][g])+')',
         '해로운 효과 '+(g>=4?'전부':'1개')+' 제거'
       ].join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([0,0,.12,.16,.20]); C.side(C.tSide).forEach(u=>{ C.heal(u,amt); C.cleanse(u, C.g>=4?99:1); }); } } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([0,0,.12,.16,.20]); C.side(C.tSide).forEach(u=>{ C.heal(u,amt); C.cleanse(u, C.g>=4?99:1); }); } } },
   water_b: { role:'빙결', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'한기', desc:g=>'공격한 대상 속도 −'+[0,5,6,8,10][g]+' (최대 3중첩)' },
     s1:{ name:'서리 화살', icon:'🏹', cd:3, kind:'harm', tag:()=> '둔화',
@@ -4015,13 +4024,13 @@ const LINE_KITS = {
         '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'양옆 대상에게도 절반만큼 보호막':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(aw5(C.a)) C.cleanse(C.t,1); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(aw5(C.a)) C.cleanse(C.t,1); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
     s2:{ name:'날개의 가호', icon:'🪽', cd:4, kind:'shield', tag:g=>'전체'+(g>=3?' · 면역':''),
       desc:g=>[
         '대상 편 전체에게 보호막 부여 (시전자 최대체력 '+pctTxt([0,0,.10,.13,.16][g])+')',
         g>=3?'해로운 효과를 1회 막아주는 보호 부여':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=C.a.maxHp*C.P([0,0,.10,.13,.16]); C.side(C.tSide).forEach(u=>{ C.shield(u,amt); if(C.g>=3) u.st.ward=1; }); } } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([0,0,.10,.13,.16]); C.side(C.tSide).forEach(u=>{ C.shield(u,amt); if(C.g>=3) u.st.ward=1; }); } } },
   light_b: { role:'가속', icon:ELEMENT_INFO.light.icon,
     passive:{ name:'서약', desc:g=>'라운드 시작마다 가장 느린 아군의 속도 +'+[0,5,6,8,10][g] },
     s1:{ name:'별빛 가속', icon:'<img class="uic" src="assets/ui/ic_star.webp" alt="">', cd:3, kind:'buff', tag:g=>g>=4?'전체':'',
@@ -4050,7 +4059,7 @@ const LINE_KITS = {
         g>=3?'처치하면 체력 15% 회복':null,
         g>=4?'처치하면 한 번 더 행동':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const low=C.t.hp/C.t.maxHp<=0.3; const r=C.hit(C.t, low?C.P([0,0,3,3.5,4]):1.2); if(r && !C.t.alive){ if(C.g>=3) C.heal(C.a, C.a.maxHp*0.15); if(C.g>=4) C.actNext(C.a); } } } },
+      run:C=>{ const low=C.t.hp/C.t.maxHp<=0.3; const r=C.hit(C.t, low?C.P([0,0,3,3.5,4]):1.2); if(r && !C.t.alive){ if(C.g>=3) C.heal(C.a, pctHp(C.a)*0.15); if(C.g>=4) C.actNext(C.a); } } } },
   dark_b: { role:'저주', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'약점 간파', desc:g=>'저주 걸린 대상을 공격할 때 크리티컬 확률 +'+pctTxt([0,.10,.15,.20,.25][g]) },
     s1:{ name:'저주 표식', icon:'<img class="uic" src="assets/ui/ic_skull.webp" alt="">', cd:3, kind:'harm', tag:g=>'저주'+(g>=4?' · 전체':(g>=3?' · 십자':'')),
@@ -4273,7 +4282,7 @@ function applyBaseBossGimmick(sf, g, boss){
         pushLog(sf, '🌳 덩굴이 '+SPIRITS[target.key].name+'을(를) 전열로 끌어냈다!');
       }
     }
-    const before = boss.hp; boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.03));
+    const before = boss.hp; boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(pctHp(boss)*0.03));
     if(boss.hp>before) pushLog(sf, '🌳 고대수목이 재생했다');
   }else if(g.type==='abyssCrystal'){
     boss.element = g.nextElement; boss.line = boss.element+'_a';
@@ -4291,7 +4300,7 @@ function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보
       else { allies().forEach(u=>{ dealDamage(sf, boss, u, 1.0, {noCrit:true}); if(u.alive) u.st.freeze = true; }); pushLog(sf, '❄️ '+nm('절대영도')+'! 아군 전체 빙결'); }
     }
     if(r%3===0){ const s2 = allies().sort((x,y)=>effSpeed(y)-effSpeed(x))[1]; if(s2){ s2.st.freeze = true; pushLog(sf, '🧊 '+nm('혹한')+' — '+SPIRITS[s2.key].name+'도 얼었다!'); } }
-    if(r%4===0){ const need = Math.round(boss.maxHp*0.04); boss.cast = { ic:'❄️', nm:'절대영도', need, dealt:0 }; pushLog(sf, '❄️ '+nm('절대영도')+' 준비 — 이번 라운드에 '+fmtHp(need)+' 피해를 주면 저지'); }
+    if(r%4===0){ const need = Math.round(pctHp(boss)*0.04); boss.cast = { ic:'❄️', nm:'절대영도', need, dealt:0 }; pushLog(sf, '❄️ '+nm('절대영도')+' 준비 — 이번 라운드에 '+fmtHp(need)+' 피해를 주면 저지'); }
     allies().forEach(u=>{ if(u.st.freeze) u.st.curse = { v: Math.max(0.5, (u.st.curse && u.st.curse.v)||0), r: 2 }; }); // 동상 — 라운드 시작 때 1 줄어서 이번 라운드 동안 유지
   }
   else if(g.type==='lavaLord'){
@@ -4303,7 +4312,7 @@ function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보
     if(r%3===2){ const woke = sf.enemyUnits.filter(u=>u.isAdd && !u.alive); woke.forEach(a=>{ a.alive = true; a.hidden = false; a.hp = a.maxHp; a.st = {}; a.fuse = 2; a.cd1 = 0; a.cd2 = 0; }); if(woke.length) pushLog(sf, '💣 '+nm('용암 정령')+' '+woke.length+'마리 소환 — 2라운드 뒤 자폭'); }
   }
   else if(g.type==='ancientTree'){
-    boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.03)); // 생명의 뿌리
+    boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(pctHp(boss)*0.03)); // 생명의 뿌리
     const pool = allies().sort(()=>Math.random()-0.5).slice(0,2);
     pool.forEach(u=>{ u.st.poison = { r:3, pct:0.06, srcG:2 }; }); if(pool.length) pushLog(sf, '🍄 '+nm('포자')+' — '+pool.map(u=>SPIRITS[u.key].name).join('·')+' 중독');
     const grow = ()=>{ boss.st.reflect = { v:0.15, r:99 }; g.thornCut = null; };
@@ -4311,7 +4320,7 @@ function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보
     else if(!boss.st.reflect){ if(g.thornCut==null) g.thornCut = r; else if(r - g.thornCut >= 2){ grow(); pushLog(sf, '🌵 '+nm('가시 덩굴')+'이 다시 자랐다'); } }
   }
   else if(g.type==='ruinGuardian'){
-    if(sf.enemyUnits.some(u=>u.isWard && u.alive)) boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(boss.maxHp*0.02)); // 결계 공명
+    if(sf.enemyUnits.some(u=>u.isWard && u.alive)) boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(pctHp(boss)*0.02)); // 결계 공명
     if(r%2===0){ const t = allies().reduce((x,y)=> y.hp>x.hp ? y : x); t.st.freeze = true; pushLog(sf, '👁️ '+nm('석화의 눈')+' — '+SPIRITS[t.key].name+' 석화!'); }
     const s = allies().reduce((x,y)=> y.atk>x.atk ? y : x); s.st.seal = { r:2 }; pushLog(sf, '🔏 '+nm('봉인의 문양')+' — '+SPIRITS[s.key].name+' 스킬 봉인');
   }
@@ -4329,7 +4338,7 @@ function applyBossExtra(sf, g, boss){ // (v256) 추가 기믹 — (v258) 노말�
   const r = sf.round, nm = n=>'<b>'+n+'</b>';
   if(g.type==='frostGiant' && r%3===0){ allies.forEach(u=>{ dealDamage(sf, boss, u, 0.5, {noCrit:true}); if(u.alive) u.st.slow = {v:15, r:2}; }); pushLog(sf, '🌨️ '+nm('눈보라')+'!'); }
   else if(g.type==='lavaLord' && r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.7, {noCrit:true})); pushLog(sf, '🌋 '+nm('분화')+'!'); }
-  else if(g.type==='ancientTree' && !g.hardShell && boss.hp/boss.maxHp < 0.5){ g.hardShell = true; boss.st.shield = (boss.st.shield||0) + Math.round(boss.maxHp*0.25); pushLog(sf, '🌳 '+nm('가시 껍질')+'!'); }
+  else if(g.type==='ancientTree' && !g.hardShell && boss.hp/boss.maxHp < 0.5){ g.hardShell = true; boss.st.shield = (boss.st.shield||0) + Math.round(pctHp(boss)*0.25); pushLog(sf, '🌳 '+nm('가시 껍질')+'!'); }
   else if(g.type==='ruinGuardian' && !g.wardReborn){
     const wards = sf.enemyUnits.filter(u=>u.isWard);
     if(wards.length && wards.every(w=>!w.alive)){
@@ -4859,6 +4868,7 @@ function battleThemeOf(sf){
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
   if(sf.mode==='trial') return 'cave';
+  if(sf.mode==='worldboss') return ({frostGiant:'snow', lavaLord:'volcano', abyssCrystal:'cave'})[sf.wbPhase] || 'cave';
   if(sf.mode==='duel') return 'arena';
   const ch = Math.max(0, Math.floor(stageLocal(sf.stageIdx||0)/CHAPTER_LENGTH)) % MAX_CHAPTERS;
   return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
@@ -4930,6 +4940,7 @@ function showSkillStageScreen(){
   let html = intro ? '<div class="bs-wipe"></div>' : '';
   const titleTxt = sf.mode==='boss' ? '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 웨이브 '+sf.wave+'/'+BOSS_WAVE_COUNT+' · R'+sf.round
     : sf.mode==='expedition' ? '🗡️ 출정 · R'+sf.round
+    : sf.mode==='worldboss' ? '🌍 월드 보스 · R'+Math.min(sf.round, WB_ROUNDS)+'/'+WB_ROUNDS
     : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')+' · R'+sf.round+((trialDef(sf.trialId)||{}).maxRounds ? '/'+trialDef(sf.trialId).maxRounds : '')
     : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계 · R'+sf.round
     : sf.mode==='duel' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투 · vs '+(sf.duelName||'상대')
@@ -5005,7 +5016,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
+  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
   setHtmlKeepImgs(root, html);
   fitBattleScreen();
@@ -5019,6 +5030,7 @@ function showSkillStageScreen(){
     if(sf.mode==='expedition'){ state.skillFight=null; unmountBattleScreen(); save(); render(); return; }
     if(sf.mode==='dungeon'){ leaveDungeonFight(); return; }
     if(sf.mode==='trial'){ leaveTrialFight(); return; }
+    if(sf.mode==='worldboss'){ if(!sf.result){ sf.round = WB_ROUNDS+1; checkWorldBossOutcome(sf); } leaveWorldBossFight(); return; } // 중간에 나가도 그때까지 피해는 기록
     if(sf.mode==='duel'){
       if(raidIsNet()){
         if(sf.result){ raidFinish().then(()=>{ activeTab='home'; render(); }); return; }
@@ -5057,6 +5069,8 @@ function showSkillStageScreen(){
         if(n && n.type!=='event') showExpeditionSquadPicker();
       }
     });
+  }else if(sf.mode==='worldboss'){ // (v266) 월드 보스
+    if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveWorldBossFight);
   }else if(sf.mode==='trial'){ // (v266) 시련의 전당
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveTrialFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
@@ -8772,6 +8786,139 @@ function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 ·
   state.trialClear = keep; state.essence = ess; state.enhanceStone = st; state.tickets = JSON.parse(tk);
   return { rate: wins/tries, wins, ai: ai.win, aiReason: ai.reason, sol };
 }
+// ===================== (v266) 월드 보스 =====================
+// 모든 플레이어가 한 주 동안 같은 보스를 함께 잡음(서버 worldboss/<주>). 전체 체력이 66%·33% 아래로 내려가면 모습·기믹이 바뀜
+// 한 번 도전 = 5라운드 · 보스 체력바는 '지금 남은 전체 체력'에서 시작 → 내 공격으로 0을 만들면 처치자(막타)
+// 날마다 약점 속성이 바뀜(그 속성 정령 공격력 ×1.5) · 하루 3번 · 전체 25/50/75/100% 마다 참여자 모두 보상
+const WB_ROUNDS = 5, WB_TRIES = 3;
+let WB_HP = 3000000; // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 10명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도
+const WB_PCT_HP = 20000, WB_ATK_RATIO = 0.35;
+const WB_PHASES = [ // 남은 체력 비율이 이 값 이하면 그 단계
+  { at:1.00, g:'frostGiant', nm:'빙하의 거신', d:'받는 피해 절반 · 3R마다 가장 빠른 아군 빙결 · 눈보라' },
+  { at:0.66, g:'lavaLord', nm:'업화의 군주', d:'화염 공격 흡수 · 매 R 화상 · 3R마다 분화' },
+  { at:0.33, g:'abyssCrystal', nm:'심연의 핵', d:'매 R 속성 변환 · 심연 응시 · 3R마다 심연 파동' }
+];
+const WB_MILESTONES = [ {p:0.25, rw:{essence:800}}, {p:0.50, rw:{stone:60}}, {p:0.75, rw:{items:{pick_epic:1}}}, {p:1.00, rw:{items:{pick_legendary:1}}} ];
+const WB_KILL_RW = { essence:1500, items:{pick_legendary:1} };
+let wbNet = { week:null, data:null, unsub:null };
+function wbWeek(){ return raidWeekKey(); }
+function wbState(){ const w = wbWeek(), s = state.wb = state.wb || {}; if(s.week!==w){ s.week = w; s.claimed = {}; s.joined = false; s.killRw = false; } if(s.day!==todayStr()){ s.day = todayStr(); s.used = 0; } return s; }
+function wbTotal(){ return Math.max(0, (wbNet.data && Number.isFinite(wbNet.data.total)) ? wbNet.data.total : 0); }
+function wbRemain(){ return Math.max(0, WB_HP - wbTotal()); }
+function wbPhaseAt(remainRatio){ let ph = WB_PHASES[0]; WB_PHASES.forEach(p=>{ if(remainRatio <= p.at) ph = p; }); return ph; }
+function wbPhase(){ return wbPhaseAt(wbRemain()/WB_HP); }
+function wbWeakEl(){ const d = todayStr(); let h = 0; for(let i=0;i<d.length;i++) h = (h*33 + d.charCodeAt(i)) >>> 0; return ELEMENTS[h % ELEMENTS.length]; }
+function wbWatch(){
+  if(!raidNet.db || wbNet.week===wbWeek()) return;
+  if(wbNet.unsub){ try{ wbNet.unsub(); }catch(e){} }
+  wbNet.week = wbWeek(); wbNet.data = null;
+  wbNet.unsub = raidNet.db.doc('worldboss/'+wbWeek()).onSnapshot(s=>{ wbNet.data = (s && s.exists) ? s.data() : {}; if(activeTab==='raid' && !document.getElementById('battleScreen')) render(); }, ()=>{});
+}
+function buildWorldBossFight(){
+  const ph = wbPhase(), gi = CHAPTER_BOSS_GIMMICK.indexOf(ph.g), weak = wbWeakEl();
+  const bf = buildBossWaveFight(gi*CHAPTER_LENGTH + CHAPTER_LENGTH-1, BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
+  const boss = bf.enemyUnits.find(u=>u.isBoss);
+  // 공격력은 도전 팀 체력에 맞춰 조절 → 약한 팀도 몇 라운드는 버티고, 강한 팀은 딜로 차이가 남
+  const avgHp = bf.myUnits.reduce((t,u)=>t+u.maxHp,0) / Math.max(1, bf.myUnits.length);
+  boss.pctHp = WB_PCT_HP; // 독·기믹 % 수치는 이 기준 체력으로 계산 (5천만 기준이면 독 한 번에 수백만)
+  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm;
+  bf.myUnits.forEach(u=>{ if(u.element===weak) u.atk = Math.round(u.atk*1.5); });
+  const sf = Object.assign(bf, { mode:'worldboss', wbStart: boss.hp, wbPhase: ph.g, log:['월드 보스 · '+ph.nm+'!'] });
+  return sf;
+}
+function checkWorldBossOutcome(sf){
+  if(sf.result) return true;
+  const boss = sf.enemyUnits.find(u=>u.isBoss);
+  const end = !boss || !boss.alive || sf.round > WB_ROUNDS || !aliveUnits(sf.myUnits).length;
+  if(!end) return false;
+  const dmg = Math.max(0, Math.round(sf.wbStart - (boss && boss.alive ? boss.hp : 0)));
+  sf.result = { win: !!(boss && !boss.alive), rounds: Math.min(sf.round, WB_ROUNDS), dmg, localKill: !!(boss && !boss.alive) };
+  const s = wbState(); s.joined = true;
+  state.essence += 100; state.enhanceStone = (state.enhanceStone||0) + 10; // 참여 보상
+  s.pending = (s.pending||0) + dmg; save();
+  wbSubmit(sf);
+  return true;
+}
+async function wbSubmit(sf){
+  const s = wbState(), fb = raidNet.fb; if(!s.pending || !fb || !raidNet.db) return;
+  const dmg = s.pending, w = wbWeek(), base = 'worldboss/'+w;
+  try{
+    let before = 0, after = 0;
+    await fb.runTransaction(fb.ref(fb.rtdb, base+'/total'), cur=>{ before = Number(cur)||0; after = before + dmg; return after; });
+    const me = await raidNet.db.doc(base+'/p/'+raidNet.uid).get(), v = (me && me.exists) ? me.data() : {};
+    await raidNet.db.doc(base+'/p/'+raidNet.uid).set({ dmg: (Number(v.dmg)||0) + dmg, best: Math.max(Number(v.best)||0, dmg), n: (Number(v.n)||0) + 1, name: homeProfileName() });
+    s.pending = 0;
+    if(before < WB_HP && after >= WB_HP){ // 막타
+      let won = false; await fb.runTransaction(fb.ref(fb.rtdb, base+'/killer'), cur=>{ if(cur) return; won = true; return { uid: raidNet.uid, name: homeProfileName(), at: Date.now() }; });
+      if(won && !s.killRw){ s.killRw = true; state.essence += WB_KILL_RW.essence; grantItems(WB_KILL_RW.items); toastReward(WB_KILL_RW, '⚔️ 월드 보스 처치자!', 4000); }
+      if(sf && sf.result) sf.result.killer = won;
+    }
+    save(); if(state.skillFight===sf && document.getElementById('battleScreen')) showSkillStageScreen();
+  }catch(e){ toast('⚠️ 월드 보스 기록 저장 실패 — 다음에 다시 보냄'); }
+}
+function wbClaim(i){
+  const s = wbState(), m = WB_MILESTONES[i]; if(!m || s.claimed[i] || !s.joined) return;
+  if(wbTotal()/WB_HP < m.p){ toast('아직 달성 전'); return; }
+  s.claimed[i] = true; state.essence += m.rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (m.rw.stone||0); grantItems(m.rw.items); save();
+  toastReward(m.rw, '🌍 월드 보스 '+Math.round(m.p*100)+'% 보상');
+}
+function wbResultOverlayHtml(sf){
+  const r = sf.result, pct = x=> (x/WB_HP*100).toFixed(2)+'%';
+  let h = '<div class="bs-result"><div class="bs-rcard win"><div class="bs-ricon">🌍</div><div class="bs-rtitle">'+(r.localKill ? '월드 보스 격파!' : '도전 끝')+'</div>'
+    + '<div class="bs-rsub">준 피해 <b style="color:#ffd557;">'+fmtHp(r.dmg)+'</b> · 전체의 '+pct(r.dmg)+'</div>'
+    + (r.killer===true ? '<div class="bs-rsub" style="color:#ff9aa8;">⚔️ 막타 — 처치자 보상</div>' : '')
+    + '<div class="bs-rrew"><div>참여 보상 '+rewardPillsHtml({essence:100, stone:10})+'</div></div>'
+    + '<div class="bs-rbtns"><button class="btn" id="skillResultCloseBtn">확인</button></div></div></div>';
+  return h;
+}
+function leaveWorldBossFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'raid'; save(); render(); }
+function wbCardHtml(){ // 레이드 목록 맨 위 카드
+  wbWatch();
+  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl();
+  if(!raidNet.db) return '<div class="wb-card off"><b>🌍 월드 보스</b><small>온라인 연결 후 참여</small></div>';
+  const marks = WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('');
+  return '<button class="wb-card" id="wbOpen">'+bossImg(ph.g, 'wb-img', '🌍')+'<span class="wb-mid"><b>🌍 월드 보스 · '+ph.nm+'</b>'
+    + '<span class="wb-bar"><span style="width:'+(ratio*100)+'%;"></span>'+marks+'</span>'
+    + '<small>'+(ratio<=0 ? '✅ 이번 주 처치 완료 · 달성 보상 확인' : '남은 체력 '+(ratio*100).toFixed(1)+'% · 오늘 약점 '+elIc(weak)+' · 도전 '+Math.max(0, WB_TRIES-s.used)+'/'+WB_TRIES)+'</small></span><em>›</em></button>';
+}
+function showWorldBoss(){
+  wbWatch();
+  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {};
+  const ps = Object.entries(d.p||{}).map(([uid,v])=>({ uid, nm: String((v&&v.name)||'소환사').slice(0,12), dmg: Number(v&&v.dmg)||0, best: Number(v&&v.best)||0 })).sort((a,b)=>b.dmg-a.dmg);
+  const myRank = ps.findIndex(x=>x.uid===raidNet.uid);
+  let h = gmHeadHtml(ph.g, '🌍', ['<span class="gm-chip">단계 '+(WB_PHASES.indexOf(ph)+1)+'/'+WB_PHASES.length+'</span>', '<span class="gm-chip">오늘 약점 '+elIc(weak)+' ×1.5</span>', '<span class="gm-chip">한 번 '+WB_ROUNDS+'라운드</span>']);
+  h += '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span>'+WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('')+'</div>';
+  h += '<div class="sub" style="text-align:center; font-size:11px;">전체 '+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ 처치자 '+escTxt(d.killer.name) : '')+'</div>';
+  const dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
+  h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'🔒', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
+  h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
+    return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
+  h += '<div class="gm-sec"><div class="gm-sh">기여 순위</div>'+(ps.length ? ps.slice(0,10).map((x,i)=>'<div class="xp-rank'+(x.uid===raidNet.uid?' me':'')+'"><span>'+(i+1)+'</span><b>'+escTxt(x.nm)+(d.killer&&d.killer.uid===x.uid?' ⚔️':'')+'</b><em>'+fmtHp(x.dmg)+'</em></div>').join('') : '<div class="sub" style="text-align:center; font-size:11px;">아직 아무도 도전 안 함</div>')
+    + (myRank>=10 ? '<div class="xp-rank me"><span>'+(myRank+1)+'</span><b>나</b><em>'+fmtHp(ps[myRank].dmg)+'</em></div>' : '')+'</div>';
+  h += '<button class="btn" id="wbGo" style="margin-top:10px;"'+(dead || s.used>=WB_TRIES || !raidNet.db ?' disabled':'')+'>'+(dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, WB_TRIES-s.used)+'/'+WB_TRIES+')')+'</button>';
+  openInfoOverlay('🌍 월드 보스', h);
+  document.querySelectorAll('[data-wb-claim]').forEach(b=>b.addEventListener('click', ()=>{ wbClaim(parseInt(b.dataset.wbClaim)); document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBoss(); }));
+  const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBossPrep(); });
+}
+function showWorldBossPrep(){
+  const s = wbState(); if(wbRemain()<=0){ toast('이번 주 보스 처치 완료'); return; } if(s.used >= WB_TRIES){ toast('오늘 도전 끝 — 내일 다시'); return; }
+  const weak = wbWeakEl(), pv = buildWorldBossFight();
+  let h = '<h3 style="text-align:center; margin:0;">🌍 '+wbPhase().nm+'</h3><div class="dg-rule">오늘 약점 '+elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · '+WB_ROUNDS+'라운드 동안 최대한 피해</div>';
+  h += formationRowsHtml();
+  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="wbClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="wbRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
+  h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">내 전투력 '+fmtCP(teamCP(pv.myUnits))+' · 도전하면 1회 사용</div>';
+  h += '<button class="btn sticky-ok" id="wbStart" style="margin-top:10px;">⚔️ 도전</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose(); bindPrepUnitInfo(pv);
+  document.querySelectorAll('[data-slot]').forEach(el=>el.addEventListener('click', ()=>showSlotPicker(parseInt(el.dataset.slot), showWorldBossPrep, null, null)));
+  document.getElementById('wbClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showWorldBossPrep(); });
+  document.getElementById('wbRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,b)=> (SPIRITS[b].element===weak) - (SPIRITS[a].element===weak) || unitAtk(b)-unitAtk(a))); save(); showWorldBossPrep(); });
+  document.getElementById('wbStart').addEventListener('click', ()=>{
+    if(!state.formation.some(Boolean)){ toast('최소 1마리 배치'); return; }
+    const st = wbState(); if(st.used >= WB_TRIES) return;
+    st.used += 1; closeModal(); state.skillFight = buildWorldBossFight(); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
+  });
+}
 function renderTowerTab(){
   if(!isUnlocked('tower')) return lockedFeatureScreenHtml('tower');
   const best = state.towerBest||0, frontier = towerFloor(), topFloor = frontier + 2; // 다음 도전 위로 2층은 미리보기
@@ -10493,6 +10640,8 @@ function sanitizeState(){
       modeOk = Number.isInteger(sf.stageIdx) && isValidStage(sf.stageIdx) && isBossStage(sf.stageIdx) && Number.isInteger(sf.wave) && sf.wave>=1 && sf.wave<=BOSS_WAVE_COUNT;
     }else if(sf && sf.mode==='expedition'){
       modeOk = true; // 출정은 stageIdx 없이도 유효
+    }else if(sf && sf.mode==='worldboss'){
+      modeOk = Number.isFinite(sf.wbStart);
     }else if(sf && sf.mode==='trial'){
       modeOk = !!trialDef(sf.trialId);
     }else if(sf && sf.mode==='dungeon'){
