@@ -1554,7 +1554,7 @@ const BOSS_RUNES = {
   frostTyrant:  { id:'frost',   name:'혹한의 룬', icon:'🧊', desc:'공격이 맞으면 12% 확률로 빙결' },
   infernoDrake: { id:'inferno', name:'겁화의 룬', icon:'🐉', desc:'공격이 맞으면 화상 1중첩' },
   abyssEye:     { id:'abyss',   name:'심연의 룬', icon:'👁️', desc:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)' },
-  eldertree:    { id:'elder',   name:'태고의 룬', icon:'🌳', desc:'라운드 시작마다 최대체력 4% 회복' },
+  eldertree:    { id:'elder',   name:'태고의 룬', icon:'🌳', desc:'라운드 시작마다 자신 최대체력 4% 회복' },
   dawnJudge:    { id:'judge',   name:'심판의 룬', icon:'⚖️', desc:'체력 30% 이하 적에게 피해 +30%' }
 };
 const RUNE_REROLL_COST = 10;
@@ -2079,7 +2079,7 @@ const RAID_OFFLINE_GRACE_MS = 30000; // 팀원이 이 시간 넘게 끊겨 있�
 const RAID_BOSSES = [
   {id:'frostTyrant', name:'혹한의 폭군', element:'water', icon:'🧊', gimmicks:[
     {id:'blizzard', name:'눈보라', ic:'🌨️', when:'3R마다', d:'아군 전체 공격력 50% 피해 + 둔화', desc:'3라운드마다 아군 전체에 공격력 50% 피해 + 둔화'},
-    {id:'iceShell', name:'얼음 껍질', ic:'🛡️', when:'체력 50%↓', d:'한 번, 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 최대체력 20% 보호막'}]},
+    {id:'iceShell', name:'얼음 껍질', ic:'🛡️', when:'체력 50%↓', d:'한 번, 보스 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 보스 최대체력 20% 보호막'}]},
   {id:'infernoDrake', name:'겁화룡', element:'fire', icon:'🐉', gimmicks:[
     {id:'brand', name:'낙인', ic:'🔥', when:'매 R', d:'체력이 가장 높은 아군 화상 3중첩', desc:'매 라운드 체력이 가장 높은 아군에게 화상 3중첩'},
     {id:'rage', name:'격노', ic:'😡', when:'4R마다', d:'공격력 +25% (누적)', desc:'4라운드마다 공격력 +25% (누적)'}]},
@@ -2087,8 +2087,8 @@ const RAID_BOSSES = [
     {id:'gaze', name:'응시', ic:'👁️', when:'매 R', d:'공격력이 가장 높은 아군 저주 (받는 피해 +25%)', desc:'매 라운드 공격력이 가장 높은 아군에게 저주 (받는 피해 +25%, 2라운드)'},
     {id:'pulse', name:'파동', ic:'🌀', when:'3R마다', d:'아군 전체 공격력 60% 피해', desc:'3라운드마다 아군 전체에 공격력 60% 피해'}]},
   {id:'eldertree', name:'태고수', element:'wood', icon:'🌳', gimmicks:[
-    {id:'regrowth', name:'재생', ic:'💚', when:'매 R', d:'최대체력 2.5% 회복', desc:'매 라운드 최대체력 2.5% 회복'},
-    {id:'bark', name:'껍질 경화', ic:'🌳', when:'체력 50%↓', d:'한 번, 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 최대체력 20% 보호막'}]},
+    {id:'regrowth', name:'재생', ic:'💚', when:'매 R', d:'보스 최대체력 2.5% 회복', desc:'매 라운드 보스 최대체력 2.5% 회복'},
+    {id:'bark', name:'껍질 경화', ic:'🌳', when:'체력 50%↓', d:'한 번, 보스 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 보스 최대체력 20% 보호막'}]},
   {id:'dawnJudge', name:'새벽의 심판관', element:'light', icon:'⚖️', gimmicks:[
     {id:'verdict', name:'판결', ic:'⚖️', when:'3R마다', d:'체력 비율이 가장 낮은 아군에게 공격력 200% 피해', desc:'3라운드마다 체력 비율이 가장 낮은 아군에게 공격력 200% 피해'},
     {id:'halo', name:'후광', ic:'✨', when:'매 R', d:'보스에 걸린 해로운 효과 전부 제거', desc:'매 라운드 시작 시 보스의 해로운 효과를 전부 제거'}]}
@@ -4106,7 +4106,7 @@ const LINE_KITS = {
       desc:g=>[
         '대상 회복 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
-        g>=3?'회복한 대상에게 2라운드 동안 재생 5% 부여':null
+        g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
@@ -4148,7 +4148,7 @@ const LINE_KITS = {
     ].filter(Boolean).join('<br>') },
     s1:{ name:'독 포자', icon:'🍄', cd:3, kind:'harm', tag:g=>'독'+(g>=2?' · 관통':''),
       desc:g=>[
-        '대상에게 공격력 70% + 독 3라운드 (라운드마다 최대체력 '+pctTxt([.04,.05,.06,.07,.08][g])+')',
+        '대상에게 공격력 70% + 독 3라운드 (라운드마다 대상 최대체력 '+pctTxt([.04,.05,.06,.07,.08][g])+')',
         g>=2?'바로 뒤 칸 대상에게도 35% + 독':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const p=C.P([.04,.05,.06,.07,.08]); C.hit(C.t,0.7); C.poison(C.t,p); if(C.g>=2) C.around('pierce').forEach(u=>{ C.hit(u,0.35); C.poison(u,p); }); } },
@@ -4201,7 +4201,7 @@ const LINE_KITS = {
     s2:{ name:'처형', icon:'⚰️', cd:4, kind:'harm', tag:()=> '처형',
       desc:g=>[
         '대상 체력이 30% 이하면 공격력 '+pctTxt([0,0,3,3.5,4][g])+', 아니면 120%',
-        g>=3?'처치하면 체력 15% 회복':null,
+        g>=3?'처치하면 자신 최대체력 15% 회복':null,
         g>=4?'처치하면 한 번 더 행동':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const low=C.t.hp/C.t.maxHp<=0.3; const r=C.hit(C.t, low?C.P([0,0,3,3.5,4]):1.2); if(r && !C.t.alive){ if(C.g>=3) C.heal(C.a, pctHp(C.a)*0.15); if(C.g>=4) C.actNext(C.a); } } } },
@@ -4240,14 +4240,14 @@ const RAID_BOSS_KITS = {
     s2:{ name:'공허의 시선', icon:'🕳️', cd:4, kind:'harm', desc:()=>'대상 편에서 체력이 가장 많은 정령에게 공격력 150% · 봉인(2R, 기본 공격만)',
       run:C=>{ const top = C.side(C.tSide).sort((x,y)=>y.hp-x.hp)[0] || C.t; C.hit(top, 1.5); if(top.alive) C.neg(top, st=>{ st.seal = {r:2}; }, '🔏봉인'); } } },
   eldertree: {
-    s1:{ name:'가시 뿌리', icon:'🌵', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 독(라운드마다 최대체력 5%, 3R)',
+    s1:{ name:'가시 뿌리', icon:'🌵', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 독(라운드마다 대상 최대체력 5%, 3R)',
       run:C=>{ C.hit(C.t, 1.6); if(C.t.alive) C.poison(C.t, 0.05); } },
     s2:{ name:'대지의 분노', icon:'🌳', cd:4, kind:'harm', desc:()=>'무작위 3명에게 공격력 110% · 속박(행동 순서 맨 뒤 · 받는 피해 +15%, 2R)',
       run:C=>{ const pool = C.side(C.tSide).slice(); for(let n=0; n<3 && pool.length; n++){ const i = C.sf.noRng ? 0 : Math.floor(Math.random()*pool.length); const u = pool.splice(i,1)[0]; C.hit(u, 1.1); if(u.alive) C.neg(u, st=>{ st.web = {v:0.15, r:2}; }, '🕸️속박'); } } } },
   dawnJudge: {
     s1:{ name:'심판의 창', icon:'⚖️', cd:3, kind:'harm', desc:()=>'대상의 보호막·이로운 효과를 모두 걷어낸 뒤 공격력 200%',
       run:C=>{ C.strip(C.t); C.hit(C.t, 2.0); } },
-    s2:{ name:'성역', icon:'✨', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80% · 자신에게 최대체력 8% 보호막',
+    s2:{ name:'성역', icon:'✨', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80% · 자신에게 보호막(자신 최대체력 8%)',
       run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); C.shield(C.a, pctHp(C.a)*0.08); } } }
 };
 Object.keys(RAID_BOSS_KITS).forEach(id=>{ const k = RAID_BOSS_KITS[id]; LINE_KITS['rboss_'+id] = { role:'레이드 보스', icon:'👑', passive:{ name:'없음', desc:()=>'보스는 정령 특성 없음 (기믹·그로기 참고)' }, s1:k.s1, s2:k.s2 }; });
@@ -4270,12 +4270,12 @@ const BOSS_UNIT_KITS = {
   cboss_ancientTree: { role:'챕터 보스', icon:'👑',
     s1:{ name:'덩굴 채찍', icon:'🌿', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 속박(행동 순서 맨 뒤 · 받는 피해 +15%, 2R)',
       run:C=>{ C.hit(C.t, 1.6); C.neg(C.t, st=>{ st.web = {v:0.15, r:2}; }, '🕸️속박'); } },
-    s2:{ name:'뿌리 휘감기', icon:'🌱', cd:4, kind:'harm', desc:()=>'대상 편에서 체력 비율이 가장 낮은 1명에게 공격력 150% · 독(라운드마다 최대체력 4%, 3R)',
+    s2:{ name:'뿌리 휘감기', icon:'🌱', cd:4, kind:'harm', desc:()=>'대상 편에서 체력 비율이 가장 낮은 1명에게 공격력 150% · 독(라운드마다 대상 최대체력 4%, 3R)',
       run:C=>{ const low = C.side(C.tSide).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0] || C.t; C.hit(low, 1.5); if(low.alive) C.poison(low, 0.04); } } },
   cboss_ruinGuardian: { role:'챕터 보스', icon:'👑',
     s1:{ name:'외눈 광선', icon:'👁️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%',
       run:C=>{ C.hit(C.t, 2.0); } },
-    s2:{ name:'수호 문양', icon:'🔆', cd:4, kind:'harm', desc:()=>'대상에게 공격력 80% · 살아 있는 결계석마다 최대체력 20% 보호막',
+    s2:{ name:'수호 문양', icon:'🔆', cd:4, kind:'harm', desc:()=>'대상에게 공격력 80% · 살아 있는 결계석마다 보호막(결계석 최대체력 20%)',
       run:C=>{ C.hit(C.t, 0.8); C.side(C.a.side).filter(u=>u.isWard).forEach(w=>C.shield(w, w.maxHp*0.2)); } } },
   cboss_abyssCrystal: { role:'챕터 보스', icon:'👑',
     s1:{ name:'프리즘 광선', icon:'🔮', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% (지금 속성으로 상성 적용)',
@@ -4401,15 +4401,15 @@ const BOSS_GIMMICKS = {
            {ic:'💣', nm:'용암 정령', when:'3R마다', fresh:true, d:'용암 정령 2마리 소환 — 앞을 막아 보스를 못 때림 · 2라운드 안에 못 잡으면 자폭 (아군 전체 공격력 80% 피해)'}] },
   ancientTree: {
     base: [{ic:'🌿', nm:'덩굴', when:'2R마다', d:'후열 아군 1명을 전열로 끌어냄'},
-           {ic:'💚', nm:'재생', when:'매 R', d:'최대체력 3% 회복'}],
-    extra:[{ic:'🌳', nm:'가시 껍질', when:'체력 50%↓', d:'한 번, 최대체력 25% 보호막'}],
+           {ic:'💚', nm:'재생', when:'매 R', d:'보스 최대체력 3% 회복'}],
+    extra:[{ic:'🌳', nm:'가시 껍질', when:'체력 50%↓', d:'한 번, 보스 최대체력 25% 보호막'}],
     hard: [{ic:'💚', nm:'생명의 뿌리', when:'매 R', d:'재생 3% → 6%'},
-           {ic:'🍄', nm:'포자', when:'매 R', d:'무작위 아군 2명 독 (R마다 최대체력 6%, 3R)'},
+           {ic:'🍄', nm:'포자', when:'매 R', d:'무작위 아군 2명 독 (R마다 대상 최대체력 6%, 3R)'},
            {ic:'🌵', nm:'가시 덩굴', when:'항상', fresh:true, d:'보스를 때리면 준 피해 15%를 돌려받음 · 이로운 효과 제거로 벗기면 2라운드 뒤 다시 자람'}] },
   ruinGuardian: {
     base: [{ic:'🪨', nm:'결계석', when:'항상', d:'결계석 2개가 살아 있으면 보스 무적 — 결계석부터 파괴'}],
     extra:[{ic:'🗿', nm:'결계 재생', when:'한 번', d:'결계석이 모두 깨지면 4라운드 뒤 하나 다시 생김'}],
-    hard: [{ic:'💠', nm:'결계 공명', when:'항상', d:'결계석 체력 2배 · 결계석이 살아 있으면 보스 매 R 체력 2% 회복'},
+    hard: [{ic:'💠', nm:'결계 공명', when:'항상', d:'결계석 체력 2배 · 결계석이 살아 있으면 매 R 보스 최대체력 2% 회복'},
            {ic:'👁️', nm:'석화의 눈', when:'2R마다', d:'체력이 가장 높은 아군 석화 (한 번 행동 불가)'},
            {ic:'🔏', nm:'봉인의 문양', when:'매 R', fresh:true, d:'공격력이 가장 높은 아군 스킬 봉인 — 그 라운드 기본 공격만 (정화로 풀림)'}] },
   abyssCrystal: {
@@ -4947,7 +4947,7 @@ function statusList(u){
   if(s.reflect) o.push({i:'🌵', t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
   if(s.ward) o.push({i:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', t:'보호', d:'해로운 효과 1회 막음', good:true});
   if(s.burn) o.push({i:'🔥', n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
-  if(s.poison) o.push({i:'☠️', t:'독', d:'라운드마다 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
+  if(s.poison) o.push({i:'☠️', t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
   if(s.freeze) o.push({i:'❄️', t:'빙결', d:'다음 행동 1회 못 함', good:false});
   if(s.slow || s.chill) o.push({i:'⏬', t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
   if(s.bind || s.web) o.push({i:'🕸️', t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
@@ -7800,16 +7800,16 @@ const PATCH_NOTES = [
       '혹한의 폭군 — 빙창(3R마다): 대상 공격력 200% + 둔화(속도 −15, 2R) · 동결 포효(4R마다): 전열 전체 90% + 체력이 가장 많은 1명 빙결',
       '겁화룡 — 화염 숨결(3R마다): 대상과 양옆 130% + 화상 1중첩 · 대멸화(4R마다): 전체 70%, 이미 화상이면 100%',
       '심연의 눈 — 정신 파열(3R마다): 대상 190%, 저주가 걸려 있으면 260% · 공허의 시선(4R마다): 체력이 가장 많은 정령 150% + 봉인 2R',
-      '태고수 — 가시 뿌리(3R마다): 대상 160% + 독(최대체력 5%, 3R) · 대지의 분노(4R마다): 무작위 3명 110% + 속박 2R',
-      '새벽의 심판관 — 심판의 창(3R마다): 대상의 보호막·이로운 효과를 걷어내고 200% · 성역(4R마다): 전체 80% + 자신에게 최대체력 8% 보호막',
+      '태고수 — 가시 뿌리(3R마다): 대상 160% + 독(대상 최대체력 5%, 3R) · 대지의 분노(4R마다): 무작위 3명 110% + 속박 2R',
+      '새벽의 심판관 — 심판의 창(3R마다): 대상의 보호막·이로운 효과를 걷어내고 200% · 성역(4R마다): 전체 80% + 자신에게 보호막(자신 최대체력 8%)',
       '추천 전투력 조정 — 겁화룡 노말 2,000→3,100 · 익스트림 8,200→8,100 / 심연의 눈 노말 2,000→1,550 / 태고수 노말 1,150→1,550 · 하드 2,000→3,100 · 익스트림 3,100→5,800 / 새벽의 심판관 익스트림 8,200→10,500'
     ]},
     { t:'챕터·출정·월드 보스 개편', items:[
       '보스가 더 이상 정령 스킬·특성을 쓰지 않음 — 예전엔 서리거인이 정령 특성(맑은 물)으로 스스로 회복하는 등 보스 정보에 없는 행동을 했음',
       '서리거인 — 고드름 몽둥이(3R마다): 대상 180% + 둔화 · 빙하 짓밟기(4R마다): 전열 전체 100%',
       '용암군주 — 용암 주먹(3R마다): 대상 170% + 화상 1중첩 · 용암 분출(4R마다): 무작위 2명 140%',
-      '고대수목 — 덩굴 채찍(3R마다): 대상 160% + 속박 2R · 뿌리 휘감기(4R마다): 체력 비율이 가장 낮은 1명 150% + 독(최대체력 4%, 3R)',
-      '유적파수꾼 — 외눈 광선(3R마다): 대상 200% · 수호 문양(4R마다): 대상 80% + 결계석마다 최대체력 20% 보호막',
+      '고대수목 — 덩굴 채찍(3R마다): 대상 160% + 속박 2R · 뿌리 휘감기(4R마다): 체력 비율이 가장 낮은 1명 150% + 독(대상 최대체력 4%, 3R)',
+      '유적파수꾼 — 외눈 광선(3R마다): 대상 200% · 수호 문양(4R마다): 대상 80% + 결계석마다 보호막(결계석 최대체력 20%)',
       '심연의 수정 — 프리즘 광선(3R마다): 대상 180% · 수정 파편(4R마다): 무작위 3명 90%',
       '결계석·용암 정령도 전용 스킬 · 월드 보스는 단계마다 스킬이 바뀜 (보스를 누르면 확인)'
     ]},
@@ -7824,7 +7824,8 @@ const PATCH_NOTES = [
       '레전더리 이하 정령 칸의 등급 테두리 색이 안 보이고 흰색으로 나오던 문제',
       '자기 자신에게 여명의 호령을 쓰면 +25% 강화가 바로 사라지던 문제',
       '게임 전체 글씨를 주아체로 통일 · 어두운 버튼의 작은 글씨가 흐릿하던 문제 · 레이드 상점 무한 표시가 안 보이던 문제',
-      '출정 버프 선택 창 문구 정리(즉시 받는 버프는 "바로 받음")'
+      '출정 버프 선택 창 문구 정리(즉시 받는 버프는 "바로 받음")',
+      '최대체력 비례 효과 설명에 기준을 적음 — 독 포자 등 독은 "대상 최대체력", 보스 재생·보호막은 "보스 최대체력", 처형 회복은 "자신 최대체력" (수치는 그대로)'
     ]}
   ]},
   { build:269, v:'2.69', date:'2026-09-29', secs:[
@@ -9511,8 +9512,8 @@ const EXP_RELICS = [
   {id:'emb_wood', ic:'🌿', nm:'숲결 문장', d:'숲결 정령 공격력 +25%'},
   {id:'emb_light', ic:'✨', nm:'빛 문장', d:'빛 정령 공격력 +25%'},
   {id:'emb_dark', ic:'🌙', nm:'그림자 문장', d:'그림자 정령 공격력 +25%'},
-  {id:'vanguard', ic:'🛡️', nm:'선봉의 방패', d:'전투 시작 때 전열에 최대체력 25% 보호막'},
-  {id:'moss', ic:'🌱', nm:'재생 이끼', d:'아군 전체 매 라운드 최대체력 4% 회복'},
+  {id:'vanguard', ic:'🛡️', nm:'선봉의 방패', d:'전투 시작 때 전열에 보호막(각자 최대체력 25%)'},
+  {id:'moss', ic:'🌱', nm:'재생 이끼', d:'아군 전체 매 라운드 각자 최대체력 4% 회복'},
   {id:'thorn', ic:'🌵', nm:'가시 갑옷', d:'아군 전체 받은 피해 12% 반사'},
   {id:'feather', ic:'🪶', nm:'바람 깃털', d:'아군 전체 속도 +12'},
   {id:'charm', ic:'🧿', nm:'수호 부적', d:'전투마다 아군 전체 해로운 효과 1회 막음'},
