@@ -1,0 +1,87 @@
+{
+  "rules": {
+    "raids": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('host').val() === auth.uid || data.child('guest').val() === auth.uid || (!data.child('guest').exists() && newData.child('guest').val() === auth.uid))",
+        ".validate": "$code.matches(/^[A-Z0-9]{6}$/)"
+      }
+    },
+    "raidActs": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('raids').child($code).exists() && (root.child('raids').child($code).child('guest').val() === auth.uid || root.child('raids').child($code).child('host').val() === auth.uid)"
+      }
+    },
+    "locks": { "$k": { ".read": "auth != null", ".write": "auth != null" } },
+    "presence": { "$room": { ".read": "auth != null", "$uid": { ".write": "auth != null && auth.uid === $uid" } } },
+    "players": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 20" }
+      }
+    },
+    "friendCodes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && !data.exists() && newData.val() === auth.uid",
+        ".validate": "$code.matches(/^[A-Z0-9]{8}$/)"
+      }
+    },
+    "friends": { "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" } },
+    "friendReqs": { "$uid": { ".read": "auth != null && auth.uid === $uid", "$from": { ".write": "auth != null && (auth.uid === $from || auth.uid === $uid)" } } },
+    "invites": { "$uid": { ".read": "auth != null && auth.uid === $uid", "$from": { ".write": "auth != null && (auth.uid === $from || auth.uid === $uid)" } } },
+    "saves": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "sessions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "mail": {
+      "all": {
+        ".read": "auth != null",
+        "$id": { ".write": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'" }
+      },
+      "user": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          "$id": { ".write": "auth != null && (auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' || (auth.uid === $uid && !newData.exists()))" }
+        }
+      }
+    },
+    "worldboss": {
+      "$week": {
+        ".read": "auth != null",
+        "total": { ".write": "auth != null", ".validate": "newData.isNumber()" },
+        "p": { "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+        "killer": { ".write": "auth != null && !data.exists()" }
+      }
+    },
+    "inquiries": {
+      ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2')",
+        "$id": {
+          ".write": "auth != null && (auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' || (auth.uid === $uid && !data.exists()))",
+          ".validate": "newData.hasChildren(['cat', 'text', 't'])",
+          "cat": { ".validate": "newData.val() === 'bug' || newData.val() === 'idea' || newData.val() === 'etc'" },
+          "text": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500" },
+          "t": { ".validate": "newData.isNumber()" },
+          "name": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "code": { ".validate": "newData.isString() && newData.val().length <= 12" },
+          "ver": { ".validate": "newData.isNumber()" },
+          "reply": { ".validate": "auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' && newData.isString() && newData.val().length <= 300" },
+          "rt": { ".validate": "auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' && newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

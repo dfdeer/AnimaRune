@@ -2505,6 +2505,7 @@ async function raidJoinRoom(input){
     if(d.guest && d.guest!==raidNet.uid){ toast('방이 꽉 참 (2/2)'); return; }
     if(d.status!=='lobby' && d.guest!==raidNet.uid){ toast('이미 시작된 방'); return; }
     if(d.kind==='duel' && !duelPayload(myDuelDeck()).some(Boolean)){ toast('먼저 결투 덱을 정하기 (친구 창)'); return; }
+    if(d.kind!=='duel' && d.guest!==raidNet.uid){ const bi = RAID_BOSSES.findIndex(x=>x.id===d.bossId); if(bi>0 && !raidBossUnlocked(bi)){ toast('아직 안 연 보스 ('+RAID_BOSSES[bi].name+') — '+RAID_BOSSES[bi-1].name+'부터 잡기'); return 'locked'; } } // (v270) 안 연 레이드 보스엔 입장 불가
     if(d.guest!==raidNet.uid) await ref.update(Object.assign({ guest: raidNet.uid, ready: { [raidNet.uid]: false } }, d.kind==='duel' ? { duelPicks: { [raidNet.uid]: duelPayload(myDuelDeck()) } } : {}));
     await raidAttach(code, 'guest');
   }catch(e){ raidNetError(e); }
@@ -2802,7 +2803,8 @@ async function friendAcceptInvite(from){
   const iv = friendNet.invites[from]; if(!iv) return;
   try{ await raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
   closeModal(); activeTab = 'raid'; render();
-  await raidJoinRoom(iv.code);
+  const r = await raidJoinRoom(iv.code);
+  if(r==='locked' && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', why:'locked', code: iv.code, name: friendNet.name, t: serverNow() }); }catch(e){} // (v270) 방장에게 '아직 안 연 보스'라고 알림
 }
 async function friendDismissInvite(from){
   const iv = friendNet.invites[from];
@@ -2826,8 +2828,8 @@ function raidInviteDeclined(from, iv){
   try{ raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
   if(!raidNet.code || iv.code!==raidNet.code) return;
   if(!raidNet.invited) raidNet.invited = {};
-  raidNet.invited[from] = { st:'declined', t: Date.now() };
-  toast(String(iv.name||raidNameOf(from)).slice(0,12)+'님이 초대 거절');
+  raidNet.invited[from] = { st: iv.why==='locked' ? 'locked' : 'declined', t: Date.now(), code: iv.code };
+  toast(String(iv.name||raidNameOf(from)).slice(0,12)+(iv.why==='locked' ? '님은 아직 이 보스를 안 열어서 못 들어옴' : '님이 초대 거절'));
   if(document.getElementById('raidModal') && raidNet.doc && raidNet.doc.status==='lobby') showRaidLobbyModal();
   setTimeout(()=>{ if(document.getElementById('raidModal') && raidNet.doc && raidNet.doc.status==='lobby') showRaidLobbyModal(); }, RAID_REINVITE_MS+50);
 }
@@ -3003,6 +3005,7 @@ function raidWaitingHtml(){ // (v239) 초대했지만 아직 안 들어온 친�
 function inviteBtnHtml(k){
   const s = (raidNet.invited||{})[k], now = Date.now();
   if(s && s.st==='wait' && now-s.t < 10*60000) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">대기 중</button>';
+  if(s && s.st==='locked' && s.code===raidNet.code) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">보스 안 열림</button>'; // (v270)
   if(s && s.st==='declined' && now-s.t < RAID_REINVITE_MS) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">거절됨</button>';
   return '<button class="btn small" data-f-invite="'+k+'" style="width:auto; padding:4px 10px;">'+(s && s.st==='declined' ? '다시 초대' : '초대')+'</button>';
 }
@@ -4240,6 +4243,68 @@ const RAID_BOSS_KITS = {
       run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); C.shield(C.a, pctHp(C.a)*0.08); } } }
 };
 Object.keys(RAID_BOSS_KITS).forEach(id=>{ const k = RAID_BOSS_KITS[id]; LINE_KITS['rboss_'+id] = { role:'레이드 보스', icon:'👑', passive:{ name:'없음', desc:()=>'보스는 정령 특성 없음 (기믹·그로기 참고)' }, s1:k.s1, s2:k.s2 }; });
+// (v270) 챕터 보스(탐험·출정)·결계석·용암 정령·월드 보스도 전용 스킬 — 예전엔 속 정령(예: 서리거인 = 물결 레전더리 A형 '세이렌')의
+// 스킬·특성(맑은 물 회복 등)을 그대로 써서 보스 정보에 없는 행동을 했음. 이제 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
+const FRONT_OF = (C, s)=>{ const all = C.side(s), fr = all.filter(u=>isFrontRow(u.idx, sideWidth(C.sf, s))); return fr.length ? fr : all; };
+const PICK_N = (C, list, n)=>{ const pool = list.slice(), out = []; while(out.length<n && pool.length){ const k = C.sf.noRng ? 0 : Math.floor(Math.random()*pool.length); out.push(pool.splice(k,1)[0]); } return out; };
+const BOSS_UNIT_KITS = {
+  // ── 챕터 보스 ──
+  cboss_frostGiant: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'고드름 몽둥이', icon:'🧊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% · 둔화(속도 −15, 2R)',
+      run:C=>{ C.hit(C.t, 1.8); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '⏬둔화'); } },
+    s2:{ name:'빙하 짓밟기', icon:'🦶', cd:4, kind:'harm', desc:()=>'대상 편 전열 전체에 공격력 100%',
+      run:C=>{ FRONT_OF(C, C.tSide).forEach(u=>C.hit(u, 1.0)); } } },
+  cboss_lavaLord: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'용암 주먹', icon:'👊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 화상 1중첩',
+      run:C=>{ C.hit(C.t, 1.7); if(C.t.alive) C.burn(C.t, 1); } },
+    s2:{ name:'용암 분출', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상 편 무작위 2명에게 공격력 140%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 2).forEach(u=>C.hit(u, 1.4)); } } },
+  cboss_ancientTree: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'덩굴 채찍', icon:'🌿', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 속박(행동 순서 맨 뒤 · 받는 피해 +15%, 2R)',
+      run:C=>{ C.hit(C.t, 1.6); C.neg(C.t, st=>{ st.web = {v:0.15, r:2}; }, '🕸️속박'); } },
+    s2:{ name:'뿌리 휘감기', icon:'🌱', cd:4, kind:'harm', desc:()=>'대상 편에서 체력 비율이 가장 낮은 1명에게 공격력 150% · 독(라운드마다 최대체력 4%, 3R)',
+      run:C=>{ const low = C.side(C.tSide).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0] || C.t; C.hit(low, 1.5); if(low.alive) C.poison(low, 0.04); } } },
+  cboss_ruinGuardian: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'외눈 광선', icon:'👁️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%',
+      run:C=>{ C.hit(C.t, 2.0); } },
+    s2:{ name:'수호 문양', icon:'🔆', cd:4, kind:'harm', desc:()=>'대상에게 공격력 80% · 살아 있는 결계석마다 최대체력 20% 보호막',
+      run:C=>{ C.hit(C.t, 0.8); C.side(C.a.side).filter(u=>u.isWard).forEach(w=>C.shield(w, w.maxHp*0.2)); } } },
+  cboss_abyssCrystal: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'프리즘 광선', icon:'🔮', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% (지금 속성으로 상성 적용)',
+      run:C=>{ C.hit(C.t, 1.8); } },
+    s2:{ name:'수정 파편', icon:'💎', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
+  // ── 보스의 부하 ──
+  ward: { role:'결계석', icon:'🔷',
+    s1:{ name:'결계 방전', icon:'⚡', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120%',
+      run:C=>{ C.hit(C.t, 1.2); } },
+    s2:{ name:'공명 광선', icon:'🔷', cd:4, kind:'harm', desc:()=>'대상 편 무작위 2명에게 공격력 90%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 2).forEach(u=>C.hit(u, 0.9)); } } },
+  lavaAdd: { role:'용암 정령', icon:'🔥',
+    s1:{ name:'용암 튀기기', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120% · 화상 1중첩',
+      run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.burn(C.t, 1); } },
+    s2:{ name:'작은 분출', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상과 양옆에 공격력 80%',
+      run:C=>{ [C.t, ...C.around('row')].forEach(u=>C.hit(u, 0.8)); } } },
+  // ── 월드 보스 (단계마다 모습·스킬이 바뀜) ──
+  wboss_frostGiant: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'빙하 주먹', icon:'🧊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200% · 둔화(속도 −15, 2R)',
+      run:C=>{ C.hit(C.t, 2.0); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '⏬둔화'); } },
+    s2:{ name:'얼음 해일', icon:'🌊', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+  wboss_lavaLord: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'업화 강타', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% · 화상 2중첩',
+      run:C=>{ C.hit(C.t, 1.8); if(C.t.alive) C.burn(C.t, 2); } },
+    s2:{ name:'화염 폭풍', icon:'🌪️', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70% · 화상 1중첩',
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.7); if(u.alive) C.burn(u, 1); }); } } },
+  wboss_abyssCrystal: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'핵 광선', icon:'💠', cd:3, kind:'harm', desc:()=>'대상에게 공격력 220%',
+      run:C=>{ C.hit(C.t, 2.2); } },
+    s2:{ name:'차원 붕괴', icon:'🌀', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 90% · 저주(받는 피해 +15%, 2R)',
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.9); C.neg(u, st=>{ st.curse = { v: Math.max(0.15, (st.curse&&st.curse.v)||0), r:2 }; }, '<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); }); } } }
+};
+Object.keys(BOSS_UNIT_KITS).forEach(id=>{ const k = BOSS_UNIT_KITS[id]; LINE_KITS[id] = { role:k.role, icon:k.icon, passive:{ name:'없음', desc:()=>'보스는 정령 특성 없음 (기믹·그로기 참고)' }, s1:k.s1, s2:k.s2 }; });
+function setBossKit(u, line){ if(LINE_KITS[line]){ u.line = line; u.pg = 0; } }
+function bossSkillSectionHtml(line, title){ const k = LINE_KITS[line]; return k ? gmSectionHtml(title||'보스 스킬', ['s1','s2'].map(s=>({ic:k[s].icon, nm:k[s].name, when:k[s].cd+'R마다', d:k[s].desc()}))) : ''; }
 function kitOf(u){ return LINE_KITS[u.line]; }
 function unitSkill(u, act){ return act==='basic' ? null : kitOf(u)[act]; }
 function skillAvailable(u, act){ if(act==='basic') return true; if(u.st && u.st.seal) return false; /* (v260) 봉인의 문양 */ if(act==='s2' && !unitS2On(u)) return false; return (act==='s1'?u.cd1:u.cd2)<=0; }
@@ -4389,16 +4454,16 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
     const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), per = bossWaveNormalPower(stageIdx) * (hardB ? HARD_BOSS_ATK_MULTS : CH_BOSS_ATK_MULTS)[bci];
     const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], (hardB ? HARD_BOSS_HP_MULTS : CH_BOSS_HP_MULTS)[bci]);
-    boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss);
+    boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss); setBossKit(boss, 'cboss_'+type); // (v270) 보스 전용 스킬
     if(type==='ruinGuardian'){
       const [we1, we2] = bossWardElements(stageIdx);
       const wHp = ENEMY_HP_MULT*1.4*(hardB ? 2 : 1); // (v258) 하드: 결계 공명 — 결계석 체력 2배
       const w1 = makeBattleUnit('enemy', 1, we1+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we1], wHp);
       const w2 = makeBattleUnit('enemy', 0, we2+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we2], wHp);
-      w1.isWard = true; w2.isWard = true; w1.dispName = ELEMENT_INFO[we1].name+' 결계석'; w2.dispName = ELEMENT_INFO[we2].name+' 결계석'; // (v259) 정령이 아니라 결계석으로 보이게
+      w1.isWard = true; w2.isWard = true; setBossKit(w1, 'ward'); setBossKit(w2, 'ward'); w1.dispName = ELEMENT_INFO[we1].name+' 결계석'; w2.dispName = ELEMENT_INFO[we2].name+' 결계석'; // (v259) 정령이 아니라 결계석으로 보이게
       enemyUnits = [w1, w2, boss];
     }else if(type==='lavaLord' && hardB){ // (v260) 하드 용암군주: 용암 정령 2마리 — 처음엔 숨어 있다가 3R마다 나옴(결계석 자리)
-      const mk = i=>{ const a = makeBattleUnit('enemy', i, 'fire_epic_a', per*0.35*ELEMENT_ATK_MULT.fire, ENEMY_HP_MULT*1.2); a.isAdd = true; a.alive = false; a.hp = 0; a.hidden = true; a.dispName = '용암 정령'; return a; };
+      const mk = i=>{ const a = makeBattleUnit('enemy', i, 'fire_epic_a', per*0.35*ELEMENT_ATK_MULT.fire, ENEMY_HP_MULT*1.2); a.isAdd = true; a.alive = false; a.hp = 0; a.hidden = true; a.dispName = '용암 정령'; setBossKit(a, 'lavaAdd'); return a; };
       enemyUnits = [mk(1), mk(0), boss];
     }else{
       enemyUnits = [boss];
@@ -4690,6 +4755,7 @@ function showBossInfo(stageIdx){ // (v260) 한눈에: 머리(그림·속성·하
   const type = bossGimmickFor(stageIdx), gi = BOSS_GIMMICK_INFO[type], G = BOSS_GIMMICKS[type], hard = isHardStage(stageIdx);
   openInfoOverlay(gi.name+(hard?' <span class="gm-hardt">하드</span>':''),
     gmHeadHtml(type, gi.icon, [gmElChip(bossFixedElementFor(stageIdx)), '<span class="gm-chip">3웨이브 연전</span>', '<span class="gm-chip">체력 이어짐</span>'])
+    + bossSkillSectionHtml('cboss_'+type) // (v270)
     + gmSectionHtml('기믹', G.base.concat(G.extra))
     + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '')
     + groggyInfoHtml(type));
@@ -4980,7 +5046,7 @@ function bossBattleInfoHtml(u){
   if(sf && sf.mode==='raid'){ const info = raidBossById(sf.raidBossId); return info ? raidBossInfoHtml(info) : ''; }
   const g = u.gimmick || (sf && sf.gimmick), G = g && BOSS_GIMMICKS[g]; if(!G) return '';
   const hard = sf && ((sf.mode==='boss' && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3));
-  return gmSectionHtml('기믹', G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g);
+  return bossSkillSectionHtml(u.line) + gmSectionHtml('기믹', G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g); // (v270) 보스 스킬 먼저
 }
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
@@ -7729,11 +7795,21 @@ const PATCH_NOTES = [
       '새벽의 심판관 — 심판의 창(3R마다): 대상의 보호막·이로운 효과를 걷어내고 200% · 성역(4R마다): 전체 80% + 자신에게 최대체력 8% 보호막',
       '추천 전투력 조정 — 겁화룡 노말 2,000→3,100 · 익스트림 8,200→8,100 / 심연의 눈 노말 2,000→1,550 / 태고수 노말 1,150→1,550 · 하드 2,000→3,100 · 익스트림 3,100→5,800 / 새벽의 심판관 익스트림 8,200→10,500'
     ]},
+    { t:'챕터·출정·월드 보스 개편', items:[
+      '보스가 더 이상 정령 스킬·특성을 쓰지 않음 — 예전엔 서리거인이 정령 특성(맑은 물)으로 스스로 회복하는 등 보스 정보에 없는 행동을 했음',
+      '서리거인 — 고드름 몽둥이(3R마다): 대상 180% + 둔화 · 빙하 짓밟기(4R마다): 전열 전체 100%',
+      '용암군주 — 용암 주먹(3R마다): 대상 170% + 화상 1중첩 · 용암 분출(4R마다): 무작위 2명 140%',
+      '고대수목 — 덩굴 채찍(3R마다): 대상 160% + 속박 2R · 뿌리 휘감기(4R마다): 체력 비율이 가장 낮은 1명 150% + 독(최대체력 4%, 3R)',
+      '유적파수꾼 — 외눈 광선(3R마다): 대상 200% · 수호 문양(4R마다): 대상 80% + 결계석마다 최대체력 20% 보호막',
+      '심연의 수정 — 프리즘 광선(3R마다): 대상 180% · 수정 파편(4R마다): 무작위 3명 90%',
+      '결계석·용암 정령도 전용 스킬 · 월드 보스는 단계마다 스킬이 바뀜 (보스를 누르면 확인)'
+    ]},
     { t:'월드 보스', items:[
       '주간 체력 300만 → 150만 (지금 참여 인원에 맞춤) — 이번 주 남은 체력·달성 보상 진행도도 바로 새 기준으로 계산됨'
     ]},
     { t:'업적', items:[ '특정 업적의 조건 변경' ]},
     { t:'고친 것', items:[
+      '아직 안 연 레이드 보스 방에는 들어갈 수 없음 (방장에게도 알림)',
       '레이드 초대가 안 보이던 경우(같은 방에서 다시 초대 · 폰 시계가 어긋난 경우)',
       '레전더리 이하 정령 칸의 등급 테두리 색이 안 보이고 흰색으로 나오던 문제',
       '자기 자신에게 여명의 호령을 쓰면 +25% 강화가 바로 사라지던 문제',
@@ -9289,7 +9365,7 @@ function buildWorldBossFight(){
   // 공격력은 도전 팀 체력에 맞춰 조절 → 약한 팀도 몇 라운드는 버티고, 강한 팀은 딜로 차이가 남
   const avgHp = bf.myUnits.reduce((t,u)=>t+u.maxHp,0) / Math.max(1, bf.myUnits.length);
   boss.pctHp = WB_PCT_HP; // 독·기믹 % 수치는 이 기준 체력으로 계산 (5천만 기준이면 독 한 번에 수백만)
-  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm;
+  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm; setBossKit(boss, 'wboss_'+ph.g); // (v270) 월드 보스 전용 스킬
   bf.myUnits.forEach(u=>{ if(u.element===weak) u.atk = Math.round(u.atk*1.5); });
   const sf = Object.assign(bf, { mode:'worldboss', wbStart: boss.hp, wbPhase: ph.g, log:['월드 보스 · '+ph.nm+'!'] });
   return sf;
@@ -9359,6 +9435,7 @@ function showWorldBoss(){
   h += '<div class="sub" style="text-align:center; font-size:11px;">전체 '+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ 처치자 '+escTxt(d.killer.name) : '')+'</div>';
   const dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
   h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'🔒', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
+  if(!dead) h += bossSkillSectionHtml('wboss_'+ph.g, '지금 단계 스킬'); // (v270)
   h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
     return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
   h += '<div class="gm-sec"><div class="gm-sh">기여 순위</div>'+(ps.length ? ps.slice(0,10).map((x,i)=>'<div class="xp-rank'+(x.uid===raidNet.uid?' me':'')+'"><span>'+(i+1)+'</span><b>'+escTxt(x.nm)+(d.killer&&d.killer.uid===x.uid?' ⚔️':'')+'</b><em>'+fmtHp(x.dmg)+'</em></div>').join('') : '<div class="sub" style="text-align:center; font-size:11px;">아직 아무도 도전 안 함</div>')
