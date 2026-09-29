@@ -22,6 +22,9 @@
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
   html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif; overscroll-behavior:none;}
+  /* (v269) 게임 전체 글씨를 주아체로 — 쓰는 한글 800자가 모두 글꼴 파일에 들어 있음. 주아는 굵기가 하나라 가짜 굵게(번져 보임)는 끄고, 굵게 쓰던 글자는 조금 진하게만 */
+  html, body, button, input, textarea, select{font-family:var(--fun, "Jua"), -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; font-synthesis:none;}
+  input, textarea{font-family:-apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;} /* 입력 칸은 아무 글자나 칠 수 있어 기본 글꼴 */
   #app{max-width:480px; margin:0 auto; min-height:calc(100vh - var(--sat) - var(--sab)); min-height:calc(100dvh - var(--sat) - var(--sab)); display:flex; flex-direction:column; position:relative;}
   header{padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg,#1e1e2e 0%,#2a2340 100%); border-bottom:1px solid #3d3a5a; position:sticky; top:0; z-index:20; box-shadow:0 2px 12px #00000055;} /* (v190) 화면 위쪽 고정 영역(z 8)보다 위 — ☰ 메뉴·재화 설명 팝업이 가려지던 문제. 팝업창(z 50)보다는 아래 */
   header .title{font-weight:700; font-size:16px; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis;}
@@ -581,6 +584,7 @@
   .bs-rgrade.gB{background:linear-gradient(135deg,#8ec5ff,#5798ff); color:#fff;}
   .bs-rsub{font-size:12px; color:var(--sub); margin-top:4px;}
   .bs-rrew{margin:12px 0 4px; padding:8px 10px; background:#ffffff0a; border-radius:12px; text-align:left; font-size:13px; font-weight:700; display:flex; flex-direction:column; gap:4px;}
+  .rrw-h{font-family:var(--fun); font-size:12.5px; color:var(--sub); text-align:center; margin:4px 0 2px;} .rrw-h.gold{color:#ffd35a;} .rrw-g{display:flex; flex-wrap:wrap; justify-content:center; gap:6px;} .rrw-c{flex:1 1 0; min-width:84px; max-width:140px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 4px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1c;} .rrw-c.wide{max-width:none;} .rrw-c .uic{width:22px; height:22px;} .rrw-c b{font-family:var(--fun); font-weight:400; font-size:15px;} .rrw-c small{font-size:10.5px; color:var(--sub); font-weight:600;} /* (v269) 레이드 보상 칸 */
   .bs-rrew span{font-size:11px; font-weight:400; color:var(--sub); margin-left:4px;}
   .bs-rbtns{display:flex; gap:8px; margin-top:12px;}
   .bs-rcard{position:relative;}
@@ -883,7 +887,17 @@
   .xp-foes{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:8px; padding:8px; border-radius:14px; background:linear-gradient(160deg,#3a1a1a,#241016); border:1px solid #ff5a5a44;} .xp-foe{width:52px; display:flex; flex-direction:column; align-items:center; gap:2px; background:none; border:0; padding:0; color:var(--text); font-family:inherit;} .xp-foe .av{width:44px; height:44px; font-size:30px;} .xp-foe .pq-bimg{width:64px; height:64px;} .xp-foe.boss{width:76px;} .xp-foe small{font-size:10px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .xp-info > div{display:flex; justify-content:space-between; gap:8px; padding:6px 2px; border-bottom:1px solid #ffffff12; font-size:13px;} .xp-info span{color:var(--sub);}
   .xp-rlist{display:flex; flex-direction:column; gap:6px;} .xp-rl{display:flex; gap:10px; align-items:center; padding:7px 9px; border-radius:11px; background:#ffffff0d; border:1px solid #ffffff18; text-align:left;} .xp-rl.rare{border-color:#ffd55788;} .xp-rl > span{font-size:24px;} .xp-rl b{display:block; font-size:13px;} .xp-rl b small{color:#ffd557; font-size:10px;} .xp-rl div > small{display:block; font-size:11.5px; color:var(--sub); margin-top:1px;}
-  .modal.xp-act > .card{background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; margin-top:0 !important;} /* 창 틀 안에 카드 틀이 또 겹치지 않게 */ .modal.xp-act{padding-top:34px;}
+  .modal.xp-act > .card, .modal.xp-act .m-body > .card{background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; margin-top:0 !important;} /* (v269) 창 안쪽(m-body)에 한 번 더 싸여 있어서 카드 틀이 겹쳐 보였음 */
+  .modal.xp-act .m-body > .card > div:first-child:not(.xp-head):not(.card){font-family:Jua, -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; font-size:17px; font-weight:400 !important; text-align:center; margin:0 0 10px;} /* 창 제목은 다른 창 제목과 같은 글씨체로 */
+  .modal.xp-act .m-body > .card > .xp-pick + .xp-pick{margin-top:8px;} /* 창 틀 안에 카드 틀이 또 겹치지 않게 */ .modal.xp-act{padding-top:34px;}
+  .al-bar{height:8px; border-radius:4px; background:#2d2a62; overflow:hidden; margin:6px 0 4px;} .al-bar i{display:block; height:100%; background:linear-gradient(90deg,#9a6bff,#e0a8ff);}
+  .al-sec{font-family:var(--fun); font-size:14px; margin:12px 0 6px; display:flex; align-items:center;}
+  .al-parts > div, .al-perks > div{display:flex; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px solid #ffffff10; font-size:12.5px;} .al-parts small{color:var(--sub);} .al-perks > div{opacity:.55;} .al-perks > div.on{opacity:1;} .al-perks > div.on b{color:#7dffb0;}
+  .al-rw{display:flex; flex-direction:column; gap:5px; max-height:40vh; overflow-y:auto;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
+  #levelBar.has-rw::after{content:'받을 보상'; font-size:10px; font-weight:800; color:#2a1800; background:#ffd557; border-radius:8px; padding:1px 6px; white-space:nowrap;} /* (v269) 레벨 보상이 있으면 표시 */
+  .pn{margin-top:8px; border-radius:12px; background:#ffffff0a; border:1px solid #ffffff14; padding:8px 12px;} .pn summary{cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px;} .pn summary::-webkit-details-marker{display:none;} .pn summary b{font-size:16px;} .pn summary small{color:var(--sub); font-size:11px;} .pn summary::after{content:'▾'; margin-left:auto; color:var(--sub);} .pn[open] summary::after{content:'▴';}
+  .ask-it{padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff14; margin-top:6px; text-align:left;} .ask-it.done{opacity:.6;} .ask-h{font-size:12.5px; color:var(--text); display:flex; gap:6px; align-items:baseline; flex-wrap:wrap;} .ask-h small{color:var(--sub); font-size:10.5px;} .ask-q{font-size:12.5px; color:#e3e1ff; margin-top:3px; white-space:pre-wrap; word-break:break-all;} .ask-a{font-size:12px; color:#9fe8c0; margin-top:4px; white-space:pre-wrap;} .ask-w{font-size:11px; color:var(--sub); margin-top:3px;} /* (v269) 문의 */
+  .pn-t{font-size:13px; color:#ffd35a; margin:10px 0 4px;} .pn ul{margin:0; padding-left:18px;} .pn li{font-size:12.5px; line-height:1.5; margin:3px 0; color:#e3e1ff;}
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
@@ -900,7 +914,7 @@
   .xp-node.can{opacity:1; cursor:pointer;} .xp-node.can span{border-color:#ffd557; animation:nodepulse 1.4s ease-in-out infinite;}
   .xp-node[disabled]{cursor:default;}
   .xp-relics{display:flex; flex-wrap:wrap; justify-content:center; gap:5px;} .xp-relic{width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; background:#ffffff12; border:1px solid #ffffff22; cursor:pointer;} .xp-relic.rare{border-color:#ffc857; box-shadow:0 0 6px #ffc85766;}
-  .xp-pick{display:flex !important; align-items:center; gap:10px; text-align:left !important; width:100%;} .xp-pick .xp-pic{font-size:22px; width:30px; text-align:center; flex:none;} .xp-pick .xp-pic .uic{width:22px; height:22px;} .xp-pick span:not(.xp-pic){flex:1; display:flex; flex-direction:column;} .xp-pick b{font-size:13px;} .xp-pick small{font-size:11px; color:var(--sub); font-weight:600;} .xp-pick em{font-style:normal; font-weight:900; color:#ffd557; white-space:nowrap;} .xp-pick.rare{border-color:#ffc857 !important;}
+  .xp-pick{display:flex !important; align-items:center; gap:10px; text-align:left !important; width:100%;} .xp-pick .xp-pic{font-size:22px; width:30px; text-align:center; flex:none;} .xp-pick .xp-pic .uic{width:22px; height:22px;} .xp-pick span:not(.xp-pic){flex:1; display:flex; flex-direction:column;} .xp-pick b{font-size:13.5px;} .xp-pick small{font-size:11.5px; color:#c3c6dc; font-weight:600;} .xp-pick, .xp-pick *{text-shadow:none !important;} /* (v269) 버튼 글자 그림자(아래로 1.5px)가 어두운 선택 칸에선 번져 흐릿하게 보였음 */ .xp-pick em{font-style:normal; font-weight:900; color:#ffd557; white-space:nowrap;} .xp-pick.rare{border-color:#ffc857 !important;}
   .xp-boss{display:flex; align-items:center; gap:10px;} .xp-bossimg{width:54px; height:54px; object-fit:contain;} .xp-boss div{flex:1; display:flex; flex-direction:column;} .xp-boss small{font-size:11px; color:var(--sub);}
   .home-emo-ic{font-size:24px; line-height:1; display:block;}
   .dp-slots{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;} .dp-slot{min-height:104px; padding:7px; border-radius:12px; background:#ffffff0c; border:1px solid #ffffff1a; display:flex; flex-direction:column; gap:4px; font-size:11px;} .dp-slot.empty{align-items:center; justify-content:center; color:var(--sub); border-style:dashed;} .dp-slot.ready{border-color:#ffd557; box-shadow:0 0 10px #ffd55755;}
@@ -1127,7 +1141,11 @@
   :root{--fun:'Jua', -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;}
   h1,h2,h3, .btn, .seg button, nav button, header .title, header .essence, .home-mbtn, .home-ic small, .home-name, .home-prof b, .home-back,
   .fr-title, .du-hero .fr-title, .sm-name, .sm-rarity, .sm-title, .rd-name, .ex-lbl, .ex-node b, .bu-plate, .bs-banner, .species-tile .name, .rarity-tag,
-  .tw-reward, .card > b:first-child, .scr-title{font-family:var(--fun); font-weight:400 !important; letter-spacing:.2px;}
+  .tw-reward, .card > b:first-child, .scr-title,
+  .ttl, .dg-title, .ex-name, .sp-name, .bs-rtitle, .aw-ch, .acc-h, .ch-card b, .rd-sb-tx b, .rd-rinfo b, .du-head b, .xp-boss b, .aw-top b, .en-cmp b, .xp-head b, .xp-rl b, .cf-t, .xp-bb b{font-family:var(--fun); font-weight:400 !important; letter-spacing:.2px;} /* (v269) 제목·이름·숫자 글꼴 통일 — 예전엔 굵은 기본 글꼴과 섞여 있었음 */
+  .ttl{font-size:15px;}
+  /* (v269) 작은 글씨는 아래로 번지는 버튼 글자 그림자 없이 — 어두운 버튼에서 흐릿하게 보였음 */
+  .btn.secondary, .btn.small, .btn small, .btn .sub, .bs-acts .btn small, .sk-nm, .rarity-tag{text-shadow:none !important;}
   /* ===================== (v206) UI 테마 — 새 그림(굵은 외곽선 · 셀 명암 · 남색 밤하늘 · 금빛)에 맞춘 공통 모양 =====================
      색·버튼·패널만 바꾸고 배치는 그대로. 글 안에 직접 쓴 색(인라인 style)은 건드리지 않음 */
   :root{ --bg:#15143a; --panel:#221f4d; --panel2:#2b2760; --text:#f1efff; --sub:#a7a3cf;
@@ -1194,7 +1212,7 @@
   .shop-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
   .shop-tile{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px 6px; border-radius:12px; background:#ffffff0b; border:1px solid #ffffff12; text-align:center; min-width:0;}
   .shop-tile.sold{opacity:.5;} .shop-ic{font-size:26px; line-height:1; height:34px; display:grid; place-items:center;} .shop-ic .uic{width:34px; height:34px;}
-  .shop-nm{font-size:12px; font-weight:800; line-height:1.2; min-height:2.4em; display:grid; place-items:center; word-break:keep-all;} .shop-lim{font-size:10px; color:var(--sub);}
+  .shop-nm{font-family:var(--fun); font-size:13px; font-weight:400; line-height:1.2; min-height:2.4em; display:grid; place-items:center; word-break:keep-all;} .shop-lim{font-family:var(--fun); font-size:11px; color:var(--sub);} .shop-lim .inf{font-size:15px; font-weight:700; vertical-align:-1px; color:#cfd3ff;} /* (v269) 무한 표시가 너무 작아 안 보였음 · 상점 글씨 Jua */
   .shop-tile{color:var(--text); cursor:pointer;} .shop-tile.cant .shop-price{opacity:.5;} .shop-price{margin-top:3px; font-size:12px; font-weight:900; padding:3px 10px; border-radius:99px; background:#5b6bff; color:#fff;} .shop-price .uic{width:14px; height:14px;}
   .sbm{text-align:center;} .sbm-ic{font-size:44px; line-height:1;} .sbm-ic .uic{width:64px; height:64px;} .sbm h3{margin:6px 0 4px;} .sbm-desc{font-size:13px; line-height:1.5; padding:8px 10px; border-radius:12px; background:#ffffff0b;}
   .sbm-meta{display:flex; justify-content:center; gap:10px; margin-top:8px; font-size:12px; color:var(--sub); font-weight:700;}
@@ -1249,12 +1267,15 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</button>
+        <button data-hmenu="notes" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📝 패치노트<span id="hmNoteNew" class="hm-n" style="display:none;">N</span></button>
+        <button data-hmenu="ask" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">✉️ 문의하기</button>
         <button data-hmenu="mail" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📬 우편함<span id="hmMailN" class="hm-n" style="display:none;"></span></button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
         <button data-hmenu="update" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔄 업데이트 <small id="hmVer" style="color:var(--sub); font-weight:600; margin-left:auto;"></small></button>
         <button data-hmenu="mailsend" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">📮 우편 보내기 <small style="color:#ffd557;">관리자</small></button>
         <button data-hmenu="mode" class="hm-admin hm-mode" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">🔁 <span id="hmModeTx">일반 모드로</span></button>
         <button data-hmenu="admin" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">🛠️ 관리자 세팅</button>
+        <button data-hmenu="inbox" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">📥 문의함 <small style="color:#ffd557;">관리자</small></button>
       </div>
       <button id="headerAchieveBtn" style="display:none; background:none; border:none; color:var(--sub); font-size:16px; padding:4px; cursor:pointer; line-height:1; position:relative;"><img class="uic" src="assets/ui/ic_medal.webp" alt=""></button>
       <button id="headerGuideBtn" style="display:none; background:none; border:none; color:var(--sub); font-size:16px; padding:4px; cursor:pointer; line-height:1;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""></button>
@@ -1291,12 +1312,12 @@ const RARITY_ORDER = ['common','rare','epic','legendary','mythic'];
 // (v101) 속성 표기는 항상 '아이콘 + 공식 이름'(화염·물결·숲결·빛·그림자)으로 통일 — 문구에서 직접 '불/물/나무' 등을 쓰지 않고 이 함수를 사용
 function elLabel(el){ return ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name; }
 const RARITY_INFO = {
-  common:{name:'일반', mult:1, color:'var(--common)'},
-  rare:{name:'레어', mult:2.5, color:'var(--rare)'},
-  epic:{name:'에픽', mult:6, color:'var(--epic)'},
-  legendary:{name:'레전더리', mult:15, color:'var(--legendary)'},
+  common:{name:'일반', mult:1, color:'#b8bcc4'},
+  rare:{name:'레어', mult:2.5, color:'#5798ff'},
+  epic:{name:'에픽', mult:6, color:'#b657ff'},
+  legendary:{name:'레전더리', mult:15, color:'#ffc857'},
   mythic:{name:'신화', mult:35, color:'#ff5777'}
-};
+}; // (v269) 색은 hex로 — 'var(--legendary)'에 투명도 두 자리('88')를 붙이면 잘못된 값이라 테두리·배경이 무시돼 신화만 색이 보였음 (:root 변수와 같은 값 유지)
 const NAMES = {
   // (v157) 짜치는 "속성+등급형용사+종" 반복 조합을 버리고 고유명사·신화 모티프 위주로 재작성
   fire:{common:['잉걸','불티'], rare:['하랑','적작'], epic:['볼칸','주작'], legendary:['펜리르','불사조'], mythic:['스콜','금오']},
@@ -1533,7 +1554,7 @@ const BOSS_RUNES = {
   frostTyrant:  { id:'frost',   name:'혹한의 룬', icon:'🧊', desc:'공격이 맞으면 12% 확률로 빙결' },
   infernoDrake: { id:'inferno', name:'겁화의 룬', icon:'🐉', desc:'공격이 맞으면 화상 1중첩' },
   abyssEye:     { id:'abyss',   name:'심연의 룬', icon:'👁️', desc:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)' },
-  eldertree:    { id:'elder',   name:'태고의 룬', icon:'🌳', desc:'라운드 시작마다 최대체력 4% 회복' },
+  eldertree:    { id:'elder',   name:'태고의 룬', icon:'🌳', desc:'라운드 시작마다 자신 최대체력 4% 회복' },
   dawnJudge:    { id:'judge',   name:'심판의 룬', icon:'⚖️', desc:'체력 30% 이하 적에게 피해 +30%' }
 };
 const RUNE_REROLL_COST = 10;
@@ -1622,7 +1643,7 @@ function runeHubHtml(){
     + '<div class="card" style="flex:1; text-align:center; padding:8px;"><div style="font-size:22px;">'+uiIc('runestone')+'</div><b>'+(state.raidGems||0)+'</b><div class="sub" style="font-size:11px;">고대 룬석</div></div>'
     + '<div class="card" style="flex:1; text-align:center; padding:8px;"><div style="font-size:22px;">⬆️</div><b>'+(state.runeUpStones||0)+'</b><div class="sub" style="font-size:11px;">승급석</div></div></div>';
   h += '<div class="sub" style="font-size:11px; text-align:center; margin:6px 0 10px;">파편: 정령 분해 · 룬석: 레이드 → 레이드 상점 · 룬 새기기: 정령 상세 창</div>';
-  h += '<div style="font-weight:700; margin-bottom:4px;">보관함 '+inv.length+'/'+RUNE_INV_MAX+'</div>';
+  h += '<div class="ttl" style="margin-bottom:4px;">보관함 '+inv.length+'/'+RUNE_INV_MAX+'</div>';
   h += inv.length ? '<div style="display:flex; flex-direction:column; gap:5px;">'+inv.map(r=>'<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">'+runeChipHtml(r)+'<span class="sub" style="font-size:11px; text-align:right;">'+runeDesc(r)+'</span></div>').join('')+'</div>' : '<div class="sub" style="text-align:center;">비어 있음</div>';
   return h;
 }
@@ -1648,22 +1669,22 @@ function showRuneInvPicker(key){
 // ===================== (v172) 레이드 입장권 · <img class="uic" src="assets/ui/ic_runestone.webp" alt="룬석"> 고대 룬석(레이드 상점 재화) =====================
 // 입장권: 최대 3장, 8시간마다 1장 충전. 전투 시작 때 1장 써야 보상을 받음 — 입장권이 없어도 친구랑 같이 싸울 수는 있음(보상 없음)
 // 룬석: 레이드 승리 보상 → 레이드 상점에서 룬 뽑기·고대 룬 교환·룬 승급석·파편·소환권 구입(주간 구매 한도로 경제 보호)
-const RAID_TICKET_MAX = 3, RAID_TICKET_INTERVAL_MS = 8*60*60*1000;
+const RAID_TICKET_CAP = 4, RAID_TICKET_INTERVAL_MS = 8*60*60*1000;
 const RAID_GEMS = { easy:2, normal:4, hard:7, extreme:12 };
-function raidTicketState(){ if(!state.raidTickets || typeof state.raidTickets!=='object') state.raidTickets = { count: RAID_TICKET_MAX, lastTick: Date.now() }; return state.raidTickets; }
+function raidTicketState(){ if(!state.raidTickets || typeof state.raidTickets!=='object') state.raidTickets = { count: raidTicketMax(), lastTick: Date.now() }; return state.raidTickets; }
 function raidTicketsRefresh(){
   const t = raidTicketState(), now = Date.now();
   if(t.lastTick > now) t.lastTick = now;
-  if(t.count >= RAID_TICKET_MAX){ t.count = RAID_TICKET_MAX; t.lastTick = now; }
-  else{ const n = Math.floor((now - t.lastTick)/RAID_TICKET_INTERVAL_MS); if(n>0){ t.count = Math.min(RAID_TICKET_MAX, t.count+n); t.lastTick = t.count>=RAID_TICKET_MAX ? now : t.lastTick + n*RAID_TICKET_INTERVAL_MS; } }
+  if(t.count >= raidTicketMax()){ t.count = raidTicketMax(); t.lastTick = now; }
+  else{ const n = Math.floor((now - t.lastTick)/RAID_TICKET_INTERVAL_MS); if(n>0){ t.count = Math.min(raidTicketMax(), t.count+n); t.lastTick = t.count>=raidTicketMax() ? now : t.lastTick + n*RAID_TICKET_INTERVAL_MS; } }
   return t;
 }
 function raidTicketCount(){ return raidTicketsRefresh().count; }
-function raidTicketNextText(){ const t = raidTicketsRefresh(); if(t.count>=RAID_TICKET_MAX) return '가득'; const ms = Math.max(0, RAID_TICKET_INTERVAL_MS - (Date.now()-t.lastTick)); const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h+'시간 '+m+'분 후 +1'; }
+function raidTicketNextText(){ const t = raidTicketsRefresh(); if(t.count>=raidTicketMax()) return '가득'; const ms = Math.max(0, RAID_TICKET_INTERVAL_MS - (Date.now()-t.lastTick)); const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h+'시간 '+m+'분 후 +1'; }
 function raidUseTicket(code){ // 같은 방에서는 한 번만 씀(새로고침해도 다시 안 씀)
   if(state.raidTicketFor===code) return !!state.raidTicketHad;
   const t = raidTicketsRefresh(), had = t.count>0;
-  if(had){ if(t.count>=RAID_TICKET_MAX) t.lastTick = Date.now(); t.count -= 1; }
+  if(had){ if(t.count>=raidTicketMax()) t.lastTick = Date.now(); t.count -= 1; }
   state.raidTicketFor = code; state.raidTicketHad = had; save();
   return had;
 }
@@ -1756,7 +1777,7 @@ function showRaidShop(){
     h += '<div class="rw-sec-t" style="margin:12px 0 5px;">'+sec.name+'</div><div class="shop-grid">' + RAID_SHOP.filter(it=>it.sec===sec.id).map(it=>{
       const left = it.limit ? it.limit - raidShopBought(it.id) : null, soldOut = left===0, can = gems>=it.price && !soldOut;
       return '<button class="shop-tile'+(soldOut?' sold':'')+(can?'':' cant')+'" data-shop-open="'+it.id+'"><div class="shop-ic">'+it.icon+'</div><div class="shop-nm">'+it.name+'</div>'
-        + '<div class="shop-lim">'+(left===null ? '∞' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div>'
+        + '<div class="shop-lim">'+(left===null ? '<span class="inf">∞</span> 무제한' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div>'
         + '<span class="shop-price">'+uiIc('runestone')+' '+it.price+'</span></button>';
     }).join('') + '</div>';
   });
@@ -1787,10 +1808,11 @@ function fmtCP(n){ return Math.round(n).toLocaleString('ko-KR'); }
 const REC_CP_MULT = { stage:1.0, expedition:1.0, dungeon:1.5, boss:1.2 };
 function recCP(v){ return Math.max(100, Math.ceil(v/100)*100); } // 백 단위 올림
 function cpVerdictRec(my, rec){ const r = my/Math.max(1,rec); if(r>=1.2) return {t:'여유', c:'#5cd65c'}; if(r>=1) return {t:'충분', c:'#a8e063'}; if(r>=0.85) return {t:'접전', c:'#ffd557'}; return {t:'부족', c:'#ff5a5a'}; }
-function cpBarHtml(my, en, enLabel, note, rec){
+function cpBarHtml(my, en, enLabel, note, rec, myLabel){
+  const ml = myLabel || '내';
   if(rec){ // 추천 전투력이 있으면 상대 대신 추천과 비교
     const v = cpVerdictRec(my, rec);
-    return '<div class="cp-bar"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 내<span class="cp-w"> 전투력</span> <b>'+fmtCP(my)+'</b></span><span class="cp-v" style="color:'+v.c+'; border-color:'+v.c+'77;">'+v.t+'</span><span>🎯 추천 <b>'+fmtCP(rec)+'</b></span></div>'
+    return '<div class="cp-bar"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+ml+'<span class="cp-w"> 전투력</span> <b>'+fmtCP(my)+'</b></span><span class="cp-v" style="color:'+v.c+'; border-color:'+v.c+'77;">'+v.t+'</span><span>🎯 추천 <b>'+fmtCP(rec)+'</b></span></div>'
       + (note ? '<div class="sub" style="text-align:center; font-size:10px; margin-top:-2px;">'+note+'</div>' : '');
   }
   const v = cpVerdict(my, en);
@@ -1901,7 +1923,7 @@ function validEnemyTargets(sf){
   if(taunt.length) return taunt.map(u=>u.idx);
   return frontFirst(sf.enemyUnits, sideWidth(sf,'enemy')).map(u=>u.idx);
 }
-function skillUnitName(side, u){ return (side==='enemy' ? '적 ' : '')+(u.dispName || SPIRITS[u.key].name); }
+function skillUnitName(side, u){ if(!u) return '—'; return (side==='enemy' ? '적 ' : '')+(u.dispName || SPIRITS[u.key].name); }
 function skillTargetable(sf, side, idx){
   const u = unitAt(sf, side, idx);
   if(!u || !u.alive) return false;
@@ -1931,6 +1953,7 @@ function dmgReduction(sf, d){
 }
 function killUnit(sf, u){
   if(!u.alive) return; // 이미 쓰러진 유닛을 다시 처리하지 않음
+  if(u.hp>0) hidHurt(sf, u, u.hp); // (v270) 즉사도 체력을 잃은 것
   u.hp = 0; u.alive = false;
   if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
@@ -1977,9 +2000,10 @@ function dealDamage(sf, a, d, mult, opts){
   const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; }
   d.hp = Math.max(0, d.hp - rest);
+  if(rest>0) hidHurt(sf, d, rest); // (v270)
   if(d.cast && total>0 && a.side!==d.side) d.cast.dealt += total; // (v260) 절대영도 저지 피해
   runeOnHit(sf, a, d, total);
-  if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); if(a.hp<=0) killUnit(sf, a); }
+  if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); }
   const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
   if(d.hp<=0 && d.alive && a && a!==d && a.side===d.side) hidFriendlyKill(sf, a, d); // (v266) 히든 업적: 같은 편을 쓰러뜨림
   if(d.hp<=0) killUnit(sf, d);
@@ -2025,6 +2049,8 @@ function makeActCtx(sf, a, tSide, tIdx){
 function performAction(sf, a, act, tSide, tIdx){
   const C = makeActCtx(sf, a, tSide, tIdx);
   if(!C.t) return C;
+  if(a.side==='me' && act!=='basic'){ const sk = kitOf(a) && kitOf(a)[act]; if(sk && sk.kind==='harm') sf.meHarmSkill = true; } // (v270) 평화주의자
+  const empBefore = a.st.empower || 0; // (v269) 이번 행동 전부터 있던 강화만 이번 행동에서 소모
   const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
     C.hit(C.t, 1);
@@ -2037,7 +2063,7 @@ function performAction(sf, a, act, tSide, tIdx){
     if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
     pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' '+sk.name+' → '+skillUnitName(tSide, C.t));
   }
-  if(a.st.empower) delete a.st.empower;
+  if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
   setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
@@ -2053,7 +2079,7 @@ const RAID_OFFLINE_GRACE_MS = 30000; // 팀원이 이 시간 넘게 끊겨 있�
 const RAID_BOSSES = [
   {id:'frostTyrant', name:'혹한의 폭군', element:'water', icon:'🧊', gimmicks:[
     {id:'blizzard', name:'눈보라', ic:'🌨️', when:'3R마다', d:'아군 전체 공격력 50% 피해 + 둔화', desc:'3라운드마다 아군 전체에 공격력 50% 피해 + 둔화'},
-    {id:'iceShell', name:'얼음 껍질', ic:'🛡️', when:'체력 50%↓', d:'한 번, 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 최대체력 20% 보호막'}]},
+    {id:'iceShell', name:'얼음 껍질', ic:'🛡️', when:'체력 50%↓', d:'한 번, 보스 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 보스 최대체력 20% 보호막'}]},
   {id:'infernoDrake', name:'겁화룡', element:'fire', icon:'🐉', gimmicks:[
     {id:'brand', name:'낙인', ic:'🔥', when:'매 R', d:'체력이 가장 높은 아군 화상 3중첩', desc:'매 라운드 체력이 가장 높은 아군에게 화상 3중첩'},
     {id:'rage', name:'격노', ic:'😡', when:'4R마다', d:'공격력 +25% (누적)', desc:'4라운드마다 공격력 +25% (누적)'}]},
@@ -2061,8 +2087,8 @@ const RAID_BOSSES = [
     {id:'gaze', name:'응시', ic:'👁️', when:'매 R', d:'공격력이 가장 높은 아군 저주 (받는 피해 +25%)', desc:'매 라운드 공격력이 가장 높은 아군에게 저주 (받는 피해 +25%, 2라운드)'},
     {id:'pulse', name:'파동', ic:'🌀', when:'3R마다', d:'아군 전체 공격력 60% 피해', desc:'3라운드마다 아군 전체에 공격력 60% 피해'}]},
   {id:'eldertree', name:'태고수', element:'wood', icon:'🌳', gimmicks:[
-    {id:'regrowth', name:'재생', ic:'💚', when:'매 R', d:'최대체력 2.5% 회복', desc:'매 라운드 최대체력 2.5% 회복'},
-    {id:'bark', name:'껍질 경화', ic:'🌳', when:'체력 50%↓', d:'한 번, 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 최대체력 20% 보호막'}]},
+    {id:'regrowth', name:'재생', ic:'💚', when:'매 R', d:'보스 최대체력 2.5% 회복', desc:'매 라운드 보스 최대체력 2.5% 회복'},
+    {id:'bark', name:'껍질 경화', ic:'🌳', when:'체력 50%↓', d:'한 번, 보스 최대체력 20% 보호막', desc:'체력이 절반 아래로 떨어지면 한 번, 보스 최대체력 20% 보호막'}]},
   {id:'dawnJudge', name:'새벽의 심판관', element:'light', icon:'⚖️', gimmicks:[
     {id:'verdict', name:'판결', ic:'⚖️', when:'3R마다', d:'체력 비율이 가장 낮은 아군에게 공격력 200% 피해', desc:'3라운드마다 체력 비율이 가장 낮은 아군에게 공격력 200% 피해'},
     {id:'halo', name:'후광', ic:'✨', when:'매 R', d:'보스에 걸린 해로운 효과 전부 제거', desc:'매 라운드 시작 시 보스의 해로운 효과를 전부 제거'}]}
@@ -2077,12 +2103,12 @@ const RAID_DIFFS = [
 function raidDiffById(id){ return RAID_DIFFS.find(d=>d.id===id) || RAID_DIFFS[1]; }
 // (v266) 레이드 추천 전투력 (둘 합산 8마리) — 등급·강화 단계별 표준 팀으로 자동 전투를 돌려, 4판 중 3판 이상 이긴 가장 약한 팀의 전투력
 // 레이드는 보스 한 마리 + 기믹이라 '상대 전투력'과 승패가 잘 안 맞아서 비율 대신 직접 잰 값을 씀 (보스·밸런스를 바꾸면 다시 재야 함)
-const RAID_REC_CP = {
+const RAID_REC_CP = { // (v269) 보스 전용 스킬로 바꾼 뒤 다시 잰 값
   frostTyrant:  { easy:1150, normal:2000, hard:3100, extreme:5800 },
-  infernoDrake: { easy:1150, normal:2000, hard:3100, extreme:8200 },
-  abyssEye:     { easy:700,  normal:2000, hard:3100, extreme:5800 },
-  eldertree:    { easy:700,  normal:1150, hard:2000, extreme:3100 },
-  dawnJudge:    { easy:1150, normal:3100, hard:4200, extreme:8200 }
+  infernoDrake: { easy:1150, normal:3100, hard:3100, extreme:8100 },
+  abyssEye:     { easy:700,  normal:1550, hard:3100, extreme:5800 },
+  eldertree:    { easy:700,  normal:1550, hard:3100, extreme:5800 },
+  dawnJudge:    { easy:1150, normal:3100, hard:4200, extreme:10500 }
 };
 function raidRecCP(bossId, diffId){ const t = RAID_REC_CP[bossId]; return (t && t[diffId]) ? recCP(t[diffId]) : 0; }
 function raidBossById(id){ return RAID_BOSSES.find(b=>b.id===id) || null; }
@@ -2181,6 +2207,7 @@ function buildRaidFight(hostPicks, guestPicks, bossId, diffId){
   const per = bossWaveNormalPower(RAID_BOSS_STAGE) * BOSS_POWER_MULT * diff.atk;
   const boss = makeBattleUnit('enemy', 1, info.element+'_legendary_a', per*ELEMENT_ATK_MULT[info.element], raidBossHpMult()*diff.hp/diff.atk);
   boss.isBoss = true; boss.dispName = info.name; boss.bossIcon = info.icon; ensureGroggy(boss);
+  if(LINE_KITS['rboss_'+info.id]){ boss.line = 'rboss_'+info.id; boss.pg = 0; } // (v269) 보스 전용 스킬 · 정령 특성 없음
   const sf = { v:168, mode:'raid', stageIdx: RAID_BOSS_STAGE, raidBossId: info.id, raidDiff: diff.id, round:1, phase:'acting', queue:[], queuePos:0, myUnits, enemyUnits:[boss],
     log:['레이드 시작!'], result:null, fxSeq:0, lastFx:null, actSeq:0 };
   startRoundQueue(sf);
@@ -2224,8 +2251,10 @@ function raidGrantReward(sf){
     state.enhanceStone = (state.enhanceStone||0) + dd.stone;
     const gems = RAID_GEMS[dd.id] || 0; state.raidGems = (state.raidGems||0) + gems; // (v172) 룬석 = 레이드 상점 재화
     if(first){ grantItems(dd.weekly); state.raidWeekDone.diffs.push(dd.id); if(dd.id!=='easy') state.raidWeekCleared = wk; }
-    const itemTxt = it=> Object.keys(it).map(k=>({summon:'<img class="uic" src="assets/ui/ic_tk_summon.webp" alt=""> 소환권',rare:'<img class="uic" src="assets/ui/ic_tk_rare.webp" alt=""> 레어 확정권',epic:'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 에픽 확정권',equip:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt=""> 장비 소환권'}[k]||k)+' +'+it[k]).join(' · ');
-    raidNet.rewardText = '<b style="font-size:15px; color:#ff9ab0;"><img class="uic" src="assets/ui/ic_runestone.webp" alt="룬석"> 고대 룬석 +'+gems+'</b><br>['+dd.name+'] <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석 +'+dd.stone+(first ? '<br>'+itemTxt(dd.weekly)+' (이번 주 '+dd.name+' 첫 승리)' : '');
+    // (v269) 보상 창 정리 — 한 줄에 몰아 쓰던 것을 칸으로: 기본 보상(룬석·강화석) / 이번 주 첫 승리 보너스 / 장비
+    const rwCell = (ic, n, lbl)=> '<div class="rrw-c">'+ic+'<b>'+n+'</b><small>'+lbl+'</small></div>';
+    raidNet.rewardText = '<div class="rrw-h">'+dd.name+' 보상</div><div class="rrw-g">'+rwCell('<img class="uic" src="assets/ui/ic_runestone.webp" alt="">', '+'+gems, '고대 룬석')+rwCell('<img class="uic" src="assets/ui/ic_stone.webp" alt="">', '+'+dd.stone, '강화석')+'</div>'
+      + (first ? '<div class="rrw-h gold">🎁 이번 주 첫 승리 보너스</div><div class="rrw-g">'+Object.keys(dd.weekly).map(k=>rwCell(TICKET_INFO[k] ? TICKET_INFO[k].icon : '🎟️', '+'+dd.weekly[k], TICKET_INFO[k] ? TICKET_INFO[k].name : k)).join('')+'</div>' : '');
     raidNet.gotStones = true;
     // (v171) 하드부터 보스 속성 장비 드롭(레전더리 먼저 굴리고, 안 나오면 에픽) — 보스가 두른 속성의 무기·방어구가 떨어진다는 설정
     if(dd.gear){
@@ -2235,7 +2264,7 @@ function raidGrantReward(sf){
         const gk = equipKey(EQUIP_SLOTS[Math.floor(Math.random()*EQUIP_SLOTS.length)], bossInfo.element, rar);
         addEquip(gk); save();
         const gi = equipInfo(gk);
-        raidNet.rewardText += '<br><b style="color:'+RARITY_INFO[rar].color+';">'+(rar==='legendary'?'✨ ':'')+gi.icon+' '+gi.name+' ('+RARITY_INFO[rar].name+') 획득!</b>';
+        raidNet.rewardText += '<div class="rrw-h" style="color:'+RARITY_INFO[rar].color+';">'+(rar==='legendary'?'✨ ':'')+'장비 획득</div><div class="rrw-g"><div class="rrw-c wide" style="border-color:'+RARITY_INFO[rar].color+'88;">'+gi.icon+'<b style="color:'+RARITY_INFO[rar].color+';">'+gi.name+'</b><small>'+RARITY_INFO[rar].name+'</small></div></div>';
       }
     }
   }else{
@@ -2479,6 +2508,7 @@ async function raidJoinRoom(input){
     if(d.guest && d.guest!==raidNet.uid){ toast('방이 꽉 참 (2/2)'); return; }
     if(d.status!=='lobby' && d.guest!==raidNet.uid){ toast('이미 시작된 방'); return; }
     if(d.kind==='duel' && !duelPayload(myDuelDeck()).some(Boolean)){ toast('먼저 결투 덱을 정하기 (친구 창)'); return; }
+    if(d.kind!=='duel' && d.guest!==raidNet.uid){ const bi = RAID_BOSSES.findIndex(x=>x.id===d.bossId); if(bi>0 && !raidBossUnlocked(bi)){ toast('아직 안 연 보스 ('+RAID_BOSSES[bi].name+') — '+RAID_BOSSES[bi-1].name+'부터 잡기'); return 'locked'; } } // (v270) 안 연 레이드 보스엔 입장 불가
     if(d.guest!==raidNet.uid) await ref.update(Object.assign({ guest: raidNet.uid, ready: { [raidNet.uid]: false } }, d.kind==='duel' ? { duelPicks: { [raidNet.uid]: duelPayload(myDuelDeck()) } } : {}));
     await raidAttach(code, 'guest');
   }catch(e){ raidNetError(e); }
@@ -2535,8 +2565,21 @@ async function raidResume(){
 
 // ---------- 시작 · 선택 ----------
 function raidMyPickPayload(){ return raidNet.myPicks.map(k=> k ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k) } : null); }
-function raidAiPickPayload(){ return raidAutoPicks().map(k=>({ key:k, atk:unitAtk(k), arm:armorMult(k), rune: spiritRune(k), aw: awakenLevel(k) })); }
-function raidAutoPicks(){ return Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=>unitAtk(c)-unitAtk(a)).slice(0,4); }
+function raidAiPickPayload(){ return raidAutoPicks().filter(Boolean).map(k=>({ key:k, atk:unitAtk(k), arm:armorMult(k), rune: spiritRune(k), aw: awakenLevel(k) })); }
+// (v269) 추천: 보스 속성에 강한 정령 우대로 4마리 → 돌격·탱커·흡혈처형(전열 계열)을 앞칸(0·1), 나머지는 뒷칸(2·3)
+// 예전엔 공격력 순 4마리를 칸 순서대로 넣어서 전열 계열이 후열에, 후열 계열이 전열에 서기도 했음
+function raidAutoPicks(bossId){
+  const info = raidBossById(bossId || (raidNet.doc && raidNet.doc.bossId)) || raidWeekBoss();
+  const pool = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
+  const score = k=>{ const el = SPIRITS[k].element; return spiritCP(k) * (info && beats(el, info.element) ? 1.15 : (info && beats(info.element, el) ? 0.85 : 1)); };
+  const pick = pool.sort((a,c)=>score(c)-score(a)).slice(0,4);
+  const isF = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
+  const front = pick.filter(isF), back = pick.filter(k=>!isF(k));
+  const out = [null,null,null,null];
+  front.slice(0,2).forEach((k,i)=>out[i]=k); back.slice(0,2).forEach((k,i)=>out[2+i]=k);
+  pick.filter(k=>!out.includes(k)).forEach(k=>{ const i = out.indexOf(null); if(i>=0) out[i] = k; }); // 한쪽이 3마리 이상이면 남는 칸에
+  return out;
+}
 function raidSavePicks(){ if(raidIsNet()) raidUpdate({ picks:{ [raidNet.uid]: raidMyPickPayload() }, ready:{ [raidNet.uid]: false } }); }
 async function raidHostStartDuel(d){
   if(raidNet.starting || !d.guest) return;
@@ -2560,7 +2603,7 @@ async function raidHostStartBattle(d){
 function raidStartSolo(alone){
   raidLocalCleanup();
   raidNet.role = 'solo'; raidNet.alone = !!alone; raidNet.rewardText = '';
-  raidNet.myPicks = raidAutoPicks(); while(raidNet.myPicks.length<4) raidNet.myPicks.push(null);
+  raidNet.myPicks = [null,null,null,null]; // (v269) 처음엔 비워 둠
   raidNet.selSlot = 0;
   showRaidPickModal();
 }
@@ -2600,7 +2643,7 @@ async function friendInit(){
     const v = obj(s), prev = friendNet.invites; friendNet.invites = v;
     Object.keys(v).forEach(k=>{ const iv = v[k]; if(!iv || typeof iv!=='object') return;
       if(iv.kind==='decline'){ raidInviteDeclined(k, iv); return; } // (v239) 내가 보낸 초대를 상대가 거절
-      if((!prev[k] || prev[k].code!==iv.code) && Date.now()-(iv.t||0) < 10*60000) inviteNotice(k, iv); });
+      if((!prev[k] || prev[k].code!==iv.code || prev[k].t!==iv.t) && Math.abs(serverNow()-(iv.t||0)) < 10*60000) inviteNotice(k, iv); }); // (v269) 같은 방에서 다시 초대해도 알림 · 서버 시각 기준(폰 시계가 10분 넘게 어긋나면 초대가 안 보였음)
     friendRefresh();
   }, ()=>{}));
   if(raidNet.room){
@@ -2756,19 +2799,20 @@ async function friendInvite(fuid, kindArg){
   if(!raidNet.code) return;
   if(!raidNet.invited) raidNet.invited = {};
   raidNet.invited[fuid] = { st:'wait', t: Date.now() };
-  try{ await raidNet.db.doc('invites/'+fuid+'/'+raidNet.uid).set({ code: raidNet.code, name: friendNet.name, t: Date.now(), kind: (kindArg || (isDuelRoom() ? 'duel' : 'raid')) }); toast((kindArg==='duel' || isDuelRoom()) ? '결투 신청' : '초대 보냄'); }
+  try{ await raidNet.db.doc('invites/'+fuid+'/'+raidNet.uid).set({ code: raidNet.code, name: friendNet.name, t: serverNow(), kind: (kindArg || (isDuelRoom() ? 'duel' : 'raid')) }); toast((kindArg==='duel' || isDuelRoom()) ? '결투 신청' : '초대 보냄'); }
   catch(e){ raidNetError(e); }
 }
 async function friendAcceptInvite(from){
   const iv = friendNet.invites[from]; if(!iv) return;
   try{ await raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
   closeModal(); activeTab = 'raid'; render();
-  await raidJoinRoom(iv.code);
+  const r = await raidJoinRoom(iv.code);
+  if(r==='locked' && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', why:'locked', code: iv.code, name: friendNet.name, t: serverNow() }); }catch(e){} // (v270) 방장에게 '아직 안 연 보스'라고 알림
 }
 async function friendDismissInvite(from){
   const iv = friendNet.invites[from];
   try{ await raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
-  if(iv && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', code: iv.code, name: friendNet.name, t: Date.now() }); }catch(e){} // (v239) 방장에게 거절했다고 알림
+  if(iv && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', code: iv.code, name: friendNet.name, t: serverNow() }); }catch(e){} // (v239) 방장에게 거절했다고 알림
 }
 // (v239) 레이드·결투 초대 알림 — 전투 중이 아니면 화면 위에 띄우고, 누르면 친구 → 요청 탭
 function inviteNotice(from, iv){
@@ -2787,8 +2831,8 @@ function raidInviteDeclined(from, iv){
   try{ raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
   if(!raidNet.code || iv.code!==raidNet.code) return;
   if(!raidNet.invited) raidNet.invited = {};
-  raidNet.invited[from] = { st:'declined', t: Date.now() };
-  toast(String(iv.name||raidNameOf(from)).slice(0,12)+'님이 초대 거절');
+  raidNet.invited[from] = { st: iv.why==='locked' ? 'locked' : 'declined', t: Date.now(), code: iv.code };
+  toast(String(iv.name||raidNameOf(from)).slice(0,12)+(iv.why==='locked' ? '님은 아직 이 보스를 안 열어서 못 들어옴' : '님이 초대 거절'));
   if(document.getElementById('raidModal') && raidNet.doc && raidNet.doc.status==='lobby') showRaidLobbyModal();
   setTimeout(()=>{ if(document.getElementById('raidModal') && raidNet.doc && raidNet.doc.status==='lobby') showRaidLobbyModal(); }, RAID_REINVITE_MS+50);
 }
@@ -2798,7 +2842,7 @@ const escTxt = v=> String(v==null?'':v).replace(/[<>&"]/g,'');
 function friendsOfflineHtml(){
   return '<div class="fr-empty">'+(!friendsAvailable() ? (raidNet.ready ? '이 화면에선 친구 기능 사용 불가' : (raidNet.failed ? '🔌 온라인 연결 실패<br>인터넷 연결 확인 후 앱 다시 열기' : '🔌 온라인 연결 중…')) : '<img class="uic" src="assets/ui/ic_party.webp" alt=""> 친구 정보 불러오는 중…')+'</div>';
 }
-function friendLiveInvites(kind){ return Object.keys(friendNet.invites||{}).filter(k=>{ const iv = friendNet.invites[k]; return iv && typeof iv.code==='string' && iv.kind!=='decline' && Date.now()-(iv.t||0) < 10*60000 && (!kind || (iv.kind==='duel')===(kind==='duel')); }); }
+function friendLiveInvites(kind){ return Object.keys(friendNet.invites||{}).filter(k=>{ const iv = friendNet.invites[k]; return iv && typeof iv.code==='string' && iv.kind!=='decline' && Math.abs(serverNow()-(iv.t||0)) < 10*60000 && (!kind || (iv.kind==='duel')===(kind==='duel')); }); }
 function friendIncomingReqs(){ return Object.keys(friendNet.reqs||{}).filter(k=>{ const r = friendNet.reqs[k]; return r && typeof r==='object' && !friendNet.friends[k] && !r.accept && !r.reject; }); }
 // (v238) 친구 요청은 상대가 수락해야 목록에 뜸 — 보낸 요청은 기기(세이브)에 기록, 상대가 수락·거절하면 요청 칸으로 답이 옴
 function friendSentList(){ const m = state.friendSent || {}; return Object.keys(m).filter(k=>!friendNet.friends[k]); }
@@ -2951,7 +2995,7 @@ function bindDuelTab(){
 function showFriendsModal(){ closeModal(); activeTab = 'friends'; render(); } // (v181) 친구는 이제 별도 화면(예전 이름 유지 — 헤더 <img class="uic" src="assets/ui/ic_party.webp" alt=""> 버튼 등에서 호출)
 function friendBadgeUpdate(){
   const dot = document.getElementById('friendDot'); if(!dot) return;
-  const inv = Object.keys(friendNet.invites||{}).some(k=>{ const iv = friendNet.invites[k]; return iv && Date.now()-(iv.t||0) < 10*60000; });
+  const inv = Object.keys(friendNet.invites||{}).some(k=>{ const iv = friendNet.invites[k]; return iv && Math.abs(serverNow()-(iv.t||0)) < 10*60000; });
   const req = Object.keys(friendNet.reqs||{}).some(k=>!friendNet.friends[k]);
   dot.style.display = (inv || req) ? 'block' : 'none';
   const hd = document.getElementById('homeFriendDot'); if(hd) hd.style.display = (inv || req) ? 'block' : 'none';
@@ -2964,6 +3008,7 @@ function raidWaitingHtml(){ // (v239) 초대했지만 아직 안 들어온 친�
 function inviteBtnHtml(k){
   const s = (raidNet.invited||{})[k], now = Date.now();
   if(s && s.st==='wait' && now-s.t < 10*60000) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">대기 중</button>';
+  if(s && s.st==='locked' && s.code===raidNet.code) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">보스 안 열림</button>'; // (v270)
   if(s && s.st==='declined' && now-s.t < RAID_REINVITE_MS) return '<button class="btn small" disabled style="width:auto; padding:4px 10px;">거절됨</button>';
   return '<button class="btn small" data-f-invite="'+k+'" style="width:auto; padding:4px 10px;">'+(s && s.st==='declined' ? '다시 초대' : '초대')+'</button>';
 }
@@ -3265,7 +3310,7 @@ function bindHomeTab(){
 // (v247) 레이드 화면 두 단계 — 목록(입장권·코드 참가·상점·보스 가로 카드) → 보스를 누르면 상세(정보·난이도·보상·방 만들기)
 let raidView = 'list';
 function raidTopHtml(){
-  return '<div class="rd-top"><div class="rd-tk">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+RAID_TICKET_MAX+'</b><small>'+raidTicketNextText()+'</small></div>'
+  return '<div class="rd-top"><div class="rd-tk">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b><small>'+raidTicketNextText()+'</small></div>'
     + (raidNet.ready && !raidNet.code ? '<div class="rd-join"><input id="raidCodeInput" maxlength="6" placeholder="방 코드" autocomplete="off" autocapitalize="characters"><button id="raidJoinBtn" '+(raidNet.busy?'disabled':'')+'>참가</button></div>' : '')
     + '</div>' + (raidNet.code ? '<button class="btn" id="raidReopenBtn" style="margin:0;">🚪 방으로 돌아가기 · '+raidNet.code+'</button>' : '');
 }
@@ -3289,7 +3334,7 @@ function raidListHtml(){
 function raidDetailHtml(){
   const info = raidWeekBoss(), cur = raidDiffById(state.raidDiff), prog = (state.raidProgress && state.raidProgress[info.id]) || [];
   const wd = (state.raidWeekDone && state.raidWeekDone.week===raidWeekKey()) ? state.raidWeekDone.diffs : [];
-  let h = '<div class="rd">' + '<div style="display:flex; gap:6px; align-items:stretch;"><button class="btn secondary small" id="raidBack" style="width:auto; margin:0; padding:6px 12px;">‹ 보스 목록</button><div style="flex:1;"></div><div class="rd-tk" style="flex-direction:row; gap:6px;">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+RAID_TICKET_MAX+'</b></div></div>'
+  let h = '<div class="rd">' + '<div style="display:flex; gap:6px; align-items:stretch;"><button class="btn secondary small" id="raidBack" style="width:auto; margin:0; padding:6px 12px;">‹ 보스 목록</button><div style="flex:1;"></div><div class="rd-tk" style="flex-direction:row; gap:6px;">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>'
     + (raidNet.code ? '<button class="btn" id="raidReopenBtn" style="margin:0;">🚪 방으로 돌아가기 · '+raidNet.code+'</button>' : '');
   const br = BOSS_RUNES[info.id];
   h += '<div class="rd-card"><div class="rd-hero"><div class="rd-ico">'+bossImg(info.id, 'rd-bimg big', info.icon)+'</div><div><div class="rd-name">'+info.name+'</div><div class="sub" style="font-size:12px; color:'+ELEMENT_INFO[info.element].color+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div></div><button class="bs-info" id="raidBossInfo" style="margin-left:auto;">ⓘ</button></div>'
@@ -3366,7 +3411,7 @@ function showRaidPickModal(){
   if(!solo && !d) return;
   if(!solo && !raidNet.picksInit){
     const mine = raidCleanPicks(d.picks[raidNet.uid]);
-    raidNet.myPicks = mine.some(Boolean) ? mine.map(p=>p?p.key:null) : raidAutoPicks().concat([null,null,null,null]).slice(0,4);
+    raidNet.myPicks = mine.some(Boolean) ? mine.map(p=>p?p.key:null) : [null,null,null,null]; // (v269) 처음엔 비워 둠 — 직접 고르거나 ✨ 추천
     raidNet.picksInit = true;
     if(!mine.some(Boolean) && raidNet.myPicks.some(Boolean)) raidSavePicks();
   }
@@ -3374,7 +3419,7 @@ function showRaidPickModal(){
   const myReady = solo ? false : !!d.ready[raidNet.uid];
   const pid = solo ? null : raidPartnerUid();
   const alone = solo && raidNet.alone;
-  const partnerPicks = solo ? raidAutoPicks().map(k=>({key:k, atk:unitAtk(k)})) : d.picks[pid];
+  const partnerPicks = solo ? raidAutoPicks(info.id).filter(Boolean).map(k=>({key:k, atk:unitAtk(k)})) : d.picks[pid];
   const partnerReady = solo ? true : !!d.ready[pid];
   let h = '<h3 style="text-align:center; margin-bottom:2px;">'+info.icon+' 정령 선택</h3>'
     + '<div class="sub" style="text-align:center; font-size:11px;">'+(alone ? '혼자 도전 · 내 정령 4마리만' : (solo ? '연습 모드 · AI 동료 · 보상 없음' : '시작되면 나갈 수 없음 · 둘 다 준비하면 전투 시작'))+'</div>';
@@ -3387,9 +3432,10 @@ function showRaidPickModal(){
     if(rpBoss) h += '<button class="rp-boss" id="rpBossInfo">'+bossImg(info.id, 'rp-bimg', info.icon)+'<span class="rp-bt"><b>'+info.name+' <small>'+dd.name+'</small></b>' // (v219) 보스 정보
       + '<span class="sub">'+elIc(rpBoss.element)+' '+ELEMENT_INFO[rpBoss.element].name+' · 체력 '+fmtHp(rpBoss.maxHp)+' · 공격 '+fmtDmg(rpBoss.atk)+'</span>'
       + '<span class="rp-chips">'+info.gimmicks.map(g=>'<i>'+g.name+'</i>').join('')+'</span></span><span class="rp-more">ⓘ</span></button>';
-    h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> '+dd.name, (alone ? '혼자라 내 4마리만 · ' : '')+'둘 합산 · '+dd.name+' 기준', raidRecCP(info.id, dd.id)); }
-  if(alone) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+uiIc('pass')+' '+(raidTicketCount()>0 ? '시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+RAID_TICKET_MAX+') · 보상은 팀과 같음' : '입장권이 없어 보상 없이 도전')+'</div>';
-  if(!solo) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+(state.raidTicketFor===raidNet.code ? (state.raidTicketHad?'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 사용됨 · 보상 있음':'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 없음 · 보상 없이 참여') : (raidTicketCount()>0 ? '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+RAID_TICKET_MAX+')' : '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권이 없어 보상 없이 참여'))+'</div>';
+    const partnerN = alone ? 0 : raidCleanPicks(other).filter(Boolean).length; // (v269) 표시: 팀 합산(둘) vs 추천(둘 합산 기준) — 팀원이 아직 안 골랐으면 알려 줌
+    h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> '+dd.name, alone ? '혼자 도전 · 내 정령만 · 추천은 둘 합산 기준' : ('우리 팀 '+(raidCleanPicks(mineP).filter(Boolean).length+partnerN)+'마리 합산 · 추천도 둘 합산 기준'+(partnerN ? '' : ' · 팀원 선택 전')), raidRecCP(info.id, dd.id), alone ? '내' : '우리 팀'); }
+  if(alone) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+uiIc('pass')+' '+(raidTicketCount()>0 ? '시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+raidTicketMax()+') · 보상은 팀과 같음' : '입장권이 없어 보상 없이 도전')+'</div>';
+  if(!solo) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+(state.raidTicketFor===raidNet.code ? (state.raidTicketHad?'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 사용됨 · 보상 있음':'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 없음 · 보상 없이 참여') : (raidTicketCount()>0 ? '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+raidTicketMax()+')' : '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권이 없어 보상 없이 참여'))+'</div>';
   h += '<div class="sub" style="text-align:center; margin:8px 0 4px; font-weight:700;">내 정령 (칸을 누르고 아래에서 고르기)</div>';
   const slotBtn = i=>{
     const k = raidNet.myPicks[i], sel = raidNet.selSlot===i && !myReady;
@@ -3409,7 +3455,7 @@ function showRaidPickModal(){
   }).join('') : '<div class="sub">보유한 정령 없음</div>';
   h += dispatchAwayTilesHtml(); // (v267)
   h += '</div></div>';
-  h += '<div class="rp-foot"><div style="display:flex; gap:6px;"><button class="btn secondary" id="raidAutoBtn" style="flex:1;" '+(myReady?'disabled':'')+'>⚡ 자동</button>'
+  h += '<div class="rp-foot"><div style="display:flex; gap:6px; margin-bottom:6px;"><button class="btn secondary" id="raidClearBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>🧹 비우기</button><button class="btn secondary" id="raidAutoBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>✨ 추천 배치</button></div><div style="display:flex; gap:6px;">'
     + '<button class="btn" id="raidReadyBtn" style="flex:2;">'+(solo ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작' : (myReady ? '↩ 준비 취소' : '<img class="uic" src="assets/ui/ic_check.webp" alt=""> 준비 완료'))+'</button></div>';
   if(solo) h += '<button class="btn secondary" id="raidSoloExitBtn" style="margin-top:6px; opacity:.8;">나가기</button>';
   if(!solo) h += '<button class="btn secondary" id="raidPickLeaveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.role==='host'?'방 닫기':'나가기')+'</button>';
@@ -3433,7 +3479,8 @@ function showRaidPickModal(){
     const empty = raidNet.myPicks.indexOf(null); if(empty>=0) raidNet.selSlot = empty;
     raidSavePicks(); showRaidPickModal();
   }));
-  document.getElementById('raidAutoBtn').addEventListener('click', ()=>{ if(myReady) return; raidNet.myPicks = raidAutoPicks().concat([null,null,null,null]).slice(0,4); raidSavePicks(); showRaidPickModal(); });
+  document.getElementById('raidAutoBtn').addEventListener('click', ()=>{ if(myReady) return; raidNet.myPicks = raidAutoPicks(info.id); raidNet.selSlot = Math.max(0, raidNet.myPicks.indexOf(null)); raidSavePicks(); showRaidPickModal(); });
+  document.getElementById('raidClearBtn').addEventListener('click', ()=>{ if(myReady) return; raidNet.myPicks = [null,null,null,null]; raidNet.selSlot = 0; raidSavePicks(); showRaidPickModal(); }); // (v269)
   document.getElementById('raidReadyBtn').addEventListener('click', ()=>{
     if(!raidNet.myPicks.some(Boolean)){ toast('최소 1마리 선택 필요'); return; }
     if(solo){
@@ -3720,7 +3767,12 @@ function checkSkillStageOutcome(sf){
   if(r && sf.result && sf.result.win && !sf.hidWin){ sf.hidWin = true; try{ hidOnWin(sf); }catch(e){} }
   return r;
 }
+function hidHurt(sf, u, loss){ // (v270) 무혈 입성 — 우리 정령이 체력을 잃었는지 (보스전은 웨이브를 넘어 기억)
+  if(!sf || !u || u.side!=='me' || !(loss>0)) return;
+  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight) state.bossFight.hurt = true;
+}
 function hidOnWin(sf){ // (v266) 이긴 판 히든 업적
+  if(sf.mode!=='trial' && !(sf.result && sf.result.waveClear) && !sf.meHarmSkill && sf.round>=5) hidMark('pacifist'); // (v270) 평화주의자
   const alive = aliveUnits(sf.myUnits);
   if(!sf.mode && alive.length===1 && alive[0].hp/alive[0].maxHp <= 0.1) hidMark('stageClutch');
   if(sf.mode==='expedition' && sf.enemyUnits.some(u=>u.isBoss) && alive.length===1) hidMark('expClutch');
@@ -3784,7 +3836,7 @@ function roundStartEffects(sf){
     let loss = 0;
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
     if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
-    if(loss>0){ u.hp = Math.max(0, u.hp - loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
+    if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
     if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧재생' }); }
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
@@ -4054,7 +4106,7 @@ const LINE_KITS = {
       desc:g=>[
         '대상 회복 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
-        g>=3?'회복한 대상에게 2라운드 동안 재생 5% 부여':null
+        g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
@@ -4096,7 +4148,7 @@ const LINE_KITS = {
     ].filter(Boolean).join('<br>') },
     s1:{ name:'독 포자', icon:'🍄', cd:3, kind:'harm', tag:g=>'독'+(g>=2?' · 관통':''),
       desc:g=>[
-        '대상에게 공격력 70% + 독 3라운드 (라운드마다 최대체력 '+pctTxt([.04,.05,.06,.07,.08][g])+')',
+        '대상에게 공격력 70% + 독 3라운드 (라운드마다 대상 최대체력 '+pctTxt([.04,.05,.06,.07,.08][g])+')',
         g>=2?'바로 뒤 칸 대상에게도 35% + 독':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const p=C.P([.04,.05,.06,.07,.08]); C.hit(C.t,0.7); C.poison(C.t,p); if(C.g>=2) C.around('pierce').forEach(u=>{ C.hit(u,0.35); C.poison(u,p); }); } },
@@ -4149,7 +4201,7 @@ const LINE_KITS = {
     s2:{ name:'처형', icon:'⚰️', cd:4, kind:'harm', tag:()=> '처형',
       desc:g=>[
         '대상 체력이 30% 이하면 공격력 '+pctTxt([0,0,3,3.5,4][g])+', 아니면 120%',
-        g>=3?'처치하면 체력 15% 회복':null,
+        g>=3?'처치하면 자신 최대체력 15% 회복':null,
         g>=4?'처치하면 한 번 더 행동':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const low=C.t.hp/C.t.maxHp<=0.3; const r=C.hit(C.t, low?C.P([0,0,3,3.5,4]):1.2); if(r && !C.t.alive){ if(C.g>=3) C.heal(C.a, pctHp(C.a)*0.15); if(C.g>=4) C.actNext(C.a); } } } },
@@ -4169,6 +4221,98 @@ const LINE_KITS = {
       ].join('<br>'),
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } }
 };
+// (v269) 레이드 보스 전용 스킬 — 예전엔 보스가 속 정령(예: 혹한의 폭군 = 물결 레전더리 A형 '세이렌')의 스킬·특성을 그대로 써서
+// 정보창에 없는 회복(세이렌 특성 '맑은 물' · 치유 스킬)을 했음. 이제 보스마다 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
+const RAID_BOSS_KITS = {
+  frostTyrant: {
+    s1:{ name:'빙창', icon:'🧊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200% · 둔화(속도 −15, 2R)',
+      run:C=>{ C.hit(C.t, 2.0); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '⏬둔화'); } },
+    s2:{ name:'동결 포효', icon:'❄️', cd:4, kind:'harm', desc:()=>'대상 편 전열 전체에 공격력 90% · 그중 체력이 가장 많은 1명 빙결',
+      run:C=>{ const fr = C.side(C.tSide).filter(u=>isFrontRow(u.idx, sideWidth(C.sf, C.tSide))); const list = fr.length ? fr : C.side(C.tSide); list.forEach(u=>C.hit(u, 0.9)); const top = list.filter(u=>u.alive).sort((x,y)=>y.hp-x.hp)[0]; if(top) C.neg(top, st=>{ st.freeze = true; }, '❄️빙결'); } } },
+  infernoDrake: {
+    s1:{ name:'화염 숨결', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상과 양옆에 공격력 130% · 화상 1중첩',
+      run:C=>{ [C.t, ...C.around('row')].forEach(u=>{ C.hit(u, 1.3); if(u.alive) C.burn(u, 1); }); } },
+    s2:{ name:'대멸화', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70% · 이미 화상이 있으면 100%',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, u.st.burn ? 1.0 : 0.7)); } } },
+  abyssEye: {
+    s1:{ name:'정신 파열', icon:'💥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 190% · 저주가 걸려 있으면 260%',
+      run:C=>{ C.hit(C.t, C.t.st.curse ? 2.6 : 1.9); } },
+    s2:{ name:'공허의 시선', icon:'🕳️', cd:4, kind:'harm', desc:()=>'대상 편에서 체력이 가장 많은 정령에게 공격력 150% · 봉인(2R, 기본 공격만)',
+      run:C=>{ const top = C.side(C.tSide).sort((x,y)=>y.hp-x.hp)[0] || C.t; C.hit(top, 1.5); if(top.alive) C.neg(top, st=>{ st.seal = {r:2}; }, '🔏봉인'); } } },
+  eldertree: {
+    s1:{ name:'가시 뿌리', icon:'🌵', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 독(라운드마다 대상 최대체력 5%, 3R)',
+      run:C=>{ C.hit(C.t, 1.6); if(C.t.alive) C.poison(C.t, 0.05); } },
+    s2:{ name:'대지의 분노', icon:'🌳', cd:4, kind:'harm', desc:()=>'무작위 3명에게 공격력 110% · 속박(행동 순서 맨 뒤 · 받는 피해 +15%, 2R)',
+      run:C=>{ const pool = C.side(C.tSide).slice(); for(let n=0; n<3 && pool.length; n++){ const i = C.sf.noRng ? 0 : Math.floor(Math.random()*pool.length); const u = pool.splice(i,1)[0]; C.hit(u, 1.1); if(u.alive) C.neg(u, st=>{ st.web = {v:0.15, r:2}; }, '🕸️속박'); } } } },
+  dawnJudge: {
+    s1:{ name:'심판의 창', icon:'⚖️', cd:3, kind:'harm', desc:()=>'대상의 보호막·이로운 효과를 모두 걷어낸 뒤 공격력 200%',
+      run:C=>{ C.strip(C.t); C.hit(C.t, 2.0); } },
+    s2:{ name:'성역', icon:'✨', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80% · 자신에게 보호막(자신 최대체력 8%)',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); C.shield(C.a, pctHp(C.a)*0.08); } } }
+};
+Object.keys(RAID_BOSS_KITS).forEach(id=>{ const k = RAID_BOSS_KITS[id]; LINE_KITS['rboss_'+id] = { role:'레이드 보스', icon:'👑', passive:{ name:'없음', desc:()=>'보스는 정령 특성 없음 (기믹·그로기 참고)' }, s1:k.s1, s2:k.s2 }; });
+// (v270) 챕터 보스(탐험·출정)·결계석·용암 정령·월드 보스도 전용 스킬 — 예전엔 속 정령(예: 서리거인 = 물결 레전더리 A형 '세이렌')의
+// 스킬·특성(맑은 물 회복 등)을 그대로 써서 보스 정보에 없는 행동을 했음. 이제 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
+const FRONT_OF = (C, s)=>{ const all = C.side(s), fr = all.filter(u=>isFrontRow(u.idx, sideWidth(C.sf, s))); return fr.length ? fr : all; };
+const PICK_N = (C, list, n)=>{ const pool = list.slice(), out = []; while(out.length<n && pool.length){ const k = C.sf.noRng ? 0 : Math.floor(Math.random()*pool.length); out.push(pool.splice(k,1)[0]); } return out; };
+const BOSS_UNIT_KITS = {
+  // ── 챕터 보스 ──
+  cboss_frostGiant: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'고드름 몽둥이', icon:'🧊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% · 둔화(속도 −15, 2R)',
+      run:C=>{ C.hit(C.t, 1.8); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '⏬둔화'); } },
+    s2:{ name:'빙하 짓밟기', icon:'🦶', cd:4, kind:'harm', desc:()=>'대상 편 전열 전체에 공격력 100%',
+      run:C=>{ FRONT_OF(C, C.tSide).forEach(u=>C.hit(u, 1.0)); } } },
+  cboss_lavaLord: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'용암 주먹', icon:'👊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 화상 1중첩',
+      run:C=>{ C.hit(C.t, 1.7); if(C.t.alive) C.burn(C.t, 1); } },
+    s2:{ name:'용암 분출', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상 편 무작위 2명에게 공격력 140%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 2).forEach(u=>C.hit(u, 1.4)); } } },
+  cboss_ancientTree: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'덩굴 채찍', icon:'🌿', cd:3, kind:'harm', desc:()=>'대상에게 공격력 160% · 속박(행동 순서 맨 뒤 · 받는 피해 +15%, 2R)',
+      run:C=>{ C.hit(C.t, 1.6); C.neg(C.t, st=>{ st.web = {v:0.15, r:2}; }, '🕸️속박'); } },
+    s2:{ name:'뿌리 휘감기', icon:'🌱', cd:4, kind:'harm', desc:()=>'대상 편에서 체력 비율이 가장 낮은 1명에게 공격력 150% · 독(라운드마다 대상 최대체력 4%, 3R)',
+      run:C=>{ const low = C.side(C.tSide).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0] || C.t; C.hit(low, 1.5); if(low.alive) C.poison(low, 0.04); } } },
+  cboss_ruinGuardian: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'외눈 광선', icon:'👁️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%',
+      run:C=>{ C.hit(C.t, 2.0); } },
+    s2:{ name:'수호 문양', icon:'🔆', cd:4, kind:'harm', desc:()=>'대상에게 공격력 80% · 살아 있는 결계석마다 보호막(결계석 최대체력 20%)',
+      run:C=>{ C.hit(C.t, 0.8); C.side(C.a.side).filter(u=>u.isWard).forEach(w=>C.shield(w, w.maxHp*0.2)); } } },
+  cboss_abyssCrystal: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'프리즘 광선', icon:'🔮', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% (지금 속성으로 상성 적용)',
+      run:C=>{ C.hit(C.t, 1.8); } },
+    s2:{ name:'수정 파편', icon:'💎', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
+  // ── 보스의 부하 ──
+  ward: { role:'결계석', icon:'🔷',
+    s1:{ name:'결계 방전', icon:'⚡', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120%',
+      run:C=>{ C.hit(C.t, 1.2); } },
+    s2:{ name:'공명 광선', icon:'🔷', cd:4, kind:'harm', desc:()=>'대상 편 무작위 2명에게 공격력 90%',
+      run:C=>{ PICK_N(C, C.side(C.tSide), 2).forEach(u=>C.hit(u, 0.9)); } } },
+  lavaAdd: { role:'용암 정령', icon:'🔥',
+    s1:{ name:'용암 튀기기', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120% · 화상 1중첩',
+      run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.burn(C.t, 1); } },
+    s2:{ name:'작은 분출', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상과 양옆에 공격력 80%',
+      run:C=>{ [C.t, ...C.around('row')].forEach(u=>C.hit(u, 0.8)); } } },
+  // ── 월드 보스 (단계마다 모습·스킬이 바뀜) ──
+  wboss_frostGiant: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'빙하 주먹', icon:'🧊', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200% · 둔화(속도 −15, 2R)',
+      run:C=>{ C.hit(C.t, 2.0); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '⏬둔화'); } },
+    s2:{ name:'얼음 해일', icon:'🌊', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+  wboss_lavaLord: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'업화 강타', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% · 화상 2중첩',
+      run:C=>{ C.hit(C.t, 1.8); if(C.t.alive) C.burn(C.t, 2); } },
+    s2:{ name:'화염 폭풍', icon:'🌪️', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70% · 화상 1중첩',
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.7); if(u.alive) C.burn(u, 1); }); } } },
+  wboss_abyssCrystal: { role:'월드 보스', icon:'🌍',
+    s1:{ name:'핵 광선', icon:'💠', cd:3, kind:'harm', desc:()=>'대상에게 공격력 220%',
+      run:C=>{ C.hit(C.t, 2.2); } },
+    s2:{ name:'차원 붕괴', icon:'🌀', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 90% · 저주(받는 피해 +15%, 2R)',
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.9); C.neg(u, st=>{ st.curse = { v: Math.max(0.15, (st.curse&&st.curse.v)||0), r:2 }; }, '<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); }); } } }
+};
+Object.keys(BOSS_UNIT_KITS).forEach(id=>{ const k = BOSS_UNIT_KITS[id]; LINE_KITS[id] = { role:k.role, icon:k.icon, passive:{ name:'없음', desc:()=>'보스는 정령 특성 없음 (기믹·그로기 참고)' }, s1:k.s1, s2:k.s2 }; });
+function setBossKit(u, line){ if(LINE_KITS[line]){ u.line = line; u.pg = 0; } }
+function bossSkillSectionHtml(line, title){ const k = LINE_KITS[line]; return k ? gmSectionHtml(title||'보스 스킬', ['s1','s2'].map(s=>({ic:k[s].icon, nm:k[s].name, when:k[s].cd+'R마다', d:k[s].desc()}))) : ''; }
 function kitOf(u){ return LINE_KITS[u.line]; }
 function unitSkill(u, act){ return act==='basic' ? null : kitOf(u)[act]; }
 function skillAvailable(u, act){ if(act==='basic') return true; if(u.st && u.st.seal) return false; /* (v260) 봉인의 문양 */ if(act==='s2' && !unitS2On(u)) return false; return (act==='s1'?u.cd1:u.cd2)<=0; }
@@ -4257,15 +4401,15 @@ const BOSS_GIMMICKS = {
            {ic:'💣', nm:'용암 정령', when:'3R마다', fresh:true, d:'용암 정령 2마리 소환 — 앞을 막아 보스를 못 때림 · 2라운드 안에 못 잡으면 자폭 (아군 전체 공격력 80% 피해)'}] },
   ancientTree: {
     base: [{ic:'🌿', nm:'덩굴', when:'2R마다', d:'후열 아군 1명을 전열로 끌어냄'},
-           {ic:'💚', nm:'재생', when:'매 R', d:'최대체력 3% 회복'}],
-    extra:[{ic:'🌳', nm:'가시 껍질', when:'체력 50%↓', d:'한 번, 최대체력 25% 보호막'}],
+           {ic:'💚', nm:'재생', when:'매 R', d:'보스 최대체력 3% 회복'}],
+    extra:[{ic:'🌳', nm:'가시 껍질', when:'체력 50%↓', d:'한 번, 보스 최대체력 25% 보호막'}],
     hard: [{ic:'💚', nm:'생명의 뿌리', when:'매 R', d:'재생 3% → 6%'},
-           {ic:'🍄', nm:'포자', when:'매 R', d:'무작위 아군 2명 독 (R마다 최대체력 6%, 3R)'},
+           {ic:'🍄', nm:'포자', when:'매 R', d:'무작위 아군 2명 독 (R마다 대상 최대체력 6%, 3R)'},
            {ic:'🌵', nm:'가시 덩굴', when:'항상', fresh:true, d:'보스를 때리면 준 피해 15%를 돌려받음 · 이로운 효과 제거로 벗기면 2라운드 뒤 다시 자람'}] },
   ruinGuardian: {
     base: [{ic:'🪨', nm:'결계석', when:'항상', d:'결계석 2개가 살아 있으면 보스 무적 — 결계석부터 파괴'}],
     extra:[{ic:'🗿', nm:'결계 재생', when:'한 번', d:'결계석이 모두 깨지면 4라운드 뒤 하나 다시 생김'}],
-    hard: [{ic:'💠', nm:'결계 공명', when:'항상', d:'결계석 체력 2배 · 결계석이 살아 있으면 보스 매 R 체력 2% 회복'},
+    hard: [{ic:'💠', nm:'결계 공명', when:'항상', d:'결계석 체력 2배 · 결계석이 살아 있으면 매 R 보스 최대체력 2% 회복'},
            {ic:'👁️', nm:'석화의 눈', when:'2R마다', d:'체력이 가장 높은 아군 석화 (한 번 행동 불가)'},
            {ic:'🔏', nm:'봉인의 문양', when:'매 R', fresh:true, d:'공격력이 가장 높은 아군 스킬 봉인 — 그 라운드 기본 공격만 (정화로 풀림)'}] },
   abyssCrystal: {
@@ -4318,16 +4462,16 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
     const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), per = bossWaveNormalPower(stageIdx) * (hardB ? HARD_BOSS_ATK_MULTS : CH_BOSS_ATK_MULTS)[bci];
     const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], (hardB ? HARD_BOSS_HP_MULTS : CH_BOSS_HP_MULTS)[bci]);
-    boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss);
+    boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss); setBossKit(boss, 'cboss_'+type); // (v270) 보스 전용 스킬
     if(type==='ruinGuardian'){
       const [we1, we2] = bossWardElements(stageIdx);
       const wHp = ENEMY_HP_MULT*1.4*(hardB ? 2 : 1); // (v258) 하드: 결계 공명 — 결계석 체력 2배
       const w1 = makeBattleUnit('enemy', 1, we1+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we1], wHp);
       const w2 = makeBattleUnit('enemy', 0, we2+'_epic_a', per*0.35*ELEMENT_ATK_MULT[we2], wHp);
-      w1.isWard = true; w2.isWard = true; w1.dispName = ELEMENT_INFO[we1].name+' 결계석'; w2.dispName = ELEMENT_INFO[we2].name+' 결계석'; // (v259) 정령이 아니라 결계석으로 보이게
+      w1.isWard = true; w2.isWard = true; setBossKit(w1, 'ward'); setBossKit(w2, 'ward'); w1.dispName = ELEMENT_INFO[we1].name+' 결계석'; w2.dispName = ELEMENT_INFO[we2].name+' 결계석'; // (v259) 정령이 아니라 결계석으로 보이게
       enemyUnits = [w1, w2, boss];
     }else if(type==='lavaLord' && hardB){ // (v260) 하드 용암군주: 용암 정령 2마리 — 처음엔 숨어 있다가 3R마다 나옴(결계석 자리)
-      const mk = i=>{ const a = makeBattleUnit('enemy', i, 'fire_epic_a', per*0.35*ELEMENT_ATK_MULT.fire, ENEMY_HP_MULT*1.2); a.isAdd = true; a.alive = false; a.hp = 0; a.hidden = true; a.dispName = '용암 정령'; return a; };
+      const mk = i=>{ const a = makeBattleUnit('enemy', i, 'fire_epic_a', per*0.35*ELEMENT_ATK_MULT.fire, ENEMY_HP_MULT*1.2); a.isAdd = true; a.alive = false; a.hp = 0; a.hidden = true; a.dispName = '용암 정령'; setBossKit(a, 'lavaAdd'); return a; };
       enemyUnits = [mk(1), mk(0), boss];
     }else{
       enemyUnits = [boss];
@@ -4491,8 +4635,8 @@ function groggyInfoHtml(ruleId){
   return '<div class="gm-sec"><div class="gm-sh"><img class="uic" src="assets/ui/ic_groggy.webp" alt=""> 그로기 게이지 — 공격이 맞을 때마다 줄어듦</div><div class="gm-box">'+parts+'<div class="gm-foot">0이 되면 받는 피해 2배 · 행동 불가</div></div></div>';
 }
 function raidBossInfoHtml(info){
-  const rn = BOSS_RUNES[info.id];
-  return gmSectionHtml('기믹', info.gimmicks) + groggyInfoHtml(info.id)
+  const rn = BOSS_RUNES[info.id], bk = RAID_BOSS_KITS[info.id];
+  return (bk ? gmSectionHtml('보스 스킬', ['s1','s2'].map(a=>({ic:bk[a].icon, nm:bk[a].name, when:bk[a].cd+'R마다', d:bk[a].desc()}))) : '') + gmSectionHtml('기믹', info.gimmicks) + groggyInfoHtml(info.id)
     + (rn ? gmSectionHtml('<img class="uic" src="assets/ui/ic_runestone.webp" alt=""> 처치 보상 · 고대 룬', [{ic:rn.icon, nm:rn.name, d:rn.desc}], 'rune') : '');
 }
 function groggyRuleOf(sf, b){ if(!b || !b.isBoss) return null; return GROGGY_RULES[b.gimmick || (sf.mode==='raid' ? sf.raidBossId : '')] || null; }
@@ -4546,7 +4690,9 @@ function resolveBossWaveVictory(sf){
   const gradeRank = {C:1,B:2,A:3,S:4};
   const chapterNum = bossChapter(stageIdx);
   { const ks = (bf.roster||[]).filter(k=>k && SPIRITS[k]); // (v268) 히든 업적 — 레어 이하만으로 하드 보스
-    if(isHardStage(stageIdx) && ks.length && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)){ hidMark('hardLowRare'); if(stageIdx===HARD_BASE+MAX_CHAPTERS*CHAPTER_LENGTH-1) hidMark('hardLowRare5'); } }
+    if(ks.length && !isHardStage(stageIdx) && ks.every(k=> SPIRITS[k].rarity==='common')) hidMark('normalCommon'); // (v269) 잡초의 반란: 일반 등급만으로 노말 보스
+    if(isHardStage(stageIdx) && !bf.hurt && !sf.meHurt) hidMark('hardFlawless'); // (v270) 무혈 입성
+    if(ks.length && stageIdx===HARD_BASE+MAX_CHAPTERS*CHAPTER_LENGTH-1 && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)) hidMark('hardLowRare5'); } // 다윗과 골리앗: 레어 이하로 챕터 5 하드
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
@@ -4618,6 +4764,7 @@ function showBossInfo(stageIdx){ // (v260) 한눈에: 머리(그림·속성·하
   const type = bossGimmickFor(stageIdx), gi = BOSS_GIMMICK_INFO[type], G = BOSS_GIMMICKS[type], hard = isHardStage(stageIdx);
   openInfoOverlay(gi.name+(hard?' <span class="gm-hardt">하드</span>':''),
     gmHeadHtml(type, gi.icon, [gmElChip(bossFixedElementFor(stageIdx)), '<span class="gm-chip">3웨이브 연전</span>', '<span class="gm-chip">체력 이어짐</span>'])
+    + bossSkillSectionHtml('cboss_'+type) // (v270)
     + gmSectionHtml('기믹', G.base.concat(G.extra))
     + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '')
     + groggyInfoHtml(type));
@@ -4800,7 +4947,7 @@ function statusList(u){
   if(s.reflect) o.push({i:'🌵', t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
   if(s.ward) o.push({i:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', t:'보호', d:'해로운 효과 1회 막음', good:true});
   if(s.burn) o.push({i:'🔥', n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
-  if(s.poison) o.push({i:'☠️', t:'독', d:'라운드마다 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
+  if(s.poison) o.push({i:'☠️', t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
   if(s.freeze) o.push({i:'❄️', t:'빙결', d:'다음 행동 1회 못 함', good:false});
   if(s.slow || s.chill) o.push({i:'⏬', t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
   if(s.bind || s.web) o.push({i:'🕸️', t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
@@ -4901,7 +5048,15 @@ function unitDetailHtml(u, bossId){
   }
   return h;
 }
-function showUnitDetail(u){ openInfoOverlay((u.side==='enemy'?'<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대':'🙂 내 정령'), unitDetailHtml(u)); }
+function showUnitDetail(u){ openInfoOverlay((u.side==='enemy'?'<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대':'🙂 내 정령'), unitDetailHtml(u)+(u.isBoss ? bossBattleInfoHtml(u) : '')); }
+// (v269) 전투 중 보스를 누르면 능력치만 나와서 기믹을 볼 수 없었음 — 레이드는 보스 기믹·그로기, 챕터·출정·월드 보스는 챕터 기믹(하드면 하드 전용까지)
+function bossBattleInfoHtml(u){
+  const sf = state.skillFight;
+  if(sf && sf.mode==='raid'){ const info = raidBossById(sf.raidBossId); return info ? raidBossInfoHtml(info) : ''; }
+  const g = u.gimmick || (sf && sf.gimmick), G = g && BOSS_GIMMICKS[g]; if(!G) return '';
+  const hard = sf && ((sf.mode==='boss' && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3));
+  return bossSkillSectionHtml(u.line) + gmSectionHtml('기믹', G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g); // (v270) 보스 스킬 먼저
+}
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
   root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; (el.lastElementChild && !el.lastElementChild.classList.contains('icon') ? el.lastElementChild : el).appendChild(b); }); // 이름 줄 옆에 붙임 — 모서리에 두면 좁은 폰에서 그림과 겹쳤음
@@ -4909,7 +5064,7 @@ function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit
 }
 function showUnitKitInfo(u){
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
-  const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div style="font-weight:800; font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
+  const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div class="ttl" style="font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
   let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[sp.rarity].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
   h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
   h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
@@ -5085,7 +5240,7 @@ function showSkillStageScreen(){
   }else if(curUnit){
     const sp = SPIRITS[curUnit.key], kit = kitOf(curUnit);
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
-    const tm = effTypeMult(curUnit, tU);
+    const tm = tU ? effTypeMult(curUnit, tU) : 1; // (v270 버그수정) 고른 대상 칸이 비어 있으면 화면이 멈추던 문제
     html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
       + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
       + '<div class="bs-tgt" id="bsTgtInfo" role="button"><img class="uic" src="assets/ui/ic_target.webp" alt=""> '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
@@ -5278,7 +5433,7 @@ function showBossPrepModal(stageIdx){
     + '</button></div>';
   html += '<div class="card" style="text-align:center; margin-top:10px; padding:16px 10px;">'
     + '<div style="font-size:44px; line-height:1;">'+bossImg(gimmickType, 'prep-bimg', gi.icon)+'</div>'
-    + '<div style="font-size:18px; font-weight:900; margin-top:6px;">'+gi.name+(fixedEl?' <span style="font-size:13px; font-weight:700; color:'+ELEMENT_INFO[fixedEl].color+';">'+ELEMENT_INFO[fixedEl].icon+' '+ELEMENT_INFO[fixedEl].name+'</span>':'')+'</div>'
+    + '<div class="ttl" style="font-size:18px; margin-top:6px;">'+gi.name+(fixedEl?' <span style="font-size:13px; font-weight:700; color:'+ELEMENT_INFO[fixedEl].color+';">'+ELEMENT_INFO[fixedEl].icon+' '+ELEMENT_INFO[fixedEl].name+'</span>':'')+'</div>'
     + '<div class="sub" style="margin-top:6px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 3웨이브 연전 <button class="bs-info" id="bossInfoBtn2" style="width:24px; height:24px; font-size:12px; margin-left:4px;">ⓘ</button></div>'
     + '</div>';
   html += '<button class="btn" id="startBossFightBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 명단 배치</button>';
@@ -5410,7 +5565,8 @@ function mailUnclaimed(){ return mailList().filter(m=>!m.claimed); }
 function mailBadgeUpdate(){
   const n = mailUnclaimed().length, el = document.getElementById('hmMailN');
   if(el){ el.style.display = n ? 'inline-block' : 'none'; el.textContent = n; }
-  const btn = document.getElementById('headerMenuBtn'); if(btn) btn.classList.toggle('has-dot', n>0);
+  const pnNew = (state.pnSeen||0) < PATCH_NOTES[0].build; { const e = document.getElementById('hmNoteNew'); if(e) e.style.display = pnNew ? 'inline-block' : 'none'; } // (v269) 안 본 패치노트
+  const btn = document.getElementById('headerMenuBtn'); if(btn) btn.classList.toggle('has-dot', n>0 || pnNew);
   document.querySelectorAll('.hm-admin').forEach(b=>{ b.style.display = (isAdmin() && (adminModeOn() || b.classList.contains('hm-mode'))) ? 'flex' : 'none'; }); // (v247) 일반 모드에선 모드 전환만 보임
   { const t = document.getElementById('hmModeTx'); if(t) t.textContent = adminModeOn() ? '일반 모드로' : '관리자 모드로'; }
 }
@@ -5734,7 +5890,7 @@ function showDismantleModal(key){
     + '<div style="font-size:44px;">'+spArt(sp)+'</div>'
     + '<h3><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> '+sp.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">보유 '+max+'개 · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
-    + '<div style="font-size:22px; font-weight:800; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +<span id="dismantleGain">'+per+'</span> · <img class="uic" src="assets/ui/ic_shard.webp" alt=""> +<span id="dismantleShard">'+DISMANTLE_SHARDS[RARITY_ORDER.indexOf(sp.rarity)]+'</span></div>'
+    + '<div class="ttl" style="font-size:22px; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +<span id="dismantleGain">'+per+'</span> · <img class="uic" src="assets/ui/ic_shard.webp" alt=""> +<span id="dismantleShard">'+DISMANTLE_SHARDS[RARITY_ORDER.indexOf(sp.rarity)]+'</span></div>'
     + '<input type="range" id="dismantleRange" min="1" max="'+max+'" value="1" step="1" style="width:100%; accent-color:#9a6bff; margin:8px 0;">'
     + '<div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub);"><span>1</span><span>'+max+'</span></div>'
     + '<button class="btn" id="dismantleOk" style="margin-top:14px;">분해하기</button>'
@@ -6202,7 +6358,7 @@ function showEquipDismantleModal(key){
     + '<div style="font-size:44px;">'+i.img+'</div>'
     + '<h3><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> '+i.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">장착 안 한 '+max+'개 · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
-    + '<div style="font-size:22px; font-weight:800; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +<span id="dismantleGain">'+per+'</span></div>'
+    + '<div class="ttl" style="font-size:22px; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +<span id="dismantleGain">'+per+'</span></div>'
     + '<input type="range" id="dismantleRange" min="1" max="'+max+'" value="1" step="1" style="width:100%; accent-color:#9a6bff; margin:8px 0;">'
     + '<div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub);"><span>1</span><span>'+max+'</span></div>'
     + '<button class="btn" id="dismantleOk" style="margin-top:14px;">분해하기</button>'
@@ -6811,7 +6967,7 @@ const GUIDE_CATEGORIES = [
   {id:'modes', icon:'🗺️', name:'모드'}
 ];
 function guideHeader(title){
-  return '<div style="font-weight:800; color:var(--text); margin:14px 0 6px; font-size:13px;">'+title+'</div>';
+  return '<div class="ttl" style="color:var(--text); margin:14px 0 6px; font-size:13px;">'+title+'</div>';
 }
 function guideList(items){
   return '<ul style="margin:0; padding-left:18px; line-height:1.7; word-break:keep-all;">' + items.map(b=>'<li>'+b+'</li>').join('') + '</ul>';
@@ -6925,6 +7081,8 @@ function render(){
   const pct = nextT===null ? 100 : Math.min(100, ((pts-prevT)/(nextT-prevT))*100);
   document.getElementById('acctLevelVal').textContent = lvl;
   document.getElementById('acctLevelFill').style.width = pct+'%';
+  { const lb = document.getElementById('levelBar'); if(lb){ lb.classList.toggle('has-rw', accountLvClaimable().length>0); if(!lb.__al){ lb.__al = true; lb.style.cursor = 'pointer'; lb.addEventListener('click', ()=>showAccountLevelModal()); } } } // (v269)
+  if(lvl > (state.lvSeen||0)){ if(state.lvSeen) toast('🎉 계정 Lv.'+lvl+' 달성 — 위 레벨 줄을 눌러 보상 받기', 3200); state.lvSeen = lvl; }
   document.querySelectorAll('nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===activeTab || (b.dataset.tab==='home' && HOME_MODE_TABS.includes(activeTab)));
     if(b.dataset.requires) b.classList.toggle('locked', !isUnlocked(b.dataset.requires));
@@ -6995,7 +7153,7 @@ function recentSummonRowHtml(){
   const list = state.recentSummons || [];
   if(list.length===0) return '';
   let html = '<div class="card">';
-  html += '<div style="font-weight:700; margin-bottom:8px;">🕘 최근 소환</div>';
+  html += '<div class="ttl" style="margin-bottom:8px;">🕘 최근 소환</div>';
   html += '<div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;">';
   list.forEach(key=>{
     const sp = SPIRITS[key];
@@ -7011,7 +7169,7 @@ function summonPageHeaderHtml(){
   const dis = (on)=> on ? ' disabled style="width:44px; padding:8px 0; opacity:.3;"' : ' style="width:44px; padding:8px 0;"';
   return '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">'
     + '<button class="btn secondary small" id="summonPagePrev"'+dis(summonPage===0)+'>◀</button>'
-    + '<div style="text-align:center;"><div style="font-weight:800; font-size:16px;">'+(summonPage===0?'🔮 정령 소환':'<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 정령장비 소환')+'</div>'
+    + '<div style="text-align:center;"><div class="ttl" style="font-size:16px;">'+(summonPage===0?'🔮 정령 소환':'<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 정령장비 소환')+'</div>'
     + '<div style="display:flex; gap:5px; justify-content:center; margin-top:4px;">'+[0,1].map(i=>'<i style="width:7px; height:7px; border-radius:50%; background:'+(i===summonPage?'#9a6bff':'#3a3a4a')+';"></i>').join('')+'</div></div>'
     + '<button class="btn secondary small" id="summonPageNext"'+dis(summonPage===1)+'>▶</button></div>';
 }
@@ -7046,7 +7204,7 @@ function renderSummonTab(){
   html += '</div>';
 
   html += '<div class="card">';
-  html += '<div style="font-weight:700; margin-bottom:8px;"><img class="uic" src="assets/ui/ic_pass.webp" alt=""> 정령 확정 소환권</div>';
+  html += '<div class="ttl" style="margin-bottom:8px;"><img class="uic" src="assets/ui/ic_pass.webp" alt=""> 정령 확정 소환권</div>';
   const ownRare = ticketCount('rare')>0, ownEpic = ticketCount('epic')>0;
   html += ticketRowHtml(TICKET_INFO.rare.name, '레어 이상 확정', ticketCount('rare'),
     '<button class="btn small" id="shopTicketBtn" '+((ownRare||(state.enhanceStone||0)>=SHOP_TICKET_COST)?'':'disabled')+'>'+(ownRare?'사용':'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+SHOP_TICKET_COST)+'</button>', true);
@@ -7055,7 +7213,7 @@ function renderSummonTab(){
   if(ticketCount('legendary')>0) html += ticketRowHtml(TICKET_INFO.legendary.icon+' '+TICKET_INFO.legendary.name, '레전더리 확정 (무작위)', ticketCount('legendary'), '<button class="btn small" id="legTicketBtn">사용</button>'); // 가지고 있을 때만
   html += '</div>';
   { const picks = ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
-    if(picks.length){ html += '<div class="card"><div style="font-weight:700; margin-bottom:8px;">🎟️ 정령 선택권</div>'
+    if(picks.length){ html += '<div class="card"><div class="ttl" style="margin-bottom:8px;">🎟️ 정령 선택권</div>'
       + picks.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', i===0)).join('') + '</div>'; } }
   html += recentSummonRowHtml();
   return html;
@@ -7093,7 +7251,7 @@ function equipTileHtml(k){
 }
 function renderEquipSummonPage(){
   if(!isEquipUnlocked()){ // 잠긴 탭은 흐리게 + 잠금 표시
-    return '<div class="card" style="text-align:center; opacity:.6;"><div style="font-size:48px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:4px;">정령장비 소환</div><div style="margin-top:14px; font-size:15px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div><div class="sub" style="margin-top:6px;">챕터 1 · 스테이지 '+(CHAPTER1_BOSS_STAGE+1)+'</div></div>';
+    return '<div class="card" style="text-align:center; opacity:.6;"><div style="font-size:48px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:4px;">정령장비 소환</div><div style="margin-top:14px; font-size:15px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div><div class="sub" style="margin-top:6px;">챕터 1 · 스테이지 '+(CHAPTER1_BOSS_STAGE+1)+'</div></div>';
   }
   const w = equipWeights(), lg = w[3] ? w[3].w : 0, pct = v => String(Math.round(v*100)/100);
   const lv = equipSummonLevel(), prog = ((state.lifetimeEquipSummons||0)%20);
@@ -7115,7 +7273,7 @@ function equipInventoryHtml(){
   const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0).sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
   const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
   h += '<div class="card">'
-    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><div style="font-weight:700;">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
+    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
     + '<div style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> '+equipSeenCount()+'/'+allEquipKeys().length+'</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn">🔧 추천 장착</button>' : '')+'</div></div>'
     + (fusible ? '<div class="sub" style="margin-top:4px; color:#5cd65c;">▲ 합성 가능 '+fusible+'종</div>' : '')
     + (owned.length ? '<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:8px;">'+owned.map(equipTileHtml).join('')+'</div>' : '<div class="sub" style="text-align:center; padding:14px 0;">보유 장비 없음</div>')
@@ -7221,13 +7379,13 @@ let spiritsSub = 'spirits'; // (v181) 정령 탭 안의 하위 탭: 정령 · �
 function renderSpiritsTab(){
   let html = '<div class="seg">'+[['spirits','📦 정령'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
-    if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div style="font-weight:800; margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
+    if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
     return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
   }
   if(spiritsSub==='runes') return html + '<div class="card">'+runeHubHtml()+'</div>';
   if(spiritsSub==='fuse') return html + renderFuseTab();
   html += '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;">';
-  html += '<div style="font-weight:700;">📦 내 정령</div>';
+  html += '<div class="ttl">📦 내 정령</div>';
   html += '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="openDex" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button></span>';
   html += '</div>';
 
@@ -7580,7 +7738,8 @@ function dexProgress(){
   return found/total;
 }
 // ===================== 계정 레벨 (별도 경험치 없이 전체 진행도로 계산 — 컨텐츠 해금용) =====================
-const ACCOUNT_LEVEL_THRESHOLDS = [0, 10, 30, 60, 100]; // 이 점수를 넘으면 레벨 1~5
+// (v269) Lv.30까지 — Lv.N 필요 점수 5·N·(N−1) (Lv.2 10 · Lv.5 100 · Lv.10 450 · Lv.20 1900 · Lv.30 4350). 예전엔 Lv.5가 끝이고 출정 해금에만 쓰였음
+const ACCOUNT_MAX_LEVEL = 30, ACCOUNT_LEVEL_THRESHOLDS = Array.from({length:ACCOUNT_MAX_LEVEL}, (_,i)=> i===0 ? 0 : 5*(i+1)*i);
 const ACCOUNT_UNLOCK_LEVEL = { reroll: 2, expedition: 2 }; // 계정 점수 10 → Lv.2, 30 → Lv.3 (챕터1 보스 클리어 즈음)
 const CHAPTER1_BOSS_STAGE = CHAPTER_LENGTH-1; // 챕터1 보스는 스테이지 10(인덱스 9) — (v148) 챕터 10스테이지로 축소
 function chapter1BossCleared(){ return !!state.stageBest[CHAPTER1_BOSS_STAGE]; }
@@ -7589,7 +7748,20 @@ function accountPoints(){
   // 그대로 점수에 넣으면 새 게임 시작부터 계정 레벨 경험치 바가 절반(5/10) 차있는 버그가 생기므로
   // 스타터 개수만큼 빼고 "직접 발견한" 종만 점수로 인정한다.
   const dexFound = Math.max(0, Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length - ELEMENTS.length);
-  return totalStagesCleared()*1 + (state.towerBest||0)*2 + Math.min(state.expeditionBestReach||0, EXPEDITION_NODE_COUNT)*3 + dexFound*1;
+  return accountPointParts(dexFound).reduce((t,x)=>t+x.pts, 0);
+}
+// (v269) 계정 점수 — 진행 기록에서 바로 계산(따로 저장하는 경험치 없음)
+function accountPointParts(dexFound){
+  if(dexFound===undefined) dexFound = Math.max(0, Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length - ELEMENTS.length);
+  const dg = Object.values(state.dungeonBest||{}).reduce((t,v)=>t+(Number(v)||0), 0);
+  const raid = Object.values(state.raidProgress||{}).reduce((t,l)=>t+(Array.isArray(l)?l.length:0), 0);
+  const ach = Object.keys(state.achievementsClaimed||{}).filter(k=>state.achievementsClaimed[k]).length;
+  const tr = (typeof TRIALS!=='undefined') ? TRIALS.filter(t=>state.trialClear && state.trialClear[t.id]).length : 0;
+  return [
+    {nm:'탐험 스테이지', n:totalStagesCleared(), per:1}, {nm:'무한의 탑 최고 층', n:state.towerBest||0, per:2},
+    {nm:'출정 최고 단계', n:Math.min(state.expeditionBestReach||0, 35), per:3}, {nm:'도감 발견', n:dexFound, per:1},
+    {nm:'요일 던전 단계', n:dg, per:2}, {nm:'시련 통과', n:tr, per:10}, {nm:'업적 달성', n:ach, per:2}, {nm:'레이드 보스·난이도 격파', n:raid, per:5}
+  ].map(x=>Object.assign(x, {pts:x.n*x.per}));
 }
 function accountLevel(){
   const pts = accountPoints();
@@ -7600,6 +7772,167 @@ function accountLevel(){
 function nextAccountThreshold(){
   const lvl = accountLevel();
   return ACCOUNT_LEVEL_THRESHOLDS[lvl] !== undefined ? ACCOUNT_LEVEL_THRESHOLDS[lvl] : null; // null이면 최고 레벨
+}
+// (v269) 계정 레벨 혜택 — 올리기만 하고 빼앗는 건 없음
+const ACCOUNT_PERKS = [ {lv:5, ic:'🧭', nm:'파견 동시 칸 +1'}, {lv:10, ic:'🗡️', nm:'출정권 최대 +1'}, {lv:15, ic:'🎫', nm:'레이드 입장권 최대 +1'}, {lv:20, ic:'🌍', nm:'월드 보스 하루 도전 +1'}, {lv:25, ic:'🧭', nm:'파견 동시 칸 +1'} ];
+function dispatchSlots(){ const l = accountLevel(); return 3 + (l>=5?1:0) + (l>=25?1:0); }
+function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
+function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
+function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
+const ACCOUNT_LV_ITEMS = { 5:{rare:1}, 10:{pick_epic:1}, 15:{epic:1}, 20:{pick_legendary:1}, 25:{pick_legendary:1}, 30:{pick_mythic:1} };
+function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L }; if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
+function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
+function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
+// ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
+// 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
+const PATCH_NOTES = [
+  { build:270, v:'2.70', date:'2026-09-29', secs:[
+    { t:'새 기능', items:[
+      '패치노트 — 메뉴(☰)에서 업데이트 내용 확인 · 새 패치노트가 있으면 N 표시',
+      '문의하기 — 메뉴(☰)에서 버그 신고·건의를 보내고, 답장도 같은 창에서 확인',
+      '계정 레벨 확장 — 최대 Lv.30 · 레벨마다 레벨 보상(정수·강화석, 5레벨마다 소환권·선택권) · 위 레벨 줄을 누르면 확인',
+      '계정 레벨 혜택 — Lv.5 파견 동시 칸 +1 · Lv.10 출정권 최대 +1 · Lv.15 레이드 입장권 최대 +1 · Lv.20 월드 보스 하루 도전 +1 · Lv.25 파견 동시 칸 +1',
+      '계정 점수 항목 추가 — 요일 던전 단계 · 시련 통과 · 업적 달성 · 레이드 격파 (출정은 35단계까지 반영)',
+      '레이드 — 정령 선택은 처음엔 비워 둠 · 비우기 · 추천 배치(전열형은 앞, 후열형은 뒤) · 우리 팀 전투력 합산 표시 · 보상 창 정리 · 전투 중 보스를 누르면 기믹·보스 스킬'
+    ]},
+    { t:'레이드 보스 개편', items:[
+      '보스가 더 이상 정령 스킬·특성을 쓰지 않음 — 예전엔 혹한의 폭군이 정령 특성(맑은 물 · 라운드마다 4~5% 회복)과 치유 스킬로 스스로 회복했음',
+      '혹한의 폭군 — 빙창(3R마다): 대상 공격력 200% + 둔화(속도 −15, 2R) · 동결 포효(4R마다): 전열 전체 90% + 체력이 가장 많은 1명 빙결',
+      '겁화룡 — 화염 숨결(3R마다): 대상과 양옆 130% + 화상 1중첩 · 대멸화(4R마다): 전체 70%, 이미 화상이면 100%',
+      '심연의 눈 — 정신 파열(3R마다): 대상 190%, 저주가 걸려 있으면 260% · 공허의 시선(4R마다): 체력이 가장 많은 정령 150% + 봉인 2R',
+      '태고수 — 가시 뿌리(3R마다): 대상 160% + 독(대상 최대체력 5%, 3R) · 대지의 분노(4R마다): 무작위 3명 110% + 속박 2R',
+      '새벽의 심판관 — 심판의 창(3R마다): 대상의 보호막·이로운 효과를 걷어내고 200% · 성역(4R마다): 전체 80% + 자신에게 보호막(자신 최대체력 8%)',
+      '추천 전투력 조정 — 겁화룡 노말 2,000→3,100 · 익스트림 8,200→8,100 / 심연의 눈 노말 2,000→1,550 / 태고수 노말 1,150→1,550 · 하드 2,000→3,100 · 익스트림 3,100→5,800 / 새벽의 심판관 익스트림 8,200→10,500'
+    ]},
+    { t:'챕터·출정·월드 보스 개편', items:[
+      '보스가 더 이상 정령 스킬·특성을 쓰지 않음 — 예전엔 서리거인이 정령 특성(맑은 물)으로 스스로 회복하는 등 보스 정보에 없는 행동을 했음',
+      '서리거인 — 고드름 몽둥이(3R마다): 대상 180% + 둔화 · 빙하 짓밟기(4R마다): 전열 전체 100%',
+      '용암군주 — 용암 주먹(3R마다): 대상 170% + 화상 1중첩 · 용암 분출(4R마다): 무작위 2명 140%',
+      '고대수목 — 덩굴 채찍(3R마다): 대상 160% + 속박 2R · 뿌리 휘감기(4R마다): 체력 비율이 가장 낮은 1명 150% + 독(대상 최대체력 4%, 3R)',
+      '유적파수꾼 — 외눈 광선(3R마다): 대상 200% · 수호 문양(4R마다): 대상 80% + 결계석마다 보호막(결계석 최대체력 20%)',
+      '심연의 수정 — 프리즘 광선(3R마다): 대상 180% · 수정 파편(4R마다): 무작위 3명 90%',
+      '결계석·용암 정령도 전용 스킬 · 월드 보스는 단계마다 스킬이 바뀜 (보스를 누르면 확인)'
+    ]},
+    { t:'월드 보스', items:[
+      '주간 체력 300만 → 150만 (지금 참여 인원에 맞춤) — 이번 주 남은 체력·달성 보상 진행도도 바로 새 기준으로 계산됨'
+    ]},
+    { t:'업적', items:[ '특정 업적의 조건 변경', '히든 업적 2개 추가' ]},
+    { t:'고친 것', items:[
+      '전투 중 고른 대상 칸이 비어 있으면 화면이 멈추던 문제',
+      '아직 안 연 레이드 보스 방에는 들어갈 수 없음 (방장에게도 알림)',
+      '레이드 초대가 안 보이던 경우(같은 방에서 다시 초대 · 폰 시계가 어긋난 경우)',
+      '레전더리 이하 정령 칸의 등급 테두리 색이 안 보이고 흰색으로 나오던 문제',
+      '자기 자신에게 여명의 호령을 쓰면 +25% 강화가 바로 사라지던 문제',
+      '게임 전체 글씨를 주아체로 통일 · 어두운 버튼의 작은 글씨가 흐릿하던 문제 · 레이드 상점 무한 표시가 안 보이던 문제',
+      '출정 버프 선택 창 문구 정리(즉시 받는 버프는 "바로 받음")',
+      '최대체력 비례 효과 설명에 기준을 적음 — 독 포자 등 독은 "대상 최대체력", 보스 재생·보호막은 "보스 최대체력", 처형 회복은 "자신 최대체력" (수치는 그대로)'
+    ]}
+  ]},
+  { build:269, v:'2.69', date:'2026-09-29', secs:[
+    { t:'새 기능', items:[
+      '출정 — 지금 칸 내용은 창으로 · 화면 아래 고정 줄(쌓인 보상 · 유물 · 포기) · 전투 칸에서 적 그림을 누르면 능력치·스킬',
+      '전투 — 나가기 전에 확인창 · 회복·지속 피해의 출처 표시(예: 로렐라이 맑은 물) · 부활 표시 · 상태 효과 남은 라운드',
+      '도감 — 4칸 · 등급/속성/역할 정렬',
+      '시련의 전당 — 힌트는 한 번 실패한 뒤 열림 · 실패 화면에서도 힌트 보기'
+    ]},
+    { t:'업적', items:[ '일부 히든 업적 추가·교체', '특정 업적의 조건 변경', '히든 업적 1개를 일반 업적으로 옮김' ]},
+    { t:'고친 것', items:[
+      '컴퓨터처럼 세로로 긴 화면에서 전장이 늘어나 정령이 배경과 겹치던 문제',
+      '출정 대기 창 모양 정리'
+    ]}
+  ]},
+  { build:268, v:'2.68', date:'2026-09-29', secs:[ { t:'업적', items:[ '히든 업적은 달성 전까지 조건을 ??? 로 표시' ]} ]},
+  { build:267, v:'2.67', date:'2026-09-29', secs:[ { t:'고친 것', items:[
+      '파견에서 같은 정령을 여러 마리 보낼 수 없던 문제 (두 번 누르면 취소되던 것)',
+      '1마리뿐인 정령도 파견 가능 (출정 중인 정령 제외)',
+      '파견 중인 정령은 선택 창에 흐리게 · 돌아오는 시간 표시' ]} ]},
+  { build:266, v:'2.66', date:'2026-09-29', secs:[ { t:'새 기능', items:[
+      '도전 — 무한의 탑 · 요일 던전 · 시련의 전당을 한곳에', '요일 던전 (요일마다 한 속성, 1~15단계)', '출정 개편 (갈림길 지도 · 유물 · 주간 변형 · 순위)',
+      '정령 파견', '시련의 전당 (퍼즐 전투 10개)', '월드 보스 (모든 플레이어 공동 주간 보스)', '추천 전투력 표시' ]} ]}
+];
+// ===================== (v269) 문의하기 — inquiries/<보낸 사람 uid>/<id> 에 저장, 관리자는 📥 문의함에서 보고 답장 =====================
+const ASK_CATS = [ ['bug','🐞 버그 신고'], ['idea','💡 건의'], ['etc','💬 기타'] ];
+let askCat = 'bug', askLastAt = 0;
+function askOnline(){ return !!(typeof raidNet!=='undefined' && raidNet.db && raidNet.uid); }
+async function showAskModal(){
+  let h = '<h3 style="text-align:center;">✉️ 문의하기</h3>';
+  if(!askOnline()){ h += '<div class="sub" style="text-align:center; padding:14px 0;">온라인 연결이 필요함 · 인터넷을 켜고 다시 열기</div>'; }
+  else {
+    h += '<div class="seg" id="askCat">'+ASK_CATS.map(([k,t])=>'<button data-ac="'+k+'" class="'+(askCat===k?'on':'')+'">'+t+'</button>').join('')+'</div>'
+      + '<textarea id="askText" class="fr-in" maxlength="500" rows="5" placeholder="어떤 화면에서 무엇을 했을 때 어떻게 됐는지 적어 주면 빨리 고칠 수 있음" style="margin-top:8px; width:100%; resize:vertical;"></textarea>'
+      + '<div class="sub" style="font-size:11px; margin-top:4px;">버전 v2.'+String(APP_BUILD).slice(1)+' · 친구 코드가 같이 전달됨</div>'
+      + '<button class="btn" id="askSend" style="margin-top:8px;">보내기</button>'
+      + '<div class="al-sec" style="margin-top:14px;">내가 보낸 문의</div><div id="askMine" class="sub">불러오는 중…</div>';
+  }
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  if(!askOnline()) return;
+  document.querySelectorAll('[data-ac]').forEach(b=>b.addEventListener('click', ()=>{ askCat = b.dataset.ac; document.querySelectorAll('[data-ac]').forEach(x=>x.classList.toggle('on', x===b)); }));
+  document.getElementById('askSend').addEventListener('click', async ev=>{
+    const btn = ev.currentTarget, text = document.getElementById('askText').value.trim();
+    if(text.length < 5){ toast('내용을 조금 더 적어 주기'); return; }
+    if(Date.now() - askLastAt < 60000){ toast('잠시 뒤에 다시 보내기 (1분에 한 번)'); return; }
+    if(btn.dataset.busy) return; btn.dataset.busy = '1';
+    const id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    try{
+      await raidNet.db.doc('inquiries/'+raidNet.uid+'/'+id).set({ cat: askCat, text: text.slice(0,500), t: serverNow(), name: String(friendNet.name||'').slice(0,12), code: friendNet.code||'', ver: APP_BUILD });
+      askLastAt = Date.now(); toast('문의 보냄 · 답장은 여기서 확인'); showAskModal();
+    }catch(e){ toast('보내기 실패 — 잠시 뒤 다시'); raidNetError(e); }
+    finally{ delete btn.dataset.busy; }
+  });
+  try{
+    const s = await raidNet.db.doc('inquiries/'+raidNet.uid).get(); const v = (s && s.exists && s.data()) || {};
+    const list = Object.keys(v).map(k=>Object.assign({id:k}, v[k])).filter(x=>x && x.text).sort((a,b)=>(b.t||0)-(a.t||0));
+    const el = document.getElementById('askMine'); if(!el) return;
+    el.innerHTML = list.length ? list.map(x=>'<div class="ask-it"><div class="ask-h">'+((ASK_CATS.find(c=>c[0]===x.cat)||ASK_CATS[2])[1])+'<small>'+new Date(x.t||0).toLocaleDateString('ko-KR')+'</small></div><div class="ask-q">'+escTxt(x.text)+'</div>'
+      + (x.reply ? '<div class="ask-a">↳ 답장: '+escTxt(x.reply)+'</div>' : '<div class="ask-w">답장 기다리는 중</div>')+'</div>').join('') : '아직 없음';
+  }catch(e){ const el = document.getElementById('askMine'); if(el) el.textContent = '불러오지 못함'; }
+}
+async function showInboxModal(){
+  if(!isAdmin()){ toast('관리자 전용'); return; }
+  let h = '<h3 style="text-align:center;">📥 문의함</h3><div id="ibList" class="sub">불러오는 중…</div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  let all = [];
+  try{ const s = await raidNet.db.doc('inquiries').get(); const v = (s && s.exists && s.data()) || {};
+    Object.keys(v).forEach(uid=>{ const m = v[uid] || {}; Object.keys(m).forEach(id=>{ const x = m[id]; if(x && x.text) all.push(Object.assign({uid, id}, x)); }); });
+  }catch(e){ const el = document.getElementById('ibList'); if(el) el.textContent = '불러오지 못함 — Firebase 규칙에서 inquiries 읽기 권한 확인 필요'; return; }
+  all.sort((a,b)=> (!!a.reply - !!b.reply) || (b.t||0)-(a.t||0)); // 답장 안 한 것 먼저
+  const el = document.getElementById('ibList'); if(!el) return;
+  el.innerHTML = all.length ? all.map((x,i)=>'<div class="ask-it'+(x.reply?' done':'')+'"><div class="ask-h">'+((ASK_CATS.find(c=>c[0]===x.cat)||ASK_CATS[2])[1])+' · '+escTxt(x.name||'?')+' <small>'+escTxt(x.code||'')+' · v'+(x.ver||'?')+' · '+new Date(x.t||0).toLocaleString('ko-KR')+'</small></div>'
+    + '<div class="ask-q">'+escTxt(x.text)+'</div>'+(x.reply?'<div class="ask-a">↳ '+escTxt(x.reply)+'</div>':'')
+    + '<div style="display:flex; gap:6px; margin-top:6px;"><input class="fr-in" data-ibr="'+i+'" maxlength="300" placeholder="답장" style="flex:1; min-width:0;"><button class="btn small" data-ibs="'+i+'" style="width:auto; margin:0;">답장</button><button class="btn secondary small" data-ibd="'+i+'" style="width:auto; margin:0;">삭제</button></div></div>').join('') : '문의 없음';
+  el.querySelectorAll('[data-ibs]').forEach(b=>b.addEventListener('click', async ()=>{ const x = all[+b.dataset.ibs], inp = el.querySelector('[data-ibr="'+b.dataset.ibs+'"]'), r = inp.value.trim(); if(!r){ toast('답장 입력'); return; }
+    try{ await raidNet.db.doc('inquiries/'+x.uid+'/'+x.id).update({ reply: r.slice(0,300), rt: serverNow() }); toast('답장 저장'); showInboxModal(); }catch(e){ raidNetError(e); } }));
+  el.querySelectorAll('[data-ibd]').forEach(b=>b.addEventListener('click', async ()=>{ if(!b.dataset.armed){ b.dataset.armed = '1'; b.textContent = '정말?'; return; } const x = all[+b.dataset.ibd];
+    try{ await raidNet.db.doc('inquiries/'+x.uid+'/'+x.id).delete(); toast('삭제됨'); showInboxModal(); }catch(e){ raidNetError(e); } }));
+}
+function showPatchNotes(){
+  state.pnSeen = PATCH_NOTES[0].build; save(); mailBadgeUpdate();
+  let h = '<h3 style="text-align:center;">📝 패치노트</h3>';
+  PATCH_NOTES.forEach((n,i)=>{
+    h += '<details class="pn"'+(i===0?' open':'')+'><summary><b>v'+n.v+'</b><small>'+n.date+'</small></summary>'
+      + n.secs.map(sec=>'<div class="pn-t">'+sec.t+'</div><ul>'+sec.items.map(x=>'<li>'+x+'</li>').join('')+'</ul>').join('') + '</details>';
+  });
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+}
+function showAccountLevelModal(){
+  const lv = accountLevel(), pts = accountPoints(), nextT = nextAccountThreshold(), prevT = ACCOUNT_LEVEL_THRESHOLDS[lv-1] || 0;
+  const pct = nextT===null ? 100 : Math.min(100, (pts-prevT)/(nextT-prevT)*100), can = accountLvClaimable(), c = state.lvClaimed || {};
+  let h = '<h3 style="text-align:center;">계정 Lv.'+lv+'</h3>'
+    + '<div class="al-bar"><i style="width:'+pct+'%"></i></div><div class="sub" style="text-align:center; font-size:12px;">'+(nextT===null ? '최고 레벨' : '점수 '+pts+' / '+nextT+' · 다음 레벨까지 '+(nextT-pts))+'</div>';
+  h += '<div class="al-sec">점수 얻는 법</div><div class="al-parts">'+accountPointParts().map(x=>'<div><span>'+x.nm+' <small>×'+x.per+'</small></span><b>'+x.n+' → '+x.pts+'점</b></div>').join('')+'</div>';
+  h += '<div class="al-sec">레벨 혜택</div><div class="al-perks">'+ACCOUNT_PERKS.map(p=>'<div class="'+(lv>=p.lv?'on':'')+'"><span>'+p.ic+' '+p.nm+'</span><b>'+(lv>=p.lv?'적용 중':'Lv.'+p.lv)+'</b></div>').join('')+'</div>';
+  h += '<div class="al-sec">레벨 보상'+(can.length?' <button class="btn small" id="alAll" style="width:auto; margin-left:6px; padding:4px 10px;">모두 받기 ('+can.length+')</button>':'')+'</div><div class="al-rw">';
+  for(let L=2; L<=ACCOUNT_MAX_LEVEL; L++){ const got = c[L], ok = L<=lv && !got;
+    h += '<div class="al-row'+(got?' got':'')+(L>lv?' lock':'')+'"><b>Lv.'+L+'</b><span>'+rewardPillsHtml(accountLvReward(L))+'</span>'+(ok ? '<button class="btn small" data-al="'+L+'">받기</button>' : '<em>'+(got?'✓':'🔒')+'</em>')+'</div>'; }
+  h += '</div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">✕</button>'+h+'</div></div>';
+  bindModalClose();
+  const after = ()=>{ save(); sfx('claim'); render(); showAccountLevelModal(); };
+  document.querySelectorAll('[data-al]').forEach(b=>b.addEventListener('click', ()=>{ if(accountLvClaim(+b.dataset.al)) after(); }));
+  { const a = document.getElementById('alAll'); if(a) a.addEventListener('click', ()=>{ accountLvClaimable().forEach(L=>accountLvClaim(L)); after(); }); }
 }
 function isUnlocked(feature){
   if(state.adminUnlockAll) return true; // (v242) 관리자 세팅: 모든 기능 해금
@@ -7681,8 +8014,10 @@ const ACHIEVEMENTS = [
   {id:'tower_mono', name:'순혈주의', desc:'한 속성 정령만으로 무한의 탑 25층 이상 돌파하기', reward:{stone:300}, category:'tower', secret:true, check:()=> hidHas('towerMono')},
   {id:'tower_solo', name:'고독한 등반가', desc:'정령 딱 1마리로 무한의 탑 30층 이상 돌파하기', reward:{stone:800, items:{pick_legendary:1}}, category:'tower', secret:'full', check:()=> hidHas('towerSolo')},
   {id:'stage_clutch', name:'간발의 차', desc:'우리 편이 1마리만 남고 그 체력도 10% 이하인 채로 스테이지 승리하기', reward:{essence:400}, category:'stage', secret:true, check:()=> hidHas('stageClutch')},
-  {id:'hard_lowrare', name:'잡초의 반란', desc:'레어 이하 정령만으로 하드 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('hardLowRare')}, // (v268)
+  {id:'normal_common', name:'잡초의 반란', desc:'일반 등급 정령만으로 노말 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('normalCommon')}, // (v268)
   {id:'hard_lowrare5', name:'다윗과 골리앗', desc:'레어 이하 정령만으로 챕터 5 하드 보스 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> hidHas('hardLowRare5')}, // (v268)
+  {id:'hard_flawless', name:'무혈 입성', desc:'하드 보스전(3웨이브 내내)에서 우리 정령이 체력을 한 번도 잃지 않고 격파하기 (보호막으로 막는 건 괜찮음)', reward:{essence:3000, items:{pick_legendary:1}}, category:'stage', secret:true, check:()=> hidHas('hardFlawless')}, // (v270)
+  {id:'pacifist', name:'평화주의자', desc:'공격 스킬을 한 번도 쓰지 않고 5라운드 이상 걸린 전투에서 승리하기 (기본 공격·아군에게 쓰는 스킬은 괜찮음 · 시련 제외)', reward:{essence:1500, items:{pick_epic:1}}, category:'general', secret:true, check:()=> hidHas('pacifist')}, // (v270)
   {id:'exp_relic8', name:'유물 수집광', desc:'한 번의 출정에서 유물 8개 모으기', reward:{stone:200}, category:'expedition', secret:true, check:()=> hidHas('relic8')},
   {id:'exp_clutch', name:'벼랑 끝', desc:'우리 편이 1마리만 남은 채로 출정 보스 처치하기', reward:{stone:250}, category:'expedition', secret:true, check:()=> hidHas('expClutch')},
   {id:'exp_greed', name:'욕심쟁이', desc:'한 번의 출정에서 킵 5번 하기', reward:{stone:300, items:{rare:2}}, category:'expedition', secret:true, check:()=> hidHas('keep5') || !!(state.expedition && (state.expedition.keeps||0)>=5)},
@@ -7852,7 +8187,7 @@ function renderHearthTab(){
   let html = '';
   html += '<div style="position:relative; border-radius:20px; padding:24px 16px; text-align:center; background:radial-gradient(circle at 50% 20%, #6a3a1a 0%, #221f4d 78%); border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d; overflow:hidden;">';
   html += '<img class="scr-hero" src="assets/ui/ic_hearth.webp" alt="" draggable="false">';
-  html += '<div style="font-size:24px; font-weight:900; margin-top:4px;">'+sparks+'/'+max+'</div>';
+  html += '<div class="ttl" style="font-size:24px; margin-top:4px;">'+sparks+'/'+max+'</div>';
   html += '<div class="sub" style="margin-top:2px;">'+(sparks<max?('다음 불씨까지 '+Math.ceil(hearthNextSparkMs()/60000)+'분'):'가득 참')+'</div>';
   html += '<div style="height:8px; border-radius:4px; background:#2d2a62; overflow:hidden; margin-top:10px;"><div style="height:100%; width:'+(sparks/max*100)+'%; background:linear-gradient(90deg,#ff7557,#ffc857);"></div></div>';
   html += '<button class="btn" id="collectHearthBtn" style="margin-top:14px;" '+(sparks<=0?'disabled':'')+'>거두기</button>';
@@ -7873,7 +8208,7 @@ function renderHearthTab(){
     else effectText = '현재 '+(20-lvl)+'분 → 다음 '+(20-(lvl+1))+'분';
     html += '<div class="card">';
     html += '<div style="display:flex; align-items:center; justify-content:space-between;">';
-    html += '<div><div style="font-weight:700;">'+u.icon+' '+u.name+' Lv.'+lvl+(maxed?' (최고)':'')+'</div><div class="sub">'+u.desc+'</div>'+(!maxed?('<div class="sub" style="margin-top:2px; color:#ffd557;">'+effectText+'</div>'):'')+'</div>';
+    html += '<div><div class="ttl">'+u.icon+' '+u.name+' Lv.'+lvl+(maxed?' (최고)':'')+'</div><div class="sub">'+u.desc+'</div>'+(!maxed?('<div class="sub" style="margin-top:2px; color:#ffd557;">'+effectText+'</div>'):'')+'</div>';
     if(!maxed) html += '<button class="btn small" data-hearth-upgrade="'+key+'" '+(canAfford?'':'disabled')+'>업그레이드</button>';
     html += '</div>';
     if(!maxed){
@@ -8089,25 +8424,25 @@ const EXPEDITION_BUFFS = [
   {id:'atk10', icon:'<img class="uic" src="assets/ui/ic_atk.webp" alt="">', label:'전체 공격력 +10%', apply:function(run){ run.powerMult *= 1.10; }},
   {id:'atk18', icon:'<img class="uic" src="assets/ui/ic_atk.webp" alt="">', label:'전체 공격력 +18%', apply:function(run){ run.powerMult *= 1.18; }},
   {id:'stone20', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">', label:'강화석 +20 즉시 획득', apply:function(run){ state.enhanceStone=(state.enhanceStone||0)+20; }},
-  {id:'equip1', icon:'<img class="uic" src="assets/ui/ic_shield.webp" alt="">', label:'장비 소환권 +1 즉시 획득', apply:function(run){ grantItems({equip:1}); }},
+  {id:'equip1', icon:'<img class="uic" src="assets/ui/ic_shield.webp" alt="">', label:'정령장비 소환권 +1 즉시 획득', apply:function(run){ grantItems({equip:1}); }},
   {id:'reward20', icon:'<img class="uic" src="assets/ui/ic_gift.webp" alt="">', label:'완주 보상 +20%', apply:function(run){ run.rewardMult *= 1.20; }}
 ];
 // (v125) 출정권 — 런을 시작할 때 1장 사용(킵으로 이어가는 사이클은 무료). 12시간마다 1장, 최대 2장, 정수로 하루 1회 충전(v126)
-const EXP_TICKET_MAX = 2, EXP_TICKET_INTERVAL_MS = 12*60*60*1000;
+const EXP_TICKET_CAP = 3, EXP_TICKET_INTERVAL_MS = 12*60*60*1000;
 const EXP_TICKET_BUY_PRICES = [600]; // 하루 1회만
 function expTicketState(){
-  if(!state.expTickets) state.expTickets = { count: EXP_TICKET_MAX, lastTick: Date.now(), buyDate: todayStr(), buys: 0 };
+  if(!state.expTickets) state.expTickets = { count: expTicketMax(), lastTick: Date.now(), buyDate: todayStr(), buys: 0 };
   return state.expTickets;
 }
 function expTicketsRefresh(){
   const t = expTicketState(), now = Date.now();
   if(t.lastTick > now) t.lastTick = now;                 // 시계를 미래로 돌렸다 되돌려도 멈추지 않게
-  if(t.count >= EXP_TICKET_MAX){ t.count = EXP_TICKET_MAX; t.lastTick = now; } // 가득 차 있는 동안은 타이머 정지
+  if(t.count >= expTicketMax()){ t.count = expTicketMax(); t.lastTick = now; } // 가득 차 있는 동안은 타이머 정지
   else{
     const n = Math.floor((now - t.lastTick) / EXP_TICKET_INTERVAL_MS);
     if(n > 0){
-      t.count = Math.min(EXP_TICKET_MAX, t.count + n);
-      t.lastTick = t.count >= EXP_TICKET_MAX ? now : t.lastTick + n*EXP_TICKET_INTERVAL_MS;
+      t.count = Math.min(expTicketMax(), t.count + n);
+      t.lastTick = t.count >= expTicketMax() ? now : t.lastTick + n*EXP_TICKET_INTERVAL_MS;
     }
   }
   if(t.buyDate !== todayStr()){ t.buyDate = todayStr(); t.buys = 0; }
@@ -8116,17 +8451,17 @@ function expTicketsRefresh(){
 function expTicketCount(){ return expTicketsRefresh().count; }
 function expTicketNextMs(){
   const t = expTicketsRefresh();
-  return t.count >= EXP_TICKET_MAX ? 0 : Math.max(0, EXP_TICKET_INTERVAL_MS - (Date.now() - t.lastTick));
+  return t.count >= expTicketMax() ? 0 : Math.max(0, EXP_TICKET_INTERVAL_MS - (Date.now() - t.lastTick));
 }
 function expTicketBuyPrice(){ const t = expTicketsRefresh(); return t.buys < EXP_TICKET_BUY_PRICES.length ? EXP_TICKET_BUY_PRICES[t.buys] : null; }
 function buyExpTicket(){
   const t = expTicketsRefresh();
-  if(t.count >= EXP_TICKET_MAX){ toast('출정권 가득 참'); return false; }
+  if(t.count >= expTicketMax()){ toast('출정권 가득 참'); return false; }
   const price = expTicketBuyPrice();
   if(price===null){ toast('오늘은 더 충전 불가'); return false; }
   if(state.essence < price){ toast('정수 부족 ('+price+' 필요)'); return false; }
   state.essence -= price; t.buys += 1; t.count += 1;
-  if(t.count >= EXP_TICKET_MAX) t.lastTick = Date.now();
+  if(t.count >= expTicketMax()) t.lastTick = Date.now();
   save();
   return true;
 }
@@ -8541,7 +8876,7 @@ function lockedFeatureScreenHtml(feature){
     + '</div>';
   return '<div class="card" style="text-align:center;">'
     + '<div style="font-size:40px; margin-bottom:6px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""></div>'
-    + '<div style="font-weight:800; font-size:16px; margin-bottom:4px;">'+FEATURE_LABEL[feature]+' 잠김</div>'
+    + '<div class="ttl" style="font-size:16px; margin-bottom:4px;">'+FEATURE_LABEL[feature]+' 잠김</div>'
     + '<div class="sub" style="margin-bottom:12px;">아래 조건을 모두 충족하면 해금</div>'
     + '<div style="display:flex; flex-direction:column; gap:8px; text-align:left;">'
     + (feature==='tower' ? '' : (ACCOUNT_UNLOCK_LEVEL[feature] ? row(lvlOk, '계정 Lv.'+ACCOUNT_UNLOCK_LEVEL[feature]+' 이상 (현재 Lv.'+accountLevel()+')') : '') + row(bossOk, chapterBossName(1)+' 처치 (챕터 1 보스)'))
@@ -8716,7 +9051,7 @@ function bindDungeonTab(){ document.querySelectorAll('[data-dg-go]').forEach(b=>
 // ===================== (v266) 정령 파견 =====================
 // 정령을 몇 시간 동안 임무에 보냄 — 보낸 정령은 그동안 없는 것으로 침(ownedCount에서 빠짐) · (v267) 1마리뿐이어도 보낼 수 있음
 // 임무는 하루 4개(자정 갱신) · 동시에 3개까지 · 조건을 맞추면 보상 ×1.5 · 높은 등급을 보내면 보상 조금 더
-const DISPATCH_SLOTS = 3, DISPATCH_BOARD = 4;
+const DISPATCH_BOARD = 4; // 동시 칸은 dispatchSlots() — 기본 3, 계정 Lv.5·25에 +1
 const DISPATCH_TEMPLATES = [
   {nm:'숲길 정찰', ic:'🌿'}, {nm:'광산 채굴', ic:'⛏️'}, {nm:'유적 조사', ic:'🏛️'}, {nm:'보급 호위', ic:'📦'}, {nm:'심연 탐색', ic:'🌀'},
   {nm:'별빛 관측', ic:'🔭'}, {nm:'화산 채집', ic:'🌋'}, {nm:'설원 수색', ic:'❄️'}, {nm:'마을 경비', ic:'🏘️'}, {nm:'고대 서고 정리', ic:'📜'}
@@ -8775,7 +9110,7 @@ function dispatchAvail(k){ return Math.max(0, ownedCount(k) - dispatchReserved(k
 function dispatchSpare(){ return Object.keys(SPIRITS).filter(k=>dispatchAvail(k) >= 1); }
 function dispatchStart(m, keys){
   const d = dispatchState();
-  if(d.slots.length >= DISPATCH_SLOTS){ toast('파견 칸 가득 참'); return false; }
+  if(d.slots.length >= dispatchSlots()){ toast('파견 칸 가득 참'); return false; }
   if(d.done[m.id] || d.slots.some(s=>s.mid===m.id)){ toast('오늘 이미 보낸 임무'); return false; }
   if(keys.length !== m.need){ toast(m.need+'마리 필요'); return false; }
   const cnt = {}; for(const k of keys){ cnt[k] = (cnt[k]||0)+1; if(dispatchAvail(k) - cnt[k] < 0){ toast(SPIRITS[k].name+' 보낼 수 있는 수 부족'); return false; } }
@@ -8799,7 +9134,7 @@ function renderDispatchTab(){
   if(!isUnlocked('dispatch')) return lockedFeatureScreenHtml('dispatch');
   const d = dispatchState(), board = dispatchBoard();
   let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧭 정령 파견</div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 돌아올 때까지 못 씀 · 조건 맞추면 보상 ×1.5</div></div>';
-  h += '<div class="dp-slots">'+Array.from({length:DISPATCH_SLOTS}, (_,i)=>{ const s = d.slots[i];
+  h += '<div class="dp-slots">'+Array.from({length:dispatchSlots()}, (_,i)=>{ const s = d.slots[i];
     if(!s) return '<div class="dp-slot empty"><span>빈 칸</span></div>';
     const left = s.end - Date.now(), done = left<=0, pct = Math.min(100, (Date.now()-s.start)/(s.end-s.start)*100);
     return '<div class="dp-slot'+(done?' ready':'')+'"><div class="dp-sh"><b>'+s.ic+' '+s.nm+'</b>'+(s.bonus?'<i>보너스</i>':'')+'</div><div class="dp-team">'+s.keys.map(k=>'<span>'+spArt(SPIRITS[k])+'</span>').join('')+'</div>'
@@ -8809,7 +9144,7 @@ function renderDispatchTab(){
     const used = d.done[m.id];
     h += '<div class="dp-mis'+(used?' used':'')+'"><div class="dp-mic">'+m.ic+'</div><div class="dg-mid"><div class="dg-nm"><b>'+m.nm+'</b><small>'+m.dur+'시간 · '+m.need+'마리</small></div>'
       + '<div class="dg-sub">🎯 '+m.cond.txt+'</div><div class="dg-sub">'+rwInline(dispatchReward(m, []))+' ~</div></div>'
-      + '<button class="btn small" data-dp-go="'+m.id+'"'+(used || d.slots.length>=DISPATCH_SLOTS ? ' disabled' : '')+'>'+(used?'보냄':'보내기')+'</button></div>';
+      + '<button class="btn small" data-dp-go="'+m.id+'"'+(used || d.slots.length>=dispatchSlots() ? ' disabled' : '')+'>'+(used?'보냄':'보내기')+'</button></div>';
   });
   h += '</div>';
   return h;
@@ -9012,8 +9347,8 @@ function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 ·
 // 모든 플레이어가 한 주 동안 같은 보스를 함께 잡음(서버 worldboss/<주>). 전체 체력이 66%·33% 아래로 내려가면 모습·기믹이 바뀜
 // 한 번 도전 = 5라운드 · 보스 체력바는 '지금 남은 전체 체력'에서 시작 → 내 공격으로 0을 만들면 처치자(막타)
 // 날마다 약점 속성이 바뀜(그 속성 정령 공격력 ×1.5) · 하루 3번 · 전체 25/50/75/100% 마다 참여자 모두 보상
-const WB_ROUNDS = 5, WB_TRIES = 3;
-let WB_HP = 3000000; // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 10명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도
+const WB_ROUNDS = 5;
+let WB_HP = 1500000; // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 5명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도 (v269: 300만→150만)
 const WB_PCT_HP = 20000, WB_ATK_RATIO = 0.35;
 const WB_PHASES = [ // 남은 체력 비율이 이 값 이하면 그 단계
   { at:1.00, g:'frostGiant', nm:'빙하의 거신', d:'받는 피해 절반 · 3R마다 가장 빠른 아군 빙결 · 눈보라' },
@@ -9043,7 +9378,7 @@ function buildWorldBossFight(){
   // 공격력은 도전 팀 체력에 맞춰 조절 → 약한 팀도 몇 라운드는 버티고, 강한 팀은 딜로 차이가 남
   const avgHp = bf.myUnits.reduce((t,u)=>t+u.maxHp,0) / Math.max(1, bf.myUnits.length);
   boss.pctHp = WB_PCT_HP; // 독·기믹 % 수치는 이 기준 체력으로 계산 (5천만 기준이면 독 한 번에 수백만)
-  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm;
+  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm; setBossKit(boss, 'wboss_'+ph.g); // (v270) 월드 보스 전용 스킬
   bf.myUnits.forEach(u=>{ if(u.element===weak) u.atk = Math.round(u.atk*1.5); });
   const sf = Object.assign(bf, { mode:'worldboss', wbStart: boss.hp, wbPhase: ph.g, log:['월드 보스 · '+ph.nm+'!'] });
   return sf;
@@ -9101,7 +9436,7 @@ function wbCardHtml(){ // 레이드 목록 맨 위 카드
   const marks = WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('');
   return '<button class="wb-card" id="wbOpen">'+bossImg(ph.g, 'wb-img', '🌍')+'<span class="wb-mid"><b>🌍 월드 보스 · '+ph.nm+'</b>'
     + '<span class="wb-bar"><span style="width:'+(ratio*100)+'%;"></span>'+marks+'</span>'
-    + '<small>'+(ratio<=0 ? '✅ 이번 주 처치 완료 · 달성 보상 확인' : '남은 체력 '+(ratio*100).toFixed(1)+'% · 오늘 약점 '+elIc(weak)+' · 도전 '+Math.max(0, WB_TRIES-s.used)+'/'+WB_TRIES)+'</small></span><em>›</em></button>';
+    + '<small>'+(ratio<=0 ? '✅ 이번 주 처치 완료 · 달성 보상 확인' : '남은 체력 '+(ratio*100).toFixed(1)+'% · 오늘 약점 '+elIc(weak)+' · 도전 '+Math.max(0, wbTries()-s.used)+'/'+wbTries())+'</small></span><em>›</em></button>';
 }
 function showWorldBoss(){
   wbWatch();
@@ -9113,17 +9448,18 @@ function showWorldBoss(){
   h += '<div class="sub" style="text-align:center; font-size:11px;">전체 '+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ 처치자 '+escTxt(d.killer.name) : '')+'</div>';
   const dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
   h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'🔒', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
+  if(!dead) h += bossSkillSectionHtml('wboss_'+ph.g, '지금 단계 스킬'); // (v270)
   h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
     return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
   h += '<div class="gm-sec"><div class="gm-sh">기여 순위</div>'+(ps.length ? ps.slice(0,10).map((x,i)=>'<div class="xp-rank'+(x.uid===raidNet.uid?' me':'')+'"><span>'+(i+1)+'</span><b>'+escTxt(x.nm)+(d.killer&&d.killer.uid===x.uid?' ⚔️':'')+'</b><em>'+fmtHp(x.dmg)+'</em></div>').join('') : '<div class="sub" style="text-align:center; font-size:11px;">아직 아무도 도전 안 함</div>')
     + (myRank>=10 ? '<div class="xp-rank me"><span>'+(myRank+1)+'</span><b>나</b><em>'+fmtHp(ps[myRank].dmg)+'</em></div>' : '')+'</div>';
-  h += '<button class="btn" id="wbGo" style="margin-top:10px;"'+(dead || s.used>=WB_TRIES || !raidNet.db ?' disabled':'')+'>'+(dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, WB_TRIES-s.used)+'/'+WB_TRIES+')')+'</button>';
+  h += '<button class="btn" id="wbGo" style="margin-top:10px;"'+(dead || s.used>=wbTries() || !raidNet.db ?' disabled':'')+'>'+(dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, wbTries()-s.used)+'/'+wbTries()+')')+'</button>';
   openInfoOverlay('🌍 월드 보스', h);
   document.querySelectorAll('[data-wb-claim]').forEach(b=>b.addEventListener('click', ()=>{ wbClaim(parseInt(b.dataset.wbClaim)); document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBoss(); }));
   const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBossPrep(); });
 }
 function showWorldBossPrep(){
-  const s = wbState(); if(wbRemain()<=0){ toast('이번 주 보스 처치 완료'); return; } if(s.used >= WB_TRIES){ toast('오늘 도전 끝 — 내일 다시'); return; }
+  const s = wbState(); if(wbRemain()<=0){ toast('이번 주 보스 처치 완료'); return; } if(s.used >= wbTries()){ toast('오늘 도전 끝 — 내일 다시'); return; }
   const weak = wbWeakEl(), pv = buildWorldBossFight();
   let h = '<h3 style="text-align:center; margin:0;">🌍 '+wbPhase().nm+'</h3><div class="dg-rule">오늘 약점 '+elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · '+WB_ROUNDS+'라운드 동안 최대한 피해</div>';
   h += formationRowsHtml();
@@ -9137,14 +9473,14 @@ function showWorldBossPrep(){
   document.getElementById('wbRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,b)=> (SPIRITS[b].element===weak) - (SPIRITS[a].element===weak) || unitAtk(b)-unitAtk(a))); save(); showWorldBossPrep(); });
   document.getElementById('wbStart').addEventListener('click', ()=>{
     if(!state.formation.some(Boolean)){ toast('최소 1마리 배치'); return; }
-    const st = wbState(); if(st.used >= WB_TRIES) return;
+    const st = wbState(); if(st.used >= wbTries()) return;
     st.used += 1; closeModal(); state.skillFight = buildWorldBossFight(); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
   });
 }
 function renderTowerTab(){
   if(!isUnlocked('tower')) return lockedFeatureScreenHtml('tower');
   const best = state.towerBest||0, frontier = towerFloor(), topFloor = frontier + 2; // 다음 도전 위로 2층은 미리보기
-  let html = '<div style="text-align:center; margin:2px 0 10px;"><div style="font-size:17px; font-weight:900; color:#ffd35a; text-shadow:0 2px 0 var(--line); display:flex; align-items:center; justify-content:center; gap:6px;">'+uiIc('tower')+' 무한의 탑</div>'
+  let html = '<div style="text-align:center; margin:2px 0 10px;"><div class="ttl" style="font-size:17px; color:#ffd35a; text-shadow:0 2px 0 var(--line); display:flex; align-items:center; justify-content:center; gap:6px;">'+uiIc('tower')+' 무한의 탑</div>'
     + '<div class="sub">최고 '+best+'층 · 최고 전투력 '+fmtDmg(state.towerBestPower||0)+'</div><div class="sub" style="font-size:11px; margin-top:2px;">층을 눌러 도전 · 보상은 층마다 처음 돌파할 때 1회</div></div>';
   { const tp = pendingRewardsFor('tower_'); // (v225) 받을 보상이 있으면 한 번에 받기
     if(tp.length) html += '<button class="btn gold" id="towerClaimAll" style="margin:0 0 10px;">'+uiIc('gift')+' 탑 보상 모두 받기 · '+tp.length+'개</button>'; }
@@ -9176,8 +9512,8 @@ const EXP_RELICS = [
   {id:'emb_wood', ic:'🌿', nm:'숲결 문장', d:'숲결 정령 공격력 +25%'},
   {id:'emb_light', ic:'✨', nm:'빛 문장', d:'빛 정령 공격력 +25%'},
   {id:'emb_dark', ic:'🌙', nm:'그림자 문장', d:'그림자 정령 공격력 +25%'},
-  {id:'vanguard', ic:'🛡️', nm:'선봉의 방패', d:'전투 시작 때 전열에 최대체력 25% 보호막'},
-  {id:'moss', ic:'🌱', nm:'재생 이끼', d:'아군 전체 매 라운드 최대체력 4% 회복'},
+  {id:'vanguard', ic:'🛡️', nm:'선봉의 방패', d:'전투 시작 때 전열에 보호막(각자 최대체력 25%)'},
+  {id:'moss', ic:'🌱', nm:'재생 이끼', d:'아군 전체 매 라운드 각자 최대체력 4% 회복'},
   {id:'thorn', ic:'🌵', nm:'가시 갑옷', d:'아군 전체 받은 피해 12% 반사'},
   {id:'feather', ic:'🪶', nm:'바람 깃털', d:'아군 전체 속도 +12'},
   {id:'charm', ic:'🧿', nm:'수호 부적', d:'전투마다 아군 전체 해로운 효과 1회 막음'},
@@ -9383,19 +9719,19 @@ function renderExpeditionTab(){
   if(!run) html += '<div style="position:relative; border-radius:20px; padding:24px 16px; text-align:center; background:radial-gradient(circle at 50% 20%, #4a3478 0%, #221f4d 78%); border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d; overflow:hidden;">';
   if(!run){
   html += '<img class="scr-hero" src="assets/ui/ic_expedition.webp" alt="" draggable="false">';
-  html += '<div style="font-size:15px; font-weight:800; margin-top:4px; color:#e0a8ff;">출정</div>';
+  html += '<div class="ttl" style="font-size:15px; margin-top:4px; color:#e0a8ff;">출정</div>';
   html += '<div style="font-size:13px; margin-top:6px;" class="sub">최고 기록: '+best+'단계'+(best>=EXPEDITION_NODE_COUNT?' <img class="uic" src="assets/ui/ic_trophy.webp" alt="">':'')+(best>EXPEDITION_NODE_COUNT?' · '+Math.ceil(best/EXPEDITION_NODE_COUNT)+'사이클':'')+'</div>';
   html += '</div>';
     html += '<div class="card" style="margin-top:12px;">';
-    html += '<div style="font-weight:700;">매번 새 경로 생성</div>';
+    html += '<div class="ttl">매번 새 경로 생성</div>';
     html += '<div class="sub" style="margin-top:4px; line-height:1.5;">7단계 한 사이클 · 마지막은 보스. 시작은 챕터1 보스급, 단계마다 적 강화. 완주하면 보상 수령 후 종료, 또는 킵하고 더 깊이 — 킵할수록 배율 상승, 지면 쌓인 보상 전부 잃음.</div>';
     const tk = expTicketCount(), price = expTicketBuyPrice();
     html += '<div style="margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffffff0d; display:flex; justify-content:space-between; align-items:center;">'
-      + '<span style="font-weight:800;"><img class="uic" src="assets/ui/ic_tk_exp.webp" alt=""> 출정권 '+tk+'/'+EXP_TICKET_MAX+'</span>'
-      + '<span class="sub">'+(tk<EXP_TICKET_MAX ? '다음 충전까지 '+expTicketTimeText(expTicketNextMs()) : '가득 참')+'</span></div>';
+      + '<span class="ttl"><img class="uic" src="assets/ui/ic_tk_exp.webp" alt=""> 출정권 '+tk+'/'+expTicketMax()+'</span>'
+      + '<span class="sub">'+(tk<expTicketMax() ? '다음 충전까지 '+expTicketTimeText(expTicketNextMs()) : '가득 참')+'</span></div>';
     { const m = expWeekMod(); html += '<div class="xp-mod" style="margin-top:10px;">'+m.ic+' 이번 주 · <b>'+m.nm+'</b> <small>'+m.d+'</small></div>'; } // (v266)
     html += '<button class="btn" id="startExpeditionBtn" style="margin-top:10px;" '+(tk<=0?'disabled':'')+'>🗡️ 출정대 고르고 출정하기</button>';
-    if(tk<EXP_TICKET_MAX){
+    if(tk<expTicketMax()){
       html += '<button class="btn secondary" id="buyExpTicketBtn" style="margin-top:8px;" '+(price===null?'disabled':'')+'>'
         + (price===null ? '오늘 충전 끝' : '<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> 정수 '+price+'으로 출정권 충전')+' <span class="sub">(오늘 '+expTicketState().buys+'/'+EXP_TICKET_BUY_PRICES.length+')</span></button>';
     }
@@ -9436,12 +9772,12 @@ function renderExpeditionTab(){
   }
   if(run.pendingBuffChoice){
     html += '<div class="card" style="margin-top:10px; border:1px solid #ffd55755;">';
-    html += '<div style="font-weight:700; text-align:center;">🎉 '+((run.keeps||0)>0 && run.currentIndex===0 ? '킵 보너스' : '돌파 보상')+' — 버프 1개 선택</div>';
+    html += '<div class="ttl" style="text-align:center;">🎉 '+((run.keeps||0)>0 && run.currentIndex===0 ? '킵 보너스' : '돌파 보상')+' — 버프 1개 선택</div>';
     run.pendingBuffChoice.forEach(bid=>{
       if(String(bid).indexOf('r:')===0){ const r = EXP_RELICS.find(x=>'r:'+x.id===bid); if(!r) return; // (v266) 유물
         html += '<button class="btn secondary xp-pick'+(r.rare?' rare':'')+'" data-expedition-buff="'+bid+'"><span class="xp-pic">'+r.ic+'</span><span><b>'+(r.rare?'희귀 유물 · ':'유물 · ')+r.nm+'</b><small>'+r.d+'</small></span></button>'; return; }
       const b = EXPEDITION_BUFFS.find(x=>x.id===bid); if(!b) return;
-      html += '<button class="btn secondary xp-pick" data-expedition-buff="'+bid+'"><span class="xp-pic">'+b.icon+'</span><span><b>'+b.label+'</b><small>이번 출정 동안</small></span></button>';
+      html += '<button class="btn secondary xp-pick" data-expedition-buff="'+bid+'"><span class="xp-pic">'+b.icon+'</span><span><b>'+b.label+'</b><small>'+(b.label.includes('즉시')?'바로 받음':'이번 출정 동안')+'</small></span></button>';
     });
     html += '</div>';
     dock();
@@ -9459,7 +9795,7 @@ function renderExpeditionTab(){
     return html;
   }
   if(node.resolvedType==='puzzle'){
-    html += '<div class="card" style="margin-top:10px;"><div style="font-weight:700; text-align:center;">🎴 미지의 방 — 카드 하나 선택</div>'
+    html += '<div class="card" style="margin-top:10px;"><div class="ttl" style="text-align:center;">🎴 미지의 방 — 카드 하나 선택</div>'
       + '<div class="sub" style="text-align:center; margin-top:4px;">무엇이 나올지는 뒤집어야 앎</div>';
     html += '<div style="display:flex; gap:8px; margin-top:10px;">';
     for(let i=0;i<3;i++){
@@ -9467,7 +9803,7 @@ function renderExpeditionTab(){
     }
     html += '</div></div>';
   }else if(node.type==='rest'){ // (v266) 휴식
-    html += '<div class="card" style="margin-top:10px;"><div style="font-weight:800; text-align:center;">🔥 모닥불 — 하나만 선택</div>'
+    html += '<div class="card" style="margin-top:10px;"><div class="ttl" style="text-align:center;">🔥 모닥불 — 하나만 선택</div>'
       + '<button class="btn secondary xp-pick" data-xp-rest="heal" style="margin-top:8px;"><span class="xp-pic">💚</span><span><b>휴식</b><small>출정대 전체 체력 35% 회복 · 피로 초기화</small></span></button>'
       + '<button class="btn secondary xp-pick" data-xp-rest="train" style="margin-top:8px;"><span class="xp-pic">⚔️</span><span><b>단련</b><small>이번 출정 공격력 +8%</small></span></button></div>';
   }else if(node.type==='shop'){ // (v266) 상점 — 금화로 유물·회복
@@ -9477,12 +9813,12 @@ function renderExpeditionTab(){
     html += '<button class="btn secondary xp-pick" data-xp-buy="heal" style="margin-top:8px;"'+(node.heal?' disabled':'')+'><span class="xp-pic">🧪</span><span><b>회복 물약</b><small>출정대 전체 체력 50% 회복</small></span><em>'+(node.heal?'구매함':'🪙 45')+'</em></button>';
     html += '<button class="btn" id="xpLeaveShop" style="margin-top:10px;">떠나기 ▶</button></div>';
   }else if(node.type==='treasure'){ // (v266) 보물
-    html += '<div class="card" style="margin-top:10px; text-align:center;"><div style="font-size:34px;">💎</div><div style="font-weight:800;">보물 상자</div><div class="sub" style="margin-top:4px;">무작위 유물 1개 + 금화 30</div>'
+    html += '<div class="card" style="margin-top:10px; text-align:center;"><div style="font-size:34px;">💎</div><div class="ttl">보물 상자</div><div class="sub" style="margin-top:4px;">무작위 유물 1개 + 금화 30</div>'
       + '<button class="btn" id="xpTreasure" style="margin-top:10px;">열기</button></div>';
   }else if(node.type==='event' || node.resolvedType==='event'){
     const ev = currentExpeditionEvent();
     html += '<div class="card" style="margin-top:10px;">';
-    html += '<div style="font-weight:700;"><img class="uic" src="assets/ui/ic_gift.webp" alt=""> 사건</div>';
+    html += '<div class="ttl"><img class="uic" src="assets/ui/ic_gift.webp" alt=""> 사건</div>';
     html += '<div class="sub" style="margin-top:6px;">'+ev.text+'</div>';
     html += '<button class="btn" data-expedition-event="optA" style="margin-top:10px;">'+ev.optA.label+'</button>';
     html += '<button class="btn secondary" data-expedition-event="optB" style="margin-top:8px;">'+ev.optB.label+'</button>';
@@ -9496,7 +9832,7 @@ function renderExpeditionTab(){
       + '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">그림을 누르면 능력치·스킬 확인</div>';
     html += '<div class="card" style="margin-top:10px;">';
     if(isBoss && node.gimmick && BOSS_GIMMICK_INFO[node.gimmick]){ const gi = BOSS_GIMMICK_INFO[node.gimmick]; html += '<div class="card xp-boss" style="margin-top:10px;">'+bossImg(node.gimmick, 'xp-bossimg', gi.icon)+'<div><b>'+gi.name+'</b><small>'+((run.cycle||1)>=3?'🔥 하드 기믹 · ':'')+'챕터 보스 기믹 그대로</small></div><button class="bs-info" id="xpBossInfo">ⓘ</button></div>'; }
-    html += '<div style="font-weight:700;">'+(isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스 전투':(node.type==='elite'?'<img class="uic" src="assets/ui/ic_skull.webp" alt=""> 정예 전투 <small class="sub">· 적 강화 · 이기면 유물 선택</small>':'<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투'))+(run.powerMult>1?' <span class="sub" style="font-weight:600;">· 공격력 배율 x'+run.powerMult.toFixed(2)+'</span>':'')+'</div>';
+    html += '<div class="ttl">'+(isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스 전투':(node.type==='elite'?'<img class="uic" src="assets/ui/ic_skull.webp" alt=""> 정예 전투 <small class="sub">· 적 강화 · 이기면 유물 선택</small>':'<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투'))+(run.powerMult>1?' <span class="sub" style="font-weight:600;">· 공격력 배율 x'+run.powerMult.toFixed(2)+'</span>':'')+'</div>';
     html += enemyPreviewHtml;
     html += '</div>';
     html += '<button class="btn" id="expeditionBattleBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 배치</button>';
@@ -10205,7 +10541,7 @@ function showSpiritInfoModal(key){
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
   html += '<div class="sub">'+ELEMENT_INFO[sp.element].name+' 속성</div>';
   if(passive){
-    html += '<div style="margin-top:10px; padding:8px; background:var(--panel2); border-radius:10px; text-align:left;"><div style="font-weight:700;">'+passive.icon+' '+passive.name+'</div><div class="sub">'+passive.desc+'</div></div>';
+    html += '<div style="margin-top:10px; padding:8px; background:var(--panel2); border-radius:10px; text-align:left;"><div class="ttl">'+passive.icon+' '+passive.name+'</div><div class="sub">'+passive.desc+'</div></div>';
   }
   html += '</div>';
   document.getElementById('modalRoot').innerHTML =
@@ -10513,12 +10849,12 @@ function showEnemyDetailPopup(element, rarity, variant, atk, pw){
   const passive = passiveForERV(element, rarity, variant);
   let html = '<div style="text-align:center;">';
   html += '<div style="width:60px; height:60px; margin:0 auto 8px; border-radius:50%; background:#1b1942; border:3px solid '+ELEMENT_INFO[element].color+'; display:flex; align-items:center; justify-content:center; font-size:30px; overflow:hidden;">'+spArt(SPIRITS[element+'_'+rarity+'_'+variant], 'fill')+'</div>';
-  html += '<div style="font-weight:800; font-size:15px;">'+ELEMENT_INFO[element].name+' · '+RARITY_INFO[rarity].name+(rarity!=='common'&&rarity!=='rare'?' ('+(variant==='a'?'A형':'B형')+')':'')+'</div>';
+  html += '<div class="ttl" style="font-size:15px;">'+ELEMENT_INFO[element].name+' · '+RARITY_INFO[rarity].name+(rarity!=='common'&&rarity!=='rare'?' ('+(variant==='a'?'A형':'B형')+')':'')+'</div>';
   if(isFinite(pw)) html += '<div class="sub" style="margin-top:4px;"><img class="uic" src="assets/ui/ic_shard.webp" alt=""> 정령력 <b style="color:var(--text);">'+fmtDmg(pw)+'</b></div>';
   html += '<div class="sub" style="margin-top:'+(isFinite(pw)?2:4)+'px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격력 <b style="color:var(--text);">'+fmtDmg(atk)+'</b></div>';
   if(passive){
     html += '<div style="margin-top:12px; padding:10px; background:var(--panel); border-radius:10px; text-align:left;">'
-      + '<div style="font-weight:700;">'+passive.icon+' '+passive.name+'</div>'
+      + '<div class="ttl">'+passive.icon+' '+passive.name+'</div>'
       + '<div class="sub" style="margin-top:2px;">'+passive.desc+'</div>'
       + '</div>';
   }else{
@@ -10759,7 +11095,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
-    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, settings:showSettingsModal, mail:showMailboxModal, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
+    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
 // (v95) 전투 결과가 표시되면, 모달이 화면보다 길 때 결과와 확인 버튼이 보이도록 맨 아래로 스크롤
@@ -10828,6 +11164,8 @@ function sanitizeState(){
   migrateBossReworkV263();
   if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
   if(!isPlainObj(s.trialTried)) s.trialTried = {}; // (v268) 시련 힌트 열림
+  if(!isPlainObj(s.lvClaimed)) s.lvClaimed = {}; if(!fin(s.lvSeen)) s.lvSeen = 0; // (v269) 계정 레벨 보상
+  if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
@@ -10886,9 +11224,9 @@ function sanitizeState(){
     }
   }
   { const t = s.expTickets;
-    if(!isPlainObj(t)) s.expTickets = { count: EXP_TICKET_MAX, lastTick: Date.now(), buyDate: todayStr(), buys: 0 };
+    if(!isPlainObj(t)) s.expTickets = { count: 2, lastTick: Date.now(), buyDate: todayStr(), buys: 0 };
     else{
-      t.count = (fin(t.count) ? Math.min(EXP_TICKET_MAX, Math.max(0, Math.floor(t.count))) : EXP_TICKET_MAX);
+      t.count = (fin(t.count) ? Math.min(EXP_TICKET_CAP, Math.max(0, Math.floor(t.count))) : 2); // (v269) 불러올 땐 계정 레벨을 아직 못 계산해서 최대치로만 자름
       t.lastTick = (fin(t.lastTick) && t.lastTick<=Date.now()) ? t.lastTick : Date.now();
       if(typeof t.buyDate!=='string') t.buyDate = todayStr();
       t.buys = fin(t.buys) ? Math.min(EXP_TICKET_BUY_PRICES.length, Math.max(0, Math.floor(t.buys))) : 0;
@@ -10906,7 +11244,7 @@ function sanitizeState(){
     s.runeStones = [];
     s.runeUpStones = (fin2(s.runeUpStones) && s.runeUpStones>=0) ? Math.floor(s.runeUpStones) : 0;
     if(!(s.raidTickets && typeof s.raidTickets==='object' && fin2(s.raidTickets.count) && fin2(s.raidTickets.lastTick))) s.raidTickets = null;
-    else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_MAX, Math.floor(s.raidTickets.count)));
+    else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_CAP, Math.floor(s.raidTickets.count)));
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
     { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; } // (v242) 받은 우편 · 관리자 해금
@@ -11026,7 +11364,7 @@ function sanitizeState(){
   }
   { const d = s.dispatch; // (v266) 파견 — 모양이 이상하면 그 칸만 버림(여유 사본 규칙을 깨는 칸도)
     if(d && typeof d==='object'){ if(!Array.isArray(d.slots)) d.slots = []; if(!d.done || typeof d.done!=='object') d.done = {};
-      d.slots = d.slots.filter(x=> x && typeof x==='object' && Array.isArray(x.keys) && x.keys.length && x.keys.every(k=>SPIRITS[k]) && fin(x.start) && fin(x.end) && x.rw && typeof x.rw==='object').slice(0, DISPATCH_SLOTS);
+      d.slots = d.slots.filter(x=> x && typeof x==='object' && Array.isArray(x.keys) && x.keys.length && x.keys.every(k=>SPIRITS[k]) && fin(x.start) && fin(x.end) && x.rw && typeof x.rw==='object').slice(0, 5); // 최대 칸(기본 3 + 계정 레벨 2)
       const need = {}; d.slots.forEach(x=>x.keys.forEach(k=>{ need[k]=(need[k]||0)+1; }));
       d.slots = d.slots.filter(x=> x.keys.every(k=> (s.owned[k]||0) - need[k] >= 0)); // (v267) 1마리뿐인 정령도 보낼 수 있음
     }else s.dispatch = null; }
@@ -11054,7 +11392,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 269;
+const APP_BUILD = 270;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
@@ -11087,7 +11425,7 @@ function showUpdatePopup(force){
   const bar = document.getElementById('updBar'); if(bar) bar.remove();
   if(document.getElementById('updPop')) return;
   openInfoOverlay('🔄 업데이트',
-    '<div style="text-align:center; line-height:1.6;"><div style="font-size:15px; font-weight:900;">새 버전 <b style="color:#ffd557;">'+verTxt(updLatest)+'</b> 준비됨</div>'
+    '<div style="text-align:center; line-height:1.6;"><div class="ttl" style="font-size:15px;">새 버전 <b style="color:#ffd557;">'+verTxt(updLatest)+'</b> 준비됨</div>'
     + '<div class="sub" style="font-size:12px;">지금 '+verTxt(APP_BUILD)+' · 업데이트하면 잠깐 새로 불러옴<br>진행 상황은 그대로 남음</div></div>'
     + '<div id="updPop" style="display:flex; gap:6px; margin-top:12px;"><button class="btn secondary" id="updLater" style="flex:1; margin:0;">나중에</button><button class="btn" id="updNow" style="flex:1.4; margin:0;">지금 업데이트</button></div>');
   const close = ()=>{ const o = document.getElementById('updPop'); const bg = o && o.closest('.modal-bg'); if(bg) bg.remove(); };
