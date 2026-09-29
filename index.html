@@ -311,8 +311,9 @@
 .roster-pick .pw{font-size:10px; font-weight:800; margin-top:1px; color:#dfe4ff;}
 .roster-pick .pw .lv{margin-left:3px; font-size:9px; color:#ffd557;}
 .roster-pick .adv{position:absolute; right:-4px; bottom:-3px; width:15px; height:15px; border-radius:50%; background:#41bf67; color:#fff; font-size:8px; font-weight:900; display:flex; align-items:center; justify-content:center; border:1.5px solid #17153a;}
-.roster-pick .pick-check{position:absolute; top:-7px; right:-6px; z-index:2; width:20px; height:20px; border-radius:50%; background:#fff; color:#4956d8; font-size:12px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 2px 6px #0009;}
-.roster-pick.picked{box-shadow:0 0 0 2px #fff, 0 0 14px #8a9bffaa; transform:translateY(-1px);}
+.roster-pick .pick-check{position:absolute; top:3px; right:3px; z-index:2; min-width:20px; height:20px; padding:0 4px; box-sizing:border-box; border-radius:10px; background:#2fd27a; color:#fff; border:1.5px solid #fff; font-size:11px; font-weight:900; display:none; align-items:center; justify-content:center; box-shadow:0 2px 6px #0009;}
+.roster-pick.picked{border-color:#5dffa0 !important; background:linear-gradient(160deg,#2fbf6a66,#1e1c40 85%) !important; box-shadow:0 0 0 2px #5dffa0, 0 0 16px #5dffa0aa; transform:translateY(-1px);} /* (v268) 고른 정령이 잘 안 보였음 — 초록 테두리·배경 */
+.roster-grid.has-pick .roster-pick:not(.picked){opacity:.55; filter:saturate(.7);} /* 하나라도 고르면 안 고른 칸은 흐리게 */
 .roster-pick.picked .pick-check{display:flex;}
 .roster-pick{color:var(--text);} .roster-pick .ico .av{margin:0;} .roster-pick .av .spimg{width:100%; height:100%;} .roster-pick .nm{margin-top:8px;} .roster-pick .av-el{left:-16%; bottom:-14%; width:38%; height:38%;}
 .roster-pick[style-dead]{opacity:.4; filter:grayscale(.7);}
@@ -875,6 +876,11 @@
   .xp-head{display:flex; justify-content:space-between; align-items:center; font-size:13px;} .xp-gold{font-weight:900; color:#ffd557;}
   .xp-mod{margin:6px 0 2px; padding:5px 8px; border-radius:9px; background:#ff9a3a1c; border:1px solid #ff9a3a55; font-size:11.5px; color:#ffd7b0; cursor:pointer;} .xp-mod small{color:#e8c8a8; opacity:.85;}
   .xp-map{position:relative; height:330px; margin:6px -12px 6px; overflow:visible; z-index:1;} /* (v266) 상자 없이 화면 폭 전체 */
+  .xp-abandon{position:sticky; bottom:0; z-index:6; margin:12px -12px 0; padding:8px 12px calc(8px + var(--sab,0px)); background:linear-gradient(180deg,#120f2c00,#120f2cf2 35%);} #main.xp-full > .xp-abandon{position:sticky !important; z-index:6 !important;} /* (v268) 출정: 런 포기하기만 맨 아래 고정 · 위 '#main.xp-full > *'(relative) 규칙보다 우선 */
+  .xp-abandon .btn{margin:0; opacity:.85;}
+  .modal.xp-act > .card{background:none !important; border:0 !important; box-shadow:none !important; padding:0 !important; margin-top:0 !important;} /* 창 틀 안에 카드 틀이 또 겹치지 않게 */ .modal.xp-act{padding-top:34px;}
+  .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
+  .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
   .xp-stars{position:absolute; inset:0; opacity:.55; background-image:radial-gradient(1px 1px at 12% 18%, #fff8, transparent), radial-gradient(1px 1px at 72% 12%, #fff6, transparent), radial-gradient(1.5px 1.5px at 42% 36%, #fff5, transparent), radial-gradient(1px 1px at 88% 44%, #fff6, transparent), radial-gradient(1px 1px at 24% 62%, #fff5, transparent), radial-gradient(1.5px 1.5px at 60% 74%, #fff4, transparent), radial-gradient(1px 1px at 8% 86%, #fff5, transparent), radial-gradient(1px 1px at 92% 90%, #fff5, transparent);}
   .xp-top{position:relative; z-index:1; margin-top:8px; padding:9px 12px; border-radius:14px; background:#1b1842cc; border:1px solid #ffffff1a; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);}
@@ -5137,7 +5143,19 @@ function showSkillStageScreen(){
     }
     endSkillStageFight(); render(); openStagePrep(i);
   };
-  if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leave);
+  // (v268) 전투 중(결과 전)에 나가려 하면 확인창 — 레이드·온라인 결투는 예전의 '한 번 더 누르기' 대신 이 창으로 확인
+  const leaveAsk = ()=>{
+    if(sf.result) return leave();
+    const net = (sf.mode==='raid' || sf.mode==='duel') && raidIsNet();
+    const msg = sf.mode==='boss' ? '보스전이 여기서 끝남 · 웨이브 진행이 사라짐'
+      : sf.mode==='expedition' ? '지도로 돌아감 · 이 전투는 처음부터 다시'
+      : sf.mode==='worldboss' ? '지금까지 준 피해만 기록 · 오늘 도전 횟수는 이미 씀'
+      : sf.mode==='duel' ? (net ? '기권 — 상대 승리' : '결투가 끝남')
+      : sf.mode==='raid' ? (net ? ((raidPartnerGone() || !raidNet.roomH) ? '레이드를 해산함' : '팀원에게 포기를 제안함 · 둘 다 동의하면 끝남') : '레이드가 끝남')
+      : '지금 전투 진행이 사라짐';
+    confirmBox('전투에서 나갈까?', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; }, {danger:true});
+  };
+  if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
   if(q('skillAutoBtn')) q('skillAutoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillAuto = !state.skillAuto; save(); showSkillStageScreen(); });
   if(q('waveNextBtn')) q('waveNextBtn').addEventListener('click', advanceBossWave);
@@ -6920,6 +6938,7 @@ function render(){
   main.classList.toggle('ex-full', activeTab==='stage'); main.classList.toggle('xp-full', activeTab==='expedition' && !!state.expedition); placeExBg();
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
   updateScrollLock();
+  xpSyncActionModal(); // (v268) 출정 칸 창
   attachHandlers();
   fitRest();
   { const sc = document.getElementById('towerScroll');
@@ -7657,7 +7676,7 @@ const ACHIEVEMENTS = [
   {id:'exp_relic8', name:'유물 수집광', desc:'한 번의 출정에서 유물 8개 모으기', reward:{stone:200}, category:'expedition', secret:true, check:()=> hidHas('relic8')},
   {id:'exp_clutch', name:'벼랑 끝', desc:'우리 편이 1마리만 남은 채로 출정 보스 처치하기', reward:{stone:250}, category:'expedition', secret:true, check:()=> hidHas('expClutch')},
   {id:'exp_greed', name:'욕심쟁이', desc:'한 번의 출정에서 킵 5번 하기', reward:{stone:300, items:{rare:2}}, category:'expedition', secret:true, check:()=> hidHas('keep5') || !!(state.expedition && (state.expedition.keeps||0)>=5)},
-  {id:'exp_greed_fall', name:'욕심의 대가', desc:'킵 5번 한 출정에서 패배해 쌓인 보상을 전부 잃기', reward:{stone:1000, items:{pick_legendary:1}}, category:'expedition', secret:'full', check:()=> hidHas('greedFall')}, // (v268) '끝을 본 자'(35단계)는 욕심쟁이와 겹쳐서 교체
+  {id:'exp_greed_quit', name:'내려놓은 욕심', desc:'킵 5번 한 출정을 스스로 포기해 쌓인 보상을 전부 버리기', reward:{stone:1000, items:{pick_legendary:1}}, category:'expedition', secret:'full', check:()=> hidHas('greedQuit')}, // (v268) '끝을 본 자'(35단계)는 욕심쟁이와 겹쳐서 교체
   {id:'betray_1', name:'배신의 서막', desc:'내 정령으로 내 정령을 쓰러뜨리기', reward:{essence:300}, category:'general', secret:true, check:()=> hidHas('selfKill')},
   {id:'fuse_unlucky', name:'불운의 연금술사', desc:'같은 등급 합성에서 3번 연속 실패하기', reward:{items:{fuseGuard:2}}, category:'general', secret:true, check:()=> hidHas('fuseFail3')},
   {id:'betray_2', name:'배신의 완성', desc:'레이드에서 파티원의 정령을 내 정령으로 쓰러뜨리기', reward:{essence:2000, items:{pick_legendary:1}}, category:'general', secret:'full', check:()=> hidHas('raidFriendKill')},
@@ -8124,10 +8143,10 @@ function startExpedition(roster){
 // (v219) 출정대 고르기 — 예전엔 출정 시작을 누르면 공격력 높은 8마리가 자동으로 정해져 바로 시작됐음
 const EXP_ROSTER_MAX = 8;
 let expRosterPick = null;
-function rosterPickTileHtml(k, picked, extra){
+function rosterPickTileHtml(k, picked, extra, num){
   const sp = SPIRITS[k];
   return '<button class="roster-pick r-'+sp.rarity+(picked?' picked':'')+'" data-exp-pick="'+k+'" style="border-color:'+RARITY_INFO[sp.rarity].color+'88; background:linear-gradient(160deg,'+RARITY_INFO[sp.rarity].color+'2a,#1e1c40 80%);">'
-    + '<span class="pick-check">✓</span><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
+    + '<span class="pick-check">'+(num || '✓')+'</span><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
     + '<div class="nm">'+sp.name+'</div>'+(extra || '<div class="pw"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(k))+(enhanceLevel(k)?'<span class="lv">+'+enhanceLevel(k)+'</span>':'')+'</div>')+'</button>';
 }
 function showExpeditionRosterPicker(){
@@ -8140,7 +8159,7 @@ function showExpeditionRosterPicker(){
   let html = '<h3 style="text-align:center; margin-bottom:2px;">🗡️ 출정대 고르기</h3>'
     + '<div class="sub" style="text-align:center; font-size:12px; line-height:1.5;">함께 떠날 정령 선택 · 전투마다 6마리 출전, 나머지는 대기하며 회복<br>출정 중엔 이 정령들만 전투</div>'
     + '<div class="exp-cnt"><b>'+expRosterPick.length+'</b> / '+max+'</div>';
-  html += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>rosterPickTileHtml(k, expRosterPick.includes(k))).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
+  html += '<div class="roster-scroll"><div class="roster-grid'+(expRosterPick.length?' has-pick':'')+'">'+owned.map(k=>rosterPickTileHtml(k, expRosterPick.includes(k), null, expRosterPick.indexOf(k)+1)).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
   html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expPickClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expPickRec" style="flex:1; margin:0;">✨ 추천 '+max+'마리</button></div>'
     + '<button class="btn sticky-ok" id="expPickGo" style="margin-top:8px;" '+(expRosterPick.length>=need?'':'disabled')+'>🗡️ 이 정령들로 출정 (<img class="uic" src="assets/ui/ic_tk_exp.webp" alt=""> 1장 사용)</button>'
     + (expRosterPick.length<need ? '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">최소 '+need+'마리 선택</div>' : '')
@@ -8307,7 +8326,6 @@ function checkExpeditionOutcome(sf){
   if(!aliveUnits(sf.myUnits).length){
     sf.result = { win:false, rounds: sf.round };
     persistExpeditionWaveState(sf);
-    if(state.expedition && (state.expedition.keeps||0)>=5) hidMark('greedFall'); // (v268) 히든 업적
     resolveExpeditionBattle(state.expedition, false, false); // 패배 → 런 종료(진행 보상만 지급, 쌓인 완주 보상은 잃음)
     return true;
   }
@@ -8478,11 +8496,12 @@ function resolveExpeditionEvent(choice){
 function doAbandonExpedition(){
   const run = state.expedition;
   if(!run) return;
-  const hasPot = run.pot && (run.pot.essence>0 || run.pot.stone>0 || run.pot.equip>0);
-  if(hasPot && !expeditionAbandonArmed){ expeditionAbandonArmed = true; render(); return; } // 쌓인 보상이 있으면 한 번 더 눌러야 포기
-  expeditionAbandonArmed = false;
-  endExpeditionRun(run.currentIndex);
-  render();
+  const pot = run.pot || {}, m = expeditionKeepMult(run), hasPot = pot.essence>0 || pot.stone>0 || pot.equip>0;
+  // (v268) 실수로 누르지 않게 확인창 — 예전엔 쌓인 보상이 있을 때만 두 번 누르게 했음
+  confirmBox('🏳️ 런 포기', '이번 출정이 끝나고 출정권은 돌려받지 못함'+(hasPot ? '<br><b style="color:#ff8a8a;">쌓인 완주 보상 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+Math.round((pot.stone||0)*m)+' · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> '+Math.round((pot.equip||0)*m)+' 잃음</b>' : ''), '포기하기', ()=>{
+    expeditionAbandonArmed = false; xpActDismissed = null;
+    if(state.expedition===run){ if((run.keeps||0)>=5) hidMark('greedQuit'); endExpeditionRun(run.currentIndex); render(); } // (v268) 히든 '내려놓은 욕심'
+  }, {danger:true});
 }
 function endExpeditionRun(reachedCount){
   const run = state.expedition;
@@ -9300,9 +9319,36 @@ function expMapHtml(run){
     const done = path[s]===i && s < run.currentIndex, here = path[s]===i && s===run.currentIndex, can = s===run.currentIndex && reach.has(i);
     const info = EXP_ROOM_INFO[n.type] || EXP_ROOM_INFO.battle;
     const ic = n.type==='boss' && n.gimmick ? bossImg(n.gimmick, 'xp-bimg', BOSS_GIMMICK_INFO[n.gimmick].icon) : info.ic;
-    nodes += '<button class="xp-node t-'+n.type.replace('?','q')+(done?' done':'')+(here?' here':'')+(can?' can':'')+(s>run.currentIndex?' later':'')+'" style="left:'+X(i,row.length)+'%; top:'+Y(s)+'%;"'+(can?' data-xp-go="'+i+'"':' disabled')+'><span>'+ic+'</span><small>'+(n.type==='boss' && n.gimmick ? BOSS_GIMMICK_INFO[n.gimmick].name : info.nm)+'</small></button>';
+    nodes += '<button class="xp-node t-'+n.type.replace('?','q')+(done?' done':'')+(here?' here':'')+(can?' can':'')+(s>run.currentIndex?' later':'')+'" style="left:'+X(i,row.length)+'%; top:'+Y(s)+'%;"'+(can?' data-xp-go="'+i+'"':(here?' data-xp-here="1"':' disabled'))+'><span>'+ic+'</span><small>'+(n.type==='boss' && n.gimmick ? BOSS_GIMMICK_INFO[n.gimmick].name : info.nm)+'</small></button>';
   }));
   return '<div class="xp-map" style="height:'+H+'px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+lines+'</svg>'+nodes+'</div>';
+}
+// (v268) 확인창 — 실수로 누르면 되돌리기 어려운 동작(런 포기·전투 나가기) 전에 한 번 더 묻기
+function confirmBox(title, msg, okLabel, onOk, opt){
+  opt = opt || {};
+  let root = document.getElementById('confirmRoot'); if(!root){ root = document.createElement('div'); root.id = 'confirmRoot'; document.body.appendChild(root); }
+  root.innerHTML = '<div class="modal-bg cf-bg" id="cfBg"><div class="modal cf-box"><div class="cf-t">'+title+'</div><div class="cf-m">'+msg+'</div>'
+    + '<div class="cf-btns"><button class="btn secondary" id="cfNo">취소</button><button class="btn'+(opt.danger?' cf-danger':'')+'" id="cfYes">'+okLabel+'</button></div></div></div>';
+  const close = ()=>{ root.innerHTML = ''; };
+  document.getElementById('cfNo').addEventListener('click', close);
+  document.getElementById('cfBg').addEventListener('click', e=>{ if(e.target.id==='cfBg') close(); });
+  document.getElementById('cfYes').addEventListener('click', ()=>{ close(); onOk(); });
+}
+let xpActionHtml = '', xpActDismissed = null;
+function xpActKey(){ const r = state.expedition; if(!r) return ''; const n = r.currentRoom; return (r.cycle||1)+':'+r.currentIndex+':'+(r.pendingKeep?'keep':r.pendingBuffChoice?'buff':(n?(n.resolvedType||n.type):'map')); }
+// (v268) 출정 칸 창 — 화면을 그릴 때마다 지금 칸 내용으로 맞춤 (다른 창이 떠 있으면 건드리지 않음 · 닫으면 그 칸에선 다시 안 띄움)
+function xpSyncActionModal(){
+  const root = document.getElementById('modalRoot'); if(!root) return;
+  const cur = document.getElementById('xpActBg');
+  const want = activeTab==='expedition' && state.expedition && xpActionHtml && xpActDismissed!==xpActKey() && !document.getElementById('battleScreen');
+  if(!want){ if(cur) root.innerHTML = ''; return; }
+  if(root.children.length && !cur) return;
+  const sc = cur ? cur.querySelector('.modal').scrollTop : 0;
+  root.innerHTML = '<div class="modal-bg" id="xpActBg"><div class="modal xp-act" style="position:relative;"><button class="close-x" id="xpActClose" aria-label="닫고 지도 보기">✕</button>'+xpActionHtml+'</div></div>';
+  root.querySelector('.modal').scrollTop = sc;
+  const close = ()=>{ xpActDismissed = xpActKey(); root.innerHTML = ''; render(); };
+  document.getElementById('xpActClose').addEventListener('click', close);
+  document.getElementById('xpActBg').addEventListener('click', e=>{ if(e.target.id==='xpActBg') close(); });
 }
 function renderExpeditionTab(){
   if(!isUnlocked('expedition')) return lockedFeatureScreenHtml('expedition');
@@ -9341,6 +9387,7 @@ function renderExpeditionTab(){
     return html;
   }
   ensureExpeditionChoices(run); // (v266) 지도 먼저
+  xpActionHtml = '';
   const keepMult = expeditionKeepMult(run), pot = run.pot || {essence:0, stone:0, equip:0}, mod = expRunMod(run);
   // (v266) 출정 중엔 탐험처럼 화면 전체가 지도 — 상자 없이 배경을 깔고, 위로 스크롤하면 보스까지 보임
   html += '<div class="ex-bgfull xp-bgfull"><div class="xp-stars"></div></div>';
@@ -9356,6 +9403,9 @@ function renderExpeditionTab(){
   html += '<div class="card" style="margin-top:10px; border:1px solid #ffd55744;">'
     + '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><span>📦 쌓인 완주 보상</span><b>'+((pot.stone>0||pot.equip>0) ? '<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+Math.round(pot.stone*keepMult)+' · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> '+Math.round((pot.equip||0)*keepMult) : '없음')+'</b></div>'
     + '<div class="sub" style="margin-top:4px;">킵 '+(run.keeps||0)+'회 · 수령 배율 ×'+keepMult.toFixed(2)+' · 지면 전부 잃음</div></div>';
+  // (v268) 지금 칸에서 할 일(전투·사건·상점·버프·킵)은 창으로 띄움 — 화면엔 지도·유물·쌓인 보상, 맨 아래엔 런 포기하기만 고정
+  const dockAt = html.length, dock = ()=>{ xpActionHtml = html.slice(dockAt); html = html.slice(0, dockAt); };
+  const abandonBar = ()=>{ html += '<div class="xp-abandon"><button class="btn secondary" id="abandonExpeditionBtn">🏳️ 런 포기하기</button></div>'; };
 
   if(run.pendingKeep){
     const base = expeditionCycleReward();
@@ -9367,7 +9417,8 @@ function renderExpeditionTab(){
     html += '<button class="btn secondary" id="keepBtn" style="margin-top:8px;">📌 킵하고 계속</button>';
     html += '<div class="sub" style="margin-top:8px; line-height:1.5;">킵 → 보상 보류, 다음 사이클로 (적 강화 · 버프 1개 선택)<br>다음 완주 시 배율 ×'+keepMult.toFixed(2)+' → ×'+nextMult.toFixed(2)+', 수령액 약 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">'+Math.round(nS*nextMult)+' <img class="uic" src="assets/ui/ic_shield.webp" alt="">'+Math.round(nEq*nextMult)+'<br><span style="color:#ff8a8a;">도중에 지면 쌓인 보상 전부 잃음</span></div>';
     html += '</div>';
-    return html;
+    dock(); if(xpActDismissed===xpActKey()) html += '<button class="btn" id="xpActReopen" style="margin-top:10px;">📋 지금 칸 다시 보기</button>';
+    abandonBar(); return html;
   }
   if(run.pendingBuffChoice){
     html += '<div class="card" style="margin-top:10px; border:1px solid #ffd55755;">';
@@ -9379,14 +9430,14 @@ function renderExpeditionTab(){
       html += '<button class="btn secondary xp-pick" data-expedition-buff="'+bid+'"><span class="xp-pic">'+b.icon+'</span><span><b>'+b.label+'</b><small>이번 출정 동안</small></span></button>';
     });
     html += '</div>';
-    return html;
+    dock(); if(xpActDismissed===xpActKey()) html += '<button class="btn" id="xpActReopen" style="margin-top:10px;">📋 지금 칸 다시 보기</button>';
+    abandonBar(); return html;
   }
 
   const node = currentExpeditionNode();
   if(!node && run.map){ // (v266) 지도에서 다음 칸 고르기
     html += '<div class="sub" style="text-align:center; margin-top:10px;">빛나는 칸을 눌러 이동 — 들어가면 되돌릴 수 없음</div>';
-    html += '<button class="btn secondary" id="abandonExpeditionBtn" style="margin-top:10px; opacity:0.7;">런 포기하기</button>';
-    return html;
+    abandonBar(); return html;
   }
   if(!node){ // 상태가 읽히지 않으면 화면이 죽지 않게 포기 버튼만
     html += '<div class="card" style="margin-top:10px;"><div class="sub">진행 상태를 읽을 수 없음. 런을 포기하고 새로 시작.</div></div>';
@@ -9437,9 +9488,9 @@ function renderExpeditionTab(){
     html += '</div>';
     html += '<button class="btn" id="expeditionBattleBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 배치</button>';
   }
-  const hasPot = pot.essence>0 || pot.stone>0 || pot.equip>0;
-  html += '<button class="btn secondary" id="abandonExpeditionBtn" style="margin-top:10px; opacity:0.7;">'
-    + (hasPot ? (expeditionAbandonArmed ? '정말 포기? 쌓인 보상 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">'+Math.round(pot.stone*keepMult)+' <img class="uic" src="assets/ui/ic_shield.webp" alt="">'+Math.round((pot.equip||0)*keepMult)+'을 잃음 (한 번 더 누르기)' : '런 포기하기 (쌓인 보상 잃음)') : '런 포기하기')+'</button>';
+  dock();
+  if(xpActDismissed===xpActKey()) html += '<button class="btn" id="xpActReopen" style="margin-top:10px;">📋 지금 칸 다시 보기</button>'; // 창을 닫아 지도를 보고 있을 때
+  abandonBar();
   return html;
 }
 function showTowerPrepModal(){
@@ -10570,6 +10621,8 @@ function attachHandlers(){
   const cob = document.getElementById('cashOutBtn'); if(cob) cob.addEventListener('click', ()=>{ cashOutExpedition(); sfx('claim'); render(); });
   const kpb = document.getElementById('keepBtn'); if(kpb) kpb.addEventListener('click', ()=>{ keepExpedition(); sfx('enhance'); render(); });
   const aeb = document.getElementById('abandonExpeditionBtn'); if(aeb) aeb.addEventListener('click', doAbandonExpedition);
+  { const x = document.getElementById('xpActReopen'); if(x) x.addEventListener('click', ()=>{ xpActDismissed = null; render(); }); } // (v268)
+  document.querySelectorAll('[data-xp-here]').forEach(b=>b.addEventListener('click', ()=>{ if(xpActDismissed){ xpActDismissed = null; render(); } })); // 지금 칸을 누르면 칸 창 다시 열기
   const ebb = document.getElementById('expeditionBattleBtn'); if(ebb) ebb.addEventListener('click', challengeExpeditionNode);
   document.querySelectorAll('[data-expedition-buff]').forEach(btn=>{
     btn.addEventListener('click', ()=>chooseExpeditionBuff(btn.dataset.expeditionBuff));
@@ -11051,8 +11104,7 @@ function appBack(){
   }
   if(document.getElementById('battleScreen')){
     const done = document.getElementById('skillResultCloseBtn'); if(done){ done.click(); return true; }
-    if(Date.now() - backArmAt < 2000){ backArmAt = 0; const ex = document.getElementById('skillExitBtn'); if(ex) ex.click(); }
-    else { backArmAt = Date.now(); toast('한 번 더 누르면 전투에서 나감'); }
+    const ex = document.getElementById('skillExitBtn'); if(ex) ex.click(); // (v268) 나가기 버튼과 같은 확인창
     return true;
   }
   if(activeTab==='raid' && typeof raidView!=='undefined' && raidView==='detail'){ const rb = document.getElementById('raidBack'); if(rb){ rb.click(); return true; } }
