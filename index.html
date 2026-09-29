@@ -3156,7 +3156,7 @@ function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MO
 const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 // (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
-const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음
+const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
   fire_common_b:'L', fire_epic_b:'L', wood_epic_a:'L', wood_mythic_a:'L',
   dark_rare_b:'L', fire_common_a:'L', fire_epic_a:'L', fire_legendary_a:'L', fire_mythic_a:'L', fire_rare_a:'L', fire_rare_b:'L', light_common_b:'L', water_common_b:'L', water_epic_b:'L', water_legendary_b:'L', water_mythic_b:'L', wood_rare_a:'L' };
 function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; return u.side==='enemy' ? f==='R' : f==='L'; }
@@ -7915,6 +7915,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:274, v:'2.74', date:'2026-09-29', secs:[
+    { t:'고친 것', items:[ '레이드 태고수가 아군 쪽(왼쪽)을 보게 방향 수정' ]}
+  ]},
   { build:273, v:'2.73', date:'2026-09-29', secs:[
     { t:'바뀐 것', items:[
       '레이드 전장 배치 — 아군 칸과 보스를 조금 줄이고, 얼음 기둥·씨앗은 보스 앞줄 위·아래에 따로 둠 (보스·상태 표시와 겹치던 문제)',
@@ -11567,7 +11570,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 273;
+const APP_BUILD = 274;
 function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
