@@ -8831,12 +8831,12 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     enemies:[{key:'fire_mythic_a', idx:1, atk:780, hp:2.16},{key:'light_mythic_a', idx:4, atk:720, hp:2.16},{key:'wood_epic_b', idx:0, atk:720, hp:2.16}] },
   { id:'t3', nm:'가시 너머', diff:4, maxRounds:4, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.41%)
     intro:'숲 정령이 가시 갑옷으로 받은 피해를 되돌려 주고, 도발로 공격을 끌어당김.',
-    hint:'가시 갑옷이 걸린 동안엔 강한 공격을 아끼기. 도발이 풀리는 라운드에 뒤쪽 적부터',
+    hint:'가시 갑옷이 걸린 동안엔 강한 공격을 아끼기. 도발이 풀리면 뒤쪽 적부터. 펜리르는 한 번 쓰러져도 되살아나니 그 목숨도 계산에 넣기',
     allies:[{key:'fire_legendary_a', idx:1},{key:'water_epic_a', idx:4}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:6.328},{key:'light_epic_b', idx:4, atk:700, hp:6.328},{key:'dark_rare_a', idx:3, atk:700, hp:6.328}] },
   { id:'t5', nm:'얼어붙은 시간', diff:4, maxRounds:3, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.18%)
     intro:'강한 어둠 신화가 둘. 한 번이라도 마음대로 움직이게 두면 버티기 어려움.',
-    hint:'신화 빙결은 대상 양옆까지 얼림. 가장 위험한 적의 차례를 얼려서 빼앗기',
+    hint:'신화 빙결은 대상 양옆까지 얼림. 가장 위험한 적의 차례를 얼려서 빼앗기. 스콜은 쓰러지면 되살아나며 적 전체에 폭발 — 한 번 쓰러지는 것도 작전',
     allies:[{key:'water_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_epic_a', idx:0}],
     enemies:[{key:'dark_mythic_a', idx:0, atk:750, hp:6.578},{key:'dark_mythic_a', idx:2, atk:750, hp:6.578},{key:'water_legendary_a', idx:4, atk:600, hp:6.578}] },
   { id:'t6', nm:'독의 정원', diff:4, maxRounds:3, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.15%)
@@ -8851,7 +8851,7 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     enemies:[{key:'wood_epic_a', idx:0, atk:700, hp:3.963},{key:'wood_legendary_b', idx:1, atk:700, hp:3.963},{key:'wood_epic_b', idx:2, atk:700, hp:3.963}] },
   { id:'t8', nm:'빛의 장벽', diff:5, maxRounds:4, noDeath:true, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
     intro:'적 화염 신화는 쓰러지면 되살아나며 우리 편 전체를 폭발로 공격.',
-    hint:'되살아나는 순간에 맞춰 우리 편 전체에 보호막을 미리 씌워 두기',
+    hint:'되살아나는 순간에 맞춰 우리 편 전체에 보호막을 미리 씌워 두기. 광명은 먼저 쓰러진 우리 편 하나를 되살림 — 한 번은 쓰러져도 됨',
     allies:[{key:'light_mythic_a', idx:4},{key:'fire_legendary_b', idx:1},{key:'dark_epic_b', idx:0}],
     enemies:[{key:'fire_mythic_a', idx:1, atk:700, hp:2.82},{key:'fire_mythic_b', idx:4, atk:700, hp:2.82},{key:'wood_rare_a', idx:0, atk:650, hp:2.82}] },
   { id:'t9', nm:'저주받은 성채', diff:5, maxRounds:4, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
@@ -8906,7 +8906,7 @@ function trialMarkTried(sf){ if(!sf.trialId || (state.trialTried && state.trialT
 function trialRulesTxt(t){ return [t.maxRounds ? t.maxRounds+'라운드 안에 적 전부 처치' : '', t.noDeath ? '우리 편 전원 생존' : ''].filter(Boolean).join(' · '); }
 function trialGoalHtml(t){ // (v266) 들어가면 보이는 목표 — 한 줄씩
   const rows = ['<div><span>🎯</span><b>'+(t.maxRounds ? t.maxRounds+'라운드 안에 적을 모두 쓰러뜨리기' : '적을 모두 쓰러뜨리기')+'</b></div>'];
-  if(t.noDeath) rows.push('<div><span>🛡️</span><b>우리 편이 한 명이라도 쓰러지면 실패</b></div>');
+  if(t.noDeath) rows.push('<div><span>🛡️</span><b>우리 편이 쓰러진 채로 남으면 실패</b></div>'); // (v268) 부활로 다시 일어나면 괜찮음 — 가시 너머·얼어붙은 시간·빛의 장벽 해법이 부활을 씀
   rows.push('<div><span>🎲</span>치명타·확률 효과 없음 — 같은 순서로 하면 결과도 항상 같음</div>');
   return '<div class="tr-goal">'+rows.join('')+'</div>'; }
 function trialResultOverlayHtml(sf){
