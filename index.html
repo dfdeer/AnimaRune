@@ -2816,17 +2816,27 @@ function friendPushProf(){
 async function showFriendProfile(k){
   const rep = friendNet.reps[k], sp = rep ? SPIRITS[rep] : null;
   const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
+  let fcode = ''; // (v283) 친구 코드 — players/<uid>/code (로그인한 사람은 읽을 수 있음)
+  const codeRow = ()=> '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+(fcode||'불러오는 중…')+'</div>'+(fcode?'<button class="btn secondary small" onclick="friendCopyCode(\''+fcode+'\')">복사</button>':'')+'</div>';
   const body = p=>'<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
     + '<div class="pf-id"><div class="pf-name">'+escTxt(raidNameOf(k))+'</div><div class="sub">'+(p?'계정 Lv.'+p.lv:'계정 Lv.—')+(sp?' · 대표 '+sp.name:'')+'</div><div class="sub" style="font-size:11px;">'+friendSeenTxt(k)+'</div></div></div>'
     + '<div class="pf-stats">'+stat('보유 정령', p?p.own:'—')+stat('도감', p?p.dex+'/'+Object.keys(SPIRITS).length:'—')+stat('클리어', p?p.clear:'—')+stat('탑 최고', p?p.tower+'층':'—')+'</div>'
-    + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">친구가 최신 버전으로 접속하면 기록이 보임</div>');
+    + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">친구가 최신 버전으로 접속하면 기록이 보임</div>')
+    + codeRow();
   openInfoOverlay('프로필', body(null));
+  let pv = null;
+  try{
+    const cs = await raidNet.db.doc('players/'+k+'/code').get(), cv = (cs && cs.exists) ? cs.data() : null;
+    fcode = (typeof cv==='string' && /^[A-Z0-9]{8}$/.test(cv)) ? cv : '—';
+  }catch(e){ fcode = '—'; }
+  { const el = document.getElementById('infoOverlayBody'); if(el) el.innerHTML = body(pv); }
   try{
     const s = await raidNet.db.doc('players/'+k+'/prof').get(), v = (s && s.exists) ? s.data() : null;
     const ok = v && typeof v==='object' && ['lv','own','dex','clear','tower'].every(x=>Number.isFinite(v[x]));
-    const el = document.getElementById('infoOverlayBody'); if(el && ok) el.innerHTML = body({lv:Math.floor(v.lv), own:Math.floor(v.own), dex:Math.floor(v.dex), clear:Math.floor(v.clear), tower:Math.floor(v.tower)});
+    const el = document.getElementById('infoOverlayBody'); if(el && ok){ pv = {lv:Math.floor(v.lv), own:Math.floor(v.own), dex:Math.floor(v.dex), clear:Math.floor(v.clear), tower:Math.floor(v.tower)}; el.innerHTML = body(pv); }
   }catch(e){}
 }
+function friendCopyCode(c){ if(!/^[A-Z0-9]{8}$/.test(c)) return; try{ navigator.clipboard.writeText(c).then(()=>toast('친구 코드 복사됨'), ()=>toast('복사 실패 — 코드를 직접 적기')); }catch(e){ toast('복사 실패 — 코드를 직접 적기'); } }
 // (v264) 서버 시각 = 내 시계 + 서버와의 차이(.info/serverTimeOffset)
 function serverNow(){ return Date.now() + (raidNet.tOff||0); }
 function watchServerOffset(){ const fb = raidNet.fb; if(!fb || raidNet.tOffOn) return; raidNet.tOffOn = true; try{ fb.onValue(fb.ref(fb.rtdb, '.info/serverTimeOffset'), s=>{ const v = s.val(); raidNet.tOff = Number.isFinite(v) ? v : 0; }); }catch(e){} }
@@ -7933,6 +7943,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:283, v:'2.85', date:'2026-09-30', secs:[
+    { t:'친구', items:[
+      '친구 프로필에 친구 코드 표시 (복사 버튼)'
+    ]}
+  ]},
   { build:282, v:'2.84', date:'2026-09-30', secs:[
     { t:'월드 보스', items:[
       '현황 탭의 이번 주/다음 주 칸을 다음 주 보스 하나로 줄이고, 아이콘을 보스 그림으로 바꿈'
@@ -11746,7 +11761,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 282, APP_VERSION = '2.84'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 283, APP_VERSION = '2.85'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
