@@ -2117,20 +2117,30 @@ const RAID_BOSSES = [ // (v272) 기믹 개편 — 매 라운드 보스가 뭔가
 ];
 // (v168) 레이드 난이도 — 보스 공격력·체력 배율과 보상이 다름. 방장이 방에서 고르고, 팀원은 같은 난이도로 싸움
 const RAID_DIFFS = [
-  { id:'easy',    name:'이지',     color:'#5cd65c', atk:0.5,  hp:0.35, stone:60,  runes:1, weekly:{summon:1} },
-  { id:'normal',  name:'노말',     color:'#5798ff', atk:1,    hp:1,   stone:150, runes:1, weekly:{rare:1} },
-  { id:'hard',    name:'하드',     color:'#ffae57', atk:1.7,  hp:1.8, stone:260, runes:2, weekly:{rare:2}, gear:{ legendary:.05, epic:.25 } },
-  { id:'extreme', name:'익스트림', color:'#ff5a5a', atk:4,    hp:5,   stone:420, runes:3, weekly:{epic:1}, gear:{ legendary:.15, epic:.40 } }
+  { id:'easy',    name:'이지',     color:'#5cd65c', atk:2,    hp:1.4, stone:60,  runes:1, weekly:{summon:1} },
+  { id:'normal',  name:'노말',     color:'#5798ff', atk:3.5,  hp:3,   stone:150, runes:1, weekly:{rare:1} },
+  { id:'hard',    name:'하드',     color:'#ffae57', atk:5,    hp:5,   stone:260, runes:2, weekly:{rare:2}, gear:{ legendary:.05, epic:.25 } },
+  { id:'extreme', name:'익스트림', color:'#ff5a5a', atk:8,    hp:10,  stone:420, runes:3, weekly:{epic:1}, gear:{ legendary:.15, epic:.40 } }
 ];
+// (v284) 보스마다 기믹이 달라 같은 배율이어도 체감 난이도가 달라서, 보스·난이도별로 공격력·체력을 함께 곱하는 보정값
+// 목표 추천 전투력(기믹 미반영 자동 전투 기준): 이지 약 5,000 · 노말 약 8,400 · 하드 약 12,500 · 익스트림 약 16,500(신화 +15 각성5 8마리)
+const RAID_BOSS_TUNE = {
+  frostTyrant:  { easy:1.4,  normal:1.45, hard:1.45, extreme:1.15 },
+  infernoDrake: { easy:1.15, normal:1.3,  hard:1.15, extreme:1 },
+  abyssEye:     { easy:1.6,  normal:1.5,  hard:1.45, extreme:1.2 },
+  eldertree:    { easy:1.6,  normal:1.6,  hard:1.7,  extreme:1.3 },
+  dawnJudge:    { easy:1.4,  normal:1.5,  hard:1.45, extreme:1.28 }
+};
+function raidBossTune(bossId, diffId){ const t = RAID_BOSS_TUNE[bossId]; return (t && t[diffId]) || 1; }
 function raidDiffById(id){ return RAID_DIFFS.find(d=>d.id===id) || RAID_DIFFS[1]; }
 // (v266) 레이드 추천 전투력 (둘 합산 8마리) — 등급·강화 단계별 표준 팀으로 자동 전투를 돌려, 4판 중 3판 이상 이긴 가장 약한 팀의 전투력
 // 레이드는 보스 한 마리 + 기믹이라 '상대 전투력'과 승패가 잘 안 맞아서 비율 대신 직접 잰 값을 씀 (보스·밸런스를 바꾸면 다시 재야 함)
-const RAID_REC_CP = { // (v269) 보스 전용 스킬로 바꾼 뒤 다시 잰 값 · (v272) 기믹 개편 뒤 바뀐 칸만 같은 사다리로 전/후를 재서 비율로 옮김(tools/raid_winrate_sim.js)
-  frostTyrant:  { easy:1150, normal:2000, hard:3100, extreme:5800 },
-  infernoDrake: { easy:1150, normal:3100, hard:3800, extreme:8100 },
-  abyssEye:     { easy:700,  normal:1550, hard:3700, extreme:5800 },
-  eldertree:    { easy:700,  normal:2600, hard:3700, extreme:5800 },
-  dawnJudge:    { easy:1150, normal:3100, hard:5100, extreme:10500 }
+const RAID_REC_CP = { // (v284) 난이도 전면 상향 뒤 다시 잰 값 — 전설+12각2(4,981) · 신화+5(8,431) · 신화+12각2(12,518) · 신화+15각5(16,522) 사다리에서 이긴 가장 약한 팀
+  frostTyrant:  { easy:4981, normal:8431, hard:12518, extreme:16522 },
+  infernoDrake: { easy:4981, normal:8431, hard:12518, extreme:16522 },
+  abyssEye:     { easy:4981, normal:8431, hard:12518, extreme:16522 },
+  eldertree:    { easy:4981, normal:8431, hard:12518, extreme:16522 },
+  dawnJudge:    { easy:4981, normal:8431, hard:12518, extreme:16522 }
 };
 function raidRecCP(bossId, diffId){ const t = RAID_REC_CP[bossId]; return (t && t[diffId]) ? recCP(t[diffId]) : 0; }
 function raidBossById(id){ return RAID_BOSSES.find(b=>b.id===id) || null; }
@@ -2226,7 +2236,7 @@ function buildRaidFight(hostPicks, guestPicks, bossId, diffId){
   add(hostPicks, P1_SLOTS, 'host'); add(guestPicks, P2_SLOTS, 'guest');
   const info = raidBossById(bossId) || raidWeekBoss();
   const diff = raidDiffById(diffId);
-  const per = bossWaveNormalPower(RAID_BOSS_STAGE) * BOSS_POWER_MULT * diff.atk;
+  const per = bossWaveNormalPower(RAID_BOSS_STAGE) * BOSS_POWER_MULT * diff.atk * raidBossTune(info.id, diff.id); // (v284) 체력도 공격력에 비례해서 같이 커짐
   const boss = makeBattleUnit('enemy', 1, info.element+'_legendary_a', per*ELEMENT_ATK_MULT[info.element], raidBossHpMult()*diff.hp/diff.atk);
   boss.isBoss = true; boss.dispName = info.name; boss.bossIcon = info.icon; ensureGroggy(boss);
   if(LINE_KITS['rboss_'+info.id]){ boss.line = 'rboss_'+info.id; boss.pg = 0; } // (v269) 보스 전용 스킬 · 정령 특성 없음
@@ -7585,6 +7595,7 @@ function showSettingsModal(){
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
   html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
+  if(DONATE_URL) html += '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:12px;">💝 개발 응원하기</button>';
   html += '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
@@ -7605,6 +7616,20 @@ function showSettingsModal(){
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
   document.getElementById('openImportFromSettings').addEventListener('click', showImportModal);
   document.getElementById('openResetFromSettings').addEventListener('click', showResetConfirmModal);
+  { const d = document.getElementById('openDonateFromSettings'); if(d) d.addEventListener('click', showDonateInfo); }
+}
+// (v284) 개발 응원(후원) — 보상 없는 응원만 받음. 링크는 토스 아이디(toss.me) 웹 링크 — 계좌번호가 드러나는 링크는 넣지 않기
+// 이 창만 존댓말 (보는 사람에게 부탁하는 글이라)
+const DONATE_URL = '';
+function showDonateInfo(){
+  if(!DONATE_URL) return;
+  const p = t=>'<p style="margin:0 0 10px; font-size:13px; line-height:1.55; text-align:left;">'+t+'</p>';
+  openInfoOverlay('💝 개발 응원하기',
+    p('아니마룬에는 유료 뽑기, 과금 패키지, 광고가 없습니다.')
+    + p('하는 분들이 많아지면서 개발 비용이 10만 원 정도 더 들었습니다.<br>그래서 과금이나 광고 대신, 원하시는 분들께만 작은 응원을 받고 있습니다.')
+    + p('응원하지 않으셔도 불이익은 전혀 없고, 응원해 주셔도 게임 내 보상은 따로 없습니다.')
+    + p('보내 주신 응원은 앞으로의 업데이트에 큰 힘이 됩니다. 감사합니다.')
+    + '<a class="btn" href="'+DONATE_URL+'" target="_blank" rel="noopener" style="display:block; text-align:center; text-decoration:none; margin-top:4px;">토스로 1,000원 응원하기</a>');
 }
 // ===================== 세이브 내보내기/불러오기 =====================
 // 이 게임은 브라우저 localStorage에만 저장돼서 기기(폰↔PC) 간 자동 연동이 안 되고,
@@ -7943,6 +7968,14 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:284, v:'2.90', date:'2026-09-30', secs:[
+    { t:'레이드 난이도 전면 상향', items:[
+      '모든 난이도의 보스 공격력·체력 배율 상향 — 이지 ×0.5/×0.35 → ×2/×1.4 · 노말 ×1/×1 → ×3.5/×3 · 하드 ×1.7/×1.8 → ×5/×5 · 익스트림 ×4/×5 → ×8/×10',
+      '보스마다 기믹 체감이 달라서 보스·난이도별 보정을 추가로 곱함(×1~×1.7) — 다섯 보스가 난이도마다 비슷하게 어렵도록 맞춤',
+      '추천 전투력(기믹을 쓰지 않는 자동 전투 기준, 둘 합산 8마리) — 이지 5,000 · 노말 8,500 · 하드 12,600 · 익스트림 16,600 (신화 +15 각성 5 여덟 마리 수준)',
+      '기믹을 잘 활용하면 추천 전투력보다 낮아도 깰 수 있음'
+    ]}
+  ]},
   { build:283, v:'2.85', date:'2026-09-30', secs:[
     { t:'친구', items:[
       '친구 프로필에 친구 코드 표시 (복사 버튼)'
@@ -11761,7 +11794,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 283, APP_VERSION = '2.85'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 284, APP_VERSION = '2.90'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
