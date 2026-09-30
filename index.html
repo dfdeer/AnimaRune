@@ -1187,6 +1187,7 @@
   button.btn:disabled .uic{opacity:.7;}
   .lack{color:#ff8a8a !important; font-weight:900;}
   .hm-n{margin-left:auto; min-width:18px; padding:0 5px; border-radius:9px; background:#ff5757; color:#fff; font-size:11px; line-height:18px; text-align:center;}
+  .upd-dot{display:inline-block; width:8px; height:8px; margin-left:5px; border-radius:50%; background:#ff5757; vertical-align:middle;}
   #headerMenuBtn.has-dot::after{content:''; position:absolute; top:1px; right:1px; width:8px; height:8px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);}
   /* (v246) 보상 창 공통 줄 */
   .rwl{display:flex; flex-direction:column; gap:12px;} .rw-sec{display:flex; flex-direction:column; gap:5px;}
@@ -5748,7 +5749,8 @@ function mailBadgeUpdate(){
   const n = mailUnclaimed().length, el = document.getElementById('hmMailN');
   if(el){ el.style.display = n ? 'inline-block' : 'none'; el.textContent = n; }
   const pnNew = (state.pnSeen||0) < PATCH_NOTES[0].build; { const e = document.getElementById('hmNoteNew'); if(e) e.style.display = pnNew ? 'inline-block' : 'none'; } // (v269) 안 본 패치노트
-  const btn = document.getElementById('headerMenuBtn'); if(btn) btn.classList.toggle('has-dot', n>0 || pnNew);
+  const updNew = (typeof updLatest!=='undefined') && updLatest > APP_BUILD; // (v2.10.2) 새 버전이 있으면 메뉴에도 빨간 점
+  const btn = document.getElementById('headerMenuBtn'); if(btn) btn.classList.toggle('has-dot', n>0 || pnNew || updNew);
   document.querySelectorAll('.hm-admin').forEach(b=>{ b.style.display = (isAdmin() && (adminModeOn() || b.classList.contains('hm-mode'))) ? 'flex' : 'none'; }); // (v247) 일반 모드에선 모드 전환만 보임
   { const t = document.getElementById('hmModeTx'); if(t) t.textContent = adminModeOn() ? '일반 모드로' : '관리자 모드로'; }
 }
@@ -6274,7 +6276,8 @@ function sfxAt(delayMs, fn){
 // 배경음은 효과음 악기(마림바·오르골·글로켄)를 쓰지 않아서 둘이 겹쳐도 섞이지 않음
 function envG(g, t0, peak, atk, dur){ g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
 function sOsc(f, type, t0, dur, peak, atk, bus){ const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f; envG(g, t0, peak, atk, dur); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); return o; }
-const aT = off=> audioCtx.currentTime + (off||0);
+let aBase = null; // (v2.10.2) 배경음 예약 중엔 기준 시각을 고정 — 음마다 시계를 다시 읽으면 박 간격이 들쭉날쭉했음
+const aT = off=> (aBase!==null ? aBase : audioCtx.currentTime) + (off||0);
 function sMusicBox(f, off, peak, dur, bus){ const t0 = aT(off); sOsc(f,'sine',t0,dur,peak,0.004,bus); sOsc(f*2.01,'sine',t0,dur*0.45,peak*0.22,0.003,bus); sOsc(f*4.2,'sine',t0,0.16,peak*0.12,0.002,bus); }
 function sMarimba(f, off, peak, dur, bus){ const t0 = aT(off); dur = dur||0.55; sOsc(f,'sine',t0,dur,peak,0.006,bus); sOsc(f*3.98,'sine',t0,0.09,peak*0.3,0.003,bus); sOsc(f*9.9,'sine',t0,0.035,peak*0.08,0.002,bus); }
 function sGlock(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.9,peak,0.002,bus); sOsc(f*2.76,'sine',t0,0.3,peak*0.35,0.002,bus); sOsc(f*5.4,'sine',t0,0.12,peak*0.15,0.002,bus); }
@@ -6285,12 +6288,18 @@ function sPluck(f, off, peak, dur, bright, bus){ const t0 = aT(off), o = audioCt
   lp.type='lowpass'; lp.Q.value = 2; lp.frequency.setValueAtTime(bright?2600:1500, t0); lp.frequency.exponentialRampToValueAtTime(260, t0+dur*0.6);
   envG(g, t0, peak, 0.005, dur); o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05); }
 function sBoop(off, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(190, t0); o.frequency.exponentialRampToValueAtTime(70, t0+0.12); envG(g, t0, peak, 0.004, 0.18); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+0.22); }
+// (v2.10.2) 효과음마다 크기를 재서(가장 큰 0.05초 구간의 RMS) 맞춘 배율 — 측정값: 버튼 0.017 ~ 승리 0.141로 8배 차이였음
+// 목표: 모두 0.05 · 승리·에픽·전설 소환만 0.06 (다시 재려면 OfflineAudioContext로 sfxPlay를 렌더링해서 같은 방식으로)
+const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summonCharge:1.13, summonEpic:0.55, summonLegend:0.51,
+  fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88 };
+let sfxNameNode = {};
+function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
 function sfxPlay(name){
   if(!audioCtx || state.settings.sfxVolume<=0) return;
   { const now = Date.now();
     if(now-sfxBurstStart > SFX_BURST_MS){ sfxBurstStart = now; sfxBurstCount = 0; }
     if(++sfxBurstCount > SFX_BURST_MAX && !SFX_PRIORITY.includes(name)) return; }
-  const B = sfxGain;
+  const B = sfxBusFor(name); // (v2.10.2) 소리마다 잰 크기에 맞춘 배율
   if(name==='click') sSlide(900,1500,0,0.035,0.07,B);                        // 톡 (물방울)
   else if(name==='navClick') sSlide(620,980,0,0.05,0.08,B);                  // 퐁
   else if(name==='summon'){ sMarimba(784,0,0.14,0.55,B); sMarimba(1175,0.08,0.13,0.55,B); }
@@ -6329,8 +6338,8 @@ function bgmPad(freqs, off, dur, peak, bus){ const t0 = aT(off);
     o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.3); })); }
 function bgmNote(step, off){
   const bus = bgmMakeBus(), m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
-  bgmWarm(m, off, 0.065, BGM_STEP*1.35, 0.07, bus);
-  if(step%2===0) sOsc(b, 'sine', aT(off), BGM_STEP*2.1, 0.05, 0.08, bus);
+  bgmWarm(m, off, 0.065, BGM_STEP*1.7, 0.07, bus); // (v2.10.2) 다음 음과 살짝 겹치게 길게
+  if(step%2===0) sOsc(b, 'sine', aT(off), BGM_STEP*2.5, 0.05, 0.08, bus);
   if(step%2===0) bgmPad(chord.map(f=>f*0.5).concat([chord[0]]), off, BGM_STEP*2, 0.015, bus);
   sOsc(chord[step%3]*2, 'triangle', aT(off+0.03), BGM_STEP*1.2, 0.009, 0.01, bus);
   if(step%8===0) sBoop(off, 0.035, bus);
@@ -6339,12 +6348,16 @@ function bgmNote(step, off){
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
   bgmNextAt = 0;
-  bgmTimer = setInterval(()=>{ // 0.25초 앞까지 미리 예약해서 박자가 흔들리지 않게
+  // (v2.10.2) 예전엔 0.25초 앞까지만 예약해서, 화면을 그리느라 폰이 잠깐 바쁘면 음이 비고 박자를 처음부터 다시 맞춰 끊김이 들렸음
+  //  → 1.5초 앞까지 미리 예약 · 조금 늦었으면 놓친 박만 건너뛰고 같은 박자 줄에 이어 붙임(3초 넘게 멈췄을 때만 새로 시작)
+  bgmTimer = setInterval(()=>{
     if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
-    if(!bgmNextAt || bgmNextAt < now - 0.1) bgmNextAt = now + 0.05;
-    while(bgmNextAt < now + 0.25){ bgmNote(bgmStep % BGM_MELODY.length, bgmNextAt - now); bgmStep++; bgmNextAt += BGM_STEP; }
-  }, 60);
+    if(!bgmNextAt || bgmNextAt < now - 3) bgmNextAt = now + 0.05;
+    while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += BGM_STEP; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
+    aBase = now;
+    try{ while(bgmNextAt < now + 1.5){ bgmNote(bgmStep % BGM_MELODY.length, bgmNextAt - now); bgmStep++; bgmNextAt += BGM_STEP; } } finally { aBase = null; }
+  }, 200);
 }
 document.addEventListener('click', function initAudioOnce(){
   ensureAudioCtx();
@@ -8065,6 +8078,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:293, v:'2.10.2', date:'2026-09-30', secs:[
+    { t:'소리', items:[ '효과음 14가지 크기를 하나하나 재서 고르게 맞춤 — 버튼 소리는 키우고(약 2.5~3배), 소환·승리처럼 컸던 소리는 줄임(약 0.4~0.7배)' ]},
+    { t:'배경음', items:[ '배경음이 중간중간 끊기던 것 — 음을 1.5초 앞까지 미리 준비하고, 멜로디·베이스를 다음 음과 살짝 겹치게 이어 붙임' ]},
+    { t:'업데이트 알림', items:[ '자잘한 업데이트(끝자리)는 알림 창 없이 메뉴와 업데이트 버튼에 빨간 점만 · 큰 버그 수정·수치 조정·새 콘텐츠는 지금처럼 알림 창' ]}
+  ]},
   { build:292, v:'2.10.1', date:'2026-09-30', secs:[
     { t:'고친 것', items:[
       '최신 크롬(갤럭시 등)에서 친구 창·결투 화면의 친구 목록이 스크롤되지 않던 문제 — 친구 줄 위에서 시작한 스크롤이 목록으로 전달되지 않았음'
@@ -11937,7 +11955,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 292, APP_VERSION = '2.10.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 293, APP_VERSION = '2.10.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
@@ -11961,7 +11979,10 @@ async function appUpdateNow(){
 // 전투·레이드 방·보스 연전 중이면 창을 띄우지 않고 위에 작은 막대만 → 전투 화면을 나오면 그때 알림 창
 var updLatest = 0, updSnoozed = false, updCheckedAt = 0; // var: 전투 화면 정리(unmountBattleScreen)가 이 줄보다 먼저 불려도 안전하게
 function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
-function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b>'; } }
+// (v2.10.2) 끝자리만 바뀐 자잘한 업데이트(소리·문구 등)는 알림 창을 띄우지 않고 메뉴와 업데이트 버튼에 빨간 점만 — 가운데·앞자리가 바뀌면(큰 버그·수치 조정·새 콘텐츠) 지금처럼 알림 창
+function verParts(v){ const p = String(v||'').split('.').map(x=>parseInt(x,10)); if(p.length===2 && String(v).split('.')[1].length===2) return [p[0], Math.floor(p[1]/10), p[1]%10]; return [p[0]||0, p[1]||0, p[2]||0]; } // 예전 '2.93' = 2.9.3
+function updPatchOnly(){ const nv = buildVer[updLatest]; if(!nv) return false; const a = verParts(APP_VERSION), c = verParts(nv); return a[0]===c[0] && a[1]===c[1]; }
+function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b><span class="upd-dot"></span>'; } if(typeof mailBadgeUpdate==='function') mailBadgeUpdate(); }
 function updBar(text){
   let b = document.getElementById('updBar');
   if(!b){ b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.addEventListener('click', ()=>{ if(updBusy()) toast('전투가 끝나면 업데이트'); else showUpdatePopup(true); }); document.body.appendChild(b); }
@@ -11969,6 +11990,7 @@ function updBar(text){
 }
 function showUpdatePopup(force){
   if(!updLatest || updLatest <= APP_BUILD || (updSnoozed && !force)) return;
+  if(!force && updPatchOnly()) return; // (v2.10.2) 자잘한 업데이트는 빨간 점만
   if(updBusy()){ updBar('🔄 새 버전 '+verTxt(updLatest)+' · 전투 끝나면 알림'); return; }
   const bar = document.getElementById('updBar'); if(bar) bar.remove();
   if(document.getElementById('updPop')) return;
