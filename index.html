@@ -3080,6 +3080,8 @@ function renderDuelTab(){
     + '<div class="du-row"><span class="du-lbl">후열</span>'+[3,4,5].map(i=>duelSlotHtml(d,i)).join('')+'</div>'
     + '<div class="du-btns"><button class="btn secondary small" id="duelRecBtn">✨ 추천 배치</button><button class="btn secondary small" id="duelClearBtn">🧹 비우기</button></div></div>';
   if(!friendsAvailable() || !friendNet.on) return h + friendsOfflineHtml() + '</div>';
+  // (v287) 방 코드 칸은 친구 목록 위로 — 친구가 많으면 맨 아래로 밀려서 찾기 힘들었음
+  h += '<div class="fr-card"><b>방 코드로 참가</b><div class="fr-inrow"><input id="duelCodeInput" maxlength="6" placeholder="방 코드 6자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="duelJoinBtn">참가</button></div></div>';
   const invs = friendLiveInvites('duel');
   if(invs.length) h += '<div class="fr-cap">받은 결투 신청</div><div class="fr-list">'+invs.map(friendInviteRowHtml).join('')+'</div>';
   const fl = friendList().sort((a,b)=> (friendOnline(b)?1:0)-(friendOnline(a)?1:0) || raidNameOf(a).localeCompare(raidNameOf(b)));
@@ -3087,7 +3089,6 @@ function renderDuelTab(){
   h += fl.length ? '<div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
       return '<div class="fr-row'+(o?'':' dim')+'"><span class="fr-dot'+(o?' on':'')+'"></span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div><button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 신청</button></div>'; }).join('')+'</div>'
     : '<div class="fr-empty">친구 없음<br><button class="btn small" id="duelToFriends" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_party.webp" alt=""> 친구 추가하러 가기</button></div>';
-  h += '<div class="fr-card"><b>방 코드로 참가</b><div class="fr-inrow"><input id="duelCodeInput" maxlength="6" placeholder="방 코드 6자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="duelJoinBtn">참가</button></div></div>';
   return h + '</div>';
 }
 function showDuelSlotPicker(slot){
@@ -7990,6 +7991,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:287, v:'2.93', date:'2026-09-30', secs:[
+    { t:'결투', items:[ '방 코드로 참가 칸을 친구 목록 위로 옮김' ]}
+  ]},
   { build:286, v:'2.92', date:'2026-09-30', secs:[
     { t:'고친 것', items:[
       '결투·친구 화면에서 스크롤을 내린 뒤 위로 안 올라가던 문제(일부 안드로이드) — 친구 접속 상태가 바뀌어 화면을 다시 그릴 때, 스크롤 중이면 끝난 뒤로 미룸',
@@ -11827,7 +11831,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 286, APP_VERSION = '2.92'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 287, APP_VERSION = '2.93'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
