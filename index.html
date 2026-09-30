@@ -7535,8 +7535,8 @@ function renderSpiritsTab(){
   html += '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="openDex" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button></span>';
   html += '</div>';
 
-  { const n = Object.keys(SPIRITS).filter(k=>canFuse(k)).length; // (v218) 합성은 합성 탭으로 옮김 — 여기선 바로가기만
-    html += '<button class="btn secondary" id="goFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기'+(n?' <span class="sub" style="color:#9fe8c0;">· 같은 정령 3마리 '+n+'종</span>':'')+'</button>'; }
+  // (v218) 합성은 합성 탭으로 옮김 — 여기선 바로가기만 · (v281) 옆에 붙던 '같은 정령 3마리 N종' 문구는 헷갈려서 뺌
+  html += '<button class="btn secondary" id="goFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기</button>';
 
   html += '<h2>보유 정령</h2>';
   { const sb = state.spiritSort || 'rarity';
@@ -7932,6 +7932,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:281, v:'2.83', date:'2026-09-30', secs:[
+    { t:'정령', items:[
+      '내 정령 화면의 [합성하러 가기] 버튼 옆 문구(같은 정령 3마리 N종)를 뺌'
+    ]}
+  ]},
   { build:280, v:'2.82', date:'2026-09-30', secs:[
     { t:'월드 보스', items:[
       '한 주 안에서 체력에 따라 모습이 바뀌던 단계를 없앰 — 이제 주마다 보스 하나 (빙하의 거신 · 업화의 군주 · 심연의 핵이 섞여서 번갈아 등장, 같은 보스가 연달아 안 나옴)',
@@ -11735,7 +11740,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 280, APP_VERSION = '2.82'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 281, APP_VERSION = '2.83'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
