@@ -973,6 +973,7 @@
   .gm-foot{margin-top:5px; padding-top:5px; border-top:1px dashed #ffffff18; font-size:11.5px; font-weight:700; color:#ffcf8a;}
   .gm-rates{display:flex; gap:4px; margin-top:3px;} .gm-rates span{flex:1; display:flex; flex-direction:column; align-items:center; padding:4px 0; border-radius:8px; background:#00000030; border:1px solid color-mix(in srgb, var(--rc) 50%, transparent);} .gm-rates small{font-size:10px; color:var(--rc); font-weight:800;} .gm-rates b{font-size:14px; color:#fff;}
   .gm-ic .uic{width:18px; height:18px;}
+  .gm-sec.wbnext .gm-ic{width:44px;} .gm-ic .gm-boss{width:44px; height:44px; object-fit:contain; display:block;}
   .bu-cast{position:relative; margin-top:2px; width:100%; height:12px; border-radius:6px; background:#0c1a2acc; border:1px solid #7fd8ff99; overflow:hidden; cursor:pointer; animation:castPulse 1s ease-in-out infinite;}
   .bu-cast > div{height:100%; background:linear-gradient(90deg,#4fb8ff,#bff0ff); transition:width .3s;}
   .bu-cast span{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000;}
@@ -7932,6 +7933,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:282, v:'2.84', date:'2026-09-30', secs:[
+    { t:'월드 보스', items:[
+      '현황 탭의 이번 주/다음 주 칸을 다음 주 보스 하나로 줄이고, 아이콘을 보스 그림으로 바꿈'
+    ]}
+  ]},
   { build:281, v:'2.83', date:'2026-09-30', secs:[
     { t:'정령', items:[
       '내 정령 화면의 [합성하러 가기] 버튼 옆 문구(같은 정령 3마리 N종)를 뺌'
@@ -9768,7 +9774,7 @@ function renderWorldBossTab(){
         + '<div class="shop-lim">'+(left===null ? '<span class="inf">∞</span> 무제한' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div><span class="shop-price"><span class="wbgem">'+uiIc('runestone')+'</span> '+it.price+'</span></button>'; }).join('')+'</div>';
     h += gmSectionHtml('월드 보스 전용 룬 (세계 등급)', Object.keys(WORLD_RUNES).map(k=>({ic:WORLD_RUNES[k].icon, nm:WORLD_RUNES[k].name, d:WORLD_RUNES[k].desc})));
   } else {
-    h += gmSectionHtml('이번 주 보스', [{ic:dead?'✅':'👹', nm:ph.nm, when:dead?'처치 완료':'이번 주', d:ph.d}, {ic:'🔮', nm:nx.nm, when:'다음 주', d:nx.d}]); // (v280) 주마다 보스 하나
+    h += gmSectionHtml('다음 주 보스', [{ic:bossImg(nx.g, 'gm-boss', '🌍'), nm:nx.nm, d:nx.d}], 'wbnext'); // (v281) 이번 주 보스는 위에 이미 보이니 다음 주만 · 아이콘은 보스 그림
     h += bossSkillSectionHtml('wboss_'+ph.g, '보스 스킬'); // (v270)
     h += gmSectionHtml('규칙', [
       {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 보스는 주마다 바뀜(월요일)'},
@@ -11740,7 +11746,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 281, APP_VERSION = '2.83'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 282, APP_VERSION = '2.84'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
