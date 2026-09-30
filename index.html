@@ -1547,7 +1547,7 @@ function gridNeighbors(idx, shape, width){
 }
 let skillSel = { key:null, side:null, idx:null };
 let skillPumpTimer = null;
-let skillIntroPending = false, skillIntroUntil = 0;
+let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skillFightSeq = 0;
 let skillRenderedFx = 0;
 let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
@@ -5333,7 +5333,12 @@ function showSkillStageScreen(){
   if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); }
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
-  if(intro) skillIntroUntil = Date.now() + 1300;
+  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; }
+  if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
+  if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
+    const k = skillFightSeq+':'+(sf.mode||'stage')+':'+sf.stageIdx+':'+(sf.wave||0)+':'+sf.round+':'+(sf.actSeq||0)+':'+!!sf.result.win;
+    if(k!==skillResSfxKey){ skillResSfxKey = k; sfx(sf.result.win ? 'win' : (sf.mode==='worldboss' ? 'claim' : 'lose')); }
+  }
   // 이번 행동의 연출: 공격자 돌진, 맞은 대상마다 흔들림·숫자
   const fxFor = u=>{
     if(!fx || !fx.hits) return null;
@@ -8083,7 +8088,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:294, v:'2.10.3', date:'2026-09-30', secs:[
     { t:'고친 것', items:[ '전투 버튼에 뜨는 예상 결과를 계산할 때 일부 히든 업적이 조건 없이 달성되거나, 반대로 달성이 막히던 문제' ]},
-    { t:'화면', items:[ '전투 화면의 아군·적 표시에 흰 테두리와 그림자 — 설원처럼 밝은 배경에서도 잘 보이게', '탐험 지도에서 특수 규칙을 지키고 깬 스테이지는 특수 표시에 초록 체크' ]}
+    { t:'화면', items:[ '전투 화면의 아군·적 표시에 흰 테두리와 그림자 — 설원처럼 밝은 배경에서도 잘 보이게', '탐험 지도에서 특수 규칙을 지키고 깬 스테이지는 특수 표시에 초록 체크' ]},
+    { t:'소리', items:[ '승리·패배 효과음이 탑에서만 나던 것 — 스테이지·보스·레이드·결투·출정·던전·시련에서도 나게 (월드보스는 도전이 끝나면 보상음)', '전투 시작 효과음도 모든 전투에서 나게 (보스전은 웨이브마다)' ]}
   ]},
   { build:293, v:'2.10.2', date:'2026-09-30', secs:[
     { t:'소리', items:[ '효과음 14가지 크기를 하나하나 재서 고르게 맞춤 — 버튼 소리는 키우고(약 2.5~3배), 소환·승리처럼 컸던 소리는 줄임(약 0.4~0.7배)' ]},
@@ -9000,8 +9006,7 @@ function challengeExpeditionNode(){
   if(!run) return;
   const node = currentExpeditionNode();
   if(!node || !['battle','elite','boss'].includes(node.type)) return;
-  sfx('battleStart');
-  expeditionAbandonArmed = false;
+  expeditionAbandonArmed = false; // (v294) 시작음은 실제 전투가 열릴 때(showSkillStageScreen) 한 번만
   showExpeditionSquadPicker();
 }
 const EXP_FATIGUE_FREE_WAVES = 1; // 1전투까진 무료(페널티 없음), 2연속부터 −5%씩(최대 −15%)
@@ -11590,7 +11595,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
   { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', doSlotFuse); }
-  { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; sfx('tap'); render(); }); }
+  { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }); }
   { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 규칙', fuseRulesHtml())); }
   { const af = document.getElementById('fzAuto'); if(af) af.addEventListener('click', showAutoFuseModal); }
   document.querySelectorAll('[data-stage]').forEach(btn=>{
