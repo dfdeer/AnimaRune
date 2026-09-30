@@ -7248,7 +7248,37 @@ function showGuideModal(){
 const TOP_MARK = '<!--top-->'; // 화면 html에 넣으면 이 앞부분이 위쪽에 고정됨
 let lastRenderedTab = null;
 function headerNum(n){ n = Math.floor(n||0); if(n < 100000) return String(n); const m = n/10000; return (m < 100 ? Math.floor(m*10)/10 : Math.floor(m))+'만'; }
+// (v2.9.6) 스크롤 진단 패널 — 평소엔 꺼져 있음. 왼쪽 위 '아니마룬' 제목을 3초 안에 5번 누르면 켜고/끔
+// 실제 폰(크롬)에서만 생기는 스크롤 문제를 확인하려고 만든 것: 화면 크기·스크롤 칸 크기·마지막으로 스크롤된 칸·다시 그린 횟수를 보여 줌
+var dbgOn = false, dbgRenders = 0, dbgLastRender = 0, dbgTouch = '-', dbgScroll = '-', dbgScrollAt = 0, dbgTaps = [];
+try{ dbgOn = localStorage.getItem('animarune_dbg')==='1'; }catch(e){}
+function dbgName(el){ if(!el || el===document) return 'document'; if(el===window) return 'window'; const c = (el.className && typeof el.className==='string') ? '.'+el.className.trim().split(/\s+/).slice(0,2).join('.') : ''; return (el.id ? '#'+el.id : (el.tagName||'?').toLowerCase()) + c; }
+document.addEventListener('touchstart', e=>{ if(dbgOn) dbgTouch = dbgName(e.target); }, {passive:true, capture:true});
+document.addEventListener('scroll', e=>{ if(dbgOn){ const t = e.target; dbgScroll = dbgName(t===document ? document.scrollingElement : t) + ' ' + Math.round((t===document ? document.scrollingElement : t).scrollTop||0); dbgScrollAt = Date.now(); } }, {passive:true, capture:true});
+function dbgTick(){
+  let p = document.getElementById('dbgPanel');
+  if(!dbgOn){ if(p) p.remove(); return; }
+  if(!p){ p = document.createElement('div'); p.id = 'dbgPanel'; p.style.cssText = 'position:fixed; left:4px; bottom:4px; z-index:99999; max-width:94vw; padding:6px 8px; border-radius:8px; background:#000c; color:#9f9; font:10px/1.35 monospace; white-space:pre-wrap; pointer-events:none;'; document.body.appendChild(p); }
+  const m = document.getElementById('main'), f = document.querySelector('.fr-scroll'), vv = window.visualViewport, ua = navigator.userAgent;
+  const cr = (ua.match(/(Chrome|SamsungBrowser)\/[\d.]+/)||['?'])[0], sa = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ? '앱' : '탭';
+  p.textContent = [
+    'v'+APP_VERSION+' · '+cr+' · '+sa+' · '+activeTab,
+    '창 '+innerWidth+'x'+innerHeight+(vv?' · 보이는 '+Math.round(vv.height)+' (y'+Math.round(vv.offsetTop)+')':'')+' · 문서y '+Math.round(window.scrollY||0),
+    'main '+(m?Math.round(m.scrollTop)+'/'+m.scrollHeight+'/'+m.clientHeight+' '+getComputedStyle(m).overflowY:'-'),
+    '목록칸 '+(f?Math.round(f.scrollTop)+'/'+f.scrollHeight+'/'+f.clientHeight+' h='+f.style.height:'없음'),
+    '터치 '+dbgTouch,
+    '스크롤 '+dbgScroll+(dbgScrollAt?' ('+((Date.now()-dbgScrollAt)/1000).toFixed(1)+'초 전)':''),
+    '다시 그림 '+dbgRenders+'회'+(dbgLastRender?' (마지막 '+((Date.now()-dbgLastRender)/1000).toFixed(1)+'초 전)':'')
+  ].join('\n');
+}
+setInterval(dbgTick, 300);
+document.addEventListener('click', e=>{
+  if(!e.target.closest || !e.target.closest('header .title')) return;
+  const now = Date.now(); dbgTaps = dbgTaps.filter(t=>now-t<3000).concat(now);
+  if(dbgTaps.length>=5){ dbgTaps = []; dbgOn = !dbgOn; try{ localStorage.setItem('animarune_dbg', dbgOn?'1':'0'); }catch(_){} toast(dbgOn?'진단 패널 켬':'진단 패널 끔'); dbgTick(); }
+}, true);
 function render(){
+  dbgRenders++; dbgLastRender = Date.now();
   checkDailyRollover();
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
   document.getElementById('essenceVal').textContent = headerNum(state.essence); // (v193) 10만 이상은 '12.3만'처럼 — 좁은 폰에서 ☰ 버튼이 화면 밖으로 밀려나던 문제
@@ -7997,7 +8027,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:290, v:'2.9.6', date:'2026-09-30', secs:[
-    { t:'화면', items:[ '창 닫기 버튼을 대문자 X → 조금 더 큰 소문자 x로 (세로로 길어 보이던 것)', '브라우저 다크 모드(삼성 인터넷 등)에서 게임 색이 이상하게 바뀌던 것 대비 — 원래 어두운 화면이라고 표시' ]}
+    { t:'화면', items:[ '창 닫기 버튼을 대문자 X → 조금 더 큰 소문자 x로 (세로로 길어 보이던 것)', '브라우저 다크 모드(삼성 인터넷 등)에서 게임 색이 이상하게 바뀌던 것 대비 — 원래 어두운 화면이라고 표시', '스크롤 문제 확인용 진단 패널 추가 (평소엔 꺼져 있음)' ]}
   ]},
   { build:289, v:'2.9.5', date:'2026-09-30', secs:[
     { t:'고친 것', items:[
