@@ -1547,6 +1547,7 @@ let skillSel = { key:null, side:null, idx:null };
 let skillPumpTimer = null;
 let skillIntroPending = false, skillIntroUntil = 0;
 let skillRenderedFx = 0;
+let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
 const SKILL_FX_WAIT_MS = 700;
 
@@ -3912,7 +3913,7 @@ function checkSkillStageOutcome(sf){
 }
 function hidHurt(sf, u, loss){ // (v270) 무혈 입성 — 우리 정령이 체력을 잃었는지 (보스전은 웨이브를 넘어 기억)
   if(!sf || !u || u.side!=='me' || !(loss>0)) return;
-  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight) state.bossFight.hurt = true;
+  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight && !skillSimDepth) state.bossFight.hurt = true; // (v294) 미리보기 계산은 제외
 }
 function hidOnWin(sf){ // (v266) 이긴 판 히든 업적
   if(sf.mode!=='trial' && !(sf.result && sf.result.waveClear) && !sf.meHarmSkill && sf.round>=5) hidMark('pacifist'); // (v270) 평화주의자
@@ -4184,7 +4185,7 @@ function restartSkillStageFight(){ const sf = state.skillFight; if(!sf) return; 
 function skillAreaCells(sf, a, act, tSide, tIdx){
   { const sk = unitSkill(a, act); if(sk && sk.self) return new Set([a.side+':'+a.idx]); }
   const c = JSON.parse(JSON.stringify(sf)), rnd = Math.random; Math.random = ()=>0.999;
-  let C; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; }
+  let C; skillSimDepth++; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; skillSimDepth--; }
   const set = new Set();
   C.hits.forEach(h=>{ if(h.side===a.side && h.idx===a.idx && !(tSide===a.side && tIdx===a.idx)) return; set.add(h.side+':'+h.idx); });
   set.add(tSide+':'+tIdx);
@@ -4194,7 +4195,7 @@ function skillPreview(sf, a, act, tSide, tIdx){
   const c = JSON.parse(JSON.stringify(sf)), rnd = Math.random;
   Math.random = ()=>0.999;
   let C;
-  try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } finally { Math.random = rnd; }
+  skillSimDepth++; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } finally { Math.random = rnd; skillSimDepth--; }
   const t0 = unitAt(sf, tSide, tIdx), t1 = unitAt(c, tSide, tIdx);
   const dmg = C.hits.filter(h=>h.kind==='dmg' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
   const heal = C.hits.filter(h=>h.kind==='heal' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
@@ -8078,6 +8079,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:294, v:'2.10.3', date:'2026-09-30', secs:[
+    { t:'고친 것', items:[ '전투 버튼에 뜨는 예상 결과를 계산할 때 일부 히든 업적이 조건 없이 달성되거나, 반대로 달성이 막히던 문제' ]}
+  ]},
   { build:293, v:'2.10.2', date:'2026-09-30', secs:[
     { t:'소리', items:[ '효과음 14가지 크기를 하나하나 재서 고르게 맞춤 — 버튼 소리는 키우고(약 2.5~3배), 소환·승리처럼 컸던 소리는 줄임(약 0.4~0.7배)' ]},
     { t:'배경음', items:[ '배경음이 중간중간 끊기던 것 — 음을 1.5초 앞까지 미리 준비하고, 멜로디·베이스를 다음 음과 살짝 겹치게 이어 붙임' ]},
@@ -8419,7 +8423,7 @@ function hidCheckPending(sf){
 }
 // (v266) 히든 업적용 기록 — 한 번 해낸 일만 표시(되돌리지 않음)
 function hidHas(k){ return !!(state.hid && state.hid[k]); }
-function hidMark(k){ if(hidHas(k)) return; state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
+function hidMark(k){ if(skillSimDepth || hidHas(k)) return; /* (v294) 버튼 미리보기(복사본 계산)에서는 기록 안 함 */ state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
 const ACHIEVEMENTS = [
   {id:'first_summon', name:'첫 소환', desc:'정령을 처음 소환하기', reward:{essence:50}, category:'general', basic:true, check:()=> (state.lifetimeSummons||0)>=1},
   {id:'summon_10', name:'정령 애호가', desc:'정령 10회 소환하기', reward:{essence:100}, category:'general', check:()=> (state.lifetimeSummons||0)>=10},
@@ -11955,7 +11959,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 293, APP_VERSION = '2.10.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 294, APP_VERSION = '2.10.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
