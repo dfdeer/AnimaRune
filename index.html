@@ -929,6 +929,10 @@
   .tr-lbl{font-size:11px; font-weight:900; color:var(--sub); text-align:center; margin:6px 0 4px;}
   .tr-hint{text-align:center; margin-top:8px;} .tr-rhint{margin-top:8px; text-align:center;} .tr-rhint summary{display:inline-block; cursor:pointer; list-style:none; font-size:12px; font-weight:800; color:#9fdcff; padding:5px 12px; border:1px solid #57d3ff55; border-radius:999px;} .tr-rhint summary::-webkit-details-marker{display:none;} .tr-rhint[open] summary{display:none;} .tr-hinttxt{font-size:12px; color:#cfe8ff; background:#57d3ff14; border:1px solid #57d3ff44; border-radius:10px; padding:7px 9px; text-align:left;}
   .tr-card{display:flex; align-items:center; gap:10px; width:100%; padding:11px 12px; border-radius:14px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .tr-card.done{border-color:#9fe8c066;} .tr-no{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; background:#ffffff14; flex:none;} .tr-card .dg-mid{display:flex; flex-direction:column; gap:1px;} .tr-card b{font-size:14px;} .tr-card small{font-size:11px; color:var(--sub);} .tr-stars{color:#ffd557 !important;} .tr-stars i{font-style:normal; color:#ffffff22;} .tr-card em{font-style:normal; font-size:20px; color:var(--sub);} .tr-card em .uic{width:18px; height:18px;}
+  .wb-scr{padding:2px 0 10px;} .wb-hero{display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:16px; background:linear-gradient(135deg,#2b3f7a,#1d1b48); border:2px solid var(--line); box-shadow:0 4px 0 #0000004d;} .wb-himg{width:84px; height:84px; flex:none; object-fit:contain;} .wb-htx{flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;} .wb-htx b{font-family:var(--fun); font-size:16px;} .wb-htx small{font-size:11px; color:var(--sub);}
+  .wb-chips{display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-top:8px;} .shop-tile.wr{border-color:#5cd0ff88;} /* (v278) 월드 보스 화면 */
+  .wbgem .uic{filter:hue-rotate(280deg) saturate(1.3);} /* (v278) 세계 룬석 = 고대 룬석 그림을 청록색으로 */
+  .wr-ic{display:inline-grid; place-items:center; font-size:1em; line-height:1;} /* (v278) 세계 룬 기호 */
   .wb-card{position:relative; display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; margin:6px 0 8px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#4a1a3a,#1d1b48); border:2px solid #ff7a9a88; box-shadow:0 0 16px #ff5a8a33, inset 0 2px 0 #ffffff14;} .wb-card.off{display:block; opacity:.7;} .wb-card.off small{display:block; font-size:11px; color:var(--sub);}
   .wb-img{width:52px; height:52px; object-fit:contain; flex:none;} .wb-mid{flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;} .wb-mid b{font-size:14px;} .wb-mid small{font-size:11px; color:var(--sub); display:flex; align-items:center; gap:3px;} .wb-mid .elic{width:14px; height:14px;} .wb-card em{font-style:normal; font-size:22px; color:var(--sub);}
   .wb-bar{position:relative; display:block; height:8px; border-radius:5px; background:#0007; overflow:hidden;} .wb-bar > span{display:block; height:100%; background:linear-gradient(90deg,#ff4a6a,#ffb84a);} .wb-bar i{position:absolute; top:0; bottom:0; width:2px; background:#ffffffaa;} .wb-bar.big{height:14px; margin:8px 0 4px;}
@@ -1543,7 +1547,13 @@ const SKILL_FX_WAIT_MS = 700;
 // ===================== (v170) 룬 각인 =====================
 // 정령(종)마다 룬 칸 1개. 분해 → 정령 파편, 파편 10개로 무작위 재각인. 레이드 승리 → 고대 룬석(희귀 이상 확정, 전설·보스 고유 룬 확률)
 // 설정: 레이드 보스는 고대의 존재 — 쓰러뜨리면 그 힘이 룬석으로 남고, 거기서 보스의 룬을 새길 수 있음
-const RUNE_TIERS = { common:{name:'일반', color:'#9fb4cf'}, rare:{name:'희귀', color:'#b07cff'}, legend:{name:'전설', color:'#ffc657'}, boss:{name:'고대', color:'#ff5a7a'} };
+const RUNE_TIERS = { common:{name:'일반', color:'#9fb4cf'}, rare:{name:'희귀', color:'#b07cff'}, legend:{name:'전설', color:'#ffc657'}, boss:{name:'고대', color:'#ff5a7a'}, world:{name:'세계', color:'#5cd0ff'} };
+// (v278) 월드 보스 전용 룬 — 세계 룬석 상점에서만 얻음 (단계별 보스의 힘)
+const WORLD_RUNES = {
+  glacier:  { name:'빙하의 룬',   icon:'❄️', desc:'라운드 시작마다 자신 최대체력 6% 보호막' },
+  hellfire: { name:'업화의 룬',   icon:'🌋', desc:'화상 걸린 적에게 주는 피해 +20%' },
+  core:     { name:'심연핵의 룬', icon:'💠', desc:'상성이 유리한 공격 피해 +20%' }
+};
 const RUNE_BASE = {
   atk:  { name:'맹공의 룬',   icon:'<img class="uic" src="assets/ui/ic_atk.webp" alt="">', vals:{common:.05, rare:.08, legend:.12}, fmt:v=>'공격력 +'+Math.round(v*100)+'%' },
   hp:   { name:'생명의 룬',   icon:'❤️', vals:{common:.06, rare:.10, legend:.15}, fmt:v=>'체력 +'+Math.round(v*100)+'%' },
@@ -1566,13 +1576,13 @@ const RUNE_STONE_BOSS = { easy:.025, normal:.05, hard:.08, extreme:.12 }; // 룬
 const RUNE_STONE_LEGEND = { easy:.05, normal:.10, hard:.18, extreme:.30 };
 const RUNE_PITY_STEP = .005; // 보스 룬이 안 나올 때마다 +0.5%p (보정)
 function bossRuneById(id){ return Object.keys(BOSS_RUNES).map(k=>BOSS_RUNES[k]).find(b=>b.id===id) || null; }
-function runeValid(r){ if(!r || typeof r!=='object') return false; if(r.tier==='boss') return !!bossRuneById(r.id); return !!(RUNE_BASE[r.id] && RUNE_BASE[r.id].vals[r.tier]!==undefined); }
+function runeValid(r){ if(!r || typeof r!=='object') return false; if(r.tier==='boss') return !!bossRuneById(r.id); if(r.tier==='world') return !!WORLD_RUNES[r.id]; return !!(RUNE_BASE[r.id] && RUNE_BASE[r.id].vals[r.tier]!==undefined); }
 function runeVal(r){ return (r && r.tier!=='boss' && RUNE_BASE[r.id]) ? RUNE_BASE[r.id].vals[r.tier] : 0; }
-function runeName(r){ return r.tier==='boss' ? bossRuneById(r.id).name : RUNE_BASE[r.id].name; }
-function runeIcon(r){ return r.tier==='boss' ? bossRuneById(r.id).icon : RUNE_BASE[r.id].icon; }
+function runeName(r){ return r.tier==='world' ? WORLD_RUNES[r.id].name : r.tier==='boss' ? bossRuneById(r.id).name : RUNE_BASE[r.id].name; }
+function runeIcon(r){ return r.tier==='world' ? WORLD_RUNES[r.id].icon : r.tier==='boss' ? bossRuneById(r.id).icon : RUNE_BASE[r.id].icon; }
 // (v205) 화면용 룬 그림 — assets/ui/rune_<id>.webp (글·알림에는 runeIcon 이모지)
-function runeImg(r){ return '<img class="eqimg" src="assets/ui/rune_'+r.id+'.webp" alt="" draggable="false">'; }
-function runeDesc(r){ return r.tier==='boss' ? bossRuneById(r.id).desc : RUNE_BASE[r.id].fmt(runeVal(r)); }
+function runeImg(r){ if(r.tier==='world') return '<span class="eqimg wr-ic">'+WORLD_RUNES[r.id].icon+'</span>'; return '<img class="eqimg" src="assets/ui/rune_'+r.id+'.webp" alt="" draggable="false">'; } // (v278) 세계 룬은 그림이 아직 없어 기호로
+function runeDesc(r){ return r.tier==='world' ? WORLD_RUNES[r.id].desc : r.tier==='boss' ? bossRuneById(r.id).desc : RUNE_BASE[r.id].fmt(runeVal(r)); }
 function runeChipHtml(r, extra){
   if(!r) return '<span class="rune-chip empty">빈 룬 칸</span>';
   const t = RUNE_TIERS[r.tier];
@@ -1594,7 +1604,7 @@ function applyRuneOnBuild(u, rune){ // makeBattleUnit에서 호출: 공격·체�
 function runeSpeed(u){ return (u.rune && u.rune.id==='spd' && u.rune.tier!=='boss') ? u.rune.v : 0; }
 function runeCrit(u){ return (u.rune && u.rune.id==='crit' && u.rune.tier!=='boss') ? u.rune.v : 0; }
 function runeDr(u){ return (u.rune && u.rune.id==='dr' && u.rune.tier!=='boss') ? u.rune.v : 0; }
-function runeDmgMult(a, d){ return (a.rune && a.rune.id==='judge' && d.hp/d.maxHp <= 0.3) ? 1.3 : 1; }
+function runeDmgMult(a, d){ if(!a.rune) return 1; if(a.rune.id==='judge' && d.hp/d.maxHp <= 0.3) return 1.3; if(a.rune.id==='hellfire' && d.st && d.st.burn>0) return 1.2; if(a.rune.id==='core' && effTypeMult(a, d)>1) return 1.2; return 1; } // (v278) 업화·심연핵의 룬
 function runeOnHit(sf, a, d, dealt){
   if(!a.rune || dealt<=0) return;
   if(a.rune.id==='life' && a.rune.tier!=='boss' && a.alive){ a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.rune.v)); }
@@ -1603,7 +1613,8 @@ function runeOnHit(sf, a, d, dealt){
   else if(a.rune.id==='inferno'){ d.st.burnCap = Math.max(d.st.burnCap||5, 5); d.st.burn = Math.min(d.st.burnCap, (d.st.burn||0)+1); d.st.burnDmg = Math.max(d.st.burnDmg||0, Math.round(a.atk*0.15)); }
   else if(a.rune.id==='abyss' && Math.random()<0.25){ d.st.curse = { v: Math.max(0.15, (d.st.curse&&d.st.curse.v)||0), r:2 }; }
 }
-function runeRoundStart(sf){ aliveUnits(sf.myUnits).forEach(u=>{ if(u.rune && u.rune.id==='elder') u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp*0.04)); }); }
+function runeRoundStart(sf){ aliveUnits(sf.myUnits).forEach(u=>{ if(u.rune && u.rune.id==='elder') u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp*0.04));
+  if(u.rune && u.rune.id==='glacier'){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*0.06)); u.st.shieldR = Math.max(u.st.shieldR||0, 1); } }); } // (v278) 빙하의 룬
 // ---- 행동
 function runeReroll(key){
   if((state.shards||0) < RUNE_REROLL_COST){ toast('정령 파편 부족 ('+RUNE_REROLL_COST+'개 필요)'); return; }
@@ -1629,7 +1640,7 @@ function showRuneReveal(r, stoneIcon, onDone, note){
   const t = RUNE_TIERS[r.tier];
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="rune-reveal tier-'+r.tier+'" style="--rc:'+t.color+';">'
     + '<div class="rr-stone">'+stoneIcon+'</div>'
-    + '<div class="rr-card"><div class="rr-ico">'+runeImg(r)+'</div><div class="rr-tier">'+t.name+(r.tier==='boss'?' · 레이드 전용':'')+'</div><div class="rr-name">'+runeName(r)+'</div><div class="rr-desc">'+runeDesc(r)+'</div>'
+    + '<div class="rr-card"><div class="rr-ico">'+runeImg(r)+'</div><div class="rr-tier">'+t.name+(r.tier==='boss'?' · 레이드 전용':(r.tier==='world'?' · 월드 보스 전용':''))+'</div><div class="rr-name">'+runeName(r)+'</div><div class="rr-desc">'+runeDesc(r)+'</div>'
     + (note?'<div class="sub" style="font-size:11px; margin-top:6px;">'+note+'</div>':'')+'<button class="btn" id="rrOk" style="margin-top:12px;">확인</button></div></div></div>';
   sfx(r.tier==='boss' || r.tier==='legend' ? 'summonEpic' : 'summon');
   document.getElementById('rrOk').addEventListener('click', ()=>{ closeModal(); if(onDone) onDone(); });
@@ -3100,7 +3111,7 @@ function friendInviteListHtml(){ // 로비(방장·팀원 없음)에서 접속 �
 }
 // ===================== (v169) 홈 화면 =====================
 // 대표 정령을 크게 보여주고, 탐험(메인 버튼)과 탑·출정·레이드로 가는 입구. 배경은 지금은 SVG로 그리고 나중에 일러스트로 교체 가능
-const HOME_MODE_TABS = ['tower','dungeon','trial','challenge','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel']; // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
+const HOME_MODE_TABS = ['tower','dungeon','trial','challenge','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel','worldboss']; // (v278) 월드 보스 화면 // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
 function homeRepSpirit(){
   if(state.homeSpirit && SPIRITS[state.homeSpirit] && ownedCount(state.homeSpirit)>0) return state.homeSpirit;
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
@@ -6286,7 +6297,7 @@ document.addEventListener('click', (e)=>{
 function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 6; }); }
 // 보상 알림은 '이름 보상 획득  <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+40' 형식(아이콘+숫자만 강조). 다른 곳의 보상 표기(<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+N <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+N 🎟️×N)와 같은 모양
 function toastReward(rw, title, ms){
-  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', itemsShort(rw.items)].filter(Boolean);
+  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean);
   toast('<span class="tt">'+(title||'보상 획득')+'</span><span class="tnr">'+parts.map(p=>'<span class="tn">'+p+'</span>').join('')+'</span>', ms||3200, true);
 }
 function toast(msg, ms, html){
@@ -7223,10 +7234,10 @@ function render(){
   });
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
   const main = document.getElementById('main');
-  const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
+  const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
-    const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : '← 홈')+'</button>' : '';
+    const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
     const html = (TAB_RENDER[activeTab] || renderStageTab)(), k = html.indexOf(TOP_MARK);
     const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '');
     const sameScreen = main.__rKey === rKey; main.__rKey = rKey;
@@ -7917,6 +7928,15 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:278, v:'2.80', date:'2026-09-30', secs:[
+    { t:'월드 보스 개편', items:[
+      '레이드 목록의 월드 보스를 누르면 전용 화면으로 전환 — 현황 · 보상 · 순위 · 상점 탭',
+      '새 재화 세계 룬석 — 도전 1번에 1개 + 준 피해 3천 · 1만 · 3만 · 6만마다 +1 (한 번에 최대 5) · 함께 달성 보상 25% 3개 · 50% 5개 · 75% 8개 · 100% 12개 · 처치자 15개',
+      '월드 보스 상점 (세계 룬석) — 월드 보스 전용 룬 3종(각 45, 주 1개) · 전설 룬 뽑기 20(주 2) · 룬 승급석 12(주 2) · 에픽 선택권 30(주 1) · 강화석 ×30 2',
+      '월드 보스 전용 룬(세계 등급) — ❄️ 빙하의 룬: 라운드 시작마다 자신 최대체력 6% 보호막 · 🌋 업화의 룬: 화상 걸린 적에게 주는 피해 +20% · 💠 심연핵의 룬: 상성이 유리한 공격 피해 +20%',
+      '순위 탭은 상위 20명까지 · 최고 한 번 피해도 같이 표시'
+    ]}
+  ]},
   { build:277, v:'2.77', date:'2026-09-30', secs:[
     { t:'밸런스', items:[
       '하드 3~5는 룬까지 쓴다고 보고 보스를 더 세게 — 하드 3 고대수목 공격력 배율 1.6 → 2.5 · 체력 배율 44 → 65',
@@ -8259,7 +8279,7 @@ function grantItems(items){
 }
 function itemsText(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+' '+TICKET_INFO[k].name+' ×'+items[k]).join(' · ') : ''; }
 function itemsShort(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+'×'+items[k]).join(' ') : ''; }
-function rewardBrief(rw){ return [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', itemsShort(rw.items)].filter(Boolean).join(' '); }
+function rewardBrief(rw){ return [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean).join(' '); }
 function rewardWords(rw){ return [rw.essence?'정수 +'+rw.essence:'', rw.stone?'강화석 +'+rw.stone:'', itemsText(rw.items)].filter(Boolean).join(' · '); }
 function addPendingReward(id, icon, label, essence, stone, tab, items){
   if(!state.pendingRewards) state.pendingRewards = [];
@@ -9558,8 +9578,11 @@ const WB_PHASES = [ // 남은 체력 비율이 이 값 이하면 그 단계
   { at:0.66, g:'lavaLord', nm:'업화의 군주', d:'화염 공격 흡수 · 매 R 화상 · 3R마다 분화' },
   { at:0.33, g:'abyssCrystal', nm:'심연의 핵', d:'매 R 속성 변환 · 심연 응시 · 3R마다 심연 파동' }
 ];
-const WB_MILESTONES = [ {p:0.25, rw:{essence:800}}, {p:0.50, rw:{stone:60}}, {p:0.75, rw:{items:{pick_epic:1}}}, {p:1.00, rw:{items:{pick_legendary:1}}} ];
-const WB_KILL_RW = { essence:1500, items:{pick_legendary:1} };
+const WB_MILESTONES = [ {p:0.25, rw:{essence:800, wbGems:3}}, {p:0.50, rw:{stone:60, wbGems:5}}, {p:0.75, rw:{items:{pick_epic:1}, wbGems:8}}, {p:1.00, rw:{items:{pick_legendary:1}, wbGems:12}} ];
+const WB_KILL_RW = { essence:1500, items:{pick_legendary:1}, wbGems:15 };
+// (v278) 세계 룬석 — 월드 보스 전용 재화. 도전 1번에 1개 + 준 피해 3천·1만·3만·6만마다 +1 (최대 5) · 함께 달성·처치 보상에도 붙음 → 월드 보스 상점
+const WB_GEM_STEPS = [3000, 10000, 30000, 60000];
+function wbGemsFor(dmg){ return 1 + WB_GEM_STEPS.filter(x=>dmg>=x).length; }
 let wbNet = { week:null, data:null, unsub:null };
 function wbWeek(){ return raidWeekKey(); }
 function wbState(){ const w = wbWeek(), s = state.wb = state.wb || {}; if(s.week!==w){ s.week = w; s.claimed = {}; s.joined = false; s.killRw = false; } if(s.day!==todayStr()){ s.day = todayStr(); s.used = 0; } return s; }
@@ -9572,7 +9595,7 @@ function wbWatch(){
   if(!raidNet.db || wbNet.week===wbWeek()) return;
   if(wbNet.unsub){ try{ wbNet.unsub(); }catch(e){} }
   wbNet.week = wbWeek(); wbNet.data = null;
-  wbNet.unsub = raidNet.db.doc('worldboss/'+wbWeek()).onSnapshot(s=>{ wbNet.data = (s && s.exists) ? s.data() : {}; if(activeTab==='raid' && !document.getElementById('battleScreen')) render(); }, ()=>{});
+  wbNet.unsub = raidNet.db.doc('worldboss/'+wbWeek()).onSnapshot(s=>{ wbNet.data = (s && s.exists) ? s.data() : {}; if((activeTab==='raid' || activeTab==='worldboss') && !document.getElementById('battleScreen')) render(); }, ()=>{});
 }
 function buildWorldBossFight(){
   const ph = wbPhase(), gi = CHAPTER_BOSS_GIMMICK.indexOf(ph.g), weak = wbWeakEl();
@@ -9595,6 +9618,7 @@ function checkWorldBossOutcome(sf){
   sf.result = { win: !!(boss && !boss.alive), rounds: Math.min(sf.round, WB_ROUNDS), dmg, localKill: !!(boss && !boss.alive) };
   const s = wbState(); s.joined = true;
   state.essence += 100; state.enhanceStone = (state.enhanceStone||0) + 10; // 참여 보상
+  sf.result.wbGems = wbGemsFor(dmg); state.wbGems = (state.wbGems||0) + sf.result.wbGems; // (v278) 세계 룬석
   s.pending = (s.pending||0) + dmg; save();
   wbSubmit(sf);
   return true;
@@ -9610,7 +9634,7 @@ async function wbSubmit(sf){
     s.pending = 0;
     if(before < WB_HP && after >= WB_HP){ // 막타
       let won = false; await fb.runTransaction(fb.ref(fb.rtdb, base+'/killer'), cur=>{ if(cur) return; won = true; return { uid: raidNet.uid, name: homeProfileName(), at: Date.now() }; });
-      if(won && !s.killRw){ s.killRw = true; state.essence += WB_KILL_RW.essence; grantItems(WB_KILL_RW.items); toastReward(WB_KILL_RW, '⚔️ 월드 보스 처치자!', 4000); }
+      if(won && !s.killRw){ s.killRw = true; state.essence += WB_KILL_RW.essence; grantItems(WB_KILL_RW.items); state.wbGems = (state.wbGems||0) + WB_KILL_RW.wbGems; toastReward(WB_KILL_RW, '⚔️ 월드 보스 처치자!', 4000); }
       if(sf && sf.result) sf.result.killer = won;
     }
     save(); if(state.skillFight===sf && document.getElementById('battleScreen')) showSkillStageScreen();
@@ -9619,7 +9643,7 @@ async function wbSubmit(sf){
 function wbClaim(i){
   const s = wbState(), m = WB_MILESTONES[i]; if(!m || s.claimed[i] || !s.joined) return;
   if(wbTotal()/WB_HP < m.p){ toast('아직 달성 전'); return; }
-  s.claimed[i] = true; state.essence += m.rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (m.rw.stone||0); grantItems(m.rw.items); save();
+  s.claimed[i] = true; state.essence += m.rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (m.rw.stone||0); state.wbGems = (state.wbGems||0) + (m.rw.wbGems||0); grantItems(m.rw.items); save();
   toastReward(m.rw, '🌍 월드 보스 '+Math.round(m.p*100)+'% 보상');
 }
 function wbResultOverlayHtml(sf){
@@ -9627,11 +9651,11 @@ function wbResultOverlayHtml(sf){
   let h = '<div class="bs-result"><div class="bs-rcard win"><div class="bs-ricon">🌍</div><div class="bs-rtitle">'+(r.localKill ? '월드 보스 격파!' : '도전 끝')+'</div>'
     + '<div class="bs-rsub">준 피해 <b style="color:#ffd557;">'+fmtHp(r.dmg)+'</b> · 전체의 '+pct(r.dmg)+'</div>'
     + (r.killer===true ? '<div class="bs-rsub" style="color:#ff9aa8;">⚔️ 막타 — 처치자 보상</div>' : '')
-    + '<div class="bs-rrew"><div>참여 보상 '+rewardPillsHtml({essence:100, stone:10})+'</div></div>'
+    + '<div class="bs-rrew"><div>참여 보상 '+rewardPillsHtml({essence:100, stone:10, wbGems:r.wbGems||0})+'</div></div>'
     + '<div class="bs-rbtns"><button class="btn" id="skillResultCloseBtn">확인</button></div></div></div>';
   return h;
 }
-function leaveWorldBossFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'raid'; save(); render(); }
+function leaveWorldBossFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'worldboss'; save(); render(); } // (v278) 월드 보스 화면으로 돌아감
 function wbCardHtml(){ // 레이드 목록 맨 위 카드
   wbWatch();
   const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl();
@@ -9641,25 +9665,85 @@ function wbCardHtml(){ // 레이드 목록 맨 위 카드
     + '<span class="wb-bar"><span style="width:'+(ratio*100)+'%;"></span>'+marks+'</span>'
     + '<small>'+(ratio<=0 ? '✅ 이번 주 처치 완료 · 달성 보상 확인' : '남은 체력 '+(ratio*100).toFixed(1)+'% · 오늘 약점 '+elIc(weak)+' · 도전 '+Math.max(0, wbTries()-s.used)+'/'+wbTries())+'</small></span><em>›</em></button>';
 }
-function showWorldBoss(){
+// (v278) 월드 보스 전용 화면 — 레이드 목록 카드를 누르면 화면 전환. 현황 · 보상 · 순위 · 상점
+let wbTab = 'boss';
+function showWorldBoss(){ activeTab = 'worldboss'; wbTab = 'boss'; save(); render(); }
+const WB_SHOP = [ // limit: 이번 주 구매 한도(0 = 무제한)
+  { id:'r_glacier',  rune:'glacier',  price:45, limit:1 },
+  { id:'r_hellfire', rune:'hellfire', price:45, limit:1 },
+  { id:'r_core',     rune:'core',     price:45, limit:1 },
+  { id:'legend', icon:'🎲', name:'전설 룬 뽑기', price:20, limit:2, desc:'전설 등급 기본 룬 1개 (무작위 종류)' },
+  { id:'upgrade', icon:'⬆️', name:'룬 승급석', price:12, limit:2, desc:'룬 한 단계 승급 (일반 → 희귀 → 전설)' },
+  { id:'pick_epic', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
+  { id:'stone', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:2, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' }
+];
+function wbShopItem(it){ if(!it.rune) return it; const r = WORLD_RUNES[it.rune]; return Object.assign({ icon:r.icon, name:r.name, desc:r.desc+' · 월드 보스 전용 룬' }, it); }
+function wbShopBought(id){ const b = state.wbShopBuys; return (b && b.week===raidWeekKey() && b.n && b.n[id]) || 0; }
+function wbShopBuy(id){
+  const it = wbShopItem(WB_SHOP.find(x=>x.id===id) || {}); if(!it.id) return;
+  if((state.wbGems||0) < it.price){ toast('세계 룬석 부족'); return; }
+  if(it.limit && wbShopBought(id) >= it.limit){ toast('이번 주 구매 한도 도달'); return; }
+  const isRune = it.rune || id==='legend';
+  if(isRune && (state.runeInv||[]).length >= RUNE_INV_MAX){ toast('룬 보관함 가득 참'); return; }
+  state.wbGems -= it.price;
+  if(!state.wbShopBuys || state.wbShopBuys.week!==raidWeekKey()) state.wbShopBuys = { week: raidWeekKey(), n:{} };
+  state.wbShopBuys.n[id] = (state.wbShopBuys.n[id]||0) + 1;
+  if(isRune){
+    const ids = Object.keys(RUNE_BASE).filter(k=>RUNE_BASE[k].vals.legend!==undefined);
+    const r = it.rune ? { id: it.rune, tier:'world' } : { id: ids[Math.floor(Math.random()*ids.length)], tier:'legend' };
+    state.runeInv = state.runeInv || []; state.runeInv.push(r); save(); sfx('claim');
+    showRuneReveal(r, '<span class="wbgem">'+uiIc('runestone')+'</span>', ()=>render(), '룬 보관함으로 · 정령 상세 창에서 새기기'); return;
+  }
+  if(id==='upgrade') state.runeUpStones = (state.runeUpStones||0) + 1;
+  else if(id==='stone') state.enhanceStone = (state.enhanceStone||0) + 30;
+  else grantItems({ [id]: 1 });
+  save(); sfx('claim'); toast(it.name+' 구입'); render();
+}
+function renderWorldBossTab(){
   wbWatch();
-  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {};
-  const ps = Object.entries(d.p||{}).map(([uid,v])=>({ uid, nm: String((v&&v.name)||'소환사').slice(0,12), dmg: Number(v&&v.dmg)||0, best: Number(v&&v.best)||0 })).sort((a,b)=>b.dmg-a.dmg);
-  const myRank = ps.findIndex(x=>x.uid===raidNet.uid);
-  let h = gmHeadHtml(ph.g, '🌍', ['<span class="gm-chip">단계 '+(WB_PHASES.indexOf(ph)+1)+'/'+WB_PHASES.length+'</span>', '<span class="gm-chip">오늘 약점 '+elIc(weak)+' ×1.5</span>', '<span class="gm-chip">한 번 '+WB_ROUNDS+'라운드</span>']);
-  h += '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span>'+WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('')+'</div>';
-  h += '<div class="sub" style="text-align:center; font-size:11px;">전체 '+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ 처치자 '+escTxt(d.killer.name) : '')+'</div>';
-  const dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
-  h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'🔒', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
-  if(!dead) h += bossSkillSectionHtml('wboss_'+ph.g, '지금 단계 스킬'); // (v270)
-  h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
-    return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
-  h += '<div class="gm-sec"><div class="gm-sh">기여 순위</div>'+(ps.length ? ps.slice(0,10).map((x,i)=>'<div class="xp-rank'+(x.uid===raidNet.uid?' me':'')+'"><span>'+(i+1)+'</span><b>'+escTxt(x.nm)+(d.killer&&d.killer.uid===x.uid?' ⚔️':'')+'</b><em>'+fmtHp(x.dmg)+'</em></div>').join('') : '<div class="sub" style="text-align:center; font-size:11px;">아직 아무도 도전 안 함</div>')
-    + (myRank>=10 ? '<div class="xp-rank me"><span>'+(myRank+1)+'</span><b>나</b><em>'+fmtHp(ps[myRank].dmg)+'</em></div>' : '')+'</div>';
-  h += '<button class="btn" id="wbGo" style="margin-top:10px;"'+(dead || s.used>=wbTries() || !raidNet.db ?' disabled':'')+'>'+(dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, wbTries()-s.used)+'/'+wbTries()+')')+'</button>';
-  openInfoOverlay('🌍 월드 보스', h);
-  document.querySelectorAll('[data-wb-claim]').forEach(b=>b.addEventListener('click', ()=>{ wbClaim(parseInt(b.dataset.wbClaim)); document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBoss(); }));
-  const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); showWorldBossPrep(); });
+  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {}, dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
+  let h = '<div class="wb-scr">';
+  h += '<div class="wb-hero">'+bossImg(ph.g, 'wb-himg', '🌍')+'<div class="wb-htx"><b>🌍 '+(dead ? '이번 주 처치 완료' : ph.nm)+'</b>'
+    + '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span>'+WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('')+'</div>'
+    + '<small>'+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+' · 단계 '+(ci+1)+'/'+WB_PHASES.length+(d.killer ? ' · ⚔️ '+escTxt(d.killer.name) : '')+'</small></div></div>';
+  h += '<div class="wb-chips"><span class="gm-chip">오늘 약점 '+elIc(weak)+' ×1.5</span><span class="gm-chip">한 번 '+WB_ROUNDS+'라운드</span><span class="gm-chip"><span class="wbgem">'+uiIc('runestone')+'</span> '+(state.wbGems||0)+'</span></div>';
+  h += '<button class="btn" id="wbGo" style="margin:8px 0;"'+(dead || s.used>=wbTries() || !raidNet.db ?' disabled':'')+'>'+(!raidNet.db ? '온라인 연결 후 도전' : dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, wbTries()-s.used)+'/'+wbTries()+')')+'</button>';
+  h += '<div class="seg" style="margin-bottom:8px;">'+[['boss','현황'],['reward','보상'],['rank','순위'],['shop','상점']].map(([k,t])=>{ const n = k==='reward' ? WB_MILESTONES.filter((m,i)=>wbTotal()/WB_HP>=m.p && !s.claimed[i] && s.joined).length : 0;
+    return '<button data-wbtab="'+k+'" class="'+(wbTab===k?'on':'')+'">'+t+(n?' <i class="hot">'+n+'</i>':'')+'</button>'; }).join('')+'</div>';
+  if(wbTab==='reward'){
+    h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
+      return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
+    h += gmSectionHtml('도전 보상', [
+      {ic:'🎯', nm:'참여', when:'도전마다', d:'정수 100 · 강화석 10 · 세계 룬석 1'},
+      {ic:'💥', nm:'피해 보너스', when:'도전마다', d:'준 피해 3천 · 1만 · 3만 · 6만마다 세계 룬석 +1 (한 번에 최대 5)'},
+      {ic:'⚔️', nm:'처치자(막타)', when:'한 주 1명', d:rewardBrief(WB_KILL_RW)}]);
+  } else if(wbTab==='rank'){
+    const ps = Object.entries(d.p||{}).map(([uid,v])=>({ uid, nm: String((v&&v.name)||'소환사').slice(0,12), dmg: Number(v&&v.dmg)||0, best: Number(v&&v.best)||0, n: Number(v&&v.n)||0 })).sort((a,b)=>b.dmg-a.dmg);
+    const myRank = ps.findIndex(x=>x.uid===raidNet.uid);
+    h += '<div class="gm-sec"><div class="gm-sh">이번 주 기여 순위 · 누적 피해 (최고 한 번)</div>'+(ps.length ? ps.slice(0,20).map((x,i)=>'<div class="xp-rank'+(x.uid===raidNet.uid?' me':'')+'"><span>'+(i+1)+'</span><b>'+escTxt(x.nm)+(d.killer&&d.killer.uid===x.uid?' ⚔️':'')+'</b><em>'+fmtHp(x.dmg)+' <small class="sub">('+fmtHp(x.best)+')</small></em></div>').join('') : '<div class="sub" style="text-align:center; font-size:11px;">아직 아무도 도전 안 함</div>')
+      + (myRank>=20 ? '<div class="xp-rank me"><span>'+(myRank+1)+'</span><b>나</b><em>'+fmtHp(ps[myRank].dmg)+'</em></div>' : '')+'</div>';
+  } else if(wbTab==='shop'){
+    h += '<div class="shop-top"><span class="rune-chip" style="border-color:#4fe0c0; color:#4fe0c0; font-size:14px;"><span class="wbgem">'+uiIc('runestone')+'</span> '+(state.wbGems||0)+'</span><span class="sub">한도: 매주 월요일 초기화</span></div>';
+    h += '<div class="shop-grid">'+WB_SHOP.map(x=>{ const it = wbShopItem(x), left = it.limit ? it.limit - wbShopBought(it.id) : null, soldOut = left===0, can = (state.wbGems||0)>=it.price && !soldOut;
+      return '<button class="shop-tile'+(soldOut?' sold':'')+(can?'':' cant')+(it.rune?' wr':'')+'" data-wbshop="'+it.id+'"><div class="shop-ic">'+it.icon+'</div><div class="shop-nm">'+it.name+'</div>'
+        + '<div class="shop-lim">'+(left===null ? '<span class="inf">∞</span> 무제한' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div><span class="shop-price"><span class="wbgem">'+uiIc('runestone')+'</span> '+it.price+'</span></button>'; }).join('')+'</div>';
+    h += gmSectionHtml('월드 보스 전용 룬 (세계 등급)', Object.keys(WORLD_RUNES).map(k=>({ic:WORLD_RUNES[k].icon, nm:WORLD_RUNES[k].name, d:WORLD_RUNES[k].desc})));
+  } else {
+    h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'<img class="uic" src="assets/ui/ic_lock.webp" alt="">', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
+    if(!dead) h += bossSkillSectionHtml('wboss_'+ph.g, '지금 단계 스킬'); // (v270)
+    h += gmSectionHtml('규칙', [
+      {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 체력 66%·33% 아래로 가면 단계가 바뀜'},
+      {ic:'⏱️', nm:'한 번 '+WB_ROUNDS+'라운드', d:'하루 '+wbTries()+'번 · 5라운드 동안 준 피해가 기록됨'},
+      {ic:'✨', nm:'오늘 약점', d:elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · 날마다 바뀜'}]);
+  }
+  return h + '</div>';
+}
+function bindWorldBossTab(){
+  document.querySelectorAll('[data-wbtab]').forEach(b=>b.addEventListener('click', ()=>{ wbTab = b.dataset.wbtab; render(); }));
+  document.querySelectorAll('[data-wb-claim]').forEach(b=>b.addEventListener('click', ()=>{ wbClaim(parseInt(b.dataset.wbClaim)); render(); }));
+  document.querySelectorAll('[data-wbshop]').forEach(b=>b.addEventListener('click', ()=>{ const it = wbShopItem(WB_SHOP.find(x=>x.id===b.dataset.wbshop)); openInfoOverlay(it.icon+' '+it.name, '<div class="sub" style="text-align:center; margin-bottom:10px;">'+it.desc+'</div><div class="sub" style="text-align:center;">가격 <span class="wbgem">'+uiIc('runestone')+'</span> '+it.price+' · 보유 '+(state.wbGems||0)+'</div><button class="btn gold" id="wbBuyGo" style="margin-top:10px;">구입하기</button>');
+    const g = document.getElementById('wbBuyGo'); if(g) g.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); wbShopBuy(it.id); }); }));
+  const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', showWorldBossPrep);
 }
 function showWorldBossPrep(){
   const s = wbState(); if(wbRemain()<=0){ toast('이번 주 보스 처치 완료'); return; } if(s.used >= wbTries()){ toast('오늘 도전 끝 — 내일 다시'); return; }
@@ -10867,6 +10951,7 @@ function rewardPillsHtml(rw){
   if(rw.essence) h += pill('<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+rw.essence, '정수');
   if(rw.stone) h += pill('<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+rw.stone, '강화석');
   if(rw.gems) h += pill(uiIc('runestone')+' '+rw.gems, '룬석');
+  if(rw.wbGems) h += pill('<span class="wbgem">'+uiIc('runestone')+'</span> '+rw.wbGems, '세계 룬석'); // (v278)
   if(rw.items) Object.keys(rw.items).forEach(k=>{ const ti = TICKET_INFO[k]; if(!ti) return; h += pill(ti.icon+' ×'+rw.items[k], ti.name); });
   return h;
 }
@@ -11212,8 +11297,9 @@ function attachHandlers(){
     });
   }
   if(activeTab==='raid') bindRaidTab();
+  if(activeTab==='worldboss') bindWorldBossTab(); // (v278)
   if(activeTab==='home') bindHomeTab();
-  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', ()=>{ activeTab = CHALLENGE_TABS.includes(activeTab) ? 'challenge' : 'home'; render(); save(); }); } // (v266) 탑·요일 던전·시련은 도전 화면으로
+  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', ()=>{ activeTab = CHALLENGE_TABS.includes(activeTab) ? 'challenge' : activeTab==='worldboss' ? 'raid' : 'home'; render(); save(); }); } // (v266) 탑·요일 던전·시련은 도전 화면으로
   document.querySelectorAll('[data-manage]').forEach(el=>{
     el.addEventListener('click', ()=>showManageModal(el.dataset.manage));
   });
@@ -11443,6 +11529,7 @@ function sanitizeState(){
     const R = {}; if(s.runes && typeof s.runes==='object' && !Array.isArray(s.runes)) Object.keys(s.runes).forEach(k=>{ if(SPIRITS[k] && runeValid(s.runes[k])) R[k] = { id:s.runes[k].id, tier:s.runes[k].tier }; }); s.runes = R;
     s.runeInv = Array.isArray(s.runeInv) ? s.runeInv.filter(runeValid).map(r=>({id:r.id, tier:r.tier})).slice(0, RUNE_INV_MAX) : [];
     s.raidGems = (fin2(s.raidGems) && s.raidGems>=0) ? Math.floor(s.raidGems) : 0;
+    s.wbGems = (fin2(s.wbGems) && s.wbGems>=0) ? Math.floor(s.wbGems) : 0; // (v278) 세계 룬석
     if(Array.isArray(s.runeStones) && s.runeStones.length) s.raidGems += s.runeStones.length*6; // (v172) 예전 룬석(개봉형)은 재화로 바꿔줌
     s.runeStones = [];
     s.runeUpStones = (fin2(s.runeUpStones) && s.runeUpStones>=0) ? Math.floor(s.runeUpStones) : 0;
@@ -11595,7 +11682,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 277, APP_VERSION = '2.77'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 278, APP_VERSION = '2.80'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
