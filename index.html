@@ -891,6 +891,7 @@
   .modal.xp-act .m-body > .card > div:first-child:not(.xp-head):not(.card){font-family:Jua, -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; font-size:17px; font-weight:400 !important; text-align:center; margin:0 0 10px;} /* 창 제목은 다른 창 제목과 같은 글씨체로 */
   .modal.xp-act .m-body > .card > .xp-pick + .xp-pick{margin-top:8px;} /* 창 틀 안에 카드 틀이 또 겹치지 않게 */ .modal.xp-act{padding-top:34px;}
   .al-bar{height:8px; border-radius:4px; background:#2d2a62; overflow:hidden; margin:6px 0 4px;} .al-bar i{display:block; height:100%; background:linear-gradient(90deg,#9a6bff,#e0a8ff);}
+  .hid-tag{display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:8px; background:#7a4dff; color:#fff; vertical-align:1px;} /* (v276) 히든 업적 표시 */
   .al-sec{font-family:var(--fun); font-size:14px; margin:12px 0 6px; display:flex; align-items:center;}
   .al-parts > div, .al-perks > div{display:flex; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px solid #ffffff10; font-size:12.5px;} .al-parts small{color:var(--sub);} .al-perks > div{opacity:.55;} .al-perks > div.on{opacity:1;} .al-perks > div.on b{color:#7dffb0;}
   .al-rw{display:flex; flex-direction:column; gap:5px;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
@@ -7915,6 +7916,13 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:276, v:'2.76', date:'2026-09-30', secs:[
+    { t:'바뀐 것', items:[
+      '히든 업적에 \"히든\" 표시 — 달성하면 이름과 조건이 그대로 보임',
+      '레벨 보상 목록의 잠금·완료 아이콘을 새 아이콘으로',
+      '버전 표기 규칙 — 새 콘텐츠는 3.00처럼 앞자리, 기존 콘텐츠 큰 업데이트는 2.80처럼 둘째 자리, 자잘한 업데이트는 2.77처럼 끝자리를 올림'
+    ]}
+  ]},
   { build:275, v:'2.75', date:'2026-09-30', secs:[
     { t:'밸런스', items:[
       '하드 챕터 보스를 하드 1 → 5 순서대로 어려워지게 조정',
@@ -8033,7 +8041,7 @@ async function showAskModal(){
   else {
     h += '<div class="seg" id="askCat">'+ASK_CATS.map(([k,t])=>'<button data-ac="'+k+'" class="'+(askCat===k?'on':'')+'">'+t+'</button>').join('')+'</div>'
       + '<textarea id="askText" class="fr-in" maxlength="500" rows="5" placeholder="어떤 화면에서 무엇을 했을 때 어떻게 됐는지 적어 주면 빨리 고칠 수 있음" style="margin-top:8px; width:100%; resize:vertical;"></textarea>'
-      + '<div class="sub" style="font-size:11px; margin-top:4px;">버전 v2.'+String(APP_BUILD).slice(1)+' · 친구 코드가 같이 전달됨</div>'
+      + '<div class="sub" style="font-size:11px; margin-top:4px;">버전 '+verTxt(APP_BUILD)+' · 친구 코드가 같이 전달됨</div>'
       + '<button class="btn" id="askSend" style="margin-top:8px;">보내기</button>'
       + '<div class="al-sec" style="margin-top:14px;">내가 보낸 문의</div><div id="askMine" class="sub">불러오는 중…</div>';
   }
@@ -8107,7 +8115,7 @@ function accountRewardTabHtml(){ // (v271) 프로필 > 레벨 보상 탭
   let h = accountLevelBarHtml();
   h += '<div class="al-sec">레벨 보상'+(can.length?' <button class="btn small" id="alAll" style="width:auto; margin-left:6px; padding:4px 10px;">모두 받기 ('+can.length+')</button>':'')+'</div><div class="al-rw">';
   for(let L=2; L<=ACCOUNT_MAX_LEVEL; L++){ const got = c[L], ok = L<=lv && !got;
-    h += '<div class="al-row'+(got?' got':'')+(L>lv?' lock':'')+'" data-alrow="'+L+'"><b>Lv.'+L+'</b><span>'+rewardPillsHtml(accountLvReward(L))+'</span>'+(ok ? '<button class="btn small" data-al="'+L+'">받기</button>' : '<em>'+(got?'✓':'🔒')+'</em>')+'</div>'; }
+    h += '<div class="al-row'+(got?' got':'')+(L>lv?' lock':'')+'" data-alrow="'+L+'"><b>Lv.'+L+'</b><span>'+rewardPillsHtml(accountLvReward(L))+'</span>'+(ok ? '<button class="btn small" data-al="'+L+'">받기</button>' : '<em>'+(got?'<img class="uic" src="assets/ui/ic_check.webp" alt="">':'<img class="uic" src="assets/ui/ic_lock.webp" alt="">')+'</em>')+'</div>'; }
   return h + '</div>';
 }
 function bindAccountRewardTab(){
@@ -10901,7 +10909,7 @@ function showAchievementsModal(keep){
       if(pending) rightSide = '<button class="btn small" data-claim-reward="achieve_'+a.id+'">받기</button>';
       else if(done) rightSide = '<div style="font-size:18px;"><img class="uic" src="assets/ui/ic_check.webp" alt=""></div>';
       else rightSide = '<div style="font-size:18px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""></div>';
-      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+(done?'<img class="uic" src="assets/ui/ic_medal.webp" alt=""> ':'')+label+'</div><div class="sub">'+descText+'</div><div>'+rewardPillsHtml(a.reward)+'</div></div>'
+      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+(done?'<img class="uic" src="assets/ui/ic_medal.webp" alt=""> ':'')+label+(a.secret?' <span class="hid-tag">히든</span>':'')+'</div><div class="sub">'+descText+'</div><div>'+rewardPillsHtml(a.reward)+'</div></div>'
         + '<div style="flex-shrink:0; min-width:48px; text-align:center;">'+rightSide+'</div></div>';
     });
     if(achievementCategory==='general') orphanAchievePending().forEach(r=>{ // (v184) 지금은 없어진 업적의 받지 않은 보상도 받을 수 있게
@@ -11578,11 +11586,14 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 275;
-function verTxt(n){ return 'v'+(n/100).toFixed(2); } // (v263) 보이는 버전은 2.63 식 — 내부 번호(263)는 sw.js 캐시 숫자와 같게
+const APP_BUILD = 276, APP_VERSION = '2.76'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+// (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
+var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
+function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
-  try{ const t = await (await fetch('sw.js?t='+Date.now(), {cache:'no-store'})).text(); const m = t.match(/animarune-v(\d+)/); return m ? +m[1] : null; }catch(e){ return null; }
+  try{ const t = await (await fetch('sw.js?t='+Date.now(), {cache:'no-store'})).text(); const m = t.match(/animarune-v(\d+)/); if(!m) return null;
+    const vm = t.match(/APP_VERSION\s*=\s*'([\d.]+)'/); if(vm) buildVer[+m[1]] = vm[1]; return +m[1]; }catch(e){ return null; }
 }
 async function appUpdateNow(){
   toast('최신 버전 확인 중…');
