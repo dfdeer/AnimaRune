@@ -6269,43 +6269,81 @@ function sfxAt(delayMs, fn){
   const due = Date.now() + delayMs;
   setTimeout(()=>{ if(Date.now()-due > SFX_STALE_MS) return; fn(); }, delayMs);
 }
+// (v2.10.0) 새 소리 — 효과음은 마림바·오르골·글로켄·물방울 같은 귀여운 악기, 배경음은 같은 멜로디를 차분한 편곡(E안)으로
+// 배경음은 효과음 악기(마림바·오르골·글로켄)를 쓰지 않아서 둘이 겹쳐도 섞이지 않음
+function envG(g, t0, peak, atk, dur){ g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
+function sOsc(f, type, t0, dur, peak, atk, bus){ const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f; envG(g, t0, peak, atk, dur); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); return o; }
+const aT = off=> audioCtx.currentTime + (off||0);
+function sMusicBox(f, off, peak, dur, bus){ const t0 = aT(off); sOsc(f,'sine',t0,dur,peak,0.004,bus); sOsc(f*2.01,'sine',t0,dur*0.45,peak*0.22,0.003,bus); sOsc(f*4.2,'sine',t0,0.16,peak*0.12,0.002,bus); }
+function sMarimba(f, off, peak, dur, bus){ const t0 = aT(off); dur = dur||0.55; sOsc(f,'sine',t0,dur,peak,0.006,bus); sOsc(f*3.98,'sine',t0,0.09,peak*0.3,0.003,bus); sOsc(f*9.9,'sine',t0,0.035,peak*0.08,0.002,bus); }
+function sGlock(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.9,peak,0.002,bus); sOsc(f*2.76,'sine',t0,0.3,peak*0.35,0.002,bus); sOsc(f*5.4,'sine',t0,0.12,peak*0.15,0.002,bus); }
+function sSlide(f1, f2, off, dur, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, 0.006, dur+0.04); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.08); }
+function sWood(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.06,peak,0.001,bus); sOsc(f*2.3,'sine',t0,0.03,peak*0.4,0.001,bus); }
+function sPluck(f, off, peak, dur, bright, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain(), g2 = audioCtx.createGain();
+  o.type='triangle'; o2.type='square'; o.frequency.value = f; o2.frequency.value = f; g2.gain.value = bright ? 0.25 : 0.08;
+  lp.type='lowpass'; lp.Q.value = 2; lp.frequency.setValueAtTime(bright?2600:1500, t0); lp.frequency.exponentialRampToValueAtTime(260, t0+dur*0.6);
+  envG(g, t0, peak, 0.005, dur); o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05); }
+function sBoop(off, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(190, t0); o.frequency.exponentialRampToValueAtTime(70, t0+0.12); envG(g, t0, peak, 0.004, 0.18); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+0.22); }
 function sfxPlay(name){
   if(!audioCtx || state.settings.sfxVolume<=0) return;
   { const now = Date.now();
     if(now-sfxBurstStart > SFX_BURST_MS){ sfxBurstStart = now; sfxBurstCount = 0; }
     if(++sfxBurstCount > SFX_BURST_MAX && !SFX_PRIORITY.includes(name)) return; }
-  if(name==='click') playTone(700,0,0.05,sfxGain,'square',0.06);
-  else if(name==='navClick') playTone(560,0,0.05,sfxGain,'square',0.06);
-  else if(name==='summon') { playTone(660,0,0.1,sfxGain,'triangle',0.16); playTone(880,0.07,0.14,sfxGain,'triangle',0.16); }
-  else if(name==='summonRare') { [523,659,784,1047].forEach((f,i)=>playTone(f,i*0.08,0.18,sfxGain,'triangle',0.18)); }
-  else if(name==='summonCharge') { [220,277,330,415,523].forEach((f,i)=>playTone(f,i*0.11,0.16,sfxGain,'sine',0.10)); }
-  else if(name==='summonEpic') { [523,659,784,1047,1319].forEach((f,i)=>playTone(f,i*0.07,0.22,sfxGain,'triangle',0.2)); playTone(262,0,0.5,sfxGain,'sine',0.14); }
-  else if(name==='summonLegend') { [523,659,784,1047,1319,1568].forEach((f,i)=>playTone(f,i*0.07,0.26,sfxGain,'triangle',0.22)); playTone(196,0,0.7,sfxGain,'sine',0.16); playTone(392,0.1,0.6,sfxGain,'sine',0.12); }
-  else if(name==='fail') { playTone(392,0,0.16,sfxGain,'sine',0.12); playTone(311,0.13,0.26,sfxGain,'sine',0.12); } // (v217) 합성 실패: 부드럽게 내려가는 두 음
-  else if(name==='fuse') { playTone(440,0,0.1,sfxGain,'sawtooth',0.14); playTone(660,0.08,0.12,sfxGain,'sawtooth',0.14); playTone(880,0.16,0.2,sfxGain,'sawtooth',0.16); }
-  else if(name==='enhance') { playTone(523,0,0.07,sfxGain,'square',0.12); playTone(784,0.06,0.12,sfxGain,'square',0.14); }
-  else if(name==='win') { [523,659,784,1047].forEach((f,i)=>playTone(f,i*0.09,0.2,sfxGain,'square',0.16)); }
-  else if(name==='lose') { playTone(300,0,0.3,sfxGain,'sawtooth',0.12); playTone(220,0.15,0.35,sfxGain,'sawtooth',0.12); }
-  else if(name==='claim') { playTone(784,0,0.07,sfxGain,'sine',0.15); playTone(1047,0.06,0.1,sfxGain,'sine',0.15); }
-  else if(name==='battleStart') { playTone(220,0,0.08,sfxGain,'square',0.11); playTone(330,0.07,0.1,sfxGain,'square',0.11); }
+  const B = sfxGain;
+  if(name==='click') sSlide(900,1500,0,0.035,0.07,B);                        // 톡 (물방울)
+  else if(name==='navClick') sSlide(620,980,0,0.05,0.08,B);                  // 퐁
+  else if(name==='summon'){ sMarimba(784,0,0.14,0.55,B); sMarimba(1175,0.08,0.13,0.55,B); }
+  else if(name==='summonRare'){ [523,659,784,1047].forEach((f,i)=>sMusicBox(f,i*0.08,0.11,0.9,B)); sGlock(2093,0.34,0.05,B); }
+  else if(name==='summonCharge'){ const t0 = aT(0), o = audioCtx.createOscillator(), lfo = audioCtx.createOscillator(), lg = audioCtx.createGain(), g = audioCtx.createGain(); // 뿌우~ 올라가는 휘슬
+    o.type='sine'; o.frequency.setValueAtTime(330,t0); o.frequency.exponentialRampToValueAtTime(880,t0+0.55); lfo.frequency.value = 11; lg.gain.value = 14; lfo.connect(lg); lg.connect(o.frequency);
+    envG(g,t0,0.08,0.03,0.62); o.connect(g); g.connect(B); o.start(t0); lfo.start(t0); o.stop(t0+0.7); lfo.stop(t0+0.7); }
+  else if(name==='summonEpic'){ [523,659,784,1047,1319].forEach((f,i)=>sMarimba(f,i*0.07,0.15,0.55,B)); [2093,2637,3136].forEach((f,i)=>sGlock(f,0.36+i*0.06,0.045,B)); sMusicBox(262,0,0.1,1.2,B); }
+  else if(name==='summonLegend'){ [523,659,784,1047,1319,1568].forEach((f,i)=>sMarimba(f,i*0.07,0.16,0.55,B)); [2093,2349,2637,3136,3520].forEach((f,i)=>sGlock(f,0.42+i*0.05,0.045,B)); sMusicBox(196,0,0.12,1.6,B); sMusicBox(392,0.1,0.1,1.4,B); sMusicBox(784,0.42,0.08,1.4,B); }
+  else if(name==='fail'){ sSlide(640,470,0,0.16,0.09,B); sSlide(520,360,0.17,0.24,0.09,B); }   // 뿌잉~
+  else if(name==='fuse'){ [0,0.07,0.14].forEach((o,i)=>sSlide(500+i*180,900+i*260,o,0.06,0.08,B)); sGlock(1568,0.22,0.07,B); sGlock(2093,0.3,0.05,B); }
+  else if(name==='enhance'){ sGlock(1047,0,0.09,B); sGlock(1568,0.07,0.09,B); }            // 띠링
+  else if(name==='win'){ [523,659,784].forEach((f,i)=>sMarimba(f,i*0.1,0.16,0.55,B)); sMarimba(1047,0.3,0.18,0.9,B); sGlock(2093,0.3,0.06,B); sBoop(0.3,0.14,B); sPluck(262,0.3,0.12,0.5,true,B); }
+  else if(name==='lose'){ [523,466,415,392].forEach((f,i)=>sMarimba(f,i*0.16,0.12,0.6,B)); sPluck(196,0.64,0.1,0.6,false,B); }
+  else if(name==='claim'){ sGlock(1319,0,0.08,B); sGlock(1760,0.06,0.08,B); sMusicBox(2637,0.12,0.04,0.6,B); } // 짜랑
+  else if(name==='battleStart'){ sWood(880,0,0.14,B); sWood(1175,0.1,0.14,B); sPluck(196,0.2,0.12,0.3,true,B); }
+}
+// 배경음 (E안: 차분한 편곡) — 멜로디 사인(천천히 스며듦) · 길게 이어지는 베이스 · 낮고 어두운 화음 패드 · 한 박에 한 번 작은 삼각파 · 여덟 박에 한 번 은은한 킥 · 2.8초 울림
+const BGM_STEP = 0.48;
+const BGM_CH = { C:[262,330,392], Am:[220,262,330], F:[175,220,262], G:[196,247,294] }, BGM_PROG = ['C','C','C','Am','F','F','Am','G'];
+let bgmBus = null, bgmNextAt = 0;
+function bgmMakeBus(){
+  if(bgmBus && bgmBus.context===audioCtx) return bgmBus;
+  const bus = audioCtx.createGain(), len = Math.floor(audioCtx.sampleRate*2.8), ir = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+  for(let ch=0; ch<2; ch++){ const d = ir.getChannelData(ch); for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.6); }
+  const conv = audioCtx.createConvolver(); conv.buffer = ir; const wet = audioCtx.createGain(); wet.gain.value = 0.45;
+  const comp = audioCtx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+  bus.connect(comp); bus.connect(conv); conv.connect(wet); wet.connect(comp); comp.connect(bgmGain);
+  return (bgmBus = bus);
+}
+function bgmWarm(f, off, peak, dur, atk, bus){ const t0 = aT(off), o = sOsc(f,'sine',t0,dur,peak,atk,bus), l = audioCtx.createOscillator(), lg = audioCtx.createGain(); l.frequency.value = 5; lg.gain.value = f*0.004; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0+dur+0.05); sOsc(f*2,'sine',t0,dur*0.6,peak*0.12,atk,bus); }
+function bgmPad(freqs, off, dur, peak, bus){ const t0 = aT(off);
+  freqs.forEach(f=>[0.997,1.003].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+    o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.value = 600; lp.Q.value = 0.3;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0+0.18); g.gain.setValueAtTime(peak, t0+dur-0.15); g.gain.linearRampToValueAtTime(0.0001, t0+dur+0.25);
+    o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.3); })); }
+function bgmNote(step, off){
+  const bus = bgmMakeBus(), m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
+  bgmWarm(m, off, 0.065, BGM_STEP*1.35, 0.07, bus);
+  if(step%2===0) sOsc(b, 'sine', aT(off), BGM_STEP*2.1, 0.05, 0.08, bus);
+  if(step%2===0) bgmPad(chord.map(f=>f*0.5).concat([chord[0]]), off, BGM_STEP*2, 0.015, bus);
+  sOsc(chord[step%3]*2, 'triangle', aT(off+0.03), BGM_STEP*1.2, 0.009, 0.01, bus);
+  if(step%8===0) sBoop(off, 0.035, bus);
+  if(step%4===0) bgmWarm(m*((step%8===0)?1.5:1.25), off+0.05, 0.02, BGM_STEP*2.4, 0.12, bus);
 }
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
-  bgmTimer = setInterval(()=>{
-    if(state.settings.bgmVolume<=0) return;
-    if(document.hidden || !audioCtx || audioCtx.state!=='running') return; // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
-    const step = bgmStep % BGM_MELODY.length;
-    playTone(BGM_MELODY[step], 0, 0.5, bgmGain, 'sine', 0.09);
-    playTone(BGM_BASS[step], 0, 0.6, bgmGain, 'triangle', 0.05);
-    // 화음을 5도/3도로 번갈아 살짝 색을 더함(4박마다)
-    if(step % 4 === 0){
-      const interval = (step % 8 === 0) ? 1.5 : 1.25;
-      playTone(BGM_MELODY[step]*interval, 0.02, 0.9, bgmGain, 'sine', 0.035);
-    }
-    // 루프당 한 번, 아주 은은한 반짝임(고음 트윙클)으로 포인트 하나 추가
-    if(step === 14) playTone(BGM_MELODY[step]*2, 0.05, 0.7, bgmGain, 'sine', 0.02);
-    bgmStep++;
-  }, 480);
+  bgmNextAt = 0;
+  bgmTimer = setInterval(()=>{ // 0.25초 앞까지 미리 예약해서 박자가 흔들리지 않게
+    if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
+    const now = audioCtx.currentTime;
+    if(!bgmNextAt || bgmNextAt < now - 0.1) bgmNextAt = now + 0.05;
+    while(bgmNextAt < now + 0.25){ bgmNote(bgmStep % BGM_MELODY.length, bgmNextAt - now); bgmStep++; bgmNextAt += BGM_STEP; }
+  }, 60);
 }
 document.addEventListener('click', function initAudioOnce(){
   ensureAudioCtx();
@@ -8026,6 +8064,12 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:291, v:'2.10.0', date:'2026-09-30', secs:[
+    { t:'소리 전면 교체', items:[
+      '효과음 14가지를 귀여운 악기로 — 버튼은 톡(물방울) · 소환은 마림바·오르골 · 소환 연출은 뿌우~ 휘슬 · 합성 실패는 뿌잉~ · 강화는 띠링 · 보상은 짜랑',
+      '배경음은 멜로디는 그대로, 차분한 편곡으로 — 부드러운 멜로디 · 길게 이어지는 베이스 · 낮은 화음 · 은은한 울림 (효과음 악기와 겹치지 않게)'
+    ]}
+  ]},
   { build:290, v:'2.9.6', date:'2026-09-30', secs:[
     { t:'화면', items:[ '창 닫기 버튼을 대문자 X → 조금 더 큰 소문자 x로 (세로로 길어 보이던 것)', '브라우저 다크 모드(삼성 인터넷 등)에서 게임 색이 이상하게 바뀌던 것 대비 — 원래 어두운 화면이라고 표시', '스크롤 문제 확인용 진단 패널 추가 (평소엔 꺼져 있음)' ]}
   ]},
@@ -11887,7 +11931,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 290, APP_VERSION = '2.9.6'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 291, APP_VERSION = '2.10.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
