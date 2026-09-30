@@ -7991,6 +7991,12 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:288, v:'2.9.4', date:'2026-09-30', secs:[
+    { t:'고친 것', items:[
+      '출정: 유물을 모두 모은 뒤 정예 칸을 깨면 \'버프 1개 선택\' 창에 고를 게 없이 멈추던 문제 — 남은 유물이 없으면 능력치 버프 중에서 고름 (이미 멈춘 경우도 다시 열면 풀림)',
+      '출정: 상점·보물 방에서 이미 가진 유물이 한 번 더 들어가던 경우 막음'
+    ]}
+  ]},
   { build:287, v:'2.93', date:'2026-09-30', secs:[
     { t:'결투', items:[ '방 코드로 참가 칸을 친구 목록 위로 옮김' ]}
   ]},
@@ -9075,12 +9081,13 @@ function keepExpedition(){
 function pickExpeditionBuffChoices(kind){ // (v266) 능력치 버프 + 유물 섞어서. 정예는 유물만(희귀 유물 잘 나옴)
   const run = state.expedition, mod = expRunMod(run);
   const relics = EXP_RELICS.filter(r=>!expHasRelic(run, r.id)).map(r=>'r:'+r.id);
-  let pool = kind==='elite' ? relics.slice() : EXPEDITION_BUFFS.map(b=>b.id).concat(relics);
+  // (v2.9.4) 유물을 다 모으면 정예 보상 목록이 비어서 '버프 1개 선택' 창에 고를 게 없이 멈췄음 → 남은 유물이 없으면 능력치 버프로
+  let pool = (kind==='elite' && relics.length) ? relics.slice() : EXPEDITION_BUFFS.map(b=>b.id).concat(relics);
   if(kind==='elite') pool = pool.concat(pool.filter(id=>{ const r = EXP_RELICS.find(x=>'r:'+x.id===id); return r && r.rare; })); // 희귀 유물 가중
   const n = (kind==='elite' ? 3 : 2) + ((mod && mod.id==='chaos') || (kind==='elite' && mod && mod.id==='elites') ? 1 : 0);
   const picks = [];
   while(picks.length<n && pool.length){ const id = pool.splice(Math.floor(Math.random()*pool.length),1)[0]; if(!picks.includes(id)) picks.push(id); }
-  return picks;
+  return picks.length ? picks : null;
 }
 function chooseExpeditionBuff(buffId){
   const run = state.expedition;
@@ -10056,13 +10063,13 @@ function expRestChoose(kind){
 function expShopBuy(i){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='shop') return;
   if(i==='heal'){ if(room.heal) return; if((run.gold||0) < 45){ toast('금화 부족'); return; } run.gold -= 45; room.heal = true; run.roster.forEach(k=>{ const c = run.unitHp[k]; if(c) c.hp = Math.min(c.maxHp, Math.max(c.hp,0) + Math.round(c.maxHp*0.5)); }); toast('🧪 출정대 체력 50% 회복'); }
-  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; run.relics = (run.relics||[]).concat(it.id); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===it.id); toast(r.ic+' '+r.nm+' 획득'); }
+  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; if(!expHasRelic(run, it.id)) run.relics = (run.relics||[]).concat(it.id); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===it.id); toast(r.ic+' '+r.nm+' 획득'); }
   save(); render();
 }
 function expTreasureTake(){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='treasure') return;
   if(!room.relic){ const pool = EXP_RELICS.filter(r=>!expHasRelic(run, r.id)); room.relic = pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null; }
-  if(room.relic){ run.relics = (run.relics||[]).concat(room.relic); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===room.relic); toast(r.ic+' 보물 — '+r.nm+' 획득'); }
+  if(room.relic && !expHasRelic(run, room.relic)){ run.relics = (run.relics||[]).concat(room.relic); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===room.relic); toast(r.ic+' 보물 — '+r.nm+' 획득'); }
   expGold(run, 30);
   advanceExpeditionAfterRoom(run);
 }
@@ -10205,6 +10212,12 @@ function renderExpeditionTab(){
     html += '</div>';
     dock();
     abandonBar(); return html;
+  }
+  if(run.pendingBuffChoice){ // (v2.9.4) 이미 가진 유물·없는 항목은 빼고, 고를 게 하나도 없으면 다시 뽑음(예전 세이브에서 멈춘 경우도 풀림)
+    const okId = id=> String(id).indexOf('r:')===0 ? (EXP_RELICS.some(r=>'r:'+r.id===id) && !expHasRelic(run, String(id).slice(2))) : EXPEDITION_BUFFS.some(b=>b.id===id);
+    const ok = (Array.isArray(run.pendingBuffChoice) ? run.pendingBuffChoice : []).filter(okId);
+    run.pendingBuffChoice = ok.length ? ok : pickExpeditionBuffChoices('battle');
+    if(!run.pendingBuffChoice){ save(); return renderExpeditionTab(); }
   }
   if(run.pendingBuffChoice){
     html += '<div class="card" style="margin-top:10px; border:1px solid #ffd55755;">';
@@ -11831,7 +11844,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 287, APP_VERSION = '2.93'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 288, APP_VERSION = '2.9.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
