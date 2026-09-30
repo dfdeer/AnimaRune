@@ -521,6 +521,11 @@
   .bu-float.crit{font-size:21px; color:#ff9d57;}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
+  .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557; animation-duration:1.6s;} /* (v295) 부활 */
+  .fx-revive .bu-icon{animation:fxRevive 1.2s ease-out .1s both;}
+  .fx-revive .bu-body{animation:fxReviveUp 1.2s ease-out .1s both;}
+  @keyframes fxRevive{0%{opacity:.25; filter:grayscale(1) brightness(.6)} 35%{opacity:1; filter:brightness(2.6) drop-shadow(0 0 18px #ffd557) drop-shadow(0 0 8px #ff8a2e)} 100%{opacity:1; filter:drop-shadow(0 2px 2px #0005)}}
+  @keyframes fxReviveUp{0%{transform:translateY(10px) scale(.8)} 35%{transform:translateY(-8px) scale(1.18)} 60%{transform:translateY(0) scale(.97)} 100%{transform:none}}
   @keyframes fxFloat{0%{opacity:0; transform:translate(-50%,0) scale(.7)} 15%{opacity:1; transform:translate(-50%,-6px) scale(1.2)} 100%{opacity:0; transform:translate(-50%,-36px) scale(1)}}
   .fx-shake{animation:bsShake .35s ease-out .15s;}
   @keyframes bsShake{0%,100%{transform:translate(0,0)} 25%{transform:translate(-4px,2px)} 50%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)}}
@@ -1985,14 +1990,14 @@ function killUnit(sf, u){
   if(u.isBoss){ delete u.cast; (sf.enemyUnits||[]).forEach(x=>{ if(x.isAdd && x.alive){ x.alive = false; x.hp = 0; x.hidden = true; x.st = {}; } }); (sf.myUnits||[]).forEach(m=>{ if(m.st && m.st.jail) delete m.st.jail; }); return; } // (v260 버그수정) 보스는 정령 패시브(화염-a 부활)를 쓰지 않음 — 용암군주·겁화룡이 체력 30%로 되살아나던 문제
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
   if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed){
-    u.reviveUsed = true; u.alive = true; u.hp = Math.round(u.maxHp*0.3); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', text:'🔥부활!', src:'투지 (체력 30%)' }); // (v268)
+    u.reviveUsed = true; u.alive = true; u.hp = Math.round(u.maxHp*0.3); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'🔥부활!', src:'투지 (체력 30%)' }); // (v268) · (v295) rv: 부활 연출
     pushLog(sf, SPIRITS[u.key].name+' 부활!');
-    if(u.g>=4) aliveUnits(sideUnits(sf, foeOf(u.side))).forEach(e=>dealDamage(sf, u, e, 0.8, {noCrit:true}));
+    if(u.g>=4) aliveUnits(sideUnits(sf, foeOf(u.side))).forEach(e=>{ const r = dealDamage(sf, u, e, 0.8, {noCrit:true}); if(r) sf._rv.push({ side:e.side, idx:e.idx, kind:'dmg', amount:r.total, eff:effTypeMult(u, e), dot:true, src:'부활 폭발' }); }); // (v295) 폭발 피해도 숫자로 (예전엔 피해만 들어가고 안 보였음)
     return;
   }
   // 빛-a 신화: 같은 편 쓰러진 아군 1회 부활
   const angel = aliveUnits(sideUnits(sf, u.side)).find(x=>x.line==='light_a' && x.g>=4 && !x.reviveGiven);
-  if(angel){ angel.reviveGiven = true; u.alive = true; u.hp = Math.round(u.maxHp*0.5); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', text:'✨부활!', src:SPIRITS[angel.key].name+' (체력 50%)' }); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
+  if(angel){ angel.reviveGiven = true; u.alive = true; u.hp = Math.round(u.maxHp*0.5); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'✨부활!', src:SPIRITS[angel.key].name+' (체력 50%)' }); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
   // 숲결-b 패시브: 독 걸린 채 쓰러지면 옆 칸으로 독 전파
   const pch = poisoned ? [0,.5,.65,.8,1][poisoned.srcG] : 0;
   if(poisoned && poisoned.srcG>=1 && (sf.noRng ? pch>=1 : Math.random() < pch)){ // (v266) 시련: 확률 전염 없음 · 100%면 첫 이웃에게
@@ -5330,7 +5335,7 @@ function showSkillStageScreen(){
   const curUnit = (side==='me' && !raidWaiting) ? unitAt(sf, 'me', cur.idx) : null;
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
-  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); }
+  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
   if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; }
@@ -5348,6 +5353,8 @@ function showSkillStageScreen(){
     const dmg = mine.filter(h=>h.kind==='dmg').reduce((x,h)=>x+h.amount, 0);
     const heal = mine.filter(h=>h.kind==='heal').reduce((x,h)=>x+h.amount, 0);
     const sh = mine.filter(h=>h.kind==='shield').reduce((x,h)=>x+h.amount, 0);
+    const rv = mine.find(h=>h.rv); // (v295) 부활: 쓰러뜨린 피해 숫자 대신 '부활!'을 크게 + 빛나며 일어나는 연출
+    if(rv){ out.cls += ' fx-revive'; out.text = rv.text+(rv.src?'<small>'+rv.src+'</small>':'')+(dmg?'<em class="fx-st">-'+dmg+'</em>':''); out.textCls = 'revive'; return out; }
     const stat = mine.find(h=>h.kind==='status');
     const d0 = mine.find(h=>h.kind==='dmg');
     if(dmg || (d0 && d0.amount===0)){
@@ -8086,6 +8093,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:295, v:'2.10.4', date:'2026-09-30', secs:[
+    { t:'전투 연출', items:[ '부활할 때 정령이 빛나며 일어나는 연출과 효과음 · 부활 글자를 크게 (투지·천사 부활 모두)', '화염 A 계열 신화의 부활 폭발 피해가 적에게 숫자로 보이게 (예전엔 피해만 들어가고 안 보였음)' ]}
+  ]},
   { build:294, v:'2.10.3', date:'2026-09-30', secs:[
     { t:'고친 것', items:[ '전투 버튼에 뜨는 예상 결과를 계산할 때 일부 히든 업적이 조건 없이 달성되거나, 반대로 달성이 막히던 문제' ]},
     { t:'화면', items:[ '전투 화면의 아군·적 표시에 흰 테두리와 그림자 — 설원처럼 밝은 배경에서도 잘 보이게', '탐험 지도에서 특수 규칙을 지키고 깬 스테이지는 특수 표시에 초록 체크' ]},
@@ -11967,7 +11977,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 294, APP_VERSION = '2.10.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 295, APP_VERSION = '2.10.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
