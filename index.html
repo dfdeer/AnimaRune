@@ -173,6 +173,7 @@
   .seg i{font-style:normal; font-size:10px; min-width:18px; padding:1px 5px; border-radius:9px; background:#ffffff1a;}
   .seg i.hot{background:#ff5757; color:#fff;}
   .fr-cap{font-size:11px; font-weight:800; color:var(--sub); margin:2px 2px -4px;}
+  .fr-scroll{overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; border-radius:14px;} /* (v280) 친구 목록만 스크롤 */
   .fr-list{display:flex; flex-direction:column; border-radius:14px; background:#1c1a28; border:1px solid #ffffff10; overflow:hidden;}
   .fr-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border-top:1px solid #ffffff0c;}
   .fr-row:first-child{border-top:none;}
@@ -2965,10 +2966,10 @@ function renderFriendsTab(){
   h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
-    if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
+    if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-scroll fit-rest" data-below="0" data-min="160"><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
       const fr = friendNet.reps[k];
       return '<div class="fr-row"><span class="fr-avw" data-f-prof="'+k+'" style="cursor:pointer;"><span class="fr-av">'+(fr?spArt(SPIRITS[fr]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span></span><div class="fr-nm" data-f-prof="'+k+'" style="cursor:pointer;"><b>'+escTxt(raidNameOf(k))+'</b><small>'+friendSeenTxt(k)+'</small></div>'
-        + '<button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div>';
+        + '<button class="btn small" data-f-duel="'+k+'"'+(o?'':' disabled')+'><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투</button><button class="fr-x" data-f-remove="'+k+'" title="친구 삭제">삭제</button></div>'; }).join('')+'</div></div>'; // (v280) 친구 목록만 따로 스크롤
     else h += '<div class="fr-empty">아직 친구 없음<br><button class="btn small" data-ftab="add" style="margin-top:10px;">＋ 친구 추가하기</button></div>';
   }else if(friendTab==='req'){
     const sent = friendSentList();
@@ -7234,6 +7235,7 @@ function render(){
     el.style.display = (el.dataset.navdot==='home' ? (pendingRewardCount('tower')+pendingRewardCount('expedition')+pendingRewardCount('stage')) : pendingRewardCount(el.dataset.navdot))>0 ? 'block' : 'none';
   });
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
+  const frSc = document.querySelector('.fr-scroll'), frTop = (frSc && activeTab==='friends') ? frSc.scrollTop : 0; // (v280) 친구 목록을 다시 그려도 스크롤 위치 유지
   const main = document.getElementById('main');
   const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
@@ -7252,6 +7254,7 @@ function render(){
   xpSyncActionModal(); // (v268) 출정 칸 창
   attachHandlers();
   fitRest();
+  if(frTop){ const f2 = document.querySelector('.fr-scroll'); if(f2) f2.scrollTop = frTop; }
   { const sc = document.getElementById('towerScroll');
     if(sc){
       if(towerScrollTop!==null) sc.scrollTop = towerScrollTop;
@@ -7929,6 +7932,13 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:280, v:'2.82', date:'2026-09-30', secs:[
+    { t:'월드 보스', items:[
+      '한 주 안에서 체력에 따라 모습이 바뀌던 단계를 없앰 — 이제 주마다 보스 하나 (빙하의 거신 · 업화의 군주 · 심연의 핵이 섞여서 번갈아 등장, 같은 보스가 연달아 안 나옴)',
+      '현황 탭에 이번 주 보스와 다음 주 보스 표시'
+    ]},
+    { t:'고친 것', items:[ '친구 창에서 친구 목록이 스크롤되지 않던 문제 — 위쪽(내 정보·탭)은 고정, 친구 목록만 따로 스크롤' ]}
+  ]},
   { build:279, v:'2.81', date:'2026-09-30', secs:[
     { t:'월드 보스', items:[
       '소탕 추가 — 그날 한 번 직접 도전하면, 남은 도전을 그날 최고 피해 그대로 바로 처리 (소탕 1회 · 모두 소탕) · 보상은 직접 도전과 같음',
@@ -9580,11 +9590,25 @@ function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 ·
 const WB_ROUNDS = 5;
 let WB_HP = 1500000; // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 5명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도 (v269: 300만→150만)
 const WB_PCT_HP = 20000, WB_ATK_RATIO = 0.35;
-const WB_PHASES = [ // 남은 체력 비율이 이 값 이하면 그 단계
-  { at:1.00, g:'frostGiant', nm:'빙하의 거신', d:'받는 피해 절반 · 3R마다 가장 빠른 아군 빙결 · 눈보라' },
-  { at:0.66, g:'lavaLord', nm:'업화의 군주', d:'화염 공격 흡수 · 매 R 화상 · 3R마다 분화' },
-  { at:0.33, g:'abyssCrystal', nm:'심연의 핵', d:'매 R 속성 변환 · 심연 응시 · 3R마다 심연 파동' }
+// (v280) 주마다 보스 하나 — 한 주 안에서 단계가 바뀌던 방식은 없앰. 목록을 섞어서 한 바퀴씩 돌리고(같은 보스가 연달아 안 나오게), 바퀴마다 순서가 바뀜
+// 나중에 속성별 2종쯤으로 늘리면 이 목록에 넣기만 하면 됨 (el = 보스 속성, 다양하게 나오도록 같은 속성이 연달아 오면 한 칸 미룸)
+const WB_BOSSES = [
+  { g:'frostGiant',   el:'water', nm:'빙하의 거신', d:'받는 피해 절반 · 3R마다 가장 빠른 아군 빙결 · 눈보라' },
+  { g:'lavaLord',     el:'fire',  nm:'업화의 군주', d:'화염 공격 흡수 · 매 R 화상 · 3R마다 분화' },
+  { g:'abyssCrystal', el:null,    nm:'심연의 핵',   d:'매 R 속성 변환 · 심연 응시 · 3R마다 심연 파동' }
 ];
+const WB_EPOCH = new Date(2026, 0, 5).getTime(); // 2026-01-05 월요일 = 0주차
+function wbWeekIndex(ms){ const d = new Date(ms===undefined ? raidWeekStart().getTime() : ms); d.setHours(0,0,0,0); return Math.round((d.getTime() - WB_EPOCH) / (7*86400000)); }
+function wbCycleOrder(c){ // c번째 바퀴의 순서 — 정해진 씨앗으로 섞음(모든 플레이어가 같은 보스)
+  const o = WB_BOSSES.map((_,i)=>i);
+  for(let i=o.length-1;i>0;i--){ const j = Math.floor(seededRand(c*97.13 + i*13.7 + 5)*(i+1)); const t = o[i]; o[i] = o[j]; o[j] = t; }
+  return o;
+}
+function wbBossForWeek(w){
+  const L = WB_BOSSES.length, c = Math.floor(w/L), pos = ((w%L)+L)%L, o = wbCycleOrder(c);
+  if(c>0 && L>1){ const prev = wbCycleOrder(c-1); if(o[0]===prev[L-1]){ const t = o[0]; o[0] = o[1]; o[1] = t; } } // 바퀴가 바뀔 때 같은 보스 연속 방지
+  return WB_BOSSES[o[pos]];
+}
 const WB_MILESTONES = [ {p:0.25, rw:{essence:800, wbGems:3}}, {p:0.50, rw:{stone:60, wbGems:5}}, {p:0.75, rw:{items:{pick_epic:1}, wbGems:8}}, {p:1.00, rw:{items:{pick_legendary:1}, wbGems:12}} ];
 const WB_KILL_RW = { essence:1500, items:{pick_legendary:1}, wbGems:15 };
 // (v278) 세계 룬석 — 월드 보스 전용 재화. 도전 1번에 1개 + 준 피해 3천·1만·3만·6만마다 +1 (최대 5) · 함께 달성·처치 보상에도 붙음 → 월드 보스 상점
@@ -9595,8 +9619,8 @@ function wbWeek(){ return raidWeekKey(); }
 function wbState(){ const w = wbWeek(), s = state.wb = state.wb || {}; if(s.week!==w){ s.week = w; s.claimed = {}; s.joined = false; s.killRw = false; } if(s.day!==todayStr()){ s.day = todayStr(); s.used = 0; s.best = 0; } /* (v279) best = 오늘 직접 도전한 최고 피해(소탕 기준) */ return s; }
 function wbTotal(){ return Math.max(0, (wbNet.data && Number.isFinite(wbNet.data.total)) ? wbNet.data.total : 0); }
 function wbRemain(){ return Math.max(0, WB_HP - wbTotal()); }
-function wbPhaseAt(remainRatio){ let ph = WB_PHASES[0]; WB_PHASES.forEach(p=>{ if(remainRatio <= p.at) ph = p; }); return ph; }
-function wbPhase(){ return wbPhaseAt(wbRemain()/WB_HP); }
+function wbPhase(){ return wbBossForWeek(wbWeekIndex()); } // 이번 주 보스 (예전 이름 그대로 씀)
+function wbNextBoss(){ return wbBossForWeek(wbWeekIndex()+1); }
 function wbWeakEl(){ const d = todayStr(); let h = 0; for(let i=0;i<d.length;i++) h = (h*33 + d.charCodeAt(i)) >>> 0; return ELEMENTS[h % ELEMENTS.length]; }
 function wbWatch(){
   if(!raidNet.db || wbNet.week===wbWeek()) return;
@@ -9667,7 +9691,7 @@ function wbCardHtml(){ // 레이드 목록 맨 위 카드
   wbWatch();
   const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl();
   if(!raidNet.db) return '<div class="wb-card off"><b>🌍 월드 보스</b><small>온라인 연결 후 참여</small></div>';
-  const marks = WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('');
+  const marks = '';
   return '<button class="wb-card" id="wbOpen">'+bossImg(ph.g, 'wb-img', '🌍')+'<span class="wb-mid"><b>🌍 월드 보스 · '+ph.nm+'</b>'
     + '<span class="wb-bar"><span style="width:'+(ratio*100)+'%;"></span>'+marks+'</span>'
     + '<small>'+(ratio<=0 ? '✅ 이번 주 처치 완료 · 달성 보상 확인' : '남은 체력 '+(ratio*100).toFixed(1)+'% · 오늘 약점 '+elIc(weak)+' · 도전 '+Math.max(0, wbTries()-s.used)+'/'+wbTries())+'</small></span><em>›</em></button>';
@@ -9708,11 +9732,11 @@ function wbShopBuy(id){
 }
 function renderWorldBossTab(){
   wbWatch();
-  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {}, dead = wbRemain()<=0, ci = WB_PHASES.indexOf(ph);
+  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {}, dead = wbRemain()<=0, nx = wbNextBoss();
   let h = '<div class="wb-scr">';
   h += '<div class="wb-hero">'+bossImg(ph.g, 'wb-himg', '🌍')+'<div class="wb-htx"><b>🌍 '+(dead ? '이번 주 처치 완료' : ph.nm)+'</b>'
-    + '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span>'+WB_PHASES.slice(1).map(p=>'<i style="left:'+(p.at*100)+'%;"></i>').join('')+'</div>'
-    + '<small>'+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+' · 단계 '+(ci+1)+'/'+WB_PHASES.length+(d.killer ? ' · ⚔️ '+escTxt(d.killer.name) : '')+'</small></div></div>';
+    + '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span></div>'
+    + '<small>'+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ '+escTxt(d.killer.name) : '')+'</small></div></div>';
   h += '<div class="wb-chips"><span class="gm-chip">오늘 약점 '+elIc(weak)+' ×1.5</span><span class="gm-chip">한 번 '+WB_ROUNDS+'라운드</span><span class="gm-chip"><span class="wbgem">'+uiIc('runestone')+'</span> '+(state.wbGems||0)+'</span></div>';
   h += '<button class="btn" id="wbGo" style="margin:8px 0 0;"'+(dead || s.used>=wbTries() || !raidNet.db ?' disabled':'')+'>'+(!raidNet.db ? '온라인 연결 후 도전' : dead ? '✅ 이번 주 처치 완료' : '⚔️ 도전 ('+Math.max(0, wbTries()-s.used)+'/'+wbTries()+')')+'</button>';
   { const left = Math.max(0, wbTries()-s.used), can = !dead && raidNet.db && s.best>0 && left>0; // (v279) 소탕
@@ -9739,10 +9763,10 @@ function renderWorldBossTab(){
         + '<div class="shop-lim">'+(left===null ? '<span class="inf">∞</span> 무제한' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div><span class="shop-price"><span class="wbgem">'+uiIc('runestone')+'</span> '+it.price+'</span></button>'; }).join('')+'</div>';
     h += gmSectionHtml('월드 보스 전용 룬 (세계 등급)', Object.keys(WORLD_RUNES).map(k=>({ic:WORLD_RUNES[k].icon, nm:WORLD_RUNES[k].name, d:WORLD_RUNES[k].desc})));
   } else {
-    h += gmSectionHtml(dead ? '이번 주 처치 완료 · 다음 주 새로 등장' : '단계', WB_PHASES.map((p,i)=> (dead || i<ci) ? {ic:'✅', nm:p.nm, when:'격파', d:p.d} : i===ci ? {ic:'👹', nm:p.nm, when:'지금', d:p.d} : {ic:'<img class="uic" src="assets/ui/ic_lock.webp" alt="">', nm:p.nm, when:'체력 '+Math.round(p.at*100)+'%↓', d:p.d}));
-    if(!dead) h += bossSkillSectionHtml('wboss_'+ph.g, '지금 단계 스킬'); // (v270)
+    h += gmSectionHtml('이번 주 보스', [{ic:dead?'✅':'👹', nm:ph.nm, when:dead?'처치 완료':'이번 주', d:ph.d}, {ic:'🔮', nm:nx.nm, when:'다음 주', d:nx.d}]); // (v280) 주마다 보스 하나
+    h += bossSkillSectionHtml('wboss_'+ph.g, '보스 스킬'); // (v270)
     h += gmSectionHtml('규칙', [
-      {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 체력 66%·33% 아래로 가면 단계가 바뀜'},
+      {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 보스는 주마다 바뀜(월요일)'},
       {ic:'⏱️', nm:'한 번 '+WB_ROUNDS+'라운드', d:'하루 '+wbTries()+'번 · 5라운드 동안 준 피해가 기록됨'},
       {ic:'⚡', nm:'소탕', d:'오늘 한 번 직접 도전하면, 남은 도전은 오늘 최고 피해 그대로 바로 처리 가능 (보상 같음) · 고점을 노리면 계속 직접 도전'},
       {ic:'✨', nm:'오늘 약점', d:elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · 날마다 바뀜'}]);
@@ -11711,7 +11735,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 279, APP_VERSION = '2.81'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 280, APP_VERSION = '2.82'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
