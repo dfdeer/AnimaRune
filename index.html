@@ -521,12 +521,12 @@
   .bu-float.crit{font-size:21px; color:#ff9d57;}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
-  .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557; animation-duration:1.6s;} /* (v295) 부활 */
+  .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v295) 부활 */
   .fx-revive .bu-icon{animation:fxRevive 1.2s ease-out .1s both;}
   .fx-revive .bu-body{animation:fxReviveUp 1.2s ease-out .1s both;}
   @keyframes fxRevive{0%{opacity:.25; filter:grayscale(1) brightness(.6)} 35%{opacity:1; filter:brightness(2.6) drop-shadow(0 0 18px #ffd557) drop-shadow(0 0 8px #ff8a2e)} 100%{opacity:1; filter:drop-shadow(0 2px 2px #0005)}}
   @keyframes fxReviveUp{0%{transform:translateY(10px) scale(.8)} 35%{transform:translateY(-8px) scale(1.18)} 60%{transform:translateY(0) scale(.97)} 100%{transform:none}}
-  @keyframes fxFloat{0%{opacity:0; transform:translate(-50%,0) scale(.7)} 15%{opacity:1; transform:translate(-50%,-6px) scale(1.2)} 100%{opacity:0; transform:translate(-50%,-36px) scale(1)}}
+  @keyframes fxFloat{0%{opacity:0; transform:translate(-50%,0) scale(.7)} 10%{opacity:1; transform:translate(-50%,-6px) scale(1.2)} 20%{transform:translate(-50%,-10px) scale(1)} 75%{opacity:1; transform:translate(-50%,-26px) scale(1)} 100%{opacity:0; transform:translate(-50%,-36px) scale(1)}} /* (v295) 오래 보이게 */
   .fx-shake{animation:bsShake .35s ease-out .15s;}
   @keyframes bsShake{0%,100%{transform:translate(0,0)} 25%{transform:translate(-4px,2px)} 50%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)}}
 
@@ -1553,6 +1553,9 @@ function gridNeighbors(idx, shape, width){
 let skillSel = { key:null, side:null, idx:null };
 let skillPumpTimer = null;
 let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skillFightSeq = 0;
+// (v295) 피해·회복 숫자는 따로 기억해서 화면을 다시 그려도 이어서 보이게 — 예전엔 다음 행동·라운드 넘김·대기 타이머로 다시 그리면 뜨다 말고 사라졌음
+const SKILL_FLOAT_MS = 1900, SKILL_FLOAT_REVIVE_MS = 2600, SKILL_FLOAT_MAX = 3;
+let skillFloats = [];
 let skillRenderedFx = 0;
 let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
@@ -5182,6 +5185,7 @@ function battleUnitHtml(u, opts){
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+'</div>'+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
+    + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
     + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+'</div>'
@@ -5338,7 +5342,8 @@ function showSkillStageScreen(){
   if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
-  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; }
+  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; }
+  { const now = Date.now(); skillFloats = skillFloats.filter(f=> now - f.t0 < f.dur); }
   if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
   if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
     const k = skillFightSeq+':'+(sf.mode||'stage')+':'+sf.stageIdx+':'+(sf.wave||0)+':'+sf.round+':'+(sf.actSeq||0)+':'+!!sf.result.win;
@@ -5379,6 +5384,9 @@ function showSkillStageScreen(){
     const u = unitAt(sf, s, idx);
     if(!u) return '<div class="bu bu-empty"></div>';
     const o = { size, fx: fxFor(u), cur: !!(cur && cur.side===s && cur.idx===idx), area: (areaSet && areaSet.has(s+':'+idx)) ? areaK : '' };
+    { const uk = s+':'+idx, now = Date.now();
+      if(o.fx && o.fx.text){ skillFloats.push({ u:uk, text:o.fx.text, cls:o.fx.textCls||'', t0:now, dur: o.fx.textCls==='revive' ? SKILL_FLOAT_REVIVE_MS : SKILL_FLOAT_MS }); o.fx = Object.assign({}, o.fx, { text:'' }); }
+      o.floats = skillFloats.filter(f=>f.u===uk).slice(-SKILL_FLOAT_MAX).map(f=>Object.assign({ age: now - f.t0 }, f)); }
     if(curUnit && u.alive){
       if(skillTargetable(sf, s, idx)){
         o.sel = skillSel.side===s && skillSel.idx===idx; o.can = !o.sel;
@@ -8094,7 +8102,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:295, v:'2.10.4', date:'2026-09-30', secs:[
-    { t:'전투 연출', items:[ '부활할 때 정령이 빛나며 일어나는 연출과 효과음 · 부활 글자를 크게 (투지·천사 부활 모두)', '화염 A 계열 신화의 부활 폭발 피해가 적에게 숫자로 보이게 (예전엔 피해만 들어가고 안 보였음)' ]}
+    { t:'전투 연출', items:[ '부활할 때 정령이 빛나며 일어나는 연출과 효과음 · 부활 글자를 크게 (투지·천사 부활 모두)', '화염 A 계열 신화의 부활 폭발 피해가 적에게 숫자로 보이게 (예전엔 피해만 들어가고 안 보였음)', '피해·회복 숫자가 다음 행동이나 라운드 넘김 때 뜨다 말고 사라지던 것 — 끝까지 보이게 하고 보이는 시간도 1.1초 → 1.9초(부활 2.6초) · 같은 정령에 여러 개가 뜨면 위로 쌓임' ]}
   ]},
   { build:294, v:'2.10.3', date:'2026-09-30', secs:[
     { t:'고친 것', items:[ '전투 버튼에 뜨는 예상 결과를 계산할 때 일부 히든 업적이 조건 없이 달성되거나, 반대로 달성이 막히던 문제' ]},
