@@ -6285,12 +6285,14 @@ function sPluck(f, off, peak, dur, bright, bus){ const t0 = aT(off), o = audioCt
   lp.type='lowpass'; lp.Q.value = 2; lp.frequency.setValueAtTime(bright?2600:1500, t0); lp.frequency.exponentialRampToValueAtTime(260, t0+dur*0.6);
   envG(g, t0, peak, 0.005, dur); o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05); }
 function sBoop(off, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(190, t0); o.frequency.exponentialRampToValueAtTime(70, t0+0.12); envG(g, t0, peak, 0.004, 0.18); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+0.22); }
+let sfxSummonNode = null;
+function sfxSummonBus(){ if(!sfxSummonNode || sfxSummonNode.context!==audioCtx){ sfxSummonNode = audioCtx.createGain(); sfxSummonNode.gain.value = 0.55; sfxSummonNode.connect(sfxGain); } return sfxSummonNode; }
 function sfxPlay(name){
   if(!audioCtx || state.settings.sfxVolume<=0) return;
   { const now = Date.now();
     if(now-sfxBurstStart > SFX_BURST_MS){ sfxBurstStart = now; sfxBurstCount = 0; }
     if(++sfxBurstCount > SFX_BURST_MAX && !SFX_PRIORITY.includes(name)) return; }
-  const B = sfxGain;
+  const B = name.indexOf('summon')===0 ? sfxSummonBus() : sfxGain; // (v2.10.2) 소환 소리는 다른 효과음보다 커서 0.55배로
   if(name==='click') sSlide(900,1500,0,0.035,0.07,B);                        // 톡 (물방울)
   else if(name==='navClick') sSlide(620,980,0,0.05,0.08,B);                  // 퐁
   else if(name==='summon'){ sMarimba(784,0,0.14,0.55,B); sMarimba(1175,0.08,0.13,0.55,B); }
@@ -8065,6 +8067,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:293, v:'2.10.2', date:'2026-09-30', secs:[
+    { t:'소리', items:[ '소환 효과음(일반·레어·에픽·전설·연출)이 다른 효과음보다 커서 약 절반 크기로 줄임' ]}
+  ]},
   { build:292, v:'2.10.1', date:'2026-09-30', secs:[
     { t:'고친 것', items:[
       '최신 크롬(갤럭시 등)에서 친구 창·결투 화면의 친구 목록이 스크롤되지 않던 문제 — 친구 줄 위에서 시작한 스크롤이 목록으로 전달되지 않았음'
@@ -11937,7 +11942,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 292, APP_VERSION = '2.10.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 293, APP_VERSION = '2.10.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
