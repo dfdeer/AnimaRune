@@ -133,7 +133,9 @@
   .ex-grade{position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); min-width:22px; padding:0 5px; border-radius:9px; font-size:11px; font-weight:900; text-align:center; line-height:17px; background:#b8bcc4; color:#1d1b48; border:1.5px solid #fff; box-shadow:0 2px 4px #0008;}
   .ex-node.boss .ex-grade{bottom:18px;}
   .ex-grade.gS{background:linear-gradient(135deg,#ffe066,#ffc857);} .ex-grade.gA{background:linear-gradient(135deg,#d6a8ff,#b657ff); color:#fff;} .ex-grade.gB{background:linear-gradient(135deg,#8ec5ff,#5798ff); color:#fff;}
-  .ex-sp{position:absolute; top:-8px; right:-8px; font-size:15px; border-radius:50%; background:radial-gradient(circle, #c98aff88 0%, #c98aff00 68%);} /* (v247) 아이폰 사파리에서 drop-shadow가 네모난 보라 판처럼 보여서 둥근 빛으로 바꿈 */
+  .ex-sp{position:absolute; top:-8px; right:-8px; font-size:15px; border-radius:50%; background:radial-gradient(circle, #c98aff88 0%, #c98aff00 68%);}
+  .ex-sp.done::after, .ex-legend .spdone::after{content:'✓'; position:absolute; right:-5px; bottom:-4px; width:13px; height:13px; border-radius:50%; background:#2fbf5b; color:#fff; font-size:9px; font-weight:900; line-height:13px; text-align:center; border:1.5px solid #fff; box-shadow:0 1px 3px #0008;} /* (v294) 특수 규칙을 지키고 깬 스테이지 */
+  .ex-legend .spdone{position:relative; display:inline-flex; margin-right:5px;} /* (v247) 아이폰 사파리에서 drop-shadow가 네모난 보라 판처럼 보여서 둥근 빛으로 바꿈 */
   .ex-dot{position:absolute; top:-3px; left:-3px; width:11px; height:11px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 6px #ff5757;}
   .ex-mode{display:flex; gap:4px; margin-bottom:5px; padding:3px; border-radius:14px; background:#0006;} .ex-mode button{position:relative; flex:1; padding:5px 0; border-radius:11px; border-color:transparent !important; border:1px solid #ffffff1a; background:#1d1b48; color:var(--sub); font-weight:900; font-size:13px;}
   .ex-mode button.on{background:#5b6bff33; border-color:#8a96ff; color:var(--text);} .ex-mode button.hard.on{background:linear-gradient(135deg,#6a1428,#3a1030); border-color:#ff5a6a; color:#ffd0d6; box-shadow:0 0 12px #ff3a5a55;} .ex-mode button.lock{opacity:.55;} .ex-mode .uic{width:14px; height:14px;}
@@ -730,8 +732,8 @@
   .bs-bsp{display:block; font-size:13px; letter-spacing:0; margin-top:3px; color:#e2c8ff;}
   .bu-spm{position:absolute; top:calc(var(--sz) * var(--k,1) * .05); left:-6px; z-index:4; font-size:10px; font-weight:900; padding:1px 6px; border-radius:8px; white-space:nowrap; box-shadow:0 1px 4px #0008;}
   .bu-spm.up{background:#ffd557; color:#2a1a00;} .bu-spm.down{background:#ff6a6a; color:#2a0000;}
-  .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:10px; font-weight:900; padding:2px 8px; border-radius:8px;}
-  .bs-teamtag.me{left:8px; background:#4b70dccc; color:#fff;} .bs-teamtag.en{right:8px; background:#c0414acc; color:#fff;}
+  .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:11px; font-weight:900; padding:2px 9px; border-radius:8px; color:#fff; border:1.5px solid #fff; box-shadow:0 1px 4px #000a; text-shadow:0 1px 2px #0009;} /* (v294) 밝은 배경(설원 등)에서도 보이게 흰 테두리·그림자 */
+  .bs-teamtag.me{left:8px; background:#3a5fcc;} .bs-teamtag.en{right:8px; background:#c0313c;}
 
   /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
   .bs-arena2{position:relative; z-index:2; flex:1; min-height:0;}
@@ -1545,8 +1547,9 @@ function gridNeighbors(idx, shape, width){
 }
 let skillSel = { key:null, side:null, idx:null };
 let skillPumpTimer = null;
-let skillIntroPending = false, skillIntroUntil = 0;
+let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skillFightSeq = 0;
 let skillRenderedFx = 0;
+let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
 const SKILL_FX_WAIT_MS = 700;
 
@@ -3912,7 +3915,7 @@ function checkSkillStageOutcome(sf){
 }
 function hidHurt(sf, u, loss){ // (v270) 무혈 입성 — 우리 정령이 체력을 잃었는지 (보스전은 웨이브를 넘어 기억)
   if(!sf || !u || u.side!=='me' || !(loss>0)) return;
-  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight) state.bossFight.hurt = true;
+  sf.meHurt = true; if(sf.mode==='boss' && state.bossFight && !skillSimDepth) state.bossFight.hurt = true; // (v294) 미리보기 계산은 제외
 }
 function hidOnWin(sf){ // (v266) 이긴 판 히든 업적
   if(sf.mode!=='trial' && !(sf.result && sf.result.waveClear) && !sf.meHarmSkill && sf.round>=5) hidMark('pacifist'); // (v270) 평화주의자
@@ -4184,7 +4187,7 @@ function restartSkillStageFight(){ const sf = state.skillFight; if(!sf) return; 
 function skillAreaCells(sf, a, act, tSide, tIdx){
   { const sk = unitSkill(a, act); if(sk && sk.self) return new Set([a.side+':'+a.idx]); }
   const c = JSON.parse(JSON.stringify(sf)), rnd = Math.random; Math.random = ()=>0.999;
-  let C; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; }
+  let C; skillSimDepth++; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; skillSimDepth--; }
   const set = new Set();
   C.hits.forEach(h=>{ if(h.side===a.side && h.idx===a.idx && !(tSide===a.side && tIdx===a.idx)) return; set.add(h.side+':'+h.idx); });
   set.add(tSide+':'+tIdx);
@@ -4194,7 +4197,7 @@ function skillPreview(sf, a, act, tSide, tIdx){
   const c = JSON.parse(JSON.stringify(sf)), rnd = Math.random;
   Math.random = ()=>0.999;
   let C;
-  try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } finally { Math.random = rnd; }
+  skillSimDepth++; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } finally { Math.random = rnd; skillSimDepth--; }
   const t0 = unitAt(sf, tSide, tIdx), t1 = unitAt(c, tSide, tIdx);
   const dmg = C.hits.filter(h=>h.kind==='dmg' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
   const heal = C.hits.filter(h=>h.kind==='heal' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
@@ -5330,7 +5333,12 @@ function showSkillStageScreen(){
   if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); }
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
-  if(intro) skillIntroUntil = Date.now() + 1300;
+  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; }
+  if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
+  if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
+    const k = skillFightSeq+':'+(sf.mode||'stage')+':'+sf.stageIdx+':'+(sf.wave||0)+':'+sf.round+':'+(sf.actSeq||0)+':'+!!sf.result.win;
+    if(k!==skillResSfxKey){ skillResSfxKey = k; sfx(sf.result.win ? 'win' : (sf.mode==='worldboss' ? 'claim' : 'lose')); }
+  }
   // 이번 행동의 연출: 공격자 돌진, 맞은 대상마다 흔들림·숫자
   const fxFor = u=>{
     if(!fx || !fx.hits) return null;
@@ -8078,6 +8086,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:294, v:'2.10.3', date:'2026-09-30', secs:[
+    { t:'고친 것', items:[ '전투 버튼에 뜨는 예상 결과를 계산할 때 일부 히든 업적이 조건 없이 달성되거나, 반대로 달성이 막히던 문제' ]},
+    { t:'화면', items:[ '전투 화면의 아군·적 표시에 흰 테두리와 그림자 — 설원처럼 밝은 배경에서도 잘 보이게', '탐험 지도에서 특수 규칙을 지키고 깬 스테이지는 특수 표시에 초록 체크' ]},
+    { t:'소리', items:[ '승리·패배 효과음이 탑에서만 나던 것 — 스테이지·보스·레이드·결투·출정·던전·시련에서도 나게 (월드보스는 도전이 끝나면 보상음)', '전투 시작 효과음도 모든 전투에서 나게 (보스전은 웨이브마다)' ]}
+  ]},
   { build:293, v:'2.10.2', date:'2026-09-30', secs:[
     { t:'소리', items:[ '효과음 14가지 크기를 하나하나 재서 고르게 맞춤 — 버튼 소리는 키우고(약 2.5~3배), 소환·승리처럼 컸던 소리는 줄임(약 0.4~0.7배)' ]},
     { t:'배경음', items:[ '배경음이 중간중간 끊기던 것 — 음을 1.5초 앞까지 미리 준비하고, 멜로디·베이스를 다음 음과 살짝 겹치게 이어 붙임' ]},
@@ -8419,7 +8432,7 @@ function hidCheckPending(sf){
 }
 // (v266) 히든 업적용 기록 — 한 번 해낸 일만 표시(되돌리지 않음)
 function hidHas(k){ return !!(state.hid && state.hid[k]); }
-function hidMark(k){ if(hidHas(k)) return; state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
+function hidMark(k){ if(skillSimDepth || hidHas(k)) return; /* (v294) 버튼 미리보기(복사본 계산)에서는 기록 안 함 */ state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
 const ACHIEVEMENTS = [
   {id:'first_summon', name:'첫 소환', desc:'정령을 처음 소환하기', reward:{essence:50}, category:'general', basic:true, check:()=> (state.lifetimeSummons||0)>=1},
   {id:'summon_10', name:'정령 애호가', desc:'정령 10회 소환하기', reward:{essence:100}, category:'general', check:()=> (state.lifetimeSummons||0)>=10},
@@ -8993,8 +9006,7 @@ function challengeExpeditionNode(){
   if(!run) return;
   const node = currentExpeditionNode();
   if(!node || !['battle','elite','boss'].includes(node.type)) return;
-  sfx('battleStart');
-  expeditionAbandonArmed = false;
+  expeditionAbandonArmed = false; // (v294) 시작음은 실제 전투가 열릴 때(showSkillStageScreen) 한 번만
   showExpeditionSquadPicker();
 }
 const EXP_FATIGUE_FREE_WAVES = 1; // 1전투까진 무료(페널티 없음), 2연속부터 −5%씩(최대 −15%)
@@ -10883,7 +10895,7 @@ function renderStageTab(){
       + '<div class="ex-disc">'+(boss ? '<span class="ex-bicon">'+bossImg(bossGimmickFor(i), 'ex-bimg', bi.icon)+'</span>' : '<b>'+(l+1)+'</b>')+(unlocked||best?'':'<span class="ex-lock"><img class="uic" src="assets/ui/ic_lock.webp" alt=""></span>')+'</div>'
       + (boss ? '<div class="ex-lbl"><img class="uic" src="assets/ui/ic_crown.webp" alt=""> '+bi.name+'</div>' : '')
       + (best ? '<span class="ex-grade g'+best+'">'+best+'</span>' : '')
-      + (special ? '<span class="ex-sp"><img class="uic" src="assets/ui/ic_special.webp" alt=""></span>' : '')
+      + (special ? '<span class="ex-sp'+(state.specialStageBonusClaimed[i]?' done':'')+'"><img class="uic" src="assets/ui/ic_special.webp" alt=""></span>' : '')
       + (hasPendingForStage(i) ? '<div class="ex-dot" style="background:#ff5757;"></div>' : '')
       + '</div>';
   });
@@ -10909,7 +10921,7 @@ function renderStageTab(){
     + nodes
     + '</div>'
     + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : ''); // (v265) 잠금 가림막도 화면 전체로(지도 상자 기준 X)
-  html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
+  html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><span class="spdone"><img class="uic" src="assets/ui/ic_special.webp" alt=""></span> 특수 달성</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
   if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
   return html;
 }
@@ -11583,7 +11595,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
   { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', doSlotFuse); }
-  { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; sfx('tap'); render(); }); }
+  { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }); }
   { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 규칙', fuseRulesHtml())); }
   { const af = document.getElementById('fzAuto'); if(af) af.addEventListener('click', showAutoFuseModal); }
   document.querySelectorAll('[data-stage]').forEach(btn=>{
@@ -11955,7 +11967,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 293, APP_VERSION = '2.10.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 294, APP_VERSION = '2.10.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
