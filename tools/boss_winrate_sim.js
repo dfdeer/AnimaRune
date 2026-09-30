@@ -14,7 +14,8 @@ const N = parseInt(process.argv[2]||'4'), chs = (process.argv[3]||'1,2,3,4,5,6,7
       window.toast=()=>{}; window.sfx=()=>{};
       const all = r=> ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+r+'_'+v)).filter(k=>SPIRITS[k]);
       const mk = (spec, enh, aw)=>{ const out=[]; let off=0; spec.forEach(([r,n])=>{ const l = all(r); for(let i=0;i<n;i++) out.push(l[(off+i*3)%l.length]); off+=n; }); return {keys:out, enh, aw}; };
-      const LADDER = [ ['전6+10',[['legendary',6]],10,0], ['신3전3+10',[['mythic',3],['legendary',3]],10,0], ['신6+10',[['mythic',6]],10,0], ['신6+12각2',[['mythic',6]],12,2], ['신6+15각5',[['mythic',6]],15,5] ];
+      // (v275) 강화 최대치(MAX_ENHANCE)가 +10이라 +12·+15 팀은 실제로 못 만듦 → 신화 +10에 각성 단계로 사다리 · 장비·룬은 없음
+      const LADDER = [ ['전6+10',[['legendary',6]],10,0], ['신3전3+10',[['mythic',3],['legendary',3]],10,0], ['신6+10',[['mythic',6]],10,0], ['신6+10각2',[['mythic',6]],10,2], ['신6+10각4',[['mythic',6]],10,4], ['신6+10각5',[['mythic',6]],10,5] ];
       const setTeam = t=>{ state.owned = {}; state.awaken = {}; state.enhanceLevel={}; t.keys.forEach(k=>{ state.owned[k]=6; state.awaken[k]=t.aw; state.enhanceLevel[k]=t.enh; }); };
       const run1 = ()=>{ let n=0; while(n++<4000){ const sf = state.skillFight; if(!sf) break; if(sf.result){ if(sf.result.waveClear){ advanceBossWave(); continue; } break; }
         const side = settleQueue(sf); if(side==='me') stepMyAutoTurn(); else if(side==='enemy') stepEnemyTurn(); else { if(sf.round>=SKILL_ROUND_CAP) break; nextSkillRound(); } } };
