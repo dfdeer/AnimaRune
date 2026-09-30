@@ -176,7 +176,8 @@
   .seg i.hot{background:#ff5757; color:#fff;}
   .fr-cap{font-size:11px; font-weight:800; color:var(--sub); margin:2px 2px -4px;}
   .fr-scroll{overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; border-radius:14px;} /* (v280) 친구 목록만 스크롤 */
-  .fr-list{display:flex; flex-direction:column; border-radius:14px; background:#1c1a28; border:1px solid #ffffff10; overflow:hidden;}
+  .fr-list{display:flex; flex-direction:column; border-radius:14px; background:#1c1a28; border:1px solid #ffffff10; overflow:hidden; overflow:clip; overscroll-behavior:auto;}
+  .fr-scroll *{overscroll-behavior:auto;} /* (v2.10.1) 최신 크롬(154~)에서 overflow:hidden + overscroll-behavior:none 상자(친구 줄 묶음) 위에서 시작한 스크롤이 목록 칸으로 안 넘어가 친구 목록이 안 움직였음 — 모서리는 clip으로 자르고(스크롤 상자가 안 됨), 목록 칸 안쪽은 스크롤을 막지 않게 */
   .fr-row{display:flex; align-items:center; gap:10px; padding:10px 12px; border-top:1px solid #ffffff0c;}
   .fr-row:first-child{border-top:none;}
   .fr-row.hot{background:#5b6bff1c;}
@@ -8064,6 +8065,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:292, v:'2.10.1', date:'2026-09-30', secs:[
+    { t:'고친 것', items:[
+      '최신 크롬(갤럭시 등)에서 친구 창·결투 화면의 친구 목록이 스크롤되지 않던 문제 — 친구 줄 위에서 시작한 스크롤이 목록으로 전달되지 않았음'
+    ]}
+  ]},
   { build:291, v:'2.10.0', date:'2026-09-30', secs:[
     { t:'소리 전면 교체', items:[
       '효과음 14가지를 귀여운 악기로 — 버튼은 톡(물방울) · 소환은 마림바·오르골 · 소환 연출은 뿌우~ 휘슬 · 합성 실패는 뿌잉~ · 강화는 띠링 · 보상은 짜랑',
@@ -11931,7 +11937,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 291, APP_VERSION = '2.10.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 292, APP_VERSION = '2.10.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
