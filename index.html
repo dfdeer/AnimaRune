@@ -5731,6 +5731,11 @@ function maxEnhanceFor(key){
 // ===================== (v222) 각성: 같은 정령 중복을 먹여 그 정령 그대로 더 강하게 =====================
 // ★1~★5 · 단계마다 정령력 +8% · 강화 한도 +1 · 비용은 같은 정령(중복)과 정수 — 좋아하는 낮은 등급 정령도 계속 키울 수 있게
 const AWAKEN_MAX = 5, AWAKEN_POWER = 0.08, AWAKEN_COPIES = [1,1,2,2,3];
+// (v297) 각성 배율을 등급마다 다르게 — 낮은 등급일수록 크게 올라서 다 키우면 윗등급을 따라잡음 (사용자 결정)
+// 5단계 정령력 배율(기본 대비): 일반 ×10 · 레어 ×10 · 에픽 ×4.5 · 레전더리 ×2.2 · 신화 ×1.4(예전과 같음)
+// 등급 배율(1 · 2.5 · 6 · 15 · 35)과 곱하면 5단계 기준 일반 10(에픽 6 ~ 레전더리 15 사이) · 레어 25(레전더리 15 ~ 신화 35 사이) · 에픽 27 · 레전더리 33 · 신화 49 → 다 각성해도 등급 순서는 그대로
+const AWAKEN_RATE = { common:1.8, rare:1.8, epic:0.7, legendary:0.24, mythic:0.08 }; // 단계마다 +(배율−1)/5
+function awakenRate(key){ return AWAKEN_RATE[SPIRITS[key].rarity] || AWAKEN_POWER; }
 function awakenLevel(key){ return (state.awaken && state.awaken[key]) || 0; }
 function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: (80 + 120*RARITY_ORDER.indexOf(SPIRITS[key].rarity)) * (lv+1) }; }
 function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
@@ -6070,11 +6075,11 @@ function awakenStepInfo(key, lv){
 function showAwakenModal(key, fxLabel){
   const sp = SPIRITS[key], lv = awakenLevel(key), ac = awakenCost(key);
   let h = '<button class="aw-back" id="awBack">‹ 정령 정보</button>';
-  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
+  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*awakenRate(key)*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
   h += '<div class="aw-steps">';
   for(let s = 1; s <= AWAKEN_MAX; s++){
     const st = s<=lv ? 'done' : (s===lv+1 ? 'next' : 'lock'), perk = awakenStepInfo(key, s);
-    h += '<div class="aw-step '+st+'"><div class="aw-sn">'+(st==='done'?uiIc('check'):uiIc('awaken'))+'<b>'+s+'단계</b></div><div class="aw-sd">'+(perk?'<b>'+perk+'</b>':'')+'<small>정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1</small></div></div>';
+    h += '<div class="aw-step '+st+'"><div class="aw-sn">'+(st==='done'?uiIc('check'):uiIc('awaken'))+'<b>'+s+'단계</b></div><div class="aw-sd">'+(perk?'<b>'+perk+'</b>':'')+'<small>정령력 +'+Math.round(awakenRate(key)*100)+'% · 강화 한도 +1</small></div></div>';
   }
   h += '</div>';
   if(ac){
@@ -6099,7 +6104,7 @@ function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv
 function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
   const A = uiIc('awaken');
-  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'}])
+  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+RARITY_ORDER.map(r=>RARITY_INFO[r].name+' '+Math.round(AWAKEN_RATE[r]*100)+'%').join(' · ')+' · 강화 한도 +1'}, {ic:'⚖️', nm:'다 키우면', d:'낮은 등급일수록 크게 올라 윗등급을 따라잡음 — 5단계 일반은 에픽~레전더리 사이, 레어는 레전더리~신화 사이'}])
     + gmSectionHtml('단계별 해금', [
       {ic:A, nm:'1단계', d:'패시브'},
       {ic:A, nm:'2단계', d:'스킬1 대기 −1'},
@@ -6113,7 +6118,7 @@ function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
   const base = BASE_ATK * RARITY_INFO[sp.rarity].mult * ELEMENT_ATK_MULT[sp.element];
-  return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + AWAKEN_POWER*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
+  return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
 function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey); } // (v104) 무기 배율 반영
@@ -8300,6 +8305,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
+    { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
     { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
     { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
     { t:'새 아이템', items:[ '신화 정령 확정권 — 신화 정령 중 무작위 1마리', '장비 확정권 (레어·에픽·레전더리·신화) — 그 등급 장비 1개, 부위·속성 무작위', '장비 선택권 (레어·에픽·레전더리·신화) — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 원하는 1개', '장비 확정권·선택권은 장비 소환 화면에서 사용 (가지고 있을 때만 보임)' ]},
@@ -11419,7 +11425,7 @@ function showManageModal(key){
   html += equipSlotsHtml(key);
   html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && awakenSpare(key)>=ac.copies && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
-    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
+    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
     html += '<div class="mg-acts">'
       + (sp.rarity!=='mythic' ? '<button class="btn secondary" id="toFuseBtn" '+(lk?'disabled':'')+'>'+uiIc('fuse')+'<span>합성</span></button>' : '')
