@@ -7315,8 +7315,8 @@ const STAGE_GRADE_ORDER = ['C','B','A','S'];
 // ===================== (v297) 시즌 패스 =====================
 // 일반(무료)·프리미엄 두 줄이 같은 패스 레벨로 나란히 진행. 프리미엄은 세계 룬석으로 해금 — 언제 사도 지난 레벨 보상까지 받음
 // 패스 경험치 = 패스 미션(일일·주간)을 깨고 받기 · 주간 최대 경험치 있음(월요일 초기화) · 시즌 = 4주(28일), 끝나면 못 받은 보상은 자동 지급
-// 프리미엄 값어치: 프리미엄 줄의 세계 룬석만 합쳐도 100(값의 2배) · 15레벨에 이미 세계 룬석 45 + 에픽 선택권(상점가 30) = 75 > 값 50
-const PASS_PRICE = 50, PASS_PRICE_RAID = 200, PASS_LV_XP = 100, PASS_MAX_LV = 30, PASS_WEEK_CAP = 900, PASS_SEASON_DAYS = 28;
+// 프리미엄 값어치는 passBuyPremium 위 주석 참고 (세계 룬석 150 · 고대 룬석 600)
+const PASS_PRICE = 150, PASS_PRICE_RAID = 600, PASS_LV_XP = 100, PASS_MAX_LV = 30, PASS_WEEK_CAP = 900, PASS_SEASON_DAYS = 28;
 const PASS_EPOCH = new Date(2026, 9, 5).getTime(); // 2026-10-05 월요일 = 시즌 1 시작 (그 전엔 시즌 1 미리 진행)
 const PASS_REWARDS = [ // [레벨 1~30] f = 일반 · p = 프리미엄
   {f:{essence:300}, p:{wbGems:10}}, {f:{stone:20}, p:{essence:600}}, {f:{items:{summon:1}}, p:{stone:40}}, {f:{essence:400}, p:{items:{summon:2}}},
@@ -7396,12 +7396,14 @@ function passClaim(list){ // [['f'|'p', lv], ...]
   passGrant(all); checkAchievements(); save(); sfx('claim'); toastReward(all, '🎫 패스 보상');
 }
 // 프리미엄 값: 세계 룬석 50 또는 고대 룬석(레이드) 200 중 골라서 — 월드 보스만 기다리지 않고 바로 살 수 있게
-// 고대 룬석 기준 프리미엄 줄 값어치 ≈ 600 (레전더리 선택권 200 · 레전더리 확정권 120 · 에픽 선택권 60 · 에픽 확정권 35 · 정수·강화석·장비권 등, 레이드 상점가) + 세계 룬석 100
+// (v297) 최대한 비싸게, 그래도 각 재화의 상점가로 따져 항상 이득이 되게:
+// · 고대 룬석 600 ← 프리미엄 줄을 레이드 상점가로 환산 ≈ 621 (레전더리 선택권 200 · 레전더리 확정권 120 · 에픽 선택권 60 · 에픽 확정권 35 · 레어 10 · 보호권 20 · 정수 69 · 강화석 40 · 장비권 55 · 소환권 12) + 세계 룬석 100은 덤
+// · 세계 룬석 150 ← 세계 룬석 100 + 에픽 선택권(월드 상점 30) + 강화석 400(≈27) = 157 · 상점에 없는 레전더리 선택권·확정권 등은 덤
 function passBuyPremium(){
   const ps = passState(); if(ps.prem) return;
   const wb = state.wbGems||0, rg = state.raidGems||0;
   const opt = (id, ic, nm, have, price)=>'<button class="btn'+(have>=price?' gold':' secondary')+'" data-pp="'+id+'" style="margin-top:8px;" '+(have>=price?'':'disabled')+'>'+ic+' '+nm+' '+price+' <small>(보유 '+have+')</small></button>';
-  const h = '<h3 style="text-align:center;">✨ 프리미엄 패스 해금</h3><div class="sub" style="text-align:center; line-height:1.6;">둘 중 하나로 해금 · 지난 레벨 보상도 받음<br>프리미엄 줄 보상은 값의 2배 이상</div>'
+  const h = '<h3 style="text-align:center;">✨ 프리미엄 패스 해금</h3><div class="sub" style="text-align:center; line-height:1.6;">둘 중 하나로 해금 · 지난 레벨 보상도 받음<br>프리미엄 줄 보상은 어느 쪽으로 사도 값보다 많음</div>'
     + opt('wb', '<span class="wbgem">'+uiIc('runestone')+'</span>', '세계 룬석', wb, PASS_PRICE) + opt('raid', uiIc('runestone'), '고대 룬석', rg, PASS_PRICE_RAID);
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:340px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
@@ -7425,7 +7427,7 @@ function renderPassTab(){
   h += '<div class="ps-head"><div class="ps-lv"><small>패스</small><b>'+lv+'</b></div><div class="ps-mid"><div class="ps-bar"><span style="width:'+(inLv/PASS_LV_XP*100)+'%;"></span></div>'
     + '<div class="ps-sub"><span>'+(lv>=PASS_MAX_LV ? '최대 레벨' : inLv+' / '+PASS_LV_XP+' xp')+'</span><span>이번 주 '+(ps.week.xp||0)+' / '+PASS_WEEK_CAP+'</span></div></div></div>';
   h += ps.prem ? '<div class="ps-prem on">✨ 프리미엄 해금됨</div>'
-    : '<button class="btn gold ps-buy" id="passBuy">✨ 프리미엄 해금 · <span class="wbgem">'+uiIc('runestone')+'</span> '+PASS_PRICE+' 또는 '+uiIc('runestone')+' '+PASS_PRICE_RAID+'</button><div class="sub" style="font-size:11px; text-align:center; margin-top:4px;">세계 룬석 또는 고대 룬석 · 프리미엄 줄 보상은 값의 2배 이상 · 지난 레벨 보상도 받음</div>';
+    : '<button class="btn gold ps-buy" id="passBuy">✨ 프리미엄 해금 · <span class="wbgem">'+uiIc('runestone')+'</span> '+PASS_PRICE+' 또는 '+uiIc('runestone')+' '+PASS_PRICE_RAID+'</button><div class="sub" style="font-size:11px; text-align:center; margin-top:4px;">세계 룬석 또는 고대 룬석 · 프리미엄 줄 보상이 값보다 많음 · 지난 레벨 보상도 받음</div>';
   h += '<div class="seg" style="margin-top:10px;"><button data-ps-v="rw" class="'+(passView==='rw'?'on':'')+'">보상'+(cl?' <i class="ps-n">'+cl+'</i>':'')+'</button><button data-ps-v="ms" class="'+(passView==='ms'?'on':'')+'">미션'+(passMissionsReady()?' <i class="ps-n">!</i>':'')+'</button></div>';
   h += TOP_MARK;
   if(passView==='rw'){
@@ -8368,7 +8370,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'3.0.0', date:'2026-10-01', secs:[
-    { t:'새 콘텐츠 — 시즌 패스', items:[ '홈 왼쪽 🎫 패스 — 일반·프리미엄 두 줄이 같은 패스 레벨로 나란히 진행 (30레벨 · 레벨마다 100 경험치)', '경험치는 패스 미션으로 — 일일 6개(하루 최대 100) · 주간 7개(최대 400) · 주간 최대 경험치 900 (월요일 초기화)', '일반 패스는 무료 · 프리미엄은 세계 룬석 50 또는 고대 룬석 200으로 해금 — 언제 해금해도 지난 레벨 보상까지 받음', '프리미엄 줄 보상: 세계 룬석 합계 100 · 에픽 확정권 · 에픽 선택권 · 레전더리 확정권 · 30레벨 레전더리 선택권 등', '시즌은 4주 — 끝날 때 못 받은 보상은 자동 지급' ]}
+    { t:'새 콘텐츠 — 시즌 패스', items:[ '홈 왼쪽 🎫 패스 — 일반·프리미엄 두 줄이 같은 패스 레벨로 나란히 진행 (30레벨 · 레벨마다 100 경험치)', '경험치는 패스 미션으로 — 일일 6개(하루 최대 100) · 주간 7개(최대 400) · 주간 최대 경험치 900 (월요일 초기화)', '일반 패스는 무료 · 프리미엄은 세계 룬석 150 또는 고대 룬석 600으로 해금 — 언제 해금해도 지난 레벨 보상까지 받음', '프리미엄 줄 보상: 세계 룬석 합계 100 · 에픽 확정권 · 에픽 선택권 · 레전더리 확정권 · 30레벨 레전더리 선택권 등', '시즌은 4주 — 끝날 때 못 받은 보상은 자동 지급' ]}
   ]},
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
     { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음' ]},
