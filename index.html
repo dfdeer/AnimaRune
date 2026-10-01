@@ -955,6 +955,7 @@
   .ps-ms{display:flex; align-items:center; gap:10px; padding:9px 11px; margin-bottom:6px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .ps-ms.done{opacity:.5;}
   .ps-msm{flex:1; min-width:0;} .ps-msm b{font-size:13px;} .ps-msm small{font-size:11px; color:var(--sub);} .ps-ms .btn{width:auto; flex-shrink:0; padding:6px 10px; margin:0;} .ps-msd .uic{width:22px; height:22px;}
   .fz-warn{margin-top:6px; padding:6px 8px; border-radius:8px; background:#ff4d4d1f; border:1px solid #ff5a5a88; color:#ff8a8a; font-size:11px; font-weight:800; line-height:1.5;} /* (v301) 강화 초기화 경고 */
+  .cf-fzmats{display:flex; justify-content:center; gap:8px; margin:2px 0 10px;} .cf-fzmats > div{display:flex; flex-direction:column; align-items:center; gap:3px; width:72px;} .cf-fzmats small{font-size:10.5px; color:var(--text); word-break:keep-all;} .cf-fzart{font-size:24px;} /* (v303) 합성 확인 */
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
@@ -7529,6 +7530,19 @@ function fuseExecute(keys){
   }else{ const cap = Math.min(info.inherit, equipEnhMax(res)); if(cap > equipEnhLevel(res)){ if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[res] = cap; inherited = cap; } }
   return { ok:true, res, isNew, inherited, awInh, info };
 }
+// (v303) 합성 확인 — 합성 바에서 누르면 넣은 재료 3개 · 성공률 · 나올 수 있는 것 · 강화 · 보호권을 한 번 보여 줌
+function fuseConfirm(){
+  const info = fuseSlotInfo(); if(!info) return;
+  const eq = fuseMode==='equip', unit = eq ? '개' : '마리';
+  const art = k=> '<span class="cf-fzart av r-'+(eq?equipInfo(k).rarity:SPIRITS[k].rarity)+'">'+fuseArtOf(k)+'</span>';
+  const mats = '<div class="cf-fzmats">'+fuseSlots.map(k=>'<div>'+art(k)+'<small>'+fuseNameOf(k)+'</small></div>').join('')+'</div>';
+  const top = Object.keys(info.out).sort((a,b)=>info.out[b]-info.out[a]).slice(0,3).map(k=>fuseNameOf(k)+' '+Math.round(info.out[k]*100)+'%').join(' · ');
+  const g = info.rate<100 && fuseGuardEligible(info.nr) && fuseGuardOn && ticketCount('fuseGuard')>0;
+  const msg = mats + '성공 <b>'+info.rate+'%</b> → '+RARITY_INFO[info.nr].name+' 1'+unit+'<br><small>'+top+'</small>'
+    + (info.inheritFrom>0 ? '<br><span style="color:#ffd557;">강화 계승 +'+info.inherit+'</span> · <span style="color:#ff8a8a;">재료 강화는 +0</span>' : '')
+    + (info.rate<100 ? '<br>'+(g ? '🛡 보호권 사용 — 실패해도 재료 유지' : '실패하면 1'+unit+'만 남음') : '');
+  confirmBox('이 재료로 합성할까?', msg, '합성', doSlotFuse);
+}
 function doSlotFuse(){
   checkDailyRollover();
   const info = fuseSlotInfo(); if(!info) return;
@@ -8856,7 +8870,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:303, v:'3.1.2', date:'2026-10-01', secs:[
-    { t:'합성 화면', items:[ '재료를 넣으면 화면 아래에 합성 바가 따라다님 — 넣은 3칸(눌러서 빼기) · 성공률 · 보호권 · 합성 · 비우기', '재료를 고르러 내려가도 위로 올라가지 않고 바로 합성 · 성공률을 누르면 합성판으로 올라감' ]},
+    { t:'합성 화면', items:[ '재료를 넣으면 화면 아래에 합성 바가 따라다님 — 넣은 3칸(눌러서 빼기) · 성공률 · 보호권 · 합성 · 비우기', '재료를 고르러 내려가도 위로 올라가지 않고 바로 합성 · 성공률을 누르면 합성판으로 올라감', '합성을 누르면 넣은 재료 3개 · 성공률 · 나올 수 있는 것 · 강화 계승을 확인 창으로 한 번 보여 줌' ]},
     { t:'문의', items:[ '새 문의 · 보낸 문의 탭으로 나눔 — 보낸 문의는 목록으로 보이고 눌러야 대화가 열림 · 답장 온 문의는 빨간 점', '관리자 문의함도 답장 대기 · 전체 탭 → 눌러서 대화 · 답장 · 삭제' ]}
   ]},
   { build:302, v:'3.1.1', date:'2026-10-01', secs:[
@@ -12527,7 +12541,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; fuseSlots[i] = b.dataset.fzAdd; render(); }));
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
-  { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', doSlotFuse); }
+  { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', fuseConfirm); } // (v303) 넣은 재료·결과를 확인 창으로 보여 준 뒤 합성
   { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }); }
   { const tp = document.getElementById('fzDockTop'); if(tp) tp.addEventListener('click', ()=>{ const c = document.querySelector('.fz-card'); if(c) c.scrollIntoView({behavior:'smooth', block:'start'}); }); } // (v304)
   { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 규칙', fuseRulesHtml())); }
