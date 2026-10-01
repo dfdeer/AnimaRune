@@ -20,8 +20,8 @@ const SUBJECT = 'https://dfdeer.github.io/AnimaRune/';
 const FRESH_MS = 15*60*1000;     // 이보다 오래된 항목은 ping이 와도 안 보냄
 const PER_RUN = 25;              // 한 번 실행에 보내는 최대 알림 수 (무료 요금제 외부 요청 50개 제한)
 const DUE_MSG = {
-  hearth:   { title: '🔥 화로 가득', body: '화로가 가득 찼어 — 강화석·정수 받아 가기' },
-  dispatch: { title: '🧭 파견 완료', body: '파견 간 정령이 돌아왔어' },
+  hearth:   { title: '🔥 화로 가득', body: '강화석·정수 받기' },
+  dispatch: { title: '🧭 파견 완료', body: '파견 간 정령 귀환' },
   daily:    { title: '🌅 오늘의 의뢰', body: '일일 의뢰·월드 보스 도전이 기다리는 중' },
 };
 
