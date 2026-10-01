@@ -654,7 +654,7 @@
   /* (v218) 합성 탭 */
   .fz-card{text-align:center;}
   .fz-dock{position:sticky; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:30; display:flex; align-items:center; gap:6px; margin-top:12px; padding:7px; border-radius:16px; background:#2b2566f2; border:1px solid #b9a4ff77; box-shadow:0 8px 24px #000b; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);} /* (v304) 합성 바 */
-  .fz-dslots{display:flex; gap:4px;} .fz-ds{width:44px; height:44px; padding:0; border-radius:10px; border:1.5px dashed #ffffff40; background:#ffffff0a; color:var(--sub); font-size:16px; display:flex; align-items:center; justify-content:center;} .fz-ds.on{border-style:solid; border-color:#b9a4ff99;} .fz-ds .av{font-size:17px;}
+  .fz-dslots{display:flex; gap:4px;} .fz-ds{width:44px; height:44px; padding:0; border-radius:10px; border:1.5px dashed #ffffff40; background:#ffffff0a; color:var(--sub); font-size:16px; display:flex; align-items:center; justify-content:center;} .fz-ds.on{border:none; background:none;} .fz-ds .av{font-size:19px; margin:0;} .fz-ds .av .av-el{width:34%; height:34%; left:-6%; bottom:-6%;} /* (v305) 넣은 칸은 등급 테두리만 — 칸 테두리와 겹치지 않게 */
   .fz-dmid{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0; border:none; background:none; color:var(--text); line-height:1.1;} .fz-dmid b{font-size:17px; color:#ffd557;} .fz-dmid small{font-size:10px; color:var(--sub);}
   .fz-dg{display:flex; flex-direction:column; align-items:center; padding:3px 5px; border-radius:10px; border:1.5px dashed #9fd8ff66; background:#ffffff0a; color:var(--sub);} .fz-dg .uic{width:22px; height:22px; margin:0;} .fz-dg small{font-size:9px;} .fz-dg.on{border-style:solid; border-color:#9fd8ff; background:#3aa0ff26; color:#cfeaff;} .fz-dg:disabled{opacity:.45;}
   .fz-dgo{width:auto !important; margin:0 !important; padding:10px 12px !important; font-size:14px;} .fz-dx{border:none; background:none; color:var(--sub); font-size:15px; padding:4px;}
@@ -8869,6 +8869,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:305, v:'3.2.1', date:'2026-10-01', secs:[
+    { t:'합성 화면', items:[ '합성 바에 넣은 재료 칸이 등급 테두리와 겹쳐 보이던 것 수정', '재료를 넣거나 뺄 때(특히 세 번째를 넣을 때) 목록이 위로 밀리던 것 수정 — 누른 재료가 같은 자리에 남음' ]}
+  ]},
   { build:304, v:'3.2.0', date:'2026-10-01', secs:[
     { t:'하드 5 심연의 수정', items:[ '체력 배율 65 → 357.5', '공격력 배율 3.6 → 8.64', '기믹은 그대로 — 매 라운드 속성 변환(다음 속성 미리 표시) · 심연 응시 · 3R마다 심연 파동 · 혼돈 · 3R마다 역류(상성 반전, 한 라운드 전 예고)' ]}
   ]},
@@ -12541,8 +12544,12 @@ function attachHandlers(){
   { const g = document.getElementById('goFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('spirit')); }
   { const g = document.getElementById('goEqFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('equip')); }
   document.querySelectorAll('[data-fz-mode]').forEach(b=>b.addEventListener('click', ()=>{ if(fuseMode!==b.dataset.fzMode){ fuseMode = b.dataset.fzMode; fuseSlots = [null,null,null]; render(); } }));
-  document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; fuseSlots[i] = b.dataset.fzAdd; render(); }));
-  document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
+  // (v305) 재료를 넣고 빼면 위 합성판 높이가 바뀌어 목록이 밀림 → 누른 재료가 화면의 같은 자리에 남도록 스크롤을 맞춤
+  const fzAnchor = (sel, fn)=>{ const m = document.getElementById('main'), el = document.querySelector(sel), y0 = el ? el.getBoundingClientRect().top : null; fn(); render();
+    if(m && y0!==null){ const el2 = document.querySelector(sel); if(el2) m.scrollTop += el2.getBoundingClientRect().top - y0; } };
+  document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; const k = b.dataset.fzAdd; fzAnchor('[data-fz-add="'+k+'"]', ()=>{ fuseSlots[i] = k; }); }));
+  document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; const k = fuseSlots[i], inDock = !!b.closest('.fz-dock');
+    fzAnchor(inDock ? '[data-fz-add="'+k+'"]' : '.fz-card', ()=>{ fuseSlots[i] = null; }); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
   { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', fuseConfirm); } // (v303) 넣은 재료·결과를 확인 창으로 보여 준 뒤 합성
   { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }); }
@@ -12932,7 +12939,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 304, APP_VERSION = '3.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 305, APP_VERSION = '3.2.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
