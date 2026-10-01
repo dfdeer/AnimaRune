@@ -77,7 +77,7 @@
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
   #main.pu-full{position:relative; background:var(--pb, #120f2a);}
-  #main.pu-full.pu-img{background-color:#1a0c0a; background-repeat:no-repeat; background-attachment:local;} #main.pu-img .pu-rays{display:none;} #main.pu-img .pu-glow{opacity:.18;} #main.pu-full .scr-top{background:none; position:relative; z-index:8;}
+  #main.pu-full.pu-img{background-color:#0d1430; background-repeat:no-repeat; background-attachment:local;} #main.pu-img .pu-rays{display:none;} #main.pu-img .pu-glow{opacity:.18;} #main.pu-full .scr-top{background:none; position:relative; z-index:8;}
   .pu-topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;} .pu-t{font-size:18px; font-weight:900; color:#ffe38a; text-shadow:0 2px 4px #000a;}
   .pu-left{font-size:12px; font-weight:800; background:#0008; border:1px solid #ffcf4a66; border-radius:10px; padding:3px 8px; white-space:nowrap;}
   .pu-bg{position:absolute; left:0; right:0; top:0; min-height:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden;}
@@ -7387,13 +7387,14 @@ let pickupView = 0;
 // (v317) 픽업 탭 — 소환 탭처럼 화면 하나 · 배경은 지금 보는 신화의 속성 색 + 속성 입자(불씨·물방울·잎·빛·어둠)
 const PU_FX = { fire:'ember', water:'bubble', wood:'leaf', light:'spark', dark:'wisp' };
 // (v317) 속성별 픽업 배경 그림 (받은 것부터) — ped: 그림 속 제단 윗면 높이(그림 높이 대비). 정령 발끝을 여기에 맞춤
-const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.52 } };
+const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.515 }, water:{ src:'assets/pickup_water.webp', ped:0.535 } };
+const PU_BG_DROP = 0.06; // 제단 윗면 가운데를 발끝보다 정령 그림 높이의 6%만큼 아래로 — 앞 가장자리가 아니라 제단 한가운데에 서 보이게
 function placePuBg(){
   const m = document.getElementById('main'); if(!m) return;
   const im = activeTab==='pickup' && PU_BG_IMAGES[m.dataset.pe];
   if(!im){ if(m.style.backgroundImage){ m.style.backgroundImage = ''; m.style.backgroundSize = ''; m.style.backgroundPosition = ''; } m.classList.remove('pu-img'); return; }
   const art = m.querySelector('.pu-art .spimg'); if(!art) return;
-  const W = m.clientWidth, H = Math.max(m.clientHeight, m.scrollHeight), feet = art.getBoundingClientRect().bottom - m.getBoundingClientRect().top + m.scrollTop - art.offsetHeight*0.04;
+  const W = m.clientWidth, H = Math.max(m.clientHeight, m.scrollHeight), feet = art.getBoundingClientRect().bottom - m.getBoundingClientRect().top + m.scrollTop - art.offsetHeight*0.04 + art.offsetHeight*PU_BG_DROP;
   let sc = Math.max(W/1024, H/1536, feet/(im.ped*1536)); // 화면을 덮으면서 제단이 발끝 아래로 오게
   let offY = feet - im.ped*1536*sc; if(offY + 1536*sc < H){ sc = (H - feet)/((1-im.ped)*1536); offY = feet - im.ped*1536*sc; }
   m.classList.add('pu-img');
