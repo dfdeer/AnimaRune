@@ -1624,17 +1624,129 @@ function applyRuneOnBuild(u, rune){ // makeBattleUnit에서 호출: 공격·체�
   if(rune.tier!=='boss' && rune.id==='atk') u.atk = u.atk*(1+u.rune.v);
   if(rune.tier!=='boss' && rune.id==='hp'){ u.maxHp = Math.max(1, Math.round(u.maxHp*(1+u.rune.v))); u.hp = u.maxHp; }
 }
-function runeSpeed(u){ return (u.rune && u.rune.id==='spd' && u.rune.tier!=='boss') ? u.rune.v : 0; }
-function runeCrit(u){ return (u.rune && u.rune.id==='crit' && u.rune.tier!=='boss') ? u.rune.v : 0; }
-function runeDr(u){ return (u.rune && u.rune.id==='dr' && u.rune.tier!=='boss') ? u.rune.v : 0; }
+function runeSpeed(u){ return ((u.rune && u.rune.id==='spd' && u.rune.tier!=='boss') ? u.rune.v : 0) + ((u.sub && u.sub.spd) || 0); } // (v298) + 각인·장비 부가 능력·초월
+function runeCrit(u){ return ((u.rune && u.rune.id==='crit' && u.rune.tier!=='boss') ? u.rune.v : 0) + ((u.sub && u.sub.crit) || 0); }
+function runeDr(u){ return ((u.rune && u.rune.id==='dr' && u.rune.tier!=='boss') ? u.rune.v : 0) + ((u.sub && u.sub.dr) || 0); }
 function runeDmgMult(a, d){ if(!a.rune) return 1; if(a.rune.id==='judge' && d.hp/d.maxHp <= 0.3) return 1.3; if(a.rune.id==='hellfire' && d.st && d.st.burn>0) return 1.2; if(a.rune.id==='core' && effTypeMult(a, d)>1) return 1.2; return 1; } // (v278) 업화·심연핵의 룬
 function runeOnHit(sf, a, d, dealt){
+  if(dealt>0 && a.sub && a.sub.life && a.alive) a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.sub.life)); // (v298) 부가 능력 흡혈
   if(!a.rune || dealt<=0) return;
   if(a.rune.id==='life' && a.rune.tier!=='boss' && a.alive){ a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.rune.v)); }
   if(!d.alive || a.side===d.side) return;
   if(a.rune.id==='frost' && Math.random()<0.12){ d.st.freeze = true; }
   else if(a.rune.id==='inferno'){ d.st.burnCap = Math.max(d.st.burnCap||5, 5); d.st.burn = Math.min(d.st.burnCap, (d.st.burn||0)+1); d.st.burnDmg = Math.max(d.st.burnDmg||0, Math.round(a.atk*0.15)); }
   else if(a.rune.id==='abyss' && Math.random()<0.25){ d.st.curse = { v: Math.max(0.15, (d.st.curse&&d.st.curse.v)||0), r:2 }; }
+}
+// ===================== (v298) 새 성장 — 각인 · 초월 · 장비 부가 능력 =====================
+// · 각인: 정령마다 무작위 부가 능력 3줄(능력 종류·품질 무작위). 각인석으로 다시 굴림 · 마음에 드는 줄은 잠금(최대 2줄, 잠글수록 비쌈)
+// · 장비 부가 능력: 장비마다 등급별 0~3줄(레어·에픽 1 · 레전더리 2 · 신화 3). 속성과 상관없이 끼운 정령 누구에게나 붙음 → 속성 대신 부가 능력을 보고 끼우는 선택
+// · 초월: 각성 5단계 뒤의 성장. 각성은 '확정'으로 스킬·패시브를 여는 단계, 초월은 '확률'로 순수 능력치(공격·체력 +5%/단계)를 올리는 단계
+//   실패하면 재료(같은 정령 1마리)는 사라지지만 다음 확률이 +10%p(성공하면 초기화) · 5단계 속도 +3 · 10단계 전투 시작 보호막(체력 15%, 2라운드)
+// 부가 능력 합은 항목마다 상한(SUB_CAP) — 다 같은 능력으로 몰아도 끝없이 커지지 않게
+const SUB_STATS = {
+  atk:  { nm:'공격력',         v:[.02,.04,.06,.09], pct:true },
+  hp:   { nm:'체력',           v:[.03,.05,.08,.12], pct:true },
+  spd:  { nm:'속도',           v:[1,2,3,5] },
+  crit: { nm:'치명타 확률',    v:[.02,.04,.06,.09], pct:true },
+  life: { nm:'흡혈',           v:[.02,.03,.05,.08], pct:true },
+  dr:   { nm:'받는 피해 감소', v:[.02,.03,.05,.07], pct:true, neg:true }
+};
+const SUB_Q = [ {nm:'일반', c:'#b8bcc8', p:.55}, {nm:'희귀', c:'#57d3ff', p:.30}, {nm:'영웅', c:'#b98bff', p:.12}, {nm:'전설', c:'#ffb347', p:.03} ];
+const SUB_CAP = { atk:.30, hp:.40, spd:12, crit:.30, life:.20, dr:.20 };
+const ENGR_LINES = 3, ENGR_LOCK_MAX = 2, EQ_SUB_LINES = { common:0, rare:1, epic:1, legendary:2, mythic:3 };
+const ENGR_DISMANTLE = [0,0,1,2,4]; // 정령 분해 때 각인석 (등급 순서)
+function subRollLine(){ const ks = Object.keys(SUB_STATS); let x = Math.random(), q = 0; for(; q<SUB_Q.length-1; q++){ if(x < SUB_Q[q].p) break; x -= SUB_Q[q].p; } return { s: ks[Math.floor(Math.random()*ks.length)], q }; }
+function subValid(l){ return !!(l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<SUB_Q.length); }
+function subVal(l){ return SUB_STATS[l.s].v[l.q]; }
+function subTxt(l){ const d = SUB_STATS[l.s], v = subVal(l); return d.nm+' '+(d.neg?'−':'+')+(d.pct ? Math.round(v*100)+'%' : v); }
+function subLineHtml(l, lock, idx, canLock){ const q = SUB_Q[l.q];
+  return '<div class="sub-line" style="--qc:'+q.c+';"><i>'+q.nm+'</i><b>'+subTxt(l)+'</b>'+(canLock ? '<button class="sub-lk'+(lock?' on':'')+'" data-sub-lock="'+idx+'">'+(lock?'🔒':'🔓')+'</button>' : '')+'</div>'; }
+function engrState(k){ const e = state.engrave && state.engrave[k]; return e && Array.isArray(e.lines) ? e : null; }
+function eqSubState(k){ const e = state.eqSub && state.eqSub[k]; return e && Array.isArray(e.lines) ? e : null; }
+function subLinesMax(kind, k){ return kind==='eq' ? (EQ_SUB_LINES[equipInfo(k).rarity]||0) : ENGR_LINES; }
+function subRerollCost(e){ const locked = e ? (e.lock||[]).filter(Boolean).length : 0; return 1 + 2*locked; }
+// 초월
+const TRANS_MAX = 10, TRANS_STEP = 0.05, TRANS_RATE = [1, .9, .8, .7, .6, .5, .4, .35, .3, .25], TRANS_PITY = 0.10;
+function transLevel(k){ return (state.trans && state.trans[k]) || 0; }
+function transMult(k){ return 1 + TRANS_STEP*transLevel(k); }
+function transChance(k){ const lv = transLevel(k); if(lv>=TRANS_MAX) return 0; return Math.min(1, TRANS_RATE[lv] + ((state.transPity && state.transPity[k])||0)); }
+function transCost(k){ const lv = transLevel(k); return { copies:1, essence: (300 + 200*RARITY_ORDER.indexOf(SPIRITS[k].rarity)) * (lv+1) }; }
+function transTag(k){ const t = transLevel(k); return t ? '<span class="tr-tag">✦'+t+'</span>' : ''; }
+// 합계 · 전투 반영
+function subTotals(k){
+  const t = { atk:0, hp:0, spd:0, crit:0, life:0, dr:0 };
+  const add = e=>{ if(e) e.lines.forEach(l=>{ if(subValid(l)) t[l.s] += subVal(l); }); };
+  add(engrState(k));
+  if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl); if(ek) add(eqSubState(ek)); });
+  Object.keys(t).forEach(s=>{ t[s] = Math.min(SUB_CAP[s], t[s]); });
+  if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전은 상한 밖
+  return t;
+}
+function hpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
+function battleSubFor(k){ const t = subTotals(k); return { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr, sh: transLevel(k)>=10 ? 0.15 : 0 }; }
+function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,cap)=> Number.isFinite(v) ? Math.max(0, Math.min(cap, v)) : 0;
+  return { spd:n(o.spd, SUB_CAP.spd+3), crit:n(o.crit, SUB_CAP.crit), life:n(o.life, SUB_CAP.life), dr:n(o.dr, SUB_CAP.dr), sh:n(o.sh, .15) }; }
+function applySubOnBuild(u, sub){ const s = cleanSub(sub); if(!s) return; u.sub = s;
+  if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); } }
+// ---- 각인·장비 부가 능력 창 (kind: 'sp' 정령 각인 · 'eq' 장비 부가 능력)
+function subRoll(kind, k){
+  const max = subLinesMax(kind, k); if(!max) return;
+  const box = kind==='eq' ? (state.eqSub = state.eqSub || {}) : (state.engrave = state.engrave || {});
+  const e = box[k], first = !e || !e.lines.length;
+  if(first){ box[k] = { lines: Array.from({length:max}, subRollLine), lock: Array(max).fill(false) }; }
+  else { e.lines = e.lines.map((l,i)=> e.lock[i] ? l : subRollLine()); }
+  state.lifetimeEngraves = (state.lifetimeEngraves||0) + 1;
+  save(); sfx('enhance');
+}
+function showSubModal(kind, k, back){
+  const isEq = kind==='eq', max = subLinesMax(kind, k), e = isEq ? eqSubState(k) : engrState(k), have = ticketCount('engr');
+  const nm = isEq ? equipInfo(k).name : SPIRITS[k].name, art = isEq ? equipInfo(k).img : spArt(SPIRITS[k]);
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?'🔷 부가 능력':'✨ 각인')+' · '+nm+'</h3>'
+    + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 부가 능력 '+ENGR_LINES+'줄')+' · 품질 일반·희귀·영웅·전설<br>같은 능력끼리 합은 상한까지만</div></div>';
+  if(!max) h += '<div class="sub" style="text-align:center; padding:16px 0;">일반 장비는 부가 능력 없음</div>';
+  else if(!e || !e.lines.length) h += '<div class="sub" style="text-align:center; padding:12px 0;">아직 '+(isEq?'감정':'각인')+' 안 함</div><button class="btn gold" id="subGo">'+(isEq?'🔍 감정하기':'✨ 각인하기')+' (무료)</button>';
+  else {
+    const locked = e.lock.filter(Boolean).length, canLock = max > 1, cost = subRerollCost(e);
+    h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, e.lock[i], i, canLock)).join('')+'</div>';
+    if(canLock) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">🔒 잠근 줄은 그대로 · 최대 '+Math.min(ENGR_LOCK_MAX, max-1)+'줄 · 잠글 때마다 비용 +2</div>';
+    h += '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>🎲 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button>';
+  }
+  if(back) h += '<button class="btn secondary" id="subBack" style="margin-top:8px;">‹ 돌아가기</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(back);
+  const re = ()=>showSubModal(kind, k, back);
+  document.querySelectorAll('[data-sub-lock]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.subLock, e2 = isEq ? eqSubState(k) : engrState(k); if(!e2) return;
+    if(!e2.lock[i] && e2.lock.filter(Boolean).length >= Math.min(ENGR_LOCK_MAX, max-1)){ toast('더 잠글 수 없음'); return; } e2.lock[i] = !e2.lock[i]; save(); re(); }));
+  const go = document.getElementById('subGo'); if(go) go.addEventListener('click', ()=>{ const e2 = isEq ? eqSubState(k) : engrState(k);
+    if(!e2 || !e2.lines.length){ subRoll(kind, k); render(); re(); return; }
+    const cost = subRerollCost(e2); if(ticketCount('engr') < cost){ toast('각인석 부족'); return; }
+    spendAsk(isEq ? '부가 능력 다시 굴리기' : '각인 다시 굴리기', {tk:'engr', n:cost}, ()=>{ if(ticketCount('engr') < cost) return; state.tickets.engr -= cost; subRoll(kind, k); render(); re(); }); });
+  const bk = document.getElementById('subBack'); if(bk) bk.addEventListener('click', back);
+}
+// ---- 초월 창
+function showTransModal(k){
+  const sp = SPIRITS[k], lv = transLevel(k), aw = awakenLevel(k), back = ()=>showManageModal(k);
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+spArt(sp)+'</div><h3 style="margin:4px 0;">🌟 초월 · '+sp.name+' '+transTag(k)+'</h3>'
+    + '<div class="sub" style="font-size:11px; line-height:1.6;">각성은 확정으로 스킬을 여는 단계 · 초월은 확률로 능력치를 올리는 단계<br>단계마다 공격·체력 +'+Math.round(TRANS_STEP*100)+'% · 5단계 속도 +3 · 10단계 전투 시작 보호막(체력 15%)</div></div>';
+  h += '<div class="tr-steps">'+Array.from({length:TRANS_MAX}, (_,i)=>'<i class="'+(i<lv?'on':'')+(i===4||i===9?' big':'')+'"></i>').join('')+'</div>';
+  if(aw < AWAKEN_MAX) h += '<div class="sub" style="text-align:center; padding:10px 0;">각성 '+AWAKEN_MAX+'단계 뒤에 열림 (지금 '+aw+'단계)</div>';
+  else if(lv >= TRANS_MAX) h += '<div style="text-align:center; padding:10px 0; font-weight:900; color:#ffd557;">최대 초월 — 공격·체력 +'+Math.round(TRANS_STEP*TRANS_MAX*100)+'%</div>';
+  else { const c = transCost(k), ch = transChance(k), pity = (state.transPity && state.transPity[k]) || 0, spare = awakenSpare(k), can = spare>=c.copies && state.essence>=c.essence;
+    h += '<div class="tr-info"><div><span>성공 확률</span><b>'+Math.round(ch*100)+'%</b>'+(pity?'<small>실패 보정 +'+Math.round(pity*100)+'%p</small>':'')+'</div><div><span>재료</span><b>같은 정령 '+c.copies+' · '+uiIc('essence')+' '+c.essence+'</b><small>남는 같은 정령 '+spare+'마리</small></div><div><span>성공하면</span><b>'+(lv+1)+'단계 · 공격·체력 +'+Math.round(TRANS_STEP*(lv+1)*100)+'%</b></div></div>'
+      + '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">실패하면 재료는 사라지고 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p</div>'
+      + '<button class="btn gold" id="trGo" style="margin-top:8px;" '+(can?'':'disabled')+'>🌟 초월 시도</button>'; }
+  h += '<button class="btn secondary" id="trBack" style="margin-top:8px;">‹ 돌아가기</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(back);
+  document.getElementById('trBack').addEventListener('click', back);
+  const go = document.getElementById('trGo'); if(go) go.addEventListener('click', ()=>{ const c = transCost(k);
+    spendAsk(sp.name+' 초월 시도', {essence:c.essence, copies:c.copies}, ()=>{
+      if(transLevel(k)>=TRANS_MAX || awakenSpare(k)<c.copies || state.essence<c.essence) return;
+      const ch = transChance(k); state.essence -= c.essence; state.owned[k] -= c.copies; cleanupFormation();
+      state.trans = state.trans || {}; state.transPity = state.transPity || {};
+      if(Math.random() < ch){ state.trans[k] = transLevel(k)+1; state.transPity[k] = 0; sfx('enhance'); toast('🌟 초월 성공 — '+sp.name+' '+state.trans[k]+'단계'); }
+      else { state.transPity[k] = (state.transPity[k]||0) + TRANS_PITY; sfx('fail'); toast('💨 초월 실패 — 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p'); }
+      checkAchievements(); save(); render(); showTransModal(k); }); });
 }
 function runeRoundStart(sf){ aliveUnits(sf.myUnits).forEach(u=>{ if(u.rune && u.rune.id==='elder') u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp*0.04));
   if(u.rune && u.rune.id==='glacier'){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*0.06)); u.st.shieldR = Math.max(u.st.shieldR||0, 1); } }); } // (v278) 빙하의 룬
@@ -1882,18 +1994,20 @@ function aw5(u){ return !!u && (u.aw||0)>=5; }
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
 function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0)); }
-function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride){
+function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride, subOverride){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity);
   // (v225) 각성: ★1 패시브 · ★3 스킬2가 등급과 상관없이 열림 · ★5 스킬 효과 한 등급 위. 레이드·결투 상대는 보내온 값(awOverride)
   const aw = Number.isFinite(awOverride) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(awOverride))) : (side==='me' ? awakenLevel(key) : 0);
   const g = Math.min(4, g0 + (aw>=5 ? 1 : 0));
   // (v168 버그수정) 6칸 전투에서 방어구(체력 +%)가 적용되지 않던 문제 — 내 정령은 방어구 배율을 체력에 곱함(레이드 팀원은 보내온 값 사용)
-  const armor = Number.isFinite(armorOverride) ? armorOverride : (side==='me' ? armorMult(key) : 1);
+  const armor = Number.isFinite(armorOverride) ? armorOverride : (side==='me' ? hpMult(key) : 1); // (v298) 방어구 × 각인·부가 능력 체력 × 초월
   const maxHp = Math.max(1, Math.round(atk*hpMult*armor)); // (v146) specialMult는 공격력에만 적용, 체력에는 반영 안 함
   const u = { side, idx, key, element: sp.element, line: sp.element+'_'+sp.variant, g, aw, pg: (g0>=1 || aw>=1) ? Math.max(1, g) : 0, s2on: g0>=2 || aw>=3, atk, hp: maxHp, maxHp,
     cd1: 0, cd2: 0, alive: true, st: {}, reviveUsed: false, reviveGiven: false, specialMult: specialMult||1 }; // (v162) 스킬2 시작 쿨타임 2턴 제거 — 등급만 되면 바로 사용 가능
   if(side==='me') applyRuneOnBuild(u, runeOverride!==undefined ? runeOverride : spiritRune(key)); // (v170) 룬
   else if(runeOverride) applyRuneOnBuild(u, runeOverride); // (v173) 결투: 상대 정령의 룬
+  if(side==='me' && runeOverride===undefined) applySubOnBuild(u, battleSubFor(key)); // (v298) 내 정령: 각인·장비 부가 능력·초월
+  else if(subOverride) applySubOnBuild(u, subOverride); // 결투·레이드: 보내온 값
   return u;
 }
 // (v166) 적 수는 3~6마리로 진행에 따라 늘어남(챕터1 초반 3마리 → 챕터3 후반부터 6마리). 빈 칸은 null
@@ -2231,7 +2345,7 @@ function raidCleanPicks(arr){
   const out = [];
   for(let i=0;i<4;i++){
     const p = (arr && typeof arr==='object') ? arr[i] : null;
-    out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk: Math.max(1, Math.min(1e7, p.atk)), arm: Number.isFinite(p.arm) ? Math.max(1, Math.min(10, p.arm)) : 1, rune: runeValid(p.rune) ? { id:p.rune.id, tier:p.rune.tier } : null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0 } : null);
+    out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk: Math.max(1, Math.min(1e7, p.atk)), arm: Number.isFinite(p.arm) ? Math.max(1, Math.min(10, p.arm)) : 1, rune: runeValid(p.rune) ? { id:p.rune.id, tier:p.rune.tier } : null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, sub: cleanSub(p.sub) } : null);
   }
   return out;
 }
@@ -2258,7 +2372,7 @@ function raidParseBattle(json){
 // ---------- 전투 구성 ----------
 function buildRaidFight(hostPicks, guestPicks, bossId, diffId){
   const myUnits = [];
-  const add = (arr, slots, owner)=> raidCleanPicks(arr).forEach((p,i)=>{ if(p){ const u = makeBattleUnit('me', slots[i], p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0); u.owner = owner; myUnits.push(u); } });
+  const add = (arr, slots, owner)=> raidCleanPicks(arr).forEach((p,i)=>{ if(p){ const u = makeBattleUnit('me', slots[i], p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null); u.owner = owner; myUnits.push(u); } });
   add(hostPicks, P1_SLOTS, 'host'); add(guestPicks, P2_SLOTS, 'guest');
   const info = raidBossById(bossId) || raidWeekBoss();
   const diff = raidDiffById(diffId);
@@ -2693,8 +2807,8 @@ async function raidResume(){
 }
 
 // ---------- 시작 · 선택 ----------
-function raidMyPickPayload(){ return raidNet.myPicks.map(k=> k ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k) } : null); }
-function raidAiPickPayload(){ return raidAutoPicks().filter(Boolean).map(k=>({ key:k, atk:unitAtk(k), arm:armorMult(k), rune: spiritRune(k), aw: awakenLevel(k) })); }
+function raidMyPickPayload(){ return raidNet.myPicks.map(k=> k ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(hpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) } : null); }
+function raidAiPickPayload(){ return raidAutoPicks().filter(Boolean).map(k=>({ key:k, atk:unitAtk(k), arm:hpMult(k), rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) })); }
 // (v269) 추천: 보스 속성에 강한 정령 우대로 4마리 → 돌격·탱커·흡혈처형(전열 계열)을 앞칸(0·1), 나머지는 뒷칸(2·3)
 // 예전엔 공격력 순 4마리를 칸 순서대로 넣어서 전열 계열이 후열에, 후열 계열이 전열에 서기도 했음
 function raidAutoPicks(bossId){
@@ -3065,7 +3179,7 @@ function bindFriendPanel(){
   document.querySelectorAll('[data-f-prof]').forEach(el=>el.addEventListener('click', ()=>showFriendProfile(el.dataset.fProf))); // (v263) 친구 프로필
 }
 // ===================== (v173) 결투 — 친구의 결투 덱과 한 판 (보상 없음) =====================
-function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(armorMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k) } : null); }
+function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(hpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) } : null); }
 // (v182) 한 번이라도 덱을 정했으면(비운 것 포함) 그대로 씀 — 예전엔 다 비우면 '아직 안 정함'으로 보고 탐험 진형을 다시 채워 넣었음.
 // 아직 한 번도 안 정했을 때(null)만 탐험 진형으로 시작
 function myDuelDeck(){ const pad = a=> a.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? k : null); const d = state.duelDeck; return Array.isArray(d) ? pad(d) : pad(state.formation||[]); } // (v267) 파견 가서 없는 정령은 빈 칸으로
@@ -3075,11 +3189,11 @@ async function saveDuelDeck(keys, quiet){
   if(activeTab==='duel') render();
 }
 function buildDuelFight(myPicks, theirPicks, name){
-  const mk = (side, arr)=> raidCleanPicks6(arr).map((p,i)=> p ? makeBattleUnit(side, i, p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0) : null).filter(Boolean);
+  const mk = (side, arr)=> raidCleanPicks6(arr).map((p,i)=> p ? makeBattleUnit(side, i, p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null) : null).filter(Boolean);
   const sf = { v:173, mode:'duel', stageIdx:0, duelName:name, round:1, phase:'acting', queue:[], queuePos:0, myUnits: mk('me', myPicks), enemyUnits: mk('enemy', theirPicks), log:['결투 시작!'], result:null, fxSeq:0, lastFx:null, actSeq:0 };
   startRoundQueue(sf); return sf;
 }
-function raidCleanPicks6(arr){ const out = []; for(let i=0;i<6;i++){ const p = (arr && typeof arr==='object') ? arr[i] : null; out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk:Math.max(1,Math.min(1e7,p.atk)), arm: Number.isFinite(p.arm)?Math.max(1,Math.min(10,p.arm)):1, rune: runeValid(p.rune)?{id:p.rune.id, tier:p.rune.tier}:null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0 } : null); } return out; }
+function raidCleanPicks6(arr){ const out = []; for(let i=0;i<6;i++){ const p = (arr && typeof arr==='object') ? arr[i] : null; out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk:Math.max(1,Math.min(1e7,p.atk)), arm: Number.isFinite(p.arm)?Math.max(1,Math.min(10,p.arm)):1, rune: runeValid(p.rune)?{id:p.rune.id, tier:p.rune.tier}:null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, sub: cleanSub(p.sub) } : null); } return out; }
 function duelResultOverlayHtml(sf){
   const r = sf.result;
   return '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'"><div class="bs-ricon">'+(r.win?'<img class="uic" src="assets/ui/ic_trophy.webp" alt="">':'<img class="uic" src="assets/ui/ic_skull.webp" alt="">')+'</div><div class="bs-rtitle">'+(r.win?'결투 승리!':'결투 패배')+'</div><div class="bs-rsub">vs '+(sf.duelName||'상대')+' · '+(r.forfeit?'기권':r.rounds+'라운드')+'</div>'
@@ -4929,7 +5043,7 @@ function persistBossWaveState(sf){
   const bf = state.bossFight; if(!bf) return;
   sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp }; }); // (v152) 6마리 고정 — 체력만 그대로 이월
 }
-function spiritMaxHpGrid(key){ const r = spiritRune(key); return Math.max(1, Math.round(unitAtk(key)*ALLY_HP_MULT*armorMult(key)*((r && r.id==='hp' && r.tier!=='boss') ? 1+runeVal(r) : 1))); } // 새 전투 체력 스케일 기준(그리드 전투 전용, 기존 spiritMaxHp와 별개)
+function spiritMaxHpGrid(key){ const r = spiritRune(key); return Math.max(1, Math.round(unitAtk(key)*ALLY_HP_MULT*hpMult(key)*((r && r.id==='hp' && r.tier!=='boss') ? 1+runeVal(r) : 1))); } // 새 전투 체력 스케일 기준(그리드 전투 전용, 기존 spiritMaxHp와 별개)
 // (v152) 이정민님 피드백: 3웨이브짜리 보스전에서 매 웨이브 교체까지 있으면 과함 —
 // 웨이브 사이 교체는 출정(여러 판 이어지는 모드) 전용으로 남기고, 보스전은 6마리를 한 번만 골라 3웨이브 내내 그대로 감.
 // 쓰러지면 그 웨이브부터는 그 자리 빈 채로 진행(이탈), 체력은 웨이브 사이 계속 이어짐(회복 없음).
@@ -6116,7 +6230,7 @@ function unitPower(speciesKey){
   return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + AWAKEN_POWER*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
-function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey); } // (v104) 무기 배율 반영
+function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
 const ELEMENT_PASSIVE = {
   fire: {
