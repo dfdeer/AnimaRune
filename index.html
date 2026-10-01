@@ -597,7 +597,7 @@
   .pq-bar{width:1px; height:34px; background:#ffffff30; margin:0 4px;}
   .pq-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
   .pq-chip{flex:0 0 34px; text-align:center; font-size:11px; font-weight:800; color:var(--sub);}
-  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} /* (v305) 정령을 넣어도 칸 너비가 그대로 */
+  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} .pq-slots .slot{aspect-ratio:auto; height:96px;} /* (v305) 정령을 넣어도 칸 너비가 그대로 · (v307) 높이도 처음부터 넣었을 때 크기로 */
   .pq-slots .slot{flex:0 0 calc((100% - 16px) / 3); aspect-ratio:1;}
   .bs-acts .btn small .warn, .bs-tgt .warn{color:#ffae57;}
   /* ===== (v142) 결과 창: 전장 위에 흐린 막 + 카드 ===== */
@@ -5521,7 +5521,9 @@ function bossBattleInfoHtml(u){
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
   root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; (el.lastElementChild && !el.lastElementChild.classList.contains('icon') ? el.lastElementChild : el).appendChild(b); }); // 이름 줄 옆에 붙임 — 모서리에 두면 좁은 폰에서 그림과 겹쳤음
-  root.querySelectorAll('[data-unit-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.unitInfo.split(':'); const u = unitAt(pv, sd, +ix); if(u) showUnitDetail(u); }));
+  root.querySelectorAll('[data-unit-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.unitInfo.split(':'); const u = unitAt(pv, sd, +ix); if(!u) return;
+    if(sd==='me' && SPIRITS[u.key] && ownedCount(u.key)>0){ manageReturnFn = (presetCtx && presetCtx.reopen) || null; showManageModal(u.key); return; } // (v307) 내 칸 ⓘ → 정령 관리 창(장비·룬·강화 등) · 상대는 그대로
+    showUnitDetail(u); }));
 }
 function showUnitKitInfo(u){
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
@@ -8908,6 +8910,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:307, v:'3.2.3', date:'2026-10-01', secs:[
+    { t:'진형·프리셋', items:[ '진형 칸에 정령을 넣으면 칸이 커지던 것 — 처음부터 넣었을 때 크기로', '준비 창의 내 칸 ⓘ와 정령 배치 창에서 길게 누르기 → 스킬만 보이던 창 대신 정령 관리 창(장비·룬·강화·각성·스킬 보기) · 닫으면 원래 화면으로 (전투 중 정보 창은 그대로)' ]}
+  ]},
   { build:306, v:'3.2.2', date:'2026-10-01', secs:[
     { t:'합성 화면', items:[ '재료를 고를 때마다 화면이 조금씩 밀려 내려가던 것 수정' ]}
   ]},
@@ -12325,7 +12330,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
   entries.sort((a,b)=> (b.isCur - a.isCur) || ((b.free>0) - (a.free>0)) || cmp(a,b));
   html += '<div class="pk-sort">'+[['cp','<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력'],['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 역할']].map(([k,t])=>'<button data-pk-sort="'+k+'" class="'+(sortBy===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
   // (v300) 한눈에 보이게 작은 칸 격자(한 줄 4칸) — 그림·등급 테두리·속성 + 이름 + 역할·전투력 · 누르면 배치 · 길게 누르면 스킬 정보
-  html += '<div class="sub pk-hint">길게 누르면 스킬 정보</div><div class="pk-grid">';
+  html += '<div class="sub pk-hint">길게 누르면 정령 정보 (장비·룬·강화·스킬)</div><div class="pk-grid">';
   // (v305) 등급·속성·역할로 정렬하면 도감처럼 묶음 제목(이름 · 개수)으로 나눔 — 다른 칸에서 쓰는 정령은 맨 아래 한 묶음
   const isFrontK = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
   const grpOf = sortBy==='rarity' ? (k=>SPIRITS[k].rarity) : sortBy==='element' ? (k=>SPIRITS[k].element) : sortBy==='role' ? (k=> isFrontK(k) ? 'f' : 'b') : null;
@@ -12361,7 +12366,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
   document.querySelectorAll('[data-pk-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.pickSort = el.dataset.pkSort; save(); showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup); }));
   document.querySelectorAll('[data-pk-info]').forEach(el=>{ let tm = null; // (v300) 길게 누르면 스킬 정보
     const stop = ()=>{ if(tm){ clearTimeout(tm); tm = null; } };
-    el.addEventListener('pointerdown', ()=>{ stop(); el.dataset.lp = ''; tm = setTimeout(()=>{ tm = null; el.dataset.lp = '1'; const k = el.dataset.pkInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }, 450); });
+    el.addEventListener('pointerdown', ()=>{ stop(); el.dataset.lp = ''; tm = setTimeout(()=>{ tm = null; el.dataset.lp = '1'; const k = el.dataset.pkInfo; manageReturnFn = ()=>showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup); showManageModal(k); }, 450); }); // (v307) 길게 누르면 정령 관리 창
     ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev, stop)); el.addEventListener('contextmenu', e=>e.preventDefault()); });
   document.querySelectorAll('[data-pick]').forEach(el=>{
     el.addEventListener('click', ()=>{
@@ -13003,7 +13008,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 306, APP_VERSION = '3.2.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 307, APP_VERSION = '3.2.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
