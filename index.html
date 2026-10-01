@@ -914,7 +914,6 @@
   .tk-myth{filter:hue-rotate(250deg) saturate(1.6) drop-shadow(0 0 3px #ff7bf0);} /* (v297) 신화 확정권 */
   .tk-eq.r-rare{filter:drop-shadow(0 0 2px #57d3ff);} .tk-eq.r-epic{filter:drop-shadow(0 0 2px #a57bff);} .tk-eq.r-legendary{filter:drop-shadow(0 0 2px #ffb347);} .tk-eq.r-mythic{filter:drop-shadow(0 0 3px #ff7bf0) hue-rotate(250deg);}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:55%; filter:drop-shadow(0 0 1px #000);}
-  .tk-mv{filter:hue-rotate(300deg) saturate(1.6);} /* (v297) 강화 이전권 */
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
@@ -1737,7 +1736,6 @@ const RAID_SHOP = [ // (v247) desc = 구매 창에 보이는 설명(간결체) �
   { id:'essence', sec:'res', icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', name:'정수 ×500', price:5, limit:0, desc:'소환·강화·화로에 쓰는 재화 500' },
   { id:'stone', sec:'res', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:3, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' },
   { id:'equip', sec:'res', icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'장비 소환권', price:5, limit:5, desc:'정령장비 1회 소환' },
-  { id:'enhMove', sec:'res', icon:'<img class="uic tk-mv" src="assets/ui/ic_stone.webp" alt="">', name:'강화 이전권', price:30, limit:1, desc:'한 정령의 강화를 다른 정령으로 옮김 (원래 정령은 +0)' }, // (v297)
   { id:'eq_epic', sec:'res', icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', price:40, limit:1, desc:'에픽 장비 1개 (부위·속성 무작위)' }, // (v297)
   { id:'eqpick_epic', sec:'res', icon:TICKET_INFO_EQP('epic'), name:'에픽 장비 선택권', price:70, limit:1, desc:'에픽 장비 10종 중 원하는 1개' },
   { id:'eq_legendary', sec:'res', icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', price:140, limit:1, desc:'레전더리 장비 1개 (부위·속성 무작위)' },
@@ -5923,7 +5921,7 @@ function showMailSendModal(){
   }
 }
 // (v296) 우편 보상 입력칸 — 보내기·수정 창이 같이 씀 (m = 기존 우편이면 그 값으로 채움)
-const MAIL_TK = ['summon','rare','epic','legendary','mythic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','enhMove'];
+const MAIL_TK = ['summon','rare','epic','legendary','mythic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'];
 function mailRewardFormHtml(m, days){
   const rw = (m && m.reward) || {}, it = rw.items || {};
   return '<div class="ms-grid">'
@@ -6019,7 +6017,7 @@ function showAdminSetupModal(){
   document.getElementById('admApply').addEventListener('click', ()=>{
     const MAX = 9999999;
     state.essence = MAX; state.enhanceStone = MAX; state.shards = 99999; state.raidGems = 99999;
-    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','enhMove'].forEach(k=>state.tickets[k] = 999);
+    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'].forEach(k=>state.tickets[k] = 999);
     Object.keys(SPIRITS).forEach(k=>{ if(!(state.owned[k]>0)) state.owned[k] = 1; state.discovered[k] = true; });
     // (v296) 장비 전부 1개씩 · 룬 종류·등급마다 1개씩(보관함에 없는 것만) · 룬 승급석
     allEquipKeys().forEach(k=>{ if(!(equipOwnedCount(k)>0)) addEquip(k); else state.equipSeen[k] = true; });
@@ -6199,10 +6197,8 @@ function enhanceCost(key){
   const sp = SPIRITS[key];
   const lvl = enhanceLevel(key);
   const rarityIdx = RARITY_ORDER.indexOf(sp.rarity);
-  // (v297) 등급이 하나 오를 때마다 강화 비용 ×3 (사용자 결정 A안) — 이전권으로 옮길 때 등급 하나마다 ÷3과 맞춤
-  const mul = Math.pow(3, rarityIdx);
-  let essence = (30 + lvl*20) * mul;
-  let stone = (2 + lvl*2) * mul;
+  let essence = 30 + lvl*20 + rarityIdx*15;
+  let stone = 2 + lvl*2 + rarityIdx;
   return { essence, stone };
 }
 function doEnhance(key, quiet){
@@ -7070,7 +7066,7 @@ function fuseInfoFor(keys){ // (v250) 재료 3개 → 합성 정보 (칸 합성�
   const streakKey = fuseMode==='equip' ? 'eq_'+nr : nr;
   const rate = Math.round((1-fuseFailChanceFor(nr, streakKey))*100);
   const inheritFrom = [...new Set(keys)].reduce((t,k)=> t + (fuseMode==='equip' ? equipEnhLevel(k) : enhanceLevel(k)), 0); // (v266) 재료 강화의 합 — 같은 정령(장비)은 강화를 함께 쓰니 한 번만 셈
-  const inherit = fuseMode==='equip' ? Math.floor(inheritFrom / FUSE_INHERIT_DIV) : 0; // (v297) 정령은 합성 계승 없앰 — 강화가 종 단위라 재료 강화가 줄지 않고 복사됐음 → 강화 이전권으로 옮김 · 장비는 그대로
+  const inherit = Math.floor(inheritFrom / FUSE_INHERIT_DIV); // 합 ÷ 3 (버림) — 서로 다른 +10 셋 → +10 · 같은 +10 셋 → +3
   const awFrom = 0, awInherit = 0; // (v266) 각성은 계승 안 함 — 낮은 등급에서 각성을 다 하고 올리면 너무 쉬워서
   return { keys, src, nr, streakKey, rate, out: fuseOutcomes(keys), inherit, inheritFrom, awFrom, awInherit };
 }
@@ -8301,7 +8297,7 @@ function dispatchSlots(){ const l = accountLevel(); return 3 + (l>=5?1:0) + (l>=
 function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
 function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
 function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
-const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1, enhMove:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1, enhMove:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1, enhMove:1} };
+const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1} };
 function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L }; if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
 function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
@@ -8309,7 +8305,6 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
-    { t:'강화 개편', items:[ '강화 비용이 등급마다 3배 — 일반 ×1 · 레어 ×3 · 에픽 ×9 · 레전더리 ×27 · 신화 ×81 (이미 한 강화는 그대로)', '정령 합성 때 강화 계승 없앰 — 재료의 강화가 줄지 않고 결과에 복사되던 문제 (장비 합성 계승은 그대로)', '새 아이템 강화 이전권 — 한 정령의 강화를 다른 정령으로 옮김 · 등급 하나 높은 쪽으로는 ÷3, 낮은 쪽으로는 ×3 · 원래 정령은 +0 · 정령 관리 창에서 사용', '강화 이전권 얻는 곳: 계정 레벨 10 · 20 · 30 · 레이드 상점(30, 주 1) · 월드 보스 상점(15, 주 1)' ]},
     { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
     { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
     { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
@@ -8756,7 +8751,6 @@ const TICKET_INFO = {
   pick_mythic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt="">', name:'신화 선택권', pick:'mythic'},
   // (v297) 신화 확정권 · 장비 확정권(등급 확정, 부위·속성 무작위) · 장비 선택권(부위·속성을 골라 받음) — 그림은 기존 아이콘에 등급 빛·방패 표시
   mythic:{icon:'<img class="uic tk-myth" src="assets/ui/ic_tk_legendary.webp" alt="">', name:'신화 정령 확정권', sure:'mythic'},
-  enhMove:{icon:'<img class="uic tk-mv" src="assets/ui/ic_stone.webp" alt="">', name:'강화 이전권'}, // (v297) 한 정령의 강화를 다른 정령으로 옮김
   eq_rare:{icon:'<img class="uic tk-eq r-rare" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레어 장비 확정권', eqSure:'rare'},
   eq_epic:{icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', eqSure:'epic'},
   eq_legendary:{icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', eqSure:'legendary'},
@@ -10204,7 +10198,6 @@ const WB_SHOP = [ // limit: 이번 주 구매 한도(0 = 무제한)
   { id:'legend', icon:'🎲', name:'전설 룬 뽑기', price:20, limit:2, desc:'전설 등급 기본 룬 1개 (무작위 종류)' },
   { id:'upgrade', icon:'⬆️', name:'룬 승급석', price:12, limit:2, desc:'룬 한 단계 승급 (일반 → 희귀 → 전설)' },
   { id:'pick_epic', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
-  { id:'enhMove', icon:'<img class="uic tk-mv" src="assets/ui/ic_stone.webp" alt="">', name:'강화 이전권', price:15, limit:1, desc:'한 정령의 강화를 다른 정령으로 옮김 (원래 정령은 +0)' }, // (v297)
   { id:'eqpick_legendary', icon:TICKET_INFO_EQP('legendary'), name:'레전더리 장비 선택권', price:60, limit:1, desc:'레전더리 장비 10종 중 원하는 1개' }, // (v297)
   { id:'stone', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:2, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' }
 ];
@@ -11411,27 +11404,6 @@ function spiritLineHtml(key){
   return '<div class="sp-line"><span class="sp-line-t">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' '+sp.variant.toUpperCase()+'종</span>'
     + '<div class="sp-line-row">'+chain.map(k=>{ const s2 = SPIRITS[k], seen = state.discovered[k]; return '<span class="sp-line-i'+(k===key?' cur':'')+'" style="--rc:'+RARITY_INFO[s2.rarity].color+';">'+(seen ? spArt(s2) : '<b>?</b>')+'<small>'+(seen ? s2.name : '???')+'</small></span>'; }).join('<i>›</i>')+'</div></div>';
 }
-// (v297) 강화 이전권 — 한 정령의 강화를 다른 정령으로 옮김. 등급 차이 하나마다 높은 쪽으로 ÷3, 낮은 쪽으로 ×3 (강화 비용이 등급마다 3배라서)
-// 받는 정령은 (옮겨 온 단계)와 (원래 단계) 중 높은 쪽 · 최대 강화를 넘는 몫은 버림 · 원래 정령은 +0
-function enhMoveResult(src, dst){ const d = RARITY_ORDER.indexOf(SPIRITS[dst].rarity) - RARITY_ORDER.indexOf(SPIRITS[src].rarity);
-  const raw = Math.floor(enhanceLevel(src) * Math.pow(3, -d) + 1e-9), cap = maxEnhanceFor(dst);
-  return { raw, to: Math.max(enhanceLevel(dst), Math.min(cap, raw)), lost: Math.max(0, raw - cap) }; }
-function showEnhMoveModal(src, dst){
-  const sp = SPIRITS[src], have = ticketCount('enhMove');
-  const pool = Object.keys(SPIRITS).filter(k=>k!==src && ownedCount(k)>0).sort((a,b)=> RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
-  let h = '<h3 style="text-align:center; margin:0 0 4px;">'+TICKET_INFO.enhMove.icon+' 강화 옮기기</h3><div class="sub" style="text-align:center; font-size:11px; line-height:1.5; margin-bottom:8px;">'+sp.name+' +'+enhanceLevel(src)+' → 받을 정령 선택 · 보유 '+have+'장<br>등급이 하나 높으면 ÷3 · 낮으면 ×3 · 원래 정령은 +0</div>';
-  h += '<div class="pick-grid">'+pool.map(k=>{ const r = enhMoveResult(src, k), t = SPIRITS[k], up = r.to > enhanceLevel(k);
-    return '<button class="pick-cell'+(dst===k?' on':'')+'" data-mv="'+k+'"><span class="av r-'+t.rarity+'">'+spArt(t)+'</span><b>'+t.name+'</b><small>+'+enhanceLevel(k)+' → '+(up?'<b style="color:#5cd65c;">+'+r.to+'</b>':'+'+r.to)+(r.lost?' (넘침 '+r.lost+')':'')+'</small></button>'; }).join('')+'</div>';
-  const r = dst ? enhMoveResult(src, dst) : null, ok = dst && have>0 && r.to > enhanceLevel(dst);
-  h += '<button class="btn gold sticky-ok" id="mvGo" style="margin-top:10px;" '+(ok?'':'disabled')+'>'+(dst ? (r.to > enhanceLevel(dst) ? SPIRITS[dst].name+' +'+r.to+'로 옮기기' : '더 오르지 않음') : '받을 정령 선택')+'</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
-  bindModalClose(()=>showManageModal(src));
-  document.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click', ()=>showEnhMoveModal(src, b.dataset.mv)));
-  const go = document.getElementById('mvGo'); if(go && ok) go.addEventListener('click', ()=>{ const rr = enhMoveResult(src, dst);
-    confirmBox('강화 옮기기?', sp.name+' +'+enhanceLevel(src)+' → +0<br>'+SPIRITS[dst].name+' +'+enhanceLevel(dst)+' → <b>+'+rr.to+'</b>'+(rr.lost?'<br>최대 강화를 넘는 '+rr.lost+'단계는 사라짐':'')+'<br>'+TICKET_INFO.enhMove.name+' 1장 사용', '옮기기', ()=>{
-      if(ticketCount('enhMove')<=0) return; const r2 = enhMoveResult(src, dst); state.tickets.enhMove -= 1; state.enhanceLevel = state.enhanceLevel || {};
-      state.enhanceLevel[dst] = r2.to; state.enhanceLevel[src] = 0; checkAchievements(); save(); sfx('enhance'); render(); toast('⬆️ '+SPIRITS[dst].name+' +'+r2.to+' (강화 옮김)'); showManageModal(dst); }); });
-}
 function showManageModal(key){
   const sp = SPIRITS[key];
   const info = RARITY_INFO[sp.rarity];
@@ -11452,7 +11424,6 @@ function showManageModal(key){
   html += runeManageHtml(key);
   html += equipSlotsHtml(key);
   html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
-  if(enhanceLevel(key)>0 && ticketCount('enhMove')>0) html += '<button class="btn secondary small" id="enhMoveBtn" style="margin:4px auto 6px; width:auto; display:block; padding:5px 14px;">'+TICKET_INFO.enhMove.icon+' 강화 다른 정령으로 옮기기 ('+ticketCount('enhMove')+'장)</button>'; // (v297)
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && awakenSpare(key)>=ac.copies && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
     html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
@@ -11466,7 +11437,6 @@ function showManageModal(key){
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
   bindModalClose(manageReturnFn ? ()=>{ const f = manageReturnFn; manageReturnFn = null; f(); } : undefined);
   document.querySelectorAll('[data-equip-slot]').forEach(el=>el.addEventListener('click', ()=>showEquipPicker(key, el.dataset.equipSlot)));
-  { const mv = document.getElementById('enhMoveBtn'); if(mv) mv.addEventListener('click', ()=>showEnhMoveModal(key)); }
   { const eo = document.getElementById('enhOpenBtn'); if(eo) eo.addEventListener('click', ()=>showEnhanceModal(key)); }
   const dBtn = document.getElementById('dismantleBtn');
   if(dBtn) dBtn.addEventListener('click', ()=>showDismantleModal(key));
@@ -12053,7 +12023,7 @@ function sanitizeState(){
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','enhMove'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
