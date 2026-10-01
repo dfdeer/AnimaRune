@@ -4887,7 +4887,8 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     if(persisted){ u.maxHp = Math.min(persisted.maxHp, u.maxHp) || u.maxHp; u.hp = Math.max(0, Math.min(persisted.hp, u.maxHp)); u.alive = u.hp>0;
       if(persisted.w){ // (v304) 보스전은 3웨이브가 한 전투 — 스킬 쿨·전투당 1회(부활 등)는 웨이브가 바뀌어도 이어짐, 전투 시작 효과(초월 보호막·강화)는 첫 웨이브에만
         u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = !!persisted.rvG;
-        if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0) delete u.st.empower; } }
+        if(persisted.st && typeof persisted.st==='object') u.st = JSON.parse(JSON.stringify(persisted.st)); // (v309) 버프·디버프도 그대로 이어짐(남은 라운드 포함) — 첫 웨이브의 전투 시작 효과도 남아 있던 만큼만
+        else { if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0) delete u.st.empower; } } }
     myUnits.push(u);
   });
   let enemyUnits, gimmick = null;
@@ -5171,7 +5172,7 @@ function checkBossWaveOutcome(sf){
 // 웨이브 종료 시 살아있는 유닛의 체력을 로스터에 저장, 출전(피로 누적)/대기(피로 해소+20% 회복) 반영
 function persistBossWaveState(sf){
   const bf = state.bossFight; if(!bf) return;
-  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: !!u.reviveGiven }; }); // (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
+  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: !!u.reviveGiven, st: u.alive ? JSON.parse(JSON.stringify(u.st||{})) : {} }; }); // (v309) 버프·디버프 · (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
 }
 function spiritMaxHpGrid(key){ const r = spiritRune(key); return Math.max(1, Math.round(unitAtk(key)*ALLY_HP_MULT*spiritHpMult(key)*((r && r.id==='hp' && r.tier!=='boss') ? 1+runeVal(r) : 1))); } // 새 전투 체력 스케일 기준(그리드 전투 전용, 기존 spiritMaxHp와 별개)
 // (v152) 이정민님 피드백: 3웨이브짜리 보스전에서 매 웨이브 교체까지 있으면 과함 —
@@ -8910,6 +8911,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:309, v:'3.3.0', date:'2026-10-01', secs:[
+    { t:'보스전', items:[ '웨이브가 바뀌어도 버프·디버프(보호막·강화·화상·독·빙결 등)가 남은 라운드 그대로 이어짐' ]},
+  ]},
   { build:308, v:'3.2.4', date:'2026-10-01', secs:[
     { t:'전투', items:[ '빙결 연출 — 얼음 기둥 그림을 흐리게 덮는 모습으로 변경', '빙결은 자기 차례가 올 때 풀림 — 풀리는 순간 얼음이 깨지며 「빙결 해제 · 행동 불가」 표시', '회복·재생 숫자 아래에 출처(스킬·유물 이름) 표시 · 버프·디버프 글자에서 정령 이름 뺌' ]},
     { t:'진형', items:[ '레이드·월드 보스도 보스마다 마지막으로 도전한 진형을 기억', '처음 도전하는 챕터 보스·탑 층·던전·레이드·월드 보스는 빈 칸부터 시작' ]},
@@ -13015,7 +13019,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 308, APP_VERSION = '3.2.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 309, APP_VERSION = '3.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
