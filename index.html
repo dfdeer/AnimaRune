@@ -478,7 +478,7 @@
   /* (v305) 상태 이상 연출 — 빙결: 얼음 기둥 그림을 흐리게 덮음(v308) · 화상: 발밑 불꽃 · 독: 초록 거품 · 저주: 보랏빛 기운 */
   .fx-frz{position:absolute; left:-6%; right:-6%; bottom:-3%; height:112%; z-index:4; pointer-events:none; transform-origin:50% 100%; animation:frzIn .35s ease-out;}
   .fx-frz svg{display:block; width:100%; height:100%; opacity:.5; filter:drop-shadow(0 0 4px #9fe3ff);}
-  .fx-frz.thaw{animation:frzOut .9s ease-in forwards;} .fx-frz.thaw em{position:absolute; left:50%; top:30%; transform:translateX(-50%); white-space:nowrap; font-style:normal; font-size:11px; font-weight:700; color:#dff6ff; text-shadow:0 0 3px #0b5aa5, 0 1px 2px #000; animation:frzTxt .9s ease-out forwards;}
+  .fx-frz.thaw{animation:frzOut .9s ease-in forwards;} .fx-frz.thaw em small{display:block; font-size:9px; opacity:.9; text-align:center;} .fx-frz.thaw em{position:absolute; left:50%; top:30%; transform:translateX(-50%); white-space:nowrap; font-style:normal; font-size:11px; font-weight:700; color:#dff6ff; text-shadow:0 0 3px #0b5aa5, 0 1px 2px #000; animation:frzTxt .9s ease-out forwards;}
   .st-frz .bu-icon{filter:saturate(.45) brightness(1.15) hue-rotate(165deg);} .st-frz .bu-body{animation:none !important;}
   @keyframes frzIn{0%{transform:scaleY(.1); opacity:0;} 70%{transform:scaleY(1.06);} 100%{transform:scaleY(1); opacity:1;}}
   @keyframes frzOut{0%{opacity:1; transform:scale(1);} 35%{opacity:1; transform:scale(1.04);} 100%{opacity:0; transform:scale(1.12);}}
@@ -2309,7 +2309,7 @@ function makeActCtx(sf, a, tSide, tIdx){
     return r;
   };
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
-  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before }); };
+  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); }; // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
   C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); };
@@ -2337,7 +2337,7 @@ function performAction(sf, a, act, tSide, tIdx){
     if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && !sf.noRng && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
     pushLog(sf, logUnitName(a.side, a)+' 공격 → '+logUnitName(tSide, C.t));
   }else{
-    const sk = unitSkill(a, act);
+    const sk = unitSkill(a, act); C.skNm = sk.name;
     if(act==='s2'){ const sg = unitSG(a); C.g = sg; C.P = arr=>arr[sg]; } // (v225) 각성으로 연 스킬2는 에픽 수치부터
     sk.run(C);
     if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
@@ -4233,7 +4233,7 @@ function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
-      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, logUnitName(u.side, u)+' 빙결로 쉼'); if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
+      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
       if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
       if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
@@ -4261,7 +4261,7 @@ function roundStartEffects(sf){
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
     if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
-    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧재생' }); }
+    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
@@ -4276,7 +4276,7 @@ function roundStartEffects(sf){
       }
       if(p.line==='light_b' && unitPG(p)>=1){
         const slow = aliveUnits(sideUnits(sf, side)).reduce((x,y)=> effSpeed(y) < effSpeed(x) ? y : x);
-        slow.st.haste = { v: Math.max(slow.st.haste ? slow.st.haste.v : 0, [0,5,6,8,10][unitPG(p)]), r: 1 }; hits.push({ side, idx:slow.idx, kind:'status', text:'⏩가속', src:SPIRITS[p.key].name+' 패시브' });
+        slow.st.haste = { v: Math.max(slow.st.haste ? slow.st.haste.v : 0, [0,5,6,8,10][unitPG(p)]), r: 1 }; hits.push({ side, idx:slow.idx, kind:'status', text:'⏩가속' } /* (v308) 버프·디버프 글자엔 정령 이름 안 붙임 */);
       }
     });
   });
@@ -4542,7 +4542,7 @@ const LINE_KITS = {
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
         '대상 편 전체 회복 (시전자 최대체력 '+pctTxt([0,0,.12,.16,.20][g])+')',
@@ -5460,7 +5460,7 @@ function battleUnitHtml(u, opts){
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+'</div>'
-    + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결로 쉼</em></div>' : '')) + (u.st.burn>0 ? '<div class="fx-burn"><i></i><i></i><i></i></div>' : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i></div>' : '') + (u.st.curse ? '<div class="fx-curse"></div>' : '') : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
+    + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + (u.st.burn>0 ? '<div class="fx-burn"><i></i><i></i><i></i></div>' : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i></div>' : '') + (u.st.curse ? '<div class="fx-curse"></div>' : '') : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
@@ -8911,7 +8911,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:308, v:'3.2.4', date:'2026-10-01', secs:[
-    { t:'전투', items:[ '빙결 연출 — 얼음 기둥 그림을 흐리게 덮는 모습으로 변경', '빙결은 자기 차례가 올 때 풀림 — 풀리는 순간 얼음이 깨지며 「빙결로 쉼」 표시' ]},
+    { t:'전투', items:[ '빙결 연출 — 얼음 기둥 그림을 흐리게 덮는 모습으로 변경', '빙결은 자기 차례가 올 때 풀림 — 풀리는 순간 얼음이 깨지며 「빙결 해제 · 행동 불가」 표시', '회복·재생 숫자 아래에 출처(스킬·유물 이름) 표시 · 버프·디버프 글자에서 정령 이름 뺌' ]},
     { t:'진형', items:[ '레이드·월드 보스도 보스마다 마지막으로 도전한 진형을 기억', '처음 도전하는 챕터 보스·탑 층·던전·레이드·월드 보스는 빈 칸부터 시작' ]},
   ]},
   { build:307, v:'3.2.3', date:'2026-10-01', secs:[
@@ -11136,7 +11136,7 @@ function expApplyRelics(run, sf, isStrong){
     if(isStrong && expHasRelic(run,'hunter')) m *= 1.30;
     u.atk = Math.round(u.atk*m);
     if(expHasRelic(run,'vanguard') && isFrontRow(u.idx)){ u.st.shield = Math.round(u.maxHp*0.25); u.st.shieldR = 2; }
-    if(expHasRelic(run,'moss')) u.st.regen = { v:0.04, r:99 };
+    if(expHasRelic(run,'moss')) u.st.regen = { v:0.04, r:99, src:'재생 이끼' };
     if(expHasRelic(run,'thorn')) u.st.reflect = { v:0.12, r:99 };
     if(expHasRelic(run,'feather')) u.st.haste = { v:12, r:99 };
     if(expHasRelic(run,'charm')) u.st.ward = 1;
