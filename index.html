@@ -6011,6 +6011,7 @@ function mailClean(m){
 function mailList(){
   const now = Date.now(), out = [];
   [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now) || (state.mailHidden && state.mailHidden[p+':'+id])) return; /* (v296) 지운 우편은 숨김 */ out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!((state.mailClaimed && state.mailClaimed[p+':'+id]) || (p==='u' && m.c)) /* (v296) 개인 우편은 서버의 받은 표시(c)도 봄 */ })); }));
+  (state.sysMail||[]).forEach(x=>{ const m = mailClean(x); if(!m || (state.mailHidden && state.mailHidden['s:'+x.id])) return; out.push(Object.assign(m, { id:'s:'+x.id, raw:x.id, scope:'s', claimed: !!x.got })); }); // (v313) 게임이 직접 넣는 우편 — 받은 표시는 우편 안에(got)
   return out.sort((a,b)=> (a.claimed-b.claimed) || (b.t-a.t));
 }
 function mailUnclaimed(){ return mailList().filter(m=>!m.claimed); }
@@ -6058,6 +6059,7 @@ function mailClaim(ids){
   ms.forEach(m=>{ const R = m.reward.runes || {}; Object.keys(R).forEach(k=>{ runes[k] = (runes[k]||0) + R[k]; }); });
   { const nr = Object.values(runes).reduce((a,b)=>a+b, 0); if(nr && (state.runeInv||[]).length + nr > RUNE_INV_MAX){ toast('룬 보관함 자리 부족 — 룬 '+nr+'개 받을 자리 필요'); return; } } // (v300)
   ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; wbGems += m.reward.wbGems||0; shards += m.reward.shards||0; upStones += m.reward.upStones||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
+    if(m.scope==='s'){ const x = (state.sysMail||[]).find(y=>y.id===m.raw); if(x) x.got = Date.now(); }
     if(m.scope==='u') raidNet.db.doc('mail/user/'+raidNet.uid+'/'+m.raw+'/c').set(Date.now()).catch(()=>{}); }); // (v296) 받은 개인 우편도 지우지 않고 받은 표시만(c) — 전체 우편처럼 보관 기간까지 남음 · 관리자가 받았는지 확인
   state.essence += essence; state.enhanceStone = (state.enhanceStone||0) + stone; state.raidGems = (state.raidGems||0) + gems; grantItems(Object.keys(items).length ? items : null);
   state.wbGems = (state.wbGems||0) + wbGems; state.shards = (state.shards||0) + shards; state.runeUpStones = (state.runeUpStones||0) + upStones;
@@ -6072,7 +6074,7 @@ function showMailboxModal(why){
   let h = '<h3 style="text-align:center; margin:0 0 8px;">📬 우편함</h3><div class="mail-list">';
   if(!raidNet.db) h += '<div class="sub" style="text-align:center; padding:20px 0;">온라인 연결 후 우편 수령 가능</div>';
   if(raidNet.db && mailNet.err && Object.keys(mailNet.err).length) h += '<div class="sub" style="text-align:center; color:#ff8a8a; font-size:11px; padding:6px 0; line-height:1.5;">⚠️ 서버에서 우편을 못 읽음 ('+(mailNet.err.all?'전체':'')+(mailNet.err.all&&mailNet.err.mine?'·':'')+(mailNet.err.mine?'개인':'')+')<br>Firebase 규칙의 mail 읽기 권한 확인 필요</div>';
-  if(!raidNet.db){}
+  if(!raidNet.db && !list.length){}
   else if(!list.length) h += '<div class="sub" style="text-align:center; padding:24px 0;">받은 우편 없음</div>';
   else h += list.map(m=>'<button class="mail-row'+(m.claimed?' done':'')+'" data-mail-open="'+m.id+'">'+(m.claimed?'':'<i class="mail-dot"></i>')+'<b>'+escTxt(m.title)+'</b><small>'+(m.claimed?'받음':(m.scope==='a'?'전체':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):''))+'</small></button>').join('');
   h += '</div>';
@@ -6647,6 +6649,7 @@ function load(){
 var saveFailWarned = false; // var: 스크립트 앞부분에서 save()가 먼저 불려도 안전하게
 function save(){
   state.saveRev = (state.saveRev||0) + 1;
+  try{ if(state.rwVer===RW_VER) state.rwGot = rwLedger(); }catch(e){} // (v313) 보상 장부 — 같은 보상 정의로 받은 만큼
   // (v193) 저장 실패(사파리 개인정보 보호 모드·저장 공간 부족 등)에도 게임이 멈추지 않게 — 예전엔 여기서 에러가 나면 하던 동작이 중간에 끊겼음
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); if(typeof accSchedule==='function') accSchedule(); if(typeof pushSchedule==='function') pushSchedule(); }
   catch(e){ if(!saveFailWarned){ saveFailWarned = true; setTimeout(()=>{ try{ toast('⚠️ 기기 저장 실패 (저장 공간·개인정보 보호 모드 확인)', 4000); }catch(_){} }, 0); } return; }
@@ -8964,6 +8967,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:313, v:'3.5.0', date:'2026-10-01', secs:[
+    { t:'보상 개편 추가 지급', items:[ '챕터 보스 첫 격파 · 무한의 탑 층 · 요일 던전 · 시련의 전당 · 계정 레벨 보상에 추가된 장비 확정권·선택권 · 신화 정령 확정권 · 각인석을, 이미 받은 보상에도 늘어난 만큼 우편으로 지급', '앞으로 한 번만 받는 보상(첫 클리어·층·단계·레벨·업적 등)이 늘어나면 늘어난 만큼 자동으로 우편 지급' ]},
+    { t:'우편', items:[ '게임이 보내는 우편은 인터넷 연결 없이도 받기 가능' ]}
+  ]},
   { build:312, v:'3.4.1', date:'2026-10-01', secs:[
     { t:'홈 화면에 추가', items:[ '☰ 설정 → 📲 홈 화면에 추가 — 크롬은 바로 설치 창 · 아이폰·카카오톡 안에서 연 화면은 순서 안내', '아이폰은 홈 화면 앱과 Safari의 저장 공간이 따로라 구글 연동을 먼저 하도록 안내' ]},
     { t:'소환', items:[ '10연 소환 결과 창(정령·장비)에도 「10회 소환 바로 하기」 체크' ]},
@@ -12817,6 +12824,43 @@ function migrateHardV253(){
   if(s.openView && typeof s.openView==='object' && s.openView.t==='stage') s.openView.idx = mv(s.openView.idx);
   s.hardV253 = true;
 }
+// (v313) 보상 장부 — 한 번만 받는 보상(스테이지·보스 첫 격파와 등급 · 챕터 진행도 · 탑 층 · 요일 던전 · 시련 · 계정 레벨 · 업적)을
+// 지금 보상 정의로 다시 계산한 합계(rwLedger)를 세이브에 같이 둠(rwGot, 저장할 때마다 갱신)
+// 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
+// 주의: 진행 기록의 모양(스테이지 번호 등)을 옮기는 업데이트와 RW_VER 올림을 같은 버전에 섞지 말 것 — 옮긴 만큼이 늘어난 보상으로 잡힘
+const RW_VER = 1;
+const RW_CAT_NM = { stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
+const RW_V0_ADDED = { boss:/^i\.(eq_|eqpick_|engr$|mythic$)/, tower:/^i\.(eq_|eqpick_)/, dg:/^i\.(eq_|eqpick_|engr$)/, trial:/^i\.(eq_|eqpick_|engr$)/, lv:/^i\.(eq_|eqpick_)/ }; // 장부가 없던 세이브(v312 이하)의 기준 = 지금 정의 − v2.11.0·v3.0.0에서 더한 장비권·각인석
+function rwLedger(){
+  const s = state, L = {}, rank = {C:1,B:2,A:3,S:4};
+  const add = (c, rw)=>{ if(!rw) return; const o = L[c] = L[c] || {};
+    ['essence','stone'].forEach(k=>{ if(rw[k]>0) o[k] = (o[k]||0) + rw[k]; });
+    if(rw.items) Object.keys(rw.items).forEach(k=>{ if(rw.items[k]>0) o['i.'+k] = (o['i.'+k]||0) + rw.items[k]; }); };
+  Object.keys(s.stageBest||{}).forEach(k=>{ const i = Number(k); if(!Number.isInteger(i) || !s.stageBest[k]) return; const g = rank[s.stageBest[k]]||0;
+    if(isBossStage(i)){ add('boss', { essence: bossFirstReward(i), items: bossFirstItems(i) }); for(let r=1;r<=g;r++) add('stage', { items:{ equip: chapterEff(bossChapter(i)) } }); }
+    else { add('stage', { essence: stageFirstReward(i) }); for(let r=1;r<=g;r++) add('stage', { essence: stageGradeReward(i, STAGE_GRADE_ORDER[r-1]) }); } });
+  Object.keys(s.chapterRewardsClaimed||{}).forEach(k=>{ const m = /^ch(\d+)_pct(\d+)$/.exec(k); if(m && s.chapterRewardsClaimed[k]) add('ch', chapterPctReward(+m[1], +m[2]/100)); });
+  Object.keys(s.towerFloorRewardClaimed||{}).forEach(k=>{ const f = Number(k); if(Number.isInteger(f) && f>0 && s.towerFloorRewardClaimed[k]) add('tower', towerFloorReward(f)); });
+  ELEMENTS.forEach(el=>{ for(let n=1; n<=dungeonBest(el); n++) add('dg', dungeonReward(n)); });
+  TRIALS.forEach(t=>{ if(trialCleared(t.id)) add('trial', t.reward); });
+  Object.keys(s.lvClaimed||{}).forEach(k=>{ const n = Number(k); if(Number.isInteger(n) && n>1 && s.lvClaimed[k]) add('lv', accountLvReward(n)); });
+  ACHIEVEMENTS.forEach(a=>{ if(s.achievementsClaimed && s.achievementsClaimed[a.id]) add('ach', a.reward); });
+  return L;
+}
+function rwMigrate(){ // 접속(세이브를 불러온 직후)에 한 번
+  const s = state; if(Number.isInteger(s.rwVer) && s.rwVer > RW_VER) return; // 더 새 버전에서 저장한 세이브 — 그대로 둠
+  if(s.rwVer===RW_VER && isPlainObj(s.rwGot)) return;
+  const now = rwLedger(); let got = s.rwGot;
+  if(!Number.isInteger(s.rwVer) || !isPlainObj(got)){ got = JSON.parse(JSON.stringify(now)); Object.keys(RW_V0_ADDED).forEach(c=>{ const o = got[c]; if(o) Object.keys(o).forEach(k=>{ if(RW_V0_ADDED[c].test(k)) delete o[k]; }); }); }
+  const rw = { essence:0, stone:0, items:{} }, cats = [];
+  Object.keys(now).forEach(c=>{ const a = now[c], b = isPlainObj(got[c]) ? got[c] : {}; let any = false;
+    Object.keys(a).forEach(k=>{ const d = Math.floor(a[k] - (Number(b[k])||0)); if(!(d>0)) return; any = true;
+      if(k==='essence' || k==='stone') rw[k] += d; else { const t = k.slice(2); rw.items[t] = (rw.items[t]||0) + d; } });
+    if(any) cats.push(RW_CAT_NM[c]||c); });
+  const id = 'rw'+RW_VER;
+  if(cats.length && !s.sysMail.some(x=>x.id===id)) s.sysMail.push({ id, title:'보상 개편 추가 지급', body:'아래 보상이 개편되어 늘어난 만큼 추가 지급\n· '+cats.join('\n· '), t: Date.now(), reward: rw });
+  s.rwGot = now; s.rwVer = RW_VER;
+}
 function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   migrateHardV253();
@@ -12908,7 +12952,7 @@ function sanitizeState(){
     else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_CAP, Math.floor(s.raidTickets.count)));
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
-    { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; const H = {}; if(s.mailHidden && typeof s.mailHidden==='object') Object.keys(s.mailHidden).forEach(k=>{ const v = s.mailHidden[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) H[k] = v; }); s.mailHidden = H; } s.askSeen = Number.isFinite(s.askSeen) ? s.askSeen : 0; s.inboxSeen = Number.isFinite(s.inboxSeen) ? s.inboxSeen : 0; // (v296) 문의 알림 // (v242) 받은 우편 · 관리자 해금
+    { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[aus]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; const H = {}; if(s.mailHidden && typeof s.mailHidden==='object') Object.keys(s.mailHidden).forEach(k=>{ const v = s.mailHidden[k]; if(/^[aus]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) H[k] = v; }); s.mailHidden = H; } s.askSeen = Number.isFinite(s.askSeen) ? s.askSeen : 0; s.inboxSeen = Number.isFinite(s.inboxSeen) ? s.inboxSeen : 0; // (v296) 문의 알림 // (v242) 받은 우편 · 관리자 해금
     { const E = {}; if(s.equipEnh && typeof s.equipEnh==='object') Object.keys(s.equipEnh).forEach(k=>{ const p = k.split('_'); const v = s.equipEnh[k]; if(p.length===3 && EQUIP_SLOTS.includes(p[0]) && ELEMENTS.includes(p[1]) && EQ_ENH_MAX[p[2]] && Number.isInteger(v) && v>0) E[k] = Math.min(v, EQ_ENH_MAX[p[2]]); }); s.equipEnh = E; } // (v241) 장비 강화
     { const F = {}; if(s.friendSent && typeof s.friendSent==='object') Object.keys(s.friendSent).slice(0,50).forEach(k=>{ const v = s.friendSent[k]; if(/^[A-Za-z0-9_-]{4,64}$/.test(k) && v && typeof v==='object') F[k] = { t: Number.isFinite(v.t) ? v.t : 0, code: typeof v.code==='string' ? v.code.slice(0,8) : '' }; }); s.friendSent = F; } // (v238) 보낸 친구 요청
     if(Array.isArray(s.duelDeck)) s.duelDeck = s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null); else s.duelDeck = null;
@@ -13047,6 +13091,8 @@ function sanitizeState(){
     }else s.dispatch = null; }
   migrateStageRewardsV179();
   migrateBossPicksV245();
+  { const old = Date.now()-120*86400000; s.sysMail = Array.isArray(s.sysMail) ? s.sysMail.filter(x=> x && typeof x==='object' && typeof x.id==='string' && /^[A-Za-z0-9_-]{1,40}$/.test(x.id) && !(x.got && x.got < old)).slice(-20) : []; } // (v313) 게임이 직접 넣는 우편
+  try{ rwMigrate(); }catch(e){ console.error('rwMigrate', e); } // (v313) 보상 개편 추가 지급
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
 
@@ -13069,7 +13115,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 312, APP_VERSION = '3.4.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 313, APP_VERSION = '3.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
