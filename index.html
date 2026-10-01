@@ -709,6 +709,7 @@
   .fz-slots{display:flex; align-items:center; justify-content:center; gap:4px;}
   .fz-plus{color:var(--sub); font-weight:900;}
   .fz-slot{width:78px; min-height:92px; border-radius:14px; border:2px dashed #ffffff33; background:#ffffff08; color:var(--sub); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 2px; font-size:22px;}
+  .fz-slot .av, .fz-pick .av{position:relative;}
   .fz-slot.on{border-style:solid; border-color:#b9a4ff88; background:#8f6bff1a; color:var(--text);} .fz-slot .icon{font-size:24px;} .fz-slot small{font-size:10px; line-height:1.1; word-break:keep-all;} .fz-slot b{font-size:22px;}
   .fz-hint{margin-top:10px; font-size:12px; line-height:1.5;}
   .fz-prev{margin-top:10px; padding:10px; border-radius:12px; background:#00000026;}
@@ -7081,7 +7082,7 @@ function openFuseTab(mode, key){ // 다른 곳(정령 관리·장비 상세)에�
   closeModal(); activeTab = 'spirits'; spiritsSub = 'fuse'; render(); const m = document.getElementById('main'); if(m) m.scrollTop = 0;
 }
 function fuseNameOf(k){ return fuseMode==='equip' ? equipInfo(k).name : SPIRITS[k].name; }
-function fuseArtOf(k){ return fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el'); }
+function fuseArtOf(k){ return (fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el')) + (fuseMode==='equip' ? eqEnhTag(k) : enhTag(k)); } // (v297) 강화한 재료는 +N 표시 (합성하면 사라지니까)
 function renderFuseTab(){
   let h = '<div class="card fz-card">';
   h += '<div class="fz-modes">'+[['spirit','📦 정령 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 합성'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')]].map(([k,t])=>'<button data-fz-mode="'+k+'" class="'+(fuseMode===k?'on':'')+'" '+(k==='equip' && !isEquipUnlocked()?'disabled':'')+'>'+t+'</button>').join('')+'</div>';
@@ -8312,7 +8313,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
-    { t:'강화·각성', items:[ '합성하면 재료의 강화가 결과로 계승되고 재료 쪽은 +0 (남은 같은 정령도) — 예전엔 재료 강화가 줄지 않고 복사됐음 · 합성 화면에 빨간 경고', '같은 정령을 여러 마리 넣어도 강화는 한 번만 계산 (재료 강화 합 ÷ 3, 예: +9 세 마리 → +3)', '강화한 정령·장비는 자동 합성에서 빠짐', '강화 비용 등급 배율 — 일반 ×1 · 레어 ×1.5 · 에픽 ×2.5 · 레전더리 ×4 · 신화 ×6', '각성 정수 비용 — 80 × 등급 배율(일반 1 · 레어 2.5 · 에픽 5 · 레전더리 9 · 신화 15) × 단계' ]},
+    { t:'강화·각성', items:[ '합성하면 재료의 강화가 결과로 계승되고 재료 쪽은 +0 (남은 같은 정령도) — 예전엔 재료 강화가 줄지 않고 복사됐음 · 합성 화면에 빨간 경고', '같은 정령을 여러 마리 넣어도 강화는 한 번만 계산 (재료 강화 합 ÷ 3, 예: +9 세 마리 → +3)', '강화한 정령·장비는 자동 합성에서 빠짐 · 합성 칸과 재료 목록에 강화 +N 표시', '강화 비용 등급 배율 — 일반 ×1 · 레어 ×1.5 · 에픽 ×2.5 · 레전더리 ×4 · 신화 ×6', '각성 정수 비용 — 80 × 등급 배율(일반 1 · 레어 2.5 · 에픽 5 · 레전더리 9 · 신화 15) × 단계' ]},
     { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
     { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
     { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
