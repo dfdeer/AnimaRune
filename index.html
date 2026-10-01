@@ -6586,6 +6586,7 @@ function defaultState(){
     expedition: null,
     expeditionBestReach: 0,
     lifetimeExpeditionClears: 0,
+    lifetimeQuests: 0, // (v313) 받은 일일 의뢰 수 — 계정 점수
     lifetimeRerolls: 0,
     towerFloorRewardClaimed: {},
     specialStageBonusClaimed: {},
@@ -7927,7 +7928,7 @@ function claimQuest(id){
   if(state.questsClaimed[id]) return;
   if(!q.check()){ toast('조건 미달성'); return; }
   state.essence += q.reward;
-  state.questsClaimed[id] = true; passBump('quest');
+  state.questsClaimed[id] = true; passBump('quest'); state.lifetimeQuests = (state.lifetimeQuests||0) + 1; // (v313) 계정 점수
   save();
   toastReward({essence:q.reward}, '📋 의뢰 보상 획득');
   render();
@@ -8941,7 +8942,7 @@ function accountPointParts(dexFound){
   return [
     {nm:'탐험 스테이지', n:totalStagesCleared(), per:1}, {nm:'무한의 탑 최고 층', n:state.towerBest||0, per:2},
     {nm:'출정 최고 단계', n:Math.min(state.expeditionBestReach||0, 35), per:3}, {nm:'도감 발견', n:dexFound, per:1},
-    {nm:'요일 던전 단계', n:dg, per:2}, {nm:'시련 통과', n:tr, per:10}, {nm:'업적 달성', n:ach, per:2}, {nm:'레이드 보스·난이도 격파', n:raid, per:5}
+    {nm:'요일 던전 단계', n:dg, per:2}, {nm:'시련 통과', n:tr, per:10}, {nm:'업적 달성', n:ach, per:2}, {nm:'레이드 보스·난이도 격파', n:raid, per:5}, {nm:'일일 의뢰 완료', n:state.lifetimeQuests||0, per:1} /* (v313) */
   ].map(x=>Object.assign(x, {pts:x.n*x.per}));
 }
 function accountLevel(){
@@ -8969,7 +8970,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:313, v:'3.5.0', date:'2026-10-01', secs:[
     { t:'보상 개편 추가 지급', items:[ '챕터 보스 첫 격파 · 무한의 탑 층 · 요일 던전 · 시련의 전당 · 계정 레벨 보상에 추가된 장비 확정권·선택권 · 신화 정령 확정권 · 각인석을, 이미 받은 보상에도 늘어난 만큼 우편으로 지급', '앞으로 한 번만 받는 보상(첫 클리어·층·단계·레벨·업적 등)이 늘어나면 늘어난 만큼 자동으로 우편 지급' ]},
-    { t:'우편', items:[ '게임이 보내는 우편은 인터넷 연결 없이도 받기 가능' ]}
+    { t:'우편', items:[ '게임이 보내는 우편은 인터넷 연결 없이도 받기 가능' ]},
+    { t:'계정 레벨', items:[ '계정 점수에 일일 의뢰 추가 — 의뢰 보상을 받을 때마다 1점' ]}
   ]},
   { build:312, v:'3.4.1', date:'2026-10-01', secs:[
     { t:'홈 화면에 추가', items:[ '☰ 설정 → 📲 홈 화면에 추가 — 크롬은 바로 설치 창 · 아이폰·카카오톡 안에서 연 화면은 순서 안내', '아이폰은 홈 화면 앱과 Safari의 저장 공간이 따로라 구글 연동을 먼저 하도록 안내' ]},
@@ -12870,7 +12872,7 @@ function sanitizeState(){
   if(!isPlainObj(s.lvClaimed)) s.lvClaimed = {}; if(!fin(s.lvSeen)) s.lvSeen = 0; // (v269) 계정 레벨 보상
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
-  ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
+  ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeQuests','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
