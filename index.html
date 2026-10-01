@@ -2972,14 +2972,16 @@ async function friendInit(){
       if((!prev[k] || prev[k].code!==iv.code || prev[k].t!==iv.t) && Math.abs(serverNow()-(iv.t||0)) < 10*60000) inviteNotice(k, iv); }); // (v269) 같은 방에서 다시 초대해도 알림 · 서버 시각 기준(폰 시계가 10분 넘게 어긋나면 초대가 안 보였음)
     friendRefresh();
   }, ()=>{}));
-  if(raidNet.room){
-    try{
-      const h = await raidNet.room.join('online'); friendNet.roomH = h;
-      h.presence({ uid }).catch(()=>{});
-      friendNet.unsubs.push(h.onPeers(ch=>{ friendNet.online = new Set(ch.peers.map(p=>p.by)); friendRefresh(); }, ()=>{}));
-    }catch(e){}
-  }
+  await friendJoinOnline();
   friendRefresh();
+}
+async function friendJoinOnline(){ // (v314) 접속 표시 방 — 실패하면 다음에 다시 시도(netRetryNow)
+  if(!raidNet.room || friendNet.roomH) return;
+  try{
+    const h = await raidNet.room.join('online'); friendNet.roomH = h;
+    h.presence({ uid: raidNet.uid }).catch(()=>{});
+    friendNet.unsubs.push(h.onPeers(ch=>{ friendNet.online = new Set(ch.peers.map(p=>p.by)); friendRefresh(); }, ()=>{}));
+  }catch(e){ friendNet.roomH = null; netRetryLater(); }
 }
 // (v225) 친구 이름·대표 정령을 실시간으로 받음 — 예전엔 이름을 한 번 받아 캐시해서, 친구가 이름을 바꿔도 앱을 다시 켜야 보였음
 function friendWatchSync(){
@@ -3897,7 +3899,7 @@ const FIREBASE_CONFIG = { // (v167) 공개돼도 되는 값 — 실제 보호는
 const FIREBASE_SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 async function loadFirebaseKit(cfg){
   const [appM, authM, dbM] = await Promise.all([import(FIREBASE_SDK+'firebase-app.js'), import(FIREBASE_SDK+'firebase-auth.js'), import(FIREBASE_SDK+'firebase-database.js')]);
-  const app = appM.initializeApp(cfg);
+  const app = (appM.getApps && appM.getApps().length) ? appM.getApp() : appM.initializeApp(cfg); // (v314) 연결 다시 시도할 때 같은 앱을 씀
   const auth = authM.getAuth(app);
   // (v230) 계정 연동: 저장된 로그인(구글 포함)을 먼저 확인하고, 없을 때만 익명으로 새로 시작
   // 구글을 다른 방식(리디렉트)으로 연동하고 돌아온 경우 그 결과도 여기서 처리
@@ -3981,6 +3983,8 @@ function makeFirebaseNet(fb){
     const onVis = ()=>{ if(document.visibilityState==='visible') fb.set(me, pres).catch(()=>{}); else if(dropOnHide) fb.remove(me).catch(()=>{}); };
     if(dropOnHide){ const onHide = ()=>{ fb.remove(me).catch(()=>{}); }; window.addEventListener('pagehide', onHide); unsubs.push(()=>window.removeEventListener('pagehide', onHide)); }
     document.addEventListener('visibilitychange', onVis); unsubs.push(()=>document.removeEventListener('visibilitychange', onVis));
+    // (v314) 같은 계정을 다른 탭·기기에서 같이 켜 두면 그쪽이 뒤로 갈 때 접속 표시를 지움 → 화면을 보고 있는 쪽이 바로 다시 등록
+    if(dropOnHide) unsubs.push(fb.onValue(me, s=>{ if(!s.exists() && document.visibilityState==='visible') fb.set(me, pres).catch(()=>{}); }));
     return { name,
       presence: async patch=>{ pres = Object.assign({}, pres, patch); await fb.set(me, pres); },
       onPeers: fn=>{ const u = fb.onValue(fb.ref(fb.rtdb, base), s=>{ const v = s.val()||{}; fn({ peers: Object.keys(v).map(id=>({ by:id, peer:id, isMe: id===fb.uid, sameTab: id===fb.uid, presence: v[id]||{}, kind:'viewer', guest:false, updatedAt:0 })), joined:[], left:[], updated:[] }); }); unsubs.push(u); return u; },
@@ -4138,12 +4142,26 @@ async function raidInitNet(){
     raidNet.db = db; raidNet.user = user; raidNet.room = room || null; raidNet.uid = uid; raidNet.ready = true;
     user.can('data.write').then(v=>{ raidNet.canWrite = v; if(activeTab==='raid' && !raidNet.code) render(); }).catch(()=>{});
     if(state.raidSession) await raidResume();
-    friendInit().catch(()=>{});
+    friendInit().catch(()=>netRetryLater()); // (v314) 실패하면 다시 시도
     accountInit().catch(()=>{});
     pushRefresh(); // (v310)
-  }catch(e){ raidNet.failed = true; raidNet.failReason = (e && e.message) || ''; state.raidSession = null; }
+  }catch(e){ raidNet.failed = true; raidNet.failReason = (e && e.message) || ''; state.raidSession = null; netRetryLater(); }
   if(activeTab==='raid' && !raidNet.code) render();
 }
+// (v314) 앱을 켤 때 인터넷이 안 되면(지하철 등) 그 뒤로 계속 오프라인이던 것 — 인터넷이 돌아오거나 화면으로 돌아오면 다시 연결
+// 친구 기능 시작(friendInit)이 중간에 실패해도 다시 시도 → 친구 목록에서 '오프라인'으로만 보이던 원인
+let netRetryT = null, netRetryN = 0, netRetrying = false;
+function netRetryLater(){ if(netRetryT) return; netRetryT = setTimeout(()=>{ netRetryT = null; netRetryNow(); }, Math.min(300000, 20000 * Math.pow(2, netRetryN++))); }
+async function netRetryNow(){
+  if(netRetrying) return; netRetrying = true;
+  try{
+    if(!raidNet.ready){ if(netRetryT){ clearTimeout(netRetryT); netRetryT = null; } raidNet.failed = false; await raidInitNet(); }
+    else if(friendsAvailable() && !friendNet.on){ await friendInit().catch(()=>netRetryLater()); }
+    else if(friendNet.on && !friendNet.roomH && raidNet.room) await friendJoinOnline();
+  } finally { netRetrying = false; }
+}
+window.addEventListener('online', ()=>{ netRetryN = 0; netRetryNow(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && (!raidNet.ready || (friendsAvailable() && (!friendNet.on || (!friendNet.roomH && raidNet.room))))) netRetryNow(); });
 
 function checkSkillStageOutcome(sf){
   const r = checkSkillStageOutcome0(sf);
@@ -9004,7 +9022,8 @@ const PATCH_NOTES = [
   { build:314, v:'3.5.1', date:'2026-10-01', secs:[
     { t:'상태 이상 연출', items:[ '독 — 몸 전체를 초록빛으로 흐리게 덮음 · 올라오는 독방울을 더 많고 크게', '둔화·빙결 — 몸 전체를 하늘빛으로 흐리게 덮음', '화상 — 몸을 주황빛으로 덮고 발밑에서 불길이 일렁이며 불티가 튐', '속박 — 정령 위에 거미줄을 흐리게 덮음' ]},
     { t:'전투 화면', items:[ '상태 효과 아이콘이 생겨도 정령이 위로 밀려 올라가지 않게', '현무 등 그림 아래 여백이 큰 정령을 이름표 쪽으로 붙임', '특수 규칙 배율(×1.8 등)을 정령 그림 위 → 체력 숫자 옆에 작게' ]},
-    { t:'정보 창', items:[ '정령 정보 창의 상태 효과 줄을 누르면 상태 효과 설명 창' ]}
+    { t:'정보 창', items:[ '정령 정보 창의 상태 효과 줄을 누르면 상태 효과 설명 창' ]},
+    { t:'친구', items:[ '접속 중인 친구가 오프라인으로 보이던 것 수정 — 같은 계정을 다른 탭·기기에서도 켜 둔 경우 · 앱을 켤 때 인터넷이 잠깐 안 됐던 경우(이제 연결되면 다시 접속)' ]}
   ]},
   { build:313, v:'3.5.0', date:'2026-10-01', secs:[
     { t:'보상 개편 추가 지급', items:[ '챕터 보스 첫 격파 · 무한의 탑 층 · 요일 던전 · 시련의 전당 · 계정 레벨 보상에 추가된 장비 확정권·선택권 · 신화 정령 확정권 · 각인석을, 이미 받은 보상에도 늘어난 만큼 우편으로 지급', '앞으로 한 번만 받는 보상(첫 클리어·층·단계·레벨·업적 등)이 늘어나면 늘어난 만큼 자동으로 우편 지급' ]},
