@@ -68,6 +68,28 @@
         "killer": { ".write": "auth != null && !data.exists()" }
       }
     },
+    "push": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "subs": {
+          "$sid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.hasChildren(['endpoint', 'p256dh', 'auth']) && newData.child('endpoint').isString() && newData.child('endpoint').val().beginsWith('https://') && newData.child('endpoint').val().length <= 600",
+            "p256dh": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "auth": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "t": { ".validate": "newData.isNumber()" },
+            "endpoint": { ".validate": true },
+            "$other": { ".validate": false }
+          }
+        },
+        "pref": { ".write": "auth != null && auth.uid === $uid", "$k": { ".validate": "newData.isBoolean()" } },
+        "due": { ".write": "auth != null && auth.uid === $uid", "$k": { ".validate": "newData.isNumber()" } },
+        "$other": { ".validate": false }
+      }
+    },
+    "pushCfg": {
+      "pub": { ".read": "auth != null" }
+    },
     "inquiries": {
       ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
       "$uid": {
