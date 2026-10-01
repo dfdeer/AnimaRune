@@ -927,6 +927,7 @@
   .tr-steps{display:flex; justify-content:center; gap:5px; margin:10px 0;} .tr-steps i{width:16px; height:16px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff2a;} .tr-steps i.big{width:20px; height:20px;} .tr-steps i.on{background:radial-gradient(circle at 35% 30%,#fff2b0,#ffb347); border-color:#ffd557; box-shadow:0 0 8px #ffd55799;}
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
+  .sub-skip{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub); cursor:pointer;} .sub-skip input{width:16px; height:16px; accent-color:#ffd557;} /* (v305) */
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
   .mg-trait{margin:6px auto 6px; max-width:300px; padding:6px 10px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1a; font-size:12px; line-height:1.5;} .mg-trait span{display:block; color:var(--sub); font-size:11px;}
   .xp-foes.rows{display:flex; flex-direction:column; gap:6px; align-items:stretch;} .xp-frow{display:flex; align-items:center; gap:6px;} .xp-flbl{flex-shrink:0; width:30px; font-size:11px; font-weight:800; color:#ffb0b0; text-align:center;} .xp-fcells{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; justify-items:center;} /* (v296) */
@@ -1794,6 +1795,7 @@ function showSubModal(kind, k, back){
     h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, e.lock[i], i, canLock)).join('')+'</div>';
     if(canLock) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">🔒 잠근 줄은 그대로 · 최대 '+Math.min(ENGR_LOCK_MAX, max-1)+'줄 · 잠글 때마다 비용 +2</div>';
     h += '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>🎲 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button>';
+    h += '<label class="sub-skip"><input type="checkbox" id="subSkip" '+(state.settings.subNoAsk?'checked':'')+'> 확인 창 없이 바로 굴리기</label>'; // (v305)
   }
   if(back) h += '<button class="btn secondary" id="subBack" style="margin-top:8px;">‹ 돌아가기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
@@ -1801,10 +1803,11 @@ function showSubModal(kind, k, back){
   const re = ()=>showSubModal(kind, k, back);
   document.querySelectorAll('[data-sub-lock]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.subLock, e2 = isEq ? eqSubState(k) : engrState(k); if(!e2) return;
     if(!e2.lock[i] && e2.lock.filter(Boolean).length >= Math.min(ENGR_LOCK_MAX, max-1)){ toast('더 잠글 수 없음'); return; } e2.lock[i] = !e2.lock[i]; save(); re(); }));
+  { const sk = document.getElementById('subSkip'); if(sk) sk.addEventListener('change', ()=>{ state.settings.subNoAsk = sk.checked; save(); }); }
   const go = document.getElementById('subGo'); if(go) go.addEventListener('click', ()=>{ const e2 = isEq ? eqSubState(k) : engrState(k);
     if(!e2 || !e2.lines.length){ subRoll(kind, k); render(); re(); return; }
     const cost = subRerollCost(e2); if(ticketCount('engr') < cost){ toast('각인석 부족'); return; }
-    spendAsk(isEq ? '부가 능력 다시 굴리기' : '각인 다시 굴리기', {tk:'engr', n:cost}, ()=>{ if(ticketCount('engr') < cost) return; state.tickets.engr -= cost; subRoll(kind, k); render(); re(); }); });
+    spendAsk(isEq ? '부가 능력 다시 굴리기' : '각인 다시 굴리기', {tk:'engr', n:cost}, ()=>{ if(ticketCount('engr') < cost) return; state.tickets.engr -= cost; subRoll(kind, k); render(); re(); }, state.settings.subNoAsk ? false : undefined); });
   const bk = document.getElementById('subBack'); if(bk) bk.addEventListener('click', back);
 }
 // ---- 초월 창
@@ -8870,6 +8873,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:305, v:'3.2.1', date:'2026-10-01', secs:[
+    { t:'각인', items:[ '각인·장비 부가 능력 창에 "확인 창 없이 바로 굴리기" 체크 — 켜 두면 다시 굴릴 때 각인석 사용 확인을 묻지 않음' ]},
     { t:'합성 화면', items:[ '합성 바에 넣은 재료 칸이 등급 테두리와 겹쳐 보이던 것 수정', '재료를 넣거나 뺄 때(특히 세 번째를 넣을 때) 목록이 위로 밀리던 것 수정 — 누른 재료가 같은 자리에 남음' ]}
   ]},
   { build:304, v:'3.2.0', date:'2026-10-01', secs:[
@@ -12853,6 +12857,7 @@ function sanitizeState(){
   s.settings.bgmVolume = fin(s.settings.bgmVolume) ? Math.min(1, Math.max(0, s.settings.bgmVolume)) : 0.3;
   s.settings.sfxVolume = fin(s.settings.sfxVolume) ? Math.min(1, Math.max(0, s.settings.sfxVolume)) : 0.35;
   s.settings.spendAsk = s.settings.spendAsk!==false; // (v296) 재화 사용 확인창
+  s.settings.subNoAsk = s.settings.subNoAsk===true; // (v305) 각인·부가 능력 다시 굴리기 확인창 끄기
   ['summons','fusions','stagesCleared','equipSummons'].forEach(k=>{ s.dailyStats[k] = fin(s.dailyStats[k]) ? Math.max(0, Math.floor(s.dailyStats[k])) : 0; });
   if(typeof s.dailyStats.date!=='string') s.dailyStats.date = todayStr();
   if(typeof s.questsClaimed.date!=='string') s.questsClaimed.date = todayStr();
