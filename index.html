@@ -947,7 +947,7 @@
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
   .sub-skip{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub); cursor:pointer;} .sub-skip input{width:16px; height:16px; accent-color:#ffd557;} /* (v305) */
-  .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
+  .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .tr-num{color:#ffd557; font-weight:900; text-shadow:0 0 6px #ffb30066;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
   .mg-trait{margin:6px auto 6px; max-width:300px; padding:6px 10px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1a; font-size:12px; line-height:1.5;} .mg-trait span{display:block; color:var(--sub); font-size:11px;}
   .xp-foes.rows{display:flex; flex-direction:column; gap:6px; align-items:stretch;} .xp-frow{display:flex; align-items:center; gap:6px;} .xp-flbl{flex-shrink:0; width:30px; font-size:11px; font-weight:800; color:#ffb0b0; text-align:center;} .xp-fcells{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; justify-items:center;} /* (v296) */
   .pr-row{padding:8px 10px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .pr-top{display:flex; align-items:center; gap:6px;} .pr-top b{flex:1; font-size:14px;} .pr-ed{background:none; border:none; font-size:14px; cursor:pointer;}
@@ -1750,6 +1750,11 @@ function transMult(k){ return 1 + TRANS_STEP*transLevel(k); }
 function transChance(k){ const lv = transLevel(k); if(lv>=TRANS_MAX) return 0; return Math.min(1, TRANS_RATE[lv] + ((state.transPity && state.transPity[k])||0)); }
 function transCost(k){ const lv = transLevel(k); return { copies:1, essence: (300 + 200*RARITY_ORDER.indexOf(SPIRITS[k].rarity)) * (lv+1) }; }
 function transTag(k){ const t = transLevel(k); return t ? '<span class="tr-tag">✦'+t+'</span>' : ''; }
+// (v310) 초월은 강화의 다음 단계 — 각성 끝 + 강화 최대(보통 +15)에서 열리고, 강화 숫자에 이어서 노란 +16, +17… 로 표시
+function transOpen(k){ return awakenLevel(k)>=AWAKEN_MAX && enhanceLevel(k)>=maxEnhanceFor(k); }
+function enhShowHtml(k){ const e = enhanceLevel(k), t = transLevel(k);
+  if(t && e>=maxEnhanceFor(k)) return '<span class="tr-num">+'+(e+t)+'</span>';
+  return (e ? '+'+e : '') + transTag(k); } // 예전에 강화를 덜 하고 초월한 정령은 ✦ 표시 그대로
 // 합계 · 전투 반영
 function subTotals(k){
   const t = { atk:0, hp:0, spd:0, crit:0, life:0, dr:0 };
@@ -1832,10 +1837,10 @@ function showSubModal(kind, k, back){
 // ---- 초월 창
 function showTransModal(k){
   const sp = SPIRITS[k], lv = transLevel(k), aw = awakenLevel(k), back = ()=>showManageModal(k);
-  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+spArt(sp)+'</div><h3 style="margin:4px 0;">🌟 초월 · '+sp.name+' '+transTag(k)+'</h3>'
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+spArt(sp)+'</div><h3 style="margin:4px 0;">🌟 초월 · '+sp.name+' '+enhShowHtml(k)+'</h3>'
     + '<div class="sub" style="font-size:11px; line-height:1.6;">각성은 확정으로 스킬을 여는 단계 · 초월은 확률로 능력치를 올리는 단계<br>단계마다 공격·체력 +'+Math.round(TRANS_STEP*100)+'% · 5단계 속도 +3</div>'+(trans10Of(k) ? '<div class="tr-perk'+(lv>=10?' on':'')+'">'+trans10Of(k).ic+' 10단계 특전 · <b>'+trans10Of(k).d+'</b></div>' : '')+'</div>';
   h += '<div class="tr-steps">'+Array.from({length:TRANS_MAX}, (_,i)=>'<i class="'+(i<lv?'on':'')+(i===4||i===9?' big':'')+'"></i>').join('')+'</div>';
-  if(aw < AWAKEN_MAX) h += '<div class="sub" style="text-align:center; padding:10px 0;">각성 '+AWAKEN_MAX+'단계 뒤에 열림 (지금 '+aw+'단계)</div>';
+  if(!transOpen(k)) h += '<div class="sub" style="text-align:center; padding:10px 0;">각성 '+AWAKEN_MAX+'단계 · 강화 +'+maxEnhanceFor(k)+'까지 하면 열림 (지금 각성 '+aw+' · +'+enhanceLevel(k)+')</div>';
   else if(lv >= TRANS_MAX) h += '<div style="text-align:center; padding:10px 0; font-weight:900; color:#ffd557;">최대 초월 — 공격·체력 +'+Math.round(TRANS_STEP*TRANS_MAX*100)+'%</div>';
   else { const c = transCost(k), ch = transChance(k), pity = (state.transPity && state.transPity[k]) || 0, spare = awakenSpare(k), can = spare>=c.copies && state.essence>=c.essence;
     h += '<div class="tr-info"><div><span>성공 확률</span><b>'+Math.round(ch*100)+'%</b>'+(pity?'<small>실패 보정 +'+Math.round(pity*100)+'%p</small>':'')+'</div><div><span>재료</span><b>같은 정령 '+c.copies+' · '+uiIc('essence')+' '+c.essence+'</b><small>남는 같은 정령 '+spare+'마리</small></div><div><span>성공하면</span><b>'+(lv+1)+'단계 · 공격·체력 +'+Math.round(TRANS_STEP*(lv+1)*100)+'%</b></div></div>'
@@ -1847,10 +1852,10 @@ function showTransModal(k){
   document.getElementById('trBack').addEventListener('click', back);
   const go = document.getElementById('trGo'); if(go) go.addEventListener('click', ()=>{ const c = transCost(k);
     spendAsk(sp.name+' 초월 시도', {essence:c.essence, copies:c.copies}, ()=>{
-      if(transLevel(k)>=TRANS_MAX || awakenSpare(k)<c.copies || state.essence<c.essence) return;
+      if(!transOpen(k) || transLevel(k)>=TRANS_MAX || awakenSpare(k)<c.copies || state.essence<c.essence) return;
       const ch = transChance(k); state.essence -= c.essence; state.owned[k] -= c.copies; cleanupFormation();
       state.trans = state.trans || {}; state.transPity = state.transPity || {};
-      if(Math.random() < ch){ state.trans[k] = transLevel(k)+1; state.transPity[k] = 0; sfx('enhance'); toast('🌟 초월 성공 — '+sp.name+' '+state.trans[k]+'단계'); }
+      if(Math.random() < ch){ state.trans[k] = transLevel(k)+1; state.transPity[k] = 0; sfx('enhance'); toast('🌟 초월 성공 — '+sp.name+' +'+(enhanceLevel(k)+state.trans[k])); }
       else { state.transPity[k] = (state.transPity[k]||0) + TRANS_PITY; sfx('fail'); toast('💨 초월 실패 — 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p'); }
       checkAchievements(); save(); render(); showTransModal(k); }); });
 }
@@ -8199,7 +8204,7 @@ function tile(key){ // 정령 탭 보유 목록·출정 대기 목록 — 개수
     + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
     + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
-    + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+(enhanceLevel(key)?'+'+enhanceLevel(key)+' ':'')+awakenStars(key)+transTag(key)+'</div>' : '')
+    + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+enhShowHtml(key)+' '+awakenStars(key)+'</div>' : '')
     + '</div>';
 }
 function dexTile(key){ // (v266) 도감 전용 — 그림·속성·이름만
@@ -8989,6 +8994,7 @@ const PATCH_NOTES = [
   { build:309, v:'3.3.0', date:'2026-10-01', secs:[
     { t:'휴대폰 알림', items:[ '☰ 설정 → 🔔 휴대폰 알림 — 친구 요청·우편·문의 답장·화로 가득·파견 완료·일일 알림(낮 12시)을 종류별로 켜고 끔', '아이폰은 Safari 공유 → 홈 화면에 추가한 앱에서만 받을 수 있음' ]},
     { t:'보스전', items:[ '웨이브가 바뀌어도 버프·디버프(보호막·강화·화상·독·빙결 등)가 남은 라운드 그대로 이어짐' ]},
+    { t:'초월', items:[ '초월은 강화의 다음 단계 — 각성 5단계 + 강화 최대(보통 +15)를 다 하면 열림', '강화 숫자에 이어서 노란 +16, +17 … 로 표시 · 정령 관리 창에서 강화를 다 하면 강화 줄이 초월 줄로 바뀜' ]},
   ]},
   { build:308, v:'3.2.4', date:'2026-10-01', secs:[
     { t:'전투', items:[ '빙결 연출 — 얼음 기둥 그림을 흐리게 덮는 모습으로 변경', '빙결은 자기 차례가 올 때 풀림 — 풀리는 순간 얼음이 깨지며 「빙결 해제 · 행동 불가」 표시', '회복·재생 숫자 아래에 출처(스킬·유물 이름) 표시 · 버프·디버프 글자에서 정령 이름 뺌' ]},
@@ -12219,13 +12225,16 @@ function showManageModal(key){
   html += '</div>';
   html += runeManageHtml(key);
   html += equipSlotsHtml(key);
-  html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
+  const trRow = transOpen(key) || (transLevel(key)>0 && maxed); // (v310) 강화를 다 하면 강화 줄이 초월 줄로 바뀜
+  if(trRow){ const tl = transLevel(key), canT = tl<TRANS_MAX && awakenSpare(key)>0 && state.essence>=transCost(key).essence;
+    html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 <span class="tr-num">+'+(lvl+tl)+'</span></b><span class="sub">/ '+(lvl+TRANS_MAX)+(tl ? ' · 공·체 +'+Math.round(tl*TRANS_STEP*100)+'%' : ' · 강화 다음 단계')+'</span><span class="aw-go'+(canT?' on':'')+'">'+(tl>=TRANS_MAX ? '최대' : (canT?'초월 가능 ':'')+'자세히')+' ›</span></button>'; }
+  else html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && awakenSpare(key)>=ac.copies && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
     html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
   { // (v298) 각인 · 초월
     const e = engrState(key), ok = awakenLevel(key)>=AWAKEN_MAX, tl = transLevel(key);
     html += '<button class="aw-row eg-row" id="engrOpenBtn">✨<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
-    html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 '+tl+'단계</b><span class="sub">'+(ok ? (tl ? '공격·체력 +'+Math.round(tl*TRANS_STEP*100)+'%' : '각성 5단계 달성 · 도전 가능') : '각성 5단계 뒤에 열림')+'</span><span class="aw-go'+(ok && tl<TRANS_MAX && awakenSpare(key)>0 ?' on':'')+'">'+(tl>=TRANS_MAX?'최대':'자세히')+' ›</span></button>'; }
+    if(transLevel(key)>0 && !maxed) html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 '+tl+'단계</b><span class="sub">'+(ok ? (tl ? '공격·체력 +'+Math.round(tl*TRANS_STEP*100)+'%' : '각성 5단계 달성 · 도전 가능') : '각성 5단계 뒤에 열림')+'</span><span class="aw-go'+(ok && tl<TRANS_MAX && awakenSpare(key)>0 ?' on':'')+'">'+(tl>=TRANS_MAX?'최대':'자세히')+' ›</span></button>'; } // 예전에 강화를 덜 하고 초월한 정령만 따로 줄
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
     html += '<div class="mg-acts">'
       + (sp.rarity!=='mythic' ? '<button class="btn secondary" id="toFuseBtn" '+(lk?'disabled':'')+'>'+uiIc('fuse')+'<span>합성</span></button>' : '')
