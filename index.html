@@ -7370,6 +7370,12 @@ function passLevel(){ return passLevelOf(passState().xp); }
 function passBump(k, n){ try{ const ps = passState(); n = n||1; ps.day.c[k] = (ps.day.c[k]||0) + n; ps.week.c[k] = (ps.week.c[k]||0) + n; }catch(e){} }
 function passMissionProg(m, daily){ const ps = passState(), box = daily ? ps.day : ps.week; return { cur: Math.min(m.n, box.c[m.k]||0), done: !!box.done[m.id], ready: (box.c[m.k]||0) >= m.n && !box.done[m.id] }; }
 function passWeekLeft(){ return Math.max(0, PASS_WEEK_CAP - (passState().week.xp||0)); }
+function passClaimAllMissions(){ // (v297) 미션 모두 받기 — 알림 한 번으로
+  const ps = passState(); let got = 0, lost = 0;
+  [[PASS_DAILY,true],[PASS_WEEKLY,false]].forEach(([list, daily])=>list.forEach(m=>{ if(!passMissionProg(m, daily).ready) return;
+    const add = Math.min(m.xp, passWeekLeft(), PASS_MAX_LV*PASS_LV_XP - ps.xp); (daily ? ps.day : ps.week).done[m.id] = true; ps.xp += add; ps.week.xp = (ps.week.xp||0) + add; got += add; lost += m.xp - add; }));
+  save(); sfx('claim'); toast('🎫 패스 경험치 +'+got+(lost ? ' (주간 최대·만렙으로 '+lost+' 버림)' : ''));
+}
 function passClaimMission(id){
   const ps = passState(), daily = id.indexOf('d_')===0, m = (daily ? PASS_DAILY : PASS_WEEKLY).find(x=>x.id===id); if(!m) return;
   const pr = passMissionProg(m, daily); if(!pr.ready) return;
@@ -7424,6 +7430,7 @@ function renderPassTab(){
     const sec = (title, list, daily, sub)=>'<div class="fr-cap" style="margin:10px 2px 6px;">'+title+' <small class="sub">'+sub+'</small></div>'+list.map(m=>{ const pr = passMissionProg(m, daily);
       return '<div class="ps-ms'+(pr.done?' done':'')+'"><div class="ps-msm"><b>'+m.nm+'</b><div class="ps-bar sm"><span style="width:'+(pr.cur/m.n*100)+'%;"></span></div><small>'+pr.cur+' / '+m.n+'</small></div>'
         + (pr.done ? '<em class="ps-msd">'+uiIc('check')+'</em>' : '<button class="btn small'+(pr.ready?' gold':'')+'" data-ps-m="'+m.id+'" '+(pr.ready?'':'disabled')+'>+'+m.xp+' xp</button>')+'</div>'; }).join('');
+    { const n = PASS_DAILY.filter(m=>passMissionProg(m,true).ready).length + PASS_WEEKLY.filter(m=>passMissionProg(m,false).ready).length; if(n>1) h += '<button class="btn gold" id="passMsAll" style="margin:8px 0 4px;">미션 모두 받기 ('+n+')</button>'; }
     if(passWeekLeft()<=0) h += '<div class="sub" style="text-align:center; color:#ffd557; margin-top:8px;">이번 주 최대 경험치 도달 — 월요일에 초기화</div>';
     h += sec('일일 미션', PASS_DAILY, true, '자정 초기화') + sec('주간 미션', PASS_WEEKLY, false, '월요일 초기화');
   }
@@ -7436,6 +7443,7 @@ function bindPassTab(){
   document.querySelectorAll('[data-ps-c]').forEach(b=>b.addEventListener('click', ()=>{ const [t, i] = b.dataset.psC.split(':'), ps = passState(), n = +i;
     if(ps.got[t][n]) return; if(t==='p' && !ps.prem){ toast('프리미엄 해금 필요'); return; } if(n>passLevelOf(ps.xp)){ toast('패스 '+n+'레벨에 받을 수 있음'); return; }
     passClaim([[t, n]]); render(); }));
+  { const ma = document.getElementById('passMsAll'); if(ma) ma.addEventListener('click', ()=>{ passClaimAllMissions(); render(); }); }
   document.querySelectorAll('[data-ps-m]').forEach(b=>b.addEventListener('click', ()=>{ passClaimMission(b.dataset.psM); render(); }));
 }
 // ===================== 일일 의뢰 =====================
