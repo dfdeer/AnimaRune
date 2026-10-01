@@ -921,7 +921,6 @@
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
-  .fz-warn{margin-top:6px; padding:6px 8px; border-radius:8px; background:#ff4d4d1f; border:1px solid #ff5a5a88; color:#ff8a8a; font-size:11px; font-weight:800; line-height:1.5;} /* (v297) 강화 사라짐 경고 */
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
@@ -5888,7 +5887,7 @@ const AWAKEN_MAX = 5, AWAKEN_POWER = 0.08, AWAKEN_COPIES = [1,1,2,2,3];
 const AWAKEN_RATE = { common:1.8, rare:1.8, epic:0.7, legendary:0.24, mythic:0.08 }; // 단계마다 +(배율−1)/5
 function awakenRate(key){ return AWAKEN_RATE[SPIRITS[key].rarity] || AWAKEN_POWER; }
 function awakenLevel(key){ return (state.awaken && state.awaken[key]) || 0; }
-function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: Math.round(80 * (AWAKEN_COST_MUL[RARITY_ORDER.indexOf(SPIRITS[key].rarity)]||1) * (lv+1)) }; } // (v297) 정수 80 × 등급 배율(1 · 2.5 · 5 · 9 · 15) × 단계
+function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: Math.round(80 * (AWAKEN_COST_MUL[RARITY_ORDER.indexOf(SPIRITS[key].rarity)]||1) * (lv+1)) }; } // (v297) 정수 80 × 등급 배율(2 · 5 · 10 · 18 · 30) × 단계
 function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
 function doAwaken(key, quiet){
   const c = awakenCost(key); if(!c) return;
@@ -6344,15 +6343,13 @@ function passiveFor(key){
   const sp = SPIRITS[key];
   return passiveForERV(sp.element, sp.rarity, sp.variant);
 }
-const ENH_COST_MUL = [1, 1.5, 2.5, 4, 6], AWAKEN_COST_MUL = [1, 2.5, 5, 9, 15];
+const AWAKEN_COST_MUL = [2, 5, 10, 18, 30]; // (v297) 각성 정수 등급 배율 — 높은 등급일수록 비싸게
 function enhanceCost(key){
   const sp = SPIRITS[key];
   const lvl = enhanceLevel(key);
   const rarityIdx = RARITY_ORDER.indexOf(sp.rarity);
-  // (v297) 등급이 높을수록 비싸게 — 일반 ×1 · 레어 ×1.5 · 에픽 ×2.5 · 레전더리 ×4 · 신화 ×6 (예전엔 등급 차이가 거의 없었음)
-  const mul = ENH_COST_MUL[rarityIdx] || 1;
-  let essence = Math.round((30 + lvl*20) * mul);
-  let stone = Math.round((2 + lvl*2) * mul);
+  let essence = 30 + lvl*20 + rarityIdx*15;
+  let stone = 2 + lvl*2 + rarityIdx;
   return { essence, stone };
 }
 function doEnhance(key, quiet){
@@ -7232,7 +7229,7 @@ function openFuseTab(mode, key){ // 다른 곳(정령 관리·장비 상세)에�
   closeModal(); activeTab = 'spirits'; spiritsSub = 'fuse'; render(); const m = document.getElementById('main'); if(m) m.scrollTop = 0;
 }
 function fuseNameOf(k){ return fuseMode==='equip' ? equipInfo(k).name : SPIRITS[k].name; }
-function fuseArtOf(k){ return (fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el')) + (fuseMode==='equip' ? eqEnhTag(k) : enhTag(k)); } // (v297) 강화한 재료는 +N 표시 (합성하면 사라지니까)
+function fuseArtOf(k){ return (fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el')) + (fuseMode==='equip' ? eqEnhTag(k) : enhTag(k)); } // (v297) 강화한 재료는 +N 표시
 function renderFuseTab(){
   let h = '<div class="card fz-card">';
   h += '<div class="fz-modes">'+[['spirit','📦 정령 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 합성'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')]].map(([k,t])=>'<button data-fz-mode="'+k+'" class="'+(fuseMode===k?'on':'')+'" '+(k==='equip' && !isEquipUnlocked()?'disabled':'')+'>'+t+'</button>').join('')+'</div>';
@@ -7252,8 +7249,7 @@ function renderFuseTab(){
       + '<div class="fz-outs">'+top.map(k=>'<div class="fz-out"><span class="fz-oart">'+(fuseMode==='equip'?equipInfo(k).img:spArt(SPIRITS[k]))+'</span><span class="fz-onm">'+fuseNameOf(k)+'</span><b>'+pct(info.out[k])+'</b></div>').join('')
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
-      + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+' <span style="opacity:.8;">(재료 강화 합 +'+info.inheritFrom+' ÷ 3)</span></div>'
-        + '<div class="fz-warn">⚠️ 합성하면 재료로 쓴 정령의 강화는 사라짐 — 남아 있는 같은 '+(fuseMode==='equip'?'장비':'정령')+'도 +0이 됨<br>같은 '+(fuseMode==='equip'?'장비를':'정령을')+' 여러 개 넣어도 강화는 한 번만 계산 (예: +9 세 개 → +3)</div>' : '')
+      + (info.inherit>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+'</div>' : '')
       + '</div>'
       + (info.rate<100 && fuseGuardEligible(info.nr) ? (()=>{ const n = ticketCount('fuseGuard'), on = fuseGuardOn && n>0; // (v247) 보호권은 체크했을 때만 사용 — 합성 버튼 바로 위, 눈에 띄게
           return '<button class="fz-guard'+(on?' on':'')+'" id="fzGuard" '+(n>0?'':'disabled')+'><span class="fz-gchk">'+(on?'✔':'')+'</span>'+uiIc('guard')
@@ -7343,8 +7339,6 @@ function fuseExecute(keys){
   const res = fusePick(info.out), isNew = give(res);
   logFuse({ m:fuseMode, k:info.keys, ok:true, r:res, p:info.out[res], s:info.rate, t:Date.now() });
   let inherited = 0, awInh = 0;
-  // (v297) 재료의 강화는 결과로 넘어가고 재료 쪽은 +0 — 강화가 종(같은 정령 전체) 단위라 남아 있는 같은 정령도 +0 (예전엔 줄지 않고 복사됐음)
-  [...new Set(info.keys)].forEach(k=>{ if(eq){ if(state.equipEnh && state.equipEnh[k]) state.equipEnh[k] = 0; } else if(state.enhanceLevel && state.enhanceLevel[k]) state.enhanceLevel[k] = 0; });
   if(!eq){
     if(info.awInherit > awakenLevel(res)){ if(!state.awaken) state.awaken = {}; state.awaken[res] = Math.min(AWAKEN_MAX, info.awInherit); awInh = state.awaken[res]; } // 결과 정령이 이미 더 높으면 그대로
     const cap = Math.min(info.inherit, maxEnhanceFor(res));
@@ -7383,8 +7377,8 @@ function autoFuseCfg(){
 function autoFusePlan(cfg){ // → [[k,k,k], ...]
   const eq = fuseMode==='equip', groups = [];
   const keys = (eq ? allEquipKeys().filter(k=>equipOwnedCount(k)>0) : Object.keys(SPIRITS).filter(k=>ownedCount(k)>0)).filter(k=>{
-    if(eq){ const i = equipInfo(k); return !isEqLocked(k) && !equipEnhLevel(k) && cfg.r.includes(i.rarity) && cfg.el.includes(i.element) && cfg.v.includes(i.slot); }
-    const sp = SPIRITS[k]; return !isSpLocked(k) && !enhanceLevel(k) && cfg.r.includes(sp.rarity) && cfg.v.includes(sp.element+'_'+sp.variant); // (v297) 강화한 정령·장비는 자동 합성에서 뺌 (합성하면 강화가 사라져서)
+    if(eq){ const i = equipInfo(k); return !isEqLocked(k) && cfg.r.includes(i.rarity) && cfg.el.includes(i.element) && cfg.v.includes(i.slot); }
+    const sp = SPIRITS[k]; return !isSpLocked(k) && cfg.r.includes(sp.rarity) && cfg.v.includes(sp.element+'_'+sp.variant);
   });
   const bucket = {}; // 같은 등급(장비는 같은 부위까지)끼리만 섞임
   keys.forEach(k=>{
@@ -8472,7 +8466,7 @@ const PATCH_NOTES = [
     { t:'각인석', items:[ '시작 선물 5개 · 정령 분해(에픽 1 · 레전더리 2 · 신화 4) · 요일 던전 단계마다 1(5단계마다 3) · 시련 2~8 · 챕터 보스 첫 격파 노말 2 · 하드 4 · 레이드 주간 첫 승리 1~5', '레이드 상점 각인석 4 (주 10개) · 월드 보스 상점 각인석 3 (주 6개)' ]}
   ]},
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
-    { t:'강화·각성', items:[ '합성하면 재료의 강화가 결과로 계승되고 재료 쪽은 +0 (남은 같은 정령도) — 예전엔 재료 강화가 줄지 않고 복사됐음 · 합성 화면에 빨간 경고', '같은 정령을 여러 마리 넣어도 강화는 한 번만 계산 (재료 강화 합 ÷ 3, 예: +9 세 마리 → +3)', '강화한 정령·장비는 자동 합성에서 빠짐 · 합성 칸과 재료 목록에 강화 +N 표시', '강화 비용 등급 배율 — 일반 ×1 · 레어 ×1.5 · 에픽 ×2.5 · 레전더리 ×4 · 신화 ×6', '각성 정수 비용 — 80 × 등급 배율(일반 1 · 레어 2.5 · 에픽 5 · 레전더리 9 · 신화 15) × 단계' ]},
+    { t:'각성 비용·합성 표시', items:[ '각성 정수 비용 — 80 × 등급 배율(일반 2 · 레어 5 · 에픽 10 · 레전더리 18 · 신화 30) × 단계 · ★5까지 일반 2,400 · 레어 6,000 · 에픽 12,000 · 레전더리 21,600 · 신화 36,000 (예전 1,200 ~ 8,400)', '합성 칸과 재료 목록에 강화 +N 표시' ]},
     { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
     { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
     { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
