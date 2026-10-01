@@ -7857,7 +7857,8 @@ function renderSpiritsTab(){
   let html = '<div class="seg">'+[['spirits','📦 정령'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
     if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
-    return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
+    return html + '<button class="btn secondary" id="goEqFuseTab" style="margin:0 0 10px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기</button>' // (v296) 정령 화면처럼 장비도 합성 바로가기
+      + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
   }
   if(spiritsSub==='runes') return html + '<div class="card">'+runeHubHtml()+'</div>';
   if(spiritsSub==='fuse') return html + renderFuseTab();
@@ -8293,7 +8294,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
-    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성)', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
+    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성) · 장비 화면에도 합성하러 가기 버튼', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
     { t:'알림', items:[ '위쪽 알림을 작은 한 줄로 · 화면에는 최대 2개 — 같은 종류는 하나로 합쳐 ×N, 넘치면 "알림 N개 더" 한 줄', '알림을 누르거나 메뉴(☰) › 🔔 알림 기록에서 이번 접속에 받은 알림을 모두 확인' ]},
     { t:'우편', items:[ '받은 우편 삭제 — 우편 창에서 한 통씩, 또는 받은 우편 모두 삭제 (받지 않은 우편은 지울 수 없음)' ]},
     { t:'시련의 전당', items:[ '힌트를 정령·행동을 바로 말하는 대신 속담으로 — 무엇을 해야 할지 추측하는 재미' ]},
@@ -11828,6 +11829,7 @@ function attachHandlers(){
   });
   // (v218) 합성 탭
   { const g = document.getElementById('goFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('spirit')); }
+  { const g = document.getElementById('goEqFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('equip')); }
   document.querySelectorAll('[data-fz-mode]').forEach(b=>b.addEventListener('click', ()=>{ if(fuseMode!==b.dataset.fzMode){ fuseMode = b.dataset.fzMode; fuseSlots = [null,null,null]; render(); } }));
   document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; fuseSlots[i] = b.dataset.fzAdd; render(); }));
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
