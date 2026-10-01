@@ -1,6 +1,6 @@
 // 아니마룬 — 오프라인 실행용 서비스 워커
 // 파일을 새 버전으로 올릴 때 아래 CACHE 이름의 숫자를 올리면 예전 캐시가 정리돼요. index.html 의 APP_BUILD 도 같은 숫자로 (업데이트 버튼이 이 숫자를 비교)
-const CACHE = 'animarune-v297';
+const CACHE = 'animarune-v298';
 const APP_VERSION = '2.11.0'; // (v276) 게임에 보이는 버전 — index.html의 APP_VERSION과 같게 (CACHE 숫자는 내부 번호라 1씩만 올림)
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './assets/fonts/jua-sub.woff2', './assets/home_stage.webp', './assets/home_expedition.webp', './assets/home_raid.webp', './assets/battle_snow.webp', './assets/battle_raid_frostTyrant.webp', './assets/battle_raid_infernoDrake.webp', './assets/battle_raid_abyssEye.webp', './assets/battle_raid_eldertree.webp', './assets/battle_raid_dawnJudge.webp', './assets/battle_plains.webp', './assets/battle_arena.webp', './assets/battle_volcano.webp', './assets/battle_forest.webp', './assets/battle_desert.webp', './assets/battle_cave.webp',
   './assets/boss/frostGiant.webp', './assets/boss/lavaLord.webp', './assets/boss/ancientTree.webp', './assets/boss/ruinGuardian.webp', './assets/boss/abyssCrystal.webp', './assets/boss/frostTyrant.webp', './assets/boss/infernoDrake.webp', './assets/boss/abyssEye.webp', './assets/boss/eldertree.webp', './assets/boss/dawnJudge.webp',
