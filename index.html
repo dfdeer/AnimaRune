@@ -134,7 +134,7 @@
   .ex-node.boss .ex-grade{bottom:18px;}
   .ex-grade.gS{background:linear-gradient(135deg,#ffe066,#ffc857);} .ex-grade.gA{background:linear-gradient(135deg,#d6a8ff,#b657ff); color:#fff;} .ex-grade.gB{background:linear-gradient(135deg,#8ec5ff,#5798ff); color:#fff;}
   .ex-sp{position:absolute; top:-8px; right:-8px; font-size:15px; border-radius:50%; background:radial-gradient(circle, #c98aff88 0%, #c98aff00 68%);}
-  .ex-sp.done::after, .ex-legend .spdone::after{content:'✓'; position:absolute; right:-5px; bottom:-4px; width:13px; height:13px; border-radius:50%; background:#2fbf5b; color:#fff; font-size:9px; font-weight:900; line-height:13px; text-align:center; border:1.5px solid #fff; box-shadow:0 1px 3px #0008;} /* (v294) 특수 규칙을 지키고 깬 스테이지 */
+  .ex-sp.done, .ex-legend .spdone{background:radial-gradient(circle, #ffd557aa 0%, #ffd55700 70%); border-radius:50%; box-shadow:0 0 0 1.5px #ffd557;} .ex-sp.done img, .ex-legend .spdone img{filter:sepia(1) saturate(3.2) hue-rotate(-8deg) brightness(1.15);} /* (v296) 특수 달성: 체크 대신 문양을 금빛으로 + 금테 — 체크가 문양을 가리던 것 */
   .ex-legend .spdone{position:relative; display:inline-flex; margin-right:5px;} /* (v247) 아이폰 사파리에서 drop-shadow가 네모난 보라 판처럼 보여서 둥근 빛으로 바꿈 */
   .ex-dot{position:absolute; top:-3px; left:-3px; width:11px; height:11px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 6px #ff5757;}
   .ex-mode{display:flex; gap:4px; margin-bottom:5px; padding:3px; border-radius:14px; background:#0006;} .ex-mode button{position:relative; flex:1; padding:5px 0; border-radius:11px; border-color:transparent !important; border:1px solid #ffffff1a; background:#1d1b48; color:var(--sub); font-weight:900; font-size:13px;}
@@ -669,7 +669,8 @@
   .upfx i{position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:var(--fc); box-shadow:0 0 8px var(--fc); opacity:0; animation:upPart .9s ease-out forwards;}
   .upfx-t{position:absolute; left:50%; z-index:6; pointer-events:none; transform:translate(-50%,0) scale(.3); white-space:nowrap; font-size:26px; font-weight:900; color:#fff; text-shadow:0 0 10px var(--fc), 0 2px 0 #0008; animation:upText 1.4s ease-out forwards;}
   .upfx.enh, .upfx-t.enh{--fc:#ffd557;} .upfx.awk, .upfx-t.awk{--fc:#ff7be8;}
-  .up-host > .spimg{animation:upPop .5s ease-out;}
+  .up-host.pop > .spimg, .up-host.pop > .eqimg{animation:upPop .5s ease-out;} /* (v297) 실제로 올렸을 때만 튀게 — 창을 열 때마다 튀던 문제 */
+  .up-host::after{z-index:1;} /* (v297) 튀는 동안에도 등급 테두리가 그림 위에 보이게 (속성 표시 z-index 2보다는 아래) */
   @keyframes upRing{0%{transform:scale(.3); opacity:1;} 100%{transform:scale(2.6); opacity:0;}}
   @keyframes upPart{0%{opacity:1; transform:translate(0,0);} 100%{opacity:0; transform:translate(var(--dx),var(--dy));}}
   @keyframes upText{0%{opacity:0; transform:translate(-50%,10px) scale(.3);} 25%{opacity:1; transform:translate(-50%,-34px) scale(1.2);} 45%{transform:translate(-50%,-34px) scale(1);} 85%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-50px) scale(1);}}
@@ -921,6 +922,11 @@
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
+  .mg-trait{margin:6px auto 6px; max-width:300px; padding:6px 10px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1a; font-size:12px; line-height:1.5;} .mg-trait span{display:block; color:var(--sub); font-size:11px;}
+  .xp-foes.rows{display:flex; flex-direction:column; gap:6px; align-items:stretch;} .xp-frow{display:flex; align-items:center; gap:6px;} .xp-flbl{flex-shrink:0; width:30px; font-size:11px; font-weight:800; color:#ffb0b0; text-align:center;} .xp-fcells{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; justify-items:center;} /* (v296) */
+  .pr-row{padding:8px 10px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .pr-top{display:flex; align-items:center; gap:6px;} .pr-top b{flex:1; font-size:14px;} .pr-ed{background:none; border:none; font-size:14px; cursor:pointer;}
+  .pr-grid{display:flex; align-items:center; gap:4px; margin:6px 0 4px;} .pr-grid i{width:1px; height:26px; background:#ffffff33; margin:0 4px;} .ps-ic{width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; overflow:hidden; font-size:16px;} .ps-ic.empty{background:#ffffff0a; border:1px dashed #ffffff22;}
+  .pr-btns{display:flex; gap:6px; flex-wrap:wrap;} .pr-btns .btn{width:auto; margin:0; padding:5px 10px; font-size:12px;}
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
   .xp-bgfull{background:radial-gradient(ellipse 120% 70% at 50% 100%, #3b2a5a 0%, #221c46 45%, #120f2c 100%);}
@@ -1050,7 +1056,7 @@
 .modal.roster-modal{display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; max-height:calc(100vh - 24px); max-height:calc(100dvh - 16px - var(--sat) - var(--sab));} /* (v237) 폰의 100vh는 주소창이 숨었을 때 높이라 실제 화면보다 커서 아래 버튼이 잘리고 스크롤도 안 됐음 → 보이는 높이 기준 + 넘치면 창 전체 스크롤 */
 .modal.roster-modal > *{flex-shrink:0;}
 .modal.framed{display:flex; flex-direction:column; overflow:hidden;}
-.modal.framed > .m-head{flex:none; margin-bottom:8px;} .modal.framed > .m-head > h3, .modal.framed > .m-head > h2{margin-top:0;} .modal.framed > .m-head > h3:last-child{margin-bottom:0;}
+.modal.framed > .m-head{flex:none; margin-bottom:8px;} .modal.framed > .m-head:has(> .close-x:only-child){min-height:24px; margin-bottom:6px;} .modal.framed > .m-head > .close-x{top:6px;} /* (v296) 제목 없는 창에서 X가 안쪽 칸 모서리에 겹치던 것 */ .modal.framed > .m-head > h3, .modal.framed > .m-head > h2{margin-top:0;} .modal.framed > .m-head > h3:last-child{margin-bottom:0;}
 .modal.framed > .m-body{flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:none; -webkit-overflow-scrolling:touch; background:#0d0d1488; border-radius:14px; padding:10px; margin:0 -8px; box-shadow:inset 0 3px 10px #000a, inset 0 0 0 1px #ffffff12;}
 .modal.framed > .m-foot{flex:none; margin-top:10px;} .modal.framed > .m-foot > .btn:first-child{margin-top:0;} .modal.framed > .m-foot .sticky-ok{position:static;}
 .modal.framed > .rp-foot, .modal.framed > .m-foot > .rp-foot{position:static; margin:0; padding:0; background:none; border:0;}
@@ -1069,7 +1075,11 @@
 .m-actions{position:sticky; bottom:-20px; z-index:3; margin:12px -20px -20px !important; padding:10px 20px 14px; background:linear-gradient(180deg,#1d1b4800,#1d1b48 22%);}
 @keyframes pulseDim{0%,100%{opacity:.25} 50%{opacity:.65}}
   .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:30px; color:var(--sub); background:none; border:none; font-family:var(--fun, 'Jua'); line-height:1; padding:0 4px;} /* (v272) X도 주아체 — 주아 글꼴에 ✕ 기호가 없어 알파벳을 씀 · (v2.9.6) 대문자 X는 세로로 길어 보여서 소문자 x를 크게 */
-  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid #5b6bff; padding:10px 16px; border-radius:10px; z-index:60; font-size:14px; line-height:1.4; width:max-content; max-width:90vw; word-break:keep-all; text-align:center;}
+  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#1d1a4ae8; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border:1px solid #5b6bff99; padding:7px 13px; border-radius:999px; z-index:60; font-size:13px; line-height:1.35; width:max-content; max-width:88vw; word-break:keep-all; text-align:center; box-shadow:0 4px 14px #0007; cursor:pointer; transition:top .18s ease, opacity .2s ease; animation:toastIn .18s ease-out;}
+  @keyframes toastIn{from{opacity:0; transform:translate(-50%,-6px);}}
+  .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
+  .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
+  .tlog-it{display:flex; gap:8px; align-items:baseline; padding:8px 4px; border-bottom:1px solid #ffffff12; font-size:13px; line-height:1.45; text-align:left;} .tlog-it small{flex-shrink:0; color:var(--sub); font-size:11px; min-width:38px;} .tlog-it .uic{width:18px; height:18px;}
   .toast .tt{opacity:.9;}
   .toast .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
   .toast .tn{font-weight:800; color:#ffd557; margin:0 4px;}
@@ -1294,6 +1304,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_stone.webp" alt="" draggable="false"><span id="stoneVal">0</span>
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화</div>
       </div>
+      <button id="headerBellBtn" style="display:none; background:none; border:none; color:var(--text); font-size:19px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="놓친 알림">🔔<span id="headerBellN" class="bell-n"></span></button>
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
       <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
@@ -1301,6 +1312,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <button data-hmenu="notes" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📝 패치노트<span id="hmNoteNew" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="ask" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">✉️ 문의하기<span id="hmAskN" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="mail" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📬 우편함<span id="hmMailN" class="hm-n" style="display:none;"></span></button>
+        <button data-hmenu="tlog" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔔 알림 기록</button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
         <button data-hmenu="update" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔄 업데이트 <small id="hmVer" style="color:var(--sub); font-weight:600; margin-left:auto;"></small></button>
         <button data-hmenu="mailsend" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">📮 우편 보내기 <small style="color:#ffd557;">관리자</small></button>
@@ -2116,6 +2128,10 @@ function validEnemyTargets(sf){
   return frontFirst(sf.enemyUnits, sideWidth(sf,'enemy')).map(u=>u.idx);
 }
 function skillUnitName(side, u){ if(!u) return '—'; return (side==='enemy' ? '적 ' : '')+(u.dispName || SPIRITS[u.key].name); }
+// (v296) 전투 기록용 이름 — 편 표시를 보이지 않는 표식으로 남겨 두고, 보여줄 때 보는 사람 기준으로 '적'을 붙임 (결투 손님 화면은 좌우가 뒤집혀 있음)
+const LOG_EN = '\u2062', LOG_ME = '\u2063';
+function logUnitName(side, u){ if(!u) return '—'; return (side==='enemy' ? LOG_EN : LOG_ME)+(u.dispName || SPIRITS[u.key].name); }
+function logText(line, mirrored){ return String(line||'').split(LOG_EN).join(mirrored ? '' : '적 ').split(LOG_ME).join(mirrored ? '적 ' : ''); }
 function skillTargetable(sf, side, idx){
   const u = unitAt(sf, side, idx);
   if(!u || !u.alive) return false;
@@ -2250,13 +2266,13 @@ function performAction(sf, a, act, tSide, tIdx){
   if(act==='basic'){
     C.hit(C.t, 1);
     if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && !sf.noRng && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
-    pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' 공격 → '+skillUnitName(tSide, C.t));
+    pushLog(sf, logUnitName(a.side, a)+' 공격 → '+logUnitName(tSide, C.t));
   }else{
     const sk = unitSkill(a, act);
     if(act==='s2'){ const sg = unitSG(a); C.g = sg; C.P = arr=>arr[sg]; } // (v225) 각성으로 연 스킬2는 에픽 수치부터
     sk.run(C);
     if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
-    pushLog(sf, (a.side==='enemy'?'적 ':'')+name+' '+sk.name+' → '+skillUnitName(tSide, C.t));
+    pushLog(sf, logUnitName(a.side, a)+' '+sk.name+' → '+logUnitName(tSide, C.t));
   }
   if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
   setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, hits:C.hits });
@@ -2447,7 +2463,7 @@ function raidOnAddDeath(sf, u){ // 기둥·씨앗이 부서졌을 때
   if(u.addKind==='pillar'){
     const j = u.jail!=null ? unitAt(sf, 'me', u.jail) : null; u.jail = null;
     if(u.shattered) return;
-    if(j && j.alive){ delete j.st.jail; pushLog(sf, '💥 얼음 기둥 파괴! '+skillUnitName('me', j)+' 구출'); }
+    if(j && j.alive){ delete j.st.jail; pushLog(sf, '💥 얼음 기둥 파괴! '+logUnitName('me', j)+' 구출'); }
     const b = sf.enemyUnits.find(x=>x.isBoss && x.alive); if(b) groggyAdd(sf, b, -15);
   } else if(!u.bloomed) pushLog(sf, '🌱 씨앗 파괴!');
 }
@@ -2459,7 +2475,7 @@ function applyRaidGimmicks(sf){
   sf.enemyUnits.filter(u=>u.isAdd && u.alive && u.addKind).forEach(a=>{
     a.addTimer = (a.addTimer||1) - 1; if(a.addTimer>0) return;
     if(a.addKind==='pillar'){ const j = a.jail!=null ? unitAt(sf, 'me', a.jail) : null; a.shattered = true; killUnit(sf, a); a.shattered = false;
-      if(j && j.alive){ delete j.st.jail; killUnit(sf, j); pushLog(sf, '🧊 '+nm('얼음 감옥')+' — '+skillUnitName('me', j)+' 얼어붙어 쓰러짐'); } }
+      if(j && j.alive){ delete j.st.jail; killUnit(sf, j); pushLog(sf, '🧊 '+nm('얼음 감옥')+' — '+logUnitName('me', j)+' 얼어붙어 쓰러짐'); } }
     else { a.bloomed = true; killUnit(sf, a); a.bloomed = false; boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(pctHp(boss)*0.06));
       allies().forEach(u=>{ if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; return; } u.st.poison = { r:3, pct:0.04, srcG:2 }; }); pushLog(sf, '🌸 '+nm('개화')+' — 보스 회복 · 아군 전체 독'); }
   });
@@ -2473,11 +2489,11 @@ function applyRaidGimmicks(sf){
   info.gimmicks.forEach(g=>{
     const al = allies(); if(!al.length) return;
     if(g.id==='prison' && r%3===2){ const t = al.filter(u=>!u.st.jail).sort((x,y)=>y.atk-x.atk)[0]; const a = t && raidSpawnAdd(sf, boss, 'pillar');
-      if(a){ a.jail = t.idx; t.st.jail = true; pushLog(sf, '🧊 '+nm('얼음 감옥')+' — '+skillUnitName('me', t)+' 갇힘 · 2라운드 안에 기둥을 깨기'); } }
+      if(a){ a.jail = t.idx; t.st.jail = true; pushLog(sf, '🧊 '+nm('얼음 감옥')+' — '+logUnitName('me', t)+' 갇힘 · 2라운드 안에 기둥을 깨기'); } }
     else if(g.id==='blizzard' && r%3===0){ al.forEach(u=>{ dealDamage(sf, boss, u, 0.5, {noCrit:true}); if(u.alive) u.st.slow = {v:15, r:2}; }); pushLog(sf, info.icon+' '+nm('눈보라')+'!'); }
     else if((g.id==='iceShell' || g.id==='bark') && !sf.raidShellUsed && boss.hp/boss.maxHp < 0.5){ sf.raidShellUsed = true; boss.st.shield = (boss.st.shield||0) + Math.round(boss.maxHp*0.2); pushLog(sf, info.icon+' '+nm(g.name)+'!'); }
     else if(g.id==='breath' && r%3===2){ const row = sf.noRng ? 'front' : (Math.random()<0.5 ? 'front' : 'back'); boss.cast = { id:'breath', ic:'🐲', nm:'용의 숨결('+(row==='front'?'전열':'후열')+')', row, el:'water', need:3, dealt:0 }; pushLog(sf, '🐲 '+nm('용의 숨결')+' 준비 — 다음 라운드 '+(row==='front'?'전열':'후열')+' · 💧물결 공격 3번이면 저지'); }
-    else if(g.id==='brand'){ const t = al.reduce((x,y)=> y.hp>x.hp ? y : x); t.st.burnCap = Math.max(t.st.burnCap||5, 5); t.st.burn = Math.min(t.st.burnCap, (t.st.burn||0)+3); t.st.burnDmg = Math.max(t.st.burnDmg||0, Math.round(boss.atk*0.15)); pushLog(sf, info.icon+' 낙인 → '+skillUnitName('me', t)); }
+    else if(g.id==='brand'){ const t = al.reduce((x,y)=> y.hp>x.hp ? y : x); t.st.burnCap = Math.max(t.st.burnCap||5, 5); t.st.burn = Math.min(t.st.burnCap, (t.st.burn||0)+3); t.st.burnDmg = Math.max(t.st.burnDmg||0, Math.round(boss.atk*0.15)); pushLog(sf, info.icon+' 낙인 → '+logUnitName('me', t)); }
     else if(g.id==='rage' && r%4===0){ boss.atk = Math.round(boss.atk*1.25); pushLog(sf, info.icon+' 격노! 공격력 상승'); }
     else if(g.id==='crossGaze'){ raidSetGaze(sf, r); if(sf.gaze) pushLog(sf, '👁️ '+nm('시선')+' → '+raidGroupName(sf.gaze)); }
     else if(g.id==='pulse' && r%3===0){ al.forEach(u=>dealDamage(sf, boss, u, 0.6, {noCrit:true})); pushLog(sf, info.icon+' '+nm('파동')+'!'); }
@@ -3258,7 +3274,7 @@ function renderDuelTabInner(){
     + '<div class="sub">칸을 눌러 정령 교체 · 결투는 항상 이 덱으로</div>'
     + '<div class="du-row"><span class="du-lbl">전열</span>'+[0,1,2].map(i=>duelSlotHtml(d,i)).join('')+'</div>'
     + '<div class="du-row"><span class="du-lbl">후열</span>'+[3,4,5].map(i=>duelSlotHtml(d,i)).join('')+'</div>'
-    + '<div class="du-btns"><button class="btn secondary small" id="duelRecBtn">✨ 추천 배치</button><button class="btn secondary small" id="duelClearBtn">🧹 비우기</button></div></div>';
+    + '<div class="du-btns"><button class="btn secondary small" id="duelRecBtn">✨ 추천 배치</button><button class="btn secondary small" data-preset-open="1">📋 프리셋</button><button class="btn secondary small" id="duelClearBtn">🧹 비우기</button></div></div>';
   if(!friendsAvailable() || !friendNet.on) return h + friendsOfflineHtml() + '</div>';
   // (v287) 방 코드 칸은 친구 목록 위로 — 친구가 많으면 맨 아래로 밀려서 찾기 힘들었음
   h += '<div class="fr-card"><b>방 코드로 참가</b><div class="fr-inrow"><input id="duelCodeInput" maxlength="6" placeholder="방 코드 6자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="duelJoinBtn">참가</button></div></div>';
@@ -3276,11 +3292,17 @@ function showDuelSlotPicker(slot, fromLobby){
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=> (RARITY_ORDER.indexOf(SPIRITS[c].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity)) || (unitAtk(c)-unitAtk(a)));
   let h = '<h3 style="text-align:center;">'+(slot<3?'전열':'후열')+' '+(slot%3+1)+'번 칸</h3><div class="sub" style="text-align:center; margin-bottom:8px;">결투 덱에 넣을 정령 선택</div>';
   if(!owned.length) h += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 정령 없음</div>';
-  h += '<div class="roster-scroll"><div class="roster-grid">'+owned.map(k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur;
-    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; }).join('')+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
+  // (v296) 전투 준비 창처럼 전열형·후열형으로 나누고 역할 표시 · ⓘ로 스킬 보기 (이 칸이 전열/후열 어느 쪽인지도 위에 표시)
+  const isF = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
+  const tileD = k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur, kit = LINE_KITS[sp.element+'_'+sp.variant];
+    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+' <span data-duel-info="'+k+'" style="opacity:.8;">ⓘ</span></div><div style="font-size:9px; color:var(--sub);">'+kit.icon+' '+kit.role+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; };
+  const gF = owned.filter(isF), gB = owned.filter(k=>!isF(k)), cap = t=>'<div class="sub" style="font-weight:800; margin:8px 2px 6px;">'+t+'</div>';
+  h += '<div class="sub" style="text-align:center; margin:-4px 0 6px;">이 칸은 <b style="color:var(--text);">'+(slot<3?'전열':'후열')+'</b> · '+(slot<3?'돌격·탱커·흡혈처형이 어울림':'치유·빙결·화상·독·보호막·가속·저주가 어울림')+'</div>';
+  h += '<div class="roster-scroll">'+(gF.length?cap('🗡️ 전열형 (돌격·탱커·흡혈처형)')+'<div class="roster-grid">'+gF.map(tileD).join('')+'</div>':'')+(gB.length?cap('🎯 후열형 (치유·빙결·화상·독·보호막·가속·저주)')+'<div class="roster-grid">'+gB.map(tileD).join('')+'</div>':'')+'<div class="roster-grid">'+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
   if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
+  document.querySelectorAll('[data-duel-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const k = el.dataset.duelInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }));
   document.querySelectorAll('[data-duel-pick]').forEach(el=>el.addEventListener('click', ()=>{
     const k = el.dataset.duelPick, nd = d.slice(), other = nd.indexOf(k);
     if(other>=0 && other!==slot) nd[other] = cur || null; // 이미 덱에 있던 정령이면 두 칸을 맞바꿈
@@ -3299,6 +3321,7 @@ function bindDuelTab(){
   const q = id=>document.getElementById(id);
   document.querySelectorAll('[data-duel-slot]').forEach(el=>el.addEventListener('click', ()=>showDuelSlotPicker(parseInt(el.dataset.duelSlot))));
   if(q('duelRecBtn')) q('duelRecBtn').addEventListener('click', ()=>saveDuelDeck(recommendFormation([])));
+  presetUse({ nm:'결투 덱', get:()=>myDuelDeck(), set:keys=>{ saveDuelDeck(keys, true); }, reopen:()=>render() }); // (v297)
   if(q('duelClearBtn')) q('duelClearBtn').addEventListener('click', ()=>saveDuelDeck([null,null,null,null,null,null], true)); // 서버의 결투 덱도 같이 비움
   if(q('duelToFriends')) q('duelToFriends').addEventListener('click', ()=>{ friendTab = 'add'; activeTab = 'friends'; render(); });
   if(q('duelJoinBtn')) q('duelJoinBtn').addEventListener('click', ()=>{ const v = q('duelCodeInput').value; raidJoinRoom(v); });
@@ -3712,7 +3735,7 @@ function showRaidLobbyModal(){
   const gReady = duelR && d.guest && !!d.ready[d.guest];
   if(duelR){ const dk = myDuelDeck();
     h += '<div class="card" style="padding:10px; margin-top:8px;"><div class="du-head"><b><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 내 결투 덱</b><small class="sub">칸을 눌러 교체 · 상대에겐 안 보임</small></div>'
-      + '<div class="du-row"><span class="du-lbl">전열</span>'+[0,1,2].map(i=>duelSlotHtml(dk,i)).join('')+'</div><div class="du-row"><span class="du-lbl">후열</span>'+[3,4,5].map(i=>duelSlotHtml(dk,i)).join('')+'</div></div>';
+      + '<div class="du-row"><span class="du-lbl">전열</span>'+[0,1,2].map(i=>duelSlotHtml(dk,i)).join('')+'</div><div class="du-row"><span class="du-lbl">후열</span>'+[3,4,5].map(i=>duelSlotHtml(dk,i)).join('')+'</div><button class="btn secondary small" data-preset-open="1" style="margin-top:6px;">📋 프리셋</button></div>';
     if(pid) h += '<div class="sub" style="text-align:center; margin-top:6px;">'+(isHost ? escTxt(raidNameOf(pid))+' · '+(gReady ? '✅ 준비 완료' : '덱 고르는 중…') : (gReady ? '✅ 준비 완료 — 방장이 시작하면 결투' : '덱을 확인하고 준비 누르기'))+'</div>'; }
   if(isHost) h += '<button class="btn" id="raidToPickBtn" style="margin-top:10px;" '+(pid && (!duelR || gReady)?'':'disabled')+'>'+(duelR?'▶ 결투 시작':'▶ 정령 선택 시작')+'</button>';
   else if(duelR) h += '<button class="btn'+(gReady?' secondary':' gold')+'" id="duelReadyBtn" style="margin-top:10px;">'+(gReady?'준비 취소':'✅ 준비')+'</button>';
@@ -3729,6 +3752,7 @@ function showRaidLobbyModal(){
   if(q('duelReadyBtn')) q('duelReadyBtn').addEventListener('click', ()=>{ const on = !(raidNet.doc && raidNet.doc.ready[raidNet.uid]);
     if(on && !duelPayload(myDuelDeck()).some(Boolean)){ toast('덱에 정령을 1마리 이상'); return; }
     raidUpdate(Object.assign({ ready:{ [raidNet.uid]: on } }, on ? { duelPicks:{ [raidNet.uid]: duelPayload(myDuelDeck()) } } : {})); });
+  if(duelR) presetUse({ nm:'결투 덱', get:()=>myDuelDeck(), set:keys=>{ saveDuelDeck(keys, true).then(()=>duelLobbyAfterEdit(false)); }, reopen:()=>showRaidLobbyModal() }); // (v297)
   if(duelR) document.querySelectorAll('#raidModal [data-duel-slot]').forEach(el=>el.addEventListener('click', ()=>showDuelSlotPicker(parseInt(el.dataset.duelSlot), true)));
   document.querySelectorAll('[data-f-invite]').forEach(el=>el.addEventListener('click', ()=>{ friendInvite(el.dataset.fInvite).then(()=>{ if(document.getElementById('raidModal') && raidNet.doc && raidNet.doc.status==='lobby') showRaidLobbyModal(); }); el.disabled = true; el.textContent = '대기 중'; }));
   document.querySelectorAll('[data-raid-diff]').forEach(el=>el.addEventListener('click', ()=>{ state.raidDiff = el.dataset.raidDiff; save(); raidUpdate({ diff: el.dataset.raidDiff }); }));
@@ -3789,7 +3813,7 @@ function showRaidPickModal(){
   }).join('') : '<div class="sub">보유한 정령 없음</div>';
   h += dispatchAwayTilesHtml(); // (v267)
   h += '</div></div>';
-  h += '<div class="rp-foot"><div style="display:flex; gap:6px; margin-bottom:6px;"><button class="btn secondary" id="raidClearBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>🧹 비우기</button><button class="btn secondary" id="raidAutoBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>✨ 추천 배치</button></div><div style="display:flex; gap:6px;">'
+  h += '<div class="rp-foot"><div style="display:flex; gap:6px; margin-bottom:6px;"><button class="btn secondary" id="raidClearBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>🧹 비우기</button><button class="btn secondary" id="raidAutoBtn" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;" '+(myReady?'disabled':'')+'>📋 프리셋</button></div><div style="display:flex; gap:6px;">'
     + '<button class="btn" id="raidReadyBtn" style="flex:2;">'+(solo ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작' : (myReady ? '↩ 준비 취소' : '<img class="uic" src="assets/ui/ic_check.webp" alt=""> 준비 완료'))+'</button></div>';
   if(solo) h += '<button class="btn secondary" id="raidSoloExitBtn" style="margin-top:6px; opacity:.8;">나가기</button>';
   if(!solo) h += '<button class="btn secondary" id="raidPickLeaveBtn" style="margin-top:6px; opacity:.8;">'+(raidNet.role==='host'?'방 닫기':'나가기')+'</button>';
@@ -3813,6 +3837,8 @@ function showRaidPickModal(){
     const empty = raidNet.myPicks.indexOf(null); if(empty>=0) raidNet.selSlot = empty;
     raidSavePicks(); showRaidPickModal();
   }));
+  presetUse({ nm:'레이드 4칸', get:()=>{ const m = raidNet.myPicks; return [m[0]||null, m[1]||null, null, m[2]||null, m[3]||null, null]; }, // (v297) 레이드는 전열 2 · 후열 2
+    set:keys=>{ const f = keys.slice(0,3).filter(Boolean).slice(0,2), b = keys.slice(3,6).filter(Boolean).slice(0,2); raidNet.myPicks = [f[0]||null, f[1]||null, b[0]||null, b[1]||null]; raidNet.selSlot = Math.max(0, raidNet.myPicks.indexOf(null)); raidSavePicks(); }, reopen:()=>showRaidPickModal() });
   document.getElementById('raidAutoBtn').addEventListener('click', ()=>{ if(myReady) return; raidNet.myPicks = raidAutoPicks(info.id); raidNet.selSlot = Math.max(0, raidNet.myPicks.indexOf(null)); raidSavePicks(); showRaidPickModal(); });
   document.getElementById('raidClearBtn').addEventListener('click', ()=>{ if(myReady) return; raidNet.myPicks = [null,null,null,null]; raidNet.selSlot = 0; raidSavePicks(); showRaidPickModal(); }); // (v269)
   document.getElementById('raidReadyBtn').addEventListener('click', ()=>{
@@ -4145,9 +4171,9 @@ function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
-      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, skillUnitName(u.side, u)+' 빙결로 쉼'); sf.queuePos++; continue; }
-      if(u.st.jail){ pushLog(sf, '🧊 '+skillUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
-      if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+skillUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
+      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, logUnitName(u.side, u)+' 빙결로 쉼'); sf.queuePos++; continue; }
+      if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
+      if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
     }
     sf.queuePos++;
@@ -4398,8 +4424,11 @@ function skillPreview(sf, a, act, tSide, tIdx){
   if(shield) parts.push('<img class="uic" src="assets/ui/ic_shield.webp" alt="">'+shield);
   if(!parts.length){ const st = C.hits.find(h=>h.kind==='status' && h.side===tSide && h.idx===tIdx); if(st) parts.push(st.text); }
   if(others) parts.push('+'+others+'명');
-  const kill = !!(t0 && t0.alive && t1 && !t1.alive);
-  return { text: parts.join(' · ') || '효과 없음', kill, dmg };
+  // (v296) 쓰러뜨렸지만 바로 되살아나는 경우(스스로 부활·천사 부활)도 처치로 — '부활' 표시를 붙임
+  const rvHit = h=> h && h.rv && h.side===tSide && h.idx===tIdx;
+  const revived = !!(t0 && t0.alive && t1 && t1.alive && ((t1.reviveUsed && !t0.reviveUsed) || C.hits.some(rvHit) || (c._rv||[]).some(rvHit) || ((c.lastFx && c.lastFx.hits) || []).some(rvHit)));
+  const kill = !!(t0 && t0.alive && t1 && !t1.alive) || revived;
+  return { text: parts.join(' · ') || '효과 없음', kill, revived, dmg };
 }
 // ===================== (v145) 진화 라인별 스킬·패시브 =====================
 // 라인 = 속성+계통(a/b). 등급 g: 0 일반 · 1 레어 · 2 에픽 · 3 레전더리 · 4 신화
@@ -4927,7 +4956,7 @@ function applyBossExtra(sf, g, boss){ // (v256) 추가 기믹 — (v258) 노말�
     }
   }
   else if(g.type==='abyssCrystal'){
-    const t = allies.reduce((x,y)=> y.atk>x.atk ? y : x); t.st.curse = {v:0.25, r:2}; pushLog(sf, '👁️ '+nm('심연 응시')+' → '+skillUnitName('me', t));
+    const t = allies.reduce((x,y)=> y.atk>x.atk ? y : x); t.st.curse = {v:0.25, r:2}; pushLog(sf, '👁️ '+nm('심연 응시')+' → '+logUnitName('me', t));
     if(r%3===0){ aliveUnits(sf.myUnits).forEach(u=>dealDamage(sf, boss, u, 0.6, {noCrit:true})); pushLog(sf, '🌀 '+nm('심연 파동')+'!'); }
   }
 }
@@ -4992,7 +5021,7 @@ function groggyAdd(sf, b, delta){
   b.gauge = Math.max(0, Math.min(GROGGY_MAX, b.gauge + delta));
   if(b.gauge>0) return false;
   b.groggy = true; if(b.cast) b.cast.broken = true; // (v260) 그로기로도 절대영도 저지
-  pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+skillUnitName('enemy', b)+' 그로기! 받는 피해 2배');
+  pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName('enemy', b)+' 그로기! 받는 피해 2배');
   return true;
 }
 // 아군 공격이 보스에 맞았을 때 게이지 깎기. mult = 스킬 배율(기본 공격 1)
@@ -5022,7 +5051,7 @@ function groggyRoundStart(sf){
     if(!b.isBoss || !b.alive) return;
     const r = groggyRuleOf(sf, b); if(!r) return;
     ensureGroggy(b);
-    if(b.groggy){ b.groggy = false; b.gauge = GROGGY_MAX; pushLog(sf, skillUnitName('enemy', b)+'이(가) 정신을 차렸다'); }
+    if(b.groggy){ b.groggy = false; b.gauge = GROGGY_MAX; pushLog(sf, logUnitName('enemy', b)+'이(가) 정신을 차렸다'); }
     else if(r.regen) b.gauge = Math.min(GROGGY_MAX, b.gauge + r.regen);
   });
 }
@@ -5124,7 +5153,7 @@ function showBossSquadPicker(stageIdx){
   let html = '<h3 style="text-align:center; margin-bottom:6px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 배치</h3>'
     + '<div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px;"><b>'+gi.icon+' '+gi.name+'</b><button class="bs-info" id="bossInfoBtn" style="width:26px; height:26px; font-size:13px;">ⓘ</button></div>';
   html += formationRowsHtml();
-  html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="bossClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="bossRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
+  html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="bossClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="bossRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
   let bossPv = null;
   { const act = state.formation.slice(0, GRID_SLOTS), waves = [1,2,3].map(w=>buildBossWaveFight(stageIdx, w, act, {})); bossPv = waves[0];
     const my = teamCP(waves[0].myUnits), ens = waves.map(f=>teamCP(f.enemyUnits));
@@ -5143,6 +5172,7 @@ function showBossSquadPicker(stageIdx){
   });
   document.getElementById('bossInfoBtn').addEventListener('click', ()=>showBossInfo(stageIdx));
   document.getElementById('bossClearBtn').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showBossSquadPicker(stageIdx); });
+  presetUse(formCtx('보스 진형', ()=>showBossSquadPicker(stageIdx))); // (v297)
   document.getElementById('bossRecBtn').addEventListener('click', ()=>{ const be = bossFixedElementFor(stageIdx); state.formation = recommendFormation(be ? [be,be,be] : []); save(); showBossSquadPicker(stageIdx); });
   document.getElementById('startWaveBtn').addEventListener('click', ()=>{
     const active = state.formation.slice(0, GRID_SLOTS);
@@ -5212,7 +5242,7 @@ function showSkillStagePrepModal(i){
   };
   const row = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(spSlot).join('')+'</div></div>';
   html += row('전열', frontIdx) + row('후열', backIdx);
-  html += '<div class="m-actions" style="display:flex; gap:8px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button>'
+  html += '<div class="m-actions" style="display:flex; gap:8px;"><button id="clearFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">🧹</button><button id="recFormationBtn" class="btn secondary" style="flex:0 0 auto; width:auto; padding:0 12px;">✨ 추천</button><button class="btn secondary" data-preset-open="1" style="flex:0 0 auto; width:auto; padding:0 12px;">📋</button>'
     + '<button class="btn" id="startSkillBattleBtn" style="flex:1;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
@@ -5222,6 +5252,7 @@ function showSkillStagePrepModal(i){
     openInfoOverlay('<img class="uic" src="assets/ui/ic_gift.webp" alt=""> 보상', getStageRewardContent(i), ()=>{ render(); refreshRewardBtnDot(i); }, ()=>getStageRewardContent(i));
   });
   document.getElementById('clearFormationBtn').addEventListener('click', ()=>{ state.formation = state.formation.map(()=>null); save(); showSkillStagePrepModal(i); });
+  presetUse(formCtx('스테이지 진형', ()=>showSkillStagePrepModal(i), spSpec && spSpec.type==='sealedSlot' ? null : null, ()=>{ if(spSpec && spSpec.type==='sealedSlot') state.formation[spSpec.slot] = null; })); // (v297) 파티 프리셋
   document.getElementById('recFormationBtn').addEventListener('click', ()=>{ state.formation = recommendFormation(enemyGridForStage(i).els); if(spSpec && spSpec.type==='sealedSlot') state.formation[spSpec.slot] = null; save(); showSkillStagePrepModal(i); }); // (v223) 봉인 칸은 비워 둬야 특수 보너스 조건 충족
   document.querySelectorAll('#modalRoot [data-slot]').forEach(el=>{
     el.addEventListener('click', ()=>{ showSlotPicker(parseInt(el.dataset.slot), ()=>showSkillStagePrepModal(i), null, null, lineup); });
@@ -5610,7 +5641,7 @@ function showSkillStageScreen(){
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
   html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+'">'+battleSceneHtml(theme)
-    + '<div class="bs-logtop"><div class="bs-log">'+((sf.log||[]).slice(-1)[0]||'')+'</div></div>'
+    + '<div class="bs-logtop"><div class="bs-log">'+logText((sf.log||[]).slice(-1)[0]||'', !!sf.mirrored)+'</div></div>'
     + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
     // (v266) 보스 칸은 맨 뒤 — 큰 그림의 투명 여백이 옆 칸 이름·체력 글자를 덮었음
@@ -5642,7 +5673,7 @@ function showSkillStageScreen(){
         const p = skillPreview(sf, curUnit, act, skillSel.side, skillSel.idx);
         if(kind==='harm' && onAlly) warn = '<span class="warnbig">⚠ 아군에게 공격</span>';
         else if(kind!=='harm' && !onAlly) warn = '<span class="warnbig">⚠ 적에게 사용</span>';
-        if(p.kill && !onAlly) kill = '<span class="killtag"><img class="uic" src="assets/ui/ic_skull.webp" alt=""> 처치</span>';
+        if(p.kill && !onAlly) kill = '<span class="killtag"><img class="uic" src="assets/ui/ic_skull.webp" alt=""> 처치'+(p.revived?' · 부활함':'')+'</span>';
         small = p.text;
       }
       const armed = skillSel.act===act && ok, ready = armed && !!skillSel.armed;
@@ -5772,7 +5803,12 @@ function showSkillStageScreen(){
   root.querySelectorAll('[data-tgt]').forEach(el=>el.addEventListener('click', ()=>{
     const [s, idx] = el.dataset.tgt.split(':');
     { const sk = curUnit && skillSel.act ? unitSkill(curUnit, skillSel.act) : null; // (v192) 자기 몸 스킬을 고른 상태: 아군을 누르면 그대로 자신, 적을 누르면 기본 공격으로 바꿈
-      if(sk && sk.self){ if(s!=='enemy') return; skillSel.act = 'basic'; skillSel.armed = true; } }
+      if(sk && sk.self){
+        if(s!=='enemy'){ // (v296) 자기 몸 스킬을 고른 채로 다른 아군을 누르면 → 아군에게 쓰는 지원 스킬로 바꿈 (예전엔 누른 게 무시돼서, 이어서 고른 지원 스킬이 자신에게 써졌음)
+          if(parseInt(idx)===curUnit.idx) return;
+          const alt = ['s1','s2'].find(x=>{ const k2 = unitSkill(curUnit, x); return k2 && k2.kind!=='harm' && !k2.self && skillAvailable(curUnit, x); });
+          if(!alt){ toast('자신에게만 쓰는 스킬'); return; } skillSel.act = alt; skillSel.armed = true;
+        } else { skillSel.act = 'basic'; skillSel.armed = true; } } }
     skillSel.side = s; skillSel.idx = parseInt(idx); skillSel.manual = true; if(s==='enemy') skillSel.sticky = parseInt(idx); showSkillStageScreen();
   }));
   pumpSkillFight();
@@ -5956,7 +5992,7 @@ function mailClean(m){
 }
 function mailList(){
   const now = Date.now(), out = [];
-  [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now)) return; out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!((state.mailClaimed && state.mailClaimed[p+':'+id]) || (p==='u' && m.c)) /* (v296) 개인 우편은 서버의 받은 표시(c)도 봄 */ })); }));
+  [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now) || (state.mailHidden && state.mailHidden[p+':'+id])) return; /* (v296) 지운 우편은 숨김 */ out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!((state.mailClaimed && state.mailClaimed[p+':'+id]) || (p==='u' && m.c)) /* (v296) 개인 우편은 서버의 받은 표시(c)도 봄 */ })); }));
   return out.sort((a,b)=> (a.claimed-b.claimed) || (b.t-a.t));
 }
 function mailUnclaimed(){ return mailList().filter(m=>!m.claimed); }
@@ -6008,10 +6044,15 @@ function showMailboxModal(why){
   h += '</div>';
   // (v247) 빈 우편함에서 "받은 우편 없음"과 "받을 우편 없음"이 같이 보이던 것 → 아래 줄은 우편이 있을 때만
   if(open.length) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">우편을 눌러 내용 확인 후 받기</div>'; // (v254) 모두 받기 없앰 — 한 통씩 읽고 받게
+  { const done = list.length - open.length; if(done) h += '<div class="mail-bar"><button class="btn secondary small" id="mailDelDone">🗑️ 받은 우편 모두 삭제 ('+done+')</button></div>'; } // (v296)
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailBox" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-mail-open]').forEach(b=>b.addEventListener('click', ()=>showMailDetail(b.dataset.mailOpen)));
+  { const d = document.getElementById('mailDelDone'); if(d) d.addEventListener('click', ()=>{ const ids = mailList().filter(m=>m.claimed).map(m=>m.id);
+    confirmBox('받은 우편 삭제?', '받은 우편 '+ids.length+'통을 우편함에서 지움<br>받지 않은 우편은 그대로', '삭제', ()=>{ mailHide(ids); showMailboxModal(); }, {danger:true}); }); }
 }
+// (v296) 우편 삭제 — 받은 우편만 내 우편함에서 숨김(세이브에 기록). 서버의 우편은 그대로 둬서 관리자 '받음' 표시는 남음
+function mailHide(ids){ if(!state.mailHidden) state.mailHidden = {}; ids.forEach(id=>{ state.mailHidden[id] = Date.now(); }); save(); mailBadgeUpdate(); toast('🗑️ 우편 '+ids.length+'통 삭제'); }
 function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내용·보상·받기
   const m = mailList().find(x=>x.id===id); if(!m) return;
   const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 210; o.id = 'mailDetail';
@@ -6019,13 +6060,14 @@ function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내�
     + '<h3 style="margin:0 28px 4px 0;">'+escTxt(m.title)+'</h3><div class="sub" style="font-size:11px;">'+(m.scope==='a'?'모든 플레이어에게':'나에게')+(mailLeftTxt(m)?' · '+mailLeftTxt(m):'')+'</div>'
     + (m.body ? '<div class="mail-body" style="margin-top:10px; font-size:13px; color:var(--text);">'+escTxt(m.body).replace(/\n/g,'<br>')+'</div>' : '')
     + (rewardPillsHtml(m.reward) ? '<div style="margin-top:10px;"><div class="sub" style="font-size:11px;">보상</div>'+rewardPillsHtml(m.reward)+'</div>' : '')
-    + (m.claimed ? '<div class="sub" style="text-align:center; margin-top:12px;">이미 받은 우편</div>' : '<button class="btn gold" id="mdClaim" style="margin-top:12px;">받기</button>')
+    + (m.claimed ? '<div class="sub" style="text-align:center; margin-top:12px;">이미 받은 우편</div><button class="btn secondary" id="mdDel" style="margin-top:8px;">🗑️ 삭제</button>' : '<button class="btn gold" id="mdClaim" style="margin-top:12px;">받기</button>')
     + '</div>';
   document.body.appendChild(o);
   const close = ()=>o.remove();
   o.addEventListener('click', e=>{ if(e.target===o) close(); });
   o.querySelector('#mdClose').addEventListener('click', close);
   const c = o.querySelector('#mdClaim'); if(c) c.addEventListener('click', ()=>{ mailClaim([m.id]); close(); if(document.getElementById('mailBox')) showMailboxModal(); });
+  const dl = o.querySelector('#mdDel'); if(dl) dl.addEventListener('click', ()=>{ mailHide([m.id]); close(); if(document.getElementById('mailBox')) showMailboxModal(); });
 }
 function showMailSendModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
@@ -6210,7 +6252,7 @@ function showEnhanceModal(key, fxLabel){
   document.getElementById('enBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('enDo'); if(d) d.addEventListener('click', ()=>{ const c = enhanceCost(key), go = ()=>{ const before = enhanceLevel(key); doEnhance(key, true); render(); showEnhanceModal(key, enhanceLevel(key)>before ? '+'+enhanceLevel(key) : null); };
     spendAsk(SPIRITS[key].name+' 강화', c, go, enhanceLevel(key)<maxEnhanceFor(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'enh'); }
 }
 // (v239) 각성 전용 화면: 단계별 효과 사다리 · 필요/보유 재료 · 각성 버튼
 function awakenStepInfo(key, lv){
@@ -6245,7 +6287,7 @@ function showAwakenModal(key, fxLabel){
   document.getElementById('awBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const c = awakenCost(key), go = ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); };
     spendAsk(SPIRITS[key].name+' 각성', c||{}, go, !!c && awakenSpare(key)>=c.copies && state.essence>=c.essence); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'awk');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'awk'); }
 }
 // (v238) 강화 +N 작은 딱지 — 전투 준비 칸·고르기 목록 등
 function enhTag(key){ const n = enhanceLevel(key); return n>0 ? '<span class="enh-tag">+'+n+'</span>' : ''; }
@@ -6706,7 +6748,17 @@ document.addEventListener('click', (e)=>{
 
 
 // ===================== 유틸 =====================
-function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 6; }); }
+function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 5; }); }
+// (v296) 알림 정리 — 화면에는 한 번에 1개(작은 한 줄) · 같은 종류(앞머리가 같은 알림)는 하나로 합쳐 ×N · 새 알림이 오면 이전 것을 바로 바꿈
+// 다 보기 전에 바뀐 알림이 있으면 위쪽 🔔에 개수 → 누르면 '알림 기록'. 메뉴(☰) › 알림 기록에서도 볼 수 있음
+const TOAST_LOG_MAX = 50, TOAST_SEEN_MS = 1500; let toastLog = [], toastMissed = 0;
+function toastSig(html){ return html.replace(/<[^>]+>/g, '').replace(/[+\-−]?[\d.,]+/g, '#').trim(); }
+function toastBell(){ const b = document.getElementById('headerBellBtn'), n = document.getElementById('headerBellN'); if(!b) return; b.style.display = toastMissed>0 ? 'inline-block' : 'none'; if(n) n.textContent = toastMissed>9 ? '9+' : toastMissed; }
+function showToastLog(){
+  toastMissed = 0; toastBell(); document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const now = Date.now(), ago = t=>{ const s = Math.round((now-t)/1000); return s<60 ? s+'초 전' : s<3600 ? Math.floor(s/60)+'분 전' : Math.floor(s/3600)+'시간 전'; };
+  openInfoOverlay('🔔 알림 기록', toastLog.length ? toastLog.map(x=>'<div class="tlog-it"><small>'+ago(x.t)+'</small><div>'+x.html+(x.n>1?' <b style="color:#ffd557;">×'+x.n+'</b>':'')+'</div></div>').join('') : '<div class="sub" style="text-align:center; padding:20px 0;">이번 접속에서 받은 알림 없음</div>');
+}
 // 보상 알림은 '이름 보상 획득  <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+40' 형식(아이콘+숫자만 강조). 다른 곳의 보상 표기(<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+N <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+N 🎟️×N)와 같은 모양
 function toastReward(rw, title, ms){
   const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean);
@@ -6715,14 +6767,22 @@ function toastReward(rw, title, ms){
 function toast(msg, ms, html){
   const el = document.createElement('div');
   el.className = 'toast';
+  el.addEventListener('click', showToastLog); // (v296) 누르면 알림 기록
   if(html) el.innerHTML = msg;
   else if(String(msg).indexOf('<img class="uic"')>=0){ // (v219) 재화 아이콘(그림)이 들어간 글자 알림 — 아이콘 태그만 살리고 나머지는 글자로
     el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/ic_[a-z_]+\.webp" alt="[^"<>]*"(?: draggable="false")?>)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
   }else el.textContent = msg;
+  const content = el.innerHTML, sig = toastSig(content), dur = ms||2200;
+  const last = toastLog[0]; if(last && last.sig===sig && Date.now()-last.t < 8000){ last.n = (last.n||1)+1; last.html = content; last.t = Date.now(); } else { toastLog.unshift({ html:content, sig, t:Date.now(), n:1 }); if(toastLog.length > TOAST_LOG_MAX) toastLog.length = TOAST_LOG_MAX; }
+  const grp = sig.split(/ · | — /)[0]; // 화면에선 앞머리가 같은 알림(예: '업적 달성 · …')끼리 합침 — 기록에는 따로 남음
+  const same = [...document.querySelectorAll('.toast')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
+  if(same){ const n = (+same.dataset.n||1) + 1; same.dataset.n = n; same.innerHTML = content+'<i class="t-n">×'+n+'</i>'; clearTimeout(same._tm); same._tm = setTimeout(()=>{ same.remove(); layoutToasts(); }, Math.max(dur, 2200)); layoutToasts(); return; }
+  el.dataset.sig = grp; el.dataset.n = 1; el._t0 = Date.now();
+  document.querySelectorAll('.toast').forEach(t=>{ if(Date.now()-(t._t0||0) < TOAST_SEEN_MS){ toastMissed += (+t.dataset.n||1); } clearTimeout(t._tm); t.remove(); }); // 이전 알림은 바로 바꿈 — 잠깐만 보인 건 🔔에 셈
+  toastBell();
   document.body.appendChild(el);
-  const all = document.querySelectorAll('.toast'); if(all.length>5) all[0].remove();
   layoutToasts();
-  setTimeout(()=>{ el.remove(); layoutToasts(); }, ms||2200);
+  el._tm = setTimeout(()=>{ el.remove(); layoutToasts(); }, dur);
 }
 function weightedPick(list){
   const total = list.reduce((s,x)=>s+x.w,0);
@@ -7539,6 +7599,39 @@ function gradeFor(ratio){
 // 스테이지/보스 등급 보상은 단계별 누적-증분 방식: 처음 A로 깨면 C+B+A를 받고,
 // 나중에 S로 올리면 이미 받은 C+B+A는 빼고 S분만 추가 지급
 const STAGE_GRADE_ORDER = ['C','B','A','S'];
+// ===================== (v297) 파티 프리셋 — 진형을 이름 붙여 저장하고 어느 화면에서든 불러옴 =====================
+// 6칸(전열 0~2 · 후열 3~5)으로 저장. 레이드(4칸)는 전열 앞 2 · 후열 앞 2로 바꿔 넣음. 그 화면에서 못 쓰는 정령(속성 제한·출정 명단 밖·없는 정령)은 빈칸
+const PRESET_MAX = 5;
+let presetCtx = null; // 지금 열린 진형 화면: { get()→6칸, set(6칸), reopen(), allow(k)? , nm }
+function presetList(){ if(!Array.isArray(state.presets)) state.presets = []; while(state.presets.length < PRESET_MAX) state.presets.push(null); return state.presets; }
+function presetUse(ctx){ presetCtx = ctx; }
+function presetFit(keys){ const allow = presetCtx && presetCtx.allow; const used = {};
+  return Array.from({length:6}, (_,i)=>{ const k = keys[i]; if(!k || !SPIRITS[k] || (allow && !allow(k))) return null; used[k] = (used[k]||0) + 1; return used[k] <= ownedCount(k) ? k : null; }); }
+function showPresetModal(){
+  if(!presetCtx){ toast('진형 화면에서 사용'); return; }
+  const list = presetList(), cur = presetCtx.get();
+  const row = (p, i)=>{ const ks = p ? p.keys : [], lost = p ? ks.filter(Boolean).length - presetFit(ks).filter(Boolean).length : 0;
+    const ic = k=> k && SPIRITS[k] ? '<span class="ps-ic av r-'+SPIRITS[k].rarity+'">'+spArt(SPIRITS[k])+'</span>' : '<span class="ps-ic empty"></span>';
+    return '<div class="pr-row"><div class="pr-top"><b>'+(p ? escTxt(p.name) : '빈 프리셋 '+(i+1))+'</b>'+(p ? '<button class="pr-ed" data-pr-name="'+i+'">✏️</button>' : '')+'</div>'
+      + (p ? '<div class="pr-grid">'+[0,1,2].map(j=>ic(ks[j])).join('')+'<i></i>'+[3,4,5].map(j=>ic(ks[j])).join('')+'</div>'+(lost ? '<div class="sub" style="font-size:10px; color:#ffb0b0;">이 화면에선 '+lost+'마리 못 씀 → 빈칸</div>' : '') : '')
+      + '<div class="pr-btns">'+(p ? '<button class="btn small" data-pr-load="'+i+'">불러오기</button>' : '')+'<button class="btn secondary small" data-pr-save="'+i+'">'+(p ? '지금 진형으로 덮어쓰기' : '지금 진형 저장')+'</button>'+(p ? '<button class="btn secondary small" data-pr-del="'+i+'">삭제</button>' : '')+'</div></div>'; };
+  const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 230; o.id = 'presetBox';
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:380px;"><button class="close-x" id="prClose">x</button><h3 style="text-align:center; margin:0 0 4px;">📋 파티 프리셋</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:8px;">'+escTxt(presetCtx.nm||'진형')+' · 저장한 진형은 어느 화면에서든 불러옴</div>'+list.map(row).join('')+'</div>';
+  document.querySelectorAll('#presetBox').forEach(x=>x.remove()); document.body.appendChild(o);
+  const close = ()=>o.remove(), re = ()=>{ close(); showPresetModal(); };
+  o.querySelector('#prClose').addEventListener('click', close); o.addEventListener('click', e=>{ if(e.target===o) close(); });
+  o.querySelectorAll('[data-pr-save]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.prSave, keys = presetCtx.get();
+    if(!keys.some(Boolean)){ toast('진형이 비어 있음'); return; }
+    const doSave = ()=>{ const L = presetList(); L[i] = { name: (L[i] && L[i].name) || '프리셋 '+(i+1), keys: keys.slice(0,6) }; save(); toast('📋 '+L[i].name+' 저장'); re(); };
+    if(presetList()[i]) confirmBox('덮어쓸까?', escTxt(presetList()[i].name)+'을(를) 지금 진형으로 바꿈', '덮어쓰기', doSave); else doSave(); }));
+  o.querySelectorAll('[data-pr-load]').forEach(b=>b.addEventListener('click', ()=>{ const p = presetList()[+b.dataset.prLoad]; if(!p) return; const keys = presetFit(p.keys);
+    if(!keys.some(Boolean)){ toast('이 화면에서 쓸 수 있는 정령 없음'); return; }
+    const ctx = presetCtx; close(); ctx.set(keys); save(); toast('📋 '+p.name+' 불러옴'); ctx.reopen(); }));
+  o.querySelectorAll('[data-pr-del]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.prDel; confirmBox('프리셋 삭제?', escTxt(presetList()[i].name), '삭제', ()=>{ presetList()[i] = null; save(); re(); }, {danger:true}); }));
+  o.querySelectorAll('[data-pr-name]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.prName, p = presetList()[i]; const nm = prompt('프리셋 이름', p.name); if(nm===null) return; const v = nm.trim().slice(0,12); if(!v) return; p.name = v; save(); re(); }));
+}
+document.addEventListener('click', e=>{ const b = e.target && e.target.closest && e.target.closest('[data-preset-open]'); if(b){ e.preventDefault(); showPresetModal(); } });
+const formCtx = (nm, reopen, allow, onSet)=>({ nm, get:()=> Array.from({length:6}, (_,i)=> state.formation[i] || null), set:keys=>{ state.formation = keys.slice(0, GRID_SLOTS); cleanupFormation(); if(onSet) onSet(); }, reopen, allow });
 // ===================== 일일 의뢰 =====================
 const QUESTS = [
   {id:'q1', name:'정령 소환 1회 하기', reward:30, check:()=> state.dailyStats.summons>=1},
@@ -7908,16 +8001,34 @@ function renderEquipSummonPage(){
   h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
   return h;
 }
-function equipInventoryHtml(){
-  let h = '';
-  const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0).sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
-  const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
-  h += '<div class="card">'
-    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
-    + '<div style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> '+equipSeenCount()+'/'+allEquipKeys().length+'</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn">🔧 추천 장착</button>' : '')+'</div></div>'
-    + (fusible ? '<div class="sub" style="margin-top:4px; color:#5cd65c;">▲ 합성 가능 '+fusible+'종</div>' : '')
-    + (owned.length ? '<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:8px;">'+owned.map(equipTileHtml).join('')+'</div>' : '<div class="sub" style="text-align:center; padding:14px 0;">보유 장비 없음</div>')
+// (v296) 장비 화면을 정령 화면과 같은 모양으로 — 머리 카드(제목·도감·추천 장착) · 합성하러 가기 · 정렬 칩(등급·속성·부위) · 5칸 타일(개수·등급 띠·강화)
+function equipSpeciesTile(k){
+  const i = equipInfo(k), info = RARITY_INFO[i.rarity], n = equipOwnedCount(k), used = equipUsedCount(k);
+  return '<div class="species-tile" data-equip-key="'+k+'">'
+    + '<div class="count">x'+n+'</div>'
+    + (canEquipFuse(k) ? '<div class="passive-badge" style="color:#5cd65c; font-weight:900;" title="합성 가능">▲</div>' : '')
+    + '<div class="icon av r-'+i.rarity+'">'+i.img+'</div>'
+    + '<div class="name">'+(isEqLocked(k)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+i.name+'</div>'
+    + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
+    + ((equipEnhLevel(k) || used) ? '<div class="sub" style="margin-top:2px;">'+(equipEnhLevel(k)?'+'+equipEnhLevel(k)+' ':'')+(used?'장착 '+used:'')+'</div>' : '')
     + '</div>';
+}
+function equipInventoryHtml(){
+  const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0);
+  const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
+  let h = '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
+    + '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn" style="width:auto;">🔧 추천 장착</button>' : '')+'</span></div>';
+  h += '<button class="btn secondary" id="goEqFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기'+(fusible?' <span style="color:#5cd65c;">▲ '+fusible+'종</span>':'')+'</button>';
+  h += '<h2>보유 장비</h2>';
+  const sb = state.equipSort || 'rarity';
+  h += '<div class="pk-sort">'+[['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['slot','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 부위']].map(([k,t])=>'<button data-eq-sort="'+k+'" class="'+(sb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  const byR = (a,b)=> RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity) || ELEMENTS.indexOf(equipInfo(a).element)-ELEMENTS.indexOf(equipInfo(b).element) || EQUIP_SLOTS.indexOf(equipInfo(a).slot)-EQUIP_SLOTS.indexOf(equipInfo(b).slot);
+  if(!owned.length) return h + '<div class="card sub">보유 장비 없음 — 소환 탭의 장비 소환에서 소환</div>';
+  if(sb==='element' || sb==='slot'){
+    const groups = sb==='element' ? ELEMENTS.map(el=>({t:ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name, ks:owned.filter(k=>equipInfo(k).element===el)}))
+      : EQUIP_SLOTS.map(sl=>({t:EQUIP_SLOT_INFO[sl].icon+' '+EQUIP_SLOT_INFO[sl].name, ks:owned.filter(k=>equipInfo(k).slot===sl)}));
+    groups.filter(g=>g.ks.length).forEach(g=>{ h += '<div class="sub" style="font-weight:800; margin:10px 0 6px;">'+g.t+'</div><div class="grid5">'+g.ks.sort(byR).map(equipSpeciesTile).join('')+'</div>'; });
+  }else h += '<div class="grid5">'+owned.sort(byR).map(equipSpeciesTile).join('')+'</div>';
   return h;
 }
 function showEquipDetailModal(key){
@@ -7969,7 +8080,7 @@ function showEquipEnhanceModal(key, fxLabel){
   document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
   const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ const c = equipEnhCost(key);
     spendAsk(equipInfo(key).name+' 강화', c, ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } }, equipEnhLevel(key)<equipEnhMax(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'enh'); }
 }
 function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
@@ -8024,7 +8135,7 @@ function renderSpiritsTab(){
   let html = '<div class="seg">'+[['spirits','📦 정령'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
     if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
-    return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
+    return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon" style="margin-top:12px;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
   }
   if(spiritsSub==='runes') return html + '<div class="card">'+runeHubHtml()+'</div>';
   if(spiritsSub==='fuse') return html + renderFuseTab();
@@ -8459,13 +8570,13 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:298, v:'3.0.0', date:'2026-10-01', secs:[
+  { build:299, v:'3.0.0', date:'2026-10-01', secs:[
     { t:'새 성장 — 각인', items:[ '정령마다 무작위 부가 능력 3줄 — 공격력 · 체력 · 속도 · 치명타 확률 · 흡혈 · 받는 피해 감소, 품질 일반 55% · 희귀 30% · 영웅 12% · 전설 3%', '수치(일반/희귀/영웅/전설): 공격력 +2/4/6/9% · 체력 +3/5/8/12% · 속도 +1/2/3/5 · 치명타 +2/4/6/9% · 흡혈 2/3/5/8% · 받는 피해 −2/3/5/7%', '첫 각인은 무료 · 다시 굴리기는 각인석 1개, 잠근 줄마다 +2 (최대 2줄 잠금)', '능력마다 합계 상한 — 공격력 30% · 체력 40% · 속도 12 · 치명타 30% · 흡혈 20% · 받는 피해 감소 20%' ]},
     { t:'새 성장 — 장비 부가 능력', items:[ '장비마다 부가 능력 — 레어·에픽 1줄 · 레전더리 2줄 · 신화 3줄 (첫 감정 무료, 각인과 같은 방식)', '속성과 상관없이 끼운 정령 누구에게나 붙음 — 속성 보너스 대신 부가 능력을 보고 끼우는 선택' ]},
     { t:'새 성장 — 초월', items:[ '각성 5단계 뒤의 성장 — 각성은 확정으로 스킬을 여는 단계, 초월은 확률로 능력치를 올리는 단계', '단계마다 공격·체력 +5% (최대 10단계 +50%) · 5단계 속도 +3', '10단계 특전은 종마다 다름 — 화염 A 첫 행동 피해 +40% · 화염 B 맞히면 화상 · 물결 A 라운드마다 약한 아군 5% 회복 · 물결 B 맞히면 15% 빙결 · 숲결 A 전투 시작 보호막 15% · 숲결 B 맞히면 독 · 빛 A 받는 피해 −12% · 빛 B 속도 +8 · 그림자 A 흡혈 +12% · 그림자 B 맞히면 25% 저주', '재료: 같은 정령 1마리 + 정수 · 성공 확률 100 · 90 · 80 · 70 · 60 · 50 · 40 · 35 · 30 · 25% · 실패하면 재료가 사라지고 다음 확률 +10%p(성공하면 초기화)' ]},
     { t:'각인석', items:[ '시작 선물 5개 · 정령 분해(에픽 1 · 레전더리 2 · 신화 4) · 요일 던전 단계마다 1(5단계마다 3) · 시련 2~8 · 챕터 보스 첫 격파 노말 2 · 하드 4 · 레이드 주간 첫 승리 1~5', '레이드 상점 각인석 4 (주 10개) · 월드 보스 상점 각인석 3 (주 6개)' ]}
   ]},
-  { build:297, v:'2.11.0', date:'2026-10-01', secs:[
+  { build:298, v:'2.11.0', date:'2026-10-01', secs:[
     { t:'각성 비용·합성 표시', items:[ '각성 정수 비용 — 80 × 등급 배율(일반 2 · 레어 5 · 에픽 10 · 레전더리 18 · 신화 30) × 단계 · ★5까지 일반 2,400 · 레어 6,000 · 에픽 12,000 · 레전더리 21,600 · 신화 36,000 (예전 1,200 ~ 8,400)', '합성 칸과 재료 목록에 강화 +N 표시' ]},
     { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
     { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
@@ -8473,9 +8584,19 @@ const PATCH_NOTES = [
     { t:'새 아이템', items:[ '신화 정령 확정권 — 신화 정령 중 무작위 1마리', '장비 확정권 (레어·에픽·레전더리·신화) — 그 등급 장비 1개, 부위·속성 무작위', '장비 선택권 (레어·에픽·레전더리·신화) — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 원하는 1개', '장비 확정권·선택권은 장비 소환 화면에서 사용 (가지고 있을 때만 보임)' ]},
     { t:'보상 추가', items:[ '챕터 보스 첫 격파 — 노말: 1 레어 장비 확정권 · 2 레어 장비 선택권 · 3 에픽 장비 확정권 · 4 에픽 장비 선택권 · 5 레전더리 장비 확정권 / 하드: 1 에픽 장비 확정권 · 2 에픽 장비 선택권 · 3 레전더리 장비 확정권 · 4 레전더리 장비 선택권 · 5 신화 정령 확정권 + 신화 장비 확정권', '무한의 탑 — 40층마다 레어 장비 확정권 · 70층마다 에픽 장비 확정권 (그 층의 레어 확정권 대신) · 100층마다 레전더리 장비 확정권 추가', '요일 던전 — 7단계 레어 장비 확정권 · 12단계 에픽 장비 선택권 · 15단계 레전더리 장비 확정권', '시련의 전당 — ★4 에픽 장비 확정권 · ★5 레전더리 장비 확정권 · 최후의 시련 레전더리 장비 선택권', '계정 레벨 — 5 레어 장비 확정권 · 10 레어 장비 선택권 · 15 에픽 장비 확정권 · 20 에픽 장비 선택권 · 25 레전더리 장비 확정권 · 30 레전더리 장비 선택권', '레이드 주간 첫 승리 — 노말 레어 장비 확정권 · 하드 에픽 장비 확정권 · 익스트림 에픽 장비 선택권', '월드 보스 — 75% 달성 에픽 장비 확정권 · 100% 달성 레전더리 장비 확정권 · 처치자 에픽 장비 선택권', '레이드 상점 — 에픽 장비 확정권(40, 주 1) · 에픽 장비 선택권(70, 주 1) · 레전더리 장비 확정권(140, 주 1)', '월드 보스 상점 — 레전더리 장비 선택권(60, 주 1)' ]}
   ]},
+  { build:297, v:'2.10.6', date:'2026-10-01', secs:[
+    { t:'시련의 전당', items:[ '힌트 문구 다듬기 — 시련마다 이기는 수순의 핵심만 짧게' ]},
+    { t:'화면', items:[ '강화·각성 창을 열 때 정령 그림이 커졌다 줄어들고 테두리가 늦게 보이던 문제 수정 — 실제로 올렸을 때만 연출' ]},
+    { t:'파티 프리셋', items:[ '진형을 이름 붙여 5개까지 저장 — 스테이지·보스·탑·요일 던전·월드 보스·출정·결투·레이드 진형 화면의 📋 프리셋에서 저장·불러오기', '그 화면에서 못 쓰는 정령(던전 속성·출정 명단 밖·없는 정령)은 빈칸으로 · 레이드는 전열 2 · 후열 2로 맞춰 넣음' ]}
+  ]},
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
-    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성)', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
-    { t:'결투', items:[ '결투 신청을 받은 사람도 대기실에서 결투 덱을 고치고 준비를 누름 — 방장은 상대가 준비해야 시작 · 상대 덱은 안 보임' ]},
+    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성)', '장비 화면을 정령 화면과 같은 모양으로 — 도감·추천 장착 머리 카드 · 합성하러 가기 · 정렬(등급·속성·부위) · 같은 칸 모양', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
+    { t:'알림', items:[ '위쪽 알림을 작은 한 줄로 · 한 번에 1개만 — 새 알림이 오면 바로 바뀌고, 같은 종류는 하나로 합쳐 ×N', '잠깐만 보이고 지나간 알림이 있으면 위쪽에 🔔 개수 → 누르면 알림 기록 (메뉴 ☰ › 알림 기록에서도)' ]},
+    { t:'우편', items:[ '받은 우편 삭제 — 우편 창에서 한 통씩, 또는 받은 우편 모두 삭제 (받지 않은 우편은 지울 수 없음)' ]},
+    { t:'시련의 전당', items:[ '힌트를 정령 이름 없이 핵심만 짚는 문장으로 — 무엇을 해야 할지 추측하는 재미' ]},
+    { t:'결투', items:[ '결투 신청을 받은 사람도 대기실에서 결투 덱을 고치고 준비를 누름 — 방장은 상대가 준비해야 시작 · 상대 덱은 안 보임', '결투 덱 칸을 고를 때 전열형·후열형으로 나눠 보이고 역할·ⓘ 스킬 보기', '신청 받은 쪽 화면의 전투 기록이 상대 기준("적"이 반대)으로 나오던 문제' ]},
+    { t:'전투', items:[ '자신에게만 쓰는 스킬을 고른 채로 다른 아군을 누르면 그 아군에게 쓰는 지원 스킬로 바뀜 — 예전엔 누른 게 무시돼 다음 지원 스킬이 자신에게 써졌음', '쓰러뜨리지만 바로 되살아나는 대상도 버튼에 "처치 · 부활함" 표시', '출정 전투 칸과 출정 준비창의 상대를 전열·후열로 나눠 표시' ]},
+    { t:'화면', items:[ '지도에서 특수 규칙 달성 표시를 체크 대신 금빛 문양으로', '정령 관리 창에 특성(예: 최대 강화 +5) 표시 · 제목 없는 창의 X가 안쪽 칸과 겹치던 것' ]},
     { t:'레이드 상점', items:[ '고대 룬(룬 뽑기 3%·고대 룬 교환)이 레이드 화면에서 고른 보스 대신 보스 5종 중 무작위' ]},
     { t:'고친 것', items:[ '레전더리 확정권을 써도 다른 화면에 다녀오기 전까지 보유 수가 그대로 보이던 문제' ]}
   ]},
@@ -9463,10 +9584,11 @@ function showExpeditionSquadPicker(){
     return h; };
   const erow = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(expSlot).join('')+'</div></div>';
   html += erow('전열',[0,1,2]) + erow('후열',[3,4,5]); // (v173) 두 줄 + 전열/후열 표시
-  html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
+  html += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="expClearBtn" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="expRecBtn" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
   let expPv = null;
   if(node){ const pv = buildExpeditionFight(run, node, isBoss); expPv = pv; html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스':'<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '상대 '+fmtCP(teamCP(pv.enemyUnits))+' · 현재 체력·피로 반영', recCP(teamCP(pv.enemyUnits)*(isBoss ? REC_CP_MULT.boss : REC_CP_MULT.expedition)));
-    html += '<div class="pq-enemy"><span class="pq-lbl">상대</span><span class="pq-icons">'+pv.enemyUnits.map(u=>'<button class="pq-e pq-eb" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(SPIRITS[u.key])+elIc(u.element,'pq-el')))+'</button>').join('')+'</span></div>'; }
+    { const ic = u=>'<button class="pq-e pq-eb" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(SPIRITS[u.key])+elIc(u.element,'pq-el')))+'</button>';
+      html += '<div class="pq-enemy"><span class="pq-lbl">상대</span><span class="pq-grp"><span class="pq-cap">전열</span><span class="pq-icons">'+pv.enemyUnits.filter(u=>isFrontRow(u.idx,3)).map(ic).join('')+'</span></span><span class="pq-bar"></span><span class="pq-grp"><span class="pq-cap">후열</span><span class="pq-icons">'+pv.enemyUnits.filter(u=>!isFrontRow(u.idx,3)).map(ic).join('')+'</span></span></div>'; } } // (v296) 출정 준비창도 전열·후열로
   html += '<div class="sub" style="text-align:center; margin:8px 0 4px;">대기 중 · 누르면 출전 칸과 교체</div>';
   // (v268) 대기는 2~3마리뿐인데 목록용 큰 스크롤 상자(창 높이만큼 늘어남)에 넣어서 왼쪽 위에 몰려 보였음 → 가운데 한 줄
   html += '<div class="exp-reserve">'+(reserve.length?reserve.map(tile).join(''):'<div class="sub">없음</div>')+'</div>';
@@ -9478,6 +9600,7 @@ function showExpeditionSquadPicker(){
   });
   document.querySelectorAll('[data-exp-res]').forEach(el=>el.addEventListener('click', ()=>{ const i = state.formation.findIndex(k=>!k); showSlotPicker(i>=0 ? i : 0, showExpeditionSquadPicker, null, run.roster); }));
   document.getElementById('expClearBtn').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showExpeditionSquadPicker(); });
+  presetUse(formCtx('출정 진형', ()=>showExpeditionSquadPicker(), k=>run.roster.includes(k) && !(run.unitHp[k] && run.unitHp[k].hp<=0))); // (v297) 출정 명단 안에서만
   document.getElementById('expRecBtn').addEventListener('click', ()=>{ const alive = run.roster.filter(k=>!run.unitHp[k] || run.unitHp[k].hp>0); state.formation = recommendFormation(node ? node.enemyComp : [], alive); save(); showExpeditionSquadPicker(); });
   document.getElementById('startExpBattleBtn').addEventListener('click', ()=>{
     const active = state.formation.slice(0, GRID_SLOTS);
@@ -9882,7 +10005,7 @@ function showDungeonPrep(el, n, keep){
   h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적은 전부 '+elIc(fe)+' '+ELEMENT_INFO[fe].name+(dungeonNoAdv(el) ? '' : ' (상성 유리)')+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
   h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[fe+'_'+c.rarity+'_'+c.variant])+elIc(fe,'av-el')+'</span>' : '').join('')+'</div>';
   h += formationRowsHtml();
-  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
+  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', pool.length ? '상대 '+fmtCP(teamCP(pv.enemyUnits)) : info.name+' 정령 없음 — 소환·합성으로 모으기', dungeonRecCP(el, n));
   h += '<div class="dg-rw">'+(first ? '🎉 첫 돌파 보상 '+rewardPillsHtml(rw) : '이미 돌파한 단계 · 보상 없음 (연습)')+'</div>';
   h += '<button class="btn sticky-ok" id="dgStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>';
@@ -9891,6 +10014,7 @@ function showDungeonPrep(el, n, keep){
   bindPrepUnitInfo(pv);
   document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.dungeonForms[el] = state.formation.slice(); save(); showDungeonPrep(el, n, true); }, null, pool.concat(dispatchAwayKeys().filter(k=>SPIRITS[k].element===el))))); // (v267) 파견 중인 같은 속성 정령도 표시
   document.getElementById('dgClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; showDungeonPrep(el, n, true); });
+  presetUse(formCtx(ELEMENT_INFO[el].name+' 던전 진형', ()=>showDungeonPrep(el, n, true), k=>SPIRITS[k].element===el, ()=>{ state.dungeonForms[el] = state.formation.slice(); })); // (v297) 그 속성만
   document.getElementById('dgRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], pool); showDungeonPrep(el, n, true); });
   document.getElementById('dgStart').addEventListener('click', ()=>{
     if(!state.formation.some(Boolean)){ toast(info.name+' 정령을 1마리 이상 배치'); return; }
@@ -10082,52 +10206,52 @@ setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='dispatch' &&
 const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로 눌렀을 때 성공률(괄호) · 자동 전투로는 실패 · 해법이 항상 같은 결과로 재현됨을 확인
   { id:'t2', nm:'처형의 사슬', diff:3, maxRounds:2, reward:{essence:1500, stone:60, items:{engr:2}}, // (2.5%)
     intro:'처형으로 적을 쓰러뜨리면 곧바로 한 번 더 행동. 처형을 사슬처럼 이어야 2라운드 안에 끝남.',
-    hint:'여러 적의 체력을 먼저 30% 밑으로 깎아 두고, 처형을 연달아 이어 가기',
+    hint:'첫 라운드에 셋을 정리해야 시간이 남음. 되살아나는 적은 마지막에 둘이 함께',
     allies:[{key:'dark_mythic_a', idx:1},{key:'wood_legendary_b', idx:4}],
     enemies:[{key:'water_epic_a', idx:0, atk:650, hp:1.535},{key:'fire_epic_b', idx:1, atk:650, hp:1.535},{key:'water_rare_b', idx:2, atk:650, hp:1.535},{key:'fire_legendary_a', idx:4, atk:650, hp:1.535}] },
   { id:'t4', nm:'두 번 쓰러지는 적', diff:3, maxRounds:4, noDeath:true, reward:{essence:1500, stone:60, items:{engr:2}}, // (1.05%)
     intro:'빛 정령은 쓰러진 동료를 한 번 되살리고, 화염 정령은 스스로 되살아나며 주변을 폭발시킴.',
-    hint:'쓰러뜨리는 순서가 핵심. 부활은 헛되이 쓰게 만들고, 폭발은 버틸 수 있을 때 받기',
+    hint:'부활 폭발은 체력이 넉넉한 첫 라운드에 받아 내기. 적의 부활은 약한 적에게 헛되이 쓰이게',
     allies:[{key:'water_mythic_b', idx:1},{key:'dark_legendary_a', idx:0},{key:'light_epic_a', idx:4}],
     enemies:[{key:'fire_mythic_a', idx:1, atk:780, hp:2.16},{key:'light_mythic_a', idx:4, atk:720, hp:2.16},{key:'wood_epic_b', idx:0, atk:720, hp:2.16}] },
   { id:'t3', nm:'가시 너머', diff:4, maxRounds:4, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1, engr:3}}, // (0.41%)
     intro:'숲 정령이 가시 갑옷으로 받은 피해를 되돌려 주고, 도발로 공격을 끌어당김.',
-    hint:'가시 갑옷이 걸린 동안엔 강한 공격을 아끼기. 도발이 풀리면 뒤쪽 적부터. 펜리르는 한 번 쓰러져도 되살아나니 그 목숨도 계산에 넣기',
+    hint:'반사 갑옷을 피하지 말고 정면으로. 반사로 한 번 쓰러져도 다시 일어남',
     allies:[{key:'fire_legendary_a', idx:1},{key:'water_epic_a', idx:4}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:6.328},{key:'light_epic_b', idx:4, atk:700, hp:6.328},{key:'dark_rare_a', idx:3, atk:700, hp:6.328}] },
   { id:'t5', nm:'얼어붙은 시간', diff:4, maxRounds:3, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1, engr:3}}, // (0.18%)
     intro:'강한 어둠 신화가 둘. 한 번이라도 마음대로 움직이게 두면 버티기 어려움.',
-    hint:'신화 빙결은 대상 양옆까지 얼림. 가장 위험한 적의 차례를 얼려서 빼앗기. 스콜은 쓰러지면 되살아나며 적 전체에 폭발 — 한 번 쓰러지는 것도 작전',
+    hint:'첫 라운드에 우리 편 하나가 쓰러지며 터져야 함. 공격은 한 적에게 모으기',
     allies:[{key:'water_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_epic_a', idx:0}],
     enemies:[{key:'dark_mythic_a', idx:0, atk:750, hp:6.578},{key:'dark_mythic_a', idx:2, atk:750, hp:6.578},{key:'water_legendary_a', idx:4, atk:600, hp:6.578}] },
   { id:'t6', nm:'독의 정원', diff:4, maxRounds:3, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1, engr:3}}, // (0.15%)
     intro:'적이 다섯. 한 명씩 때려서는 3라운드 안에 다 쓰러뜨릴 수 없음.',
-    hint:'독에 걸린 적이 쓰러지면 옆 칸으로 독이 번짐. 가속으로 내 차례를 앞당겨 연쇄를 빠르게',
+    hint:'독은 한가운데 적에게 한 번만. 나머지는 그 옆자리부터 쓰러뜨리기',
     allies:[{key:'wood_mythic_b', idx:1},{key:'light_mythic_b', idx:4}],
     enemies:[{key:'water_epic_a', idx:0, atk:600, hp:0.993},{key:'water_rare_b', idx:1, atk:600, hp:0.993},{key:'water_epic_b', idx:2, atk:600, hp:0.993},{key:'light_rare_a', idx:3, atk:600, hp:0.993},{key:'water_legendary_b', idx:4, atk:600, hp:0.993}] },
   { id:'t1', nm:'불씨 폭발', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, // (0.11%)
     intro:'체력이 두꺼운 숲 정령이 셋. 평범하게 때려서는 3라운드가 모자람.',
-    hint:'화상을 충분히 쌓은 뒤 한 번에 터뜨리기. 여명의 호령을 받은 정령은 곧바로 한 번 더 행동',
+    hint:'첫 차례부터 호령은 화염 정령에게. 화상은 여러 적에게 넓게 깔고 시작',
     allies:[{key:'fire_mythic_b', idx:1},{key:'light_legendary_b', idx:4}],
     enemies:[{key:'wood_epic_a', idx:0, atk:700, hp:3.963},{key:'wood_legendary_b', idx:1, atk:700, hp:3.963},{key:'wood_epic_b', idx:2, atk:700, hp:3.963}] },
   { id:'t8', nm:'빛의 장벽', diff:5, maxRounds:4, noDeath:true, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, // (0.15%)
     intro:'적 화염 신화는 쓰러지면 되살아나며 우리 편 전체를 폭발로 공격.',
-    hint:'되살아나는 순간에 맞춰 우리 편 전체에 보호막을 미리 씌워 두기. 광명은 먼저 쓰러진 우리 편 하나를 되살림 — 한 번은 쓰러져도 됨',
+    hint:'되살아나며 터지는 적은 첫 라운드에 바로 쓰러뜨리기. 우리 편 하나는 쓰러져도 다시 일어남',
     allies:[{key:'light_mythic_a', idx:4},{key:'fire_legendary_b', idx:1},{key:'dark_epic_b', idx:0}],
     enemies:[{key:'fire_mythic_a', idx:1, atk:700, hp:2.82},{key:'fire_mythic_b', idx:4, atk:700, hp:2.82},{key:'wood_rare_a', idx:0, atk:650, hp:2.82}] },
   { id:'t9', nm:'저주받은 성채', diff:5, maxRounds:4, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, // (0.15%)
     intro:'뒤에서는 치유하고 되살리고, 앞에서는 도발과 반사로 막는 성채.',
-    hint:'도발·반사 같은 이로운 효과는 악몽 포식으로 벗길 수 있음. 뒤쪽 치유·부활 담당부터',
+    hint:'앞을 막는 적의 이로운 효과부터 벗기기. 한 번 되살아나는 것까지 계산에 넣기',
     allies:[{key:'dark_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_legendary_b', idx:0}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:8.313},{key:'water_mythic_a', idx:4, atk:600, hp:8.313},{key:'light_mythic_a', idx:3, atk:600, hp:8.313}] },
   { id:'t7', nm:'처형자의 춤', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, // (0.12%)
     intro:'되살리는 적과 치유하는 적이 서로를 지켜 줌.',
-    hint:'무엇을 먼저 없앨지 정하기. 호령으로 처형 기회를 계속 이어 가기',
+    hint:'쓰러뜨리는 순서가 전부. 앞줄 둘부터, 치유하는 적은 맨 마지막',
     allies:[{key:'dark_mythic_a', idx:1},{key:'light_mythic_b', idx:4}],
     enemies:[{key:'water_legendary_a', idx:4, atk:720, hp:2.165},{key:'light_epic_a', idx:3, atk:720, hp:2.165},{key:'fire_epic_b', idx:0, atk:780, hp:2.165},{key:'wood_legendary_a', idx:1, atk:780, hp:2.165}] },
   { id:'t10', nm:'최후의 시련', diff:5, maxRounds:4, noDeath:true, reward:{essence:6000, stone:200, items:{pick_mythic:1, eqpick_legendary:1, engr:8}}, // (0.21%)
     intro:'탱커·치유·부활·폭발이 모두 모인 마지막 시련.',
-    hint:'지금까지 쓴 요령을 모두 순서대로. 한 명도 잃지 말 것',
+    hint:'첫 라운드에 부활 폭발부터 받아 내기. 나머지는 지금까지의 요령 그대로',
     allies:[{key:'water_mythic_a', idx:4},{key:'light_mythic_b', idx:3},{key:'dark_mythic_a', idx:1},{key:'fire_mythic_b', idx:0}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:650, hp:1.422},{key:'water_mythic_a', idx:4, atk:650, hp:1.422},{key:'light_mythic_a', idx:3, atk:650, hp:1.422},{key:'fire_mythic_a', idx:0, atk:700, hp:1.422},{key:'dark_legendary_b', idx:5, atk:650, hp:1.422},{key:'fire_epic_b', idx:2, atk:650, hp:1.422}] }
 ];
@@ -10461,13 +10585,14 @@ function showWorldBossPrep(){
   const weak = wbWeakEl(), pv = buildWorldBossFight();
   let h = '<h3 style="text-align:center; margin:0;">🌍 '+wbPhase().nm+'</h3><div class="dg-rule">오늘 약점 '+elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · '+WB_ROUNDS+'라운드 동안 최대한 피해</div>';
   h += formationRowsHtml();
-  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="wbClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="wbRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
+  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="wbClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="wbRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
   h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">내 전투력 '+fmtCP(teamCP(pv.myUnits))+' · 도전하면 1회 사용</div>';
   h += '<button class="btn sticky-ok" id="wbStart" style="margin-top:10px;">⚔️ 도전</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(); bindPrepUnitInfo(pv);
   document.querySelectorAll('[data-slot]').forEach(el=>el.addEventListener('click', ()=>showSlotPicker(parseInt(el.dataset.slot), showWorldBossPrep, null, null)));
   document.getElementById('wbClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; save(); showWorldBossPrep(); });
+  presetUse(formCtx('월드 보스 진형', ()=>showWorldBossPrep())); // (v297)
   document.getElementById('wbRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,b)=> (SPIRITS[b].element===weak) - (SPIRITS[a].element===weak) || unitAtk(b)-unitAtk(a))); save(); showWorldBossPrep(); });
   document.getElementById('wbStart').addEventListener('click', ()=>{
     if(!state.formation.some(Boolean)){ toast('최소 1마리 배치'); return; }
@@ -10841,7 +10966,10 @@ function renderExpeditionTab(){
     const isBoss = node.type==='boss';
     // (v268) 속성 동그라미 대신 실제 적 — 누르면 능력치·스킬
     const pv = buildExpeditionFight(run, node, isBoss); xpPreviewPv = pv;
-    const enemyPreviewHtml = '<div class="xp-foes">'+pv.enemyUnits.filter(u=>!u.hidden && !(u.isAdd && !u.alive)).map(u=>'<button class="xp-foe'+(u.isBoss?' boss':'')+'" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : (u.isWard ? wardArt(u.element) : '<span class="av r-'+SPIRITS[u.key].rarity+'">'+spArt(SPIRITS[u.key])+elIc(u.element,'av-el')+'</span>'))+'<small>'+(u.dispName || (u.isBoss ? '보스' : SPIRITS[u.key] ? SPIRITS[u.key].name : ''))+'</small></button>').join('')+'</div>'
+    // (v296) 전열 3 · 후열 3 두 줄로 — 어느 쪽에 서 있는지 보이게
+    const xpFoe = u=>'<button class="xp-foe'+(u.isBoss?' boss':'')+'" data-unit-info="enemy:'+u.idx+'">'+(u.isBoss ? bossImg(unitBossId(u),'pq-bimg',u.bossIcon) : (u.isWard ? wardArt(u.element) : '<span class="av r-'+SPIRITS[u.key].rarity+'">'+spArt(SPIRITS[u.key])+elIc(u.element,'av-el')+'</span>'))+'<small>'+(u.dispName || (u.isBoss ? '보스' : SPIRITS[u.key] ? SPIRITS[u.key].name : ''))+'</small></button>';
+    const xpVis = pv.enemyUnits.filter(u=>!u.hidden && !(u.isAdd && !u.alive)), xpRow = (lbl, list)=> list.length ? '<div class="xp-frow"><span class="xp-flbl">'+lbl+'</span><div class="xp-fcells">'+list.map(xpFoe).join('')+'</div></div>' : '';
+    const enemyPreviewHtml = '<div class="xp-foes rows">'+xpRow('전열', xpVis.filter(u=>isFrontRow(u.idx, 3)))+xpRow('후열', xpVis.filter(u=>!isFrontRow(u.idx, 3)))+'</div>'
       + '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">그림을 누르면 능력치·스킬 확인</div>';
     html += '<div class="card" style="margin-top:10px;">';
     if(isBoss && node.gimmick && BOSS_GIMMICK_INFO[node.gimmick]){ const gi = BOSS_GIMMICK_INFO[node.gimmick]; html += '<div class="card xp-boss" style="margin-top:10px;">'+bossImg(node.gimmick, 'xp-bossimg', gi.icon)+'<div><b>'+gi.name+'</b><small>'+((run.cycle||1)>=3?'🔥 하드 기믹 · ':'')+'챕터 보스 기믹 그대로</small></div><button class="bs-info" id="xpBossInfo">ⓘ</button></div>'; }
@@ -10891,7 +11019,7 @@ function showTowerPrepModal(){
   if(special) enemyPower *= specialAggregateMultForEnemy(special, enemyComp, slots);
   html += '</div>';
   html += '<div class="sub" style="margin-top:6px; text-align:center;">🟢유리 🟡보통 🔴불리</div>';
-  html += '<div style="display:flex; align-items:center; justify-content:center; gap:10px; margin:8px 0 4px;"><div class="sub" style="font-weight:700;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 내 진형</div><button id="clearFormationBtn" class="btn secondary small" style="width:auto; padding:3px 10px; font-size:12px;">🧹 비우기</button></div>';
+  html += '<div style="display:flex; align-items:center; justify-content:center; gap:10px; margin:8px 0 4px;"><div class="sub" style="font-weight:700;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 내 진형</div><button id="clearFormationBtn" class="btn secondary small" style="width:auto; padding:3px 10px; font-size:12px;">🧹 비우기</button><button class="btn secondary small" data-preset-open="1" style="width:auto; padding:3px 10px; font-size:12px;">📋 프리셋</button></div>';
   html += '<div class="formation-wrap" style="margin-top:2px;">';
   let slotsHtml = '';
   const myMarks = special ? specialSlotMarks(special, state.formation.map(k=>k?SPIRITS[k].element:null), slots, true) : [];
@@ -10936,6 +11064,7 @@ function showTowerPrepModal(){
     });
   });
   const clrT = document.getElementById('clearFormationBtn');
+  presetUse(formCtx('탑 진형', ()=>showTowerPrepModal())); // (v297)
   if(clrT) clrT.addEventListener('click', ()=>{ state.formation = state.formation.map(()=>null); save(); showTowerPrepModal(); });
   document.getElementById('startTowerBtn').addEventListener('click', ()=>{ challengeTower(floor); });
 }
@@ -11581,6 +11710,7 @@ function showManageModal(key){
   html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+awakenStars(key)+'</h3>';
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
+  { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
   if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)-1)+'%</div>';
   { const kit = LINE_KITS[sp.element+'_'+sp.variant]; // (v170) 옛 패시브 대신 실제 전투에서 쓰는 역할·스킬
@@ -11963,6 +12093,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k = el.dataset.recentEquip; if(equipOwnedCount(k)>0) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
+  document.querySelectorAll('[data-eq-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.equipSort = el.dataset.eqSort; save(); render(); }));
   const ab = document.getElementById('openAchieve'); if(ab) ab.addEventListener('click', showAchievementsModal);
   const hb = document.getElementById('collectHearthBtn'); if(hb) hb.addEventListener('click', collectHearth);
   const stb = document.getElementById('shopTicketBtn'); if(stb) stb.addEventListener('click', doShopTicket);
@@ -12042,6 +12173,7 @@ function attachHandlers(){
   });
   // (v218) 합성 탭
   { const g = document.getElementById('goFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('spirit')); }
+  { const g = document.getElementById('goEqFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('equip')); }
   document.querySelectorAll('[data-fz-mode]').forEach(b=>b.addEventListener('click', ()=>{ if(fuseMode!==b.dataset.fzMode){ fuseMode = b.dataset.fzMode; fuseSlots = [null,null,null]; render(); } }));
   document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; fuseSlots[i] = b.dataset.fzAdd; render(); }));
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; fuseSlots[i] = null; render(); }));
@@ -12120,8 +12252,9 @@ document.getElementById('headerGuideBtn').addEventListener('click', showGuideMod
 document.getElementById('headerResetBtn').addEventListener('click', showSettingsModal);
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
+    { const bb = document.getElementById('headerBellBtn'); if(bb && !bb.dataset.bound){ bb.dataset.bound = '1'; bb.addEventListener('click', showToastLog); } } // (v296) 놓친 알림
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
-    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
+    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
 // (v95) 전투 결과가 표시되면, 모달이 화면보다 길 때 결과와 확인 버튼이 보이도록 맨 아래로 스크롤
@@ -12275,7 +12408,7 @@ function sanitizeState(){
     else s.raidTickets.count = Math.max(0, Math.min(RAID_TICKET_CAP, Math.floor(s.raidTickets.count)));
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
-    { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; } s.askSeen = Number.isFinite(s.askSeen) ? s.askSeen : 0; s.inboxSeen = Number.isFinite(s.inboxSeen) ? s.inboxSeen : 0; // (v296) 문의 알림 // (v242) 받은 우편 · 관리자 해금
+    { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; const H = {}; if(s.mailHidden && typeof s.mailHidden==='object') Object.keys(s.mailHidden).forEach(k=>{ const v = s.mailHidden[k]; if(/^[au]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) H[k] = v; }); s.mailHidden = H; } s.askSeen = Number.isFinite(s.askSeen) ? s.askSeen : 0; s.inboxSeen = Number.isFinite(s.inboxSeen) ? s.inboxSeen : 0; // (v296) 문의 알림 // (v242) 받은 우편 · 관리자 해금
     { const E = {}; if(s.equipEnh && typeof s.equipEnh==='object') Object.keys(s.equipEnh).forEach(k=>{ const p = k.split('_'); const v = s.equipEnh[k]; if(p.length===3 && EQUIP_SLOTS.includes(p[0]) && ELEMENTS.includes(p[1]) && EQ_ENH_MAX[p[2]] && Number.isInteger(v) && v>0) E[k] = Math.min(v, EQ_ENH_MAX[p[2]]); }); s.equipEnh = E; } // (v241) 장비 강화
     { const F = {}; if(s.friendSent && typeof s.friendSent==='object') Object.keys(s.friendSent).slice(0,50).forEach(k=>{ const v = s.friendSent[k]; if(/^[A-Za-z0-9_-]{4,64}$/.test(k) && v && typeof v==='object') F[k] = { t: Number.isFinite(v.t) ? v.t : 0, code: typeof v.code==='string' ? v.code.slice(0,8) : '' }; }); s.friendSent = F; } // (v238) 보낸 친구 요청
     if(Array.isArray(s.duelDeck)) s.duelDeck = s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null); else s.duelDeck = null;
@@ -12398,6 +12531,7 @@ function sanitizeState(){
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
     if(s.transPity && typeof s.transPity==='object') Object.keys(s.transPity).forEach(k=>{ const v = s.transPity[k]; if(SPIRITS[k] && Number.isFinite(v) && v>0) TP[k] = Math.min(1, v); }); s.transPity = TP;
     if(s.engrGift!==true){ s.tickets.engr = (s.tickets.engr||0) + 5; s.engrGift = true; } } // 새 성장 시작 선물 각인석 5
+  s.presets = Array.isArray(s.presets) ? s.presets.slice(0,5).map(p=> (p && typeof p==='object' && Array.isArray(p.keys)) ? { name: String(p.name||'프리셋').slice(0,12), keys: p.keys.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null) } : null) : []; // (v297) 파티 프리셋
   { const d = s.dispatch; // (v266) 파견 — 모양이 이상하면 그 칸만 버림(여유 사본 규칙을 깨는 칸도)
     if(d && typeof d==='object'){ if(!Array.isArray(d.slots)) d.slots = []; if(!d.done || typeof d.done!=='object') d.done = {};
       d.slots = d.slots.filter(x=> x && typeof x==='object' && Array.isArray(x.keys) && x.keys.length && x.keys.every(k=>SPIRITS[k]) && fin(x.start) && fin(x.end) && x.rw && typeof x.rw==='object').slice(0, 5); // 최대 칸(기본 3 + 계정 레벨 2)
@@ -12428,7 +12562,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 298, APP_VERSION = '3.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 299, APP_VERSION = '3.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
