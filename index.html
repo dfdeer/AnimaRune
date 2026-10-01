@@ -947,6 +947,7 @@
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
   .sub-skip{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub); cursor:pointer;} .sub-skip input{width:16px; height:16px; accent-color:#ffd557;} /* (v305) */
+  .inst-steps{margin:12px 0 4px; padding-left:22px; line-height:1.6;} .inst-steps li{margin-bottom:6px;} .inst-ok{margin-top:14px; padding:10px; border-radius:10px; background:#3fd18a22; text-align:center; font-weight:700;} .inst-warn{margin-top:10px; padding:9px 10px; border-radius:10px; background:#ffb30018; border:1px solid #ffb30055; font-size:12px; line-height:1.55;}
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .tr-num{color:#ffd557; font-weight:900; text-shadow:0 0 6px #ffb30066;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
   .mg-trait{margin:6px auto 6px; max-width:300px; padding:6px 10px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1a; font-size:12px; line-height:1.5;} .mg-trait span{display:block; color:var(--sub); font-size:11px;}
   .xp-foes.rows{display:flex; flex-direction:column; gap:6px; align-items:stretch;} .xp-frow{display:flex; align-items:center; gap:6px;} .xp-flbl{flex-shrink:0; width:30px; font-size:11px; font-weight:800; color:#ffb0b0; text-align:center;} .xp-fcells{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; justify-items:center;} /* (v296) */
@@ -8576,12 +8577,13 @@ function showPushModal(){
   const on = !!state.settings.push, off = state.settings.pushOff || {};
   let h = '<h3>🔔 휴대폰 알림</h3>';
   const why = !pushSupported() ? '이 기기·브라우저는 알림을 못 받음' : pushIosNeedsInstall() ? '아이폰은 Safari 공유 버튼 → <b>홈 화면에 추가</b>한 앱에서만 알림을 받을 수 있음' : (typeof Notification!=='undefined' && Notification.permission==='denied') ? '알림 권한이 막혀 있음 — 기기·브라우저 설정에서 허용한 뒤 다시' : '';
-  if(why) h += '<div class="sub" style="margin:8px 0; line-height:1.5;">'+why+'</div>';
+  if(why) h += '<div class="sub" style="margin:8px 0; line-height:1.5;">'+why+'</div>'+(pushIosNeedsInstall() ? '<button class="btn secondary small" id="pushInstBtn" style="width:auto; margin:0 auto 6px; display:block;">📲 홈 화면에 추가하는 방법</button>' : '');
   h += '<button class="btn'+(on?' secondary':'')+'" id="pushToggle" style="margin-top:8px;'+(why && !on ? ' opacity:.5;" disabled' : '"')+'>'+(on ? '알림 끄기' : '알림 켜기')+'</button>';
   h += '<div style="margin-top:14px; text-align:left;'+(on?'':' opacity:.45; pointer-events:none;')+'">'+PUSH_KINDS.map(([k,nm])=>'<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sub">'+nm+'</span><input type="checkbox" data-push-kind="'+k+'" '+(off[k]?'':'checked')+'></label>').join('')+'</div>';
   h += '<div class="sub" style="font-size:11px; margin-top:10px; line-height:1.5;">이 기기에만 적용 · 화로·파견·일일 알림은 최대 10분 늦게 올 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(showSettingsModal);
+  { const ib = document.getElementById('pushInstBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showPushModal)); }
   document.getElementById('pushToggle').addEventListener('click', async e=>{
     const b = e.currentTarget; b.disabled = true; b.textContent = '…';
     try{ if(state.settings.push){ await pushUnregister(); toast('알림 끔'); } else { await pushRegister(true); toast('🔔 알림 켬'); } }
@@ -8592,6 +8594,48 @@ function showPushModal(){
     const k = c.dataset.pushKind; state.settings.pushOff = Object.assign({}, state.settings.pushOff, { [k]: !c.checked }); if(c.checked) delete state.settings.pushOff[k]; save();
     if(raidNet.fb) raidNet.fb.set(pushRef('pref/'+k), c.checked).catch(()=>{});
   }));
+}
+// ===================== (v312) 홈 화면에 추가 =====================
+// 안드로이드 크롬·PC 크롬/엣지는 버튼으로 설치 창(beforeinstallprompt) · 아이폰·카카오톡 안 브라우저 등은 버튼으로 못 띄워서 순서 안내
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', ()=>{ installEvt = null; try{ toast('📲 홈 화면에 추가됨'); }catch(_){} });
+function isStandaloneApp(){ return window.navigator.standalone===true || !!(window.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches)); }
+function installKind(){
+  const ua = navigator.userAgent || '';
+  if(/KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|everytimeApp|DaumApps/i.test(ua)) return 'inapp'; // 앱 안 브라우저 — 설치 못 함
+  if(/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1)) return 'ios';
+  if(/SamsungBrowser/.test(ua)) return 'samsung';
+  if(/Android/.test(ua)) return 'android';
+  return 'pc';
+}
+const SHARE_IC = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px;" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function installStepsHtml(kind){
+  const st = l=>'<ol class="inst-steps">'+l.map(x=>'<li>'+x+'</li>').join('')+'</ol>';
+  if(kind==='inapp') return '<div class="sub">카카오톡·네이버 같은 앱 안에서 열린 화면은 홈 화면에 추가할 수 없음</div>'+st(['오른쪽 아래(또는 위) <b>⋮</b> 또는 <b>공유</b> 누르기', '<b>다른 브라우저로 열기</b> — 아이폰은 <b>Safari</b>, 안드로이드는 <b>Chrome</b>', '열린 화면에서 다시 ☰ → 설정 → 📲 홈 화면에 추가']);
+  if(kind==='ios') return st(['<b>Safari</b>로 열기 (다른 앱 안이면 Safari로 먼저 열기)', '아래쪽(아이패드는 위쪽) <b>공유</b> '+SHARE_IC+' 누르기 — 안 보이면 주소창 옆 <b>⋯</b> → 공유', '목록을 내려 <b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>', '이제부터 홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
+  if(kind==='samsung') return st(['아래쪽 <b>≡</b> 메뉴 누르기', '<b>현재 페이지 추가</b> → <b>홈 화면</b>', '홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
+  if(kind==='android') return st(['오른쪽 위 <b>⋮</b> 누르기', '<b>홈 화면에 추가</b> 또는 <b>앱 설치</b> → <b>설치</b>', '홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
+  return st(['주소창 오른쪽의 <b>설치</b> 아이콘(모니터에 화살표) 누르기 — 없으면 <b>⋮</b> 메뉴 → <b>앱 설치</b>(크롬) 또는 <b>⋯</b> → 앱 → <b>이 사이트를 앱으로 설치</b>(엣지)', '바탕화면·시작 메뉴의 <b>아니마룬</b>으로 열기']);
+}
+function showInstallModal(back){
+  back = back || closeModal;
+  const kind = installKind();
+  let h = '<h3>📲 홈 화면에 추가</h3><div class="sub" style="line-height:1.5;">앱처럼 전체 화면으로 열리고, 휴대폰 알림도 받을 수 있음</div>';
+  if(isStandaloneApp()) h += '<div class="inst-ok">✅ 지금 홈 화면 앱으로 열려 있음</div>';
+  else{
+    if(installEvt) h += '<button class="btn" id="instGo" style="margin-top:12px;">📲 바로 설치</button><div class="sub" style="font-size:11px; margin-top:6px;">창이 안 뜨면 아래 순서대로</div>';
+    h += installStepsHtml(kind);
+    if(kind==='ios') h += '<div class="inst-warn">⚠️ 아이폰은 홈 화면 앱과 Safari의 저장 공간이 따로라서 <b>진행이 이어지지 않음</b> — 먼저 설정 → 계정에서 <b>구글 연동</b>을 해 두고, 홈 화면 앱에서 같은 구글로 로그인하기 (또는 세이브 내보내기 → 불러오기)</div>'+(acc.linked ? '<div class="sub" style="font-size:11px; margin-top:6px;">✅ 구글 연동됨 — 홈 화면 앱에서 같은 구글로 로그인하면 그대로 이어짐</div>' : '<button class="btn secondary small" id="instAcc" style="margin-top:8px;">⚙️ 설정에서 구글 연동하기</button>');
+  }
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:left;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(back);
+  { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', showSettingsModal); }
+  const g = document.getElementById('instGo'); if(g) g.addEventListener('click', async ()=>{
+    const e = installEvt; if(!e) return; installEvt = null;
+    try{ e.prompt(); const r = await e.userChoice; if(r && r.outcome==='accepted') toast('📲 설치 중'); }catch(_){}
+    showInstallModal(back);
+  });
 }
 function showSettingsModal(){
   const s = state.settings;
@@ -8606,6 +8650,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
+  if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">(앱처럼 쓰기)</span></button>'; // (v312)
   if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">🔔 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
@@ -8628,6 +8673,7 @@ function showSettingsModal(){
   });
   document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
   { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
+  { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
   bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
