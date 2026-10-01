@@ -1059,7 +1059,11 @@
 .m-actions{position:sticky; bottom:-20px; z-index:3; margin:12px -20px -20px !important; padding:10px 20px 14px; background:linear-gradient(180deg,#1d1b4800,#1d1b48 22%);}
 @keyframes pulseDim{0%,100%{opacity:.25} 50%{opacity:.65}}
   .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:30px; color:var(--sub); background:none; border:none; font-family:var(--fun, 'Jua'); line-height:1; padding:0 4px;} /* (v272) X도 주아체 — 주아 글꼴에 ✕ 기호가 없어 알파벳을 씀 · (v2.9.6) 대문자 X는 세로로 길어 보여서 소문자 x를 크게 */
-  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:var(--panel2); border:1px solid #5b6bff; padding:10px 16px; border-radius:10px; z-index:60; font-size:14px; line-height:1.4; width:max-content; max-width:90vw; word-break:keep-all; text-align:center;}
+  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#1d1a4ae8; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border:1px solid #5b6bff99; padding:7px 13px; border-radius:999px; z-index:60; font-size:13px; line-height:1.35; width:max-content; max-width:88vw; word-break:keep-all; text-align:center; box-shadow:0 4px 14px #0007; cursor:pointer; transition:top .18s ease, opacity .2s ease; animation:toastIn .18s ease-out;}
+  @keyframes toastIn{from{opacity:0; transform:translate(-50%,-6px);}}
+  .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
+  .toast.more{background:#ffd557e6; color:#3b2500; border-color:#ffd557; font-weight:800; font-size:12px; padding:4px 12px;}
+  .tlog-it{display:flex; gap:8px; align-items:baseline; padding:8px 4px; border-bottom:1px solid #ffffff12; font-size:13px; line-height:1.45; text-align:left;} .tlog-it small{flex-shrink:0; color:var(--sub); font-size:11px; min-width:38px;} .tlog-it .uic{width:18px; height:18px;}
   .toast .tt{opacity:.9;}
   .toast .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
   .toast .tn{font-weight:800; color:#ffd557; margin:0 4px;}
@@ -1291,6 +1295,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <button data-hmenu="notes" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📝 패치노트<span id="hmNoteNew" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="ask" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">✉️ 문의하기<span id="hmAskN" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="mail" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📬 우편함<span id="hmMailN" class="hm-n" style="display:none;"></span></button>
+        <button data-hmenu="tlog" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔔 알림 기록</button>
         <button data-hmenu="settings" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">⚙️ 설정</button>
         <button data-hmenu="update" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">🔄 업데이트 <small id="hmVer" style="color:var(--sub); font-weight:600; margin-left:auto;"></small></button>
         <button data-hmenu="mailsend" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">📮 우편 보내기 <small style="color:#ffd557;">관리자</small></button>
@@ -6542,7 +6547,23 @@ document.addEventListener('click', (e)=>{
 
 
 // ===================== 유틸 =====================
-function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 6; }); }
+function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 5; }); }
+// (v296) 알림 정리 — 화면에는 최대 2개만 (작은 한 줄) · 같은 종류(숫자만 다른 알림)는 하나로 합쳐 ×N · 넘친 건 '알림 N개 더' 한 줄로
+// 모든 알림은 '알림 기록'(메뉴 ☰ · 알림을 누르면 열림)에 남아서 뭐가 왔는지 다 볼 수 있음
+const TOAST_MAX = 2, TOAST_LOG_MAX = 50; let toastLog = [], toastHidden = 0;
+function toastSig(html){ return html.replace(/<[^>]+>/g, '').replace(/[+\-−]?[\d.,]+/g, '#').trim(); }
+function toastMore(){
+  let m = document.querySelector('.toast.more');
+  if(!toastHidden){ if(m) m.remove(); layoutToasts(); return; }
+  if(!m){ m = document.createElement('div'); m.className = 'toast more'; m.addEventListener('click', showToastLog); document.body.appendChild(m); }
+  m.textContent = '🔔 알림 '+toastHidden+'개 더 · 눌러서 보기'; clearTimeout(m._tm); m._tm = setTimeout(()=>{ toastHidden = 0; m.remove(); layoutToasts(); }, 4000);
+  document.body.appendChild(m); layoutToasts(); // 항상 맨 아래
+}
+function showToastLog(){
+  toastHidden = 0; document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const now = Date.now(), ago = t=>{ const s = Math.round((now-t)/1000); return s<60 ? s+'초 전' : s<3600 ? Math.floor(s/60)+'분 전' : Math.floor(s/3600)+'시간 전'; };
+  openInfoOverlay('🔔 알림 기록', toastLog.length ? toastLog.map(x=>'<div class="tlog-it"><small>'+ago(x.t)+'</small><div>'+x.html+(x.n>1?' <b style="color:#ffd557;">×'+x.n+'</b>':'')+'</div></div>').join('') : '<div class="sub" style="text-align:center; padding:20px 0;">이번 접속에서 받은 알림 없음</div>');
+}
 // 보상 알림은 '이름 보상 획득  <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+40' 형식(아이콘+숫자만 강조). 다른 곳의 보상 표기(<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+N <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+N 🎟️×N)와 같은 모양
 function toastReward(rw, title, ms){
   const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean);
@@ -6551,14 +6572,22 @@ function toastReward(rw, title, ms){
 function toast(msg, ms, html){
   const el = document.createElement('div');
   el.className = 'toast';
+  el.addEventListener('click', showToastLog); // (v296) 누르면 알림 기록
   if(html) el.innerHTML = msg;
   else if(String(msg).indexOf('<img class="uic"')>=0){ // (v219) 재화 아이콘(그림)이 들어간 글자 알림 — 아이콘 태그만 살리고 나머지는 글자로
     el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/ic_[a-z_]+\.webp" alt="[^"<>]*"(?: draggable="false")?>)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
   }else el.textContent = msg;
-  document.body.appendChild(el);
-  const all = document.querySelectorAll('.toast'); if(all.length>5) all[0].remove();
+  const content = el.innerHTML, sig = toastSig(content), dur = ms||2200;
+  const last = toastLog[0]; if(last && last.sig===sig && Date.now()-last.t < 8000){ last.n = (last.n||1)+1; last.html = content; last.t = Date.now(); } else { toastLog.unshift({ html:content, sig, t:Date.now(), n:1 }); if(toastLog.length > TOAST_LOG_MAX) toastLog.length = TOAST_LOG_MAX; }
+  const grp = sig.split(/ · | — /)[0]; // 화면에선 앞머리가 같은 알림(예: '업적 달성 · …')끼리 합침 — 기록에는 따로 남음
+  const same = [...document.querySelectorAll('.toast:not(.more)')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
+  if(same){ const n = (+same.dataset.n||1) + 1; same.dataset.n = n; same.innerHTML = content+'<i class="t-n">×'+n+'</i>'; clearTimeout(same._tm); same._tm = setTimeout(()=>{ same.remove(); layoutToasts(); }, Math.max(dur, 2200)); layoutToasts(); return; }
+  el.dataset.sig = grp; el.dataset.n = 1;
+  const more = document.querySelector('.toast.more'); if(more) document.body.insertBefore(el, more); else document.body.appendChild(el);
+  const vis = [...document.querySelectorAll('.toast:not(.more)')];
+  if(vis.length > TOAST_MAX){ vis.slice(0, vis.length-TOAST_MAX).forEach(t=>{ clearTimeout(t._tm); t.remove(); toastHidden++; }); toastMore(); }
   layoutToasts();
-  setTimeout(()=>{ el.remove(); layoutToasts(); }, ms||2200);
+  el._tm = setTimeout(()=>{ el.remove(); layoutToasts(); }, dur);
 }
 function weightedPick(list){
   const total = list.reduce((s,x)=>s+x.w,0);
@@ -8259,6 +8288,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
     { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성)', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
+    { t:'알림', items:[ '위쪽 알림을 작은 한 줄로 · 화면에는 최대 2개 — 같은 종류는 하나로 합쳐 ×N, 넘치면 "알림 N개 더" 한 줄', '알림을 누르거나 메뉴(☰) › 🔔 알림 기록에서 이번 접속에 받은 알림을 모두 확인' ]},
     { t:'결투', items:[ '결투 신청을 받은 사람도 대기실에서 결투 덱을 고치고 준비를 누름 — 방장은 상대가 준비해야 시작 · 상대 덱은 안 보임' ]},
     { t:'레이드 상점', items:[ '고대 룬(룬 뽑기 3%·고대 룬 교환)이 레이드 화면에서 고른 보스 대신 보스 5종 중 무작위' ]},
     { t:'고친 것', items:[ '레전더리 확정권을 써도 다른 화면에 다녀오기 전까지 보유 수가 그대로 보이던 문제' ]}
@@ -11869,7 +11899,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
-    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
+    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
 // (v95) 전투 결과가 표시되면, 모달이 화면보다 길 때 결과와 확인 버튼이 보이도록 맨 아래로 스크롤
