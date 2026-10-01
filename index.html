@@ -8300,7 +8300,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
-    { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 — 대신 상성 유리와 같은 만큼 적 약화 (공격력 ×0.8 · 체력 ÷1.3)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
+    { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
     { t:'새 아이템', items:[ '신화 정령 확정권 — 신화 정령 중 무작위 1마리', '장비 확정권 (레어·에픽·레전더리·신화) — 그 등급 장비 1개, 부위·속성 무작위', '장비 선택권 (레어·에픽·레전더리·신화) — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 원하는 1개', '장비 확정권·선택권은 장비 소환 화면에서 사용 (가지고 있을 때만 보임)' ]},
     { t:'보상 추가', items:[ '챕터 보스 첫 격파 — 노말: 1 레어 장비 확정권 · 2 레어 장비 선택권 · 3 에픽 장비 확정권 · 4 에픽 장비 선택권 · 5 레전더리 장비 확정권 / 하드: 1 에픽 장비 확정권 · 2 에픽 장비 선택권 · 3 레전더리 장비 확정권 · 4 레전더리 장비 선택권 · 5 신화 정령 확정권 + 신화 장비 확정권', '무한의 탑 — 40층마다 레어 장비 확정권 · 70층마다 에픽 장비 확정권 (그 층의 레어 확정권 대신) · 100층마다 레전더리 장비 확정권 추가', '요일 던전 — 7단계 레어 장비 확정권 · 12단계 에픽 장비 선택권 · 15단계 레전더리 장비 확정권', '시련의 전당 — ★4 에픽 장비 확정권 · ★5 레전더리 장비 확정권 · 최후의 시련 레전더리 장비 선택권', '계정 레벨 — 5 레어 장비 확정권 · 10 레어 장비 선택권 · 15 에픽 장비 확정권 · 20 에픽 장비 선택권 · 25 레전더리 장비 확정권 · 30 레전더리 장비 선택권', '레이드 주간 첫 승리 — 노말 레어 장비 확정권 · 하드 에픽 장비 확정권 · 익스트림 에픽 장비 선택권', '월드 보스 — 75% 달성 에픽 장비 확정권 · 100% 달성 레전더리 장비 확정권 · 처치자 에픽 장비 선택권', '레이드 상점 — 에픽 장비 확정권(40, 주 1) · 에픽 장비 선택권(70, 주 1) · 레전더리 장비 확정권(140, 주 1)', '월드 보스 상점 — 레전더리 장비 선택권(60, 주 1)' ]}
   ]},
@@ -9598,15 +9598,14 @@ function towerRewardChipHtml(f){
 }
 // ===================== (v266) 요일 던전 =====================
 // 요일마다 한 속성 던전이 열림(월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일 전부). 그 속성 정령만 출전
-// (v297) 적은 내 속성이 이기는 속성(화염→숲결 · 물결→화염 · 숲결→물결 · 빛→그림자). 그림자는 이기는 속성이 없어 적도 그림자지만
-// 상성 유리와 같은 만큼 적을 약하게(공격력 ×0.8 · 체력 ÷1.3 = 받는 피해 ×0.8 · 주는 피해 ×1.3과 같은 효과) · 쉬워진 만큼 20단계까지
+// (v297) 적은 내 속성이 이기는 속성(화염→숲결 · 물결→화염 · 숲결→물결 · 빛→그림자). 그림자는 이기는 속성이 없어 적도 그림자(수치 보정 없음) · 쉬워진 만큼 20단계까지
 // 1~15단계를 차례로 뚫음 — 보상은 단계마다 처음 돌파할 때 1회뿐(반복 수급 없음). 5·10·15단계는 수호자(강한 신화급) 등장
 // 나중에 단계를 늘리려면 DUNGEON_MAX 만 올리면 됨(강도·보상 공식이 15단계 뒤로도 이어짐)
 const DUNGEON_MAX = 20; // (v297) 15 → 20
 const DUNGEON_FOE = { fire:'wood', water:'fire', wood:'water', light:'dark', dark:'dark' };
 function dungeonFoeEl(el){ return DUNGEON_FOE[el] || el; }
 // 적 공격력 속성 보정은 내 속성 값을 씀 — 그림자의 +6%는 '이기는 상대가 없어서' 붙는 보정이라 빛 던전의 그림자 적에겐 맞지 않음
-function dungeonNoAdv(el){ return typeMult(el, dungeonFoeEl(el)) <= 1; } // 이기는 속성이 없는 던전(그림자) → 적 능력치로 보정
+function dungeonNoAdv(el){ return typeMult(el, dungeonFoeEl(el)) <= 1; } // 이기는 속성이 없는 던전(그림자) — 추천 전투력만 그대로
 const DUNGEON_ADV_CP = Math.sqrt(0.8/1.3); // 상성 유리를 전투력으로 환산한 배율 (추천 전투력용)
 const DUNGEON_DAY_EL = [null, 'fire', 'water', 'wood', 'light', 'dark', null]; // getDay(): 0=일 … 6=토 · null=전부 열림
 const DUNGEON_THEME = { fire:'volcano', water:'snow', wood:'forest', light:'desert', dark:'cave' };
@@ -9653,7 +9652,7 @@ function buildDungeonFight(el, n){
   const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
   cells.forEach((c, idx)=>{
     if(!c) return;
-    const u = makeBattleUnit('enemy', idx, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1)*(na?0.8:1), ENEMY_HP_MULT*(c.guardian?4:1)/(na?1.3:1));
+    const u = makeBattleUnit('enemy', idx, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1));
     if(c.guardian) u.dispName = '수호자 '+SPIRITS[u.key].name;
     enemyUnits.push(u);
   });
@@ -9665,8 +9664,8 @@ function buildDungeonFight(el, n){
 function dungeonRecCP(el, n){ // (v266) 추천 전투력 — 적 배치는 단계마다 고정이라 내 진형과 무관하게 계산
   const per = dungeonPower(n);
   const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
-  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1)*(na?0.8:1), ENEMY_HP_MULT*(c.guardian?4:1)/(na?1.3:1))) : a, 0);
-  return recCP(en * REC_CP_MULT.dungeon * (na ? 1 : DUNGEON_ADV_CP)); // (v297) 상성 유리만큼 낮춤 (그림자는 적 능력치에 이미 반영)
+  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1))) : a, 0);
+  return recCP(en * REC_CP_MULT.dungeon * (na ? 1 : DUNGEON_ADV_CP)); // (v297) 상성 유리만큼 낮춤 (그림자 던전은 상성이 없어 그대로)
 }
 function checkDungeonOutcome(sf){
   if(sf.result) return true;
@@ -9709,7 +9708,7 @@ function showDungeonPrep(el, n, keep){
   const info = ELEMENT_INFO[el], cells = dungeonEnemyGrid(el, n), pv = buildDungeonFight(el, n), rw = dungeonReward(n), first = n > dungeonBest(el);
   let h = '<h3 style="text-align:center; margin:0;">'+info.icon+' '+info.name+' 던전 · '+n+'단계</h3>';
   const fe = dungeonFoeEl(el);
-  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적은 전부 '+elIc(fe)+' '+ELEMENT_INFO[fe].name+(dungeonNoAdv(el) ? ' (상성 대신 적 약화)' : ' (상성 유리)')+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
+  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적은 전부 '+elIc(fe)+' '+ELEMENT_INFO[fe].name+(dungeonNoAdv(el) ? '' : ' (상성 유리)')+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
   h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[fe+'_'+c.rarity+'_'+c.variant])+elIc(fe,'av-el')+'</span>' : '').join('')+'</div>';
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
