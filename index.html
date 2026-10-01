@@ -710,7 +710,7 @@
   .aw-cr{display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:13px;} .aw-cr .spimg{width:1.4em; height:1.4em; margin:0; vertical-align:middle;}
   #awDo{margin-top:10px;}
   /* (v220) 긴 목록의 카드는 화면 밖에 있으면 배치·그리기를 건너뜀(정령 50장 목록이 폰에서 멈칫하던 원인) */
-  .pk-card{content-visibility:auto; contain-intrinsic-size:auto 1px auto 60px;} .roster-grid > *, .grid5 > .species-tile, .fz-grid > .fz-pick{content-visibility:auto; contain-intrinsic-size:auto 1px auto 96px;}
+  .pk-card{content-visibility:auto; contain-intrinsic-size:auto 1px auto 60px;} .roster-grid > *, .grid5 > .species-tile{content-visibility:auto; contain-intrinsic-size:auto 1px auto 96px;}
   .ud-sts{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin-top:6px;} .ud-sts .sbg{font-size:11px; padding:1px 6px; width:auto; height:auto; border-radius:8px;}
   .ud-st b small{font-size:10px; color:var(--sub);}
   .bs-tgt[role=button]{cursor:pointer;} .bs-tgt[role=button]::after{content:' ⓘ'; font-size:11px; opacity:.7;}
@@ -8908,6 +8908,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:306, v:'3.2.2', date:'2026-10-01', secs:[
+    { t:'합성 화면', items:[ '재료를 고를 때마다 화면이 조금씩 밀려 내려가던 것 수정' ]}
+  ]},
   { build:305, v:'3.2.1', date:'2026-10-01', secs:[
     { t:'전투 연출', items:[ '상태 이상이 정령 위에 보이게 — 빙결: 위로 뾰족한 얼음이 정령을 덮음 · 화상: 발밑 불꽃 · 독: 초록 거품 · 저주: 보랏빛 기운' ]},
     { t:'진형·프리셋', items:[ '진형 칸의 정령을 꾹 누르면 정령 관리 창(장비·룬·강화·각성 등) — 닫으면 그 화면으로 돌아옴', '프리셋 만들기 칸에 정령을 넣어도 칸 너비가 그대로', '정령 배치 창에서 등급·속성·역할로 정렬하면 도감처럼 묶음 제목과 개수로 나눔' ]},
@@ -12603,8 +12606,9 @@ function attachHandlers(){
   { const g = document.getElementById('goEqFuseTab'); if(g) g.addEventListener('click', ()=>openFuseTab('equip')); }
   document.querySelectorAll('[data-fz-mode]').forEach(b=>b.addEventListener('click', ()=>{ if(fuseMode!==b.dataset.fzMode){ fuseMode = b.dataset.fzMode; fuseSlots = [null,null,null]; render(); } }));
   // (v305) 재료를 넣고 빼면 위 합성판 높이가 바뀌어 목록이 밀림 → 누른 재료가 화면의 같은 자리에 남도록 스크롤을 맞춤
-  const fzAnchor = (sel, fn)=>{ const m = document.getElementById('main'), el = document.querySelector(sel), y0 = el ? el.getBoundingClientRect().top : null; fn(); render();
-    if(m && y0!==null){ const el2 = document.querySelector(sel); if(el2) m.scrollTop += el2.getBoundingClientRect().top - y0; } };
+  // (v306) 합성 재료 칸은 content-visibility를 쓰지 않음 — 화면 밖 칸이 어림 높이로 바뀌어 다시 그릴 때마다 조금씩 밀렸음 · 눌린 칸(:active 축소)이 아니라 목록 기준으로 맞춤
+  const fzAnchor = (sel, fn)=>{ const m = document.getElementById('main'), el0 = document.querySelector(sel), el = el0 && el0.closest('.fz-pick') ? document.querySelector('.fz-grid') : el0, y0 = el ? el.getBoundingClientRect().top : null; const anc = el && el.classList.contains('fz-grid') ? '.fz-grid' : sel; fn(); render();
+    if(m && y0!==null){ const el2 = document.querySelector(anc); if(el2) m.scrollTop += el2.getBoundingClientRect().top - y0; } };
   document.querySelectorAll('[data-fz-add]').forEach(b=>b.addEventListener('click', ()=>{ const i = fuseSlots.indexOf(null); if(i<0) return; const k = b.dataset.fzAdd; fzAnchor('[data-fz-add="'+k+'"]', ()=>{ fuseSlots[i] = k; }); }));
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; const k = fuseSlots[i], inDock = !!b.closest('.fz-dock');
     fzAnchor(inDock ? '[data-fz-add="'+k+'"]' : '.fz-card', ()=>{ fuseSlots[i] = null; }); }));
@@ -12999,7 +13003,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 305, APP_VERSION = '3.2.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 306, APP_VERSION = '3.2.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
