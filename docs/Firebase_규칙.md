@@ -176,6 +176,8 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
           "rt": {
             ".validate": "auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' && newData.isNumber()"
           },
+          // (v3.2.1) 관리자가 '완료'로 표시한 시각 — 답장 대기에서 빠짐
+          "dt": { ".validate": "auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' && newData.isNumber()" },
           // 문의한 사람이 마지막으로 이어 쓴 시각 (관리자 빨간 점)
           "ut": {
             ".write": "auth != null && auth.uid === $uid && data.parent().exists()",
@@ -211,5 +213,6 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
 ```
 
 ## 최근 바뀐 것
+- **v3.2.1** 문의 완료 표시: `inquiries/<uid>/<id>/dt` 추가
 - **v3.0.1** 문의 이어 쓰기: `inquiries/<uid>/<id>/msgs`, `ut` 추가 — 이걸 게시해야 문의를 여러 번 주고받을 수 있음
 - **v2.10.5** 우편: 개인 우편 받은 표시 `c` · 관리자 개인 우편 읽기
