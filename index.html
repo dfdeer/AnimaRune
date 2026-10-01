@@ -8549,7 +8549,10 @@ async function pushUnregister(){
   try{ const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); }catch(e){}
 }
 // 접속할 때: 켜 둔 기기면 주소를 다시 등록(계정이 바뀌었거나 주소가 갱신된 경우)
-function pushRefresh(){ if(state.settings.push && pushSupported() && Notification.permission==='granted') pushRegister(false).catch(()=>{}); }
+let pushReady = false; // 알림 서버(공개 키)가 준비됐을 때만 설정에 버튼을 보임
+function pushRefresh(){
+  const fb = raidNet.fb; if(fb) fb.get(fb.ref(fb.rtdb, 'pushCfg/pub')).then(v=>{ pushReady = !!v.val(); }).catch(()=>{});
+  if(state.settings.push && pushSupported() && Notification.permission==='granted') pushRegister(false).catch(()=>{}); }
 // 예약 시각 — 바뀌었을 때만 서버에 씀
 let pushDueLast = '', pushDueTimer = null;
 function pushDueTimes(){
@@ -8600,7 +8603,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
-  html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">🔔 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
+  if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">🔔 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
   html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
@@ -8621,7 +8624,7 @@ function showSettingsModal(){
     save();
   });
   document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
-  document.getElementById('pushOpenBtn').addEventListener('click', showPushModal);
+  { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
   bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
