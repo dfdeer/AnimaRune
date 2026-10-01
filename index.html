@@ -1115,6 +1115,10 @@
   .pk-pill.ok{background:#5cd65c26; color:#8be88b; border:1px solid #5cd65c66;}
   .pk-pill.busy{background:#ffffff10; color:var(--sub); border:1px solid #ffffff22;}
   .pk-pill.cur{background:#7a6bff33; color:#c9c2ff; border:1px solid #7a6bff88;}
+  .pk-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px;} .pk-gdiv{grid-column:1/-1;} .pk-hint{text-align:center; font-size:10.5px; margin:-2px 0 6px;} /* (v300) 정령 선택 격자 */
+  .pk-tile{position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0; padding:9px 2px 5px; border-radius:11px; background:#27235a; border:1.5px solid #ffffff14; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;} .pk-tile.avail{border-color:#5cd65c44;} .pk-tile.cur{border-color:#ffd557; background:#ffd55718;} .pk-tile.busy{opacity:.5;} .pk-tile:active{transform:scale(.96);}
+  .pk-tile .av{font-size:24px; margin-bottom:2px;} .pk-tl-tag{position:absolute; top:2px; left:3px; z-index:3; font-size:10px;} .pk-tl-adv{position:absolute; top:2px; right:2px; z-index:3;} .pk-tl-adv .pk-adv{font-size:9px; padding:0 4px; margin:0;}
+  .pk-tl-nm{max-width:100%; font-size:10.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .pk-tl-ft{display:flex; align-items:center; gap:3px; font-size:10.5px;} .pk-tl-ft b{color:var(--text);} .pk-tl-ft i{font-style:normal; font-size:9px; font-weight:800; padding:0 3px; border-radius:5px;} .pk-tl-ft i.f{background:#ff7a5a2a; color:#ffb4a0;} .pk-tl-ft i.b{background:#5a8aff2a; color:#a8c8ff;} .pk-tl-busy{font-size:9.5px; color:#ff8a8a;}
   .pk-div{margin:10px 0 6px; font-size:12px; font-weight:800; color:var(--sub); text-align:center;}
   .sub{color:var(--sub); font-size:12px;}
   .cycle-wheel{position:relative; width:150px; height:150px; margin:14px auto;}
@@ -8819,6 +8823,7 @@ const PATCH_NOTES = [
     { t:'파티 프리셋', items:[ '정령 탭 📋 프리셋 — 진형 화면에 가지 않고 바로 6칸을 채워 저장 · 불러와서 고쳐 덮어쓰기' ]},
     { t:'화면', items:[ 'ⓘ 버튼의 i가 동그라미 가운데에서 어긋나 보이던 것 수정' ]},
     { t:'관리자 우편', items:[ '보상 입력을 ＋ 보상 추가 방식으로 — 고른 것만 줄로 쌓고 ✕로 빼기', '모든 재화·아이템을 보낼 수 있음 — 세계 룬석 · 정령 파편 · 룬 승급석 · 각인석 · 모든 확정권·선택권 · 룬(뽑기·전설·고대 무작위·고대 5종·월드 룬 3종)' ]},
+    { t:'정령 선택 창', items:[ '한 줄 목록 → 한 줄에 4칸 격자로 — 그림·등급 테두리·속성 · 이름 · 역할 아이콘과 전투력만 보여 한눈에 비교', '누르면 배치 · 길게 누르면 스킬 정보 · 역할 이름표가 붉으면 전열형, 푸르면 후열형' ]},
     { t:'결투', items:[ '결투 덱 칸을 누르면 스테이지와 같은 정령 배치 창 — 전투력 · 등급 · 속성 · 역할 정렬과 ⓘ 스킬 보기', '결투 신청을 수락하면 레이드 창으로 넘어가던 문제 수정 — 결투 탭에서 대기실이 열림 · 결투가 끝나도 결투 탭으로' ]},
     { t:'문의', items:[ '한 문의에 여러 번 이어 쓰기 — 문의한 사람도 추가로 쓸 수 있고 답장도 덮어쓰지 않고 차례로 쌓임' ]}
   ]},
@@ -12172,23 +12177,25 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     role:(a,b)=> (ENEMY_FRONT_LINES.includes(SPIRITS[b.key].element+'_'+SPIRITS[b.key].variant)?1:0)-(ENEMY_FRONT_LINES.includes(SPIRITS[a.key].element+'_'+SPIRITS[a.key].variant)?1:0) || roleOf(a.key).localeCompare(roleOf(b.key)) || spiritCP(b.key)-spiritCP(a.key) }[sortBy] || ((a,b)=>0);
   entries.sort((a,b)=> (b.isCur - a.isCur) || ((b.free>0) - (a.free>0)) || cmp(a,b));
   html += '<div class="pk-sort">'+[['cp','<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력'],['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['role','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 역할']].map(([k,t])=>'<button data-pk-sort="'+k+'" class="'+(sortBy===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  // (v300) 한눈에 보이게 작은 칸 격자(한 줄 4칸) — 그림·등급 테두리·속성 + 이름 + 역할·전투력 · 누르면 배치 · 길게 누르면 스킬 정보
+  html += '<div class="sub pk-hint">길게 누르면 스킬 정보</div><div class="pk-grid">';
   let busyDivider = false;
   entries.forEach(e=>{
-    const key = e.key, free = e.free, sp = SPIRITS[key], info = RARITY_INFO[sp.rarity];
+    const key = e.key, free = e.free, sp = SPIRITS[key];
     const kit = LINE_KITS[sp.element+'_'+sp.variant], front = ENEMY_FRONT_LINES.includes(sp.element+'_'+sp.variant);
-    if(free<=0 && !busyDivider){ busyDivider = true; html += '<div class="pk-div"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 다른 칸에서 쓰는 중 — 누르면 이 칸으로 이동</div>'; }
+    if(free<=0 && !busyDivider){ busyDivider = true; html += '<div class="pk-div pk-gdiv"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 다른 칸에서 쓰는 중 — 누르면 이 칸으로 이동</div>'; }
     let adv = '';
     if(enemyEl){ const m = typeMult(sp.element, enemyEl); adv = m>1 ? '<span class="pk-adv up">유리</span>' : (m<1 ? '<span class="pk-adv down">불리</span>' : ''); }
-    else if(lineup){ const t = lineupThreat(key, lineup); adv = t.weak>=2 ? '<span class="pk-adv down">약점 '+t.weak+'</span>' : (t.strong>=2 ? '<span class="pk-adv up">강점 '+t.strong+'</span>' : ''); }
-    const rn = spiritRune(key);
-    html += '<div class="pk-card '+(e.isCur?'cur':(free>0?'avail':'busy'))+'" data-pick="'+key+'">'
-      + '<div class="pk-ico" style="border-color:'+ELEMENT_INFO[sp.element].color+';">'+spArt(sp)+'</div>'
-      + '<div class="pk-main"><div class="pk-name">'+sp.name+' <span style="color:'+info.color+'; font-size:10px; font-weight:800;">'+info.name+'</span> '+enhTag(key)+awakenStars(key)+'</div>'
-      + '<div class="pk-sub"><span class="pk-role '+(front?'f':'b')+'">'+kit.icon+' '+kit.role+' · '+(front?'전열':'후열')+'</span>'+(rn?' '+runeImg(rn):'')+(e.isCur?' <b style="color:#ffd557;">📍이 칸</b>':(free<=0?' <span style="color:#ff8a8a;">칸 '+e.users.join('·')+'</span>':''))+'</div></div>'
-      + '<div class="pk-right">'+adv+'<div class="pk-cp"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+fmtCP(spiritCP(key))+'</div></div>'
-      + '<button class="pk-info" data-pk-info="'+key+'">ⓘ</button>'
+    else if(lineup){ const t = lineupThreat(key, lineup); adv = t.weak>=2 ? '<span class="pk-adv down">약 '+t.weak+'</span>' : (t.strong>=2 ? '<span class="pk-adv up">강 '+t.strong+'</span>' : ''); }
+    html += '<div class="pk-tile '+(e.isCur?'cur':(free>0?'avail':'busy'))+'" data-pick="'+key+'" data-pk-info="'+key+'" title="'+sp.name+' · '+kit.role+'">'
+      + '<span class="pk-tl-tag">'+enhTag(key)+'</span>'+(adv ? '<span class="pk-tl-adv">'+adv+'</span>' : '')
+      + '<div class="av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+      + '<div class="pk-tl-nm">'+(e.isCur ? '📍' : '')+sp.name+'</div>'
+      + '<div class="pk-tl-ft"><i class="'+(front?'f':'b')+'">'+kit.role.split('·')[0]+'</i><b>'+fmtCP(spiritCP(key))+'</b></div>'
+      + (free<=0 && !e.isCur ? '<div class="pk-tl-busy">칸 '+e.users.join('·')+'</div>' : '')
       + '</div>';
   });
+  html += '</div>';
   if(options.length===0) html = rosterFilter ? '<div class="sub">출전 명단에 남은 정령 없음 — 다른 슬롯에서 이동</div>' : '<div class="sub" style="text-align:center;">보유 정령 없음 — 소환 먼저</div>';
   html += dispatchAwayHtml(rosterFilter); // (v267) 파견 가서 지금 못 쓰는 정령
   document.getElementById('modalRoot').innerHTML =
@@ -12196,9 +12203,13 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     + '<button class="close-x" id="modalClose">x</button><h3>정령 배치 · '+(slotIdx<3?'전열':'후열')+'</h3>' + html + '</div></div>';
   bindModalClose(returnFn);
   document.querySelectorAll('[data-pk-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.pickSort = el.dataset.pkSort; save(); showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup); }));
-  document.querySelectorAll('[data-pk-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const k = el.dataset.pkInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }));
+  document.querySelectorAll('[data-pk-info]').forEach(el=>{ let tm = null; // (v300) 길게 누르면 스킬 정보
+    const stop = ()=>{ if(tm){ clearTimeout(tm); tm = null; } };
+    el.addEventListener('pointerdown', ()=>{ stop(); el.dataset.lp = ''; tm = setTimeout(()=>{ tm = null; el.dataset.lp = '1'; const k = el.dataset.pkInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }, 450); });
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>el.addEventListener(ev, stop)); el.addEventListener('contextmenu', e=>e.preventDefault()); });
   document.querySelectorAll('[data-pick]').forEach(el=>{
     el.addEventListener('click', ()=>{
+      if(el.dataset.lp==='1'){ el.dataset.lp = ''; return; } // 길게 눌러 정보를 연 뒤 손을 뗀 클릭은 배치 안 함
       const key = el.dataset.pick;
       const free = ownedCount(key) - usedCountExcluding(key, slotIdx);
       if(free>0){
