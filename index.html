@@ -76,7 +76,8 @@
   .home-pu .hp-tx b{font-size:14px; color:#ffe38a; text-shadow:0 1px 2px #000a;} .home-pu .hp-tx small{font-size:11px; font-weight:800; color:#fff; background:#0008; border-radius:8px; padding:1px 6px; margin-top:2px;}
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
-  #main.pu-full{position:relative; background:var(--pb, #120f2a);} #main.pu-full .scr-top{background:none; position:relative; z-index:8;}
+  #main.pu-full{position:relative; background:var(--pb, #120f2a);}
+  #main.pu-full.pu-img{background-color:#1a0c0a; background-repeat:no-repeat; background-attachment:local;} #main.pu-img .pu-rays{display:none;} #main.pu-img .pu-glow{opacity:.18;} #main.pu-full .scr-top{background:none; position:relative; z-index:8;}
   .pu-topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;} .pu-t{font-size:18px; font-weight:900; color:#ffe38a; text-shadow:0 2px 4px #000a;}
   .pu-left{font-size:12px; font-weight:800; background:#0008; border:1px solid #ffcf4a66; border-radius:10px; padding:3px 8px; white-space:nowrap;}
   .pu-bg{position:absolute; left:0; right:0; top:0; min-height:100%; height:100%; z-index:0; pointer-events:none; overflow:hidden;}
@@ -7385,6 +7386,19 @@ function doPickup(n){
 let pickupView = 0;
 // (v317) 픽업 탭 — 소환 탭처럼 화면 하나 · 배경은 지금 보는 신화의 속성 색 + 속성 입자(불씨·물방울·잎·빛·어둠)
 const PU_FX = { fire:'ember', water:'bubble', wood:'leaf', light:'spark', dark:'wisp' };
+// (v317) 속성별 픽업 배경 그림 (받은 것부터) — ped: 그림 속 제단 윗면 높이(그림 높이 대비). 정령 발끝을 여기에 맞춤
+const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.52 } };
+function placePuBg(){
+  const m = document.getElementById('main'); if(!m) return;
+  const im = activeTab==='pickup' && PU_BG_IMAGES[m.dataset.pe];
+  if(!im){ if(m.style.backgroundImage){ m.style.backgroundImage = ''; m.style.backgroundSize = ''; m.style.backgroundPosition = ''; } m.classList.remove('pu-img'); return; }
+  const art = m.querySelector('.pu-art .spimg'); if(!art) return;
+  const W = m.clientWidth, H = Math.max(m.clientHeight, m.scrollHeight), feet = art.getBoundingClientRect().bottom - m.getBoundingClientRect().top + m.scrollTop - art.offsetHeight*0.04;
+  let sc = Math.max(W/1024, H/1536, feet/(im.ped*1536)); // 화면을 덮으면서 제단이 발끝 아래로 오게
+  let offY = feet - im.ped*1536*sc; if(offY + 1536*sc < H){ sc = (H - feet)/((1-im.ped)*1536); offY = feet - im.ped*1536*sc; }
+  m.classList.add('pu-img');
+  m.style.backgroundImage = 'url('+im.src+')'; m.style.backgroundSize = Math.round(1024*sc)+'px '+Math.round(1536*sc)+'px'; m.style.backgroundPosition = '50% '+Math.round(offY)+'px';
+}
 function puFxHtml(el){ let h = '<div class="pu-bg pu-'+el+'"><div class="pu-glow"></div><div class="pu-rays"></div>';
   for(let i=0;i<16;i++){ const x = (i*61 + 7) % 100, d = (i*0.37) % 4.2, sz = 6 + (i*5) % 9, du = 4 + (i*7) % 4; h += '<i class="pu-p '+PU_FX[el]+'" style="left:'+x+'%; width:'+sz+'px; height:'+sz+'px; animation-delay:-'+d.toFixed(2)+'s; animation-duration:'+du+'s;"></i>'; }
   return h + '</div>'; }
@@ -8358,7 +8372,7 @@ function render(){
     if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; }
   }
   main.classList.toggle('is-home', activeTab==='home');
-  main.classList.toggle('pu-full', activeTab==='pickup'); if(activeTab==='pickup') main.dataset.pe = SPIRITS[pickupPeriod().pair[pickupView]].element; else delete main.dataset.pe; main.classList.toggle('ex-full', activeTab==='stage'); main.classList.toggle('xp-full', activeTab==='expedition' && !!state.expedition); placeExBg();
+  main.classList.toggle('pu-full', activeTab==='pickup'); if(activeTab==='pickup') main.dataset.pe = SPIRITS[pickupPeriod().pair[pickupView]].element; else delete main.dataset.pe; placePuBg(); main.classList.toggle('ex-full', activeTab==='stage'); main.classList.toggle('xp-full', activeTab==='expedition' && !!state.expedition); placeExBg();
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
   updateScrollLock();
   xpSyncActionModal(); // (v268) 출정 칸 창
@@ -12167,7 +12181,7 @@ function isStageUnlockedGraph(stageIdx){
 let viewingChapter = null;
 // (v265) 탐험 전체 배경: 화면(헤더 아래~바닥)에 고정 — 스크롤해도 배경은 그대로
 function placeExBg(){ const m = document.getElementById('main'); if(!m) return; const t = Math.max(0, m.getBoundingClientRect().top)+'px'; m.querySelectorAll('.ex-bgfull, .ex-veil').forEach(el=>{ el.style.top = t; }); }
-window.addEventListener('resize', placeExBg);
+window.addEventListener('resize', placeExBg); window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') placePuBg(); });
 function renderStageTab(){
   // (v186) 탐험 지도 개편: 화면 폭 전체 · 지역별 풍경 배경 · 스테이지를 잇는 길 · 큰 원형 노드 · 다음 도전 위에 내 정령 · 좌우로 밀어 챕터 이동
   const curN = currentChapterNum();
