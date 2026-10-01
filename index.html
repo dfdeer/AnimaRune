@@ -475,14 +475,14 @@
 
   /* 유닛: 눈 위에 서 있는 정령(그림자) + 이름표 + 체력바 */
   .bu{position:relative; width:calc(72px * min(var(--k,1), 1)); display:flex; flex-direction:column; align-items:center;}
-  /* (v305) 상태 이상 연출 — 빙결: 위로 뾰족한 얼음이 정령을 덮음 · 화상: 발밑 불꽃 · 독: 초록 거품 · 저주: 보랏빛 기운 */
-  .fx-frz{position:absolute; left:-10%; right:-10%; bottom:-6%; height:124%; z-index:4; pointer-events:none; transform-origin:50% 100%; animation:frzIn .35s ease-out; filter:drop-shadow(0 0 1px #0b5aa5) drop-shadow(0 0 1px #0b5aa5) drop-shadow(0 0 5px #4fc3ff);}
-  .fx-frz b{position:absolute; inset:0; background:linear-gradient(180deg, #8fdcff 0%, #b9ecff 25%, #6cc6ff 60%, #2f86d6 100%);
-    clip-path:polygon(4% 100%, 0 78%, 5% 60%, 2% 44%, 9% 30%, 13% 58%, 19% 12%, 26% 56%, 32% 26%, 38% 60%, 46% 4%, 54% 58%, 61% 20%, 67% 60%, 74% 8%, 81% 56%, 87% 28%, 92% 52%, 98% 40%, 95% 62%, 100% 80%, 96% 100%); opacity:.52;}
-  .fx-frz i{position:absolute; inset:0; clip-path:inherit; background:linear-gradient(115deg, transparent 30%, #ffffffcc 37%, transparent 44%, transparent 62%, #ffffff99 67%, transparent 72%); animation:frzShine 2.4s linear infinite;}
-  .st-frz .bu-icon{filter:saturate(.3) brightness(1.2) hue-rotate(165deg);} .st-frz .bu-body{animation:none !important;}
+  /* (v305) 상태 이상 연출 — 빙결: 얼음 기둥 그림을 흐리게 덮음(v308) · 화상: 발밑 불꽃 · 독: 초록 거품 · 저주: 보랏빛 기운 */
+  .fx-frz{position:absolute; left:-6%; right:-6%; bottom:-3%; height:112%; z-index:4; pointer-events:none; transform-origin:50% 100%; animation:frzIn .35s ease-out;}
+  .fx-frz svg{display:block; width:100%; height:100%; opacity:.5; filter:drop-shadow(0 0 4px #9fe3ff);}
+  .fx-frz.thaw{animation:frzOut .9s ease-in forwards;} .fx-frz.thaw em small{display:block; font-size:9px; opacity:.9; text-align:center;} .fx-frz.thaw em{position:absolute; left:50%; top:30%; transform:translateX(-50%); white-space:nowrap; font-style:normal; font-size:11px; font-weight:700; color:#dff6ff; text-shadow:0 0 3px #0b5aa5, 0 1px 2px #000; animation:frzTxt .9s ease-out forwards;}
+  .st-frz .bu-icon{filter:saturate(.45) brightness(1.15) hue-rotate(165deg);} .st-frz .bu-body{animation:none !important;}
   @keyframes frzIn{0%{transform:scaleY(.1); opacity:0;} 70%{transform:scaleY(1.06);} 100%{transform:scaleY(1); opacity:1;}}
-  @keyframes frzShine{0%{transform:translateX(-50%);} 100%{transform:translateX(50%);}}
+  @keyframes frzOut{0%{opacity:1; transform:scale(1);} 35%{opacity:1; transform:scale(1.04);} 100%{opacity:0; transform:scale(1.12);}}
+  @keyframes frzTxt{0%{opacity:0; margin-top:4px;} 25%{opacity:1; margin-top:0;} 80%{opacity:1;} 100%{opacity:0; margin-top:-6px;}}
   .fx-burn{position:absolute; left:10%; right:10%; bottom:2%; height:40%; z-index:4; pointer-events:none;}
   .fx-burn i{position:absolute; bottom:0; width:34%; height:100%; border-radius:50% 50% 45% 45%; background:radial-gradient(ellipse at 50% 85%, #ffe27a 0%, #ff8a2a 40%, #ff3a1a00 72%); animation:burnFl .7s ease-in-out infinite alternate; opacity:.85; mix-blend-mode:screen;}
   .fx-burn i:nth-child(1){left:0; animation-delay:-.2s;} .fx-burn i:nth-child(2){left:33%; height:120%; animation-delay:-.45s;} .fx-burn i:nth-child(3){right:0;}
@@ -2309,7 +2309,7 @@ function makeActCtx(sf, a, tSide, tIdx){
     return r;
   };
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
-  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before }); };
+  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); }; // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
   C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); };
@@ -2337,7 +2337,7 @@ function performAction(sf, a, act, tSide, tIdx){
     if(a.line==='fire_b' && unitPG(a)>=1 && C.t.alive && !sf.noRng && Math.random() < [0,.3,.4,.5,.6][unitPG(a)]) C.burn(C.t, 1);
     pushLog(sf, logUnitName(a.side, a)+' 공격 → '+logUnitName(tSide, C.t));
   }else{
-    const sk = unitSkill(a, act);
+    const sk = unitSkill(a, act); C.skNm = sk.name;
     if(act==='s2'){ const sg = unitSG(a); C.g = sg; C.P = arr=>arr[sg]; } // (v225) 각성으로 연 스킬2는 에픽 수치부터
     sk.run(C);
     if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
@@ -2945,6 +2945,9 @@ function raidAutoPicks(bossId){
   pick.filter(k=>!out.includes(k)).forEach(k=>{ const i = out.indexOf(null); if(i>=0) out[i] = k; }); // 한쪽이 3마리 이상이면 남는 칸에
   return out;
 }
+// (v308) 레이드 보스마다 마지막으로 도전한 4칸을 기억 — 처음 만나는 보스는 빈 칸부터
+function raidSaveForm(bossId){ if(!bossId || !raidNet.myPicks.some(Boolean)) return; state.raidForms = state.raidForms || {}; state.raidForms[bossId] = raidNet.myPicks.slice(0,4); save(); }
+function raidLoadForm(bossId){ const f = (state.raidForms && state.raidForms[bossId]) || [], used = {}; return [0,1,2,3].map(i=>{ const k = f[i]; if(typeof k!=='string' || !SPIRITS[k] || ownedCount(k)<=0 || used[k]) return null; used[k] = 1; return k; }); }
 function raidSavePicks(){ if(raidIsNet()) raidUpdate({ picks:{ [raidNet.uid]: raidMyPickPayload() }, ready:{ [raidNet.uid]: false } }); }
 async function raidHostStartDuel(d){
   if(raidNet.starting || !d.guest) return;
@@ -2968,8 +2971,8 @@ async function raidHostStartBattle(d){
 function raidStartSolo(alone){
   raidLocalCleanup();
   raidNet.role = 'solo'; raidNet.alone = !!alone; raidNet.rewardText = '';
-  raidNet.myPicks = [null,null,null,null]; // (v269) 처음엔 비워 둠
-  raidNet.selSlot = 0;
+  raidNet.myPicks = raidLoadForm(raidWeekBoss().id); // (v269) 처음엔 비워 둠 · (v308) 도전했던 보스는 그때 4칸
+  raidNet.selSlot = Math.max(0, raidNet.myPicks.indexOf(null));
   showRaidPickModal();
 }
 
@@ -3827,7 +3830,7 @@ function showRaidPickModal(){
   if(!solo && !d) return;
   if(!solo && !raidNet.picksInit){
     const mine = raidCleanPicks(d.picks[raidNet.uid]);
-    raidNet.myPicks = mine.some(Boolean) ? mine.map(p=>p?p.key:null) : [null,null,null,null]; // (v269) 처음엔 비워 둠 — 직접 고르거나 ✨ 추천
+    raidNet.myPicks = mine.some(Boolean) ? mine.map(p=>p?p.key:null) : raidLoadForm(d.bossId); // (v269) 처음엔 비워 둠 — 직접 고르거나 ✨ 추천 · (v308) 도전했던 보스는 그때 4칸
     raidNet.picksInit = true;
     if(!mine.some(Boolean) && raidNet.myPicks.some(Boolean)) raidSavePicks();
   }
@@ -3902,11 +3905,12 @@ function showRaidPickModal(){
   document.getElementById('raidReadyBtn').addEventListener('click', ()=>{
     if(!raidNet.myPicks.some(Boolean)){ toast('최소 1마리 선택 필요'); return; }
     if(solo){
-      const alone = !!raidNet.alone;
+      const alone = !!raidNet.alone; raidSaveForm(raidWeekBoss().id);
       const sf = buildRaidFight(raidMyPickPayload(), alone ? [] : raidAiPickPayload(), raidWeekBoss().id, raidNet.diff||state.raidDiff||'normal');
       if(alone){ sf.alone = 'solo_'+Date.now().toString(36); raidUseTicket(sf.alone); } // 시작할 때 입장권 사용(중간에 나가도 돌려받지 않음 — 팀 레이드와 같음)
       state.skillFight = sf; skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); return;
     }
+    if(!myReady) raidSaveForm(d.bossId);
     raidUpdate({ ready:{ [raidNet.uid]: !myReady } });
   });
   if(document.getElementById('raidPickLeaveBtn')) document.getElementById('raidPickLeaveBtn').addEventListener('click', (e)=>{
@@ -4229,7 +4233,7 @@ function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
-      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, logUnitName(u.side, u)+' 빙결로 쉼'); sf.queuePos++; continue; }
+      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
       if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
       if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
@@ -4257,7 +4261,7 @@ function roundStartEffects(sf){
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
     if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
-    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧재생' }); }
+    if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
@@ -4272,7 +4276,7 @@ function roundStartEffects(sf){
       }
       if(p.line==='light_b' && unitPG(p)>=1){
         const slow = aliveUnits(sideUnits(sf, side)).reduce((x,y)=> effSpeed(y) < effSpeed(x) ? y : x);
-        slow.st.haste = { v: Math.max(slow.st.haste ? slow.st.haste.v : 0, [0,5,6,8,10][unitPG(p)]), r: 1 }; hits.push({ side, idx:slow.idx, kind:'status', text:'⏩가속', src:SPIRITS[p.key].name+' 패시브' });
+        slow.st.haste = { v: Math.max(slow.st.haste ? slow.st.haste.v : 0, [0,5,6,8,10][unitPG(p)]), r: 1 }; hits.push({ side, idx:slow.idx, kind:'status', text:'⏩가속' } /* (v308) 버프·디버프 글자엔 정령 이름 안 붙임 */);
       }
     });
   });
@@ -4538,7 +4542,7 @@ const LINE_KITS = {
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2}; },'💧재생'); } } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
         '대상 편 전체 회복 (시전자 최대체력 '+pctTxt([0,0,.12,.16,.20][g])+')',
@@ -5204,11 +5208,6 @@ function showBossInfo(stageIdx){ // (v260) 한눈에: 머리(그림·속성·하
 }
 function showBossSquadPicker(stageIdx){
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
-  if(!state.bossSquadInit || !state.bossSquadInit[stageIdx]){
-    const def = owned.slice().sort((a,c)=> unitAtk(c)-unitAtk(a)).slice(0, GRID_SLOTS);
-    state.formation = Array.from({length: GRID_SLOTS}, (_,i)=> def[i] || null);
-    state.bossSquadInit = state.bossSquadInit || {}; state.bossSquadInit[stageIdx] = true;
-  }
   save();
   const gk = bossGimmickFor(stageIdx), gi = BOSS_GIMMICK_INFO[gk];
   let html = '<h3 style="text-align:center; margin-bottom:6px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 배치</h3>'
@@ -5409,6 +5408,8 @@ function showStatusInfo(u){
   const l = statusList(u);
   openInfoOverlay((u.side==='enemy'?'적 ':'')+(u.dispName||SPIRITS[u.key].name)+' · 상태 효과', l.length ? l.map(x=>'<div style="display:flex; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sbg '+(x.good?'g':'b')+'" style="font-size:16px;">'+x.i+'</span><div><b style="font-size:13px;">'+x.t+'</b><div class="sub" style="font-size:12px;">'+x.d+'</div></div></div>').join('') : '<div class="sub" style="text-align:center;">걸린 효과 없음</div>');
 }
+// (v308) 빙결 연출 — 레이드 얼음 기둥 그림(그림자 뺌)을 정령 위에 흐리게 덮음
+const FRZ_ART = '<svg viewBox="4 2 54 72" preserveAspectRatio="none" aria-hidden="true"><polygon points="18,72 14,30 22,10 30,4 38,12 46,28 42,72" fill="#bfeaff" stroke="#3a8fc7" stroke-width="2.5" stroke-linejoin="round"/><polygon points="30,4 38,12 36,70 30,72" fill="#8fd3f7"/><polygon points="22,10 26,40 20,70 18,72 14,30" fill="#e8f8ff"/><polygon points="8,72 6,52 12,44 16,56 15,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><polygon points="45,72 46,50 52,42 55,58 52,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><path d="M24 22 L27 36 M34 30 L32 48" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>';
 // (v273) 레이드 얼음 기둥·씨앗 그림 — 정령 칸처럼 보이지 않게 직접 그린 물체
 function addArtHtml(kind){
   if(kind==='pillar') return '<span class="add-art pillar"><svg viewBox="0 0 60 80" aria-hidden="true"><ellipse cx="30" cy="74" rx="22" ry="5" fill="#0006"/><polygon points="18,72 14,30 22,10 30,4 38,12 46,28 42,72" fill="#bfeaff" stroke="#3a8fc7" stroke-width="2.5" stroke-linejoin="round"/><polygon points="30,4 38,12 36,70 30,72" fill="#8fd3f7"/><polygon points="22,10 26,40 20,70 18,72 14,30" fill="#e8f8ff"/><polygon points="8,72 6,52 12,44 16,56 15,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><polygon points="45,72 46,50 52,42 55,58 52,72" fill="#a8defa" stroke="#3a8fc7" stroke-width="2" stroke-linejoin="round"/><path d="M24 22 L27 36 M34 30 L32 48" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg></span>';
@@ -5459,7 +5460,7 @@ function battleUnitHtml(u, opts){
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (v185) 특수 규칙 배율
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+'</div>'
-    + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz"><b><i></i></b></div>' : '') + (u.st.burn>0 ? '<div class="fx-burn"><i></i><i></i><i></i></div>' : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i></div>' : '') + (u.st.curse ? '<div class="fx-curse"></div>' : '') : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
+    + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + (u.st.burn>0 ? '<div class="fx-burn"><i></i><i></i><i></i></div>' : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i></div>' : '') + (u.st.curse ? '<div class="fx-curse"></div>' : '') : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
@@ -5617,7 +5618,7 @@ function showSkillStageScreen(){
   const curUnit = (side==='me' && !raidWaiting) ? unitAt(sf, 'me', cur.idx) : null;
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
-  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult(); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
+  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
   if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; }
@@ -5943,7 +5944,7 @@ function showBossPrepModal(stageIdx){
   });
   document.getElementById('bossInfoBtn2').addEventListener('click', (e)=>{ e.stopPropagation(); showBossInfo(stageIdx); });
   document.getElementById('startBossFightBtn').addEventListener('click', ()=>{
-    if(state.stageFormations && Array.isArray(state.stageFormations[stageIdx])) applyStageFormation(stageIdx); // (v300) 한 번 도전한 보스는 그때 덱 그대로
+    applyStageFormation(stageIdx); // (v300) 한 번 도전한 보스는 그때 덱 그대로 · (v308) 처음이면 빈 칸부터
     showBossSquadPicker(stageIdx);
   });
 }
@@ -7707,8 +7708,7 @@ function saveTowerFormation(f){
 }
 function applyTowerFormation(f){
   const saved = state.towerFormations && state.towerFormations[f];
-  if(!Array.isArray(saved)) return;
-  state.formation = Array.from({length:5}, (_,k)=> (typeof saved[k]==='string' && SPIRITS[saved[k]]) ? saved[k] : null);
+  state.formation = Array.from({length:5}, (_,k)=> (Array.isArray(saved) && typeof saved[k]==='string' && SPIRITS[saved[k]]) ? saved[k] : null); // (v308) 처음 가는 층은 빈 칸부터
   cleanupFormation();
 }
 function saveStageFormation(i){
@@ -8910,6 +8910,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:308, v:'3.2.4', date:'2026-10-01', secs:[
+    { t:'전투', items:[ '빙결 연출 — 얼음 기둥 그림을 흐리게 덮는 모습으로 변경', '빙결은 자기 차례가 올 때 풀림 — 풀리는 순간 얼음이 깨지며 「빙결 해제 · 행동 불가」 표시', '회복·재생 숫자 아래에 출처(스킬·유물 이름) 표시 · 버프·디버프 글자에서 정령 이름 뺌' ]},
+    { t:'진형', items:[ '레이드·월드 보스도 보스마다 마지막으로 도전한 진형을 기억', '처음 도전하는 챕터 보스·탑 층·던전·레이드·월드 보스는 빈 칸부터 시작' ]},
+  ]},
   { build:307, v:'3.2.3', date:'2026-10-01', secs:[
     { t:'진형·프리셋', items:[ '진형 칸에 정령을 넣으면 칸이 커지던 것 — 처음부터 넣었을 때 크기로', '준비 창의 내 칸 ⓘ와 정령 배치 창에서 길게 누르기 → 스킬만 보이던 창 대신 정령 관리 창(장비·룬·강화·각성·스킬 보기) · 닫으면 원래 화면으로 (전투 중 정보 창은 그대로)' ]}
   ]},
@@ -10410,7 +10414,7 @@ function showDungeonPrep(el, n, keep){
   const pool = dungeonPool(el);
   state.dungeonForms = state.dungeonForms || {};
   if(!keep){ const f = (state.dungeonForms[el] || []).slice(0, GRID_SLOTS); state.formation = Array.from({length:GRID_SLOTS}, (_,i)=> (f[i] && pool.includes(f[i])) ? f[i] : null);
-    if(!state.formation.some(Boolean)) state.formation = recommendFormation([], pool); }
+    } // (v308) 처음 가는 던전은 빈 칸부터 (예전엔 추천 배치로 채움)
   state.formation = state.formation.map(k=> (k && pool.includes(k)) ? k : null);
   state.dungeonForms[el] = state.formation.slice(); save();
   const info = ELEMENT_INFO[el], cells = dungeonEnemyGrid(el, n), pv = buildDungeonFight(el, n), rw = dungeonReward(n), first = n > dungeonBest(el);
@@ -10974,7 +10978,7 @@ function bindWorldBossTab(){
   document.querySelectorAll('[data-wb-claim]').forEach(b=>b.addEventListener('click', ()=>{ wbClaim(parseInt(b.dataset.wbClaim)); render(); }));
   document.querySelectorAll('[data-wbshop]').forEach(b=>b.addEventListener('click', ()=>{ const it = wbShopItem(WB_SHOP.find(x=>x.id===b.dataset.wbshop)); openInfoOverlay(it.icon+' '+it.name, '<div class="sub" style="text-align:center; margin-bottom:10px;">'+it.desc+'</div><div class="sub" style="text-align:center;">가격 <span class="wbgem">'+uiIc('runestone')+'</span> '+it.price+' · 보유 '+(state.wbGems||0)+'</div><button class="btn gold" id="wbBuyGo" style="margin-top:10px;">구입하기</button>');
     const g = document.getElementById('wbBuyGo'); if(g) g.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>x.remove()); wbShopBuy(it.id); }); }));
-  const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', showWorldBossPrep);
+  const go = document.getElementById('wbGo'); if(go) go.addEventListener('click', ()=>{ applyWbFormation(); showWorldBossPrep(); });
   { const a = document.getElementById('wbSweep1'), b = document.getElementById('wbSweepAll'); if(a) a.addEventListener('click', ()=>wbSweep(false)); if(b) b.addEventListener('click', ()=>wbSweep(true)); } // (v279)
 }
 // (v279) 소탕 — 오늘 한 번이라도 직접 도전했으면, 남은 도전을 오늘 최고 피해 그대로 바로 처리 (보상도 도전과 같음)
@@ -10994,6 +10998,9 @@ function wbSweep(all){
   const fake = { result:{} }; wbSubmit(fake).then(()=>{ if(fake.result.killer) toast('⚔️ 소탕으로 막타 — 처치자 보상', 3500); if(activeTab==='worldboss') render(); });
   render();
 }
+// (v308) 월드 보스마다 마지막으로 도전한 진형을 기억 — 처음 만나는 보스는 빈 칸부터
+function saveWbFormation(){ if(!state.formation.some(Boolean)) return; state.wbForms = state.wbForms || {}; state.wbForms[wbPhase().g] = state.formation.slice(0, GRID_SLOTS); }
+function applyWbFormation(){ const saved = state.wbForms && state.wbForms[wbPhase().g]; state.formation = Array.from({length: GRID_SLOTS}, (_,k)=> (Array.isArray(saved) && typeof saved[k]==='string' && SPIRITS[saved[k]]) ? saved[k] : null); cleanupFormation(); }
 function showWorldBossPrep(){
   const s = wbState(); if(wbRemain()<=0){ toast('이번 주 보스 처치 완료'); return; } if(s.used >= wbTries()){ toast('오늘 도전 끝 — 내일 다시'); return; }
   const weak = wbWeakEl(), pv = buildWorldBossFight();
@@ -11011,7 +11018,7 @@ function showWorldBossPrep(){
   document.getElementById('wbStart').addEventListener('click', ()=>{
     if(!state.formation.some(Boolean)){ toast('최소 1마리 배치'); return; }
     const st = wbState(); if(st.used >= wbTries()) return;
-    st.used += 1; passBump('wb'); closeModal(); state.skillFight = buildWorldBossFight(); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
+    st.used += 1; passBump('wb'); saveWbFormation(); closeModal(); state.skillFight = buildWorldBossFight(); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
   });
 }
 function renderTowerTab(){
@@ -11129,7 +11136,7 @@ function expApplyRelics(run, sf, isStrong){
     if(isStrong && expHasRelic(run,'hunter')) m *= 1.30;
     u.atk = Math.round(u.atk*m);
     if(expHasRelic(run,'vanguard') && isFrontRow(u.idx)){ u.st.shield = Math.round(u.maxHp*0.25); u.st.shieldR = 2; }
-    if(expHasRelic(run,'moss')) u.st.regen = { v:0.04, r:99 };
+    if(expHasRelic(run,'moss')) u.st.regen = { v:0.04, r:99, src:'재생 이끼' };
     if(expHasRelic(run,'thorn')) u.st.reflect = { v:0.12, r:99 };
     if(expHasRelic(run,'feather')) u.st.haste = { v:12, r:99 };
     if(expHasRelic(run,'charm')) u.st.ward = 1;
@@ -13008,7 +13015,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 307, APP_VERSION = '3.2.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 308, APP_VERSION = '3.2.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
