@@ -91,12 +91,13 @@
   .sc-nav{position:absolute; top:50%; transform:translateY(-50%); z-index:3; width:34px; height:52px; border-radius:12px; border:1px solid #ffffff33; background:#0008; color:#fff; font-size:28px; line-height:1;} .sc-nav.l{left:8px;} .sc-nav.r{right:8px;}
   .sc-dots{display:flex; justify-content:center; gap:6px; margin:0 0 10px;} .sc-dots i{width:7px; height:7px; border-radius:50%; background:#ffffff40; transition:all .25s;} .sc-dots i.on{width:18px; border-radius:4px; background:var(--ec);}
   .dg-door{border-radius:40% 40% 4px 4px / 22% 22% 4px 4px;}
-  .dg-door.shut::before{content:''; position:absolute; inset:0; border-radius:inherit; background:#050410b0; backdrop-filter:grayscale(.8); -webkit-backdrop-filter:grayscale(.8);}
-  .dg-door.open.sel{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 80%, #fff), 0 0 24px var(--ec); animation:dgGlow 1.6s ease-in-out infinite alternate;}
-  .dg-door.shut.sel::before{background:#05041080;}
+  .dg-door.sel{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 75%, #fff), 0 0 26px var(--ec); animation:dgGlow 1.6s ease-in-out infinite alternate;}
+  .dg-door.shut.sel{box-shadow:0 0 0 3px #d8d4e8, 0 0 18px #ffffff55; animation:none;}
   .dg-lab{position:absolute; left:50%; top:calc(100% + 10px); transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap; line-height:1.15; opacity:0; transition:opacity .25s;} .sc-spot.sel .dg-lab{opacity:1;}
   .dg-lab b{font-size:14px; text-shadow:0 2px 4px #000;} .dg-lab small{font-size:11px; font-weight:800; color:#fff; background:#000a; border-radius:8px; padding:2px 8px; margin-top:3px;} .dg-door.open .dg-lab small{background:color-mix(in srgb, var(--ec) 70%, #000);}
-  @keyframes dgGlow{0%{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 70%, #fff), 0 0 10px var(--ec);} 100%{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 90%, #fff), 0 0 28px var(--ec);}}
+  .dg-car::after{background:linear-gradient(180deg,transparent 90%,#0d0b1f 100%); }
+  .dg-car::before{content:''; position:absolute; inset:0; z-index:1; pointer-events:none; backdrop-filter:grayscale(1) brightness(.75); -webkit-backdrop-filter:grayscale(1) brightness(.75); -webkit-mask:linear-gradient(90deg,#000 calc(var(--cx,50%) - 38%),transparent calc(var(--cx,50%) - 17%),transparent calc(var(--cx,50%) + 17%),#000 calc(var(--cx,50%) + 38%)); mask:linear-gradient(90deg,#000 calc(var(--cx,50%) - 38%),transparent calc(var(--cx,50%) - 17%),transparent calc(var(--cx,50%) + 17%),#000 calc(var(--cx,50%) + 38%)); transition:none;}
+  @keyframes dgGlow{0%{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 65%, #fff), 0 0 14px var(--ec);} 100%{box-shadow:0 0 0 3px color-mix(in srgb, var(--ec) 85%, #fff), 0 0 30px var(--ec);}}
   .ch-spot2{border-radius:50%;} .ch-spot2:not(.sel){opacity:.85;} .ch-spot2.lock{filter:grayscale(.6) brightness(.7);}
   .ch-spot2.sel::before{content:''; position:absolute; inset:-6%; border-radius:50%; background:radial-gradient(circle, #ffd27a33 0%, transparent 62%); animation:tintP 1.6s ease-in-out infinite alternate;}
   .ch-lab{position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); white-space:nowrap; font-size:13px; font-weight:900; color:#ffe9b8; background:#140c22d9; border:1.5px solid #d9a35a; border-radius:10px; padding:4px 11px; box-shadow:0 0 10px #ffb34755, 0 3px 6px #000a; opacity:0; transition:opacity .25s;} .sc-spot.sel .ch-lab{opacity:1;}
@@ -10867,7 +10868,7 @@ function chDetailHtml(k){ const c = challengeCards().find(x=>x.tab===k); if(!c) 
 function renderChallengeTab(){
   const cs = challengeCards(), keys = Object.keys(CH_SPOTS).filter(k=>cs.some(c=>c.tab===k)); if(!keys.includes(chSel)) chSel = keys[0];
   let h = '<div style="text-align:center; margin:2px 0 6px;"><div class="dg-title">'+uiIc('trophy')+' 도전</div><div class="sub" style="font-size:11px;">뚫는 재미 · 보상은 처음 돌파할 때만</div></div>' + TOP_MARK;
-  h += sceneCarHtml('chCar', 'assets/bg_challenge.webp', 1024, 1536, keys.map(k=>{ const c = cs.find(x=>x.tab===k), p = CH_SPOTS[k]; return { k, x:p.x, y:p.y, w:p.w, h:p.h, cls:'ch-spot2'+(c.lock?' lock':''), inner:'<span class="ch-lab">'+(c.lock?uiIc('lock')+' ':'')+p.lab+(c.dot?'<i class="ch-dot"></i>':'')+'</span>' }; }), chSel, 1.9, 'ch-car');
+  h += sceneCarHtml('chCar', 'assets/bg_challenge.webp', 1024, 1536, keys.map(k=>{ const c = cs.find(x=>x.tab===k), p = CH_SPOTS[k]; return { k, x:p.x, y:p.y, w:p.w, h:p.h, cls:'ch-spot2'+(c.lock?' lock':''), inner:'' }; }), chSel, 1.9, 'ch-car');
   h += '<div class="sc-dots">'+keys.map(k=>'<i class="'+(k===chSel?'on':'')+'" style="--ec:#ffc46a;"></i>').join('')+'</div>';
   h += '<div id="chDetail">'+chDetailHtml(chSel)+'</div>';
   return h;
@@ -10895,6 +10896,7 @@ function sceneCarPlace(el, animate){
   const yy = Math.min(0, Math.max(H - ih*sc, y));
   tr.style.transition = animate ? 'transform .35s ease' : 'none';
   tr.style.width = Math.round(iw*sc)+'px'; tr.style.transform = 'translate('+Math.round(x)+'px,'+Math.round(yy)+'px)';
+  el.style.setProperty('--cx', (((+sp.dataset.x)*sc + x)/W*100).toFixed(1)+'%'); // 고른 곳 화면 위치 (회색 그라데이션이 따라감)
 }
 function sceneCarBind(id, keys, onSel, onOpen){
   const el = document.getElementById(id); if(!el) return;
