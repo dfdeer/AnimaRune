@@ -3153,7 +3153,7 @@ async function friendAddByCode(input){
     if(friendNet.friends[fuid]){ toast('이미 친구'); return; }
     if(friendIncomingReqs().includes(fuid)){ friendNet.busy = false; await friendAccept(fuid, true); toast('서로 요청해서 바로 친구 등록'); return; } // 상대가 먼저 요청했으면 바로 수락
     if(state.friendSent && state.friendSent[fuid]){ toast('이미 요청함 — 상대가 수락하면 친구 목록에 표시'); return; }
-    await raidNet.db.doc('friendReqs/'+fuid+'/'+raidNet.uid).set({ name: friendNet.name, t: Date.now() });
+    await raidNet.db.doc('friendReqs/'+fuid+'/'+raidNet.uid).set({ name: friendNet.name, t: Date.now() }); pushPing({ t:'friend', to:fuid, from:raidNet.uid }); // (v310) 알림
     if(!state.friendSent) state.friendSent = {};
     state.friendSent[fuid] = { t: Date.now(), code }; save();
     toast('친구 요청 보냄 — 상대가 수락하면 친구 목록에 표시', 3000);
@@ -3165,6 +3165,7 @@ async function friendAccept(from, ok){
     if(ok) await raidNet.db.doc('friends/'+raidNet.uid+'/'+from).set(true);
     await raidNet.db.doc('friendReqs/'+raidNet.uid+'/'+from).delete();
     await raidNet.db.doc('friendReqs/'+from+'/'+raidNet.uid).set(ok ? { name: friendNet.name, t: Date.now(), accept: true } : { name: friendNet.name, t: Date.now(), reject: true }); // 보낸 사람에게 답
+    if(ok) pushPing({ t:'friend', to:from, from:raidNet.uid }); // (v310) 수락 알림
     if(state.friendSent && state.friendSent[from]){ delete state.friendSent[from]; save(); }
   }catch(e){ raidNetError(e); }
 }
@@ -6091,7 +6092,7 @@ function askThreadHtml(x, admin){ const L = askThread(x);
     : (i===0 ? '<div class="ask-q">'+escTxt(y.m)+'</div>' : '<div class="ask-u">'+(admin?'추가: ':'↪ 추가: ')+escTxt(y.m)+'<small>'+new Date(y.t).toLocaleString('ko-KR')+'</small></div>')).join(''); }
 async function askAddMsg(uid, id, text, admin){ const mid = Date.now().toString(36)+Math.random().toString(36).slice(2,5), t = serverNow();
   await raidNet.db.doc('inquiries/'+uid+'/'+id+'/msgs/'+mid).set({ m: text.slice(0,300), t, a: !!admin });
-  await raidNet.db.doc('inquiries/'+uid+'/'+id).update(admin ? { rt: t } : { ut: t }); }
+  await raidNet.db.doc('inquiries/'+uid+'/'+id).update(admin ? { rt: t } : { ut: t }); pushPing({ t:'askMsg', uid, id, mid }); }
 function askNewReply(){ const v = askNet.mine || {}; return Object.keys(v).some(k=>v[k] && (v[k].rt||0) > (state.askSeen||0)); }
 function inboxNewCount(){ if(!askNet.all || !isAdmin()) return 0; let n = 0; Object.keys(askNet.all).forEach(u=>{ const m = askNet.all[u] || {}; Object.keys(m).forEach(id=>{ const x = m[id]; if(x && x.text && askWaiting(x) && askLastUser(x) > (state.inboxSeen||0)) n++; }); }); return n; }
 function askMarkSeen(){ const v = askNet.mine || {}; let t = state.askSeen||0; Object.keys(v).forEach(k=>{ if(v[k] && v[k].rt > t) t = v[k].rt; }); if(t!==(state.askSeen||0)){ state.askSeen = t; save(); } mailBadgeUpdate(); }
@@ -6195,7 +6196,7 @@ function showMailSendModal(){
       path = 'mail/user/'+uid+'/'+id; who = (nm || raidNameOf(uid))+' ('+code+')'; mail.toName = String(nm || raidNameOf(uid) || '').slice(0,20); mail.toCode = code; // (v296) 관리 창에 받는 사람 표시
     }
     const b = btnEl; if(!b.dataset.armed){ b.dataset.armed = '1'; b.textContent = who+'에게 보내기? (한 번 더)'; return; }
-    try{ await raidNet.db.doc(path).set(mail); }
+    try{ await raidNet.db.doc(path).set(mail); { const ps = path.split('/'); pushPing(ps[1]==='all' ? { t:'mailAll', id:ps[2] } : { t:'mail', to:ps[2], id:ps[3] }); } } // (v310) 알림
     catch(e){ toast('보내기 실패 — Firebase 규칙의 관리자 쓰기 권한 확인 필요 ('+((e && e.code)||'오류')+')', 5000); b.dataset.armed = ''; b.textContent = '보내기'; return; }
     // (v247) 보낸 뒤 다시 읽어 확인 — 쓰기는 됐는데 읽기가 막힌 경우를 알려줌
     // 다른 사람 개인 우편은 규칙상 본인만 읽을 수 있어 관리자가 다시 읽으면 거절되는 게 정상 → 전체 우편·나에게 보낸 우편만 확인
@@ -8516,7 +8517,7 @@ function renderSpiritsTab(){
 }
 
 // ===================== (v310) 휴대폰 푸시 알림 =====================
-// 보내는 쪽은 Firebase 함수(functions/index.js · docs/푸시_알림_설정.md). 게임은 ① 이 기기의 받는 주소 등록 ② 끈 알림 종류 ③ 예약 시각(화로·파견·일일)만 기록
+// 보내는 쪽은 Cloudflare Workers(cloudflare/push-worker.js · docs/푸시_알림_설정.md). 게임은 ① 이 기기의 받는 주소 등록 ② 끈 알림 종류 ③ 예약 시각(화로·파견·일일) 기록 ④ 친구 요청·우편·문의를 저장한 직후 서버를 깨움(pushPing)
 const PUSH_KINDS = [ ['friend','🙋 친구 요청'], ['mail','📮 우편 도착'], ['ask','💬 문의 답장'], ['hearth','🔥 화로 가득'], ['dispatch','🧭 파견 완료'], ['daily','🌅 오늘 안 들어왔을 때 (낮 12시)'] ];
 function pushSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
 function pushIosNeedsInstall(){ const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); const app = window.navigator.standalone===true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); return ios && !app; }
@@ -8545,13 +8546,13 @@ async function pushUnregister(){
   const fb = raidNet.fb, sid = state.settings.pushSid;
   state.settings.push = false; save();
   if(fb && sid) await fb.remove(pushRef('subs/'+sid)).catch(()=>{});
-  if(fb) await fb.remove(pushRef('due')).catch(()=>{});
+  if(fb) await fb.remove(fb.ref(fb.rtdb, 'pushDue/'+fb.uid)).catch(()=>{});
   try{ const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); }catch(e){}
 }
 // 접속할 때: 켜 둔 기기면 주소를 다시 등록(계정이 바뀌었거나 주소가 갱신된 경우)
-let pushReady = false; // 알림 서버(공개 키)가 준비됐을 때만 설정에 버튼을 보임
+let pushReady = false, pushUrl = ''; // 알림 서버(공개 키·주소)가 준비됐을 때만 설정에 버튼을 보임
 function pushRefresh(){
-  const fb = raidNet.fb; if(fb) fb.get(fb.ref(fb.rtdb, 'pushCfg/pub')).then(v=>{ pushReady = !!v.val(); }).catch(()=>{});
+  const fb = raidNet.fb; if(fb) Promise.all([fb.get(fb.ref(fb.rtdb, 'pushCfg/pub')), fb.get(fb.ref(fb.rtdb, 'pushCfg/url'))]).then(([p,u])=>{ const url = String(u.val()||''); pushUrl = /^https:\/\/[^\s"'<>]+$/.test(url) ? url.replace(/\/$/,'') : ''; pushReady = !!p.val() && !!pushUrl; }).catch(()=>{});
   if(state.settings.push && pushSupported() && Notification.permission==='granted') pushRegister(false).catch(()=>{}); }
 // 예약 시각 — 바뀌었을 때만 서버에 씀
 let pushDueLast = '', pushDueTimer = null;
@@ -8565,8 +8566,10 @@ function pushDueTimes(){
 function pushSyncDue(){
   if(!state.settings.push || !raidNet.fb) return;
   const due = pushDueTimes(), key = JSON.stringify(due); if(key===pushDueLast) return;
-  pushDueLast = key; raidNet.fb.set(pushRef('due'), due).catch(()=>{ pushDueLast = ''; });
+  pushDueLast = key; raidNet.fb.set(raidNet.fb.ref(raidNet.fb.rtdb, 'pushDue/'+raidNet.fb.uid), due).catch(()=>{ pushDueLast = ''; });
 }
+// 친구 요청·우편·문의를 저장한 직후 알림 서버를 깨움 — 서버가 DB에서 실제로 있는지 확인하고 받는 사람에게 보냄(받는 사람이 알림을 켰을 때만)
+function pushPing(o){ if(!pushUrl) return; try{ fetch(pushUrl+'/ping', { method:'POST', headers:{ 'content-type':'text/plain' }, body: JSON.stringify(o), keepalive:true }).catch(()=>{}); }catch(e){} }
 function pushSchedule(){ if(!state.settings.push) return; clearTimeout(pushDueTimer); pushDueTimer = setTimeout(pushSyncDue, 1500); }
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') pushSyncDue(); });
 function showPushModal(){
@@ -8994,8 +8997,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:310, v:'3.3.1', date:'2026-10-01', secs:[
+    { t:'정리', items:[ '패치 노트 문구 정리' ]},
+  ]},
   { build:309, v:'3.3.0', date:'2026-10-01', secs:[
-    { t:'휴대폰 알림', items:[ '☰ 설정 → 🔔 휴대폰 알림 — 친구 요청·우편·문의 답장·화로 가득·파견 완료·일일 알림(낮 12시)을 종류별로 켜고 끔', '아이폰은 Safari 공유 → 홈 화면에 추가한 앱에서만 받을 수 있음' ]},
     { t:'보스전', items:[ '웨이브가 바뀌어도 버프·디버프(보호막·강화·화상·독·빙결 등)가 남은 라운드 그대로 이어짐' ]},
     { t:'초월', items:[ '초월은 강화의 다음 단계 — 각성 5단계 + 강화 최대(보통 +15)를 다 하면 열림', '강화 숫자에 이어서 노란 +16, +17 … 로 표시 · 정령 관리 창에서 강화를 다 하면 강화 줄이 초월 줄로 바뀜' ]},
   ]},
@@ -9329,7 +9334,7 @@ async function showAskModal(){
       if(btn.dataset.busy) return; btn.dataset.busy = '1';
       const id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
       try{
-        await raidNet.db.doc('inquiries/'+raidNet.uid+'/'+id).set({ cat: askCat, text: text.slice(0,500), t: serverNow(), name: String(friendNet.name||'').slice(0,12), code: friendNet.code||'', ver: APP_BUILD });
+        await raidNet.db.doc('inquiries/'+raidNet.uid+'/'+id).set({ cat: askCat, text: text.slice(0,500), t: serverNow(), name: String(friendNet.name||'').slice(0,12), code: friendNet.code||'', ver: APP_BUILD }); pushPing({ t:'askNew', uid:raidNet.uid, id }); // (v310)
         askLastAt = Date.now(); toast('문의 보냄 · 답장은 보낸 문의 탭에서 확인'); askTab = 'mine'; askOpen = id; showAskModal();
       }catch(e){ toast('보내기 실패 — 잠시 뒤 다시'); raidNetError(e); }
       finally{ delete btn.dataset.busy; }
@@ -13109,7 +13114,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 309, APP_VERSION = '3.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 310, APP_VERSION = '3.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
