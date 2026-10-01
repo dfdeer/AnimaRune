@@ -1240,7 +1240,7 @@
   .mail-modal{display:flex; flex-direction:column; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px - var(--sat) - var(--sab)); overflow:hidden;} .mail-list{flex:1 1 auto; min-height:120px; overflow-y:auto; overscroll-behavior:none; -webkit-overflow-scrolling:touch; padding:2px; margin:0 -2px;} .mail-bar{flex-shrink:0; padding-top:10px; margin-top:6px; border-top:1px solid #ffffff14;}
   .mail-row{display:flex; align-items:center; gap:8px; width:100%; padding:11px 12px; margin-bottom:6px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a; color:var(--text); text-align:left;} .mail-row b{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .mail-row small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-row.done{opacity:.5;} .mail-dot{flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#ff5757;}
   .pick-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px;} .pick-cell{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; border-radius:12px; background:#ffffff0d; border:2px solid #ffffff1a; color:var(--text);} .pick-cell.on{border-color:#ffd557; background:#ffd5571f;} .pick-cell .av{width:52px; height:52px; font-size:30px;} .pick-cell b{font-size:13px;} .pick-cell small{font-size:10px; color:var(--sub);}
-  .mail-card{padding:10px 12px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .mail-card.done{opacity:.55;} .mail-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;} .mail-top small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-body{font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5; word-break:keep-all;} .mail-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;}
+  .mail-card{padding:10px 12px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .mail-card.done{opacity:.55;} .mail-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;} .mail-top small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-body{font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5; word-break:keep-all;} .mail-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;} .mm-edit{flex-shrink:0; background:#ffffff14; border:1px solid #ffffff2a; border-radius:8px; padding:2px 7px; font-size:13px; cursor:pointer;}
   .ms-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px;} .ms-grid label{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--sub);} .ms-grid input{width:100%; padding:6px 8px; border-radius:8px; border:1px solid #ffffff2a; background:#0d0d14; color:var(--text); font-size:14px;}
   .inv-notice{position:fixed; top:calc(10px + var(--sat)); left:50%; transform:translateX(-50%); z-index:9000; display:flex; align-items:center; gap:8px; width:min(92vw, 420px); padding:10px 14px; border-radius:16px; border:2px solid #ffd557; background:linear-gradient(135deg,#3b2f7a,#26215c); color:var(--text); box-shadow:0 8px 24px #000a; text-align:left; animation:invIn .35s ease-out;} .inv-notice b{flex:1; font-size:14px;} .inv-notice small{color:#ffd557; font-weight:800; white-space:nowrap;} .inv-notice span{font-size:20px;}
   @keyframes invIn{from{opacity:0; transform:translate(-50%,-16px);} to{opacity:1; transform:translate(-50%,0);}}
@@ -3726,6 +3726,7 @@ function makeFirebaseNet(fb){
         return fb.update(r, fbFlatten(JSON.parse(JSON.stringify(patch)), '', {}));
       },
       delete: ()=> fb.remove(r),
+      tx: fn=> fb.runTransaction(r, fn).then(res=>({ committed: !!res.committed, data: res.snapshot ? fbFromArrays(res.snapshot.val()) : null })), // (v296) 우편 수정: 받기 전일 때만 바꿈
       onSnapshot: (next, onErr)=> fb.onValue(r, s=>next(mkSnap(s)), e=>{ if(onErr) onErr(e); }),
       acquire: async ({holder, ttlMs})=>{
         const lr = fb.ref(fb.rtdb, 'locks/'+lockKey(path));
@@ -5524,7 +5525,13 @@ function showSkillStageScreen(){
       : sf.mode==='duel' ? (net ? '기권 — 상대 승리' : '결투가 끝남')
       : sf.mode==='raid' ? (net ? ((raidPartnerGone() || !raidNet.roomH) ? '레이드를 해산함' : '팀원에게 포기를 제안함 · 둘 다 동의하면 끝남') : '레이드가 끝남')
       : '지금 전투 진행이 사라짐';
-    confirmBox('전투에서 나갈까?', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; }, {danger:true});
+    // (v296) 혼자 하는 일반·보스·시련·요일 던전은 나가기 창에서 바로 처음부터 다시 (출정·월드 보스·레이드·결투는 다시 시작하면 안 되는 전투라 없음)
+    const retry = sf.mode==='boss' ? ()=>{ const roster = state.bossFight.roster.slice(); const i = sf.stageIdx; endBossWaveRun(false); startBossWaveRun(i, roster); }
+      : sf.mode==='trial' ? ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
+      : sf.mode==='dungeon' ? ()=>{ state.skillFight = buildDungeonFight(sf.dungeonEl, sf.dungeonN); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
+      : !sf.mode ? restartSkillStageFight : null;
+    confirmBox('전투에서 나갈까?', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; },
+      { danger:true, alt: retry ? { label:'🔁 다시', fn:()=>{ if(state.skillFight===sf) retry(); } } : null });
   };
   if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
@@ -5760,11 +5767,11 @@ function mailClean(m){
   const n = v=> Number.isFinite(v) ? Math.max(0, Math.min(1e7, Math.floor(v))) : 0, tm = v=> Number.isFinite(v) && v>0 ? Math.floor(v) : 0; // 시간(밀리초)은 자르지 않음
   const rw = m.reward && typeof m.reward==='object' ? m.reward : {}, items = {};
   if(rw.items && typeof rw.items==='object') Object.keys(rw.items).forEach(k=>{ if(TICKET_INFO[k] && n(rw.items[k])>0) items[k] = n(rw.items[k]); });
-  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), items: Object.keys(items).length ? items : null } }; // (v266) gems = 룬석(레이드 재화)
+  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), c: tm(m.c), et: tm(m.et), toName: String(m.toName||'').slice(0,20), toCode: String(m.toCode||'').slice(0,8), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), items: Object.keys(items).length ? items : null } }; // (v266) gems = 룬석(레이드 재화)
 }
 function mailList(){
   const now = Date.now(), out = [];
-  [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now)) return; out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!(state.mailClaimed && state.mailClaimed[p+':'+id]) })); }));
+  [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now)) return; out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!((state.mailClaimed && state.mailClaimed[p+':'+id]) || (p==='u' && m.c)) /* (v296) 개인 우편은 서버의 받은 표시(c)도 봄 */ })); }));
   return out.sort((a,b)=> (a.claimed-b.claimed) || (b.t-a.t));
 }
 function mailUnclaimed(){ return mailList().filter(m=>!m.claimed); }
@@ -5782,7 +5789,7 @@ function mailClaim(ids){
   if(!state.mailClaimed) state.mailClaimed = {};
   let essence = 0, stone = 0, gems = 0; const items = {};
   ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
-    if(m.scope==='u') raidNet.db.doc('mail/user/'+raidNet.uid+'/'+m.raw).delete().catch(()=>{}); }); // 받은 개인 우편은 서버에서 지움(기록은 세이브에)
+    if(m.scope==='u') raidNet.db.doc('mail/user/'+raidNet.uid+'/'+m.raw+'/c').set(Date.now()).catch(()=>{}); }); // (v296) 받은 개인 우편도 지우지 않고 받은 표시만(c) — 전체 우편처럼 보관 기간까지 남음 · 관리자가 받았는지 확인
   state.essence += essence; state.enhanceStone = (state.enhanceStone||0) + stone; state.raidGems = (state.raidGems||0) + gems; grantItems(Object.keys(items).length ? items : null);
   save(); sfx('claim'); render();
   toastReward({ essence, stone, gems, items: Object.keys(items).length ? items : null }, '📬 우편 '+ms.length+'개 보상 받음');
@@ -5821,37 +5828,28 @@ function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내�
 }
 function showMailSendModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
-  const tk = ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'];
   let h = '<h3 style="text-align:center;">📮 우편 보내기</h3>'
     + '<div class="sub" style="text-align:center; font-size:11px; margin:-4px 0 8px;">내 UID <b id="msUid" style="color:var(--text); user-select:all;">'+raidNet.uid+'</b> <button class="btn secondary small" id="msUidCp" style="width:auto; padding:2px 8px;">복사</button><br>Firebase 규칙의 \'관리자UID\' 자리에 이 값</div>'
     + '<div class="seg" id="msTo"><button data-to="all" class="on">모든 플레이어</button><button data-to="one">한 명 (친구 코드)</button></div>'
     + '<input id="msCode" class="fr-in code" maxlength="8" placeholder="받는 사람 친구 코드 8자리" style="display:none; margin-top:6px; width:100%;">'
     + '<input id="msTitle" class="fr-in" maxlength="40" placeholder="제목" style="margin-top:8px; width:100%;">'
     + '<textarea id="msBody" class="fr-in" maxlength="300" rows="3" placeholder="내용 (선택)" style="margin-top:6px; width:100%; resize:vertical;"></textarea>'
-    + '<div class="ms-grid">'
-    + '<label><span>'+uiIc('essence')+' 정수</span><input id="msE" type="number" min="0" value="0"></label>'
-    + '<label><span>'+uiIc('stone')+' 강화석</span><input id="msS" type="number" min="0" value="0"></label>'
-    + '<label><span>'+uiIc('runestone')+' 룬석</span><input id="msG" type="number" min="0" value="0"></label>'
-    + tk.map(k=>'<label><span>'+TICKET_INFO[k].icon+' '+TICKET_INFO[k].name.replace('정령 ','')+'</span><input data-tk="'+k+'" type="number" min="0" value="0"></label>').join('')
-    + '<label><span>보관 기간(일)</span><input id="msDays" type="number" min="1" max="90" value="7"></label></div>'
+    + mailRewardFormHtml(null, 7)
     + '<button class="btn gold" id="msSend" style="margin-top:10px;">보내기</button>';
-  const all = Object.keys(mailNet.all||{}).map(id=>Object.assign(mailClean(mailNet.all[id])||{}, {raw:id})).filter(m=>m.title).sort((a,b)=>b.t-a.t);
-  if(all.length) h += '<div class="fr-cap" style="margin-top:14px;">보낸 전체 우편</div>'+all.map(m=>'<div class="mail-card"><div class="mail-top"><b>'+escTxt(m.title)+'</b><small>'+(m.exp && m.exp<Date.now()?'만료':mailLeftTxt(m))+'</small></div><div class="mail-foot"><div>'+rewardPillsHtml(m.reward)+'</div><button class="fr-x" data-mdel="'+m.raw+'">삭제</button></div></div>').join('');
+  h += '<button class="btn secondary" id="msManage" style="margin-top:10px;">📋 보낸 우편 관리 (전체 · 개인)</button>'; // (v296) 보낸 우편 목록은 관리 창으로
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   let to = 'all'; const q = id=>document.getElementById(id);
   document.querySelectorAll('#msTo [data-to]').forEach(b=>b.addEventListener('click', ()=>{ to = b.dataset.to; document.querySelectorAll('#msTo [data-to]').forEach(x=>x.classList.toggle('on', x===b)); q('msCode').style.display = to==='one' ? 'block' : 'none'; }));
-  document.querySelectorAll('[data-mdel]').forEach(b=>b.addEventListener('click', async ()=>{ if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='정말?'; return; } try{ await raidNet.db.doc('mail/all/'+b.dataset.mdel).delete(); toast('삭제됨'); showMailSendModal(); }catch(e){ raidNetError(e); } }));
+  q('msManage').addEventListener('click', ()=>showMailManageModal('all'));
   if(q('msUidCp')) q('msUidCp').addEventListener('click', ()=>{ try{ navigator.clipboard.writeText(raidNet.uid).then(()=>toast('UID 복사됨'), ()=>toast('길게 눌러 복사')); }catch(e){ toast('길게 눌러 복사'); } });
   q('msSend').addEventListener('click', async (ev)=>{
     const b0 = ev.currentTarget; if(b0.dataset.busy) return; b0.dataset.busy = '1'; try{ await mailSendClick(b0, to); } finally{ delete b0.dataset.busy; }
   });
   async function mailSendClick(btnEl, to){
     const title = q('msTitle').value.trim(); if(!title){ toast('제목 입력 필요'); return; }
-    const num = v=> Math.max(0, Math.min(1e7, Math.floor(+v||0)));
-    const items = {}; document.querySelectorAll('[data-tk]').forEach(i=>{ const v = num(i.value); if(v>0) items[i.dataset.tk] = v; });
-    const days = Math.max(1, Math.min(90, num(q('msDays').value)||7));
-    const mail = { title, body: q('msBody').value.trim().slice(0,300), t: Date.now(), exp: Date.now()+days*86400000, reward: { essence: num(q('msE').value), stone: num(q('msS').value), gems: num(q('msG').value), items: Object.keys(items).length ? items : null } };
+    const f = mailRewardFormRead(document);
+    const mail = { title, body: q('msBody').value.trim().slice(0,300), t: Date.now(), exp: Date.now()+f.days*86400000, reward: f.reward };
     const id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     let path = 'mail/all/'+id, who = '모든 플레이어';
     if(to==='one'){
@@ -5859,7 +5857,7 @@ function showMailSendModal(){
       const s = await raidNet.db.doc('friendCodes/'+code).get(); const uid = s.exists ? s.data() : null;
       if(typeof uid!=='string'){ toast('없는 친구 코드'); return; }
       let nm = ''; try{ const ps = raidNet.user && await raidNet.user.profiles([uid]); nm = ps && ps[uid] && ps[uid].name || ''; }catch(e){}
-      path = 'mail/user/'+uid+'/'+id; who = (nm || raidNameOf(uid))+' ('+code+')';
+      path = 'mail/user/'+uid+'/'+id; who = (nm || raidNameOf(uid))+' ('+code+')'; mail.toName = String(nm || raidNameOf(uid) || '').slice(0,20); mail.toCode = code; // (v296) 관리 창에 받는 사람 표시
     }
     const b = btnEl; if(!b.dataset.armed){ b.dataset.armed = '1'; b.textContent = who+'에게 보내기? (한 번 더)'; return; }
     try{ await raidNet.db.doc(path).set(mail); }
@@ -5870,6 +5868,94 @@ function showMailSendModal(){
     let readOk = true; if(canRead){ try{ const chk = await raidNet.db.doc(path).get(); readOk = !!(chk && chk.exists); }catch(e){ readOk = false; } }
     toast(readOk ? '📮 '+who+'에게 보냄' : '📮 보냄 — 하지만 다시 읽기 실패: Firebase 규칙의 mail 읽기 권한 확인 필요', readOk ? 2500 : 5000); showMailSendModal();
   }
+}
+// (v296) 우편 보상 입력칸 — 보내기·수정 창이 같이 씀 (m = 기존 우편이면 그 값으로 채움)
+const MAIL_TK = ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'];
+function mailRewardFormHtml(m, days){
+  const rw = (m && m.reward) || {}, it = rw.items || {};
+  return '<div class="ms-grid">'
+    + '<label><span>'+uiIc('essence')+' 정수</span><input id="msE" type="number" min="0" value="'+(rw.essence||0)+'"></label>'
+    + '<label><span>'+uiIc('stone')+' 강화석</span><input id="msS" type="number" min="0" value="'+(rw.stone||0)+'"></label>'
+    + '<label><span>'+uiIc('runestone')+' 룬석</span><input id="msG" type="number" min="0" value="'+(rw.gems||0)+'"></label>'
+    + MAIL_TK.map(k=>'<label><span>'+TICKET_INFO[k].icon+' '+TICKET_INFO[k].name.replace('정령 ','')+'</span><input data-tk="'+k+'" type="number" min="0" value="'+(it[k]||0)+'"></label>').join('')
+    + '<label><span>'+(m?'남은 기간(일)':'보관 기간(일)')+'</span><input id="msDays" type="number" min="1" max="90" value="'+days+'"></label></div>';
+}
+function mailRewardFormRead(root){
+  const num = v=> Math.max(0, Math.min(1e7, Math.floor(+v||0))), g = id=>root.querySelector('#'+id);
+  const items = {}; root.querySelectorAll('[data-tk]').forEach(i=>{ const v = num(i.value); if(v>0) items[i.dataset.tk] = v; });
+  return { days: Math.max(1, Math.min(90, num(g('msDays').value)||7)), reward: { essence: num(g('msE').value), stone: num(g('msS').value), gems: num(g('msG').value), items: Object.keys(items).length ? items : null } };
+}
+// (v296) 보낸 우편 관리 — 전체 / 개인 탭. 개인 우편은 받았는지 보이고, 안 받은 것만 ✏️ 수정 (서버 규칙도 받은 우편 수정을 막음)
+// 다른 사람 개인 우편을 읽으려면 Firebase 규칙에 관리자 읽기 권한이 필요 (docs/계정연동_설정.md 4번)
+let mailAdm = { users:null, err:null, unsub:null };
+function mailAdminWatch(){
+  if(mailAdm.unsub || !raidNet.db || (mailAdm.err && Date.now()-(mailAdm.errAt||0) < 10000)) return; // 거절되면 10초 동안은 다시 안 붙음(창을 다시 그릴 때마다 반복 요청하지 않게)
+  mailAdm.unsub = raidNet.db.doc('mail/user').onSnapshot(s=>{ mailAdm.users = (s && s.exists) ? (s.data()||{}) : {}; mailAdm.err = null; if(document.getElementById('mailMng')) showMailManageModal(); },
+    e=>{ mailAdm.err = (e && (e.code||e.message)) || 'error'; mailAdm.errAt = Date.now(); mailAdm.unsub = null; if(document.getElementById('mailMng')) showMailManageModal(); });
+}
+let mailMngTab = 'all';
+function mailManageRows(tab){
+  const now = Date.now();
+  if(tab==='all') return Object.keys(mailNet.all||{}).map(id=>{ const m = mailClean(mailNet.all[id]); return m && Object.assign(m, { raw:id, path:'mail/all/'+id }); }).filter(Boolean).sort((a,b)=>b.t-a.t);
+  const out = [], U = mailAdm.users || {};
+  Object.keys(U).forEach(uid=>{ const box = U[uid]; if(!box || typeof box!=='object') return;
+    Object.keys(box).forEach(id=>{ const m = mailClean(box[id]); if(!m || !box[id].title) return; out.push(Object.assign(m, { raw:id, uid, path:'mail/user/'+uid+'/'+id, expired: m.exp && m.exp<now })); }); });
+  return out.sort((a,b)=>b.t-a.t);
+}
+function showMailManageModal(tab){
+  if(!isAdmin()){ toast('관리자 전용'); return; }
+  if(tab) mailMngTab = tab;
+  mailAdminWatch();
+  const now = Date.now(), rows = mailManageRows(mailMngTab);
+  let h = '<h3 style="text-align:center; margin:0 0 8px;">📋 보낸 우편 관리</h3>'
+    + '<div class="seg" id="mmTab"><button data-mm="all" class="'+(mailMngTab==='all'?'on':'')+'">전체 우편</button><button data-mm="user" class="'+(mailMngTab==='user'?'on':'')+'">개인 우편</button></div><div class="mail-list" style="margin-top:8px;">';
+  if(mailMngTab==='user' && mailAdm.err) h += '<div class="sub" style="text-align:center; color:#ff8a8a; font-size:11px; padding:10px 0; line-height:1.6;">⚠️ 개인 우편을 못 읽음 ('+escTxt(String(mailAdm.err))+')<br>Firebase 규칙에 관리자 읽기 권한 추가 필요<br>(docs/계정연동_설정.md 4번)</div>';
+  else if(mailMngTab==='user' && !mailAdm.users) h += '<div class="sub" style="text-align:center; padding:20px 0;">불러오는 중…</div>';
+  else if(!rows.length) h += '<div class="sub" style="text-align:center; padding:24px 0;">보낸 우편 없음</div>';
+  else h += rows.map((m,i)=>{
+    const exp = m.exp && m.exp<now, claimed = mailMngTab==='user' && m.c, canEdit = !exp && !claimed;
+    const st = mailMngTab==='all' ? (exp ? '만료' : mailLeftTxt(m)) : (claimed ? '✅ 받음 '+(new Date(m.c).getMonth()+1)+'/'+new Date(m.c).getDate() : exp ? '만료 · 안 받음' : '안 받음 · '+mailLeftTxt(m));
+    return '<div class="mail-card'+(claimed||exp?' done':'')+'"><div class="mail-top"><b>'+escTxt(m.title)+(m.et?' <small style="color:#ffd557;">수정됨</small>':'')+'</b>'
+      + (canEdit ? '<button class="mm-edit" data-mm-edit="'+i+'" aria-label="수정">✏️</button>' : '')+'</div>'
+      + (mailMngTab==='user' ? '<div class="sub" style="font-size:11px; margin-top:2px;">받는 사람 · '+escTxt(m.toName || (raidNet.names && raidNet.names[m.uid]) || 'UID '+m.uid.slice(0,6))+(m.toCode?' ('+escTxt(m.toCode)+')':'')+'</div>' : '')
+      + '<div class="sub" style="font-size:11px; margin-top:2px;">'+st+'</div>'
+      + '<div class="mail-foot"><div>'+rewardPillsHtml(m.reward)+'</div><button class="fr-x" data-mm-del="'+i+'">삭제</button></div></div>'; }).join('');
+  h += '</div><div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">'+(mailMngTab==='user' ? '✏️ 수정은 상대가 받기 전에만' : '✏️ 수정해도 이미 받은 사람은 그대로')+'</div>';
+  const old = document.getElementById('mailMng'); const sc = old ? (old.querySelector('.mail-list')||{}).scrollTop : 0;
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal mail-modal" id="mailMng" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  const ml = document.querySelector('#mailMng .mail-list'); if(ml && sc) ml.scrollTop = sc;
+  bindModalClose();
+  document.querySelectorAll('[data-mm]').forEach(b=>b.addEventListener('click', ()=>showMailManageModal(b.dataset.mm)));
+  document.querySelectorAll('[data-mm-edit]').forEach(b=>b.addEventListener('click', ()=>showMailEditModal(rows[+b.dataset.mmEdit])));
+  document.querySelectorAll('[data-mm-del]').forEach(b=>b.addEventListener('click', async ()=>{ if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='정말?'; return; }
+    try{ await raidNet.db.doc(rows[+b.dataset.mmDel].path).delete(); toast('삭제됨'); showMailManageModal(); }catch(e){ raidNetError(e); } }));
+}
+function showMailEditModal(m){
+  if(!m || !isAdmin()) return;
+  const left = Math.max(1, Math.ceil(((m.exp||Date.now())-Date.now())/86400000));
+  const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 210; o.id = 'mailEdit';
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="meClose">x</button><h3 style="text-align:center; margin:0 0 6px;">✏️ 우편 수정</h3>'
+    + '<div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">'+(m.uid ? '받는 사람 · '+escTxt(m.toName || (raidNet.names && raidNet.names[m.uid]) || 'UID '+m.uid.slice(0,6)) : '모든 플레이어')+'</div>'
+    + '<input id="meTitle" class="fr-in" maxlength="40" placeholder="제목" style="width:100%;" value="'+escTxt(m.title).replace(/"/g,'&quot;')+'">'
+    + '<textarea id="meBody" class="fr-in" maxlength="300" rows="3" placeholder="내용 (선택)" style="margin-top:6px; width:100%; resize:vertical;">'+escTxt(m.body)+'</textarea>'
+    + mailRewardFormHtml(m, left) + '<button class="btn gold" id="meSave" style="margin-top:10px;">저장</button></div>';
+  document.body.appendChild(o);
+  const close = ()=>o.remove();
+  o.querySelector('#meClose').addEventListener('click', close);
+  o.addEventListener('click', e=>{ if(e.target===o) close(); });
+  o.querySelector('#meSave').addEventListener('click', async (ev)=>{
+    const b = ev.currentTarget; if(b.dataset.busy) return;
+    const title = o.querySelector('#meTitle').value.trim(); if(!title){ toast('제목 입력 필요'); return; }
+    const f = mailRewardFormRead(o), patch = { title, body: o.querySelector('#meBody').value.trim().slice(0,300), reward: f.reward, exp: Date.now()+f.days*86400000, et: Date.now() };
+    b.dataset.busy = '1'; b.textContent = '저장 중…';
+    try{
+      // 받은 표시(c)가 이미 있으면 바꾸지 않음 — 서버에서 한 번에 확인하고 바꿔서, 받는 순간과 겹쳐도 받은 우편이 바뀌지 않게
+      let why = '';
+      const r = await raidNet.db.doc(m.path).tx(cur=>{ if(!cur || !cur.title){ why = '없는 우편'; return; } if(cur.c){ why = '이미 받은 우편이라 수정 불가'; return; } return Object.assign({}, cur, JSON.parse(JSON.stringify(patch))); });
+      if(!r.committed){ toast(why || '수정 실패'); close(); if(document.getElementById('mailMng')) showMailManageModal(); return; }
+      toast('✏️ 수정됨'); close(); if(m.path.indexOf('mail/all/')===0) mailNet.all[m.raw] = r.data || mailNet.all[m.raw]; if(document.getElementById('mailMng')) showMailManageModal();
+    }catch(e){ delete b.dataset.busy; b.textContent = '저장'; toast('수정 실패 — Firebase 규칙 확인 필요 ('+((e && e.code)||'오류')+')', 5000); }
+  });
 }
 function showAdminSetupModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
@@ -5914,7 +6000,8 @@ function showEnhanceModal(key, fxLabel){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('enBack').addEventListener('click', ()=>showManageModal(key));
-  const d = document.getElementById('enDo'); if(d) d.addEventListener('click', ()=>{ const before = enhanceLevel(key); doEnhance(key, true); render(); showEnhanceModal(key, enhanceLevel(key)>before ? '+'+enhanceLevel(key) : null); });
+  const d = document.getElementById('enDo'); if(d) d.addEventListener('click', ()=>{ const c = enhanceCost(key), go = ()=>{ const before = enhanceLevel(key); doEnhance(key, true); render(); showEnhanceModal(key, enhanceLevel(key)>before ? '+'+enhanceLevel(key) : null); };
+    spendAsk(SPIRITS[key].name+' 강화', c, go, enhanceLevel(key)<maxEnhanceFor(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
   if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
 }
 // (v239) 각성 전용 화면: 단계별 효과 사다리 · 필요/보유 재료 · 각성 버튼
@@ -5948,7 +6035,8 @@ function showAwakenModal(key, fxLabel){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('awBack').addEventListener('click', ()=>showManageModal(key));
-  const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); });
+  const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const c = awakenCost(key), go = ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); };
+    spendAsk(SPIRITS[key].name+' 각성', c||{}, go, !!c && awakenSpare(key)>=c.copies && state.essence>=c.essence); });
   if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'awk');
 }
 // (v238) 강화 +N 작은 딱지 — 전투 준비 칸·고르기 목록 등
@@ -6169,7 +6257,7 @@ function defaultState(){
     duelDeck: null, // (v182) 결투 덱 — 기본값에 없어서 앱을 다시 켜면 편집한 덱이 사라지던 문제 수정
     equipOwned: {}, equipped: {}, equipSeen: {}, lifetimeEquipSummons: 0, lifetimeEquipFusions: 0,
     pendingRewards: [],
-    settings: {bgmVolume:0.3, sfxVolume:0.35},
+    settings: {bgmVolume:0.3, sfxVolume:0.35, spendAsk:true},
     dailyStats: {date: todayStr(), summons:0, fusions:0, stagesCleared:0, equipSummons:0},
     questsClaimed: {date: todayStr(), q1:false, q2:false, q3:false}
   };
@@ -6561,14 +6649,16 @@ function performEquipSummon(againFn){
   showResultModal(v.sp, isNew, againFn, Object.assign({custom:v.custom}, EQUIP_RESULT_OPTS));
   render();
 }
-function doEquipSummon(){
+function doEquipSummon(){ const t = ticketCount('equip')>0; if(!isEquipUnlocked() || (!t && state.essence < EQUIP_SUMMON_COST)) return doEquipSummonNow(); spendAsk('장비 소환', t ? {tk:'equip', n:1} : {essence:EQUIP_SUMMON_COST}, doEquipSummonNow); }
+function doEquipSummonNow(){
   if(!isEquipUnlocked()){ toast(uiIc('lock')+' '+bossUnlockTxt(1)); return; }
   const byTicket = ticketCount('equip') > 0;
   if(!byTicket && state.essence < EQUIP_SUMMON_COST){ toast('정수 부족 ('+EQUIP_SUMMON_COST+' 필요)'); return; }
   if(byTicket) state.tickets.equip -= 1; else state.essence -= EQUIP_SUMMON_COST;
   performEquipSummon(doEquipSummon);
 }
-function doEquipMultiSummon(){
+function doEquipMultiSummon(){ const t = ticketCount('equip')>=MULTI_SUMMON_COUNT, c = multiEquipCost(); if(!isEquipUnlocked() || (!t && state.essence < c)) return doEquipMultiSummonNow(); spendAsk('장비 소환 x'+MULTI_SUMMON_COUNT, t ? {tk:'equip', n:MULTI_SUMMON_COUNT} : {essence:c}, doEquipMultiSummonNow); }
+function doEquipMultiSummonNow(){
   checkDailyRollover();
   if(!isEquipUnlocked()){ toast(uiIc('lock')+' '+bossUnlockTxt(1)); return; }
   const cost = multiEquipCost(), byTicket = ticketCount('equip') >= MULTI_SUMMON_COUNT;
@@ -6688,7 +6778,8 @@ function showEquipDexModal(){
 }
 
 const SHOP_TICKET_COST = 60;
-function doShopTicket(){
+function doShopTicket(){ const t = ticketCount('rare')>0; if(!t && (state.enhanceStone||0) < SHOP_TICKET_COST) return doShopTicketNow(); spendAsk(TICKET_INFO.rare.name, t ? {tk:'rare', n:1} : {stone:SHOP_TICKET_COST}, doShopTicketNow); }
+function doShopTicketNow(){
   const own = ticketCount('rare')>0;
   if(!own && (state.enhanceStone||0) < SHOP_TICKET_COST){ toast('강화석 부족 ('+SHOP_TICKET_COST+' 필요)'); return; }
   if(own) state.tickets.rare -= 1; else state.enhanceStone -= SHOP_TICKET_COST;
@@ -6710,7 +6801,8 @@ function doShopTicket(){
   render();
 }
 const EPIC_TICKET_COST = 7500; // 에픽 확률 1%(기대 소환 약 100회=약 1만 정수) 기준, 종전 '기대 비용의 75%' 비율 유지
-function doLegendaryTicket(){ // (v253) 레전더리 확정권 — 티켓으로만(정수 구매 없음)
+function doLegendaryTicket(){ if(ticketCount('legendary')<=0) return doLegendaryTicketNow(); spendAsk(TICKET_INFO.legendary.name, {tk:'legendary', n:1}, doLegendaryTicketNow); }
+function doLegendaryTicketNow(){ // (v253) 레전더리 확정권 — 티켓으로만(정수 구매 없음)
   if(ticketCount('legendary')<=0){ toast('레전더리 확정권 없음'); return; }
   state.tickets.legendary -= 1;
   const key = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_legendary_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
@@ -6718,8 +6810,10 @@ function doLegendaryTicket(){ // (v253) 레전더리 확정권 — 티켓으로�
   state.owned[key] = (state.owned[key]||0) + 1; state.discovered[key] = true;
   pushRecentSummon(key); checkAchievements(); save();
   showResultModal(SPIRITS[key], isNew);
+  render(); // (v296) 빠져 있어서 보유 수가 다른 탭에 다녀와야 줄어든 것으로 보였음
 }
-function doEpicTicket(){
+function doEpicTicket(){ const t = ticketCount('epic')>0; if(!t && state.essence < EPIC_TICKET_COST) return doEpicTicketNow(); spendAsk(TICKET_INFO.epic.name, t ? {tk:'epic', n:1} : {essence:EPIC_TICKET_COST}, doEpicTicketNow); }
+function doEpicTicketNow(){
   const own = ticketCount('epic')>0;
   if(!own && state.essence < EPIC_TICKET_COST){ toast('정수 부족 ('+EPIC_TICKET_COST+' 필요)'); return; }
   if(own) state.tickets.epic -= 1; else state.essence -= EPIC_TICKET_COST;
@@ -6764,7 +6858,9 @@ function performSummon(againFn){
   showResultModal(SPIRITS[key], isNew, againFn);
   render();
 }
-function doSummon(){ // 소환권이 있으면 소환권을 먼저 쓰고, 없으면 정수
+// (v296) 재화 사용 확인창 — 누르면 바로 쓰던 것을 '사용' 한 번 더 (설정에서 끌 수 있음)
+function doSummon(){ const t = ticketCount('summon')>0; if(!t && state.essence < SUMMON_COST) return doSummonNow(); spendAsk('정령 소환', t ? {tk:'summon', n:1} : {essence:SUMMON_COST}, doSummonNow); }
+function doSummonNow(){ // 소환권이 있으면 소환권을 먼저 쓰고, 없으면 정수
   const byTicket = ticketCount('summon') > 0;
   if(!byTicket && state.essence < SUMMON_COST){ toast('정수 부족 (' + SUMMON_COST + ' 필요)'); return; }
   if(byTicket) state.tickets.summon -= 1; else state.essence -= SUMMON_COST;
@@ -6772,7 +6868,8 @@ function doSummon(){ // 소환권이 있으면 소환권을 먼저 쓰고, 없�
 }
 const MULTI_SUMMON_COUNT = 10;
 function multiSummonCost(){ return Math.round(SUMMON_COST * MULTI_SUMMON_COUNT * 0.9); } // 10개 값 대비 10% 할인
-function doMultiSummon(){
+function doMultiSummon(){ const t = ticketCount('summon')>=MULTI_SUMMON_COUNT, c = multiSummonCost(); if(!t && state.essence < c) return doMultiSummonNow(); spendAsk('정령 소환 x'+MULTI_SUMMON_COUNT, t ? {tk:'summon', n:MULTI_SUMMON_COUNT} : {essence:c}, doMultiSummonNow); }
+function doMultiSummonNow(){
   const cost = multiSummonCost();
   const byTicket = ticketCount('summon') >= MULTI_SUMMON_COUNT; // 소환권이 10장 이상이면 소환권 10장, 아니면 정수
   if(!byTicket && state.essence < cost){ toast('정수 부족 (' + cost + ' 필요)'); return; }
@@ -7612,7 +7709,8 @@ function showEquipEnhanceModal(key, fxLabel){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
-  const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } });
+  const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ const c = equipEnhCost(key);
+    spendAsk(equipInfo(key).name+' 강화', c, ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } }, equipEnhLevel(key)<equipEnhMax(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
   if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
 }
 function showEquipPicker(spKey, slot){
@@ -7713,6 +7811,7 @@ function showSettingsModal(){
   html += '<div class="sub" style="margin-bottom:4px;">🔊 효과음 볼륨</div>';
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
+  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
   html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
@@ -7732,6 +7831,7 @@ function showSettingsModal(){
     if(sfxGain) sfxGain.gain.value = state.settings.sfxVolume;
     save();
   });
+  document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
   bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
@@ -8101,6 +8201,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:296, v:'2.10.5', date:'2026-10-01', secs:[
+    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음' ]},
+    { t:'고친 것', items:[ '레전더리 확정권을 써도 다른 화면에 다녀오기 전까지 보유 수가 그대로 보이던 문제' ]}
+  ]},
   { build:295, v:'2.10.4', date:'2026-09-30', secs:[
     { t:'전투 연출', items:[ '부활할 때 정령이 빛나며 일어나는 연출과 효과음 · 부활 글자를 크게 (투지·천사 부활 모두)', '화염 A 계열 신화의 부활 폭발 피해가 적에게 숫자로 보이게 (예전엔 피해만 들어가고 안 보였음)', '피해·회복 숫자가 다음 행동이나 라운드 넘김 때 뜨다 말고 사라지던 것 — 끝까지 보이게 하고 보이는 시간도 1.1초 → 1.9초(부활 2.6초) · 같은 정령에 여러 개가 뜨면 위로 쌓임' ]}
   ]},
@@ -10254,16 +10358,25 @@ function expMapHtml(run){
   }));
   return '<div class="xp-map" style="height:'+H+'px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+lines+'</svg>'+nodes+'</div>';
 }
+// (v296) 재화 사용 확인 — c: {essence, stone, shards, tk, n, copies, upStone} · ok===false(재료 부족 등)면 묻지 않고 바로 실행해서 원래 안내가 뜨게
+function spendTxt(c){ const p = [];
+  if(c.essence) p.push(uiIc('essence')+' 정수 <b>'+c.essence+'</b>'); if(c.stone) p.push(uiIc('stone')+' 강화석 <b>'+c.stone+'</b>');
+  if(c.shards) p.push(uiIc('shard')+' 정령 파편 <b>'+c.shards+'</b>'); if(c.upStone) p.push('⬆️ 룬 승급석 <b>'+c.upStone+'</b>');
+  if(c.tk) p.push(TICKET_INFO[c.tk].icon+' '+TICKET_INFO[c.tk].name+' <b>'+(c.n||1)+'</b>장'); if(c.copies) p.push('같은 정령 <b>'+c.copies+'</b>마리');
+  return p.join(' · '); }
+function spendAsk(title, c, fn, ok){ if(ok===false || (state.settings && state.settings.spendAsk===false)){ fn(); return; } confirmBox(title, spendTxt(c)+' 사용', '사용', fn); }
 // (v268) 확인창 — 실수로 누르면 되돌리기 어려운 동작(런 포기·전투 나가기) 전에 한 번 더 묻기
+// (v296) opt.alt = {label, fn} 이면 가운데에 버튼 하나 더 (전투 나가기 창의 '다시 시도')
 function confirmBox(title, msg, okLabel, onOk, opt){
   opt = opt || {};
   let root = document.getElementById('confirmRoot'); if(!root){ root = document.createElement('div'); root.id = 'confirmRoot'; document.body.appendChild(root); }
   root.innerHTML = '<div class="modal-bg cf-bg" id="cfBg"><div class="modal cf-box"><div class="cf-t">'+title+'</div><div class="cf-m">'+msg+'</div>'
-    + '<div class="cf-btns"><button class="btn secondary" id="cfNo">취소</button><button class="btn'+(opt.danger?' cf-danger':'')+'" id="cfYes">'+okLabel+'</button></div></div></div>';
+    + '<div class="cf-btns"><button class="btn secondary" id="cfNo">취소</button>'+(opt.alt ? '<button class="btn" id="cfAlt">'+opt.alt.label+'</button>' : '')+'<button class="btn'+(opt.danger?' cf-danger':'')+'" id="cfYes">'+okLabel+'</button></div></div></div>';
   const close = ()=>{ root.innerHTML = ''; };
   document.getElementById('cfNo').addEventListener('click', close);
   document.getElementById('cfBg').addEventListener('click', e=>{ if(e.target.id==='cfBg') close(); });
   document.getElementById('cfYes').addEventListener('click', ()=>{ close(); onOk(); });
+  if(opt.alt) document.getElementById('cfAlt').addEventListener('click', ()=>{ close(); opt.alt.fn(); });
 }
 let xpActionHtml = '', xpActDismissed = null, xpPreviewPv = null;
 function xpActKey(){ const r = state.expedition; if(!r) return ''; const n = r.currentRoom; return (r.cycle||1)+':'+r.currentIndex+':'+(r.pendingKeep?'keep':r.pendingBuffChoice?'buff':(n?(n.resolvedType||n.type):'map')); }
@@ -11193,9 +11306,9 @@ function showManageModal(key){
   if(rrBtn) rrBtn.addEventListener('click', (e)=>{
     const cur = spiritRune(key);
     if(cur && (cur.tier==='legend' || cur.tier==='boss') && !e.currentTarget.dataset.armed){ e.currentTarget.dataset.armed = '1'; e.currentTarget.textContent = '⚠️ 지금 룬이 사라짐 · 한 번 더'; return; }
-    runeReroll(key);
+    spendAsk('룬 재각인', {shards:RUNE_REROLL_COST}, ()=>runeReroll(key), (state.shards||0)>=RUNE_REROLL_COST);
   });
-  const ruBtn = document.getElementById('runeUpBtn'); if(ruBtn) ruBtn.addEventListener('click', ()=>runeUpgrade(key));
+  const ruBtn = document.getElementById('runeUpBtn'); if(ruBtn) ruBtn.addEventListener('click', ()=>spendAsk('룬 승급', {upStone:1}, ()=>runeUpgrade(key), (state.runeUpStones||0)>=1));
   const riBtn = document.getElementById('runeInvBtn');
   if(riBtn) riBtn.addEventListener('click', ()=>showRuneInvPicker(key));
 }
@@ -11539,7 +11652,7 @@ function attachHandlers(){
   { const ltb = document.getElementById('legTicketBtn'); if(ltb) ltb.addEventListener('click', doLegendaryTicket); }
   document.querySelectorAll('[data-pick-tk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(b.dataset.pickTk)));
   document.querySelectorAll('[data-hearth-upgrade]').forEach(btn=>{
-    btn.addEventListener('click', ()=>doHearthUpgrade(btn.dataset.hearthUpgrade));
+    btn.addEventListener('click', ()=>{ const k = btn.dataset.hearthUpgrade, c = hearthUpgradeCost(k); spendAsk('화로 '+HEARTH_UPGRADES[k].name+' 강화', c, ()=>doHearthUpgrade(k), hearthUpgradeLevel(k)<HEARTH_UPGRADES[k].maxLv && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
   });
   document.querySelectorAll('[data-tower-floor]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -11556,7 +11669,7 @@ function attachHandlers(){
     btn.addEventListener('click', ()=>{ claimPendingReward('tower_'+btn.dataset.towerReward); sfx('claim'); render(); });
   });
   const seb = document.getElementById('startExpeditionBtn'); if(seb) seb.addEventListener('click', ()=>{ expRosterPick = null; showExpeditionRosterPicker(); }); // (v219) 출정대부터 고름
-  const bet = document.getElementById('buyExpTicketBtn'); if(bet) bet.addEventListener('click', ()=>{ if(buyExpTicket()) sfx('claim'); render(); });
+  const bet = document.getElementById('buyExpTicketBtn'); if(bet) bet.addEventListener('click', ()=>{ const pr = expTicketBuyPrice(); spendAsk('출정권 충전', {essence:pr}, ()=>{ if(buyExpTicket()) sfx('claim'); render(); }, pr!==null && expTicketCount()<expTicketMax() && state.essence>=pr); });
   const cob = document.getElementById('cashOutBtn'); if(cob) cob.addEventListener('click', ()=>{ cashOutExpedition(); sfx('claim'); render(); });
   const kpb = document.getElementById('keepBtn'); if(kpb) kpb.addEventListener('click', ()=>{ keepExpedition(); sfx('enhance'); render(); });
   const aeb = document.getElementById('abandonExpeditionBtn'); if(aeb) aeb.addEventListener('click', doAbandonExpedition);
@@ -11910,6 +12023,7 @@ function sanitizeState(){
   // 설정·일일 기록·화로·출정
   s.settings.bgmVolume = fin(s.settings.bgmVolume) ? Math.min(1, Math.max(0, s.settings.bgmVolume)) : 0.3;
   s.settings.sfxVolume = fin(s.settings.sfxVolume) ? Math.min(1, Math.max(0, s.settings.sfxVolume)) : 0.35;
+  s.settings.spendAsk = s.settings.spendAsk!==false; // (v296) 재화 사용 확인창
   ['summons','fusions','stagesCleared','equipSummons'].forEach(k=>{ s.dailyStats[k] = fin(s.dailyStats[k]) ? Math.max(0, Math.floor(s.dailyStats[k])) : 0; });
   if(typeof s.dailyStats.date!=='string') s.dailyStats.date = todayStr();
   if(typeof s.questsClaimed.date!=='string') s.questsClaimed.date = todayStr();
@@ -11985,7 +12099,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 295, APP_VERSION = '2.10.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 296, APP_VERSION = '2.10.5'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
