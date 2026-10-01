@@ -710,6 +710,7 @@
   .fz-slots{display:flex; align-items:center; justify-content:center; gap:4px;}
   .fz-plus{color:var(--sub); font-weight:900;}
   .fz-slot{width:78px; min-height:92px; border-radius:14px; border:2px dashed #ffffff33; background:#ffffff08; color:var(--sub); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 2px; font-size:22px;}
+  .fz-slot .av, .fz-pick .av{position:relative;}
   .fz-slot.on{border-style:solid; border-color:#b9a4ff88; background:#8f6bff1a; color:var(--text);} .fz-slot .icon{font-size:24px;} .fz-slot small{font-size:10px; line-height:1.1; word-break:keep-all;} .fz-slot b{font-size:22px;}
   .fz-hint{margin-top:10px; font-size:12px; line-height:1.5;}
   .fz-prev{margin-top:10px; padding:10px; border-radius:12px; background:#00000026;}
@@ -912,6 +913,9 @@
   .pn-t{font-size:13px; color:#ffd35a; margin:10px 0 4px;} .pn ul{margin:0; padding-left:18px;} .pn li{font-size:12.5px; line-height:1.5; margin:3px 0; color:#e3e1ff;}
   .dp-cancel{margin-top:4px; padding:2px 10px; border-radius:8px; border:1px solid #ffffff2a; background:#ffffff10; color:var(--sub); font-size:11px; cursor:pointer;}
   .fr-lv{position:absolute; left:-4px; bottom:-4px; min-width:18px; padding:0 4px; border-radius:8px; background:#ffcf4a; color:#3b2500; font-size:10px; font-weight:900; line-height:15px; text-align:center; box-shadow:0 1px 3px #0008;} /* (v296) 친구 레벨 */
+  .tk-myth{filter:hue-rotate(250deg) saturate(1.6) drop-shadow(0 0 3px #ff7bf0);} /* (v297) 신화 확정권 */
+  .tk-eq.r-rare{filter:drop-shadow(0 0 2px #57d3ff);} .tk-eq.r-epic{filter:drop-shadow(0 0 2px #a57bff);} .tk-eq.r-legendary{filter:drop-shadow(0 0 2px #ffb347);} .tk-eq.r-mythic{filter:drop-shadow(0 0 3px #ff7bf0) hue-rotate(250deg);}
+  .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:55%; filter:drop-shadow(0 0 1px #000);}
   .mg-trait{margin:6px auto 6px; max-width:300px; padding:6px 10px; border-radius:10px; background:#ffffff0d; border:1px solid #ffffff1a; font-size:12px; line-height:1.5;} .mg-trait span{display:block; color:var(--sub); font-size:11px;}
   .xp-foes.rows{display:flex; flex-direction:column; gap:6px; align-items:stretch;} .xp-frow{display:flex; align-items:center; gap:6px;} .xp-flbl{flex-shrink:0; width:30px; font-size:11px; font-weight:800; color:#ffb0b0; text-align:center;} .xp-fcells{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; justify-items:center;} /* (v296) */
   .pr-row{padding:8px 10px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .pr-top{display:flex; align-items:center; gap:6px;} .pr-top b{flex:1; font-size:14px;} .pr-ed{background:none; border:none; font-size:14px; cursor:pointer;}
@@ -1734,6 +1738,7 @@ function raidUseTicket(code){ // 같은 방에서는 한 번만 씀(새로고침
   return had;
 }
 // ---- 상점
+function TICKET_INFO_EQP(r){ return '<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_'+r+'.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>'; } // (v297) 장비 선택권 그림 (TICKET_INFO보다 먼저 쓰여서 따로)
 const RAID_SHOP = [ // (v247) desc = 구매 창에 보이는 설명(간결체) · limit 0 = 제한 없음
   { id:'pick_epic', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:60, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
   { id:'pick_legendary', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt="">', name:'레전더리 선택권', price:200, limit:1, desc:'레전더리 정령 10종 중 원하는 1마리' },
@@ -1744,6 +1749,9 @@ const RAID_SHOP = [ // (v247) desc = 구매 창에 보이는 설명(간결체) �
   { id:'essence', sec:'res', icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', name:'정수 ×500', price:5, limit:0, desc:'소환·강화·화로에 쓰는 재화 500' },
   { id:'stone', sec:'res', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:3, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' },
   { id:'equip', sec:'res', icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'장비 소환권', price:5, limit:5, desc:'정령장비 1회 소환' },
+  { id:'eq_epic', sec:'res', icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', price:40, limit:1, desc:'에픽 장비 1개 (부위·속성 무작위)' }, // (v297)
+  { id:'eqpick_epic', sec:'res', icon:TICKET_INFO_EQP('epic'), name:'에픽 장비 선택권', price:70, limit:1, desc:'에픽 장비 10종 중 원하는 1개' },
+  { id:'eq_legendary', sec:'res', icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', price:140, limit:1, desc:'레전더리 장비 1개 (부위·속성 무작위)' },
   { id:'shards', sec:'res', icon:'<img class="uic" src="assets/ui/ic_shard.webp" alt="">', name:'정령 파편 ×10', price:3, limit:5, desc:'룬 재각인 1회분' },
   { id:'draw', sec:'rune', icon:'🎲', name:'룬 뽑기', price:6, limit:0, desc:'희귀 이상 확정 · 전설 12% · 고대 룬(보스 5종 중 무작위) 3%' },
   { id:'boss', sec:'rune', icon:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">', name:'고대 룬 교환', price:70, limit:1, desc:'고대 룬 확정 · 레이드 보스 5종 중 무작위' },
@@ -2153,9 +2161,9 @@ const RAID_BOSSES = [ // (v272) 기믹 개편 — 매 라운드 보스가 뭔가
 // (v168) 레이드 난이도 — 보스 공격력·체력 배율과 보상이 다름. 방장이 방에서 고르고, 팀원은 같은 난이도로 싸움
 const RAID_DIFFS = [
   { id:'easy',    name:'이지',     color:'#5cd65c', atk:2,    hp:1.4, stone:60,  runes:1, weekly:{summon:1} },
-  { id:'normal',  name:'노말',     color:'#5798ff', atk:3.5,  hp:3,   stone:150, runes:1, weekly:{rare:1} },
-  { id:'hard',    name:'하드',     color:'#ffae57', atk:5,    hp:5,   stone:260, runes:2, weekly:{rare:2}, gear:{ legendary:.05, epic:.25 } },
-  { id:'extreme', name:'익스트림', color:'#ff5a5a', atk:8,    hp:10,  stone:420, runes:3, weekly:{epic:1}, gear:{ legendary:.15, epic:.40 } }
+  { id:'normal',  name:'노말',     color:'#5798ff', atk:3.5,  hp:3,   stone:150, runes:1, weekly:{rare:1, eq_rare:1} },
+  { id:'hard',    name:'하드',     color:'#ffae57', atk:5,    hp:5,   stone:260, runes:2, weekly:{rare:2, eq_epic:1}, gear:{ legendary:.05, epic:.25 } },
+  { id:'extreme', name:'익스트림', color:'#ff5a5a', atk:8,    hp:10,  stone:420, runes:3, weekly:{epic:1, eqpick_epic:1}, gear:{ legendary:.15, epic:.40 } }
 ];
 // (v284) 보스마다 기믹이 달라 같은 배율이어도 체감 난이도가 달라서, 보스·난이도별로 공격력·체력을 함께 곱하는 보정값
 // 목표 추천 전투력(기믹 미반영 자동 전투 기준): 이지 약 5,000 · 노말 약 8,400 · 하드 약 12,500 · 익스트림 약 16,500(신화 +15 각성5 8마리)
@@ -4541,8 +4549,8 @@ function stageFirstReward(i){ i = stageEff(i); return Math.round((50 + i*15) * 1
 function stageGradeReward(i, tier){ return Math.round(stageFirstReward(i) * STAGE_GRADE_SHARE[tier]); }
 function bossFirstReward(i){ return Math.round(stageFirstReward(i) * 1.5); }
 // (v245) 챕터 보스 첫 격파 선택권 — 1: 레어 1 · 2: 에픽 1 · 3: 레어 3+에픽 1 · 4: 에픽 3 · 5: 레전더리 1
-const BOSS_FIRST_ITEMS = { 1:{pick_rare:1}, 2:{pick_epic:1}, 3:{pick_rare:3, pick_epic:1}, 4:{pick_epic:3}, 5:{pick_legendary:1} };
-const BOSS_FIRST_ITEMS_HARD = { 1:{pick_epic:2}, 2:{pick_legendary:1}, 3:{pick_epic:2, pick_legendary:1}, 4:{pick_legendary:2}, 5:{pick_legendary:2, pick_epic:2} }; // (v251) 하드 1~5
+const BOSS_FIRST_ITEMS = { 1:{pick_rare:1, eq_rare:1}, 2:{pick_epic:1, eqpick_rare:1}, 3:{pick_rare:3, pick_epic:1, eq_epic:1}, 4:{pick_epic:3, eqpick_epic:1}, 5:{pick_legendary:1, eq_legendary:1} }; // (v297) 장비 확정권·선택권 추가
+const BOSS_FIRST_ITEMS_HARD = { 1:{pick_epic:2, eq_epic:1}, 2:{pick_legendary:1, eqpick_epic:1}, 3:{pick_epic:2, pick_legendary:1, eq_legendary:1}, 4:{pick_legendary:2, eqpick_legendary:1}, 5:{pick_legendary:2, pick_epic:2, mythic:1, eq_mythic:1} }; // (v251) 하드 1~5
 function bossFirstItems(i){ const ch = bossChapter(i), it = isHardChapter(ch) ? BOSS_FIRST_ITEMS_HARD[chapterBase(ch)] : BOSS_FIRST_ITEMS[ch]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ i = stageEff(i); return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
@@ -5760,8 +5768,13 @@ function maxEnhanceFor(key){
 // ===================== (v222) 각성: 같은 정령 중복을 먹여 그 정령 그대로 더 강하게 =====================
 // ★1~★5 · 단계마다 정령력 +8% · 강화 한도 +1 · 비용은 같은 정령(중복)과 정수 — 좋아하는 낮은 등급 정령도 계속 키울 수 있게
 const AWAKEN_MAX = 5, AWAKEN_POWER = 0.08, AWAKEN_COPIES = [1,1,2,2,3];
+// (v297) 각성 배율을 등급마다 다르게 — 낮은 등급일수록 크게 올라서 다 키우면 윗등급을 따라잡음 (사용자 결정)
+// 5단계 정령력 배율(기본 대비): 일반 ×10 · 레어 ×10 · 에픽 ×4.5 · 레전더리 ×2.2 · 신화 ×1.4(예전과 같음)
+// 등급 배율(1 · 2.5 · 6 · 15 · 35)과 곱하면 5단계 기준 일반 10(에픽 6 ~ 레전더리 15 사이) · 레어 25(레전더리 15 ~ 신화 35 사이) · 에픽 27 · 레전더리 33 · 신화 49 → 다 각성해도 등급 순서는 그대로
+const AWAKEN_RATE = { common:1.8, rare:1.8, epic:0.7, legendary:0.24, mythic:0.08 }; // 단계마다 +(배율−1)/5
+function awakenRate(key){ return AWAKEN_RATE[SPIRITS[key].rarity] || AWAKEN_POWER; }
 function awakenLevel(key){ return (state.awaken && state.awaken[key]) || 0; }
-function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: (80 + 120*RARITY_ORDER.indexOf(SPIRITS[key].rarity)) * (lv+1) }; }
+function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: Math.round(80 * (AWAKEN_COST_MUL[RARITY_ORDER.indexOf(SPIRITS[key].rarity)]||1) * (lv+1)) }; } // (v297) 정수 80 × 등급 배율(2 · 5 · 10 · 18 · 30) × 단계
 function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
 function doAwaken(key, quiet){
   const c = awakenCost(key); if(!c) return;
@@ -5951,7 +5964,7 @@ function showMailSendModal(){
   }
 }
 // (v296) 우편 보상 입력칸 — 보내기·수정 창이 같이 씀 (m = 기존 우편이면 그 값으로 채움)
-const MAIL_TK = ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'];
+const MAIL_TK = ['summon','rare','epic','legendary','mythic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'];
 function mailRewardFormHtml(m, days){
   const rw = (m && m.reward) || {}, it = rw.items || {};
   return '<div class="ms-grid">'
@@ -6047,7 +6060,7 @@ function showAdminSetupModal(){
   document.getElementById('admApply').addEventListener('click', ()=>{
     const MAX = 9999999;
     state.essence = MAX; state.enhanceStone = MAX; state.shards = 99999; state.raidGems = 99999;
-    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>state.tickets[k] = 999);
+    if(!state.tickets) state.tickets = {}; ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'].forEach(k=>state.tickets[k] = 999);
     Object.keys(SPIRITS).forEach(k=>{ if(!(state.owned[k]>0)) state.owned[k] = 1; state.discovered[k] = true; });
     // (v296) 장비 전부 1개씩 · 룬 종류·등급마다 1개씩(보관함에 없는 것만) · 룬 승급석
     allEquipKeys().forEach(k=>{ if(!(equipOwnedCount(k)>0)) addEquip(k); else state.equipSeen[k] = true; });
@@ -6105,11 +6118,11 @@ function awakenStepInfo(key, lv){
 function showAwakenModal(key, fxLabel){
   const sp = SPIRITS[key], lv = awakenLevel(key), ac = awakenCost(key);
   let h = '<button class="aw-back" id="awBack">‹ 정령 정보</button>';
-  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
+  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*awakenRate(key)*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
   h += '<div class="aw-steps">';
   for(let s = 1; s <= AWAKEN_MAX; s++){
     const st = s<=lv ? 'done' : (s===lv+1 ? 'next' : 'lock'), perk = awakenStepInfo(key, s);
-    h += '<div class="aw-step '+st+'"><div class="aw-sn">'+(st==='done'?uiIc('check'):uiIc('awaken'))+'<b>'+s+'단계</b></div><div class="aw-sd">'+(perk?'<b>'+perk+'</b>':'')+'<small>정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1</small></div></div>';
+    h += '<div class="aw-step '+st+'"><div class="aw-sn">'+(st==='done'?uiIc('check'):uiIc('awaken'))+'<b>'+s+'단계</b></div><div class="aw-sd">'+(perk?'<b>'+perk+'</b>':'')+'<small>정령력 +'+Math.round(awakenRate(key)*100)+'% · 강화 한도 +1</small></div></div>';
   }
   h += '</div>';
   if(ac){
@@ -6134,7 +6147,7 @@ function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv
 function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
   const A = uiIc('awaken');
-  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+Math.round(AWAKEN_POWER*100)+'% · 강화 한도 +1'}])
+  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+RARITY_ORDER.map(r=>RARITY_INFO[r].name+' '+Math.round(AWAKEN_RATE[r]*100)+'%').join(' · ')+' · 강화 한도 +1'}, {ic:'⚖️', nm:'다 키우면', d:'낮은 등급일수록 크게 올라 윗등급을 따라잡음 — 5단계 일반은 에픽~레전더리 사이, 레어는 레전더리~신화 사이'}])
     + gmSectionHtml('단계별 해금', [
       {ic:A, nm:'1단계', d:'패시브'},
       {ic:A, nm:'2단계', d:'스킬1 대기 −1'},
@@ -6148,7 +6161,7 @@ function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
   const base = BASE_ATK * RARITY_INFO[sp.rarity].mult * ELEMENT_ATK_MULT[sp.element];
-  return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + AWAKEN_POWER*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
+  return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
 function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey); } // (v104) 무기 배율 반영
@@ -6208,11 +6221,11 @@ const ELEMENT_PASSIVE = {
 const MYTHIC_PASSIVE = { icon:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">', name:'통솔', desc:'모든 팀원의 공격력 +10%' };
 function passiveForERV(element, rarity, variant){
   if(rarity==='common' || rarity==='rare') return null; // 일반·레어는 아직 variant 간 차이 없음(쌍둥이)
-  if(rarity==='mythic'){
-    const epicP = ELEMENT_PASSIVE[element].epic[variant];
-    return Object.assign({}, epicP, {
-      name: epicP.name+' + 통솔',
-      desc: epicP.desc+' · '+MYTHIC_PASSIVE.desc
+  if(rarity==='mythic'){ // (v297) 레전더리 특성 + 통솔 — 예전엔 에픽 특성 + 통솔이라 최대 강화·공격력 특성이 레전더리보다 낮았음
+    const legP = ELEMENT_PASSIVE[element].legendary[variant];
+    return Object.assign({}, legP, {
+      name: legP.name+' + 통솔',
+      desc: legP.desc+' · '+MYTHIC_PASSIVE.desc
     });
   }
   const byElement = ELEMENT_PASSIVE[element];
@@ -6223,6 +6236,7 @@ function passiveFor(key){
   const sp = SPIRITS[key];
   return passiveForERV(sp.element, sp.rarity, sp.variant);
 }
+const AWAKEN_COST_MUL = [2, 5, 10, 18, 30]; // (v297) 각성 정수 등급 배율 — 높은 등급일수록 비싸게
 function enhanceCost(key){
   const sp = SPIRITS[key];
   const lvl = enhanceLevel(key);
@@ -6925,6 +6939,39 @@ function doLegendaryTicketNow(){ // (v253) 레전더리 확정권 — 티켓으�
   showResultModal(SPIRITS[key], isNew);
   render(); // (v296) 빠져 있어서 보유 수가 다른 탭에 다녀와야 줄어든 것으로 보였음
 }
+// (v297) 신화 확정권 — 신화 정령 중 무작위 1마리
+function doMythicTicket(){ if(ticketCount('mythic')<=0){ toast('신화 확정권 없음'); return; } spendAsk(TICKET_INFO.mythic.name, {tk:'mythic', n:1}, ()=>{
+  if(ticketCount('mythic')<=0) return; state.tickets.mythic -= 1;
+  const key = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_mythic_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
+  const isNew = !state.discovered[key]; state.owned[key] = (state.owned[key]||0) + 1; state.discovered[key] = true;
+  pushRecentSummon(key); checkAchievements(); save(); showResultModal(SPIRITS[key], isNew); render(); }); }
+// (v297) 장비 확정권 — 그 등급 장비 1개 (부위·속성 무작위)
+function doEquipSureTicket(tk){ const r = TICKET_INFO[tk] && TICKET_INFO[tk].eqSure; if(!r) return; if(ticketCount(tk)<=0){ toast(TICKET_INFO[tk].name+' 없음'); return; }
+  spendAsk(TICKET_INFO[tk].name, {tk, n:1}, ()=>{ if(ticketCount(tk)<=0) return; state.tickets[tk] -= 1;
+    const key = rollEquipKey(r), isNew = addEquip(key); pushRecentEquip(key); checkAchievements(); save();
+    const v = equipResultView(key); showResultModal(v.sp, isNew, null, {custom:v.custom, ticketKey:'equip'}); render(); }); }
+// (v297) 장비 선택권 — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 하나를 골라 받음
+function showEquipPickModal(tk, sel){
+  const r = TICKET_INFO[tk] && TICKET_INFO[tk].eqPick; if(!r) return;
+  const keys = []; EQUIP_SLOTS.forEach(sl=>ELEMENTS.forEach(e=>keys.push(equipKey(sl, e, r))));
+  let h = '<h3 style="text-align:center;">'+TICKET_INFO[tk].icon+' '+TICKET_INFO[tk].name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">받을 장비 선택 · 보유 '+ticketCount(tk)+'장</div><div class="pick-grid">';
+  h += keys.map(k=>{ const i = equipInfo(k); return '<button class="pick-cell'+(sel===k?' on':'')+'" data-epk="'+k+'"><span class="av r-'+r+'" style="font-size:22px;">'+i.img+'</span><b>'+i.name+'</b><small>'+EQUIP_SLOT_INFO[i.slot].name+' · '+ELEMENT_INFO[i.element].name+' · 보유 '+equipOwnedCount(k)+'</small></button>'; }).join('');
+  h += '</div><button id="eqPickGo" class="btn gold sticky-ok" style="margin-top:10px;" '+(sel?'':'disabled')+'>'+(sel ? equipInfo(sel).name+' 받기' : '장비 선택')+'</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose();
+  document.querySelectorAll('[data-epk]').forEach(b=>b.addEventListener('click', ()=>showEquipPickModal(tk, b.dataset.epk)));
+  const go = document.getElementById('eqPickGo'); if(go && sel) go.addEventListener('click', ()=>{
+    if(ticketCount(tk)<=0){ toast('선택권 없음'); return; }
+    state.tickets[tk] -= 1; const isNew = addEquip(sel); pushRecentEquip(sel); checkAchievements(); save(); render();
+    const v = equipResultView(sel); showResultModal(v.sp, isNew, null, {custom:v.custom, ticketKey:'equip'}); });
+}
+function equipTicketCardHtml(){ // 장비 소환 화면 — 가지고 있는 장비 확정권·선택권만
+  const sure = ['eq_rare','eq_epic','eq_legendary','eq_mythic'].filter(k=>ticketCount(k)>0), pick = ['eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'].filter(k=>ticketCount(k)>0);
+  if(!sure.length && !pick.length) return '';
+  return '<div class="card"><div class="ttl" style="margin-bottom:8px;">'+uiIc('tk_equip')+' 장비 확정권 · 선택권</div>'
+    + sure.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].eqSure].name+' 장비 확정 (부위·속성 무작위)', ticketCount(k), '<button class="btn small" data-eq-sure="'+k+'">사용</button>', i===0)).join('')
+    + pick.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].eqPick].name+' 장비 10종 중 원하는 1개', ticketCount(k), '<button class="btn small" data-eq-pick="'+k+'">사용</button>', !sure.length && i===0)).join('') + '</div>';
+}
 function doEpicTicket(){ const t = ticketCount('epic')>0; if(!t && state.essence < EPIC_TICKET_COST) return doEpicTicketNow(); spendAsk(TICKET_INFO.epic.name, t ? {tk:'epic', n:1} : {essence:EPIC_TICKET_COST}, doEpicTicketNow); }
 function doEpicTicketNow(){
   const own = ticketCount('epic')>0;
@@ -7092,7 +7139,7 @@ function openFuseTab(mode, key){ // 다른 곳(정령 관리·장비 상세)에�
   closeModal(); activeTab = 'spirits'; spiritsSub = 'fuse'; render(); const m = document.getElementById('main'); if(m) m.scrollTop = 0;
 }
 function fuseNameOf(k){ return fuseMode==='equip' ? equipInfo(k).name : SPIRITS[k].name; }
-function fuseArtOf(k){ return fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el'); }
+function fuseArtOf(k){ return (fuseMode==='equip' ? equipInfo(k).img : spArt(SPIRITS[k])+elIc(SPIRITS[k].element,'av-el')) + (fuseMode==='equip' ? eqEnhTag(k) : enhTag(k)); } // (v297) 강화한 재료는 +N 표시
 function renderFuseTab(){
   let h = '<div class="card fz-card">';
   h += '<div class="fz-modes">'+[['spirit','📦 정령 합성'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 합성'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')]].map(([k,t])=>'<button data-fz-mode="'+k+'" class="'+(fuseMode===k?'on':'')+'" '+(k==='equip' && !isEquipUnlocked()?'disabled':'')+'>'+t+'</button>').join('')+'</div>';
@@ -7742,6 +7789,7 @@ function renderSummonTab(){
   html += ticketRowHtml(TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'),
     '<button class="btn small" id="epicTicketBtn" '+((ownEpic||state.essence>=EPIC_TICKET_COST)?'':'disabled')+'>'+(ownEpic?'사용':'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+EPIC_TICKET_COST)+'</button>');
   if(ticketCount('legendary')>0) html += ticketRowHtml(TICKET_INFO.legendary.icon+' '+TICKET_INFO.legendary.name, '레전더리 확정 (무작위)', ticketCount('legendary'), '<button class="btn small" id="legTicketBtn">사용</button>'); // 가지고 있을 때만
+  if(ticketCount('mythic')>0) html += ticketRowHtml(TICKET_INFO.mythic.icon+' '+TICKET_INFO.mythic.name, '신화 확정 (무작위)', ticketCount('mythic'), '<button class="btn small" id="mythTicketBtn">사용</button>'); // (v297)
   html += '</div>';
   { const picks = ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
     if(picks.length){ html += '<div class="card"><div class="ttl" style="margin-bottom:8px;">🎟️ 정령 선택권</div>'
@@ -7798,6 +7846,7 @@ function renderEquipSummonPage(){
   h += '</div>';
   // (v181) 내 장비 관리는 정령 탭 › 장비로 옮김 — 여기서는 바로가기만
   const cnt = allEquipKeys().reduce((a,k)=>a+equipOwnedCount(k),0);
+  h += equipTicketCardHtml();
   h += recentEquipRowHtml();
   h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
   return h;
@@ -8361,13 +8410,21 @@ function dispatchSlots(){ const l = accountLevel(); return 3 + (l>=5?1:0) + (l>=
 function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
 function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
 function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
-const ACCOUNT_LV_ITEMS = { 5:{rare:1}, 10:{pick_epic:1}, 15:{epic:1}, 20:{pick_legendary:1}, 25:{pick_legendary:1}, 30:{pick_mythic:1} };
+const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1} };
 function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L }; if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
 function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:298, v:'2.11.0', date:'2026-10-01', secs:[
+    { t:'각성 비용·합성 표시', items:[ '각성 정수 비용 — 80 × 등급 배율(일반 2 · 레어 5 · 에픽 10 · 레전더리 18 · 신화 30) × 단계 · ★5까지 일반 2,400 · 레어 6,000 · 에픽 12,000 · 레전더리 21,600 · 신화 36,000 (예전 1,200 ~ 8,400)', '합성 칸과 재료 목록에 강화 +N 표시' ]},
+    { t:'각성 강화', items:[ '각성 단계마다 정령력 증가를 등급마다 다르게 — 일반 +180% · 레어 +180% · 에픽 +70% · 레전더리 +24% · 신화 +8%(그대로)', '5단계까지 다 하면 일반은 에픽과 레전더리 사이, 레어는 레전더리와 신화 사이 정도 — 다 각성해도 등급 순서는 그대로' ]},
+    { t:'신화 특성', items:[ '신화 정령의 특성이 에픽 특성 + 통솔 → 레전더리 특성 + 통솔로 (예: 숲결 A 신화 최대 강화 +5 → +10, 공격력 특성 +10% → +20% 등) — 신화가 레전더리보다 낮던 것' ]},
+    { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 (예전과 같음)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
+    { t:'새 아이템', items:[ '신화 정령 확정권 — 신화 정령 중 무작위 1마리', '장비 확정권 (레어·에픽·레전더리·신화) — 그 등급 장비 1개, 부위·속성 무작위', '장비 선택권 (레어·에픽·레전더리·신화) — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 원하는 1개', '장비 확정권·선택권은 장비 소환 화면에서 사용 (가지고 있을 때만 보임)' ]},
+    { t:'보상 추가', items:[ '챕터 보스 첫 격파 — 노말: 1 레어 장비 확정권 · 2 레어 장비 선택권 · 3 에픽 장비 확정권 · 4 에픽 장비 선택권 · 5 레전더리 장비 확정권 / 하드: 1 에픽 장비 확정권 · 2 에픽 장비 선택권 · 3 레전더리 장비 확정권 · 4 레전더리 장비 선택권 · 5 신화 정령 확정권 + 신화 장비 확정권', '무한의 탑 — 40층마다 레어 장비 확정권 · 70층마다 에픽 장비 확정권 (그 층의 레어 확정권 대신) · 100층마다 레전더리 장비 확정권 추가', '요일 던전 — 7단계 레어 장비 확정권 · 12단계 에픽 장비 선택권 · 15단계 레전더리 장비 확정권', '시련의 전당 — ★4 에픽 장비 확정권 · ★5 레전더리 장비 확정권 · 최후의 시련 레전더리 장비 선택권', '계정 레벨 — 5 레어 장비 확정권 · 10 레어 장비 선택권 · 15 에픽 장비 확정권 · 20 에픽 장비 선택권 · 25 레전더리 장비 확정권 · 30 레전더리 장비 선택권', '레이드 주간 첫 승리 — 노말 레어 장비 확정권 · 하드 에픽 장비 확정권 · 익스트림 에픽 장비 선택권', '월드 보스 — 75% 달성 에픽 장비 확정권 · 100% 달성 레전더리 장비 확정권 · 처치자 에픽 장비 선택권', '레이드 상점 — 에픽 장비 확정권(40, 주 1) · 에픽 장비 선택권(70, 주 1) · 레전더리 장비 확정권(140, 주 1)', '월드 보스 상점 — 레전더리 장비 선택권(60, 주 1)' ]}
+  ]},
   { build:297, v:'2.10.6', date:'2026-10-01', secs:[
     { t:'시련의 전당', items:[ '힌트 문구 다듬기 — 시련마다 이기는 수순의 핵심만 짧게' ]},
     { t:'화면', items:[ '강화·각성 창을 열 때 정령 그림이 커졌다 줄어들고 테두리가 늦게 보이던 문제 수정 — 실제로 올렸을 때만 연출' ]},
@@ -8815,7 +8872,17 @@ const TICKET_INFO = {
   pick_rare:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_rare.webp" alt="">', name:'레어 선택권', pick:'rare'},
   pick_epic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', pick:'epic'},
   pick_legendary:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt="">', name:'레전더리 선택권', pick:'legendary'},
-  pick_mythic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt="">', name:'신화 선택권', pick:'mythic'}
+  pick_mythic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt="">', name:'신화 선택권', pick:'mythic'},
+  // (v297) 신화 확정권 · 장비 확정권(등급 확정, 부위·속성 무작위) · 장비 선택권(부위·속성을 골라 받음) — 그림은 기존 아이콘에 등급 빛·방패 표시
+  mythic:{icon:'<img class="uic tk-myth" src="assets/ui/ic_tk_legendary.webp" alt="">', name:'신화 정령 확정권', sure:'mythic'},
+  eq_rare:{icon:'<img class="uic tk-eq r-rare" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레어 장비 확정권', eqSure:'rare'},
+  eq_epic:{icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', eqSure:'epic'},
+  eq_legendary:{icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', eqSure:'legendary'},
+  eq_mythic:{icon:'<img class="uic tk-eq r-mythic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'신화 장비 확정권', eqSure:'mythic'},
+  eqpick_rare:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_rare.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'레어 장비 선택권', eqPick:'rare'},
+  eqpick_epic:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'에픽 장비 선택권', eqPick:'epic'},
+  eqpick_legendary:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'레전더리 장비 선택권', eqPick:'legendary'},
+  eqpick_mythic:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'신화 장비 선택권', eqPick:'mythic'}
 };
 function ticketCount(k){ return (state.tickets && state.tickets[k]) || 0; }
 function grantItems(items){
@@ -9066,12 +9133,14 @@ function challengeTower(floor){
 // (v155) 경제 구조: 스테이지=정수, 탑=강화석+층 소환권, 보스=장비권, 출정=장비·재료(강화석) — 층 보상은 정수 대신 강화석이 기본
 function towerFloorReward(f){
   // (v245) 선택권 층: 100층마다 레전더리 · 50층마다 에픽 · 30층마다 레어 (그 층의 확정권 대신)
-  if(f%100===0) return {items:{pick_legendary:1}};  // 100, 200…
+  if(f%100===0) return {items:{pick_legendary:1, eq_legendary:1}};  // 100, 200… (v297) + 레전더리 장비 확정권
   if(f%50===0) return {items:{pick_epic:1}};        // 50, 150…
   if(f%75===0) return {items:{legendary:1}};        // (v253) 75, 225… 레전더리 확정권
   if(f%25===0) return {items:{epic:1}};   // 25, 75, 125… 에픽 확정권
   const m = f%10;
   if(f%30===0) return {items:{pick_rare:1}};        // 30, 60, 90, 120…
+  if(f%70===0) return {items:{eq_epic:1}};          // (v297) 70, 140, 280… 에픽 장비 확정권 (그 층의 레어 확정권 대신)
+  if(f%40===0) return {items:{eq_rare:1}};          // (v297) 40, 80, 160… 레어 장비 확정권 (그 층의 레어 확정권 대신)
   if(m===0) return {items:{rare:1}};      // 10, 20, 40… 레어 확정권
   if(m===5) return {items:{summon:1}};    // 5, 15, 35… 정령 소환권
   if(m===9) return {items:{equip:1}};     // 9, 19, 29… 정령장비 소환권
@@ -9661,10 +9730,16 @@ function towerRewardChipHtml(f){
   return '<div class="tw-reward"><span>'+rewardBrief(towerFloorReward(f))+'</span></div>';
 }
 // ===================== (v266) 요일 던전 =====================
-// 요일마다 한 속성 던전이 열림(월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일 전부). 그 속성 정령만 출전, 적도 같은 속성(상성 없이 순수 실력)
+// 요일마다 한 속성 던전이 열림(월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일 전부). 그 속성 정령만 출전
+// (v297) 적은 내 속성이 이기는 속성(화염→숲결 · 물결→화염 · 숲결→물결 · 빛→그림자). 그림자는 이기는 속성이 없어 적도 그림자(수치 보정 없음) · 쉬워진 만큼 20단계까지
 // 1~15단계를 차례로 뚫음 — 보상은 단계마다 처음 돌파할 때 1회뿐(반복 수급 없음). 5·10·15단계는 수호자(강한 신화급) 등장
 // 나중에 단계를 늘리려면 DUNGEON_MAX 만 올리면 됨(강도·보상 공식이 15단계 뒤로도 이어짐)
-const DUNGEON_MAX = 15;
+const DUNGEON_MAX = 20; // (v297) 15 → 20
+const DUNGEON_FOE = { fire:'wood', water:'fire', wood:'water', light:'dark', dark:'dark' };
+function dungeonFoeEl(el){ return DUNGEON_FOE[el] || el; }
+// 적 공격력 속성 보정은 내 속성 값을 씀 — 그림자의 +6%는 '이기는 상대가 없어서' 붙는 보정이라 빛 던전의 그림자 적에겐 맞지 않음
+function dungeonNoAdv(el){ return typeMult(el, dungeonFoeEl(el)) <= 1; } // 이기는 속성이 없는 던전(그림자) — 추천 전투력만 그대로
+const DUNGEON_ADV_CP = Math.sqrt(0.8/1.3); // 상성 유리를 전투력으로 환산한 배율 (추천 전투력용)
 const DUNGEON_DAY_EL = [null, 'fire', 'water', 'wood', 'light', 'dark', null]; // getDay(): 0=일 … 6=토 · null=전부 열림
 const DUNGEON_THEME = { fire:'volcano', water:'snow', wood:'forest', light:'desert', dark:'cave' };
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
@@ -9680,6 +9755,8 @@ function dungeonReward(n){
   const it = {};
   if(n%5===3 || n%5===2 && n>10) it.equip = 1;
   if(n===5) it.rare = 2; if(n===10) it.pick_epic = 1; if(n===15) it.pick_legendary = 1;
+  if(n===7) it.eq_rare = 1; if(n===12) it.eqpick_epic = 1; if(n===15) it.eq_legendary = 1; // (v297) 장비 확정권·선택권
+  if(n===18) it.eq_epic = 1; if(n===20){ delete it.pick_epic; it.pick_legendary = 1; it.eqpick_legendary = 1; } // (v297) 새 16~20단계
   if(n>15 && n%5===0) it.pick_epic = 1;
   if(Object.keys(it).length) rw.items = it;
   return rw;
@@ -9690,7 +9767,7 @@ function dungeonEnemyGrid(el, n){
   const pool = [];
   for(let k=0;k<count;k++){
     const rr = weightedPickSeeded(enemyRarityWeights(prog), seededRand(seed + k*13.1 + 1)), v = seededRand(seed + k*7.3 + 2) < 0.5 ? 'a' : 'b';
-    pool.push({ rarity: rr, variant: v, front: ENEMY_FRONT_LINES.includes(el+'_'+v) });
+    pool.push({ rarity: rr, variant: v, front: ENEMY_FRONT_LINES.includes(dungeonFoeEl(el)+'_'+v) });
   }
   if(dungeonGuardian(n)){ pool[0] = { rarity:'mythic', variant: seededRand(seed+99)<0.5?'a':'b', front:false, guardian:true }; }
   pool.sort((x,y)=> (x.guardian?1:0) - (y.guardian?1:0) || (y.front?1:0) - (x.front?1:0));
@@ -9705,9 +9782,10 @@ function buildDungeonFight(el, n){
   const myUnits = [];
   state.formation.slice(0, GRID_SLOTS).forEach((key, idx)=>{ if(key && SPIRITS[key] && SPIRITS[key].element===el) myUnits.push(makeBattleUnit('me', idx, key, unitAtk(key), ALLY_HP_MULT)); });
   const enemyUnits = [];
+  const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
   cells.forEach((c, idx)=>{
     if(!c) return;
-    const u = makeBattleUnit('enemy', idx, el+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1));
+    const u = makeBattleUnit('enemy', idx, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1));
     if(c.guardian) u.dispName = '수호자 '+SPIRITS[u.key].name;
     enemyUnits.push(u);
   });
@@ -9718,8 +9796,9 @@ function buildDungeonFight(el, n){
 }
 function dungeonRecCP(el, n){ // (v266) 추천 전투력 — 적 배치는 단계마다 고정이라 내 진형과 무관하게 계산
   const per = dungeonPower(n);
-  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, el+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1))) : a, 0);
-  return recCP(en * REC_CP_MULT.dungeon);
+  const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
+  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1))) : a, 0);
+  return recCP(en * REC_CP_MULT.dungeon * (na ? 1 : DUNGEON_ADV_CP)); // (v297) 상성 유리만큼 낮춤 (그림자 던전은 상성이 없어 그대로)
 }
 function checkDungeonOutcome(sf){
   if(sf.result) return true;
@@ -9761,8 +9840,9 @@ function showDungeonPrep(el, n, keep){
   state.dungeonForms[el] = state.formation.slice(); save();
   const info = ELEMENT_INFO[el], cells = dungeonEnemyGrid(el, n), pv = buildDungeonFight(el, n), rw = dungeonReward(n), first = n > dungeonBest(el);
   let h = '<h3 style="text-align:center; margin:0;">'+info.icon+' '+info.name+' 던전 · '+n+'단계</h3>';
-  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적도 전부 '+info.name+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
-  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[el+'_'+c.rarity+'_'+c.variant])+elIc(el,'av-el')+'</span>' : '').join('')+'</div>';
+  const fe = dungeonFoeEl(el);
+  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적은 전부 '+elIc(fe)+' '+ELEMENT_INFO[fe].name+(dungeonNoAdv(el) ? '' : ' (상성 유리)')+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
+  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[fe+'_'+c.rarity+'_'+c.variant])+elIc(fe,'av-el')+'</span>' : '').join('')+'</div>';
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', pool.length ? '상대 '+fmtCP(teamCP(pv.enemyUnits)) : info.name+' 정령 없음 — 소환·합성으로 모으기', dungeonRecCP(el, n));
@@ -9801,13 +9881,13 @@ function bindChallengeTab(){ document.querySelectorAll('[data-ch-go]').forEach(b
 function renderDungeonTab(){
   if(!isUnlocked('dungeon')) return lockedFeatureScreenHtml('dungeon');
   const today = new Date().getDay(), open = dungeonOpenEls();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">📅 요일 던전</div><div class="sub" style="font-size:11px;">그날 속성 정령만 출전 · 단계마다 처음 돌파할 때 보상</div></div>';
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">📅 요일 던전</div><div class="sub" style="font-size:11px;">그날 속성 정령만 출전 · 적은 그 속성이 이기는 속성 · 단계마다 처음 돌파할 때 보상</div></div>';
   h += '<div class="dg-week">'+DAY_NAMES.map((d,i)=>{ const e = DUNGEON_DAY_EL[i]; return '<span class="'+(i===today?'on':'')+'"><small>'+d+'</small>'+(e ? elIc(e) : '<b>전체</b>')+'</span>'; }).join('')+'</div>';
   h += TOP_MARK + '<div class="dg-list">';
   ELEMENTS.forEach(el=>{
     const info = ELEMENT_INFO[el], best = dungeonBest(el), isOpen = dungeonIsOpen(el), done = best >= DUNGEON_MAX, next = Math.min(DUNGEON_MAX, best+1);
     const nextRw = done ? null : dungeonReward(next);
-    const marks = [5,10,15].map(m=>'<i class="'+(best>=m?'got':'')+'" style="left:'+(m/DUNGEON_MAX*100)+'%;"></i>').join('');
+    const marks = [5,10,15,20].map(m=>'<i class="'+(best>=m?'got':'')+'" style="left:'+(m/DUNGEON_MAX*100)+'%;"></i>').join('');
     h += '<div class="dg-card'+(isOpen?'':' closed')+'" style="--ec:'+info.color+';">'
       + '<div class="dg-ic">'+elIc(el)+'</div>'
       + '<div class="dg-mid"><div class="dg-nm"><b>'+info.name+' 던전</b><small>'+(isOpen ? '오늘 열림' : dungeonDaysOf(el)+'요일')+'</small></div>'
@@ -9973,42 +10053,42 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     hint:'부활 폭발은 체력이 넉넉한 첫 라운드에 받아 내기. 적의 부활은 약한 적에게 헛되이 쓰이게',
     allies:[{key:'water_mythic_b', idx:1},{key:'dark_legendary_a', idx:0},{key:'light_epic_a', idx:4}],
     enemies:[{key:'fire_mythic_a', idx:1, atk:780, hp:2.16},{key:'light_mythic_a', idx:4, atk:720, hp:2.16},{key:'wood_epic_b', idx:0, atk:720, hp:2.16}] },
-  { id:'t3', nm:'가시 너머', diff:4, maxRounds:4, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.41%)
+  { id:'t3', nm:'가시 너머', diff:4, maxRounds:4, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1}}, // (0.41%)
     intro:'숲 정령이 가시 갑옷으로 받은 피해를 되돌려 주고, 도발로 공격을 끌어당김.',
     hint:'반사 갑옷을 피하지 말고 정면으로. 반사로 한 번 쓰러져도 다시 일어남',
     allies:[{key:'fire_legendary_a', idx:1},{key:'water_epic_a', idx:4}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:6.328},{key:'light_epic_b', idx:4, atk:700, hp:6.328},{key:'dark_rare_a', idx:3, atk:700, hp:6.328}] },
-  { id:'t5', nm:'얼어붙은 시간', diff:4, maxRounds:3, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.18%)
+  { id:'t5', nm:'얼어붙은 시간', diff:4, maxRounds:3, noDeath:true, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1}}, // (0.18%)
     intro:'강한 어둠 신화가 둘. 한 번이라도 마음대로 움직이게 두면 버티기 어려움.',
     hint:'첫 라운드에 우리 편 하나가 쓰러지며 터져야 함. 공격은 한 적에게 모으기',
     allies:[{key:'water_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_epic_a', idx:0}],
     enemies:[{key:'dark_mythic_a', idx:0, atk:750, hp:6.578},{key:'dark_mythic_a', idx:2, atk:750, hp:6.578},{key:'water_legendary_a', idx:4, atk:600, hp:6.578}] },
-  { id:'t6', nm:'독의 정원', diff:4, maxRounds:3, reward:{essence:2500, stone:100, items:{pick_epic:1}}, // (0.15%)
+  { id:'t6', nm:'독의 정원', diff:4, maxRounds:3, reward:{essence:2500, stone:100, items:{pick_epic:1, eq_epic:1}}, // (0.15%)
     intro:'적이 다섯. 한 명씩 때려서는 3라운드 안에 다 쓰러뜨릴 수 없음.',
     hint:'독은 한가운데 적에게 한 번만. 나머지는 그 옆자리부터 쓰러뜨리기',
     allies:[{key:'wood_mythic_b', idx:1},{key:'light_mythic_b', idx:4}],
     enemies:[{key:'water_epic_a', idx:0, atk:600, hp:0.993},{key:'water_rare_b', idx:1, atk:600, hp:0.993},{key:'water_epic_b', idx:2, atk:600, hp:0.993},{key:'light_rare_a', idx:3, atk:600, hp:0.993},{key:'water_legendary_b', idx:4, atk:600, hp:0.993}] },
-  { id:'t1', nm:'불씨 폭발', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.11%)
+  { id:'t1', nm:'불씨 폭발', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1}}, // (0.11%)
     intro:'체력이 두꺼운 숲 정령이 셋. 평범하게 때려서는 3라운드가 모자람.',
     hint:'첫 차례부터 호령은 화염 정령에게. 화상은 여러 적에게 넓게 깔고 시작',
     allies:[{key:'fire_mythic_b', idx:1},{key:'light_legendary_b', idx:4}],
     enemies:[{key:'wood_epic_a', idx:0, atk:700, hp:3.963},{key:'wood_legendary_b', idx:1, atk:700, hp:3.963},{key:'wood_epic_b', idx:2, atk:700, hp:3.963}] },
-  { id:'t8', nm:'빛의 장벽', diff:5, maxRounds:4, noDeath:true, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
+  { id:'t8', nm:'빛의 장벽', diff:5, maxRounds:4, noDeath:true, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1}}, // (0.15%)
     intro:'적 화염 신화는 쓰러지면 되살아나며 우리 편 전체를 폭발로 공격.',
     hint:'되살아나며 터지는 적은 첫 라운드에 바로 쓰러뜨리기. 우리 편 하나는 쓰러져도 다시 일어남',
     allies:[{key:'light_mythic_a', idx:4},{key:'fire_legendary_b', idx:1},{key:'dark_epic_b', idx:0}],
     enemies:[{key:'fire_mythic_a', idx:1, atk:700, hp:2.82},{key:'fire_mythic_b', idx:4, atk:700, hp:2.82},{key:'wood_rare_a', idx:0, atk:650, hp:2.82}] },
-  { id:'t9', nm:'저주받은 성채', diff:5, maxRounds:4, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.15%)
+  { id:'t9', nm:'저주받은 성채', diff:5, maxRounds:4, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1}}, // (0.15%)
     intro:'뒤에서는 치유하고 되살리고, 앞에서는 도발과 반사로 막는 성채.',
     hint:'앞을 막는 적의 이로운 효과부터 벗기기. 한 번 되살아나는 것까지 계산에 넣기',
     allies:[{key:'dark_mythic_b', idx:4},{key:'fire_mythic_a', idx:1},{key:'wood_legendary_b', idx:0}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:600, hp:8.313},{key:'water_mythic_a', idx:4, atk:600, hp:8.313},{key:'light_mythic_a', idx:3, atk:600, hp:8.313}] },
-  { id:'t7', nm:'처형자의 춤', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1}}, // (0.12%)
+  { id:'t7', nm:'처형자의 춤', diff:5, maxRounds:3, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1}}, // (0.12%)
     intro:'되살리는 적과 치유하는 적이 서로를 지켜 줌.',
     hint:'쓰러뜨리는 순서가 전부. 앞줄 둘부터, 치유하는 적은 맨 마지막',
     allies:[{key:'dark_mythic_a', idx:1},{key:'light_mythic_b', idx:4}],
     enemies:[{key:'water_legendary_a', idx:4, atk:720, hp:2.165},{key:'light_epic_a', idx:3, atk:720, hp:2.165},{key:'fire_epic_b', idx:0, atk:780, hp:2.165},{key:'wood_legendary_a', idx:1, atk:780, hp:2.165}] },
-  { id:'t10', nm:'최후의 시련', diff:5, maxRounds:4, noDeath:true, reward:{essence:6000, stone:200, items:{pick_mythic:1}}, // (0.21%)
+  { id:'t10', nm:'최후의 시련', diff:5, maxRounds:4, noDeath:true, reward:{essence:6000, stone:200, items:{pick_mythic:1, eqpick_legendary:1}}, // (0.21%)
     intro:'탱커·치유·부활·폭발이 모두 모인 마지막 시련.',
     hint:'첫 라운드에 부활 폭발부터 받아 내기. 나머지는 지금까지의 요령 그대로',
     allies:[{key:'water_mythic_a', idx:4},{key:'light_mythic_b', idx:3},{key:'dark_mythic_a', idx:1},{key:'fire_mythic_b', idx:0}],
@@ -10148,8 +10228,8 @@ function wbBossForWeek(w){
   if(c>0 && L>1){ const prev = wbCycleOrder(c-1); if(o[0]===prev[L-1]){ const t = o[0]; o[0] = o[1]; o[1] = t; } } // 바퀴가 바뀔 때 같은 보스 연속 방지
   return WB_BOSSES[o[pos]];
 }
-const WB_MILESTONES = [ {p:0.25, rw:{essence:800, wbGems:3}}, {p:0.50, rw:{stone:60, wbGems:5}}, {p:0.75, rw:{items:{pick_epic:1}, wbGems:8}}, {p:1.00, rw:{items:{pick_legendary:1}, wbGems:12}} ];
-const WB_KILL_RW = { essence:1500, items:{pick_legendary:1}, wbGems:15 };
+const WB_MILESTONES = [ {p:0.25, rw:{essence:800, wbGems:3}}, {p:0.50, rw:{stone:60, wbGems:5}}, {p:0.75, rw:{items:{pick_epic:1, eq_epic:1}, wbGems:8}}, {p:1.00, rw:{items:{pick_legendary:1, eq_legendary:1}, wbGems:12}} ]; // (v297) 장비 확정권
+const WB_KILL_RW = { essence:1500, items:{pick_legendary:1, eqpick_epic:1}, wbGems:15 };
 // (v278) 세계 룬석 — 월드 보스 전용 재화. 도전 1번에 1개 + 준 피해 3천·1만·3만·6만마다 +1 (최대 5) · 함께 달성·처치 보상에도 붙음 → 월드 보스 상점
 const WB_GEM_STEPS = [3000, 10000, 30000, 60000];
 function wbGemsFor(dmg){ return 1 + WB_GEM_STEPS.filter(x=>dmg>=x).length; }
@@ -10245,6 +10325,7 @@ const WB_SHOP = [ // limit: 이번 주 구매 한도(0 = 무제한)
   { id:'legend', icon:'🎲', name:'전설 룬 뽑기', price:20, limit:2, desc:'전설 등급 기본 룬 1개 (무작위 종류)' },
   { id:'upgrade', icon:'⬆️', name:'룬 승급석', price:12, limit:2, desc:'룬 한 단계 승급 (일반 → 희귀 → 전설)' },
   { id:'pick_epic', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
+  { id:'eqpick_legendary', icon:TICKET_INFO_EQP('legendary'), name:'레전더리 장비 선택권', price:60, limit:1, desc:'레전더리 장비 10종 중 원하는 1개' }, // (v297)
   { id:'stone', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:2, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' }
 ];
 function wbShopItem(it){ if(!it.rune) return it; const r = WORLD_RUNES[it.rune]; return Object.assign({ icon:r.icon, name:r.name, desc:r.desc+' · 월드 보스 전용 룬' }, it); }
@@ -11477,7 +11558,7 @@ function showManageModal(key){
   html += equipSlotsHtml(key);
   html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && awakenSpare(key)>=ac.copies && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
-    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*AWAKEN_POWER*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
+    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
     html += '<div class="mg-acts">'
       + (sp.rarity!=='mythic' ? '<button class="btn secondary" id="toFuseBtn" '+(lk?'disabled':'')+'>'+uiIc('fuse')+'<span>합성</span></button>' : '')
@@ -11850,6 +11931,9 @@ function attachHandlers(){
   const stb = document.getElementById('shopTicketBtn'); if(stb) stb.addEventListener('click', doShopTicket);
   const etb = document.getElementById('epicTicketBtn'); if(etb) etb.addEventListener('click', doEpicTicket);
   { const ltb = document.getElementById('legTicketBtn'); if(ltb) ltb.addEventListener('click', doLegendaryTicket); }
+  { const mtb = document.getElementById('mythTicketBtn'); if(mtb) mtb.addEventListener('click', doMythicTicket); }
+  document.querySelectorAll('[data-eq-sure]').forEach(b=>b.addEventListener('click', ()=>doEquipSureTicket(b.dataset.eqSure)));
+  document.querySelectorAll('[data-eq-pick]').forEach(b=>b.addEventListener('click', ()=>showEquipPickModal(b.dataset.eqPick)));
   document.querySelectorAll('[data-pick-tk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(b.dataset.pickTk)));
   document.querySelectorAll('[data-hearth-upgrade]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ const k = btn.dataset.hearthUpgrade, c = hearthUpgradeCost(k); spendAsk('화로 '+HEARTH_UPGRADES[k].name+' 강화', c, ()=>doHearthUpgrade(k), hearthUpgradeLevel(k)<HEARTH_UPGRADES[k].maxLv && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
@@ -12075,7 +12159,7 @@ function sanitizeState(){
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
@@ -12303,7 +12387,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 297, APP_VERSION = '2.10.6'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 298, APP_VERSION = '2.11.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
