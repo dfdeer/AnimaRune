@@ -30,3 +30,17 @@ self.addEventListener('fetch', e=>{
     net.then(save).catch(()=> caches.match(req).then(r=> r || (req.mode==='navigate' ? caches.match('./index.html') : Response.error())))
   );
 });
+// (v310) 휴대폰 알림 — 서버(Firebase 함수)가 보낸 알림을 띄우고, 누르면 게임을 열거나 앞으로 가져옴
+self.addEventListener('push', e=>{
+  let d = {};
+  try{ d = e.data ? e.data.json() : {}; }catch(_){ d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || '아니마룬', { body: d.body || '', tag: d.tag || 'animarune', icon: './icon-192.png', badge: './icon-192.png', data: { url: d.url || './' } }));
+});
+self.addEventListener('notificationclick', e=>{
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(list=>{
+    const w = list.find(c=>c.url.startsWith(self.registration.scope));
+    return w ? w.focus() : self.clients.openWindow(url);
+  }));
+});

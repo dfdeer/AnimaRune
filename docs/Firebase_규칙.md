@@ -142,6 +142,30 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
         }
       }
     },
+    // (v3.3.0) 휴대폰 알림 — 기기 주소(subs)·끈 알림(pref)·예약 시각(due)은 본인만. 보내는 건 서버 함수(규칙과 무관)
+    "push": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "subs": {
+          "$sid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.hasChildren(['endpoint', 'p256dh', 'auth']) && newData.child('endpoint').isString() && newData.child('endpoint').val().beginsWith('https://') && newData.child('endpoint').val().length <= 600",
+            "p256dh": { ".validate": "newData.isString() && newData.val().length <= 200" },
+            "auth": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "t": { ".validate": "newData.isNumber()" },
+            "endpoint": { ".validate": true },
+            "$other": { ".validate": false }
+          }
+        },
+        "pref": { ".write": "auth != null && auth.uid === $uid", "$k": { ".validate": "newData.isBoolean()" } },
+        "due": { ".write": "auth != null && auth.uid === $uid", "$k": { ".validate": "newData.isNumber()" } },
+        "$other": { ".validate": false }
+      }
+    },
+    // 알림 서버 공개 키 — 서버 함수가 처음 실행될 때 만듦. 비밀 키(pushCfg/vapid)는 아무도 못 읽음
+    "pushCfg": {
+      "pub": { ".read": "auth != null" }
+    },
     // 문의함 — 관리자는 전체 읽기, 문의한 사람은 자기 것만
     "inquiries": {
       ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
@@ -213,6 +237,7 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
 ```
 
 ## 최근 바뀐 것
+- **v3.3.0** 휴대폰 알림: `push/<uid>`(subs·pref·due) · `pushCfg/pub` 추가
 - **v3.2.1** 문의 완료 표시: `inquiries/<uid>/<id>/dt` 추가
 - **v3.0.1** 문의 이어 쓰기: `inquiries/<uid>/<id>/msgs`, `ut` 추가 — 이걸 게시해야 문의를 여러 번 주고받을 수 있음
 - **v2.10.5** 우편: 개인 우편 받은 표시 `c` · 관리자 개인 우편 읽기

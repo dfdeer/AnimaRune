@@ -4181,6 +4181,7 @@ async function raidInitNet(){
     if(state.raidSession) await raidResume();
     friendInit().catch(()=>{});
     accountInit().catch(()=>{});
+    pushRefresh(); // (v310)
   }catch(e){ raidNet.failed = true; raidNet.failReason = (e && e.message) || ''; state.raidSession = null; }
   if(activeTab==='raid' && !raidNet.code) render();
 }
@@ -6701,7 +6702,7 @@ var saveFailWarned = false; // var: 스크립트 앞부분에서 save()가 먼�
 function save(){
   state.saveRev = (state.saveRev||0) + 1;
   // (v193) 저장 실패(사파리 개인정보 보호 모드·저장 공간 부족 등)에도 게임이 멈추지 않게 — 예전엔 여기서 에러가 나면 하던 동작이 중간에 끊겼음
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); if(typeof accSchedule==='function') accSchedule(); }
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); if(typeof accSchedule==='function') accSchedule(); if(typeof pushSchedule==='function') pushSchedule(); }
   catch(e){ if(!saveFailWarned){ saveFailWarned = true; setTimeout(()=>{ try{ toast('⚠️ 기기 저장 실패 (저장 공간·개인정보 보호 모드 확인)', 4000); }catch(_){} }, 0); } return; }
 }
 
@@ -8509,6 +8510,78 @@ function renderSpiritsTab(){
   return html;
 }
 
+// ===================== (v310) 휴대폰 푸시 알림 =====================
+// 보내는 쪽은 Firebase 함수(functions/index.js · docs/푸시_알림_설정.md). 게임은 ① 이 기기의 받는 주소 등록 ② 끈 알림 종류 ③ 예약 시각(화로·파견·일일)만 기록
+const PUSH_KINDS = [ ['friend','🙋 친구 요청'], ['mail','📮 우편 도착'], ['ask','💬 문의 답장'], ['hearth','🔥 화로 가득'], ['dispatch','🧭 파견 완료'], ['daily','🌅 오늘 안 들어왔을 때 (낮 12시)'] ];
+function pushSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+function pushIosNeedsInstall(){ const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); const app = window.navigator.standalone===true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); return ios && !app; }
+function pushB64(s){ s = String(s).replace(/-/g,'+').replace(/_/g,'/'); const raw = atob(s + '='.repeat((4 - s.length%4)%4)); return Uint8Array.from(raw, c=>c.charCodeAt(0)); }
+async function pushSubId(sub){ const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sub.endpoint)); return [...new Uint8Array(d)].slice(0,12).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function pushRef(path){ const fb = raidNet.fb; return fb.ref(fb.rtdb, 'push/'+fb.uid+(path?'/'+path:'')); }
+async function pushRegister(ask){ // ask: 버튼을 눌렀을 때만 권한을 물음
+  if(!pushSupported()) throw new Error('이 기기·브라우저는 알림을 못 받음');
+  if(pushIosNeedsInstall()) throw new Error('아이폰은 홈 화면에 추가한 앱에서만 알림 가능');
+  const perm = ask ? await Notification.requestPermission() : Notification.permission;
+  if(perm!=='granted') throw new Error('알림 권한이 꺼져 있음 — 기기 설정에서 허용');
+  const fb = raidNet.fb; if(!fb) throw new Error('온라인 연결 중 — 잠시 뒤 다시');
+  const pub = (await fb.get(fb.ref(fb.rtdb, 'pushCfg/pub'))).val(); if(!pub) throw new Error('알림 서버 준비 전 — 나중에 다시');
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if(sub){ const k = sub.options && sub.options.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null, want = pushB64(pub);
+    if(!k || k.length!==want.length || k.some((b,i)=>b!==want[i])){ await sub.unsubscribe().catch(()=>{}); sub = null; } } // 서버 키가 바뀌었으면 새로
+  if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: pushB64(pub) });
+  const j = sub.toJSON(), sid = await pushSubId(sub);
+  await fb.set(pushRef('subs/'+sid), { endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth, t:Date.now() });
+  const pref = {}; PUSH_KINDS.forEach(([k])=>{ pref[k] = !(state.settings.pushOff && state.settings.pushOff[k]); });
+  await fb.set(pushRef('pref'), pref);
+  state.settings.push = true; state.settings.pushSid = sid; pushDueLast = ''; save(); pushSyncDue();
+}
+async function pushUnregister(){
+  const fb = raidNet.fb, sid = state.settings.pushSid;
+  state.settings.push = false; save();
+  if(fb && sid) await fb.remove(pushRef('subs/'+sid)).catch(()=>{});
+  if(fb) await fb.remove(pushRef('due')).catch(()=>{});
+  try{ const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if(sub) await sub.unsubscribe(); }catch(e){}
+}
+// 접속할 때: 켜 둔 기기면 주소를 다시 등록(계정이 바뀌었거나 주소가 갱신된 경우)
+function pushRefresh(){ if(state.settings.push && pushSupported() && Notification.permission==='granted') pushRegister(false).catch(()=>{}); }
+// 예약 시각 — 바뀌었을 때만 서버에 씀
+let pushDueLast = '', pushDueTimer = null;
+function pushDueTimes(){
+  const out = {}, now = Date.now();
+  if(state.hearth && hearthSparks() < HEARTH_MAX()) out.hearth = state.hearth.lastCollect + HEARTH_MAX()*HEARTH_INTERVAL_MS();
+  const d = state.dispatch; if(d && Array.isArray(d.slots)){ const ends = d.slots.map(x=>x.end).filter(t=>t>now); if(ends.length) out.dispatch = Math.min(...ends); }
+  const t = new Date(); t.setDate(t.getDate()+1); t.setHours(12,0,0,0); out.daily = t.getTime();
+  return out;
+}
+function pushSyncDue(){
+  if(!state.settings.push || !raidNet.fb) return;
+  const due = pushDueTimes(), key = JSON.stringify(due); if(key===pushDueLast) return;
+  pushDueLast = key; raidNet.fb.set(pushRef('due'), due).catch(()=>{ pushDueLast = ''; });
+}
+function pushSchedule(){ if(!state.settings.push) return; clearTimeout(pushDueTimer); pushDueTimer = setTimeout(pushSyncDue, 1500); }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') pushSyncDue(); });
+function showPushModal(){
+  const on = !!state.settings.push, off = state.settings.pushOff || {};
+  let h = '<h3>🔔 휴대폰 알림</h3>';
+  const why = !pushSupported() ? '이 기기·브라우저는 알림을 못 받음' : pushIosNeedsInstall() ? '아이폰은 Safari 공유 버튼 → <b>홈 화면에 추가</b>한 앱에서만 알림을 받을 수 있음' : (typeof Notification!=='undefined' && Notification.permission==='denied') ? '알림 권한이 막혀 있음 — 기기·브라우저 설정에서 허용한 뒤 다시' : '';
+  if(why) h += '<div class="sub" style="margin:8px 0; line-height:1.5;">'+why+'</div>';
+  h += '<button class="btn'+(on?' secondary':'')+'" id="pushToggle" style="margin-top:8px;'+(why && !on ? ' opacity:.5;" disabled' : '"')+'>'+(on ? '알림 끄기' : '알림 켜기')+'</button>';
+  h += '<div style="margin-top:14px; text-align:left;'+(on?'':' opacity:.45; pointer-events:none;')+'">'+PUSH_KINDS.map(([k,nm])=>'<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sub">'+nm+'</span><input type="checkbox" data-push-kind="'+k+'" '+(off[k]?'':'checked')+'></label>').join('')+'</div>';
+  h += '<div class="sub" style="font-size:11px; margin-top:10px; line-height:1.5;">이 기기에만 적용 · 화로·파견·일일 알림은 최대 10분 늦게 올 수 있음</div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(showSettingsModal);
+  document.getElementById('pushToggle').addEventListener('click', async e=>{
+    const b = e.currentTarget; b.disabled = true; b.textContent = '…';
+    try{ if(state.settings.push){ await pushUnregister(); toast('알림 끔'); } else { await pushRegister(true); toast('🔔 알림 켬'); } }
+    catch(err){ toast(String((err && err.message) || err), 3500); }
+    showPushModal();
+  });
+  document.querySelectorAll('[data-push-kind]').forEach(c=>c.addEventListener('change', ()=>{
+    const k = c.dataset.pushKind; state.settings.pushOff = Object.assign({}, state.settings.pushOff, { [k]: !c.checked }); if(c.checked) delete state.settings.pushOff[k]; save();
+    if(raidNet.fb) raidNet.fb.set(pushRef('pref/'+k), c.checked).catch(()=>{});
+  }));
+}
 function showSettingsModal(){
   const s = state.settings;
   let html = '<h3>⚙️ 설정</h3>';
@@ -8522,6 +8595,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
+  html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">🔔 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
   html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
@@ -8542,6 +8616,7 @@ function showSettingsModal(){
     save();
   });
   document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
+  document.getElementById('pushOpenBtn').addEventListener('click', showPushModal);
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
   bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
@@ -8912,6 +8987,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:309, v:'3.3.0', date:'2026-10-01', secs:[
+    { t:'휴대폰 알림', items:[ '☰ 설정 → 🔔 휴대폰 알림 — 친구 요청·우편·문의 답장·화로 가득·파견 완료·일일 알림(낮 12시)을 종류별로 켜고 끔', '아이폰은 Safari 공유 → 홈 화면에 추가한 앱에서만 받을 수 있음' ]},
     { t:'보스전', items:[ '웨이브가 바뀌어도 버프·디버프(보호막·강화·화상·독·빙결 등)가 남은 라운드 그대로 이어짐' ]},
   ]},
   { build:308, v:'3.2.4', date:'2026-10-01', secs:[
@@ -12932,6 +13008,8 @@ function sanitizeState(){
   s.settings.sfxVolume = fin(s.settings.sfxVolume) ? Math.min(1, Math.max(0, s.settings.sfxVolume)) : 0.35;
   s.settings.spendAsk = s.settings.spendAsk!==false; // (v296) 재화 사용 확인창
   s.settings.subNoAsk = s.settings.subNoAsk===true;
+  s.settings.push = s.settings.push===true; if(typeof s.settings.pushSid!=='string') delete s.settings.pushSid; // (v310) 휴대폰 알림
+  if(!s.settings.pushOff || typeof s.settings.pushOff!=='object') s.settings.pushOff = {};
   s.settings.multiNoAsk = s.settings.multiNoAsk===true; // (v305) 10회 소환 확인창 끄기 // (v305) 각인·부가 능력 다시 굴리기 확인창 끄기
   ['summons','fusions','stagesCleared','equipSummons'].forEach(k=>{ s.dailyStats[k] = fin(s.dailyStats[k]) ? Math.max(0, Math.floor(s.dailyStats[k])) : 0; });
   if(typeof s.dailyStats.date!=='string') s.dailyStats.date = todayStr();
