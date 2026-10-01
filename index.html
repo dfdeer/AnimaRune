@@ -1039,6 +1039,7 @@
   .bs-acts.n3 .btn{font-size:12px; padding:8px 4px;}
   .bs-acts.n3 .btn small{font-size:10px;}
   .bs-info{flex-shrink:0; width:28px; height:28px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff33; color:var(--text); font-size:14px;}
+  .bs-info, .pk-info{display:inline-flex; align-items:center; justify-content:center; padding:0; line-height:1; font-size:0 !important;} .bs-info::before, .pk-info::before{content:'i'; font:italic 800 14px/1 Georgia, 'Times New Roman', serif; color:var(--text);} /* (v300) ⓘ 글자가 동그라미 안에서 어긋나 보이던 것 → 가운데에 i만 그림 */
   @media (max-height:720px){
     #battleScreen{gap:4px; padding-top:6px;}
     .bs-order{min-height:34px; padding:3px 8px;}
@@ -2687,7 +2688,7 @@ function raidOnDoc(snap){
   raidNameOf(raidPartnerUid());
   if(raidNet.role==='host' && raidNet.lastGuest && !d.guest && (d.status==='lobby')) toast('팀원이 나감');
   raidNet.lastGuest = d.guest;
-  if(d.status==='lobby'){ raidNet.picksInit = false; if(!document.querySelector('[data-duel-pick]')) showRaidLobbyModal(); return; } // (v296) 결투 덱 칸 고르는 중엔 창을 덮지 않음
+  if(d.status==='lobby'){ raidNet.picksInit = false; if(!duelPicking) showRaidLobbyModal(); return; } // (v296) 결투 덱 칸 고르는 중엔 창을 덮지 않음
   if(d.status==='pick'){
     if(raidNet.role==='host' && d.guest && d.ready[d.host] && d.ready[d.guest] && !raidNet.starting) raidHostStartBattle(d);
     else if(!raidNet.starting) showRaidPickModal();
@@ -3314,29 +3315,17 @@ function renderDuelTabInner(){
     : '<div class="fr-empty">친구 없음<br><button class="btn small" id="duelToFriends" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_party.webp" alt=""> 친구 추가하러 가기</button></div>';
   return h + '</div>';
 }
+let duelPicking = false; // 결투 덱 칸 고르는 창이 열려 있는 동안 대기실 창이 덮어쓰지 않게
+// (v300) 결투 덱 칸도 스테이지와 같은 정령 배치 창(정렬·전투력·역할·ⓘ) — 고르는 동안만 진형 자리를 빌려 쓰고 끝나면 결투 덱으로 저장, 진형은 되돌림
 function showDuelSlotPicker(slot, fromLobby){
-  const d = myDuelDeck(), cur = d[slot];
-  const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0).sort((a,c)=> (RARITY_ORDER.indexOf(SPIRITS[c].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity)) || (unitAtk(c)-unitAtk(a)));
-  let h = '<h3 style="text-align:center;">'+(slot<3?'전열':'후열')+' '+(slot%3+1)+'번 칸</h3><div class="sub" style="text-align:center; margin-bottom:8px;">결투 덱에 넣을 정령 선택</div>';
-  if(!owned.length) h += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 정령 없음</div>';
-  // (v296) 전투 준비 창처럼 전열형·후열형으로 나누고 역할 표시 · ⓘ로 스킬 보기 (이 칸이 전열/후열 어느 쪽인지도 위에 표시)
-  const isF = k=> ENEMY_FRONT_LINES.includes(SPIRITS[k].element+'_'+SPIRITS[k].variant);
-  const tileD = k=>{ const sp = SPIRITS[k], inDeck = d.includes(k) && k!==cur, kit = LINE_KITS[sp.element+'_'+sp.variant];
-    return '<button data-duel-pick="'+k+'" style="position:relative; padding:6px 2px; border-radius:10px; background:#27235a; border:2px solid '+(k===cur?'#ffd557':RARITY_INFO[sp.rarity].color+'66')+'; color:var(--text);'+(inDeck?' opacity:.45;':'')+'"><div class="spw" style="font-size:22px;">'+spArt(sp)+elIc(sp.element,'spw-el')+'</div><div style="font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'+sp.name+' <span data-duel-info="'+k+'" style="opacity:.8;">ⓘ</span></div><div style="font-size:9px; color:var(--sub);">'+kit.icon+' '+kit.role+'</div>'+(inDeck?'<div style="position:absolute; top:2px; right:4px; font-size:9px;">덱</div>':'')+'</button>'; };
-  const gF = owned.filter(isF), gB = owned.filter(k=>!isF(k)), cap = t=>'<div class="sub" style="font-weight:800; margin:8px 2px 6px;">'+t+'</div>';
-  h += '<div class="sub" style="text-align:center; margin:-4px 0 6px;">이 칸은 <b style="color:var(--text);">'+(slot<3?'전열':'후열')+'</b> · '+(slot<3?'돌격·탱커·흡혈처형이 어울림':'치유·빙결·화상·독·보호막·가속·저주가 어울림')+'</div>';
-  h += '<div class="roster-scroll">'+(gF.length?cap('🗡️ 전열형 (돌격·탱커·흡혈처형)')+'<div class="roster-grid">'+gF.map(tileD).join('')+'</div>':'')+(gB.length?cap('🎯 후열형 (치유·빙결·화상·독·보호막·가속·저주)')+'<div class="roster-grid">'+gB.map(tileD).join('')+'</div>':'')+'<div class="roster-grid">'+dispatchAwayTilesHtml()+'</div></div>'; // (v267) 파견 중 표시
-  if(cur) h += '<button class="btn secondary" id="duelSlotClear" style="margin-top:10px;">이 칸 비우기</button>';
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
-  bindModalClose();
-  document.querySelectorAll('[data-duel-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const k = el.dataset.duelInfo; showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT)); }));
-  document.querySelectorAll('[data-duel-pick]').forEach(el=>el.addEventListener('click', ()=>{
-    const k = el.dataset.duelPick, nd = d.slice(), other = nd.indexOf(k);
-    if(other>=0 && other!==slot) nd[other] = cur || null; // 이미 덱에 있던 정령이면 두 칸을 맞바꿈
-    nd[slot] = k; closeModal(); saveDuelDeck(nd, true).then(()=>duelLobbyAfterEdit(fromLobby));
-  }));
-  const cl = document.getElementById('duelSlotClear'); if(cl) cl.addEventListener('click', ()=>{ const nd = d.slice(); nd[slot] = null; closeModal(); saveDuelDeck(nd, true).then(()=>duelLobbyAfterEdit(fromLobby)); });
-  if(fromLobby){ const x = document.getElementById('modalClose'); if(x) x.addEventListener('click', ()=>duelLobbyAfterEdit(true)); }
+  duelPicking = true;
+  const back = (state.formation||[]).slice(), d = myDuelDeck(), d6 = Array.from({length:GRID_SLOTS}, (_,i)=> d[i] || null);
+  state.formation = d6.slice();
+  let done = false;
+  const ret = ()=>{ if(done) return; done = true; duelPicking = false; const nd = state.formation.slice(0, GRID_SLOTS); state.formation = back; closeModal();
+    if(JSON.stringify(nd)===JSON.stringify(d6)){ save(); if(fromLobby) duelLobbyAfterEdit(true); else render(); return; }
+    saveDuelDeck(nd, true).then(()=>duelLobbyAfterEdit(fromLobby)); };
+  showSlotPicker(slot, ret, null, null);
 }
 // (v296) 대기실에서 덱을 고치면 방의 내 덱도 바꾸고, 받은 사람은 준비를 다시 누르게 함
 function duelLobbyAfterEdit(fromLobby){
@@ -8828,8 +8817,9 @@ const PATCH_NOTES = [
   { build:300, v:'3.0.1', date:'2026-10-01', secs:[
     { t:'진형', items:[ '한 번 도전한 스테이지는 그때 덱 그대로 — 보스 스테이지도 이제 기억 (예전엔 다른 곳에서 쓴 진형이 들어갔음)', '새로 켜면 스테이지 진형 6번째 칸이 비던 문제 수정' ]},
     { t:'파티 프리셋', items:[ '정령 탭 📋 프리셋 — 진형 화면에 가지 않고 바로 6칸을 채워 저장 · 불러와서 고쳐 덮어쓰기' ]},
+    { t:'화면', items:[ 'ⓘ 버튼의 i가 동그라미 가운데에서 어긋나 보이던 것 수정' ]},
     { t:'관리자 우편', items:[ '보상 입력을 ＋ 보상 추가 방식으로 — 고른 것만 줄로 쌓고 ✕로 빼기', '모든 재화·아이템을 보낼 수 있음 — 세계 룬석 · 정령 파편 · 룬 승급석 · 각인석 · 모든 확정권·선택권 · 룬(뽑기·전설·고대 무작위·고대 5종·월드 룬 3종)' ]},
-    { t:'결투', items:[ '결투 신청을 수락하면 레이드 창으로 넘어가던 문제 수정 — 결투 탭에서 대기실이 열림 · 결투가 끝나도 결투 탭으로' ]},
+    { t:'결투', items:[ '결투 덱 칸을 누르면 스테이지와 같은 정령 배치 창 — 전투력 · 등급 · 속성 · 역할 정렬과 ⓘ 스킬 보기', '결투 신청을 수락하면 레이드 창으로 넘어가던 문제 수정 — 결투 탭에서 대기실이 열림 · 결투가 끝나도 결투 탭으로' ]},
     { t:'문의', items:[ '한 문의에 여러 번 이어 쓰기 — 문의한 사람도 추가로 쓸 수 있고 답장도 덮어쓰지 않고 차례로 쌓임' ]}
   ]},
   { build:299, v:'3.0.0', date:'2026-10-01', secs:[
