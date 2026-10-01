@@ -918,6 +918,7 @@
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
   .tr-steps{display:flex; justify-content:center; gap:5px; margin:10px 0;} .tr-steps i{width:16px; height:16px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff2a;} .tr-steps i.big{width:20px; height:20px;} .tr-steps i.on{background:radial-gradient(circle at 35% 30%,#fff2b0,#ffb347); border-color:#ffd557; box-shadow:0 0 8px #ffd55799;}
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info span{min-width:64px; color:var(--sub); font-size:12px;} .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
+  .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
   .cf-bg{z-index:10000; animation:none;} .cf-box{max-width:320px; text-align:center;} .cf-t{font-size:17px; font-weight:900;} .cf-m{margin-top:8px; font-size:13px; line-height:1.55; color:var(--sub);} .cf-m b{color:#ffd9d9;}
   .cf-btns{display:flex; gap:8px; margin-top:14px;} .cf-btns .btn{flex:1; margin:0;} .btn.cf-danger{background:linear-gradient(180deg,#ff6b6b,#d63a4a); box-shadow:0 3px 0 #8e1f2c;}
@@ -1635,6 +1636,7 @@ function runeDr(u){ return ((u.rune && u.rune.id==='dr' && u.rune.tier!=='boss')
 function runeDmgMult(a, d){ if(!a.rune) return 1; if(a.rune.id==='judge' && d.hp/d.maxHp <= 0.3) return 1.3; if(a.rune.id==='hellfire' && d.st && d.st.burn>0) return 1.2; if(a.rune.id==='core' && effTypeMult(a, d)>1) return 1.2; return 1; } // (v278) 업화·심연핵의 룬
 function runeOnHit(sf, a, d, dealt){
   if(dealt>0 && a.sub && a.sub.life && a.alive) a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.sub.life)); // (v298) 부가 능력 흡혈
+  if(dealt>0 && a.sub) subOnHit(sf, a, d);
   if(!a.rune || dealt<=0) return;
   if(a.rune.id==='life' && a.rune.tier!=='boss' && a.alive){ a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.rune.v)); }
   if(!d.alive || a.side===d.side) return;
@@ -1646,7 +1648,7 @@ function runeOnHit(sf, a, d, dealt){
 // · 각인: 정령마다 무작위 부가 능력 3줄(능력 종류·품질 무작위). 각인석으로 다시 굴림 · 마음에 드는 줄은 잠금(최대 2줄, 잠글수록 비쌈)
 // · 장비 부가 능력: 장비마다 등급별 0~3줄(레어·에픽 1 · 레전더리 2 · 신화 3). 속성과 상관없이 끼운 정령 누구에게나 붙음 → 속성 대신 부가 능력을 보고 끼우는 선택
 // · 초월: 각성 5단계 뒤의 성장. 각성은 '확정'으로 스킬·패시브를 여는 단계, 초월은 '확률'로 순수 능력치(공격·체력 +5%/단계)를 올리는 단계
-//   실패하면 재료(같은 정령 1마리)는 사라지지만 다음 확률이 +10%p(성공하면 초기화) · 5단계 속도 +3 · 10단계 전투 시작 보호막(체력 15%, 2라운드)
+//   실패하면 재료(같은 정령 1마리)는 사라지지만 다음 확률이 +10%p(성공하면 초기화) · 5단계 속도 +3 · 10단계 특전은 종마다 다름(TRANS10)
 // 부가 능력 합은 항목마다 상한(SUB_CAP) — 다 같은 능력으로 몰아도 끝없이 커지지 않게
 const SUB_STATS = {
   atk:  { nm:'공격력',         v:[.02,.04,.06,.09], pct:true },
@@ -1688,11 +1690,37 @@ function subTotals(k){
   return t;
 }
 function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
-function battleSubFor(k){ const t = subTotals(k); return { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr, sh: transLevel(k)>=10 ? 0.15 : 0 }; }
+// (v298) 초월 10단계 특전 — 종(계열)마다 역할에 맞게 다름 (사용자 결정)
+const TRANS10 = {
+  fire_a:  { ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
+  fire_b:  { ic:'♨️', d:'공격이 맞으면 화상 1중첩', sub:{ burn:1 } },
+  water_a: { ic:'💧', d:'라운드 시작마다 체력이 가장 낮은 아군 5% 회복', sub:{ rheal:.05 } },
+  water_b: { ic:'❄️', d:'공격이 맞으면 15% 확률로 빙결', sub:{ frz:.15 } },
+  wood_a:  { ic:'🛡️', d:'전투 시작 보호막 (체력 15%, 2라운드)', sub:{ sh:.15 } },
+  wood_b:  { ic:'☠️', d:'공격이 맞으면 독 (3라운드, 체력 4%)', sub:{ poi:.04 } },
+  light_a: { ic:'✨', d:'받는 피해 −12%', sub:{ dr:.12 } },
+  light_b: { ic:'💨', d:'속도 +8', sub:{ spd:8 } },
+  dark_a:  { ic:'🩸', d:'흡혈 +12%', sub:{ life:.12 } },
+  dark_b:  { ic:'🌑', d:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)', sub:{ curse:.25 } }
+};
+function trans10Of(k){ const sp = SPIRITS[k]; return TRANS10[sp.element+'_'+sp.variant] || null; }
+function battleSubFor(k){ const t = subTotals(k), o = { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr };
+  const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ o[x] = (o[x]||0) + p.sub[x]; }); // 특전은 상한 밖
+  return o; }
 function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,cap)=> Number.isFinite(v) ? Math.max(0, Math.min(cap, v)) : 0;
-  return { spd:n(o.spd, SUB_CAP.spd+3), crit:n(o.crit, SUB_CAP.crit), life:n(o.life, SUB_CAP.life), dr:n(o.dr, SUB_CAP.dr), sh:n(o.sh, .15) }; }
+  return { spd:n(o.spd, SUB_CAP.spd+11), crit:n(o.crit, SUB_CAP.crit), life:n(o.life, SUB_CAP.life+.12), dr:n(o.dr, SUB_CAP.dr+.12), sh:n(o.sh, .15),
+    emp:n(o.emp, .4), burn:n(o.burn, 1), rheal:n(o.rheal, .05), frz:n(o.frz, .15), poi:n(o.poi, .04), curse:n(o.curse, .25) }; }
 function applySubOnBuild(u, sub){ const s = cleanSub(sub); if(!s) return; u.sub = s;
-  if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); } }
+  if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); }
+  if(s.emp>0) u.st.empower = Math.max(u.st.empower||0, s.emp); }
+function subOnHit(sf, a, d){ // (v298) 초월 특전: 맞힌 적에게 걸리는 효과 (시련처럼 확률 없는 전투에선 확률 효과 안 씀)
+  const s = a.sub; if(!s || !d.alive || a.side===d.side) return;
+  if(s.burn){ d.st.burnCap = Math.max(d.st.burnCap||5, 5); d.st.burn = Math.min(d.st.burnCap, (d.st.burn||0)+1); d.st.burnDmg = Math.max(d.st.burnDmg||0, Math.round(a.atk*0.15)); }
+  if(s.poi && !d.st.poison) d.st.poison = { r:3, pct:s.poi, srcG:2 };
+  if(sf.noRng) return;
+  if(s.frz && Math.random()<s.frz) d.st.freeze = true;
+  if(s.curse && Math.random()<s.curse) d.st.curse = { v: Math.max(0.15, (d.st.curse&&d.st.curse.v)||0), r:2 };
+}
 // ---- 각인·장비 부가 능력 창 (kind: 'sp' 정령 각인 · 'eq' 장비 부가 능력)
 function subRoll(kind, k){
   const max = subLinesMax(kind, k); if(!max) return;
@@ -1732,7 +1760,7 @@ function showSubModal(kind, k, back){
 function showTransModal(k){
   const sp = SPIRITS[k], lv = transLevel(k), aw = awakenLevel(k), back = ()=>showManageModal(k);
   let h = '<div style="text-align:center;"><div style="font-size:40px;">'+spArt(sp)+'</div><h3 style="margin:4px 0;">🌟 초월 · '+sp.name+' '+transTag(k)+'</h3>'
-    + '<div class="sub" style="font-size:11px; line-height:1.6;">각성은 확정으로 스킬을 여는 단계 · 초월은 확률로 능력치를 올리는 단계<br>단계마다 공격·체력 +'+Math.round(TRANS_STEP*100)+'% · 5단계 속도 +3 · 10단계 전투 시작 보호막(체력 15%)</div></div>';
+    + '<div class="sub" style="font-size:11px; line-height:1.6;">각성은 확정으로 스킬을 여는 단계 · 초월은 확률로 능력치를 올리는 단계<br>단계마다 공격·체력 +'+Math.round(TRANS_STEP*100)+'% · 5단계 속도 +3</div>'+(trans10Of(k) ? '<div class="tr-perk'+(lv>=10?' on':'')+'">'+trans10Of(k).ic+' 10단계 특전 · <b>'+trans10Of(k).d+'</b></div>' : '')+'</div>';
   h += '<div class="tr-steps">'+Array.from({length:TRANS_MAX}, (_,i)=>'<i class="'+(i<lv?'on':'')+(i===4||i===9?' big':'')+'"></i>').join('')+'</div>';
   if(aw < AWAKEN_MAX) h += '<div class="sub" style="text-align:center; padding:10px 0;">각성 '+AWAKEN_MAX+'단계 뒤에 열림 (지금 '+aw+'단계)</div>';
   else if(lv >= TRANS_MAX) h += '<div style="text-align:center; padding:10px 0; font-weight:900; color:#ffd557;">최대 초월 — 공격·체력 +'+Math.round(TRANS_STEP*TRANS_MAX*100)+'%</div>';
@@ -1753,7 +1781,8 @@ function showTransModal(k){
       else { state.transPity[k] = (state.transPity[k]||0) + TRANS_PITY; sfx('fail'); toast('💨 초월 실패 — 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p'); }
       checkAchievements(); save(); render(); showTransModal(k); }); });
 }
-function runeRoundStart(sf){ aliveUnits(sf.myUnits).forEach(u=>{ if(u.rune && u.rune.id==='elder') u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp*0.04));
+function runeRoundStart(sf){ [sf.myUnits, sf.enemyUnits].forEach(list=>aliveUnits(list).forEach(u=>{ if(u.sub && u.sub.rheal){ const low = aliveUnits(list).reduce((x,y)=> y.hp/y.maxHp < x.hp/x.maxHp ? y : x); low.hp = Math.min(low.maxHp, low.hp + Math.round(low.maxHp*u.sub.rheal)); } })); // (v298) 초월 치유 특전
+  aliveUnits(sf.myUnits).forEach(u=>{ if(u.rune && u.rune.id==='elder') u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp*0.04));
   if(u.rune && u.rune.id==='glacier'){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*0.06)); u.st.shieldR = Math.max(u.st.shieldR||0, 1); } }); } // (v278) 빙하의 룬
 // ---- 행동
 function runeReroll(key){
@@ -8431,7 +8460,7 @@ const PATCH_NOTES = [
   { build:298, v:'3.0.0', date:'2026-10-01', secs:[
     { t:'새 성장 — 각인', items:[ '정령마다 무작위 부가 능력 3줄 — 공격력 · 체력 · 속도 · 치명타 확률 · 흡혈 · 받는 피해 감소, 품질 일반 55% · 희귀 30% · 영웅 12% · 전설 3%', '수치(일반/희귀/영웅/전설): 공격력 +2/4/6/9% · 체력 +3/5/8/12% · 속도 +1/2/3/5 · 치명타 +2/4/6/9% · 흡혈 2/3/5/8% · 받는 피해 −2/3/5/7%', '첫 각인은 무료 · 다시 굴리기는 각인석 1개, 잠근 줄마다 +2 (최대 2줄 잠금)', '능력마다 합계 상한 — 공격력 30% · 체력 40% · 속도 12 · 치명타 30% · 흡혈 20% · 받는 피해 감소 20%' ]},
     { t:'새 성장 — 장비 부가 능력', items:[ '장비마다 부가 능력 — 레어·에픽 1줄 · 레전더리 2줄 · 신화 3줄 (첫 감정 무료, 각인과 같은 방식)', '속성과 상관없이 끼운 정령 누구에게나 붙음 — 속성 보너스 대신 부가 능력을 보고 끼우는 선택' ]},
-    { t:'새 성장 — 초월', items:[ '각성 5단계 뒤의 성장 — 각성은 확정으로 스킬을 여는 단계, 초월은 확률로 능력치를 올리는 단계', '단계마다 공격·체력 +5% (최대 10단계 +50%) · 5단계 속도 +3 · 10단계 전투 시작 때 체력 15% 보호막(2라운드)', '재료: 같은 정령 1마리 + 정수 · 성공 확률 100 · 90 · 80 · 70 · 60 · 50 · 40 · 35 · 30 · 25% · 실패하면 재료가 사라지고 다음 확률 +10%p(성공하면 초기화)' ]},
+    { t:'새 성장 — 초월', items:[ '각성 5단계 뒤의 성장 — 각성은 확정으로 스킬을 여는 단계, 초월은 확률로 능력치를 올리는 단계', '단계마다 공격·체력 +5% (최대 10단계 +50%) · 5단계 속도 +3', '10단계 특전은 종마다 다름 — 화염 A 첫 행동 피해 +40% · 화염 B 맞히면 화상 · 물결 A 라운드마다 약한 아군 5% 회복 · 물결 B 맞히면 15% 빙결 · 숲결 A 전투 시작 보호막 15% · 숲결 B 맞히면 독 · 빛 A 받는 피해 −12% · 빛 B 속도 +8 · 그림자 A 흡혈 +12% · 그림자 B 맞히면 25% 저주', '재료: 같은 정령 1마리 + 정수 · 성공 확률 100 · 90 · 80 · 70 · 60 · 50 · 40 · 35 · 30 · 25% · 실패하면 재료가 사라지고 다음 확률 +10%p(성공하면 초기화)' ]},
     { t:'각인석', items:[ '시작 선물 5개 · 정령 분해(에픽 1 · 레전더리 2 · 신화 4) · 요일 던전 단계마다 1(5단계마다 3) · 시련 2~8 · 챕터 보스 첫 격파 노말 2 · 하드 4 · 레이드 주간 첫 승리 1~5', '레이드 상점 각인석 4 (주 10개) · 월드 보스 상점 각인석 3 (주 6개)' ]}
   ]},
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
