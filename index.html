@@ -914,8 +914,6 @@
   .pn-t{font-size:13px; color:#ffd35a; margin:10px 0 4px;} .pn ul{margin:0; padding-left:18px;} .pn li{font-size:12.5px; line-height:1.5; margin:3px 0; color:#e3e1ff;}
   .dp-cancel{margin-top:4px; padding:2px 10px; border-radius:8px; border:1px solid #ffffff2a; background:#ffffff10; color:var(--sub); font-size:11px; cursor:pointer;}
   .fr-lv{position:absolute; left:-4px; bottom:-4px; min-width:18px; padding:0 4px; border-radius:8px; background:#ffcf4a; color:#3b2500; font-size:10px; font-weight:900; line-height:15px; text-align:center; box-shadow:0 1px 3px #0008;} /* (v296) 친구 레벨 */
-  .tk-myth{filter:hue-rotate(250deg) saturate(1.6) drop-shadow(0 0 3px #ff7bf0);} /* (v297) 신화 확정권 */
-  .tk-eq.r-rare{filter:drop-shadow(0 0 2px #57d3ff);} .tk-eq.r-epic{filter:drop-shadow(0 0 2px #a57bff);} .tk-eq.r-legendary{filter:drop-shadow(0 0 2px #ffb347);} .tk-eq.r-mythic{filter:drop-shadow(0 0 3px #ff7bf0) hue-rotate(250deg);}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:55%; filter:drop-shadow(0 0 1px #000);}
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
@@ -1916,21 +1914,30 @@ function raidUseTicket(code){ // 같은 방에서는 한 번만 씀(새로고침
   return had;
 }
 // ---- 상점
-function TICKET_INFO_EQP(r){ return '<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_'+r+'.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>'; } // (v297) 장비 선택권 그림 (TICKET_INFO보다 먼저 쓰여서 따로)
+// (v302) 권 그림 한 곳에서 — 확정권 = 별 권 · 선택권 = 하트 권 (등급 색: 레어 파랑 · 에픽 보라 · 레전더리 주황 · 신화 빨강) · 장비 권은 같은 그림에 방패 표시
+// 빛은 등급으로만 (레전더리·신화) — 확정권·선택권이 같은 등급이면 똑같이 빛남
+function tkIcon(kind, r, eq){
+  const src = kind==='pick' ? 'ic_tk_pick_'+r : ({ rare:'ic_tk_rare', epic:'ic_pass', legendary:'ic_tk_legendary', mythic:'ic_tk_legendary' })[r];
+  const f = []; if(kind!=='pick' && r==='mythic') f.push('hue-rotate(-40deg) saturate(1.4)');
+  if(r==='legendary') f.push('drop-shadow(0 0 2px #ffb347aa)'); else if(r==='mythic') f.push('drop-shadow(0 0 3px #ff5a8acc)');
+  const img = '<img class="uic" src="assets/ui/'+src+'.webp" alt=""'+(f.length ? ' style="filter:'+f.join(' ')+';"' : '')+'>';
+  return eq ? '<span class="tk-eqp">'+img+'<img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>' : img;
+}
+function TICKET_INFO_EQP(r){ return tkIcon('pick', r, true); } // (v297) 장비 선택권 그림 (TICKET_INFO보다 먼저 쓰여서 따로)
 const RAID_SHOP = [ // (v247) desc = 구매 창에 보이는 설명(간결체) · limit 0 = 제한 없음
-  { id:'pick_epic', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:60, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
-  { id:'pick_legendary', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt="">', name:'레전더리 선택권', price:200, limit:1, desc:'레전더리 정령 10종 중 원하는 1마리' },
-  { id:'rare', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_rare.webp" alt="">', name:'레어 확정권', price:10, limit:2, desc:'레어 이상 정령 1회 확정 소환' },
-  { id:'epic', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_pass.webp" alt="">', name:'에픽 확정권', price:35, limit:1, desc:'에픽 정령 1회 확정 소환' },
-  { id:'legendary', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_tk_legendary.webp" alt="">', name:'레전더리 확정권', price:120, limit:1, desc:'레전더리 정령 1회 확정 소환 (무작위)' },
+  { id:'pick_epic', sec:'spirit', icon:tkIcon('pick','epic'), name:'에픽 정령 선택권', price:60, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
+  { id:'pick_legendary', sec:'spirit', icon:tkIcon('pick','legendary'), name:'레전더리 정령 선택권', price:200, limit:1, desc:'레전더리 정령 10종 중 원하는 1마리' },
+  { id:'rare', sec:'spirit', icon:tkIcon('sure','rare'), name:'레어 정령 확정권', price:10, limit:2, desc:'레어 이상 정령 1회 확정 소환' },
+  { id:'epic', sec:'spirit', icon:tkIcon('sure','epic'), name:'에픽 정령 확정권', price:35, limit:1, desc:'에픽 정령 1회 확정 소환' },
+  { id:'legendary', sec:'spirit', icon:tkIcon('sure','legendary'), name:'레전더리 정령 확정권', price:120, limit:1, desc:'레전더리 정령 1회 확정 소환 (무작위)' },
   { id:'fuseGuard', sec:'spirit', icon:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', name:'합성 보호권', price:20, limit:2, desc:'전설·신화 합성에서 체크하면, 실패해도 재료 유지 (실패 때 1장 사용)' },
   { id:'essence', sec:'res', icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', name:'정수 ×500', price:5, limit:0, desc:'소환·강화·화로에 쓰는 재화 500' },
   { id:'stone', sec:'res', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:3, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' },
   { id:'equip', sec:'res', icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'장비 소환권', price:5, limit:5, desc:'정령장비 1회 소환' },
   { id:'engr', sec:'res', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:4, limit:10, desc:'각인·장비 부가 능력 다시 굴리기에 씀' }, // (v298)
-  { id:'eq_epic', sec:'res', icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', price:40, limit:1, desc:'에픽 장비 1개 (부위·속성 무작위)' }, // (v297)
+  { id:'eq_epic', sec:'res', icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', price:40, limit:1, desc:'에픽 장비 1개 (부위·속성 무작위)' }, // (v297)
   { id:'eqpick_epic', sec:'res', icon:TICKET_INFO_EQP('epic'), name:'에픽 장비 선택권', price:70, limit:1, desc:'에픽 장비 10종 중 원하는 1개' },
-  { id:'eq_legendary', sec:'res', icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', price:140, limit:1, desc:'레전더리 장비 1개 (부위·속성 무작위)' },
+  { id:'eq_legendary', sec:'res', icon:tkIcon('sure','legendary',true), name:'레전더리 장비 확정권', price:140, limit:1, desc:'레전더리 장비 1개 (부위·속성 무작위)' },
   { id:'shards', sec:'res', icon:'<img class="uic" src="assets/ui/ic_shard.webp" alt="">', name:'정령 파편 ×10', price:3, limit:5, desc:'룬 재각인 1회분' },
   { id:'draw', sec:'rune', icon:'🎲', name:'룬 뽑기', price:6, limit:0, desc:'희귀 이상 확정 · 전설 12% · 고대 룬(보스 5종 중 무작위) 3%' },
   { id:'boss', sec:'rune', icon:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">', name:'고대 룬 교환', price:70, limit:1, desc:'고대 룬 확정 · 레이드 보스 5종 중 무작위' },
@@ -2570,7 +2577,7 @@ function raidGrantReward(sf){
   state.raidRewarded = Array.isArray(state.raidRewarded) ? state.raidRewarded : [];
   if(state.raidRewarded.includes(rcode)) return;
   state.raidRewarded = state.raidRewarded.concat(rcode).slice(-30);
-  if(!raidUseTicket(rcode)){ raidNet.rewardText = '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권이 없어 이번 판은 보상 없음'; save(); return; }
+  if(!raidUseTicket(rcode)){ raidNet.rewardText = '<img class="uic" src="assets/ui/ic_ticket.webp" alt=""> 입장권이 없어 이번 판은 보상 없음'; save(); return; }
   if(sf.result.win){
     const dd = raidDiffById(sf.raidDiff), wk = raidWeekKey();
     if(!state.raidWeekDone || state.raidWeekDone.week!==wk) state.raidWeekDone = { week: wk, diffs: [] };
@@ -3814,7 +3821,7 @@ function showRaidPickModal(){
     const partnerN = alone ? 0 : raidCleanPicks(other).filter(Boolean).length; // (v269) 표시: 팀 합산(둘) vs 추천(둘 합산 기준) — 팀원이 아직 안 골랐으면 알려 줌
     h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> '+dd.name, alone ? '혼자 도전 · 내 정령만 · 추천은 둘 합산 기준' : ('우리 팀 '+(raidCleanPicks(mineP).filter(Boolean).length+partnerN)+'마리 합산 · 추천도 둘 합산 기준'+(partnerN ? '' : ' · 팀원 선택 전')), raidRecCP(info.id, dd.id), alone ? '내' : '우리 팀'); }
   if(alone) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+uiIc('pass')+' '+(raidTicketCount()>0 ? '시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+raidTicketMax()+') · 보상은 팀과 같음' : '입장권이 없어 보상 없이 도전')+'</div>';
-  if(!solo) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+(state.raidTicketFor===raidNet.code ? (state.raidTicketHad?'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 사용됨 · 보상 있음':'<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권 없음 · 보상 없이 참여') : (raidTicketCount()>0 ? '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+raidTicketMax()+')' : '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 입장권이 없어 보상 없이 참여'))+'</div>';
+  if(!solo) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">'+(state.raidTicketFor===raidNet.code ? (state.raidTicketHad?'<img class="uic" src="assets/ui/ic_ticket.webp" alt=""> 입장권 사용됨 · 보상 있음':'<img class="uic" src="assets/ui/ic_ticket.webp" alt=""> 입장권 없음 · 보상 없이 참여') : (raidTicketCount()>0 ? '<img class="uic" src="assets/ui/ic_pass.webp" alt=""> 시작하면 입장권 1장 사용 ('+raidTicketCount()+'/'+raidTicketMax()+')' : '<img class="uic" src="assets/ui/ic_ticket.webp" alt=""> 입장권이 없어 보상 없이 참여'))+'</div>';
   h += '<div class="sub" style="text-align:center; margin:8px 0 4px; font-weight:700;">내 정령 (칸을 누르고 아래에서 고르기)</div>';
   const slotBtn = i=>{
     const k = raidNet.myPicks[i], sel = raidNet.selSlot===i && !myReady;
@@ -6176,7 +6183,8 @@ function mailGoods(){
     {g:'재화', k:'gems', nm:'고대 룬석', ic:uiIc('runestone')}, {g:'재화', k:'wbGems', nm:'세계 룬석', ic:'<span class="wbgem">'+uiIc('runestone')+'</span>'},
     {g:'재화', k:'shards', nm:'정령 파편', ic:'<img class="uic" src="assets/ui/ic_shard.webp" alt="">'}, {g:'재화', k:'upStones', nm:'룬 승급석', ic:'⬆️'}
   ];
-  Object.keys(TICKET_INFO).forEach(k=>{ const t = TICKET_INFO[k]; L.push({ g: k==='engr' ? '재화' : (/^eq|^equip/.test(k) ? '장비' : '정령'), k:'it:'+k, nm:t.name, ic:t.icon }); });
+  const RR = ['rare','epic','legendary','mythic'], order = ['engr','summon'].concat(RR, RR.map(r=>'pick_'+r), ['fuseGuard','equip'], RR.map(r=>'eq_'+r), RR.map(r=>'eqpick_'+r)); // (v302) 정령·장비가 같은 순서(소환권 → 확정권 → 선택권)
+  order.concat(Object.keys(TICKET_INFO).filter(k=>!order.includes(k))).forEach(k=>{ const t = TICKET_INFO[k]; if(!t) return; L.push({ g: k==='engr' ? '재화' : (/^eq|^equip/.test(k) ? '장비' : '정령'), k:'it:'+k, nm:t.name, ic:t.icon }); });
   ['draw','legend','boss'].concat(Object.values(BOSS_RUNES).map(b=>'b_'+b.id), Object.keys(WORLD_RUNES).map(w=>'w_'+w)).forEach(c=>{ const r = mailRuneInfo(c); if(r) L.push({ g:'룬', k:'ru:'+c, nm:r.nm, ic:r.ic }); });
   return L;
 }
@@ -8193,17 +8201,17 @@ function renderSummonTab(){
   html += '</div>';
 
   html += '<div class="card">';
-  html += '<div class="ttl" style="margin-bottom:8px;"><img class="uic" src="assets/ui/ic_pass.webp" alt=""> 정령 확정 소환권</div>';
+  html += '<div class="ttl" style="margin-bottom:8px;">'+tkIcon('sure','epic')+' 정령 확정권</div>';
   const ownRare = ticketCount('rare')>0, ownEpic = ticketCount('epic')>0;
-  html += ticketRowHtml(TICKET_INFO.rare.name, '레어 이상 확정', ticketCount('rare'),
+  html += ticketRowHtml(TICKET_INFO.rare.icon+' '+TICKET_INFO.rare.name, '레어 이상 확정', ticketCount('rare'),
     '<button class="btn small" id="shopTicketBtn" '+((ownRare||(state.enhanceStone||0)>=SHOP_TICKET_COST)?'':'disabled')+'>'+(ownRare?'사용':'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+SHOP_TICKET_COST)+'</button>', true);
-  html += ticketRowHtml(TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'),
+  html += ticketRowHtml(TICKET_INFO.epic.icon+' '+TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'),
     '<button class="btn small" id="epicTicketBtn" '+((ownEpic||state.essence>=EPIC_TICKET_COST)?'':'disabled')+'>'+(ownEpic?'사용':'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+EPIC_TICKET_COST)+'</button>');
   if(ticketCount('legendary')>0) html += ticketRowHtml(TICKET_INFO.legendary.icon+' '+TICKET_INFO.legendary.name, '레전더리 확정 (무작위)', ticketCount('legendary'), '<button class="btn small" id="legTicketBtn">사용</button>'); // 가지고 있을 때만
   if(ticketCount('mythic')>0) html += ticketRowHtml(TICKET_INFO.mythic.icon+' '+TICKET_INFO.mythic.name, '신화 확정 (무작위)', ticketCount('mythic'), '<button class="btn small" id="mythTicketBtn">사용</button>'); // (v297)
   html += '</div>';
   { const picks = ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
-    if(picks.length){ html += '<div class="card"><div class="ttl" style="margin-bottom:8px;">🎟️ 정령 선택권</div>'
+    if(picks.length){ html += '<div class="card"><div class="ttl" style="margin-bottom:8px;">'+tkIcon('pick','epic')+' 정령 선택권</div>'
       + picks.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', i===0)).join('') + '</div>'; } }
   html += recentSummonRowHtml();
   { const n = Object.keys(SPIRITS).reduce((a,k)=>a+ownedCount(k),0); // (v296) 장비 소환 화면처럼 내 정령 바로가기
@@ -8831,6 +8839,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:302, v:'3.1.1', date:'2026-10-01', secs:[
+    { t:'권 이름·그림 정리', items:[ '선택권 이름에 정령을 붙임 — 레어·에픽·레전더리·신화 정령 선택권', '정령·장비 권을 같은 모양으로 맞춤 — 확정권은 별 권, 선택권은 하트 권(등급 색: 레어 파랑 · 에픽 보라 · 레전더리 주황 · 신화 빨강), 장비 권은 같은 그림에 방패 표시', '빛은 등급으로만 — 레전더리·신화는 확정권·선택권 모두 똑같이 빛남 (예전엔 신화 확정권만 빛났음)', '레이드 입장권 그림을 에픽 확정권과 다른 그림으로' ]}
+  ]},
   { build:301, v:'3.1.0', date:'2026-10-01', secs:[
     { t:'합성과 강화', items:[ '합성에 성공하면 재료의 강화는 결과로 이어지고(재료 강화 합 ÷ 3, 예: +3 · +5 · +2 → +3) 재료로 쓴 정령은 +0 — 남아 있는 같은 정령도 +0', '합성에 실패하면 남는 1마리만 강화 그대로 · 나머지 재료는 +0 · 강등되면 남은 정령의 강화가 강등된 정령으로 옮겨감', '같은 정령을 여러 마리 넣어도 강화는 한 번만 셈 · 합성 화면에 빨간 경고 · 강화한 정령·장비는 자동 합성에서 빠짐 · 장비 합성도 같음', '예전엔 재료 강화가 줄지 않고 결과로 복사됐음' ]},
     { t:'강화 비용', items:[ '등급이 오를수록 비싸게 — 일반 ×1 · 레어 ×2 · 에픽 ×3.5 · 레전더리 ×6 · 신화 ×10 (정수·강화석 모두)', '+0 → +10 정수: 일반 1,200 · 레어 2,400 · 에픽 4,200 · 레전더리 7,200 · 신화 12,000', '아랫등급 셋을 +10 해서 합성하는 것보다 윗등급을 바로 +10 하는 게 항상 쌈' ]}
@@ -9301,27 +9312,27 @@ ELEMENTS.forEach(el=>{
 // (v103) 티켓 종류 — 정령 소환권(무료 1회) / 레어·에픽 정령 확정권 / 정령장비 소환권
 const TICKET_INFO = {
   summon:{icon:'<img class="uic" src="assets/ui/ic_tk_summon.webp" alt="">', name:'정령 소환권'},
-  rare:{icon:'<img class="uic" src="assets/ui/ic_tk_rare.webp" alt="">', name:'레어 정령 확정권'},
-  epic:{icon:'<img class="uic" src="assets/ui/ic_pass.webp" alt="">', name:'에픽 정령 확정권'},
-  legendary:{icon:'<img class="uic" src="assets/ui/ic_tk_legendary.webp" alt="">', name:'레전더리 정령 확정권'}, // (v253) 레전더리 중 무작위 1마리 · 하드 챕터 100%·탑 75층마다·레이드 상점
+  rare:{icon:tkIcon('sure','rare'), name:'레어 정령 확정권'},
+  epic:{icon:tkIcon('sure','epic'), name:'에픽 정령 확정권'},
+  legendary:{icon:tkIcon('sure','legendary'), name:'레전더리 정령 확정권'}, // (v253) 레전더리 중 무작위 1마리 · 하드 챕터 100%·탑 75층마다·레이드 상점
   equip:{icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'정령장비 소환권'},
   fuseGuard:{icon:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', name:'합성 보호권'},
   // (v243) 선택권 — 그 등급 정령 중 하나를 골라 받음 · (v245) 레어~레전더리는 보스 첫 격파·탑 보상으로도, 신화는 우편 전용
-  pick_rare:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_rare.webp" alt="">', name:'레어 선택권', pick:'rare'},
-  pick_epic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', pick:'epic'},
-  pick_legendary:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt="">', name:'레전더리 선택권', pick:'legendary'},
-  pick_mythic:{icon:'<img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt="">', name:'신화 선택권', pick:'mythic'},
+  pick_rare:{icon:tkIcon('pick','rare'), name:'레어 정령 선택권', pick:'rare'},
+  pick_epic:{icon:tkIcon('pick','epic'), name:'에픽 정령 선택권', pick:'epic'},
+  pick_legendary:{icon:tkIcon('pick','legendary'), name:'레전더리 정령 선택권', pick:'legendary'},
+  pick_mythic:{icon:tkIcon('pick','mythic'), name:'신화 정령 선택권', pick:'mythic'},
   // (v297) 신화 확정권 · 장비 확정권(등급 확정, 부위·속성 무작위) · 장비 선택권(부위·속성을 골라 받음) — 그림은 기존 아이콘에 등급 빛·방패 표시
-  mythic:{icon:'<img class="uic tk-myth" src="assets/ui/ic_tk_legendary.webp" alt="">', name:'신화 정령 확정권', sure:'mythic'},
+  mythic:{icon:tkIcon('sure','mythic'), name:'신화 정령 확정권', sure:'mythic'},
   engr:{icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석'}, // (v298) 각인·장비 부가 능력 다시 굴리기
-  eq_rare:{icon:'<img class="uic tk-eq r-rare" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레어 장비 확정권', eqSure:'rare'},
-  eq_epic:{icon:'<img class="uic tk-eq r-epic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'에픽 장비 확정권', eqSure:'epic'},
-  eq_legendary:{icon:'<img class="uic tk-eq r-legendary" src="assets/ui/ic_tk_equip.webp" alt="">', name:'레전더리 장비 확정권', eqSure:'legendary'},
-  eq_mythic:{icon:'<img class="uic tk-eq r-mythic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'신화 장비 확정권', eqSure:'mythic'},
-  eqpick_rare:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_rare.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'레어 장비 선택권', eqPick:'rare'},
-  eqpick_epic:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'에픽 장비 선택권', eqPick:'epic'},
-  eqpick_legendary:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_legendary.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'레전더리 장비 선택권', eqPick:'legendary'},
-  eqpick_mythic:{icon:'<span class="tk-eqp"><img class="uic" src="assets/ui/ic_tk_pick_mythic.webp" alt=""><img class="tk-eqp-b" src="assets/ui/ic_shield.webp" alt=""></span>', name:'신화 장비 선택권', eqPick:'mythic'}
+  eq_rare:{icon:tkIcon('sure','rare',true), name:'레어 장비 확정권', eqSure:'rare'},
+  eq_epic:{icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', eqSure:'epic'},
+  eq_legendary:{icon:tkIcon('sure','legendary',true), name:'레전더리 장비 확정권', eqSure:'legendary'},
+  eq_mythic:{icon:tkIcon('sure','mythic',true), name:'신화 장비 확정권', eqSure:'mythic'},
+  eqpick_rare:{icon:tkIcon('pick','rare',true), name:'레어 장비 선택권', eqPick:'rare'},
+  eqpick_epic:{icon:tkIcon('pick','epic',true), name:'에픽 장비 선택권', eqPick:'epic'},
+  eqpick_legendary:{icon:tkIcon('pick','legendary',true), name:'레전더리 장비 선택권', eqPick:'legendary'},
+  eqpick_mythic:{icon:tkIcon('pick','mythic',true), name:'신화 장비 선택권', eqPick:'mythic'}
 };
 function ticketCount(k){ return (state.tickets && state.tickets[k]) || 0; }
 function grantItems(items){
@@ -10764,7 +10775,7 @@ const WB_SHOP = [ // limit: 이번 주 구매 한도(0 = 무제한)
   { id:'r_core',     rune:'core',     price:45, limit:1 },
   { id:'legend', icon:'🎲', name:'전설 룬 뽑기', price:20, limit:2, desc:'전설 등급 기본 룬 1개 (무작위 종류)' },
   { id:'upgrade', icon:'⬆️', name:'룬 승급석', price:12, limit:2, desc:'룬 한 단계 승급 (일반 → 희귀 → 전설)' },
-  { id:'pick_epic', icon:'<img class="uic" src="assets/ui/ic_tk_pick_epic.webp" alt="">', name:'에픽 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
+  { id:'pick_epic', icon:tkIcon('pick','epic'), name:'에픽 정령 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
   { id:'engr', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:3, limit:6, desc:'각인·장비 부가 능력 다시 굴리기에 씀' }, // (v298)
   { id:'eqpick_legendary', icon:TICKET_INFO_EQP('legendary'), name:'레전더리 장비 선택권', price:60, limit:1, desc:'레전더리 장비 10종 중 원하는 1개' }, // (v297)
   { id:'stone', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:2, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' }
@@ -12855,7 +12866,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 301, APP_VERSION = '3.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 302, APP_VERSION = '3.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
