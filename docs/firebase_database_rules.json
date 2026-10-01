@@ -50,9 +50,13 @@
         "$id": { ".write": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'" }
       },
       "user": {
+        ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
         "$uid": {
           ".read": "auth != null && auth.uid === $uid",
-          "$id": { ".write": "auth != null && (auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' || (auth.uid === $uid && !newData.exists()))" }
+          "$id": {
+            ".write": "auth != null && ((auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2' && (!data.child('c').exists() || !newData.exists())) || (auth.uid === $uid && !newData.exists()))",
+            "c": { ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.isNumber() && data.parent().child('title').exists()" }
+          }
         }
       }
     },
