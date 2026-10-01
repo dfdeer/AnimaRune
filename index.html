@@ -1145,6 +1145,7 @@
 .sm-new{position:absolute; top:12px; right:-32px; transform:rotate(38deg); background:#ffd557; color:#3a2a00; font-size:10px; font-weight:900; padding:2px 34px;}
 .sm-actions{position:relative; z-index:2; display:flex; gap:8px; margin-top:18px; width:100%; max-width:300px; opacity:0; visibility:hidden; animation:smShow .3s ease-out calc(var(--rev) + .9s) forwards;}
 .mt-actions{display:flex; gap:8px; margin-top:16px; opacity:0; visibility:hidden; animation:smShow .3s ease-out forwards;}
+.mt-skip{margin-top:10px; opacity:0; visibility:hidden; animation:smShow .3s ease-out forwards;} /* (v312) */
 @keyframes smShow{0%{opacity:0; visibility:visible;} 100%{opacity:1; visibility:visible;}}
 .sm-actions .btn{flex:1;}
 .sm-wallet{position:absolute; top:14px; left:14px; z-index:5; display:flex; gap:6px;}
@@ -8965,6 +8966,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:312, v:'3.4.1', date:'2026-10-01', secs:[
     { t:'홈 화면에 추가', items:[ '☰ 설정 → 📲 홈 화면에 추가 — 크롬은 바로 설치 창 · 아이폰·카카오톡 안에서 연 화면은 순서 안내', '아이폰은 홈 화면 앱과 Safari의 저장 공간이 따로라 구글 연동을 먼저 하도록 안내' ]},
+    { t:'소환', items:[ '10연 소환 결과 창(정령·장비)에도 「10회 소환 바로 하기」 체크' ]},
     { t:'문구', items:[ '확인 창 제목을 짧게 — 합성 재료 확인 · 전투 나가기 · 프리셋 덮어쓰기 · 진행 선택', '화로·파견 휴대폰 알림 문구 다듬기' ]},
   ]},
   { build:311, v:'3.4.0', date:'2026-10-01', secs:[
@@ -12104,9 +12106,11 @@ function showMultiResultModal(keys, isNewFlags, again, opts){
     + '<div class="mt-actions" style="animation-delay:'+(startAt+keys.length*stagger+250)+'ms;">'
     + (again ? '<button class="btn" id="mAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 '+MULTI_SUMMON_COUNT+'연 더 '+multiCostLabel())+'</button>' : '')
     + '<button class="btn secondary" id="modalClose2">확인</button></div>'
+    + (again ? '<label class="sub-skip mt-skip" style="animation-delay:'+(startAt+keys.length*stagger+250)+'ms;"><input type="checkbox" id="mSkip" '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>' : '') // (v312) 결과 창에서도 확인 창 끄기
     + '</div></div>';
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('mAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
+  { const c = document.getElementById('mSkip'); if(c) c.addEventListener('change', ()=>{ state.settings.multiNoAsk = c.checked; save(); document.querySelectorAll('[data-multi-skip]').forEach(x=>{ x.checked = c.checked; }); }); }
   // 타일이 나타나는 순간에 맞춰 등급별 효과음
   keys.forEach((key,idx)=>{
     const t = SUMMON_THEME[infoOf(key).rarity];
