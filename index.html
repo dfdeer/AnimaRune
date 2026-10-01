@@ -76,6 +76,7 @@
   .home-pu .hp-tx b{font-size:14px; color:#ffe38a; text-shadow:0 1px 2px #000a;} .home-pu .hp-tx small{font-size:11px; font-weight:800; color:#fff; background:#0008; border-radius:8px; padding:1px 6px; margin-top:2px;}
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
+  #main.tab-bg{background:linear-gradient(180deg,#0b0a2440 0%,#0b0a2466 55%,#0b0a24aa 100%), var(--tabbg) 50% 0 / cover no-repeat; background-color:#14112e;} #main.tab-bg .scr-top{background:none;} #main.tab-bg .card{background:linear-gradient(160deg,#26235a99 0%,#1d1b48b8 100%); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); border-color:#ffffff1f;}
   #main.pu-full{position:relative; background:var(--pb, #120f2a);}
   #main.pu-full.pu-img{background-color:#0d1430; background-repeat:no-repeat; background-attachment:local;} #main.pu-img .pu-rays{display:none;} #main.pu-img .pu-glow{opacity:.18;}
   #main.pu-img .pu-nm{text-shadow:0 0 8px #000c, 0 2px 4px #000e;} #main.pu-img .pu-sub{display:inline-block; margin-top:4px; padding:2px 10px; border-radius:10px; background:#000a; color:#fff;} #main.pu-img .pu-sel, #main.pu-img .pu-rate, #main.pu-img .pu-t, #main.pu-img .sub-skip{text-shadow:0 0 6px #000, 0 1px 3px #000;} #main.pu-img .pu-rar{text-shadow:0 0 6px #ff577799, 0 1px 3px #000, 0 0 2px #000;} #main.pu-full .scr-top{background:none; position:relative; z-index:8;}
@@ -7386,9 +7387,10 @@ function doPickup(n){
 }
 let pickupView = 0;
 // (v317) 픽업 탭 — 소환 탭처럼 화면 하나 · 배경은 지금 보는 신화의 속성 색 + 속성 입자(불씨·물방울·잎·빛·어둠)
+const TAB_BG_IMAGES = { summon:'assets/bg_summon.webp', spirits:'assets/bg_spirits.webp' }; // (v317) 탭 배경 그림 (받은 것부터)
 const PU_FX = { fire:'ember', water:'bubble', wood:'leaf', light:'spark', dark:'wisp' };
 // (v317) 속성별 픽업 배경 그림 (받은 것부터) — ped: 그림 속 제단 윗면 높이(그림 높이 대비). 정령 발끝을 여기에 맞춤
-const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.495 }, water:{ src:'assets/pickup_water.webp', ped:0.535 }, wood:{ src:'assets/pickup_wood.webp', ped:0.527 }, light:{ src:'assets/pickup_light.webp', ped:0.495 }, dark:{ src:'assets/pickup_dark.webp', ped:0.51 } };
+const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.495 }, water:{ src:'assets/pickup_water.webp', ped:0.535 }, wood:{ src:'assets/pickup_wood.webp', ped:0.545 }, light:{ src:'assets/pickup_light.webp', ped:0.495 }, dark:{ src:'assets/pickup_dark.webp', ped:0.51 } };
 const PU_BG_DROP = 0.06; // 제단 윗면 가운데를 발끝보다 정령 그림 높이의 6%만큼 아래로 — 앞 가장자리가 아니라 제단 한가운데에 서 보이게
 function placePuBg(){
   const m = document.getElementById('main'); if(!m) return;
@@ -8374,6 +8376,7 @@ function render(){
     if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; }
   }
   main.classList.toggle('is-home', activeTab==='home');
+  { const tb = TAB_BG_IMAGES[activeTab]; main.classList.toggle('tab-bg', !!tb); if(tb) main.style.setProperty('--tabbg', 'url('+tb+')'); else main.style.removeProperty('--tabbg'); } // (v317) 화면 배경 그림
   main.classList.toggle('pu-full', activeTab==='pickup'); if(activeTab==='pickup') main.dataset.pe = SPIRITS[pickupPeriod().pair[pickupView]].element; else delete main.dataset.pe; placePuBg(); main.classList.toggle('ex-full', activeTab==='stage'); main.classList.toggle('xp-full', activeTab==='expedition' && !!state.expedition); placeExBg();
   document.body.classList.toggle('on-home', activeTab==='home'); // 하단 탭은 홈에서만 보임 + 홈은 위아래로 끌리지 않게
   updateScrollLock();
