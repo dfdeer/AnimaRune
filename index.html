@@ -1062,7 +1062,7 @@
   .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#1d1a4ae8; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border:1px solid #5b6bff99; padding:7px 13px; border-radius:999px; z-index:60; font-size:13px; line-height:1.35; width:max-content; max-width:88vw; word-break:keep-all; text-align:center; box-shadow:0 4px 14px #0007; cursor:pointer; transition:top .18s ease, opacity .2s ease; animation:toastIn .18s ease-out;}
   @keyframes toastIn{from{opacity:0; transform:translate(-50%,-6px);}}
   .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
-  .toast.more{background:#ffd557e6; color:#3b2500; border-color:#ffd557; font-weight:800; font-size:12px; padding:4px 12px;}
+  .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
   .tlog-it{display:flex; gap:8px; align-items:baseline; padding:8px 4px; border-bottom:1px solid #ffffff12; font-size:13px; line-height:1.45; text-align:left;} .tlog-it small{flex-shrink:0; color:var(--sub); font-size:11px; min-width:38px;} .tlog-it .uic{width:18px; height:18px;}
   .toast .tt{opacity:.9;}
   .toast .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
@@ -1288,6 +1288,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_stone.webp" alt="" draggable="false"><span id="stoneVal">0</span>
         <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 레어+ 확정권 · 정령 강화 · 화로 업그레이드에 쓰는 재화</div>
       </div>
+      <button id="headerBellBtn" style="display:none; background:none; border:none; color:var(--text); font-size:19px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="놓친 알림">🔔<span id="headerBellN" class="bell-n"></span></button>
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
       <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
@@ -6554,19 +6555,13 @@ document.addEventListener('click', (e)=>{
 
 // ===================== 유틸 =====================
 function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 5; }); }
-// (v296) 알림 정리 — 화면에는 최대 2개만 (작은 한 줄) · 같은 종류(숫자만 다른 알림)는 하나로 합쳐 ×N · 넘친 건 '알림 N개 더' 한 줄로
-// 모든 알림은 '알림 기록'(메뉴 ☰ · 알림을 누르면 열림)에 남아서 뭐가 왔는지 다 볼 수 있음
-const TOAST_MAX = 2, TOAST_LOG_MAX = 50; let toastLog = [], toastHidden = 0;
+// (v296) 알림 정리 — 화면에는 한 번에 1개(작은 한 줄) · 같은 종류(앞머리가 같은 알림)는 하나로 합쳐 ×N · 새 알림이 오면 이전 것을 바로 바꿈
+// 다 보기 전에 바뀐 알림이 있으면 위쪽 🔔에 개수 → 누르면 '알림 기록'. 메뉴(☰) › 알림 기록에서도 볼 수 있음
+const TOAST_LOG_MAX = 50, TOAST_SEEN_MS = 1500; let toastLog = [], toastMissed = 0;
 function toastSig(html){ return html.replace(/<[^>]+>/g, '').replace(/[+\-−]?[\d.,]+/g, '#').trim(); }
-function toastMore(){
-  let m = document.querySelector('.toast.more');
-  if(!toastHidden){ if(m) m.remove(); layoutToasts(); return; }
-  if(!m){ m = document.createElement('div'); m.className = 'toast more'; m.addEventListener('click', showToastLog); document.body.appendChild(m); }
-  m.textContent = '🔔 알림 '+toastHidden+'개 더 · 눌러서 보기'; clearTimeout(m._tm); m._tm = setTimeout(()=>{ toastHidden = 0; m.remove(); layoutToasts(); }, 4000);
-  document.body.appendChild(m); layoutToasts(); // 항상 맨 아래
-}
+function toastBell(){ const b = document.getElementById('headerBellBtn'), n = document.getElementById('headerBellN'); if(!b) return; b.style.display = toastMissed>0 ? 'inline-block' : 'none'; if(n) n.textContent = toastMissed>9 ? '9+' : toastMissed; }
 function showToastLog(){
-  toastHidden = 0; document.querySelectorAll('.toast').forEach(t=>t.remove());
+  toastMissed = 0; toastBell(); document.querySelectorAll('.toast').forEach(t=>t.remove());
   const now = Date.now(), ago = t=>{ const s = Math.round((now-t)/1000); return s<60 ? s+'초 전' : s<3600 ? Math.floor(s/60)+'분 전' : Math.floor(s/3600)+'시간 전'; };
   openInfoOverlay('🔔 알림 기록', toastLog.length ? toastLog.map(x=>'<div class="tlog-it"><small>'+ago(x.t)+'</small><div>'+x.html+(x.n>1?' <b style="color:#ffd557;">×'+x.n+'</b>':'')+'</div></div>').join('') : '<div class="sub" style="text-align:center; padding:20px 0;">이번 접속에서 받은 알림 없음</div>');
 }
@@ -6586,12 +6581,12 @@ function toast(msg, ms, html){
   const content = el.innerHTML, sig = toastSig(content), dur = ms||2200;
   const last = toastLog[0]; if(last && last.sig===sig && Date.now()-last.t < 8000){ last.n = (last.n||1)+1; last.html = content; last.t = Date.now(); } else { toastLog.unshift({ html:content, sig, t:Date.now(), n:1 }); if(toastLog.length > TOAST_LOG_MAX) toastLog.length = TOAST_LOG_MAX; }
   const grp = sig.split(/ · | — /)[0]; // 화면에선 앞머리가 같은 알림(예: '업적 달성 · …')끼리 합침 — 기록에는 따로 남음
-  const same = [...document.querySelectorAll('.toast:not(.more)')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
+  const same = [...document.querySelectorAll('.toast')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
   if(same){ const n = (+same.dataset.n||1) + 1; same.dataset.n = n; same.innerHTML = content+'<i class="t-n">×'+n+'</i>'; clearTimeout(same._tm); same._tm = setTimeout(()=>{ same.remove(); layoutToasts(); }, Math.max(dur, 2200)); layoutToasts(); return; }
-  el.dataset.sig = grp; el.dataset.n = 1;
-  const more = document.querySelector('.toast.more'); if(more) document.body.insertBefore(el, more); else document.body.appendChild(el);
-  const vis = [...document.querySelectorAll('.toast:not(.more)')];
-  if(vis.length > TOAST_MAX){ vis.slice(0, vis.length-TOAST_MAX).forEach(t=>{ clearTimeout(t._tm); t.remove(); toastHidden++; }); toastMore(); }
+  el.dataset.sig = grp; el.dataset.n = 1; el._t0 = Date.now();
+  document.querySelectorAll('.toast').forEach(t=>{ if(Date.now()-(t._t0||0) < TOAST_SEEN_MS){ toastMissed += (+t.dataset.n||1); } clearTimeout(t._tm); t.remove(); }); // 이전 알림은 바로 바꿈 — 잠깐만 보인 건 🔔에 셈
+  toastBell();
+  document.body.appendChild(el);
   layoutToasts();
   el._tm = setTimeout(()=>{ el.remove(); layoutToasts(); }, dur);
 }
@@ -7744,16 +7739,34 @@ function renderEquipSummonPage(){
   h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
   return h;
 }
-function equipInventoryHtml(){
-  let h = '';
-  const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0).sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
-  const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
-  h += '<div class="card">'
-    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
-    + '<div style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> '+equipSeenCount()+'/'+allEquipKeys().length+'</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn">🔧 추천 장착</button>' : '')+'</div></div>'
-    + (fusible ? '<div class="sub" style="margin-top:4px; color:#5cd65c;">▲ 합성 가능 '+fusible+'종</div>' : '')
-    + (owned.length ? '<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:8px;">'+owned.map(equipTileHtml).join('')+'</div>' : '<div class="sub" style="text-align:center; padding:14px 0;">보유 장비 없음</div>')
+// (v296) 장비 화면을 정령 화면과 같은 모양으로 — 머리 카드(제목·도감·추천 장착) · 합성하러 가기 · 정렬 칩(등급·속성·부위) · 5칸 타일(개수·등급 띠·강화)
+function equipSpeciesTile(k){
+  const i = equipInfo(k), info = RARITY_INFO[i.rarity], n = equipOwnedCount(k), used = equipUsedCount(k);
+  return '<div class="species-tile" data-equip-key="'+k+'">'
+    + '<div class="count">x'+n+'</div>'
+    + (canEquipFuse(k) ? '<div class="passive-badge" style="color:#5cd65c; font-weight:900;" title="합성 가능">▲</div>' : '')
+    + '<div class="icon av r-'+i.rarity+'">'+i.img+'</div>'
+    + '<div class="name">'+(isEqLocked(k)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+i.name+'</div>'
+    + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
+    + ((equipEnhLevel(k) || used) ? '<div class="sub" style="margin-top:2px;">'+(equipEnhLevel(k)?'+'+equipEnhLevel(k)+' ':'')+(used?'장착 '+used:'')+'</div>' : '')
     + '</div>';
+}
+function equipInventoryHtml(){
+  const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0);
+  const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
+  let h = '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
+    + '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn" style="width:auto;">🔧 추천 장착</button>' : '')+'</span></div>';
+  h += '<button class="btn secondary" id="goEqFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기'+(fusible?' <span style="color:#5cd65c;">▲ '+fusible+'종</span>':'')+'</button>';
+  h += '<h2>보유 장비</h2>';
+  const sb = state.equipSort || 'rarity';
+  h += '<div class="pk-sort">'+[['rarity','<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급'],['element',ELEMENT_INFO.fire.icon+' 속성'],['slot','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 부위']].map(([k,t])=>'<button data-eq-sort="'+k+'" class="'+(sb===k?'on':'')+'">'+t+'</button>').join('')+'</div>';
+  const byR = (a,b)=> RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity) || ELEMENTS.indexOf(equipInfo(a).element)-ELEMENTS.indexOf(equipInfo(b).element) || EQUIP_SLOTS.indexOf(equipInfo(a).slot)-EQUIP_SLOTS.indexOf(equipInfo(b).slot);
+  if(!owned.length) return h + '<div class="card sub">보유 장비 없음 — 소환 탭의 장비 소환에서 소환</div>';
+  if(sb==='element' || sb==='slot'){
+    const groups = sb==='element' ? ELEMENTS.map(el=>({t:ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name, ks:owned.filter(k=>equipInfo(k).element===el)}))
+      : EQUIP_SLOTS.map(sl=>({t:EQUIP_SLOT_INFO[sl].icon+' '+EQUIP_SLOT_INFO[sl].name, ks:owned.filter(k=>equipInfo(k).slot===sl)}));
+    groups.filter(g=>g.ks.length).forEach(g=>{ h += '<div class="sub" style="font-weight:800; margin:10px 0 6px;">'+g.t+'</div><div class="grid5">'+g.ks.sort(byR).map(equipSpeciesTile).join('')+'</div>'; });
+  }else h += '<div class="grid5">'+owned.sort(byR).map(equipSpeciesTile).join('')+'</div>';
   return h;
 }
 function showEquipDetailModal(key){
@@ -7857,8 +7870,7 @@ function renderSpiritsTab(){
   let html = '<div class="seg">'+[['spirits','📦 정령'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
     if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
-    return html + '<button class="btn secondary" id="goEqFuseTab" style="margin:0 0 10px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기</button>' // (v296) 정령 화면처럼 장비도 합성 바로가기
-      + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
+    return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon" style="margin-top:12px;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
   }
   if(spiritsSub==='runes') return html + '<div class="card">'+runeHubHtml()+'</div>';
   if(spiritsSub==='fuse') return html + renderFuseTab();
@@ -8294,8 +8306,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
-    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성) · 장비 화면에도 합성하러 가기 버튼', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
-    { t:'알림', items:[ '위쪽 알림을 작은 한 줄로 · 화면에는 최대 2개 — 같은 종류는 하나로 합쳐 ×N, 넘치면 "알림 N개 더" 한 줄', '알림을 누르거나 메뉴(☰) › 🔔 알림 기록에서 이번 접속에 받은 알림을 모두 확인' ]},
+    { t:'편의', items:[ '재화를 쓰는 곳마다 확인창 — 소환(1회·10회)·장비 소환·확정권·강화·각성·장비 강화·화로·출정권 충전·룬 재각인·룬 승급 (설정에서 끌 수 있음)', '전투 중 나가기 창에 다시 버튼 — 스테이지·보스·시련·요일 던전은 바로 처음부터 다시 도전', '받은 개인 우편도 사라지지 않고 보관 기간까지 우편함에 남음', '정령 소환 화면 아래에 내 정령 바로가기 · 장비 소환 화면에도 최근 소환 기록', '정령 탭의 합성을 맨 오른쪽으로 (정령 · 장비 · 룬 · 합성)', '장비 화면을 정령 화면과 같은 모양으로 — 도감·추천 장착 머리 카드 · 합성하러 가기 · 정렬(등급·속성·부위) · 같은 칸 모양', '파견 취소 — 보상 없이 정령만 돌아오고 그 임무는 다시 보낼 수 있음', '도감에 한 번이라도 등록된 정령은 대표 정령(프로필)으로 쓸 수 있음', '친구 목록 정령 그림에 계정 레벨', '문의에 답장이 오면 메뉴와 문의하기에 빨간 점' ]},
+    { t:'알림', items:[ '위쪽 알림을 작은 한 줄로 · 한 번에 1개만 — 새 알림이 오면 바로 바뀌고, 같은 종류는 하나로 합쳐 ×N', '잠깐만 보이고 지나간 알림이 있으면 위쪽에 🔔 개수 → 누르면 알림 기록 (메뉴 ☰ › 알림 기록에서도)' ]},
     { t:'우편', items:[ '받은 우편 삭제 — 우편 창에서 한 통씩, 또는 받은 우편 모두 삭제 (받지 않은 우편은 지울 수 없음)' ]},
     { t:'시련의 전당', items:[ '힌트를 정령·행동을 바로 말하는 대신 속담으로 — 무엇을 해야 할지 추측하는 재미' ]},
     { t:'결투', items:[ '결투 신청을 받은 사람도 대기실에서 결투 덱을 고치고 준비를 누름 — 방장은 상대가 준비해야 시작 · 상대 덱은 안 보임' ]},
@@ -11753,6 +11765,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k = el.dataset.recentEquip; if(equipOwnedCount(k)>0) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
+  document.querySelectorAll('[data-eq-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.equipSort = el.dataset.eqSort; save(); render(); }));
   const ab = document.getElementById('openAchieve'); if(ab) ab.addEventListener('click', showAchievementsModal);
   const hb = document.getElementById('collectHearthBtn'); if(hb) hb.addEventListener('click', collectHearth);
   const stb = document.getElementById('shopTicketBtn'); if(stb) stb.addEventListener('click', doShopTicket);
@@ -11908,6 +11921,7 @@ document.getElementById('headerGuideBtn').addEventListener('click', showGuideMod
 document.getElementById('headerResetBtn').addEventListener('click', showSettingsModal);
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
+    { const bb = document.getElementById('headerBellBtn'); if(bb && !bb.dataset.bound){ bb.dataset.bound = '1'; bb.addEventListener('click', showToastLog); } } // (v296) 놓친 알림
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
     hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
