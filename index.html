@@ -669,7 +669,8 @@
   .upfx i{position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:var(--fc); box-shadow:0 0 8px var(--fc); opacity:0; animation:upPart .9s ease-out forwards;}
   .upfx-t{position:absolute; left:50%; z-index:6; pointer-events:none; transform:translate(-50%,0) scale(.3); white-space:nowrap; font-size:26px; font-weight:900; color:#fff; text-shadow:0 0 10px var(--fc), 0 2px 0 #0008; animation:upText 1.4s ease-out forwards;}
   .upfx.enh, .upfx-t.enh{--fc:#ffd557;} .upfx.awk, .upfx-t.awk{--fc:#ff7be8;}
-  .up-host > .spimg{animation:upPop .5s ease-out;}
+  .up-host.pop > .spimg, .up-host.pop > .eqimg{animation:upPop .5s ease-out;} /* (v297) 실제로 올렸을 때만 튀게 — 창을 열 때마다 튀던 문제 */
+  .up-host::after{z-index:1;} /* (v297) 튀는 동안에도 등급 테두리가 그림 위에 보이게 (속성 표시 z-index 2보다는 아래) */
   @keyframes upRing{0%{transform:scale(.3); opacity:1;} 100%{transform:scale(2.6); opacity:0;}}
   @keyframes upPart{0%{opacity:1; transform:translate(0,0);} 100%{opacity:0; transform:translate(var(--dx),var(--dy));}}
   @keyframes upText{0%{opacity:0; transform:translate(-50%,10px) scale(.3);} 25%{opacity:1; transform:translate(-50%,-34px) scale(1.2);} 45%{transform:translate(-50%,-34px) scale(1);} 85%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-50px) scale(1);}}
@@ -6089,7 +6090,7 @@ function showEnhanceModal(key, fxLabel){
   document.getElementById('enBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('enDo'); if(d) d.addEventListener('click', ()=>{ const c = enhanceCost(key), go = ()=>{ const before = enhanceLevel(key); doEnhance(key, true); render(); showEnhanceModal(key, enhanceLevel(key)>before ? '+'+enhanceLevel(key) : null); };
     spendAsk(SPIRITS[key].name+' 강화', c, go, enhanceLevel(key)<maxEnhanceFor(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'enh'); }
 }
 // (v239) 각성 전용 화면: 단계별 효과 사다리 · 필요/보유 재료 · 각성 버튼
 function awakenStepInfo(key, lv){
@@ -6124,7 +6125,7 @@ function showAwakenModal(key, fxLabel){
   document.getElementById('awBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const c = awakenCost(key), go = ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); };
     spendAsk(SPIRITS[key].name+' 각성', c||{}, go, !!c && awakenSpare(key)>=c.copies && state.essence>=c.essence); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'awk');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'awk'); }
 }
 // (v238) 강화 +N 작은 딱지 — 전투 준비 칸·고르기 목록 등
 function enhTag(key){ const n = enhanceLevel(key); return n>0 ? '<span class="enh-tag">+'+n+'</span>' : ''; }
@@ -7877,7 +7878,7 @@ function showEquipEnhanceModal(key, fxLabel){
   document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
   const d = document.getElementById('eeDo'); if(d) d.addEventListener('click', ()=>{ const c = equipEnhCost(key);
     spendAsk(equipInfo(key).name+' 강화', c, ()=>{ if(doEquipEnhance(key)){ render(); showEquipEnhanceModal(key, '+'+equipEnhLevel(key)); } }, equipEnhLevel(key)<equipEnhMax(key) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
-  if(fxLabel) upgradeFx(document.getElementById('upHost'), fxLabel, 'enh');
+  if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'enh'); }
 }
 function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
@@ -8369,6 +8370,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:297, v:'2.10.6', date:'2026-10-01', secs:[
     { t:'시련의 전당', items:[ '힌트 문구 다듬기 — 시련마다 이기는 수순의 핵심만 짧게' ]},
+    { t:'화면', items:[ '강화·각성 창을 열 때 정령 그림이 커졌다 줄어들고 테두리가 늦게 보이던 문제 수정 — 실제로 올렸을 때만 연출' ]},
     { t:'파티 프리셋', items:[ '진형을 이름 붙여 5개까지 저장 — 스테이지·보스·탑·요일 던전·월드 보스·출정·결투·레이드 진형 화면의 📋 프리셋에서 저장·불러오기', '그 화면에서 못 쓰는 정령(던전 속성·출정 명단 밖·없는 정령)은 빈칸으로 · 레이드는 전열 2 · 후열 2로 맞춰 넣음' ]}
   ]},
   { build:296, v:'2.10.5', date:'2026-10-01', secs:[
