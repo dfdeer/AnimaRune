@@ -263,6 +263,7 @@
   .home-ic .uic{width:30px; height:30px; margin:0;} .home.compact .home-ic .uic{width:26px; height:26px;}
   header .essence .uic{width:18px; height:18px; margin:0;}
   #headerFriendBtn .uic, #headerMenuBtn .uic{width:24px; height:24px; margin:0;}
+  .xp-lock #headerFriendBtn{opacity:.35;} /* (v315) 출정 중엔 친구 화면 못 감 */
   h2{font-size:15px; margin:4px 0 10px;}
   .card{background:linear-gradient(160deg,#26235a 0%,#1d1b48 100%); border-radius:14px; padding:12px; margin-bottom:10px; border:1px solid #ffffff0f; box-shadow:0 4px 14px #00000040;}
   .btn{background:linear-gradient(135deg,#6a7bff,#9a6bff); color:#fff; border:none; border-radius:12px; padding:12px; font-size:14px; font-weight:800; width:100%; box-shadow:0 4px 14px #7a5bff55, inset 0 1px 0 #ffffff33; transition:transform .08s ease, box-shadow .08s ease; letter-spacing:.2px;}
@@ -3171,7 +3172,7 @@ function inviteNotice(from, iv){
   let el = document.getElementById('inviteNotice'); if(el) el.remove();
   el = document.createElement('button'); el.id = 'inviteNotice'; el.className = 'inv-notice';
   el.innerHTML = '<span>'+(iv.kind==='duel'?uiIc('atk'):'📨')+'</span><b>'+escTxt(txt)+'</b><small>눌러서 보기 ›</small>';
-  el.addEventListener('click', ()=>{ el.remove(); closeModal(); activeTab = 'friends'; friendTab = 'req'; render(); });
+  el.addEventListener('click', ()=>{ el.remove(); if(xpLockBlock()) return; closeModal(); activeTab = 'friends'; friendTab = 'req'; render(); }); // (v315) 출정 중엔 못 감
   document.body.appendChild(el); sfx('claim');
   setTimeout(()=>{ if(el.isConnected) el.remove(); }, 8000);
 }
@@ -8125,8 +8126,14 @@ document.addEventListener('click', e=>{
   const now = Date.now(); dbgTaps = dbgTaps.filter(t=>now-t<3000).concat(now);
   if(dbgTaps.length>=5){ dbgTaps = []; dbgOn = !dbgOn; try{ localStorage.setItem('animarune_dbg', dbgOn?'1':'0'); }catch(_){} toast(dbgOn?'진단 패널 켬':'진단 패널 끔'); dbgTick(); }
 }, true);
+// (v315) 출정 중에는 출정 화면 밖으로 못 나감 — 나가서 강화·합성 등을 하고 돌아오는 것 막기 · 포기하거나 끝내면 풀림
+function xpRunOn(){ return !!state.expedition; }
+let xpLockToastAt = 0;
+function xpLockBlock(){ if(!xpRunOn()) return false; if(Date.now()-xpLockToastAt > 1500){ xpLockToastAt = Date.now(); toast('🗡️ 출정 중 — 포기하거나 끝내야 나갈 수 있음'); } return true; }
 function render(){
   dbgRenders++; dbgLastRender = Date.now();
+  if(xpRunOn() && activeTab!=='expedition' && !state.skillFight) activeTab = 'expedition'; // (v315) 어느 길로 바뀌어도 출정 화면으로
+  document.body.classList.toggle('xp-lock', xpRunOn());
   checkDailyRollover();
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
   document.getElementById('essenceVal').textContent = headerNum(state.essence); // (v193) 10만 이상은 '12.3만'처럼 — 좁은 폰에서 ☰ 버튼이 화면 밖으로 밀려나던 문제
@@ -8155,7 +8162,7 @@ function render(){
   const TAB_RENDER = { summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
-    const back = HOME_MODE_TABS.includes(activeTab) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
+    const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
     const html = (TAB_RENDER[activeTab] || renderStageTab)(), k = html.indexOf(TOP_MARK);
     const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '');
     const sameScreen = main.__rKey === rKey; main.__rKey = rKey;
@@ -9019,6 +9026,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:315, v:'3.6.0', date:'2026-10-01', secs:[
+    { t:'출정', items:[ '출정 중에는 출정 화면 밖으로 나갈 수 없음 — 포기하거나 끝내면 풀림', '홈 버튼 · 친구 버튼 · 초대 알림 · 뒤로 가기 모두 막힘 (설정·우편·패치 노트는 열림)', '출정 중에 앱을 다시 켜면 출정 화면으로' ]}
+  ]},
   { build:314, v:'3.5.1', date:'2026-10-01', secs:[
     { t:'상태 이상 연출', items:[ '독 — 몸 전체를 초록빛으로 흐리게 덮음 · 올라오는 독방울을 더 많고 크게', '둔화·빙결 — 몸 전체를 하늘빛으로 흐리게 덮음', '화상 — 몸을 주황빛으로 덮고 발밑에서 불길이 일렁이며 불티가 튐', '속박 — 정령 위에 거미줄을 흐리게 덮음' ]},
     { t:'전투 화면', items:[ '상태 효과 아이콘이 생겨도 정령이 위로 밀려 올라가지 않게', '현무 등 그림 아래 여백이 큰 정령을 이름표 쪽으로 붙임', '특수 규칙 배율(×1.8 등)을 정령 그림 위 → 체력 숫자 옆에 작게' ]},
@@ -12788,6 +12798,7 @@ function attachHandlers(){
 const FEATURE_LABEL = { expedition:'출정', tower:'탑', reroll:'특성 리롤', dungeon:'요일 던전', dispatch:'정령 파견', trial:'시련의 전당' };
 document.querySelectorAll('nav button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
+    if(btn.dataset.tab!=='expedition' && xpLockBlock()) return; // (v315)
     activeTab = btn.dataset.tab;
     render();
     save();
@@ -12819,7 +12830,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
   { const hm = document.getElementById('headerMenu');
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
     { const bb = document.getElementById('headerBellBtn'); if(bb && !bb.dataset.bound){ bb.dataset.bound = '1'; bb.addEventListener('click', showToastLog); } } // (v296) 놓친 알림
-    if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); showFriendsModal(); }); }
+    if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); if(xpLockBlock()) return; showFriendsModal(); }); }
     hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
@@ -13159,7 +13170,7 @@ sanitizeState();
 // (v122) 앱을 껐다 켜도 하던 화면으로: 마지막 탭 → 진행 중인 보스전(결과 화면 포함) → 열어둔 탑/스테이지 준비창
 function resumeLastView(){
   if(!state.skillFight) unmountBattleScreen(); // 세이브가 바뀌어(클라우드 복원 등) 전투가 없으면 전장 화면을 걷어냄
-  activeTab = 'home'; // (v170) 앱을 켜면 항상 홈(탐험 모드)부터
+  activeTab = xpRunOn() ? 'expedition' : 'home'; // (v170) 앱을 켜면 항상 홈(탐험 모드)부터 · (v315) 출정 중이면 출정 화면
   if(state.bossFight) activeTab = 'stage';
   render();
   if(state.skillFight){ activeTab = 'stage'; render(); skillSel.key = null; showSkillStageScreen(); return; } // (v158 버그수정) 보스전도 skillFight로 통일 관리되므로 이 한 줄이 보스 재개까지 다 처리 — 아래 구버전 bossFight 분기는 도달 불가라 제거
@@ -13174,7 +13185,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 314, APP_VERSION = '3.5.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 315, APP_VERSION = '3.6.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
@@ -13250,6 +13261,7 @@ function appBack(){
     return true;
   }
   if(activeTab==='raid' && typeof raidView!=='undefined' && raidView==='detail'){ const rb = document.getElementById('raidBack'); if(rb){ rb.click(); return true; } }
+  if(activeTab==='expedition' && xpRunOn()){ xpLockBlock(); return true; } // (v315) 출정 중 뒤로 가기
   { const hb = document.getElementById('homeBackBtn'); if(hb){ hb.click(); return true; } }
   if(activeTab!=='home'){ activeTab = 'home'; render(); save(); return true; }
   return false;
