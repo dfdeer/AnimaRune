@@ -1285,6 +1285,10 @@
   .mail-row{display:flex; align-items:center; gap:8px; width:100%; padding:11px 12px; margin-bottom:6px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a; color:var(--text); text-align:left;} .mail-row b{flex:1; min-width:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .mail-row small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-row.done{opacity:.5;} .mail-dot{flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#ff5757;}
   .pick-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px;} .pick-cell{display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 4px; border-radius:12px; background:#ffffff0d; border:2px solid #ffffff1a; color:var(--text);} .pick-cell.on{border-color:#ffd557; background:#ffd5571f;} .pick-cell .av{width:52px; height:52px; font-size:30px;} .pick-cell b{font-size:13px;} .pick-cell small{font-size:10px; color:var(--sub);}
   .mail-card{padding:10px 12px; margin-bottom:8px; border-radius:12px; background:#ffffff0d; border:1px solid #ffffff1a;} .mail-card.done{opacity:.55;} .mail-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;} .mail-top small{color:var(--sub); font-size:11px; white-space:nowrap;} .mail-body{font-size:12px; color:var(--sub); margin-top:4px; line-height:1.5; word-break:keep-all;} .mail-foot{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px;} .mm-edit{flex-shrink:0; background:#ffffff14; border:1px solid #ffffff2a; border-radius:8px; padding:2px 7px; font-size:13px; cursor:pointer;}
+  .ms-rw{margin-top:8px; padding:8px; border-radius:12px; background:#ffffff08; border:1px solid #ffffff14;} .ms-rwh{display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:800; color:var(--sub);} .ms-rwh .btn{width:auto; margin:0;} .ms-rows{display:flex; flex-direction:column; gap:5px; margin-top:6px;} .ms-none{text-align:center; font-size:11px; padding:6px 0;}
+  .ms-row{display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:9px; background:#ffffff0c;} .ms-row b{flex:1; min-width:0; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .ms-row input{width:86px; padding:5px 6px; border-radius:8px; border:1px solid #ffffff22; background:#0d0b22; color:var(--text);} .ms-ic{width:22px; text-align:center; flex-shrink:0;} .ms-del{border:none; background:none; color:#ff8a8a; font-size:14px; padding:2px 4px; cursor:pointer;}
+  .ms-days{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; font-size:12px; color:var(--sub);} .ms-days input{width:86px; padding:5px 6px; border-radius:8px; border:1px solid #ffffff22; background:#0d0b22; color:var(--text);}
+  .ms-pg{margin:8px 0 4px; font-size:12px; font-weight:800; color:var(--sub);} .ms-pick{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px;} .ms-pi{display:flex; align-items:center; gap:5px; padding:6px 7px; border-radius:9px; border:1px solid #ffffff1a; background:#ffffff0a; color:var(--text); font-size:11.5px; text-align:left;} .ms-pi span{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} .ms-pi.on{border-color:#ffd55788; background:#ffd5571a;} /* (v300) 우편 보상 줄 */
   .ms-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:8px;} .ms-grid label{display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--sub);} .ms-grid input{width:100%; padding:6px 8px; border-radius:8px; border:1px solid #ffffff2a; background:#0d0d14; color:var(--text); font-size:14px;}
   .inv-notice{position:fixed; top:calc(10px + var(--sat)); left:50%; transform:translateX(-50%); z-index:9000; display:flex; align-items:center; gap:8px; width:min(92vw, 420px); padding:10px 14px; border-radius:16px; border:2px solid #ffd557; background:linear-gradient(135deg,#3b2f7a,#26215c); color:var(--text); box-shadow:0 8px 24px #000a; text-align:left; animation:invIn .35s ease-out;} .inv-notice b{flex:1; font-size:14px;} .inv-notice small{color:#ffd557; font-weight:800; white-space:nowrap;} .inv-notice span{font-size:20px;}
   @keyframes invIn{from{opacity:0; transform:translate(-50%,-16px);} to{opacity:1; transform:translate(-50%,0);}}
@@ -2865,8 +2869,8 @@ async function raidLeavePick(){ // (v169) 정령 선택 단계 나가기 — 팀
   try{ await raidWriteChain; await ref.update({ guest:null, status:'lobby', ready }); }catch(e){}
 }
 async function raidFinish(){ // 결과 화면 '확인'
-  const code = raidNet.code, role = raidNet.role;
-  raidLocalCleanup(); state.skillFight = null; unmountBattleScreen(); save(); activeTab = 'raid'; render();
+  const code = raidNet.code, role = raidNet.role, wasDuel = isDuelRoom();
+  raidLocalCleanup(); state.skillFight = null; unmountBattleScreen(); save(); activeTab = wasDuel ? 'duel' : 'raid'; render(); // (v300) 결투가 끝나면 결투 탭으로
   if(role==='host' && code && raidNet.db){ try{ await raidWriteChain; await raidNet.db.doc('raidActs/'+code).delete(); await raidNet.db.doc('raids/'+code).delete(); }catch(e){} }
 }
 async function raidResume(){
@@ -2876,7 +2880,7 @@ async function raidResume(){
     const snap = await raidNet.db.doc('raids/'+s.code).get();
     const d = snap.exists ? raidCleanDoc(snap.data()) : null;
     if(!d || d.status==='closed' || d.status==='done' || (s.role==='host' ? d.host!==raidNet.uid : d.guest!==raidNet.uid)){ state.raidSession = null; save(); return; }
-    activeTab = 'raid'; render();
+    activeTab = d.kind==='duel' ? 'duel' : 'raid'; render(); // (v300)
     await raidAttach(s.code, s.role);
   }catch(e){ state.raidSession = null; }
 }
@@ -3144,7 +3148,7 @@ async function friendInvite(fuid, kindArg){
 async function friendAcceptInvite(from){
   const iv = friendNet.invites[from]; if(!iv) return;
   try{ await raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
-  closeModal(); activeTab = 'raid'; render();
+  closeModal(); activeTab = iv.kind==='duel' ? 'duel' : 'raid'; render(); // (v300) 결투 신청을 받으면 결투 탭으로 (예전엔 레이드 창으로 넘어갔음)
   const r = await raidJoinRoom(iv.code);
   if(r==='locked' && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', why:'locked', code: iv.code, name: friendNet.name, t: serverNow() }); }catch(e){} // (v270) 방장에게 '아직 안 연 보스'라고 알림
 }
@@ -6013,7 +6017,8 @@ function mailClean(m){
   const n = v=> Number.isFinite(v) ? Math.max(0, Math.min(1e7, Math.floor(v))) : 0, tm = v=> Number.isFinite(v) && v>0 ? Math.floor(v) : 0; // 시간(밀리초)은 자르지 않음
   const rw = m.reward && typeof m.reward==='object' ? m.reward : {}, items = {};
   if(rw.items && typeof rw.items==='object') Object.keys(rw.items).forEach(k=>{ if(TICKET_INFO[k] && n(rw.items[k])>0) items[k] = n(rw.items[k]); });
-  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), c: tm(m.c), et: tm(m.et), toName: String(m.toName||'').slice(0,20), toCode: String(m.toCode||'').slice(0,8), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), items: Object.keys(items).length ? items : null } }; // (v266) gems = 룬석(레이드 재화)
+  const runes = {}; if(rw.runes && typeof rw.runes==='object') Object.keys(rw.runes).forEach(k=>{ if(mailRuneInfo(k) && n(rw.runes[k])>0) runes[k] = Math.min(RUNE_INV_MAX, n(rw.runes[k])); }); // (v300)
+  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), c: tm(m.c), et: tm(m.et), toName: String(m.toName||'').slice(0,20), toCode: String(m.toCode||'').slice(0,8), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), wbGems: n(rw.wbGems), shards: n(rw.shards), upStones: n(rw.upStones), items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null } }; // (v266) gems = 고대 룬석(레이드 재화) · (v300) 세계 룬석 · 정령 파편 · 룬 승급석 · 룬
 }
 function mailList(){
   const now = Date.now(), out = [];
@@ -6061,12 +6066,16 @@ function mailBadgeUpdate(){
 function mailClaim(ids){
   const ms = mailList().filter(m=>ids.includes(m.id) && !m.claimed); if(!ms.length) return;
   if(!state.mailClaimed) state.mailClaimed = {};
-  let essence = 0, stone = 0, gems = 0; const items = {};
-  ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
+  let essence = 0, stone = 0, gems = 0, wbGems = 0, shards = 0, upStones = 0; const items = {}, runes = {};
+  ms.forEach(m=>{ const R = m.reward.runes || {}; Object.keys(R).forEach(k=>{ runes[k] = (runes[k]||0) + R[k]; }); });
+  { const nr = Object.values(runes).reduce((a,b)=>a+b, 0); if(nr && (state.runeInv||[]).length + nr > RUNE_INV_MAX){ toast('룬 보관함 자리 부족 — 룬 '+nr+'개 받을 자리 필요'); return; } } // (v300)
+  ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; wbGems += m.reward.wbGems||0; shards += m.reward.shards||0; upStones += m.reward.upStones||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
     if(m.scope==='u') raidNet.db.doc('mail/user/'+raidNet.uid+'/'+m.raw+'/c').set(Date.now()).catch(()=>{}); }); // (v296) 받은 개인 우편도 지우지 않고 받은 표시만(c) — 전체 우편처럼 보관 기간까지 남음 · 관리자가 받았는지 확인
   state.essence += essence; state.enhanceStone = (state.enhanceStone||0) + stone; state.raidGems = (state.raidGems||0) + gems; grantItems(Object.keys(items).length ? items : null);
+  state.wbGems = (state.wbGems||0) + wbGems; state.shards = (state.shards||0) + shards; state.runeUpStones = (state.runeUpStones||0) + upStones;
+  Object.keys(runes).forEach(k=>{ for(let i=0;i<runes[k];i++){ const r = mailRuneMake(k); if(r){ state.runeInv = state.runeInv || []; state.runeInv.push(r); } } });
   save(); sfx('claim'); render();
-  toastReward({ essence, stone, gems, items: Object.keys(items).length ? items : null }, '📬 우편 '+ms.length+'개 보상 받음');
+  toastReward({ essence, stone, gems, wbGems, shards, upStones, items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null }, '📬 우편 '+ms.length+'개 보상 받음');
 }
 function mailLeftTxt(m){ if(!m.exp) return ''; const d = Math.ceil((m.exp-Date.now())/86400000); return d<=1 ? '오늘까지' : d+'일 남음'; }
 function showMailboxModal(why){
@@ -6149,22 +6158,68 @@ function showMailSendModal(){
     toast(readOk ? '📮 '+who+'에게 보냄' : '📮 보냄 — 하지만 다시 읽기 실패: Firebase 규칙의 mail 읽기 권한 확인 필요', readOk ? 2500 : 5000); showMailSendModal();
   }
 }
-// (v296) 우편 보상 입력칸 — 보내기·수정 창이 같이 씀 (m = 기존 우편이면 그 값으로 채움)
-const MAIL_TK = ['summon','rare','epic','legendary','mythic','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'];
+// (v300) 우편 보상 — '+ 보상 추가'로 고른 것만 줄로 쌓음 · 게임의 모든 재화·소환권·장비권·룬 (보내기·수정 창이 같이 씀)
+// 키: 재화는 이름 그대로(essence·stone·gems·wbGems·shards·upStones) · 소환권 등은 it:<TICKET_INFO 키> · 룬은 ru:<mailRuneInfo 코드>
+function mailRuneInfo(code){
+  if(code==='draw') return { nm:'룬 뽑기 (희귀 이상)', ic:'🎲' };
+  if(code==='legend') return { nm:'전설 룬 (무작위 종류)', ic:'🎲' };
+  if(code==='boss') return { nm:'고대 룬 (무작위)', ic:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">' };
+  if(code.indexOf('b_')===0){ const b = Object.values(BOSS_RUNES).find(x=>x.id===code.slice(2)); return b ? { nm:'고대 룬 · '+b.name, ic:b.icon } : null; }
+  if(code.indexOf('w_')===0){ const w = WORLD_RUNES[code.slice(2)]; return w ? { nm:'월드 룬 · '+w.name, ic:w.icon } : null; }
+  return null;
+}
+function mailRuneMake(code){
+  if(code==='draw') return rollShopRune();
+  if(code==='legend'){ const ids = Object.keys(RUNE_BASE).filter(k=>RUNE_BASE[k].vals.legend!==undefined); return { id: ids[Math.floor(Math.random()*ids.length)], tier:'legend' }; }
+  if(code==='boss') return randomBossRune();
+  if(code.indexOf('b_')===0) return { id: code.slice(2), tier:'boss' };
+  if(code.indexOf('w_')===0) return { id: code.slice(2), tier:'world' };
+  return null;
+}
+function mailGoods(){
+  const L = [
+    {g:'재화', k:'essence', nm:'정수', ic:uiIc('essence')}, {g:'재화', k:'stone', nm:'강화석', ic:uiIc('stone')},
+    {g:'재화', k:'gems', nm:'고대 룬석', ic:uiIc('runestone')}, {g:'재화', k:'wbGems', nm:'세계 룬석', ic:'<span class="wbgem">'+uiIc('runestone')+'</span>'},
+    {g:'재화', k:'shards', nm:'정령 파편', ic:'<img class="uic" src="assets/ui/ic_shard.webp" alt="">'}, {g:'재화', k:'upStones', nm:'룬 승급석', ic:'⬆️'}
+  ];
+  Object.keys(TICKET_INFO).forEach(k=>{ const t = TICKET_INFO[k]; L.push({ g: k==='engr' ? '재화' : (/^eq|^equip/.test(k) ? '장비' : '정령'), k:'it:'+k, nm:t.name, ic:t.icon }); });
+  ['draw','legend','boss'].concat(Object.values(BOSS_RUNES).map(b=>'b_'+b.id), Object.keys(WORLD_RUNES).map(w=>'w_'+w)).forEach(c=>{ const r = mailRuneInfo(c); if(r) L.push({ g:'룬', k:'ru:'+c, nm:r.nm, ic:r.ic }); });
+  return L;
+}
+function mailRwRowHtml(k, v){ const g = mailGoods().find(x=>x.k===k); if(!g) return '';
+  return '<div class="ms-row" data-msr="'+k+'"><span class="ms-ic">'+g.ic+'</span><b>'+g.nm+'</b><input type="number" min="1" value="'+v+'"><button class="ms-del" data-msdel="'+k+'">✕</button></div>'; }
 function mailRewardFormHtml(m, days){
-  const rw = (m && m.reward) || {}, it = rw.items || {};
-  return '<div class="ms-grid">'
-    + '<label><span>'+uiIc('essence')+' 정수</span><input id="msE" type="number" min="0" value="'+(rw.essence||0)+'"></label>'
-    + '<label><span>'+uiIc('stone')+' 강화석</span><input id="msS" type="number" min="0" value="'+(rw.stone||0)+'"></label>'
-    + '<label><span>'+uiIc('runestone')+' 룬석</span><input id="msG" type="number" min="0" value="'+(rw.gems||0)+'"></label>'
-    + MAIL_TK.map(k=>'<label><span>'+TICKET_INFO[k].icon+' '+TICKET_INFO[k].name.replace('정령 ','')+'</span><input data-tk="'+k+'" type="number" min="0" value="'+(it[k]||0)+'"></label>').join('')
-    + '<label><span>'+(m?'남은 기간(일)':'보관 기간(일)')+'</span><input id="msDays" type="number" min="1" max="90" value="'+days+'"></label></div>';
+  const rw = (m && m.reward) || {}, rows = [];
+  ['essence','stone','gems','wbGems','shards','upStones'].forEach(k=>{ if(rw[k]) rows.push(mailRwRowHtml(k, rw[k])); });
+  if(rw.items) Object.keys(rw.items).forEach(k=>rows.push(mailRwRowHtml('it:'+k, rw.items[k])));
+  if(rw.runes) Object.keys(rw.runes).forEach(k=>rows.push(mailRwRowHtml('ru:'+k, rw.runes[k])));
+  return '<div class="ms-rw"><div class="ms-rwh"><span>보상</span><button class="btn secondary small" data-msadd="1">＋ 보상 추가</button></div><div class="ms-rows">'+(rows.join('') || '<div class="sub ms-none">보상 없음 — 편지만 보냄</div>')+'</div></div>'
+    + '<label class="ms-days"><span>'+(m?'남은 기간(일)':'보관 기간(일)')+'</span><input id="msDays" type="number" min="1" max="90" value="'+days+'"></label>';
 }
 function mailRewardFormRead(root){
   const num = v=> Math.max(0, Math.min(1e7, Math.floor(+v||0))), g = id=>root.querySelector('#'+id);
-  const items = {}; root.querySelectorAll('[data-tk]').forEach(i=>{ const v = num(i.value); if(v>0) items[i.dataset.tk] = v; });
-  return { days: Math.max(1, Math.min(90, num(g('msDays').value)||7)), reward: { essence: num(g('msE').value), stone: num(g('msS').value), gems: num(g('msG').value), items: Object.keys(items).length ? items : null } };
+  const reward = { essence:0, stone:0, gems:0, wbGems:0, shards:0, upStones:0, items:null, runes:null }, items = {}, runes = {};
+  root.querySelectorAll('[data-msr]').forEach(r=>{ const k = r.dataset.msr, v = num(r.querySelector('input').value); if(!v) return;
+    if(k.indexOf('it:')===0) items[k.slice(3)] = (items[k.slice(3)]||0) + v; else if(k.indexOf('ru:')===0) runes[k.slice(3)] = Math.min(RUNE_INV_MAX, (runes[k.slice(3)]||0) + v); else reward[k] = v; });
+  if(Object.keys(items).length) reward.items = items; if(Object.keys(runes).length) reward.runes = runes;
+  return { days: Math.max(1, Math.min(90, num(g('msDays').value)||7)), reward };
 }
+// 보상 줄 추가·삭제 — 창 어디서든(보내기·수정) 같은 위임 처리
+function mailGoodsPicker(root){
+  const have = new Set([...root.querySelectorAll('[data-msr]')].map(r=>r.dataset.msr)), L = mailGoods();
+  const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 260; o.id = 'msPick';
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:380px;"><button class="close-x" id="mpClose">x</button><h3 style="text-align:center; margin:0 0 6px;">＋ 보상 추가</h3>'
+    + ['재화','정령','장비','룬'].map(gr=>'<div class="ms-pg">'+gr+'</div><div class="ms-pick">'+L.filter(x=>x.g===gr).map(x=>'<button class="ms-pi'+(have.has(x.k)?' on':'')+'" data-mpk="'+x.k+'">'+x.ic+'<span>'+x.nm+'</span></button>').join('')+'</div>').join('') + '</div>';
+  document.body.appendChild(o);
+  const close = ()=>o.remove(); o.querySelector('#mpClose').addEventListener('click', close); o.addEventListener('click', e=>{ if(e.target===o) close(); });
+  o.querySelectorAll('[data-mpk]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.mpk, box = root.querySelector('.ms-rows'); close();
+    let row = root.querySelector('[data-msr="'+k+'"]');
+    if(!row){ const nn = box.querySelector('.ms-none'); if(nn) nn.remove(); box.insertAdjacentHTML('beforeend', mailRwRowHtml(k, k==='essence' ? 1000 : (k==='stone' ? 100 : 1))); row = root.querySelector('[data-msr="'+k+'"]'); }
+    const inp = row.querySelector('input'); inp.focus(); inp.select(); }));
+}
+document.addEventListener('click', e=>{ const t = e.target && e.target.closest ? e.target : null; if(!t) return;
+  const add = t.closest('[data-msadd]'); if(add){ mailGoodsPicker(add.closest('.modal')); return; }
+  const del = t.closest('[data-msdel]'); if(del){ const box = del.closest('.ms-rows'); del.closest('[data-msr]').remove(); if(box && !box.querySelector('[data-msr]')) box.innerHTML = '<div class="sub ms-none">보상 없음 — 편지만 보냄</div>'; } });
 // (v296) 보낸 우편 관리 — 전체 / 개인 탭. 개인 우편은 받았는지 보이고, 안 받은 것만 ✏️ 수정 (서버 규칙도 받은 우편 수정을 막음)
 // 다른 사람 개인 우편을 읽으려면 Firebase 규칙에 관리자 읽기 권한이 필요 (docs/계정연동_설정.md 4번)
 let mailAdm = { users:null, err:null, unsub:null };
@@ -6798,7 +6853,7 @@ function showToastLog(){
 }
 // 보상 알림은 '이름 보상 획득  <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+40' 형식(아이콘+숫자만 강조). 다른 곳의 보상 표기(<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+N <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+N 🎟️×N)와 같은 모양
 function toastReward(rw, title, ms){
-  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean);
+  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', rw.shards?'<img class="uic" src="assets/ui/ic_shard.webp" alt="파편">+'+rw.shards:'', rw.upStones?'⬆️+'+rw.upStones:'', itemsShort(rw.items), rw.runes?Object.keys(rw.runes).map(k=>{ const r = mailRuneInfo(k); return r ? r.ic+'×'+rw.runes[k] : ''; }).join(' '):''].filter(Boolean);
   toast('<span class="tt">'+(title||'보상 획득')+'</span><span class="tnr">'+parts.map(p=>'<span class="tn">'+p+'</span>').join('')+'</span>', ms||3200, true);
 }
 function toast(msg, ms, html){
@@ -8773,6 +8828,8 @@ const PATCH_NOTES = [
   { build:300, v:'3.0.1', date:'2026-10-01', secs:[
     { t:'진형', items:[ '한 번 도전한 스테이지는 그때 덱 그대로 — 보스 스테이지도 이제 기억 (예전엔 다른 곳에서 쓴 진형이 들어갔음)', '새로 켜면 스테이지 진형 6번째 칸이 비던 문제 수정' ]},
     { t:'파티 프리셋', items:[ '정령 탭 📋 프리셋 — 진형 화면에 가지 않고 바로 6칸을 채워 저장 · 불러와서 고쳐 덮어쓰기' ]},
+    { t:'관리자 우편', items:[ '보상 입력을 ＋ 보상 추가 방식으로 — 고른 것만 줄로 쌓고 ✕로 빼기', '모든 재화·아이템을 보낼 수 있음 — 세계 룬석 · 정령 파편 · 룬 승급석 · 각인석 · 모든 확정권·선택권 · 룬(뽑기·전설·고대 무작위·고대 5종·월드 룬 3종)' ]},
+    { t:'결투', items:[ '결투 신청을 수락하면 레이드 창으로 넘어가던 문제 수정 — 결투 탭에서 대기실이 열림 · 결투가 끝나도 결투 탭으로' ]},
     { t:'문의', items:[ '한 문의에 여러 번 이어 쓰기 — 문의한 사람도 추가로 쓸 수 있고 답장도 덮어쓰지 않고 차례로 쌓임' ]}
   ]},
   { build:299, v:'3.0.0', date:'2026-10-01', secs:[
@@ -12024,7 +12081,10 @@ function rewardPillsHtml(rw){
   if(rw.stone) h += pill('<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+rw.stone, '강화석');
   if(rw.gems) h += pill(uiIc('runestone')+' '+rw.gems, '룬석');
   if(rw.wbGems) h += pill('<span class="wbgem">'+uiIc('runestone')+'</span> '+rw.wbGems, '세계 룬석'); // (v278)
+  if(rw.shards) h += pill('<img class="uic" src="assets/ui/ic_shard.webp" alt=""> '+rw.shards, '정령 파편'); // (v300)
+  if(rw.upStones) h += pill('⬆️ '+rw.upStones, '룬 승급석');
   if(rw.items) Object.keys(rw.items).forEach(k=>{ const ti = TICKET_INFO[k]; if(!ti) return; h += pill(ti.icon+' ×'+rw.items[k], ti.name); });
+  if(rw.runes) Object.keys(rw.runes).forEach(k=>{ const r = typeof mailRuneInfo==='function' && mailRuneInfo(k); if(r) h += pill(r.ic+' ×'+rw.runes[k], r.nm); });
   return h;
 }
 let achieveMode = 'ach'; // (v173) 일일 의뢰와 업적을 따로 엶
