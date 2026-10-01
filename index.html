@@ -8300,6 +8300,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:297, v:'2.11.0', date:'2026-10-01', secs:[
+    { t:'요일 던전 개편', items:[ '적이 내 속성과 같던 것 → 내 속성이 이기는 속성으로 (화염 던전 숲결 적 · 물결 던전 화염 적 · 숲결 던전 물결 적 · 빛 던전 그림자 적)', '그림자 던전은 이기는 속성이 없어서 적도 그림자 — 대신 상성 유리와 같은 만큼 적 약화 (공격력 ×0.8 · 체력 ÷1.3)', '단계 15 → 20 · 20단계 수호자 첫 돌파 보상 레전더리 선택권 + 레전더리 장비 선택권 · 18단계 에픽 장비 확정권', '추천 전투력도 상성 유리만큼 낮춤' ]},
     { t:'새 아이템', items:[ '신화 정령 확정권 — 신화 정령 중 무작위 1마리', '장비 확정권 (레어·에픽·레전더리·신화) — 그 등급 장비 1개, 부위·속성 무작위', '장비 선택권 (레어·에픽·레전더리·신화) — 그 등급 장비 10종(무기·갑옷 × 5속성) 중 원하는 1개', '장비 확정권·선택권은 장비 소환 화면에서 사용 (가지고 있을 때만 보임)' ]},
     { t:'보상 추가', items:[ '챕터 보스 첫 격파 — 노말: 1 레어 장비 확정권 · 2 레어 장비 선택권 · 3 에픽 장비 확정권 · 4 에픽 장비 선택권 · 5 레전더리 장비 확정권 / 하드: 1 에픽 장비 확정권 · 2 에픽 장비 선택권 · 3 레전더리 장비 확정권 · 4 레전더리 장비 선택권 · 5 신화 정령 확정권 + 신화 장비 확정권', '무한의 탑 — 40층마다 레어 장비 확정권 · 70층마다 에픽 장비 확정권 (그 층의 레어 확정권 대신) · 100층마다 레전더리 장비 확정권 추가', '요일 던전 — 7단계 레어 장비 확정권 · 12단계 에픽 장비 선택권 · 15단계 레전더리 장비 확정권', '시련의 전당 — ★4 에픽 장비 확정권 · ★5 레전더리 장비 확정권 · 최후의 시련 레전더리 장비 선택권', '계정 레벨 — 5 레어 장비 확정권 · 10 레어 장비 선택권 · 15 에픽 장비 확정권 · 20 에픽 장비 선택권 · 25 레전더리 장비 확정권 · 30 레전더리 장비 선택권', '레이드 주간 첫 승리 — 노말 레어 장비 확정권 · 하드 에픽 장비 확정권 · 익스트림 에픽 장비 선택권', '월드 보스 — 75% 달성 에픽 장비 확정권 · 100% 달성 레전더리 장비 확정권 · 처치자 에픽 장비 선택권', '레이드 상점 — 에픽 장비 확정권(40, 주 1) · 에픽 장비 선택권(70, 주 1) · 레전더리 장비 확정권(140, 주 1)', '월드 보스 상점 — 레전더리 장비 선택권(60, 주 1)' ]}
   ]},
@@ -9596,10 +9597,17 @@ function towerRewardChipHtml(f){
   return '<div class="tw-reward"><span>'+rewardBrief(towerFloorReward(f))+'</span></div>';
 }
 // ===================== (v266) 요일 던전 =====================
-// 요일마다 한 속성 던전이 열림(월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일 전부). 그 속성 정령만 출전, 적도 같은 속성(상성 없이 순수 실력)
+// 요일마다 한 속성 던전이 열림(월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일 전부). 그 속성 정령만 출전
+// (v297) 적은 내 속성이 이기는 속성(화염→숲결 · 물결→화염 · 숲결→물결 · 빛→그림자). 그림자는 이기는 속성이 없어 적도 그림자지만
+// 상성 유리와 같은 만큼 적을 약하게(공격력 ×0.8 · 체력 ÷1.3 = 받는 피해 ×0.8 · 주는 피해 ×1.3과 같은 효과) · 쉬워진 만큼 20단계까지
 // 1~15단계를 차례로 뚫음 — 보상은 단계마다 처음 돌파할 때 1회뿐(반복 수급 없음). 5·10·15단계는 수호자(강한 신화급) 등장
 // 나중에 단계를 늘리려면 DUNGEON_MAX 만 올리면 됨(강도·보상 공식이 15단계 뒤로도 이어짐)
-const DUNGEON_MAX = 15;
+const DUNGEON_MAX = 20; // (v297) 15 → 20
+const DUNGEON_FOE = { fire:'wood', water:'fire', wood:'water', light:'dark', dark:'dark' };
+function dungeonFoeEl(el){ return DUNGEON_FOE[el] || el; }
+// 적 공격력 속성 보정은 내 속성 값을 씀 — 그림자의 +6%는 '이기는 상대가 없어서' 붙는 보정이라 빛 던전의 그림자 적에겐 맞지 않음
+function dungeonNoAdv(el){ return typeMult(el, dungeonFoeEl(el)) <= 1; } // 이기는 속성이 없는 던전(그림자) → 적 능력치로 보정
+const DUNGEON_ADV_CP = Math.sqrt(0.8/1.3); // 상성 유리를 전투력으로 환산한 배율 (추천 전투력용)
 const DUNGEON_DAY_EL = [null, 'fire', 'water', 'wood', 'light', 'dark', null]; // getDay(): 0=일 … 6=토 · null=전부 열림
 const DUNGEON_THEME = { fire:'volcano', water:'snow', wood:'forest', light:'desert', dark:'cave' };
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
@@ -9616,6 +9624,7 @@ function dungeonReward(n){
   if(n%5===3 || n%5===2 && n>10) it.equip = 1;
   if(n===5) it.rare = 2; if(n===10) it.pick_epic = 1; if(n===15) it.pick_legendary = 1;
   if(n===7) it.eq_rare = 1; if(n===12) it.eqpick_epic = 1; if(n===15) it.eq_legendary = 1; // (v297) 장비 확정권·선택권
+  if(n===18) it.eq_epic = 1; if(n===20){ delete it.pick_epic; it.pick_legendary = 1; it.eqpick_legendary = 1; } // (v297) 새 16~20단계
   if(n>15 && n%5===0) it.pick_epic = 1;
   if(Object.keys(it).length) rw.items = it;
   return rw;
@@ -9626,7 +9635,7 @@ function dungeonEnemyGrid(el, n){
   const pool = [];
   for(let k=0;k<count;k++){
     const rr = weightedPickSeeded(enemyRarityWeights(prog), seededRand(seed + k*13.1 + 1)), v = seededRand(seed + k*7.3 + 2) < 0.5 ? 'a' : 'b';
-    pool.push({ rarity: rr, variant: v, front: ENEMY_FRONT_LINES.includes(el+'_'+v) });
+    pool.push({ rarity: rr, variant: v, front: ENEMY_FRONT_LINES.includes(dungeonFoeEl(el)+'_'+v) });
   }
   if(dungeonGuardian(n)){ pool[0] = { rarity:'mythic', variant: seededRand(seed+99)<0.5?'a':'b', front:false, guardian:true }; }
   pool.sort((x,y)=> (x.guardian?1:0) - (y.guardian?1:0) || (y.front?1:0) - (x.front?1:0));
@@ -9641,9 +9650,10 @@ function buildDungeonFight(el, n){
   const myUnits = [];
   state.formation.slice(0, GRID_SLOTS).forEach((key, idx)=>{ if(key && SPIRITS[key] && SPIRITS[key].element===el) myUnits.push(makeBattleUnit('me', idx, key, unitAtk(key), ALLY_HP_MULT)); });
   const enemyUnits = [];
+  const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
   cells.forEach((c, idx)=>{
     if(!c) return;
-    const u = makeBattleUnit('enemy', idx, el+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1));
+    const u = makeBattleUnit('enemy', idx, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1)*(na?0.8:1), ENEMY_HP_MULT*(c.guardian?4:1)/(na?1.3:1));
     if(c.guardian) u.dispName = '수호자 '+SPIRITS[u.key].name;
     enemyUnits.push(u);
   });
@@ -9654,8 +9664,9 @@ function buildDungeonFight(el, n){
 }
 function dungeonRecCP(el, n){ // (v266) 추천 전투력 — 적 배치는 단계마다 고정이라 내 진형과 무관하게 계산
   const per = dungeonPower(n);
-  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, el+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1), ENEMY_HP_MULT*(c.guardian?4:1))) : a, 0);
-  return recCP(en * REC_CP_MULT.dungeon);
+  const fe = dungeonFoeEl(el), na = dungeonNoAdv(el);
+  const en = dungeonEnemyGrid(el, n).reduce((a,c)=> c ? a + unitCP(makeBattleUnit('enemy', 0, fe+'_'+c.rarity+'_'+c.variant, per*ELEMENT_ATK_MULT[el]*(c.guardian?1.3:1)*(na?0.8:1), ENEMY_HP_MULT*(c.guardian?4:1)/(na?1.3:1))) : a, 0);
+  return recCP(en * REC_CP_MULT.dungeon * (na ? 1 : DUNGEON_ADV_CP)); // (v297) 상성 유리만큼 낮춤 (그림자는 적 능력치에 이미 반영)
 }
 function checkDungeonOutcome(sf){
   if(sf.result) return true;
@@ -9697,8 +9708,9 @@ function showDungeonPrep(el, n, keep){
   state.dungeonForms[el] = state.formation.slice(); save();
   const info = ELEMENT_INFO[el], cells = dungeonEnemyGrid(el, n), pv = buildDungeonFight(el, n), rw = dungeonReward(n), first = n > dungeonBest(el);
   let h = '<h3 style="text-align:center; margin:0;">'+info.icon+' '+info.name+' 던전 · '+n+'단계</h3>';
-  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적도 전부 '+info.name+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
-  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[el+'_'+c.rarity+'_'+c.variant])+elIc(el,'av-el')+'</span>' : '').join('')+'</div>';
+  const fe = dungeonFoeEl(el);
+  h += '<div class="dg-rule">'+elIc(el)+' '+info.name+' 정령만 출전 · 적은 전부 '+elIc(fe)+' '+ELEMENT_INFO[fe].name+(dungeonNoAdv(el) ? ' (상성 대신 적 약화)' : ' (상성 유리)')+(dungeonGuardian(n)?' · <b>수호자 등장</b>':'')+'</div>';
+  h += '<div class="dg-foes">'+cells.map((c,i)=> c ? '<span class="dg-foe av r-'+c.rarity+(c.guardian?' g':'')+'" data-unit-info="enemy:'+i+'">'+spArt(SPIRITS[fe+'_'+c.rarity+'_'+c.variant])+elIc(fe,'av-el')+'</span>' : '').join('')+'</div>';
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="dgClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="dgRec" style="flex:1; margin:0;">✨ 추천 배치</button></div>';
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', pool.length ? '상대 '+fmtCP(teamCP(pv.enemyUnits)) : info.name+' 정령 없음 — 소환·합성으로 모으기', dungeonRecCP(el, n));
@@ -9736,13 +9748,13 @@ function bindChallengeTab(){ document.querySelectorAll('[data-ch-go]').forEach(b
 function renderDungeonTab(){
   if(!isUnlocked('dungeon')) return lockedFeatureScreenHtml('dungeon');
   const today = new Date().getDay(), open = dungeonOpenEls();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">📅 요일 던전</div><div class="sub" style="font-size:11px;">그날 속성 정령만 출전 · 단계마다 처음 돌파할 때 보상</div></div>';
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">📅 요일 던전</div><div class="sub" style="font-size:11px;">그날 속성 정령만 출전 · 적은 그 속성이 이기는 속성 · 단계마다 처음 돌파할 때 보상</div></div>';
   h += '<div class="dg-week">'+DAY_NAMES.map((d,i)=>{ const e = DUNGEON_DAY_EL[i]; return '<span class="'+(i===today?'on':'')+'"><small>'+d+'</small>'+(e ? elIc(e) : '<b>전체</b>')+'</span>'; }).join('')+'</div>';
   h += TOP_MARK + '<div class="dg-list">';
   ELEMENTS.forEach(el=>{
     const info = ELEMENT_INFO[el], best = dungeonBest(el), isOpen = dungeonIsOpen(el), done = best >= DUNGEON_MAX, next = Math.min(DUNGEON_MAX, best+1);
     const nextRw = done ? null : dungeonReward(next);
-    const marks = [5,10,15].map(m=>'<i class="'+(best>=m?'got':'')+'" style="left:'+(m/DUNGEON_MAX*100)+'%;"></i>').join('');
+    const marks = [5,10,15,20].map(m=>'<i class="'+(best>=m?'got':'')+'" style="left:'+(m/DUNGEON_MAX*100)+'%;"></i>').join('');
     h += '<div class="dg-card'+(isOpen?'':' closed')+'" style="--ec:'+info.color+';">'
       + '<div class="dg-ic">'+elIc(el)+'</div>'
       + '<div class="dg-mid"><div class="dg-nm"><b>'+info.name+' 던전</b><small>'+(isOpen ? '오늘 열림' : dungeonDaysOf(el)+'요일')+'</small></div>'
