@@ -4308,7 +4308,9 @@ const ACC_META_KEY = 'animarune_cloud', ACC_DEV_KEY = 'animarune_dev';
 let acc = { on:false, linked:false, email:'', uid:null, dev:null, base:null, kicked:false, busy:false, timer:null, lastPush:0, unsub:null };
 function accDevId(){ let d = null; try{ d = localStorage.getItem(ACC_DEV_KEY); if(!d){ d = Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(ACC_DEV_KEY, d); } }catch(e){ d = d || 'tmp'+Math.random().toString(36).slice(2); } return d; }
 function accMeta(){ try{ const m = JSON.parse(localStorage.getItem(ACC_META_KEY)||'null'); return (m && m.uid===acc.uid) ? m : null; }catch(e){ return null; } }
-function accSetMeta(base){ acc.base = base; try{ localStorage.setItem(ACC_META_KEY, JSON.stringify({ uid: acc.uid, base, savedRev: state.saveRev||0 })); }catch(e){} }
+function accSetMeta(base, rev){ acc.base = base; try{ localStorage.setItem(ACC_META_KEY, JSON.stringify({ uid: acc.uid, base, savedRev: rev!==undefined ? rev : (state.saveRev||0) })); }catch(e){} }
+// (v333) 이 기기에 서버로 아직 안 올라간 진행이 있는지 (지하철 등 오프라인에서 한 것)
+function accUnsynced(){ const m = accMeta(); return !!(acc.linked && m && (state.saveRev||0)!==m.savedRev); }
 function accRef(p){ return raidNet.fb.ref(raidNet.fb.rtdb, p+'/'+acc.uid); }
 function accFresh(s){ return !(s.lifetimeSummons>0) && !Object.keys(s.stageBest||{}).some(k=>s.stageBest[k]); } // 아직 아무것도 안 한 세이브
 function accSummary(s){
@@ -4316,8 +4318,14 @@ function accSummary(s){
   const cleared = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).length;
   return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · '+uiIc('essence')+' '+Math.floor(s.essence||0)+' · 탑 '+(s.towerBest||0)+'층';
 }
+// (v333) 서버 진행으로 덮기 전 기기 진행을 최근 3개까지 보관 — 설정 「덮어쓰기 전 진행 되살리기」 (예전엔 1개뿐이라 다음에 켤 때 또 덮이면 사라졌음)
+const accBakKey = ()=> SAVE_KEY+'_beforeCloudList'; // 함수로: SAVE_KEY가 이 줄보다 아래에서 정의됨
+function accBackups(){ let L = []; try{ L = JSON.parse(localStorage.getItem(accBakKey())||'[]') || []; }catch(e){ L = []; }
+  if(!L.length){ try{ const o = JSON.parse(localStorage.getItem(SAVE_KEY+'_beforeCloud')||'null'); if(o && o.raw) L = [o]; }catch(e){} } // 예전 1개짜리 보관
+  return L.filter(b=>b && typeof b.raw==='string'); }
+function accBackupNow(){ try{ const raw = localStorage.getItem(SAVE_KEY); if(!raw) return; const L = accBackups(); if(L.some(b=>b.raw===raw)) return; L.unshift({ t: Date.now(), raw }); localStorage.setItem(accBakKey(), JSON.stringify(L.slice(0, 3))); }catch(e){} }
 function accApply(parsed){ // 서버 세이브를 이 기기에 적용(적용 전 기기 세이브는 따로 보관)
-  try{ localStorage.setItem(SAVE_KEY+'_beforeCloud', JSON.stringify({ t: Date.now(), raw: localStorage.getItem(SAVE_KEY) })); }catch(e){}
+  accBackupNow();
   state = mergeWithDefaults(defaultState(), parsed); sanitizeState(); save();
 }
 async function accInitial(){ // 켤 때: 서버 세이브와 맞추기
@@ -4348,25 +4356,29 @@ async function accPush(force){ // 서버에 저장 — 다른 기기가 그사�
   if(!acc.on || !acc.linked || acc.kicked || acc.busy) return false;
   acc.busy = true; clearTimeout(acc.timer);
   try{
-    const data = encodeSaveString(), base = acc.base||0, dev = acc.dev;
+    const data = encodeSaveString(), base = acc.base||0, dev = acc.dev, rev0 = state.saveRev||0;
     let conflict = false;
     const res = await raidNet.fb.runTransaction(accRef('saves'), cur=>{
       if(cur && !force && (cur.rev||0)!==base){ conflict = true; return; }
       conflict = false;
       return { rev: Math.max(base, (cur && cur.rev)||0) + 1, t: Date.now(), dev, data };
     });
-    if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1); acc.lastPush = Date.now(); return true; }
+    if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1, rev0); acc.lastPush = Date.now(); if((state.saveRev||0)!==rev0) accSchedule(); return true; } // (v333) 올리는 동안 또 저장했으면 이어서 한 번 더
     if(conflict){ // 다른 기기가 더 새로 저장함 → 한 번만 다시 맞춰봄(계속 충돌하면 고르기 창으로, 무한 반복 금지)
       acc.busy = false;
       if(acc.retrying){ acc.retrying = false; const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null; let parsed = null; try{ parsed = cloud && cloud.data ? decodeSaveString(cloud.data) : null; }catch(e){} if(parsed && !document.querySelector('.acc-pick')) accChooser(parsed, cloud); return false; }
       acc.retrying = true; try{ await accInitial(); } finally{ acc.retrying = false; }
     }
     return false;
-  }catch(e){ return false; }
+  }catch(e){ accRetryLater(); return false; } // (v333) 인터넷이 안 되면 30초 뒤 다시
   finally{ acc.busy = false; }
 }
+function accRetryLater(){ if(acc.on && acc.linked && !acc.kicked){ clearTimeout(acc.timer); acc.timer = setTimeout(()=>{ if(accUnsynced()) accPush(false); }, 30000); } }
 function accSchedule(){ if(acc.on && acc.linked && !acc.kicked){ clearTimeout(acc.timer); acc.timer = setTimeout(()=>accPush(false), 8000); } } // 저장할 때마다 8초 모아서 한 번
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden' && acc.timer) accPush(false); }); // 앱을 내릴 때 바로 저장
+// (v333) 인터넷이 돌아오거나 앱으로 돌아오면 밀린 진행을 서버에 올림 — 예전엔 다음에 또 저장할 때까지 안 올라가서, 다른 기기로 켜면 오프라인 전 진행만 보였음
+window.addEventListener('online', ()=>{ if(acc.on && acc.linked && !acc.kicked && accUnsynced()) setTimeout(()=>accPush(false), 1500); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && acc.on && acc.linked && !acc.kicked && accUnsynced()) accPush(false); });
 function accClaimSession(){ return raidNet.fb.set(accRef('sessions'), { dev: acc.dev, t: Date.now() }).catch(()=>{}); }
 function accWatchSession(){
   if(acc.unsub) acc.unsub();
@@ -4380,14 +4392,18 @@ function accKickedOverlay(){
   const o = document.createElement('div'); o.id = 'accKick'; o.className = 'modal-bg'; o.style.zIndex = 9999;
   o.innerHTML = '<div class="modal" style="text-align:center;"><div style="font-size:34px;">📱</div><h3>다른 기기에서 접속함</h3>'
     + '<div class="sub" style="font-size:12px; line-height:1.5;">같은 계정은 한 번에 한 기기만.<br>여기서 이어 하면 다른 기기는 멈춤.</div>'
+    + (accUnsynced() ? '<div class="sub" style="font-size:12px; line-height:1.5; margin-top:6px; color:#ffd166;">이 기기에 서버에 아직 안 올라간 진행이 있음 — 이어 하기를 누르면 어느 쪽을 쓸지 고름</div>' : '')
     + '<button class="btn" id="accTakeBack" style="margin-top:12px;">이 기기에서 이어 하기</button></div>';
   document.body.appendChild(o);
   o.querySelector('#accTakeBack').addEventListener('click', async ()=>{
     const b = o.querySelector('#accTakeBack'); b.disabled = true; b.textContent = '불러오는 중…';
     try{
       const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null;
-      if(cloud && cloud.data){ const parsed = decodeSaveString(cloud.data); accApply(parsed); accSetMeta(cloud.rev||0); }
-      acc.kicked = false; await accClaimSession(); o.remove(); render(); toast('서버의 최신 진행 불러옴');
+      const parsed = cloud && cloud.data ? decodeSaveString(cloud.data) : null;
+      acc.kicked = false; await accClaimSession(); o.remove();
+      if(parsed && accUnsynced()){ accSetMeta(accMeta() ? accMeta().base : 0); accChooser(parsed, cloud); return; } // (v333) 이 기기에만 있는 진행을 말없이 덮던 것 → 고르기
+      if(parsed){ accApply(parsed); accSetMeta(cloud.rev||0); }
+      render(); toast('서버의 최신 진행 불러옴');
     }catch(e){ b.disabled = false; b.textContent = '이 기기에서 이어 하기'; toast('연결 오류 — 다시 누르기'); }
   });
 }
@@ -4424,9 +4440,29 @@ function accountBoxHtml(){
   if(!raidNet.fb || !acc.on) h += '<div class="sub">온라인 연결 중이거나 연결 안 됨</div>';
   else if(!acc.linked) h += '<div class="sub">게스트 — 이 기기에만 저장. 연동하면 폰·컴퓨터 어디서든 이어서 가능.</div><button class="btn" id="accLinkBtn" style="margin-top:8px;">구글로 연동하기</button><div class="sub" style="font-size:11px; margin-top:4px;">다른 기기에서 이미 연동했다면 같은 버튼으로 불러오기</div>';
   else h += '<div class="sub">구글 연동됨'+(acc.email?' · '+escTxt(acc.email):'')+'</div><div class="sub" style="font-size:11px;">자동으로 서버에 저장'+(acc.lastPush?' · 마지막 '+new Date(acc.lastPush).toTimeString().slice(0,5):'')+'</div><button class="btn secondary" id="accPushBtn" style="margin-top:8px;">☁️ 지금 서버에 저장</button>';
+  if(accBackups().length) h += '<button class="btn secondary" id="accRestoreBtn" style="margin-top:8px;">↩️ 덮어쓰기 전 진행 되살리기</button>';
   return h + '</div>';
 }
+// (v333) 서버 진행으로 덮이기 전 기기 진행(최근 3개)에서 골라 되살림 — 지금 진행도 먼저 보관해서 되돌릴 수 있음
+function showAccRestore(){
+  const L = accBackups(); if(!L.length){ toast('되살릴 진행 없음'); return; }
+  const fmt = t=>{ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); };
+  const rows = L.map((b,i)=>{ let sum = '읽을 수 없음'; try{ sum = accSummary(JSON.parse(b.raw)); }catch(e){} return '<button class="acc-pick" data-rb="'+i+'"><b>'+fmt(b.t)+'에 덮이기 전</b><span>'+sum+'</span></button>'; }).join('');
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'
+    + '<h3 style="text-align:center;">덮어쓰기 전 진행</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">다른 기기·서버 진행으로 바뀌기 직전의 이 기기 진행.<br>되살리면 지금 진행은 이 목록에 보관됨'+(acc.linked ? ' · 서버에도 저장' : '')+'.</div>'
+    + '<div class="acc-pick" style="pointer-events:none; opacity:.8;"><b>지금 진행</b><span>'+accSummary(state)+'</span></div>' + rows + '</div></div>';
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.querySelectorAll('[data-rb]').forEach(b=>b.addEventListener('click', async ()=>{
+    const bak = L[+b.dataset.rb]; let parsed = null; try{ parsed = JSON.parse(bak.raw); }catch(e){}
+    if(!parsed){ toast('읽을 수 없는 진행'); return; }
+    accBackupNow(); state = mergeWithDefaults(defaultState(), parsed); sanitizeState(); save();
+    closeModal(); render();
+    if(acc.on && acc.linked && !acc.kicked){ const snap = await raidNet.fb.get(accRef('saves')).catch(()=>null), cloud = snap && snap.exists() ? snap.val() : null; acc.base = (cloud && cloud.rev)||0; const ok = await accPush(true); toast(ok ? '진행 되살림 · 서버에 저장' : '진행 되살림 (서버 저장은 다음 연결 때)'); }
+    else toast('진행 되살림');
+  }));
+}
 function bindAccountBox(){
+  const rb = document.getElementById('accRestoreBtn'); if(rb) rb.addEventListener('click', showAccRestore);
   const l = document.getElementById('accLinkBtn'); if(l) l.addEventListener('click', ()=>{ l.disabled = true; accLinkGoogle().finally(()=>{ l.disabled = false; }); });
   const p = document.getElementById('accPushBtn'); if(p) p.addEventListener('click', async ()=>{ p.disabled = true; const ok = await accPush(false); toast(ok ? '서버에 저장' : '저장 실패'); p.disabled = false; });
 }
@@ -9622,6 +9658,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:333, v:'4.5.0', date:'2026-10-03', secs:[
+    { t:'계정 저장 버그 수정', items:[ '인터넷이 끊긴 동안 한 진행이 다시 연결돼도 서버에 안 올라가던 것 수정 — 연결되거나 앱으로 돌아오면 바로 올림 (실패하면 30초마다 다시)', '다른 기기에서 접속한 뒤 「이 기기에서 이어 하기」를 누르면 이 기기에만 있던 진행이 말없이 사라지던 것 수정 — 이제 이 기기 진행과 서버 진행 중 고름', '설정 계정 칸에 「덮어쓰기 전 진행 되살리기」 — 서버 진행으로 바뀌기 직전의 이 기기 진행을 최근 3개까지 보관' ]}
+  ]},
   { build:332, v:'4.4.0', date:'2026-10-02', secs:[
     { t:'전투 효과음', items:[ '전투에 효과음 추가 — 타격 · 치명타 · 속성 유리·불리 · 지속 피해 · 쓰러짐 · 회복 · 보호막 · 이로운 효과 · 해로운 효과', '스킬을 쓸 때 속성(불·물·숲·빛·그림자)마다 다른 효과음', '설정에 「전투 효과음」 켜기·끄기 (기본 켜짐) — 효과음 볼륨은 그대로 따름' ]}
   ]},
@@ -14070,7 +14109,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 332, APP_VERSION = '4.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 333, APP_VERSION = '4.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
