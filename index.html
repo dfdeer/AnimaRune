@@ -1328,6 +1328,8 @@
   @keyframes toastIn{from{opacity:0; transform:translate(-50%,-6px);}}
   .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
   .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
+  .et-cur{display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffcf4a14; border:1px solid #ffcf4a44; text-align:left; flex-wrap:wrap;} .et-cur span{font-size:10px; color:var(--sub);} .et-cur small{flex-basis:100%; font-size:11px; color:var(--sub);}
+  .et-offers{display:flex; flex-direction:column; gap:6px; margin-top:8px;} .et-off{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff1f; color:var(--text); text-align:left; cursor:pointer; font:inherit;} .et-off small{font-size:11px; color:var(--sub);} .et-off i{font-style:normal; font-size:10px; color:#8ec5ff;} .et-off.on{border-color:#ffcf4a; background:#ffcf4a1a;} .et-off.on i{color:#ffe08a;}
   .so-sec{font-weight:900; font-size:12px; color:#ffe9a8; margin:10px 0 4px; text-align:left;} .so-d{text-align:left; font-size:11px; line-height:1.55;}
   .so-q{display:flex; gap:4px;} .so-q span{flex:1; border-radius:8px; padding:5px 2px; text-align:center; background:#ffffff0d; border:1px solid color-mix(in srgb, var(--qc) 50%, transparent);} .so-q i{display:block; font-style:normal; font-size:10px; color:var(--qc);} .so-q b{font-size:13px;}
   .so-t{width:100%; border-collapse:collapse; margin-top:8px; font-size:11px;} .so-t th, .so-t td{padding:4px 2px; text-align:center; border-bottom:1px solid #ffffff14;} .so-t td:first-child{text-align:left; white-space:nowrap;} .so-t th{font-size:10px; color:var(--sub);}
@@ -1965,13 +1967,36 @@ const TRANS10 = {
   dark_a:  { ic:'🩸', d:'흡혈 +12%', sub:{ life:.12 } },
   dark_b:  { ic:'🌑', d:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)', sub:{ curse:.25 } }
 };
+// ===================== (v328) 장비 고유 효과 — 레전더리·신화 장비마다 하나. 후보 3개 중에서 골라 붙임 · 각인석으로 후보 다시 뽑기
+// 값은 [레전더리, 신화] · 효과는 초월 특전과 같은 전투 처리(sub)를 씀 · 부가 능력 상한 밖에서 더해짐 (장비 2개면 2개)
+const EQ_TRAITS = {
+  vanguard:{ ic:'⚔️', nm:'선제',   sub:'emp',   v:[.15,.25], d:v=>'전투 첫 행동 피해 +'+Math.round(v*100)+'%' },
+  aegis:   { ic:'🛡️', nm:'수호막', sub:'sh',    v:[.08,.12], d:v=>'전투 시작 보호막 (최대체력 '+Math.round(v*100)+'%, 2라운드)' },
+  ember:   { ic:'🔥', nm:'불씨',   sub:'burn',  v:[1,1],     d:()=>'공격이 맞으면 화상 1중첩' },
+  venom:   { ic:'🧪', nm:'독침',   sub:'poi',   v:[.02,.03], d:v=>'공격이 맞으면 독 (3라운드, 최대체력 '+Math.round(v*100)+'%)' },
+  frost:   { ic:'❄️', nm:'서리',   sub:'frz',   v:[.06,.10], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 빙결' },
+  hex:     { ic:'🌑', nm:'저주',   sub:'curse', v:[.12,.18], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 저주 (받는 피해 +15%, 2라운드)' },
+  spring:  { ic:'💧', nm:'샘',     sub:'rheal', v:[.02,.03], d:v=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+Math.round(v*100)+'% 회복' },
+  swift:   { ic:'💨', nm:'질풍',   sub:'spd',   v:[3,5],     d:v=>'속도 +'+v },
+  keen:    { ic:'🎯', nm:'예리함', sub:'crit',  v:[.05,.08], d:v=>'치명타 확률 +'+Math.round(v*100)+'%' },
+  leech:   { ic:'🩸', nm:'흡혈',   sub:'life',  v:[.04,.06], d:v=>'흡혈 +'+Math.round(v*100)+'%' },
+  bulwark: { ic:'🪨', nm:'철벽',   sub:'dr',    v:[.04,.06], d:v=>'받는 피해 −'+Math.round(v*100)+'%' }
+};
+const EQ_TRAIT_RARITY = { legendary:0, mythic:1 }, EQ_TRAIT_OFFERS = 3, EQ_TRAIT_REROLL = 2;
+function eqTraitTier(key){ const r = equipInfo(key).rarity; return r in EQ_TRAIT_RARITY ? EQ_TRAIT_RARITY[r] : -1; }
+function eqTraitState(key){ const t = state.eqTrait && state.eqTrait[key]; return t && typeof t==='object' ? t : null; }
+function eqTraitOf(key){ const t = eqTraitState(key), tier = eqTraitTier(key); if(!t || !EQ_TRAITS[t.id] || tier<0) return null; const d = EQ_TRAITS[t.id]; return { id:t.id, d, v:d.v[tier] }; }
+function eqTraitTxt(key, id){ const d = EQ_TRAITS[id], tier = Math.max(0, eqTraitTier(key)); return d.d(d.v[tier]); }
+function eqTraitRollOffers(cur){ const ids = Object.keys(EQ_TRAITS).filter(x=>x!==cur), out = []; while(out.length<EQ_TRAIT_OFFERS && ids.length){ out.push(ids.splice(Math.floor(Math.random()*ids.length),1)[0]); } return out; }
+function eqTraitSubFor(k){ const o = {}; if(typeof isEquipUnlocked!=='function' || !isEquipUnlocked()) return o; EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl), t = ek && eqTraitOf(ek); if(t) o[t.d.sub] = (o[t.d.sub]||0) + t.v; }); return o; }
 function trans10Of(k){ const sp = SPIRITS[k]; return TRANS10[sp.element+'_'+sp.variant] || null; }
 function battleSubFor(k){ const t = subTotals(k), o = { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr };
   const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ o[x] = (o[x]||0) + p.sub[x]; }); // 특전은 상한 밖
+  const tr = eqTraitSubFor(k); Object.keys(tr).forEach(x=>{ o[x] = (o[x]||0) + tr[x]; }); // (v328) 장비 고유 효과도 상한 밖
   return o; }
 function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,cap)=> Number.isFinite(v) ? Math.max(0, Math.min(cap, v)) : 0;
-  return { spd:n(o.spd, SUB_CAP.spd+11), crit:n(o.crit, SUB_CAP.crit), life:n(o.life, SUB_CAP.life+.12), dr:n(o.dr, SUB_CAP.dr+.12), sh:n(o.sh, .15),
-    emp:n(o.emp, .4), burn:n(o.burn, 1), rheal:n(o.rheal, .05), frz:n(o.frz, .15), poi:n(o.poi, .04), curse:n(o.curse, .25) }; }
+  return { spd:n(o.spd, SUB_CAP.spd+11+10), crit:n(o.crit, SUB_CAP.crit+.16), life:n(o.life, SUB_CAP.life+.12+.12), dr:n(o.dr, SUB_CAP.dr+.12+.12), sh:n(o.sh, .15+.24), // (v328) 상한 = 부가 능력 + 초월 특전 + 장비 고유 효과 2개
+    emp:n(o.emp, .4+.5), burn:n(o.burn, 2), rheal:n(o.rheal, .05+.06), frz:n(o.frz, .15+.2), poi:n(o.poi, .04+.06), curse:n(o.curse, .25+.36) }; }
 function applySubOnBuild(u, sub){ const s = cleanSub(sub); if(!s) return; u.sub = s;
   if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); }
   if(s.emp>0) u.st.empower = Math.max(u.st.empower||0, s.emp); }
@@ -2032,6 +2057,28 @@ function showSubOdds(){
     + '<div class="so-sec">줄 수</div><div class="sub so-d">정령 각인 '+ENGR_LINES+'줄 · 장비 레어·에픽 1줄 · 레전더리 2줄 · 신화 3줄 · 일반 장비 없음</div>'
     + '<div class="so-sec">다시 굴리기</div><div class="sub so-d">각인석 1개 · 잠근 줄 하나마다 +2 (최대 '+ENGR_LOCK_MAX+'줄) · 같은 능력끼리 합은 상한까지만 (각인 + 장비 2개 합)</div>';
   openInfoOverlay('📊 부가 능력 확률표', h);
+}
+// (v328) 장비 고유 효과 창 — 후보 3개 중 하나를 골라 붙임 · 처음 후보는 무료 · 각인석으로 다시 뽑기
+function showEqTraitModal(key, back){
+  const i = equipInfo(key), tier = eqTraitTier(key); if(tier<0) return;
+  state.eqTrait = state.eqTrait || {}; let t = state.eqTrait[key];
+  if(!t){ t = state.eqTrait[key] = { id:null, offers: eqTraitRollOffers(null) }; save(); }
+  const cur = eqTraitOf(key), have = ticketCount('engr');
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+i.img+'</div><h3 style="margin:4px 0;">✴️ 고유 효과 · '+i.name+'</h3>'
+    + '<div class="sub" style="font-size:11px; line-height:1.5;">레전더리·신화 장비마다 하나 · 끼운 정령에게 붙음 (신화가 더 셈)<br>후보 '+EQ_TRAIT_OFFERS+'개 중에서 골라 붙이고, 마음에 안 들면 후보를 다시 뽑음</div></div>';
+  h += '<div class="et-cur">'+(cur ? '<span>지금</span><b>'+cur.d.ic+' '+cur.d.nm+'</b><small>'+cur.d.d(cur.v)+'</small>' : '<span>지금</span><b class="sub">없음</b>')+'</div>';
+  h += '<div class="et-offers">'+(t.offers||[]).filter(id=>EQ_TRAITS[id]).map(id=>{ const d = EQ_TRAITS[id]; return '<button class="et-off'+(cur && cur.id===id?' on':'')+'" data-et-pick="'+id+'"><b>'+d.ic+' '+d.nm+'</b><small>'+eqTraitTxt(key, id)+'</small><i>'+(cur && cur.id===id ? '붙어 있음' : '이걸로 고르기')+'</i></button>'; }).join('')+'</div>';
+  h += '<button class="btn gold" id="etReroll" style="margin-top:10px;" '+(have>=EQ_TRAIT_REROLL?'':'disabled')+'>'+uiIc('dice')+' 후보 다시 뽑기 · '+TICKET_INFO.engr.icon+' '+EQ_TRAIT_REROLL+' <small>(보유 '+have+')</small></button>';
+  h += '<button class="btn secondary small" id="etList" style="margin-top:8px;">📋 고유 효과 전체 목록</button>';
+  if(back) h += '<button class="btn secondary" id="etBack" style="margin-top:8px;">‹ 돌아가기</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(back);
+  const re = ()=>showEqTraitModal(key, back);
+  document.querySelectorAll('[data-et-pick]').forEach(b=>b.addEventListener('click', ()=>{ const id = b.dataset.etPick; if(!EQ_TRAITS[id]) return; state.eqTrait[key].id = id; save(); sfx('enhance'); toast('✴️ '+i.name+' — '+EQ_TRAITS[id].nm); render(); re(); }));
+  document.getElementById('etReroll').addEventListener('click', ()=>{ if(ticketCount('engr') < EQ_TRAIT_REROLL){ toast('각인석 부족'); return; }
+    spendAsk('고유 효과 후보 다시 뽑기', {tk:'engr', n:EQ_TRAIT_REROLL}, ()=>{ if(ticketCount('engr') < EQ_TRAIT_REROLL) return; state.tickets.engr -= EQ_TRAIT_REROLL; state.eqTrait[key].offers = eqTraitRollOffers(state.eqTrait[key].id); save(); sfx('enhance'); re(); }); });
+  document.getElementById('etList').addEventListener('click', ()=>openInfoOverlay('✴️ 장비 고유 효과 목록', '<div class="sub so-d" style="margin-bottom:6px;">후보는 '+Object.keys(EQ_TRAITS).length+'가지 중 무작위 '+EQ_TRAIT_OFFERS+'개 (지금 붙은 것은 빼고) · 값은 레전더리 / 신화</div><table class="so-t"><tr><th>효과</th><th>레전더리</th><th>신화</th></tr>'+Object.keys(EQ_TRAITS).map(id=>{ const d = EQ_TRAITS[id]; return '<tr><td>'+d.ic+' '+d.nm+'</td><td>'+d.d(d.v[0])+'</td><td>'+d.d(d.v[1])+'</td></tr>'; }).join('')+'</table>'));
+  const bk = document.getElementById('etBack'); if(bk) bk.addEventListener('click', back);
 }
 // ---- 초월 창
 function showTransModal(k){
@@ -8846,6 +8893,8 @@ function showEquipDetailModal(key){
     html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
   { const mx = EQ_SUB_LINES[i.rarity]||0, e = eqSubState(key); // (v298) 장비 부가 능력
     html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">🔷<b>부가 능력</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
+  if(eqTraitTier(key)>=0){ const t = eqTraitOf(key); // (v328) 장비 고유 효과
+    html += '<button class="aw-row eg-row" id="eqTraitOpen" style="margin-top:8px;">✴️<b>고유 효과</b><span class="sub">'+(t ? t.d.ic+' <b style="color:#ffe08a;">'+t.d.nm+'</b> · '+t.d.d(t.v) : '아직 없음 — 눌러서 고르기')+'</span><span class="aw-go'+(t?'':' on')+'">'+(t?'바꾸기':'고르기')+' ›</span></button>'; }
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?'🔓 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
@@ -8854,6 +8903,7 @@ function showEquipDetailModal(key){
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
   { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
   { const so = document.getElementById('eqSubOpen'); if(so && (EQ_SUB_LINES[i.rarity]||0)) so.addEventListener('click', ()=>showSubModal('eq', key, ()=>showEquipDetailModal(key))); }
+  { const to = document.getElementById('eqTraitOpen'); if(to) to.addEventListener('click', ()=>showEqTraitModal(key, ()=>showEquipDetailModal(key))); }
   const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>openFuseTab('equip', key));
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
   document.querySelectorAll('[data-unequip]').forEach(b=>b.addEventListener('click', ()=>{ unequipItem(b.dataset.unequip, i.slot); showEquipDetailModal(key); }));
@@ -9497,6 +9547,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:328, v:'4.2.0', date:'2026-10-02', secs:[
+    { t:'장비 고유 효과 (새 성장)', items:[ '레전더리·신화 장비마다 고유 효과 하나 — 장비 창의 「고유 효과」에서 후보 3개 중 골라 붙임 (처음 후보는 무료)', '후보 다시 뽑기 각인석 2개 · 지금 붙은 효과는 새 후보에서 빠짐 · 후보 안에서는 언제든 바꿀 수 있음', '끼운 정령에게 붙고 무기·방어구 각각 하나씩 · 부가 능력 상한과 따로 더해짐', '효과 (레전더리 / 신화): 선제 첫 행동 피해 +15% / +25% · 수호막 전투 시작 보호막 8% / 12% · 불씨 공격 시 화상 1중첩 · 독침 독 2% / 3% · 서리 빙결 6% / 10% · 저주 12% / 18% · 샘 라운드마다 회복 2% / 3% · 질풍 속도 +3 / +5 · 예리함 치명타 +5% / +8% · 흡혈 +4% / +6% · 철벽 받는 피해 −4% / −6%', '고유 효과 창에서 전체 목록 보기' ]}
+  ]},
   { build:327, v:'4.1.2', date:'2026-10-02', secs:[
     { t:'전투 연출', items:[ '이로운 효과도 몸에 표시 — 보호막(투명한 막) · 도발(발밑 붉은 고리) · 굳건함(금빛 테두리) · 가속(바람 줄) · 강화(오르는 주황 화살) · 재생(오르는 초록 십자)', '정령이 가만히 있을 때 숨 쉬듯 살짝 움직임', '쓰러질 때 번쩍이며 넘어지는 연출', '치명타 때 화면이 살짝 번쩍임' ]},
     { t:'아이콘', items:[ '보스 기믹 아이콘 일부를 그림으로 (잠식 · 빙결 · 화상 장판 · 분화 · 격노 · 덩굴 · 석화의 눈 · 봉인의 문양 · 용의 숨결 등)' ]},
@@ -13872,6 +13925,7 @@ function sanitizeState(){
     const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<4).slice(0,3); if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
     s.engrave = cleanBox(s.engrave, k=>!!SPIRITS[k]);
     s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)$/.test(k));
+    { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
     if(s.transPity && typeof s.transPity==='object') Object.keys(s.transPity).forEach(k=>{ const v = s.transPity[k]; if(SPIRITS[k] && Number.isFinite(v) && v>0) TP[k] = Math.min(1, v); }); s.transPity = TP;
     if(s.engrGift!==true){ s.tickets.engr = (s.tickets.engr||0) + 5; s.engrGift = true; } } // 새 성장 시작 선물 각인석 5
@@ -13911,7 +13965,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 327, APP_VERSION = '4.1.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 328, APP_VERSION = '4.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
