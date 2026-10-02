@@ -3288,6 +3288,7 @@ async function friendInit(){
     friendRefresh();
   }, ()=>{}));
   await friendJoinOnline();
+  friendMarkGoogle();
   friendRefresh();
 }
 async function friendJoinOnline(){ // (v314) 접속 표시 방 — 실패하면 다음에 다시 시도(netRetryNow)
@@ -3355,6 +3356,33 @@ function friendSetName(name){
   const el = document.getElementById('homeProfName'); if(el) el.textContent = name;
 }
 function friendList(){ return Object.keys(friendNet.friends||{}).filter(k=>friendNet.friends[k]); }
+// (v335) 구글 연동한 계정은 players/<나>/g = 1 로 표시 → 관리자 친구창 '전체'에 보임 (전체 목록 읽기는 관리자만 — Firebase 규칙)
+function friendMarkGoogle(){
+  if(!friendNet.on || !friendsAvailable() || !raidNet.db || typeof acc==='undefined' || !acc.linked || friendNet.gSent) return;
+  friendNet.gSent = true; raidNet.db.doc('players/'+raidNet.uid+'/g').set(1).catch(()=>{ friendNet.gSent = false; });
+}
+let admUsers = { list:null, busy:false, err:'' };
+async function admLoadUsers(){
+  if(!isAdmin() || !friendsAvailable() || admUsers.busy) return;
+  admUsers.busy = true; admUsers.err = '';
+  try{
+    const sn = await raidNet.db.doc('players').get(), v = (sn && sn.exists && sn.data() && typeof sn.data()==='object') ? sn.data() : {};
+    admUsers.list = Object.keys(v).filter(k=>k!==raidNet.uid && v[k] && typeof v[k]==='object' && v[k].g).map(k=>{ const p = v[k];
+      const u = { uid:k, name: (typeof p.name==='string' && p.name.trim()) ? p.name.slice(0,12) : '소환사-'+k.slice(0,4), code: (typeof p.code==='string' && /^[A-Z0-9]{8}$/.test(p.code)) ? p.code : '',
+        rep: (typeof p.rep==='string' && SPIRITS[p.rep]) ? p.rep : null, lv: (p.prof && Number.isFinite(p.prof.lv)) ? Math.floor(p.prof.lv) : null, seen: Number.isFinite(p.seen) ? p.seen : 0 };
+      if(!raidNet.names[k]) raidNet.names[k] = u.name;
+      if(!friendNet.seen[k]) friendNet.seen[k] = u.seen;
+      return u; });
+  }catch(e){ admUsers.err = (e && e.code) ? String(e.code) : '읽기 실패'; }
+  admUsers.busy = false;
+  if(activeTab==='friends') render();
+}
+function admUserRowHtml(u, isFr){
+  const o = friendOnline(u.uid), sent = state.friendSent && state.friendSent[u.uid];
+  return '<div class="fr-row"><span class="fr-avw" data-f-prof="'+u.uid+'" style="cursor:pointer;"><span class="fr-av">'+(u.rep?spArt(SPIRITS[u.rep]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span>'+(u.lv ? '<span class="fr-lv">'+u.lv+'</span>' : '')+'</span>'
+    + '<div class="fr-nm" data-f-prof="'+u.uid+'" style="cursor:pointer;"><b>'+escTxt(u.name)+'</b><small>'+friendSeenTxt(u.uid)+(u.code?' · '+u.code:'')+'</small></div>'
+    + (isFr ? '' : (sent ? '<small class="sub" style="flex-shrink:0;">요청함</small>' : (u.code ? '<button class="btn secondary small" data-adm-req="'+u.code+'">친구 요청</button>' : '')))+'</div>';
+}
 function friendOnline(id){ return friendNet.online.has(id); }
 // (v254) 마지막 접속: 켜져 있는 동안 1분마다 players/<나>/seen 에 시각 기록 → 친구 목록에 "N분 전"
 function friendSeenTxt(id){
@@ -3536,7 +3564,7 @@ function renderFriendsTab(){
   const invs = friendLiveInvites(), reqs = friendIncomingReqs(), nReq = invs.length + reqs.length;
   const rep = homeRepSpirit(); friendPushRep();
   h += '<div class="fr-me"><span class="fr-av big">'+(rep?spArt(SPIRITS[rep]):'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">'+uiIc('log')+' 복사</button></div>';
-  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
+  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].concat(isAdmin() ? [['all','전체',admUsers.list ? admUsers.list.length : null]] : []).map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-scroll fit-rest" data-below="0" data-min="160"><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
@@ -3553,6 +3581,18 @@ function renderFriendsTab(){
     if(reqs.length) h += '<div class="fr-cap">친구 요청</div><div class="fr-list">'+reqs.map(k=>{ const r = friendNet.reqs[k] || {};
       return '<div class="fr-row"><span class="fr-av">🙋</span><div class="fr-nm"><b>'+escTxt(String(r.name||raidNameOf(k)).slice(0,12))+'</b><small>친구 요청</small></div><button class="btn small" data-f-accept="'+k+'">수락</button><button class="fr-x" data-f-reject="'+k+'">거절</button></div>'; }).join('')+'</div>';
     if(sent.length) h += '<div class="fr-cap">보낸 요청 · 수락 대기 중</div><div class="fr-list">'+sent.map(k=>'<div class="fr-row"><span class="fr-av">📨</span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(state.friendSent[k].code?'코드 '+escTxt(state.friendSent[k].code)+' · ':'')+'수락을 기다리는 중</small></div><button class="fr-x" data-f-cancel="'+k+'">취소</button></div>').join('')+'</div>';
+  }else if(friendTab==='all' && isAdmin()){ // (v335) 관리자: 구글 로그인한 모든 유저 — 친구 / 친구 아님
+    if(!admUsers.list && !admUsers.busy && !admUsers.err) setTimeout(admLoadUsers, 0);
+    const ref = '<button class="fr-x" id="admUsersRe" style="font-size:12px; padding:3px 9px;">새로고침</button>';
+    if(admUsers.err) h += '<div class="fr-empty">전체 유저를 못 불러옴 ('+escTxt(admUsers.err)+')<br><small>Firebase 규칙에 관리자 전체 읽기가 있어야 함</small><br>'+ref+'</div>';
+    else if(!admUsers.list) h += '<div class="fr-empty">불러오는 중…</div>';
+    else {
+      const ord = (a,b)=> (friendOnline(b.uid)?1:0)-(friendOnline(a.uid)?1:0) || (friendNet.seen[b.uid]||0)-(friendNet.seen[a.uid]||0);
+      const frs = admUsers.list.filter(u=>friendNet.friends[u.uid]).sort(ord), oth = admUsers.list.filter(u=>!friendNet.friends[u.uid]).sort(ord);
+      const sec = (t, arr, isFr)=> '<div class="fr-cap">'+t+' '+arr.length+'</div>'+(arr.length ? '<div class="fr-list">'+arr.map(u=>admUserRowHtml(u, isFr)).join('')+'</div>' : '<div class="fr-empty" style="padding:14px;">없음</div>');
+      h += '<div class="fr-cap" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;"><span>구글 로그인 유저 '+admUsers.list.length+' · 접속 중 '+admUsers.list.filter(u=>friendOnline(u.uid)).length+'</span>'+ref+'</div>'
+        + '<div class="fr-scroll fit-rest" data-below="0" data-min="160"><div style="display:flex; flex-direction:column; gap:10px;">'+sec('친구', frs, true)+sec('친구 아님', oth, false)+'</div></div>';
+    }
   }else{
     h += '<div class="fr-card"><b>친구 코드로 추가</b><div class="sub">친구에게 받은 8자리 코드 입력 → 친구 요청</div>'
       + '<div class="fr-inrow"><input id="fCodeInput" maxlength="8" placeholder="친구 코드 8자리" autocapitalize="characters" autocomplete="off" class="fr-in code"><button class="btn small" id="fAddBtn">추가</button></div></div>';
@@ -3578,6 +3618,8 @@ function bindFriendPanel(){
   }));
   document.querySelectorAll('[data-f-duel]').forEach(el=>el.addEventListener('click', ()=>duelChallenge(el.dataset.fDuel)));
   document.querySelectorAll('[data-f-prof]').forEach(el=>el.addEventListener('click', ()=>showFriendProfile(el.dataset.fProf))); // (v263) 친구 프로필
+  if(q('admUsersRe')) q('admUsersRe').addEventListener('click', ()=>{ admUsers.list = null; admUsers.err = ''; render(); });
+  document.querySelectorAll('[data-adm-req]').forEach(el=>el.addEventListener('click', ()=>{ el.disabled = true; friendAddByCode(el.dataset.admReq); }));
 }
 // ===================== (v173) 결투 — 친구의 결투 덱과 한 판 (보상 없음) =====================
 function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(spiritHpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) } : null); }
@@ -4428,6 +4470,7 @@ async function accInit(){
   const fb = raidNet.fb; if(!fb || !fb.who) return;
   const w = fb.who(); acc.uid = w.uid; acc.linked = !w.anon; acc.email = w.email; acc.dev = accDevId(); acc.on = true;
   if(!acc.linked) return;
+  friendMarkGoogle();
   await accInitial();
   await accClaimSession(); accWatchSession();
 }
@@ -4448,7 +4491,7 @@ async function accLinkGoogle(){
   if(!r) return; // 리디렉트로 이동 중
   if(r.switched){ toast('이미 연동된 구글 계정 — 그 계정으로 전환'); try{ localStorage.removeItem(ACC_META_KEY); }catch(e){} setTimeout(()=>location.reload(), 900); return; } // 계정이 바뀌면 새로 시작해서 서버 진행과 맞춤
   acc.linked = true; acc.email = r.email; acc.uid = r.uid;
-  accSetMeta(0); await accPush(true); await accClaimSession(); accWatchSession();
+  accSetMeta(0); await accPush(true); await accClaimSession(); accWatchSession(); friendMarkGoogle();
   toast('구글 계정 연동 완료 — 다른 기기에서도 이어서 가능', 3500);
   if(document.getElementById('accBox')) showSettingsModal();
 }
