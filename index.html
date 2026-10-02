@@ -1747,6 +1747,8 @@ function refreshRewardBtnDot(stageIdx){
 // 상성은 "공격자 속성 vs 맞는 대상 속성". 대상은 항상 1명(어느 편이든), 모든 행동이 그 대상 기준으로 들어감.
 const SKILL_ROUND_CAP = 20;
 const ALLY_HP_MULT = 2.7;
+const HEAL1_C = [.16,.19,.22,.26,.30], HEAL1_T = [.16,.19,.22,.26,.30]; // (v317) 치유의 물결 — 시전자 최대체력 % + 대상 최대체력 % (일반~신화)
+const HEAL2_C = [0,0,.09,.12,.15], HEAL2_T = [0,0,.09,.12,.15]; // (v317) 해일의 축복 — 전체
 const ENEMY_HP_MULT = 2.5;
 const SKILL_ENEMY_STEP_MS = 750;
 const SKILL_ROUND_GAP_MS = 900;
@@ -4698,21 +4700,21 @@ const LINE_KITS = {
         g>=3?'터뜨린 뒤 십자 방향 대상에게 화상 1중첩':null
       ].filter(Boolean).join('<br>'),
       run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
-  water_a: { role:'치유', icon:ELEMENT_INFO.water.icon,
+  water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:ELEMENT_INFO.water.icon, cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
       desc:g=>[
-        '대상 회복 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
+        '대상 회복 (시전자 최대체력 '+pctTxt(HEAL1_C[g])+' + 대상 최대체력 '+pctTxt(HEAL1_T[g])+')',
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.heal(C.t,amt); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
+      run:C=>{ const amt = u=>pctHp(C.a)*C.P(HEAL1_C) + u.maxHp*C.P(HEAL1_T); C.heal(C.t,amt(C.t)); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt(o)); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt(u)*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:'🌊', cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
-        '대상 편 전체 회복 (시전자 최대체력 '+pctTxt([0,0,.12,.16,.20][g])+')',
+        '대상 편 전체 회복 (시전자 최대체력 '+pctTxt(HEAL2_C[g])+' + 각자 최대체력 '+pctTxt(HEAL2_T[g])+')',
         '해로운 효과 '+(g>=4?'전부':'1개')+' 제거'
       ].join('<br>'),
-      run:C=>{ const amt=pctHp(C.a)*C.P([0,0,.12,.16,.20]); C.side(C.tSide).forEach(u=>{ C.heal(u,amt); C.cleanse(u, C.g>=4?99:1); }); } } },
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.heal(u, pctHp(C.a)*C.P(HEAL2_C) + u.maxHp*C.P(HEAL2_T)); C.cleanse(u, C.g>=4?99:1); }); } } },
   water_b: { role:'빙결', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'한기', desc:g=>'공격한 대상 속도 −'+[0,5,6,8,10][g]+' (최대 3중첩)' },
     s1:{ name:'서리 화살', icon:'🏹', cd:3, kind:'harm', tag:()=> '둔화',
