@@ -6925,7 +6925,7 @@ function awakenBadge(lv){ return lv ? '<span class="aw-stars" title="각성 '+lv
 function awakenStars(key){ return awakenBadge(awakenLevel(key)); }
 function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
   const A = uiIc('awaken');
-  return gmSectionHtml('각성 효과', [{ic:'💪', nm:'단계마다', d:'정령력 +'+RARITY_ORDER.map(r=>RARITY_INFO[r].name+' '+Math.round(AWAKEN_RATE[r]*100)+'%').join(' · ')+' · 강화 한도 +1'}, {ic:'⚖️', nm:'다 키우면', d:'낮은 등급일수록 크게 올라 윗등급을 따라잡음 — 5단계 일반은 에픽~레전더리 사이, 레어는 레전더리~신화 사이'}])
+  return gmSectionHtml('각성 효과', [{ic:artIc('hp_power_up'), nm:'단계마다', d:'정령력 +'+RARITY_ORDER.map(r=>RARITY_INFO[r].name+' '+Math.round(AWAKEN_RATE[r]*100)+'%').join(' · ')+' · 강화 한도 +1'}, {ic:'⚖️', nm:'다 키우면', d:'낮은 등급일수록 크게 올라 윗등급을 따라잡음 — 5단계 일반은 에픽~레전더리 사이, 레어는 레전더리~신화 사이'}])
     + gmSectionHtml('단계별 해금', [
       {ic:A, nm:'1단계', d:'패시브'},
       {ic:A, nm:'2단계', d:'스킬1 대기 −1'},
@@ -6933,7 +6933,8 @@ function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
       {ic:A, nm:'4단계', d:'스킬2 대기 −1'},
       {ic:A, nm:'5단계', d:'스킬 한 등급 위 + 계열 효과'}])
     + gmSectionHtml('재료', [
-      {ic:'🧬', nm:'사본 + 정수', d:'단계마다 같은 정령 '+AWAKEN_COPIES.join('·')+'마리 (1마리는 남김)'},
+      {ic:artIc('hp_copies'), nm:'사본 + 정수', d:'단계마다 같은 정령 '+AWAKEN_COPIES.join('·')+'마리 (1마리는 남김)'},
+      {ic:memIc(), nm:RARITY_INFO.mythic.name+'·성좌', d:'사본 대신 그 정령의 기억 조각 '+AWAKEN_COPIES.map(n=>n*MEM_PER_COPY).join('·')+'개 + 정수'},
       {ic:'📌', nm:'합성', d:'각성은 합성 결과로 이어지지 않음'}]);
 }
 function unitPower(speciesKey){
@@ -8146,14 +8147,14 @@ function fuseRulesHtml(){ // (v219) 합성·계승 규칙 한눈에 — 가이�
   const pc = v=>Math.round(v*100)+'%', RN = r=>RARITY_INFO[r].name;
   const rates = '<div class="gm-rates">'+['rare','epic','legendary','mythic'].map(r=>'<span style="--rc:'+RARITY_HEX[r]+';"><small>'+RN(r)+'</small><b>'+pc(1-FUSE_FAIL[r])+'</b></span>').join('')+'</div>';
   return gmSectionHtml('합성 방법', [
-      {ic:'🧪', nm:'재료', d:'같은 등급 3개 → 한 등급 위 1개'},
-      {ic:'🎯', nm:'성공률', d:rates},
+      {ic:artIc('hp_material'), nm:'재료', d:'같은 등급 3개 → 한 등급 위 1개'},
+      {ic:artIc('hp_rate'), nm:'성공률', d:rates},
       {ic:uiIc('dice'), nm:'결과', d:'넣은 정령의 윗단계 '+pc(FUSE_OUT.same)+' · 같은 속성 다른 계열 '+pc(FUSE_OUT.sib)+' · 다른 속성 '+pc(FUSE_OUT.other)}])
     + gmSectionHtml('합성 실패', [
-      {ic:'💔', nm:'재료', d:'무작위 1개만 남음'},
-      {ic:'⬇️', nm:'강등', d:'남은 1개가 '+RN('epic')+' '+pc(FUSE_DOWN.epic)+' · '+RN('legendary')+' '+pc(FUSE_DOWN.legendary)+' 확률로 한 등급 아래로'},
-      {ic:'📈', nm:'보정', d:'실패할 때마다 다음 성공률 +'+Math.round(FUSE_PITY_STEP*100)+'%p'},
-      {ic:'🛡️', nm:'보호권', d:'체크하면 실패해도 재료 유지 ('+RN('legendary')+'·'+RN('mythic')+')'}])
+      {ic:artIc('hp_fail'), nm:'재료', d:'무작위 1개만 남음'},
+      {ic:artIc('hp_down'), nm:'강등', d:'남은 1개가 '+RN('epic')+' '+pc(FUSE_DOWN.epic)+' · '+RN('legendary')+' '+pc(FUSE_DOWN.legendary)+' 확률로 한 등급 아래로'},
+      {ic:artIc('hp_pity'), nm:'보정', d:'실패할 때마다 다음 성공률 +'+Math.round(FUSE_PITY_STEP*100)+'%p'},
+      {ic:artIc('hp_protect'), nm:'보호권', d:'체크하면 실패해도 재료 유지 ('+RN('legendary')+'·'+RN('mythic')+')'}])
     + gmSectionHtml('강화·각성 계승', [
       {ic:'⬆️', nm:'강화', d:'재료 강화를 모아 이어받음 · 같은 정령은 한 번만 셈<br>예) 서로 다른 +10 셋 → +10 · 같은 정령 +10 셋 → +3'},
       {ic:'⭐', nm:'각성', d:'이어받지 않음'}])
@@ -12042,9 +12043,9 @@ function renderWorldBossTab(){
     h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
       return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
     h += gmSectionHtml('도전 보상', [
-      {ic:'🎯', nm:'참여', when:'도전마다', d:'정수 100 · 강화석 10 · 세계 룬석 1'},
-      {ic:'💥', nm:'피해 보너스', when:'도전마다', d:'준 피해 3천 · 1만 · 3만 · 6만마다 세계 룬석 +1 (한 번에 최대 5)'},
-      {ic:'⚔️', nm:'처치자(막타)', when:'한 주 1명', d:rewardBrief(WB_KILL_RW)}]);
+      {ic:artIc('hp_join'), nm:'참여', when:'도전마다', d:'정수 100 · 강화석 10 · 세계 룬석 1'},
+      {ic:artIc('hp_bonus'), nm:'피해 보너스', when:'도전마다', d:'준 피해 3천 · 1만 · 3만 · 6만마다 세계 룬석 +1 (한 번에 최대 5)'},
+      {ic:artIc('hp_finisher'), nm:'처치자(막타)', when:'한 주 1명', d:rewardBrief(WB_KILL_RW)}]);
   } else if(wbTab==='rank'){
     const ps = Object.entries(d.p||{}).map(([uid,v])=>({ uid, nm: String((v&&v.name)||'소환사').slice(0,12), dmg: Number(v&&v.dmg)||0, best: Number(v&&v.best)||0, n: Number(v&&v.n)||0 })).sort((a,b)=>b.dmg-a.dmg);
     const myRank = ps.findIndex(x=>x.uid===raidNet.uid);
@@ -12060,8 +12061,8 @@ function renderWorldBossTab(){
     h += bossSkillSectionHtml('wboss_'+ph.g, '이번 주 보스 스킬 · '+ph.nm); // (v270) · (v326) 다음 주 보스 칸은 맨 아래로 — 위에 있으면 아래 스킬이 다음 주 것처럼 보였음
     h += gmSectionHtml('규칙', [
       {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 보스는 주마다 바뀜(월요일)'},
-      {ic:'⏱️', nm:'한 번 '+WB_ROUNDS+'라운드', d:'하루 '+wbTries()+'번 · 5라운드 동안 준 피해가 기록됨'},
-      {ic:'⚡', nm:'소탕', d:'오늘 한 번 직접 도전하면, 남은 도전은 오늘 최고 피해 그대로 바로 처리 가능 (보상 같음) · 고점을 노리면 계속 직접 도전'},
+      {ic:artIc('hp_rounds'), nm:'한 번 '+WB_ROUNDS+'라운드', d:'하루 '+wbTries()+'번 · 5라운드 동안 준 피해가 기록됨'},
+      {ic:artIc('hp_sweep'), nm:'소탕', d:'오늘 한 번 직접 도전하면, 남은 도전은 오늘 최고 피해 그대로 바로 처리 가능 (보상 같음) · 고점을 노리면 계속 직접 도전'},
       {ic:'✨', nm:'오늘 약점', d:elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · 날마다 바뀜'}]);
     h += gmSectionHtml('다음 주 보스', [{ic:bossImg(nx.g, 'gm-boss', '🌍'), nm:nx.nm, d:nx.d}], 'wbnext'); // (v281) 이번 주 보스는 위에 이미 보이니 다음 주만 · 아이콘은 보스 그림
   }
