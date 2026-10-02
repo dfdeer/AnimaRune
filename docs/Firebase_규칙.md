@@ -97,6 +97,8 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
     },
     // 지금 이 계정으로 접속한 기기 (한 번에 한 기기)
     "sessions": {
+      // (v336) 전체 목록은 관리자만 읽기 — 관리자 친구창 '전체'에서 구글 연동 계정 판별 (세션은 구글 연동 계정만 있음)
+      ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
