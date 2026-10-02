@@ -3356,19 +3356,23 @@ async function admLoadUsers(){
       const u = { uid:k, google: !!(p.g || ses[k]), name: (typeof p.name==='string' && p.name.trim()) ? p.name.slice(0,12) : '소환사-'+k.slice(0,4), code: (typeof p.code==='string' && /^[A-Z0-9]{8}$/.test(p.code)) ? p.code : '',
         rep: (typeof p.rep==='string' && SPIRITS[p.rep]) ? p.rep : null, lv: (p.prof && Number.isFinite(p.prof.lv)) ? Math.floor(p.prof.lv) : null, seen: Number.isFinite(p.seen) ? p.seen : 0 };
       if(!raidNet.names[k]) raidNet.names[k] = u.name;
-      if(!friendNet.seen[k]) friendNet.seen[k] = u.seen;
+      if(!(friendNet.seen[k] > u.seen)) friendNet.seen[k] = u.seen;
       return u; });
   }catch(e){ admUsers.err = (e && e.code) ? String(e.code) : '읽기 실패'; }
-  admUsers.busy = false;
+  admUsers.busy = false; admUsers.at = serverNow();
   if(activeTab==='friends') render();
 }
+// 목록은 불러온 순간의 기록이라, 불러온 뒤 지난 시간만큼은 봐줌 (접속 표시는 실시간)
+function admOnline(id){ if(!friendNet.online.has(id)) return false; const t = friendNet.seen[id]; return Number.isFinite(t) && t>0 && serverNow()-t < 3*60000 + Math.max(0, serverNow()-(admUsers.at||0)); }
 function admUserRowHtml(u, isFr){
-  const o = friendOnline(u.uid), sent = state.friendSent && state.friendSent[u.uid];
+  const o = admOnline(u.uid), sent = state.friendSent && state.friendSent[u.uid];
   return '<div class="fr-row"><span class="fr-avw" data-f-prof="'+u.uid+'" style="cursor:pointer;"><span class="fr-av">'+(u.rep?spArt(SPIRITS[u.rep]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span>'+(u.lv ? '<span class="fr-lv">'+u.lv+'</span>' : '')+'</span>'
-    + '<div class="fr-nm" data-f-prof="'+u.uid+'" style="cursor:pointer;"><b>'+escTxt(u.name)+(isFr && !u.google ? ' <small style="opacity:.6;">익명</small>' : '')+'</b><small>'+friendSeenTxt(u.uid)+(u.code?' · '+u.code:'')+'</small></div>'
+    + '<div class="fr-nm" data-f-prof="'+u.uid+'" style="cursor:pointer;"><b>'+escTxt(u.name)+(isFr && !u.google ? ' <small style="opacity:.6;">익명</small>' : '')+'</b><small>'+(o ? '접속 중' : friendSeenTxt(u.uid))+(u.code?' · '+u.code:'')+'</small></div>'
     + (isFr ? '' : (sent ? '<small class="sub" style="flex-shrink:0;">요청함</small>' : (u.code ? '<button class="btn secondary small" data-adm-req="'+u.code+'">친구 요청</button>' : '')))+'</div>';
 }
-function friendOnline(id){ return friendNet.online.has(id); }
+// (v338) 접속 표시(presence)만 보면 안 됨 — 예전 버전 앱이나 뒤에 켜 둔 창이 남긴 접속 표시가 지워지지 않고 남아 있어서 아무도 안 하는데 '접속 중'으로 보였음.
+// 지금 버전은 화면을 보는 동안 1분마다 players/<uid>/seen 을 남기므로, 접속 표시 + 마지막 기록이 3분 안일 때만 접속 중
+function friendOnline(id){ if(!friendNet.online.has(id)) return false; const t = friendNet.seen[id]; return Number.isFinite(t) && t>0 && serverNow()-t < 3*60000; }
 // (v254) 마지막 접속: 켜져 있는 동안 1분마다 players/<나>/seen 에 시각 기록 → 친구 목록에 "N분 전"
 function friendSeenTxt(id){
   if(friendOnline(id)) return '접속 중';
@@ -3395,7 +3399,7 @@ async function showFriendProfile(k){
   const body = p=>'<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
     + '<div class="pf-id"><div class="pf-name">'+escTxt(raidNameOf(k))+'</div><div class="sub">'+(p?'계정 Lv.'+p.lv:'계정 Lv.—')+(sp?' · 대표 '+sp.name:'')+'</div><div class="sub" style="font-size:11px;">'+friendSeenTxt(k)+'</div></div></div>'
     + '<div class="pf-stats">'+stat('보유 정령', p?p.own:'—')+stat('도감', p?p.dex+'/'+Object.keys(SPIRITS).length:'—')+stat('클리어', p?p.clear:'—')+stat('탑 최고', p?p.tower+'층':'—')+'</div>'
-    + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">친구가 최신 버전으로 접속하면 기록이 보임</div>')
+    + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">아직 기록 없음 — 최신 버전으로 접속하면 보임</div>')
     + codeRow();
   openInfoOverlay('프로필', body(null));
   let pv = null;
@@ -3572,12 +3576,12 @@ function renderFriendsTab(){
     if(admUsers.err) h += '<div class="fr-empty">전체 유저를 못 불러옴 ('+escTxt(admUsers.err)+')<br><small>Firebase 규칙에 관리자 전체 읽기가 있어야 함</small><br>'+ref+'</div>';
     else if(!admUsers.list) h += '<div class="fr-empty">불러오는 중…</div>';
     else {
-      const ord = (a,b)=> (friendOnline(b.uid)?1:0)-(friendOnline(a.uid)?1:0) || (friendNet.seen[b.uid]||0)-(friendNet.seen[a.uid]||0);
+      const ord = (a,b)=> (admOnline(b.uid)?1:0)-(admOnline(a.uid)?1:0) || (friendNet.seen[b.uid]||0)-(friendNet.seen[a.uid]||0);
       const all = admUsers.list, frs = all.filter(u=>friendNet.friends[u.uid]).sort(ord), oth = all.filter(u=>!friendNet.friends[u.uid] && u.google).sort(ord), anon = all.filter(u=>!friendNet.friends[u.uid] && !u.google).sort(ord);
       const CAP = 150; // 익명 계정은 많을 수 있어서 접속 중·최근 접속 순으로 앞쪽만
       const sec = (t, arr, isFr)=> '<div class="fr-cap">'+t+' '+arr.length+'</div>'+(arr.length ? '<div class="fr-list">'+arr.slice(0,CAP).map(u=>admUserRowHtml(u, isFr)).join('')+'</div>'+(arr.length>CAP ? '<div class="sub" style="text-align:center; font-size:11px;">외 '+(arr.length-CAP)+'명 (오래전 접속)</div>' : '') : '<div class="fr-empty" style="padding:14px;">없음</div>');
       const nG = all.filter(u=>u.google).length;
-      h += '<div class="fr-cap" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;"><span>구글 '+nG+' · 익명 '+(all.length-nG)+' · 접속 중 '+all.filter(u=>friendOnline(u.uid)).length+'</span>'+ref+'</div>'
+      h += '<div class="fr-cap" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;"><span>구글 '+nG+' · 익명 '+(all.length-nG)+' · 접속 중 '+all.filter(u=>admOnline(u.uid)).length+'</span>'+ref+'</div>'
         + '<div class="fr-scroll fit-rest" data-below="0" data-min="160"><div style="display:flex; flex-direction:column; gap:10px;">'+sec('친구', frs, true)+sec('구글 · 친구 아님', oth, false)+sec('익명 · 친구 아님', anon, false)+'</div></div>';
     }
   }else{
@@ -9707,6 +9711,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:338, v:'4.5.4', date:'2026-10-03', secs:[
+    { t:'친구', items:[ '게임을 안 하는 친구가 계속 \'접속 중\'으로 보이던 것 수정 — 접속 표시와 마지막 접속 기록(3분 안)을 같이 확인', '기록이 없는 프로필 안내 문구 다듬기' ]}
+  ]},
   { build:336, v:'4.5.3', date:'2026-10-03', secs:[
     { t:'정령 파견', items:[ '파견 중인 칸의 정령 그림이 잘리던 것 수정 · 칸마다 등급 색 테두리' ]}
   ]},
@@ -14170,7 +14177,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 337, APP_VERSION = '4.5.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 338, APP_VERSION = '4.5.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
