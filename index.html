@@ -1182,7 +1182,7 @@
   .dp-slots{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;} .dp-slot{min-height:104px; padding:7px; border-radius:12px; background:#ffffff0c; border:1px solid #ffffff1a; display:flex; flex-direction:column; gap:4px; font-size:11px;} .dp-slot.empty{align-items:center; justify-content:center; color:var(--sub); border-style:dashed;} .dp-slot.ready{border-color:#ffd557; box-shadow:0 0 10px #ffd55755;}
   .dp-sh{display:flex; flex-direction:column; gap:2px;} .dp-sh b{font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .dp-sh i{font-style:normal; font-size:9px; color:#9fe8c0;} .dp-team{display:flex; gap:2px;} .dp-team span{width:24px; height:24px; border-radius:6px; overflow:hidden; background:#0004;} .dp-team .spimg{width:100%; height:100%; object-fit:cover;}
   .dp-bar{height:5px; border-radius:3px; background:#0006; overflow:hidden;} .dp-bar div{height:100%; background:linear-gradient(90deg,#57d3ff,#9fe8c0);} .dp-slot small{color:var(--sub); font-size:10px;} .dp-slot .btn{margin:0; padding:4px 0;}
-  .dp-mis{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .dp-mis.used{opacity:.5;} .dp-mic{font-size:28px; width:36px; text-align:center;}
+  .dp-mis{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .dp-mis.used{background:linear-gradient(135deg,#221f4a,#191739);} .dp-mis.used > *{opacity:.55;} .dp-mis.used .dp-mic{filter:grayscale(.7);} /* (v334) 칸 전체를 반투명하게 하면 뒤 배경이 비쳐 보여서 → 칸은 그대로, 안의 내용만 흐리게 */ .dp-mic{font-size:28px; width:36px; text-align:center;}
   .dp-pickrow{display:flex; justify-content:center; gap:8px; margin:8px 0;} .dp-pk{width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; border:2px dashed #ffffff33; color:var(--sub); font-size:20px; background:#0003; padding:0; overflow:hidden;} .dp-pk.on{border:2px solid #ffd557;} .dp-pk .spimg{width:100%; height:100%; object-fit:cover;}
   .tr-rule{text-align:center; margin:6px 0; padding:6px 8px; border-radius:10px; background:#ffd55718; border:1px solid #ffd55755; color:#ffe7a0; font-size:12px; font-weight:800;}
   .tr-intro{text-align:center; margin:6px 4px 2px; font-size:12.5px; line-height:1.5; color:#dcd9f5;}
@@ -9658,6 +9658,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:334, v:'4.5.1', date:'2026-10-03', secs:[
+    { t:'정령 파견', items:[ '스크롤하면 화면 절반이 어둡게 덮이던 것 수정 — 위에 고정되는 부분을 제목까지만', '이미 보낸 임무 칸이 반투명해서 뒤 배경이 비치던 것 — 칸은 그대로 두고 글자만 흐리게' ]}
+  ]},
   { build:333, v:'4.5.0', date:'2026-10-03', secs:[
     { t:'계정 저장 버그 수정', items:[ '인터넷이 끊긴 동안 한 진행이 다시 연결돼도 서버에 안 올라가던 것 수정 — 연결되거나 앱으로 돌아오면 바로 올림 (실패하면 30초마다 다시)', '다른 기기에서 접속한 뒤 「이 기기에서 이어 하기」를 누르면 이 기기에만 있던 진행이 말없이 사라지던 것 수정 — 이제 이 기기 진행과 서버 진행 중 고름', '설정 계정 칸에 「덮어쓰기 전 진행 되살리기」 — 서버 진행으로 바뀌기 직전의 이 기기 진행을 최근 3개까지 보관' ]}
   ]},
@@ -11599,13 +11602,13 @@ function rwInline(rw){ return rewardBrief(rw); }
 function renderDispatchTab(){
   if(!isUnlocked('dispatch')) return lockedFeatureScreenHtml('dispatch');
   const d = dispatchState(), board = dispatchBoard();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">'+uiIc('dispatch')+' 정령 파견</div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 돌아올 때까지 못 씀 · 조건 맞추면 보상 ×1.5</div></div>';
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">'+uiIc('dispatch')+' 정령 파견</div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 돌아올 때까지 못 씀 · 조건 맞추면 보상 ×1.5</div></div>' + TOP_MARK; // (v334) 위에 고정은 제목까지만 — 예전엔 파견 칸까지 고정돼 스크롤하면 화면 절반이 어두운 고정 영역으로 덮였음
   h += '<div class="dp-slots">'+Array.from({length:dispatchSlots()}, (_,i)=>{ const s = d.slots[i];
     if(!s) return '<div class="dp-slot empty"><span>빈 칸</span></div>';
     const left = s.end - Date.now(), done = left<=0, pct = Math.min(100, (Date.now()-s.start)/(s.end-s.start)*100);
     return '<div class="dp-slot'+(done?' ready':'')+'"><div class="dp-sh"><b>'+s.ic+' '+s.nm+'</b>'+(s.bonus?'<i>보너스</i>':'')+'</div><div class="dp-team">'+s.keys.map(k=>'<span>'+spArt(SPIRITS[k])+'</span>').join('')+'</div>'
       + '<div class="dp-bar"><div style="width:'+pct+'%;"></div></div>'+(done ? '<button class="btn small gold" data-dp-claim="'+i+'">받기</button>' : '<small>'+fmtLeft(left)+' 남음</small><button class="dp-cancel" data-dp-cancel="'+i+'">취소</button>')+'</div>'; }).join('')+'</div>';
-  h += TOP_MARK + '<div class="fr-cap" style="margin:10px 2px 6px;">오늘 임무 · 자정에 새로</div><div class="dg-list">';
+  h += '<div class="fr-cap" style="margin:10px 2px 6px;">오늘 임무 · 자정에 새로</div><div class="dg-list">';
   board.forEach(m=>{
     const used = d.done[m.id];
     h += '<div class="dp-mis'+(used?' used':'')+'"><div class="dp-mic">'+m.ic+'</div><div class="dg-mid"><div class="dg-nm"><b>'+m.nm+'</b><small>'+m.dur+'시간 · '+m.need+'마리</small></div>'
@@ -14109,7 +14112,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 333, APP_VERSION = '4.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 334, APP_VERSION = '4.5.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
