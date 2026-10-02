@@ -9442,6 +9442,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:326, v:'4.1.1', date:'2026-10-02', secs:[
+    { t:'월드 보스', items:[ '현황 탭 순서 정리 — 이번 주 보스 스킬 · 규칙 · 다음 주 보스 순 (다음 주 보스가 위에 있어 아래 스킬이 다음 주 것처럼 보이던 것)' ]}
+  ]},
   { build:325, v:'4.1.0', date:'2026-10-02', secs:[
     { t:'패스', items:[ '5레벨마다 별빛 조각 추가 — 일반 10개 · 프리미엄 20개 (5·10·15·20·25·30레벨, 시즌마다 일반 60 · 프리미엄 120)' ]}
   ]},
@@ -11741,13 +11744,13 @@ function renderWorldBossTab(){
         + '<div class="shop-lim">'+(left===null ? '<span class="inf">∞</span> 무제한' : (soldOut ? '이번 주 완료' : '주 '+left+'/'+it.limit))+'</div><span class="shop-price">'+uiIc('wbgem')+' '+it.price+'</span></button>'; }).join('')+'</div>';
     h += gmSectionHtml('월드 보스 전용 룬 (세계 등급)', Object.keys(WORLD_RUNES).map(k=>({ic:WORLD_RUNES[k].icon, nm:WORLD_RUNES[k].name, d:WORLD_RUNES[k].desc})));
   } else {
-    h += gmSectionHtml('다음 주 보스', [{ic:bossImg(nx.g, 'gm-boss', '🌍'), nm:nx.nm, d:nx.d}], 'wbnext'); // (v281) 이번 주 보스는 위에 이미 보이니 다음 주만 · 아이콘은 보스 그림
-    h += bossSkillSectionHtml('wboss_'+ph.g, '보스 스킬'); // (v270)
+    h += bossSkillSectionHtml('wboss_'+ph.g, '이번 주 보스 스킬 · '+ph.nm); // (v270) · (v326) 다음 주 보스 칸은 맨 아래로 — 위에 있으면 아래 스킬이 다음 주 것처럼 보였음
     h += gmSectionHtml('규칙', [
       {ic:'🌍', nm:'공동 보스', d:'모든 플레이어가 한 주 동안 같은 보스를 함께 깎음 · 보스는 주마다 바뀜(월요일)'},
       {ic:'⏱️', nm:'한 번 '+WB_ROUNDS+'라운드', d:'하루 '+wbTries()+'번 · 5라운드 동안 준 피해가 기록됨'},
       {ic:'⚡', nm:'소탕', d:'오늘 한 번 직접 도전하면, 남은 도전은 오늘 최고 피해 그대로 바로 처리 가능 (보상 같음) · 고점을 노리면 계속 직접 도전'},
       {ic:'✨', nm:'오늘 약점', d:elIc(weak)+' '+ELEMENT_INFO[weak].name+' 정령 공격력 ×1.5 · 날마다 바뀜'}]);
+    h += gmSectionHtml('다음 주 보스', [{ic:bossImg(nx.g, 'gm-boss', '🌍'), nm:nx.nm, d:nx.d}], 'wbnext'); // (v281) 이번 주 보스는 위에 이미 보이니 다음 주만 · 아이콘은 보스 그림
   }
   return h + '</div>';
 }
@@ -13846,7 +13849,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 325, APP_VERSION = '4.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 326, APP_VERSION = '4.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
