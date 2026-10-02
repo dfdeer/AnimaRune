@@ -8924,7 +8924,7 @@ const SHARE_IC = '<svg viewBox="0 0 24 24" width="18" height="18" style="vertica
 function installStepsHtml(kind){
   const st = l=>'<ol class="inst-steps">'+l.map(x=>'<li>'+x+'</li>').join('')+'</ol>';
   if(kind==='inapp') return '<div class="sub">카카오톡·네이버 같은 앱 안에서 열린 화면은 홈 화면에 추가할 수 없음</div>'+st(['오른쪽 아래(또는 위) <b>⋮</b> 또는 <b>공유</b> 누르기', '<b>다른 브라우저로 열기</b> — 아이폰은 <b>Safari</b>, 안드로이드는 <b>Chrome</b>', '열린 화면에서 다시 ☰ → 설정 → 📲 홈 화면에 추가']);
-  if(kind==='ios') return st(['<b>Safari</b>로 열기 (다른 앱 안이면 Safari로 먼저 열기)', '아래쪽(아이패드는 위쪽) <b>공유</b> '+SHARE_IC+' 누르기 — 안 보이면 주소창 옆 <b>⋯</b> → 공유', '목록을 내려 <b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>', '이제부터 홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
+  if(kind==='ios') return '<div class="inst-warn" style="margin-top:10px;">🍎 아이폰은 바로 설치 버튼이 없음 — 아래 순서대로 직접 추가</div>'+st(['<b>Safari</b>로 열기 (다른 앱 안이면 Safari로 먼저 열기)', '아래쪽(아이패드는 위쪽) <b>공유</b> '+SHARE_IC+' 누르기 — 안 보이면 주소창 옆 <b>⋯</b> → 공유', '목록을 내려 <b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>', '이제부터 홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
   if(kind==='samsung') return st(['아래쪽 <b>≡</b> 메뉴 누르기', '<b>현재 페이지 추가</b> → <b>홈 화면</b>', '홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
   if(kind==='android') return st(['오른쪽 위 <b>⋮</b> 누르기', '<b>홈 화면에 추가</b> 또는 <b>앱 설치</b> → <b>설치</b>', '홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
   return st(['주소창 오른쪽의 <b>설치</b> 아이콘(모니터에 화살표) 누르기 — 없으면 <b>⋮</b> 메뉴 → <b>앱 설치</b>(크롬) 또는 <b>⋯</b> → 앱 → <b>이 사이트를 앱으로 설치</b>(엣지)', '바탕화면·시작 메뉴의 <b>아니마룬</b>으로 열기']);
@@ -8961,7 +8961,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
-  if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">(앱처럼 쓰기)</span></button>'; // (v312)
+  if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
   if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">🔔 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">🔊 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">📤 세이브 내보내기</button>';
