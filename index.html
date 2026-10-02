@@ -1181,6 +1181,15 @@
   .dg-rw{margin-top:8px; font-size:12px; text-align:center; color:var(--sub);}
   .ch-card{position:relative; display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2e2a6a,#1d1b48); border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d;} .ch-card > .uic{width:40px; height:40px;} .ch-card span{flex:1; display:flex; flex-direction:column; gap:2px;} .ch-card b{font-size:15px;} .ch-card small{font-size:11px; color:var(--sub);} .ch-card em{font-style:normal; font-size:22px; color:var(--sub);} .ch-card em .uic{width:18px; height:18px;} .ch-card.lock{opacity:.6;} .ch-dot{position:absolute; top:8px; left:8px; width:9px; height:9px; border-radius:50%; background:#ff5757;}
   .upd-bar{position:fixed; left:50%; transform:translateX(-50%); top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:998; padding:8px 14px; border-radius:999px; border:1px solid #ffd557; background:#2b2760f0; color:#ffe7a0; font-size:13px; font-weight:800; box-shadow:0 6px 18px #000a; white-space:nowrap; cursor:pointer;}
+  /* 시작 화면 (불러오는 동안) */
+  #splash{position:fixed; inset:0; z-index:100000; background:#0b1238 url(assets/splash.webp) 50% 100% / cover no-repeat; display:flex; flex-direction:column; align-items:center; transition:opacity .45s ease;}
+  #splash.out{opacity:0; pointer-events:none;}
+  #splash .sp-t{margin-top:19vh; text-align:center; color:#fff; font-family:var(--fun, "Jua"), sans-serif; font-size:clamp(40px, 13vw, 64px); line-height:1; text-shadow:0 3px 0 #3b2a7a, 0 0 18px #b48cff, 0 0 36px #6a4bd8aa; letter-spacing:2px;}
+  #splash .sp-s{margin-top:8px; text-align:center; color:#ffe7a0; font-family:var(--fun, "Jua"), sans-serif; font-size:clamp(15px, 4.6vw, 22px); letter-spacing:4px; text-shadow:0 2px 0 #3b2a7a, 0 0 10px #ffd35a88;}
+  #splash .sp-bar{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom, 0px) + 5vh); width:min(62vw, 300px); height:8px; border-radius:99px; background:#0d0b22b0; border:1px solid #ffffff40; overflow:hidden;}
+  #splash .sp-bar i{display:block; height:100%; width:8%; border-radius:99px; background:linear-gradient(90deg, #b48cff, #ffd35a); animation:spLoad 2.4s cubic-bezier(.2,.7,.3,1) forwards;}
+  #splash.done .sp-bar i{width:100%; animation:none; transition:width .25s ease;}
+  @keyframes spLoad{to{width:88%;}}
   .rw-tip{position:fixed; z-index:999; max-width:260px; padding:6px 10px; border-radius:9px; background:#0d0b22f0; border:1px solid #ffd55788; color:#fff; font-size:12px; font-weight:700; line-height:1.4; box-shadow:0 4px 14px #0008; pointer-events:none; animation:rwTip .15s ease-out;}
   @keyframes rwTip{from{opacity:0; transform:translateY(4px);}}
   .gm-head{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:#ffffff08; margin-bottom:4px;}
@@ -1502,6 +1511,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 </script>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sp-t">아니마룬</div><div class="sp-s">AnimaRune</div><div class="sp-bar"><i></i></div></div>
 <div id="app">
   <header>
     <div class="title"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="tname"> 아니마룬</span></div>
@@ -3839,6 +3849,10 @@ window.addEventListener('resize', relayoutScreens);
 window.addEventListener('orientationchange', ()=>setTimeout(relayoutScreens, 250));
 window.addEventListener('pageshow', relayoutScreens);
 window.addEventListener('load', relayoutScreens);
+/* 시작 화면: 다 불러오면 막대를 채우고 사라짐 (최소 0.9초, 늦어도 8초 뒤엔 걷힘) */
+(function(){ const sp = document.getElementById('splash'); if(!sp) return; const t0 = Date.now(); let gone = false;
+  const hide = ()=>{ if(gone) return; gone = true; sp.classList.add('done'); setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 500); }, Math.max(250, 900-(Date.now()-t0))); };
+  if(document.readyState==='complete') hide(); else window.addEventListener('load', hide); setTimeout(hide, 8000); })();
 if(window.visualViewport) window.visualViewport.addEventListener('resize', relayoutScreens);
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(relayoutScreens).catch(()=>{});
 if(window.ResizeObserver){ const ro = new ResizeObserver(relayoutScreens); ['header','#levelBar','nav','#main'].forEach(sel=>{ const e = document.querySelector(sel); if(e) ro.observe(e, {box:'border-box'}); }); ro.observe(document.body, {box:'border-box'}); } // 여백(안전 영역) 변화까지 잡으려고 border-box 기준
