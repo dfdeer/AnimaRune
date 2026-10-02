@@ -2567,8 +2567,8 @@ function makeActCtx(sf, a, tSide, tIdx){
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
   C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); }; // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
-  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); return true; };
-  C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); };
+  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); return true; };
+  C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, text:label }); };
   C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','seal','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
@@ -2600,7 +2600,7 @@ function performAction(sf, a, act, tSide, tIdx){
     pushLog(sf, logUnitName(a.side, a)+' '+sk.name+' → '+logUnitName(tSide, C.t));
   }
   if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
-  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, hits:C.hits });
+  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
 }
@@ -4308,7 +4308,9 @@ const ACC_META_KEY = 'animarune_cloud', ACC_DEV_KEY = 'animarune_dev';
 let acc = { on:false, linked:false, email:'', uid:null, dev:null, base:null, kicked:false, busy:false, timer:null, lastPush:0, unsub:null };
 function accDevId(){ let d = null; try{ d = localStorage.getItem(ACC_DEV_KEY); if(!d){ d = Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem(ACC_DEV_KEY, d); } }catch(e){ d = d || 'tmp'+Math.random().toString(36).slice(2); } return d; }
 function accMeta(){ try{ const m = JSON.parse(localStorage.getItem(ACC_META_KEY)||'null'); return (m && m.uid===acc.uid) ? m : null; }catch(e){ return null; } }
-function accSetMeta(base){ acc.base = base; try{ localStorage.setItem(ACC_META_KEY, JSON.stringify({ uid: acc.uid, base, savedRev: state.saveRev||0 })); }catch(e){} }
+function accSetMeta(base, rev){ acc.base = base; try{ localStorage.setItem(ACC_META_KEY, JSON.stringify({ uid: acc.uid, base, savedRev: rev!==undefined ? rev : (state.saveRev||0) })); }catch(e){} }
+// (v333) 이 기기에 서버로 아직 안 올라간 진행이 있는지 (지하철 등 오프라인에서 한 것)
+function accUnsynced(){ const m = accMeta(); return !!(acc.linked && m && (state.saveRev||0)!==m.savedRev); }
 function accRef(p){ return raidNet.fb.ref(raidNet.fb.rtdb, p+'/'+acc.uid); }
 function accFresh(s){ return !(s.lifetimeSummons>0) && !Object.keys(s.stageBest||{}).some(k=>s.stageBest[k]); } // 아직 아무것도 안 한 세이브
 function accSummary(s){
@@ -4316,8 +4318,14 @@ function accSummary(s){
   const cleared = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).length;
   return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · '+uiIc('essence')+' '+Math.floor(s.essence||0)+' · 탑 '+(s.towerBest||0)+'층';
 }
+// (v333) 서버 진행으로 덮기 전 기기 진행을 최근 3개까지 보관 — 설정 「덮어쓰기 전 진행 되살리기」 (예전엔 1개뿐이라 다음에 켤 때 또 덮이면 사라졌음)
+const accBakKey = ()=> SAVE_KEY+'_beforeCloudList'; // 함수로: SAVE_KEY가 이 줄보다 아래에서 정의됨
+function accBackups(){ let L = []; try{ L = JSON.parse(localStorage.getItem(accBakKey())||'[]') || []; }catch(e){ L = []; }
+  if(!L.length){ try{ const o = JSON.parse(localStorage.getItem(SAVE_KEY+'_beforeCloud')||'null'); if(o && o.raw) L = [o]; }catch(e){} } // 예전 1개짜리 보관
+  return L.filter(b=>b && typeof b.raw==='string'); }
+function accBackupNow(){ try{ const raw = localStorage.getItem(SAVE_KEY); if(!raw) return; const L = accBackups(); if(L.some(b=>b.raw===raw)) return; L.unshift({ t: Date.now(), raw }); localStorage.setItem(accBakKey(), JSON.stringify(L.slice(0, 3))); }catch(e){} }
 function accApply(parsed){ // 서버 세이브를 이 기기에 적용(적용 전 기기 세이브는 따로 보관)
-  try{ localStorage.setItem(SAVE_KEY+'_beforeCloud', JSON.stringify({ t: Date.now(), raw: localStorage.getItem(SAVE_KEY) })); }catch(e){}
+  accBackupNow();
   state = mergeWithDefaults(defaultState(), parsed); sanitizeState(); save();
 }
 async function accInitial(){ // 켤 때: 서버 세이브와 맞추기
@@ -4348,25 +4356,29 @@ async function accPush(force){ // 서버에 저장 — 다른 기기가 그사�
   if(!acc.on || !acc.linked || acc.kicked || acc.busy) return false;
   acc.busy = true; clearTimeout(acc.timer);
   try{
-    const data = encodeSaveString(), base = acc.base||0, dev = acc.dev;
+    const data = encodeSaveString(), base = acc.base||0, dev = acc.dev, rev0 = state.saveRev||0;
     let conflict = false;
     const res = await raidNet.fb.runTransaction(accRef('saves'), cur=>{
       if(cur && !force && (cur.rev||0)!==base){ conflict = true; return; }
       conflict = false;
       return { rev: Math.max(base, (cur && cur.rev)||0) + 1, t: Date.now(), dev, data };
     });
-    if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1); acc.lastPush = Date.now(); return true; }
+    if(res && res.committed){ const v = res.snapshot && res.snapshot.val ? res.snapshot.val() : null; accSetMeta(v && v.rev ? v.rev : base+1, rev0); acc.lastPush = Date.now(); if((state.saveRev||0)!==rev0) accSchedule(); return true; } // (v333) 올리는 동안 또 저장했으면 이어서 한 번 더
     if(conflict){ // 다른 기기가 더 새로 저장함 → 한 번만 다시 맞춰봄(계속 충돌하면 고르기 창으로, 무한 반복 금지)
       acc.busy = false;
       if(acc.retrying){ acc.retrying = false; const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null; let parsed = null; try{ parsed = cloud && cloud.data ? decodeSaveString(cloud.data) : null; }catch(e){} if(parsed && !document.querySelector('.acc-pick')) accChooser(parsed, cloud); return false; }
       acc.retrying = true; try{ await accInitial(); } finally{ acc.retrying = false; }
     }
     return false;
-  }catch(e){ return false; }
+  }catch(e){ accRetryLater(); return false; } // (v333) 인터넷이 안 되면 30초 뒤 다시
   finally{ acc.busy = false; }
 }
+function accRetryLater(){ if(acc.on && acc.linked && !acc.kicked){ clearTimeout(acc.timer); acc.timer = setTimeout(()=>{ if(accUnsynced()) accPush(false); }, 30000); } }
 function accSchedule(){ if(acc.on && acc.linked && !acc.kicked){ clearTimeout(acc.timer); acc.timer = setTimeout(()=>accPush(false), 8000); } } // 저장할 때마다 8초 모아서 한 번
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden' && acc.timer) accPush(false); }); // 앱을 내릴 때 바로 저장
+// (v333) 인터넷이 돌아오거나 앱으로 돌아오면 밀린 진행을 서버에 올림 — 예전엔 다음에 또 저장할 때까지 안 올라가서, 다른 기기로 켜면 오프라인 전 진행만 보였음
+window.addEventListener('online', ()=>{ if(acc.on && acc.linked && !acc.kicked && accUnsynced()) setTimeout(()=>accPush(false), 1500); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && acc.on && acc.linked && !acc.kicked && accUnsynced()) accPush(false); });
 function accClaimSession(){ return raidNet.fb.set(accRef('sessions'), { dev: acc.dev, t: Date.now() }).catch(()=>{}); }
 function accWatchSession(){
   if(acc.unsub) acc.unsub();
@@ -4380,14 +4392,18 @@ function accKickedOverlay(){
   const o = document.createElement('div'); o.id = 'accKick'; o.className = 'modal-bg'; o.style.zIndex = 9999;
   o.innerHTML = '<div class="modal" style="text-align:center;"><div style="font-size:34px;">📱</div><h3>다른 기기에서 접속함</h3>'
     + '<div class="sub" style="font-size:12px; line-height:1.5;">같은 계정은 한 번에 한 기기만.<br>여기서 이어 하면 다른 기기는 멈춤.</div>'
+    + (accUnsynced() ? '<div class="sub" style="font-size:12px; line-height:1.5; margin-top:6px; color:#ffd166;">이 기기에 서버에 아직 안 올라간 진행이 있음 — 이어 하기를 누르면 어느 쪽을 쓸지 고름</div>' : '')
     + '<button class="btn" id="accTakeBack" style="margin-top:12px;">이 기기에서 이어 하기</button></div>';
   document.body.appendChild(o);
   o.querySelector('#accTakeBack').addEventListener('click', async ()=>{
     const b = o.querySelector('#accTakeBack'); b.disabled = true; b.textContent = '불러오는 중…';
     try{
       const snap = await raidNet.fb.get(accRef('saves')), cloud = snap.exists() ? snap.val() : null;
-      if(cloud && cloud.data){ const parsed = decodeSaveString(cloud.data); accApply(parsed); accSetMeta(cloud.rev||0); }
-      acc.kicked = false; await accClaimSession(); o.remove(); render(); toast('서버의 최신 진행 불러옴');
+      const parsed = cloud && cloud.data ? decodeSaveString(cloud.data) : null;
+      acc.kicked = false; await accClaimSession(); o.remove();
+      if(parsed && accUnsynced()){ accSetMeta(accMeta() ? accMeta().base : 0); accChooser(parsed, cloud); return; } // (v333) 이 기기에만 있는 진행을 말없이 덮던 것 → 고르기
+      if(parsed){ accApply(parsed); accSetMeta(cloud.rev||0); }
+      render(); toast('서버의 최신 진행 불러옴');
     }catch(e){ b.disabled = false; b.textContent = '이 기기에서 이어 하기'; toast('연결 오류 — 다시 누르기'); }
   });
 }
@@ -4424,9 +4440,29 @@ function accountBoxHtml(){
   if(!raidNet.fb || !acc.on) h += '<div class="sub">온라인 연결 중이거나 연결 안 됨</div>';
   else if(!acc.linked) h += '<div class="sub">게스트 — 이 기기에만 저장. 연동하면 폰·컴퓨터 어디서든 이어서 가능.</div><button class="btn" id="accLinkBtn" style="margin-top:8px;">구글로 연동하기</button><div class="sub" style="font-size:11px; margin-top:4px;">다른 기기에서 이미 연동했다면 같은 버튼으로 불러오기</div>';
   else h += '<div class="sub">구글 연동됨'+(acc.email?' · '+escTxt(acc.email):'')+'</div><div class="sub" style="font-size:11px;">자동으로 서버에 저장'+(acc.lastPush?' · 마지막 '+new Date(acc.lastPush).toTimeString().slice(0,5):'')+'</div><button class="btn secondary" id="accPushBtn" style="margin-top:8px;">☁️ 지금 서버에 저장</button>';
+  if(accBackups().length) h += '<button class="btn secondary" id="accRestoreBtn" style="margin-top:8px;">↩️ 덮어쓰기 전 진행 되살리기</button>';
   return h + '</div>';
 }
+// (v333) 서버 진행으로 덮이기 전 기기 진행(최근 3개)에서 골라 되살림 — 지금 진행도 먼저 보관해서 되돌릴 수 있음
+function showAccRestore(){
+  const L = accBackups(); if(!L.length){ toast('되살릴 진행 없음'); return; }
+  const fmt = t=>{ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); };
+  const rows = L.map((b,i)=>{ let sum = '읽을 수 없음'; try{ sum = accSummary(JSON.parse(b.raw)); }catch(e){} return '<button class="acc-pick" data-rb="'+i+'"><b>'+fmt(b.t)+'에 덮이기 전</b><span>'+sum+'</span></button>'; }).join('');
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'
+    + '<h3 style="text-align:center;">덮어쓰기 전 진행</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">다른 기기·서버 진행으로 바뀌기 직전의 이 기기 진행.<br>되살리면 지금 진행은 이 목록에 보관됨'+(acc.linked ? ' · 서버에도 저장' : '')+'.</div>'
+    + '<div class="acc-pick" style="pointer-events:none; opacity:.8;"><b>지금 진행</b><span>'+accSummary(state)+'</span></div>' + rows + '</div></div>';
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.querySelectorAll('[data-rb]').forEach(b=>b.addEventListener('click', async ()=>{
+    const bak = L[+b.dataset.rb]; let parsed = null; try{ parsed = JSON.parse(bak.raw); }catch(e){}
+    if(!parsed){ toast('읽을 수 없는 진행'); return; }
+    accBackupNow(); state = mergeWithDefaults(defaultState(), parsed); sanitizeState(); save();
+    closeModal(); render();
+    if(acc.on && acc.linked && !acc.kicked){ const snap = await raidNet.fb.get(accRef('saves')).catch(()=>null), cloud = snap && snap.exists() ? snap.val() : null; acc.base = (cloud && cloud.rev)||0; const ok = await accPush(true); toast(ok ? '진행 되살림 · 서버에 저장' : '진행 되살림 (서버 저장은 다음 연결 때)'); }
+    else toast('진행 되살림');
+  }));
+}
 function bindAccountBox(){
+  const rb = document.getElementById('accRestoreBtn'); if(rb) rb.addEventListener('click', showAccRestore);
   const l = document.getElementById('accLinkBtn'); if(l) l.addEventListener('click', ()=>{ l.disabled = true; accLinkGoogle().finally(()=>{ l.disabled = false; }); });
   const p = document.getElementById('accPushBtn'); if(p) p.addEventListener('click', async ()=>{ p.disabled = true; const ok = await accPush(false); toast(ok ? '서버에 저장' : '저장 실패'); p.disabled = false; });
 }
@@ -5659,7 +5695,7 @@ function keepPanelHeight(root){ const pn = root.querySelector('.bs-panel'); if(!
   pn.style.minHeight = ''; const h = Math.ceil(pn.getBoundingClientRect().height); if(pn.querySelector('.bs-acts') && h > bsPanelH) bsPanelH = h; if(bsPanelH) pn.style.minHeight = bsPanelH+'px'; }
 function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
   const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
-  if(prevDeadUnits) root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)) b.classList.add('bu-dying'); }); // (v327) 방금 쓰러진 정령만 쓰러지는 연출
+  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; } }); if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
   eachStatusFx(root, (key, el)=>{ if(statusFxSeen.has(key)){ const t0 = statusFxSeen.get(key), t = Math.max(0, now - t0); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); next.set(key, t0); } else { const c = Math.max(0, ...fxAnims(el).map(a=>a.currentTime||0)); next.set(key, now - c); } });
   statusFxSeen = next; }
 function mountBattleScreen(){
@@ -6001,7 +6037,7 @@ function showSkillStageScreen(){
   const curUnit = (side==='me' && !raidWaiting) ? unitAt(sf, 'me', cur.idx) : null;
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
-  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
+  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); battleSfxFor(sf, fx); } // (v295) 부활음 · (v332) 전투 효과음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
   if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; }
@@ -7180,17 +7216,25 @@ const aT = off=> (aBase!==null ? aBase : audioCtx.currentTime) + (off||0);
 function sMusicBox(f, off, peak, dur, bus){ const t0 = aT(off); sOsc(f,'sine',t0,dur,peak,0.004,bus); sOsc(f*2.01,'sine',t0,dur*0.45,peak*0.22,0.003,bus); sOsc(f*4.2,'sine',t0,0.16,peak*0.12,0.002,bus); }
 function sMarimba(f, off, peak, dur, bus){ const t0 = aT(off); dur = dur||0.55; sOsc(f,'sine',t0,dur,peak,0.006,bus); sOsc(f*3.98,'sine',t0,0.09,peak*0.3,0.003,bus); sOsc(f*9.9,'sine',t0,0.035,peak*0.08,0.002,bus); }
 function sGlock(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.9,peak,0.002,bus); sOsc(f*2.76,'sine',t0,0.3,peak*0.35,0.002,bus); sOsc(f*5.4,'sine',t0,0.12,peak*0.15,0.002,bus); }
-function sSlide(f1, f2, off, dur, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, 0.006, dur+0.04); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.08); }
+function sSlide(f1, f2, off, dur, peak, bus, type){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type||'sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, 0.006, dur+0.04); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.08); }
 function sWood(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.06,peak,0.001,bus); sOsc(f*2.3,'sine',t0,0.03,peak*0.4,0.001,bus); }
 function sPluck(f, off, peak, dur, bright, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain(), g2 = audioCtx.createGain();
   o.type='triangle'; o2.type='square'; o.frequency.value = f; o2.frequency.value = f; g2.gain.value = bright ? 0.25 : 0.08;
   lp.type='lowpass'; lp.Q.value = 2; lp.frequency.setValueAtTime(bright?2600:1500, t0); lp.frequency.exponentialRampToValueAtTime(260, t0+dur*0.6);
   envG(g, t0, peak, 0.005, dur); o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05); }
-function sBoop(off, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(190, t0); o.frequency.exponentialRampToValueAtTime(70, t0+0.12); envG(g, t0, peak, 0.004, 0.18); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+0.22); }
+function sBoop(off, peak, bus, f1, f2, dur){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); dur = dur||0.12; o.type='sine'; o.frequency.setValueAtTime(f1||190, t0); o.frequency.exponentialRampToValueAtTime(f2||70, t0+dur); envG(g, t0, peak, 0.004, dur+0.06); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.1); }
+// (v332) 전투 효과음용 — 잡음(필터 모양·길이로 타격·불꽃·바람) · 떨리며 내려가는 음
+let noiseBufCache = null;
+function noiseBuf(){ if(noiseBufCache && noiseBufCache.ctx===audioCtx) return noiseBufCache.buf; const len = Math.floor(audioCtx.sampleRate), buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0); let x = 12345; for(let i=0;i<len;i++){ x = (x*16807)%2147483647; d[i] = (x/2147483647)*2-1; } noiseBufCache = { ctx:audioCtx, buf }; return buf; }
+function sNoise(off, dur, peak, bus, ftype, f1, f2, q, atk){ const t0 = aT(off), src = audioCtx.createBufferSource(), fl = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); src.buffer = noiseBuf(); fl.type = ftype||'lowpass'; fl.Q.value = q||0.8; fl.frequency.setValueAtTime(f1, t0); if(f2) fl.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, atk||0.003, dur); src.connect(fl); fl.connect(g); g.connect(bus); src.start(t0); src.stop(t0+dur+0.05); }
+function sWobble(f1, f2, off, dur, peak, bus, rate, depth){ const t0 = aT(off), o = audioCtx.createOscillator(), l = audioCtx.createOscillator(), lg = audioCtx.createGain(), g = audioCtx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); l.frequency.value = rate; lg.gain.value = depth; l.connect(lg); lg.connect(o.frequency); envG(g, t0, peak, 0.01, dur); o.connect(g); g.connect(bus); o.start(t0); l.start(t0); o.stop(t0+dur+0.05); l.stop(t0+dur+0.05); }
 // (v2.10.2) 효과음마다 크기를 재서(가장 큰 0.05초 구간의 RMS) 맞춘 배율 — 측정값: 버튼 0.017 ~ 승리 0.141로 8배 차이였음
 // 목표: 모두 0.05 · 승리·에픽·전설 소환만 0.06 (다시 재려면 OfflineAudioContext로 sfxPlay를 렌더링해서 같은 방식으로)
 const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summonCharge:1.13, summonEpic:0.55, summonLegend:0.51,
-  fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88 };
+  fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
+  // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
+  bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
+  bSk_fire:0.55, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61 };
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
 function sfxPlay(name){
@@ -7215,6 +7259,40 @@ function sfxPlay(name){
   else if(name==='lose'){ [523,466,415,392].forEach((f,i)=>sMarimba(f,i*0.16,0.12,0.6,B)); sPluck(196,0.64,0.1,0.6,false,B); }
   else if(name==='claim'){ sGlock(1319,0,0.08,B); sGlock(1760,0.06,0.08,B); sMusicBox(2637,0.12,0.04,0.6,B); } // 짜랑
   else if(name==='battleStart'){ sWood(880,0,0.14,B); sWood(1175,0.1,0.14,B); sPluck(196,0.2,0.12,0.3,true,B); }
+  // (v332) 전투 효과음
+  else if(name==='bHit'){ sNoise(0,0.07,0.5,B,'lowpass',1400,500); sBoop(0,0.35,B,170,70,0.09); }
+  else if(name==='bCrit'){ sNoise(0,0.14,0.55,B,'bandpass',3200,900,0.9); sBoop(0,0.45,B,220,55,0.16); sGlock(1568,0.03,0.12,B); }
+  else if(name==='bStrong') sSlide(1100,2100,0,0.09,0.12,B);
+  else if(name==='bWeak') sSlide(420,240,0,0.12,0.2,B);
+  else if(name==='bDot'){ sSlide(300,700,0,0.05,0.2,B); sSlide(380,900,0.07,0.05,0.16,B); }
+  else if(name==='bFall'){ sSlide(560,110,0,0.38,0.22,B,'triangle'); sWood(180,0.36,0.3,B); }
+  else if(name==='bHeal') [784,988,1175].forEach((f,i)=>sMarimba(f,i*0.06,0.13,0.45,B));
+  else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
+  else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
+  else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
+  else if(name==='bSk_fire'){ sNoise(0,0.28,0.35,B,'lowpass',400,3000,1,0.05); sBoop(0.18,0.25,B,160,70,0.1); }
+  else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
+  else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
+  else if(name==='bSk_light'){ sNoise(0,0.25,0.12,B,'highpass',5000,8000,0.7,0.06); sGlock(2637,0.12,0.09,B); }
+  else if(name==='bSk_dark'){ sWobble(260,130,0,0.35,0.2,B,6,12); sNoise(0,0.3,0.12,B,'lowpass',600,200,1,0.08); }
+}
+// (v332) 전투 효과음 — 행동 하나의 결과(hits)를 보고 스킬 시전 → 맞는 소리 → 회복·보호막·상태 효과 순서로 살짝씩 띄워 냄 (0.12초에 3개 제한에 안 걸리게)
+function battleSfxOn(){ return state.settings.battleSfx!==false; }
+function battleSfxFor(sf, fx){
+  if(!battleSfxOn() || !fx) return;
+  const hits = (fx.hits||[]).filter(h=>!h.rv), m = skillSpeedMult(), q = [];
+  let base = 150;
+  if(fx.kind==='act' && fx.skill){ const a = unitAt(sf, fx.actorSide, fx.actorIdx); if(a && ELEMENTS.includes(a.element)){ sfx('bSk_'+a.element); base = 220; } }
+  const dmg = hits.filter(h=>h.kind==='dmg' && !h.dot), dot = hits.filter(h=>h.kind==='dmg' && h.dot);
+  if(dmg.length){ q.push(dmg.some(h=>h.crit) ? 'bCrit' : 'bHit'); if(dmg.some(h=>h.eff>1)) q.push('bStrong'); else if(dmg.some(h=>h.eff<1)) q.push('bWeak'); }
+  else if(dot.length) q.push('bDot');
+  const st = hits.filter(h=>h.kind==='status' && !h.ward && (h.neg!==undefined || fx.kind==='act')); // 라운드 처리(풀림 등)에서 나온 글자는 뺌
+  const isNeg = h=> h.neg!==undefined ? h.neg : (fx.kind==='act' && h.side!==fx.actorSide);
+  if(st.some(isNeg)) q.push('bDebuff');
+  if(hits.some(h=>h.kind==='heal' && h.amount>0)) q.push('bHeal');
+  if(hits.some(h=>h.kind==='shield')) q.push('bShield');
+  if(st.some(h=>!isNeg(h))) q.push('bBuff');
+  q.slice(0, 4).forEach((n, i)=>sfxAt(Math.round((base + i*90)*m), ()=>{ if(battleSfxOn()) sfx(n); }));
 }
 // 배경음 (E안: 차분한 편곡) — 멜로디 사인(천천히 스며듦) · 길게 이어지는 베이스 · 낮고 어두운 화음 패드 · 한 박에 한 번 작은 삼각파 · 여덟 박에 한 번 은은한 킥 · 2.8초 울림
 const BGM_STEP = 0.48;
@@ -9181,6 +9259,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">🔇 다른 창 볼 때 소리 끄기 <small style="opacity:.7;">(알탭 등)</small></span><input type="checkbox" id="muteBlurChk" '+(s.muteBlur!==false?'checked':'')+'></label>';
+  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">⚔️ 전투 효과음 <small style="opacity:.7;">(타격·스킬·회복 등)</small></span><input type="checkbox" id="battleSfxChk" '+(s.battleSfx!==false?'checked':'')+'></label>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
   if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
   if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">'+uiIc('bell')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
@@ -9205,6 +9284,7 @@ function showSettingsModal(){
   });
   document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
   document.getElementById('muteBlurChk').addEventListener('change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
+  document.getElementById('battleSfxChk').addEventListener('change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
   { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
   { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
@@ -9578,6 +9658,15 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:333, v:'4.5.0', date:'2026-10-03', secs:[
+    { t:'계정 저장 버그 수정', items:[ '인터넷이 끊긴 동안 한 진행이 다시 연결돼도 서버에 안 올라가던 것 수정 — 연결되거나 앱으로 돌아오면 바로 올림 (실패하면 30초마다 다시)', '다른 기기에서 접속한 뒤 「이 기기에서 이어 하기」를 누르면 이 기기에만 있던 진행이 말없이 사라지던 것 수정 — 이제 이 기기 진행과 서버 진행 중 고름', '설정 계정 칸에 「덮어쓰기 전 진행 되살리기」 — 서버 진행으로 바뀌기 직전의 이 기기 진행을 최근 3개까지 보관' ]}
+  ]},
+  { build:332, v:'4.4.0', date:'2026-10-02', secs:[
+    { t:'전투 효과음', items:[ '전투에 효과음 추가 — 타격 · 치명타 · 속성 유리·불리 · 지속 피해 · 쓰러짐 · 회복 · 보호막 · 이로운 효과 · 해로운 효과', '스킬을 쓸 때 속성(불·물·숲·빛·그림자)마다 다른 효과음', '설정에 「전투 효과음」 켜기·끄기 (기본 켜짐) — 효과음 볼륨은 그대로 따름' ]}
+  ]},
+  { build:331, v:'4.3.1', date:'2026-10-02', secs:[
+    { t:'화면', items:[ '도전·요일 던전 화면에서 아래 카드가 살짝 잘려 스크롤되던 것 수정 — 화면이 짧으면 위 그림 높이를 줄여 한눈에 보이게' ]}
+  ]},
   { build:330, v:'4.3.0', date:'2026-10-02', secs:[
     { t:'장비 한 개씩 따로', items:[ '같은 장비도 하나하나 따로 강화·부가 능력·고유 효과·잠금을 가짐 — 같은 장비를 정령마다 다르게 맞출 수 있음', '같은 종류를 여러 개 갖고 있던 장비는 1개만 지금 상태 그대로 두고 나머지는 새 장비(+0 · 부가 능력·고유 효과 없음)로 나눔', '한 장비는 정령 한 명만 낄 수 있음 — 여러 정령이 같은 장비를 끼고 있었다면 나눈 새 장비를 끼워 줌', '합성·분해 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화·능력 붙은 장비는 자동 합성에서 빠짐)' ]},
     { t:'정령 중복 배치 금지', items:[ '같은 정령은 한 팀에 한 번만 — 이미 놓인 정령을 고르면 그 자리로 옮김', '이미 중복으로 놓여 있던 자리는 비움 (팀·균열·결투 덱·프리셋)' ]},
@@ -9683,7 +9772,6 @@ const PATCH_NOTES = [
     { t:'전투 연출', items:[ '상태 이상이 정령 위에 보이게 — 빙결: 위로 뾰족한 얼음이 정령을 덮음 · 화상: 발밑 불꽃 · 독: 초록 거품 · 저주: 보랏빛 기운' ]},
     { t:'진형·프리셋', items:[ '진형 칸의 정령을 꾹 누르면 정령 관리 창(장비·룬·강화·각성 등) — 닫으면 그 화면으로 돌아옴', '프리셋 만들기 칸에 정령을 넣어도 칸 너비가 그대로', '정령 배치 창에서 등급·속성·역할로 정렬하면 도감처럼 묶음 제목과 개수로 나눔' ]},
     { t:'편의', items:[ '10회 소환(정령·장비)에 "10회 소환 바로 하기" 체크 — 켜 두면 확인 창 없이 소환', '전투 나가기 창의 다시 버튼 → 다시하기', '홈의 패스 아이콘을 그림으로 (기기마다 다르게 보이던 것)' ]},
-    { t:'문의', items:[ '관리자 문의함에서 완료로 표시하면 답장 대기에서 빠짐 — 문의한 사람이 다시 쓰면 다시 대기' ]},
     { t:'각인', items:[ '각인·장비 부가 능력 창에 "바로 굴리기" 체크 — 켜 두면 다시 굴릴 때 각인석 사용 확인을 묻지 않음' ]},
     { t:'합성 화면', items:[ '합성 바에 넣은 재료 칸이 등급 테두리와 겹쳐 보이던 것 수정', '재료를 넣거나 뺄 때(특히 세 번째를 넣을 때) 목록이 위로 밀리던 것 수정 — 누른 재료가 같은 자리에 남음' ]}
   ]},
@@ -9693,7 +9781,7 @@ const PATCH_NOTES = [
   ]},
   { build:303, v:'3.1.2', date:'2026-10-01', secs:[
     { t:'합성 화면', items:[ '재료를 넣으면 화면 아래에 합성 바가 따라다님 — 넣은 3칸(눌러서 빼기) · 성공률 · 보호권 · 합성 · 비우기', '재료를 고르러 내려가도 위로 올라가지 않고 바로 합성 · 성공률을 누르면 합성판으로 올라감', '합성을 누르면 넣은 재료 3개 · 성공률 · 나올 수 있는 것 · 강화 계승을 확인 창으로 한 번 보여 줌' ]},
-    { t:'문의', items:[ '새 문의 · 보낸 문의 탭으로 나눔 — 보낸 문의는 목록으로 보이고 눌러야 대화가 열림 · 답장 온 문의는 빨간 점', '관리자 문의함도 답장 대기 · 전체 탭 → 눌러서 대화 · 답장 · 삭제' ]}
+    { t:'문의', items:[ '새 문의 · 보낸 문의 탭으로 나눔 — 보낸 문의는 목록으로 보이고 눌러야 대화가 열림 · 답장 온 문의는 빨간 점' ]}
   ]},
   { build:302, v:'3.1.1', date:'2026-10-01', secs:[
     { t:'권 이름·그림 정리', items:[ '선택권 이름에 정령을 붙임 — 레어·에픽·레전더리·신화 정령 선택권', '정령·장비 권을 같은 모양으로 맞춤 — 확정권은 별 권, 선택권은 하트 권(등급 색: 레어 파랑 · 에픽 보라 · 레전더리 주황 · 신화 빨강), 장비 권은 같은 그림에 방패 표시', '빛은 등급으로만 — 레전더리·신화는 확정권·선택권 모두 똑같이 빛남 (예전엔 신화 확정권만 빛났음)', '레이드 입장권 그림을 에픽 확정권과 다른 그림으로' ]}
@@ -9706,7 +9794,6 @@ const PATCH_NOTES = [
     { t:'진형', items:[ '한 번 도전한 스테이지는 그때 덱 그대로 — 보스 스테이지도 이제 기억 (예전엔 다른 곳에서 쓴 진형이 들어갔음)', '새로 켜면 스테이지 진형 6번째 칸이 비던 문제 수정' ]},
     { t:'파티 프리셋', items:[ '정령 탭 📋 프리셋 — 진형 화면에 가지 않고 바로 6칸을 채워 저장 · 불러와서 고쳐 덮어쓰기' ]},
     { t:'화면', items:[ 'ⓘ 버튼의 i가 동그라미 가운데에서 어긋나 보이던 것 수정' ]},
-    { t:'관리자 우편', items:[ '보상 입력을 ＋ 보상 추가 방식으로 — 고른 것만 줄로 쌓고 ✕로 빼기', '모든 재화·아이템을 보낼 수 있음 — 세계 룬석 · 정령 파편 · 룬 승급석 · 각인석 · 모든 확정권·선택권 · 룬(뽑기·전설·고대 무작위·고대 5종·월드 룬 3종)' ]},
     { t:'정령 선택 창', items:[ '한 줄 목록 → 한 줄에 4칸 격자로 — 그림·등급 테두리·속성 · 이름 · 역할 아이콘과 전투력만 보여 한눈에 비교', '누르면 배치 · 길게 누르면 스킬 정보 · 역할 이름표가 붉으면 전열형, 푸르면 후열형' ]},
     { t:'결투', items:[ '결투 덱 칸을 누르면 스테이지와 같은 정령 배치 창 — 전투력 · 등급 · 속성 · 역할 정렬과 ⓘ 스킬 보기', '결투 신청을 수락하면 레이드 창으로 넘어가던 문제 수정 — 결투 탭에서 대기실이 열림 · 결투가 끝나도 결투 탭으로' ]},
     { t:'문의', items:[ '한 문의에 여러 번 이어 쓰기 — 문의한 사람도 추가로 쓸 수 있고 답장도 덮어쓰지 않고 차례로 쌓임' ]}
@@ -9762,7 +9849,7 @@ const PATCH_NOTES = [
   ]},
   { build:291, v:'2.10.0', date:'2026-09-30', secs:[
     { t:'소리 전면 교체', items:[
-      '효과음 14가지를 귀여운 악기로 — 버튼은 톡(물방울) · 소환은 마림바·오르골 · 소환 연출은 뿌우~ 휘슬 · 합성 실패는 뿌잉~ · 강화는 띠링 · 보상은 짜랑',
+      '효과음 14가지를 귀여운 악기 소리로 바꿈 — 버튼 · 소환 · 소환 연출 · 합성 실패 · 강화 · 보상 등',
       '배경음은 멜로디는 그대로, 차분한 편곡으로 — 부드러운 멜로디 · 길게 이어지는 베이스 · 낮은 화음 · 은은한 울림 (효과음 악기와 겹치지 않게)'
     ]}
   ]},
@@ -11372,17 +11459,25 @@ function sceneCarPlace(el, animate){
   tr.style.width = Math.round(iw*sc)+'px'; tr.style.transform = 'translate('+Math.round(x)+'px,'+Math.round(yy)+'px)';
   el.style.setProperty('--cx', (((+sp.dataset.x)*sc + x)/W*100).toFixed(1)+'%'); // 고른 곳 화면 위치 (회색 그라데이션이 따라감)
 }
+// (v331) 그림이 화면보다 길면(폰 위아래 안전 영역 등) 그림 높이를 줄여 아래 카드까지 스크롤 없이 보이게 · 한 화면 안에서는 줄기만 함(고를 때마다 출렁이지 않게)
+function sceneCarFit(el){
+  const m = el.closest('main'); if(!m) return;
+  const cur = el.offsetHeight, pb = parseFloat(getComputedStyle(m).paddingBottom)||0, over = m.scrollHeight - m.clientHeight - Math.max(0, pb - 16); // 아래 여백은 16px만 남기고 봐줌
+  if(over <= 0) return;
+  const h = Math.max(220, cur - over);
+  if(h < cur){ el.style.height = h+'px'; sceneCarPlace(el, false); }
+}
 function sceneCarBind(id, keys, onSel, onOpen){
   const el = document.getElementById(id); if(!el) return;
-  requestAnimationFrame(()=>sceneCarPlace(el, false));
-  const go = k=>{ if(k===el.dataset.sel){ if(onOpen) onOpen(k); return; } el.dataset.sel = k; el.querySelectorAll('.sc-spot').forEach(b=>b.classList.toggle('sel', b.dataset.sc===k)); sceneCarPlace(el, true); onSel(k); };
+  requestAnimationFrame(()=>{ sceneCarPlace(el, false); sceneCarFit(el); });
+  const go = k=>{ if(k===el.dataset.sel){ if(onOpen) onOpen(k); return; } el.dataset.sel = k; el.querySelectorAll('.sc-spot').forEach(b=>b.classList.toggle('sel', b.dataset.sc===k)); sceneCarPlace(el, true); onSel(k); sceneCarFit(el); };
   const step = d=>{ const i = keys.indexOf(el.dataset.sel); go(keys[(i + d + keys.length) % keys.length]); };
   el.querySelectorAll('[data-sc]').forEach(b=>b.addEventListener('click', ()=>go(b.dataset.sc)));
   el.querySelectorAll('[data-sc-step]').forEach(b=>b.addEventListener('click', ()=>step(+b.dataset.scStep)));
   let sx = null; el.addEventListener('touchstart', e=>{ sx = e.touches[0].clientX; }, {passive:true});
   el.addEventListener('touchend', e=>{ if(sx===null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if(Math.abs(dx) > 40) step(dx<0 ? 1 : -1); });
 }
-window.addEventListener('resize', ()=>document.querySelectorAll('.sc-car').forEach(el=>sceneCarPlace(el, false)));
+window.addEventListener('resize', ()=>document.querySelectorAll('.sc-car').forEach(el=>{ el.style.height = ''; sceneCarPlace(el, false); sceneCarFit(el); }));
 // (v317) 요일 던전 — 그림 속 문 5개를 직접 눌러 고름 · 오늘 열린 문은 빛나고, 닫힌 문은 잠김 · 고른 문의 던전 정보가 아래에
 const DG_DOORS = { fire:107, water:301, wood:511, light:717, dark:913 }; // 그림 속 문 가운데 가로 위치(px, 그림 폭 1024)
 let dgSel = null;
@@ -13916,6 +14011,7 @@ function sanitizeState(){
   });
   // 설정·일일 기록·화로·출정
   s.settings.muteBlur = s.settings.muteBlur!==false; // (v324) 기본 켜짐
+  s.settings.battleSfx = s.settings.battleSfx!==false; // (v332) 전투 효과음 기본 켜짐
   s.settings.bgmVolume = fin(s.settings.bgmVolume) ? Math.min(1, Math.max(0, s.settings.bgmVolume)) : 0.3;
   s.settings.sfxVolume = fin(s.settings.sfxVolume) ? Math.min(1, Math.max(0, s.settings.sfxVolume)) : 0.35;
   s.settings.spendAsk = s.settings.spendAsk!==false; // (v296) 재화 사용 확인창
@@ -14013,7 +14109,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 330, APP_VERSION = '4.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 333, APP_VERSION = '4.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
