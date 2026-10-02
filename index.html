@@ -8239,6 +8239,9 @@ const PASS_REWARDS = [ // [레벨 1~30] f = 일반 · p = 프리미엄
   {f:{items:{equip:2}}, p:{items:{legendary:1}}}, {f:{stone:50}, p:{essence:1800}}, {f:{essence:1000}, p:{items:{equip:4}}}, {f:{items:{summon:3}}, p:{stone:100}},
   {f:{stone:60}, p:{wbGems:20}}, {f:{items:{pick_epic:1}}, p:{items:{pick_legendary:1}, wbGems:10}}
 ];
+// (v325) 5레벨마다 별빛 조각 — 일반 10 · 프리미엄 20
+const PASS_STAR_F = 10, PASS_STAR_P = 20;
+PASS_REWARDS.forEach((r,i)=>{ if((i+1)%5===0){ r.f.star = (r.f.star||0) + PASS_STAR_F; r.p.star = (r.p.star||0) + PASS_STAR_P; } });
 // 미션: k = 세는 항목(passBump로 올림) · n = 목표 · xp = 받는 경험치
 const PASS_DAILY = [
   {id:'d_login', k:'login', n:1, xp:10, nm:'접속하기'},
@@ -8296,8 +8299,8 @@ function passClaimable(){ const ps = passState(), lv = passLevelOf(ps.xp), out =
   for(let i=1;i<=lv;i++){ if(!ps.got.f[i]) out.push(['f',i]); if(ps.prem && !ps.got.p[i]) out.push(['p',i]); } return out; }
 function passMissionsReady(){ return PASS_DAILY.some(m=>passMissionProg(m,true).ready) || PASS_WEEKLY.some(m=>passMissionProg(m,false).ready); }
 function passHasDot(){ try{ return passClaimable().length>0 || passMissionsReady(); }catch(e){ return false; } }
-function passAddRw(acc, rw){ if(!rw) return acc; ['essence','stone','wbGems'].forEach(k=>{ if(rw[k]) acc[k] = (acc[k]||0) + rw[k]; }); if(rw.items){ acc.items = acc.items || {}; Object.keys(rw.items).forEach(k=>{ acc.items[k] = (acc.items[k]||0) + rw.items[k]; }); } return acc; }
-function passGrant(rw){ state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); state.wbGems = (state.wbGems||0) + (rw.wbGems||0); grantItems(rw.items||null); }
+function passAddRw(acc, rw){ if(!rw) return acc; ['essence','stone','wbGems','star'].forEach(k=>{ if(rw[k]) acc[k] = (acc[k]||0) + rw[k]; }); if(rw.items){ acc.items = acc.items || {}; Object.keys(rw.items).forEach(k=>{ acc.items[k] = (acc.items[k]||0) + rw.items[k]; }); } return acc; }
+function passGrant(rw){ state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); state.wbGems = (state.wbGems||0) + (rw.wbGems||0); state.starShard = (state.starShard||0) + (rw.star||0); grantItems(rw.items||null); }
 function passClaim(list){ // [['f'|'p', lv], ...]
   const ps = passState(), lv = passLevelOf(ps.xp), all = {};
   list.forEach(([t,i])=>{ if(i<1 || i>lv || ps.got[t][i] || (t==='p' && !ps.prem)) return; ps.got[t][i] = Date.now(); passAddRw(all, PASS_REWARDS[i-1][t]); });
@@ -8323,7 +8326,7 @@ function passBuyPremium(){
 function passRwCell(rw, st){ // st: lock | ready | got | prem-lock
   const one = (ic, n)=>'<span class="ps-it">'+ic+'<b>'+n+'</b></span>', p = [];
   if(rw.essence) p.push(one(uiIc('essence'), rw.essence)); if(rw.stone) p.push(one(uiIc('stone'), rw.stone));
-  if(rw.wbGems) p.push(one(uiIc('wbgem'), rw.wbGems));
+  if(rw.wbGems) p.push(one(uiIc('wbgem'), rw.wbGems)); if(rw.star) p.push(one(SHARD_IC, rw.star));
   if(rw.items) Object.keys(rw.items).forEach(k=>p.push(one(TICKET_INFO[k].icon, rw.items[k])));
   const names = [rw.essence?'정수 '+rw.essence:'', rw.stone?'강화석 '+rw.stone:'', rw.wbGems?'세계 룬석 '+rw.wbGems:''].concat(rw.items ? Object.keys(rw.items).map(k=>TICKET_INFO[k].name+' '+rw.items[k]) : []).filter(Boolean).join(' · ');
   return '<div class="ps-cell '+st+'" title="'+names+'">'+p.join('')+(st==='got' ? '<i class="ps-ck">✓</i>' : st==='prem-lock' ? '<i class="ps-lk">🔒</i>' : '')+'</div>';
@@ -9439,6 +9442,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:325, v:'4.1.0', date:'2026-10-02', secs:[
+    { t:'패스', items:[ '5레벨마다 별빛 조각 추가 — 일반 10개 · 프리미엄 20개 (5·10·15·20·25·30레벨, 시즌마다 일반 60 · 프리미엄 120)' ]}
+  ]},
   { build:324, v:'4.0.7', date:'2026-10-02', secs:[
     { t:'설정', items:[ '「다른 창 볼 때 소리 끄기」 추가 — 컴퓨터에서 다른 창으로 넘어가면 소리가 꺼지고 돌아오면 다시 남 (기본 켜짐)' ]},
     { t:'화면', items:[ '승리 창 등급을 동그라미 대신 「승리!」 옆에 큰 글자로', '월드 보스 화면에 이번 주 보스 기간과 남은 시간 표시' ]},
@@ -13840,7 +13846,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 324, APP_VERSION = '4.0.7'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 325, APP_VERSION = '4.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
