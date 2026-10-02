@@ -1180,7 +1180,7 @@
   .xp-boss{display:flex; align-items:center; gap:10px;} .xp-bossimg{width:54px; height:54px; object-fit:contain;} .xp-boss div{flex:1; display:flex; flex-direction:column;} .xp-boss small{font-size:11px; color:var(--sub);}
   .home-emo-ic{font-size:24px; line-height:1; display:block;}
   .dp-slots{display:flex; flex-direction:column; gap:6px;} .dp-slot{padding:7px 9px; border-radius:12px; background:#16123acc; border:1px solid #ffffff1a; display:flex; align-items:center; gap:9px; font-size:11px;} .dp-slot.empty{justify-content:center; color:var(--sub); border-style:dashed; background:#16123a80; padding:9px;} .dp-mid2{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;} .dp-slot .dp-cancel{margin:0; padding:6px 12px; flex-shrink:0;} .dp-slot.ready{border-color:#ffd557; box-shadow:0 0 10px #ffd55755;}
-  .dp-sh{display:flex; align-items:baseline; gap:6px; min-width:0;} .dp-sh b{font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .dp-sh i{font-style:normal; font-size:10px; color:#9fe8c0; flex-shrink:0;} .dp-team{display:flex; gap:2px; flex-shrink:0; width:88px;} .dp-team span{width:28px; height:28px; border-radius:6px; overflow:hidden; background:#0004;} .dp-team .spimg{width:100%; height:100%; object-fit:cover;}
+  .dp-sh{display:flex; align-items:baseline; gap:6px; min-width:0;} .dp-sh b{font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .dp-sh i{font-style:normal; font-size:10px; color:#9fe8c0; flex-shrink:0;} .dp-team{display:flex; gap:2px; flex-shrink:0; width:88px;} .dp-team span{width:28px; height:28px; border-radius:7px; overflow:hidden; background:#0006; box-sizing:border-box; border:1.5px solid var(--rc,#ffffff33); display:flex; align-items:center; justify-content:center;} .dp-team .spimg{width:100%; height:100%; object-fit:contain; margin:0;} /* (v336) 칸 테두리(등급 색) · 그림 안 잘리게 */
   .dp-bar{height:5px; border-radius:3px; background:#0006; overflow:hidden;} .dp-bar div{height:100%; background:linear-gradient(90deg,#57d3ff,#9fe8c0);} .dp-slot small{color:var(--sub); font-size:10px;} .dp-slot .btn{margin:0; padding:6px 12px; width:auto; flex-shrink:0;}
   .dp-mis{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:linear-gradient(135deg,#2a2660,#1d1b48); border:1px solid #ffffff1a;} .dp-mis.used{background:linear-gradient(135deg,#221f4a,#191739);} .dp-mis.used > *{opacity:.55;} .dp-mis.used .dp-mic{filter:grayscale(.7);} /* (v334) 칸 전체를 반투명하게 하면 뒤 배경이 비쳐 보여서 → 칸은 그대로, 안의 내용만 흐리게 */ .dp-mic{font-size:28px; width:36px; text-align:center;}
   .dp-pickrow{display:flex; justify-content:center; gap:8px; margin:8px 0;} .dp-pk{width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; border:2px dashed #ffffff33; color:var(--sub); font-size:20px; background:#0003; padding:0; overflow:hidden;} .dp-pk.on{border:2px solid #ffd557;} .dp-pk .spimg{width:100%; height:100%; object-fit:cover;}
@@ -3350,7 +3350,9 @@ async function admLoadUsers(){
   admUsers.busy = true; admUsers.err = '';
   try{
     const sn = await raidNet.db.doc('players').get(), v = (sn && sn.exists && sn.data() && typeof sn.data()==='object') ? sn.data() : {};
-    admUsers.list = Object.keys(v).filter(k=>k!==raidNet.uid && v[k] && typeof v[k]==='object' && v[k].g).map(k=>{ const p = v[k];
+    // (v336) 구글 연동 계정만 sessions/<uid>(지금 하는 기기)가 있음 → 새 버전으로 다시 접속 안 한 사람도 보임 (g 표시는 보조)
+    let ses = {}; try{ const ss = await raidNet.db.doc('sessions').get(); ses = (ss && ss.exists && ss.data() && typeof ss.data()==='object') ? ss.data() : {}; }catch(e){}
+    admUsers.list = Object.keys(v).filter(k=>k!==raidNet.uid && v[k] && typeof v[k]==='object' && (v[k].g || ses[k])).map(k=>{ const p = v[k];
       const u = { uid:k, name: (typeof p.name==='string' && p.name.trim()) ? p.name.slice(0,12) : '소환사-'+k.slice(0,4), code: (typeof p.code==='string' && /^[A-Z0-9]{8}$/.test(p.code)) ? p.code : '',
         rep: (typeof p.rep==='string' && SPIRITS[p.rep]) ? p.rep : null, lv: (p.prof && Number.isFinite(p.prof.lv)) ? Math.floor(p.prof.lv) : null, seen: Number.isFinite(p.seen) ? p.seen : 0 };
       if(!raidNet.names[k]) raidNet.names[k] = u.name;
@@ -9703,6 +9705,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:336, v:'4.5.3', date:'2026-10-03', secs:[
+    { t:'정령 파견', items:[ '파견 중인 칸의 정령 그림이 잘리던 것 수정 · 칸마다 등급 색 테두리' ]}
+  ]},
   { build:335, v:'4.5.2', date:'2026-10-03', secs:[
     { t:'아이콘', items:[ '설명 창(각성·합성·월드 보스) 항목 앞 이모지를 그림 아이콘으로', '챕터·레이드 보스 기믹 아이콘을 새 그림으로', '출정 유물 15종 · 정령 파견 임무 10종 · 탐험 특수 규칙 7종 아이콘을 그림으로', '메뉴·설정 창(패치 노트·업데이트·소리·배경음·휴대폰 알림·세이브 내보내기) 아이콘을 그림으로', '비우기·삭제·이름 바꾸기·경고·오프라인·남은 시간·자동 전투·잠금 풀기·월드 보스 등 여러 화면의 이모지를 그림으로' ]}
   ]},
@@ -11655,7 +11660,7 @@ function renderDispatchTab(){
   { const n = dispatchSlots(), used = d.slots.filter(Boolean), empty = n - used.length; // (v335) 칸을 가로 한 줄씩 — 예전 3열 격자는 4칸이면 3+1로 갈라져 불편했음 · 빈 칸은 한 줄로 합침
     h += '<div class="dp-slots">'+d.slots.map((s,i)=>{ if(!s) return '';
       const left = s.end - Date.now(), done = left<=0, pct = Math.min(100, (Date.now()-s.start)/(s.end-s.start)*100);
-      return '<div class="dp-slot'+(done?' ready':'')+'"><div class="dp-team">'+s.keys.map(k=>'<span>'+spArt(SPIRITS[k])+'</span>').join('')+'</div>'
+      return '<div class="dp-slot'+(done?' ready':'')+'"><div class="dp-team">'+s.keys.map(k=>'<span style="--rc:'+(RARITY_HEX[SPIRITS[k].rarity]||'#ffffff33')+'">'+spArt(SPIRITS[k])+'</span>').join('')+'</div>'
         + '<div class="dp-mid2"><div class="dp-sh"><b>'+dpIc(s)+' '+s.nm+'</b>'+(s.bonus?'<i>보너스</i>':'')+'</div><div class="dp-bar"><div style="width:'+pct+'%;"></div></div><small>'+(done ? '도착' : fmtLeft(left)+' 남음')+'</small></div>'
         + (done ? '<button class="btn small gold" data-dp-claim="'+i+'">받기</button>' : '<button class="dp-cancel" data-dp-cancel="'+i+'">취소</button>')+'</div>'; }).join('')
       + (empty>0 ? '<div class="dp-slot empty"><span>빈 칸 '+empty+'개 · 아래 임무에서 보내기</span></div>' : '')+'</div>'; }
@@ -14163,7 +14168,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 335, APP_VERSION = '4.5.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 336, APP_VERSION = '4.5.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
