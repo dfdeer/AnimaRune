@@ -261,9 +261,7 @@
   .rf-fl small{flex-shrink:0; min-width:34px; text-align:right; font-size:11px; color:#ffe08a; font-weight:800;}
   .rf-stars{display:flex; justify-content:center; gap:10px; margin:8px 0;} .rf-st{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; color:var(--sub);} .rf-st .star-ic{width:24px; height:24px; filter:grayscale(1) brightness(.45);} .rf-st.on .star-ic{filter:none;} .rf-st.on small{color:#ffe08a;} .rf-st.new .star-ic{animation:rfPop .6s ease-out;}
   .rf-pus{display:flex; justify-content:center; gap:14px; margin-top:8px;} .rf-pu{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:12px;} .rf-pu .av{width:54px; height:54px; border-radius:12px; overflow:hidden; display:block;} .rf-pu .av img{width:100%; height:100%;}
-  .rf-mini{width:28px; height:28px; border-radius:8px; overflow:hidden; display:block; flex-shrink:0;} .rf-mini img{width:100%; height:100%;}
   .rf-boss2{display:flex; align-items:center; gap:10px; margin:8px 0 6px; padding:8px 10px; border-radius:12px; background:#0005; cursor:pointer;} .rf-bimg2{width:54px; height:54px; object-fit:contain; flex-shrink:0;} .rf-boss2 b{display:block; font-size:15px;} .rf-boss2 small{display:block; font-size:11px; color:var(--sub); line-height:1.4; margin-top:2px;}
-  .rf-tip{display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:12px; background:linear-gradient(90deg,#4a3510aa,#2a1d0844); border:1px solid #c9a24a66;} .rf-tip .av{width:40px; height:40px; border-radius:10px; overflow:hidden; display:block; flex-shrink:0;} .rf-tip .av img{width:100%; height:100%;} .rf-tip b{display:block; font-size:13px; color:#ffe08a;} .rf-tip small{display:block; font-size:11px; line-height:1.4;}
   @keyframes rfPop{0%{transform:scale(.2);}70%{transform:scale(1.3);}100%{transform:scale(1);}}
   @media (max-height:700px){ .ex-mode{margin-bottom:3px;} .ex-mode button{padding:2px 0; font-size:11px; border-radius:9px;} }
   .ex-head.hard{background:linear-gradient(160deg,#3a1030,#1d1030) !important; border-color:#ff5a6a66 !important;} .ex-map.hard .ex-shade{background:radial-gradient(ellipse at center, #0000 40%, #5a001a66 100%), #3a001522 !important;}
@@ -10997,7 +10995,7 @@ function showRiftPrep(f, keep){
   const fi = riftFloorInfo(f), per = riftPeriod(), pv = buildRiftFight(f), rs = riftState(), pu = SPIRITS[fi.pu];
   let h = '<h3 style="text-align:center; margin:0;">'+STAR_IC+' '+RIFT_NAME+' · '+f+'층</h3>';
   h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
-  h += '<div class="rf-tip"><span class="av r-mythic">'+spArt(pu)+'</span><div><b>추천 · '+pu.name+'</b><small>'+fi.why+'</small></div></div>';
+  // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
   h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
@@ -11028,7 +11026,7 @@ function renderRiftTab(){
   for(let f=1; f<=RIFT_FLOORS.length; f++){
     const hard = !!RIFT_TIERS[f-1].h, b = rs.st[f]||0, open = riftFloorOpen(f); // 보스는 눌러서 준비 창에서 확인 (목록엔 안 보임 · 사용자 결정)
     h += '<button class="rf-fl'+(open?'':' lock')+(b&1?' done':'')+(hard?' hard':'')+'" data-rift-f="'+f+'"'+(on?'':' disabled')+'>'
-      + '<span class="rf-no">'+f+'</span><span class="rf-boss"><span class="rf-mini av r-mythic">'+spArt(SPIRITS[per.pair[(f-1)%2]])+'</span><b>'+SPIRITS[per.pair[(f-1)%2]].name+' 무대</b>'+(hard?'<i>HARD</i>':'')+'</span>'
+      + '<span class="rf-no">'+f+'</span><span class="rf-boss"><b>'+f+'층</b>'+(hard?'<i>HARD</i>':'')+'</span>'
       + '<span class="rf-s3">'+[1,2,4].map(x=>'<i class="'+(b&x?'on':'')+'">'+STAR_IC+'</i>').join('')+'</span>'
       + '<small>'+(open ? '★ '+RIFT_STAR_SHARD[f-1] : uiIc('lock'))+'</small></button>';
   }
