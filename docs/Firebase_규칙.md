@@ -45,6 +45,8 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
     },
     // 플레이어 공개 정보 (이름·대표 정령 등) — 누구나 읽기, 본인만 쓰기
     "players": {
+      // (v335) 전체 목록은 관리자만 읽기 — 관리자 친구창 '전체' (구글 로그인 유저 모두)
+      ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $uid",
