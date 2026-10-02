@@ -470,7 +470,7 @@
   .bonus-tag.down,.bonus-pill.down{background:#ff6a6a; color:#2a0000;}
   .slot.bonus-max{border:2px dashed #ffd55799; background:linear-gradient(160deg,#37321f,#25221a); box-shadow:none;}
   .bonus-tag.max,.bonus-pill.max{background:transparent; color:#ffd557dd; border:1px dashed #ffd55799;}
-  .tw-row{display:grid; grid-template-columns:62% 38%; height:54px; align-items:center;}
+  .tw-row{display:grid; grid-template-columns:62% 38%; height:44px; align-items:center;} /* (v317) 층 사이 공백 줄임 (54→44) */
   .tw-body{height:100%; display:flex; align-items:center; justify-content:center; position:relative; z-index:1;}
   /* (v317) 탑 그림 — 벽 타일(탑 부분 가로 10.9~88.8%)을 왼쪽 62% 칸에 맞춰 반복 */
   #towerScroll{overflow-x:hidden;}
@@ -6691,55 +6691,56 @@ function unitPower(speciesKey){
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
 function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
+function trIc(k){ return '<img class="uic" src="assets/ui/tr/'+k+'.webp" alt="" draggable="false">'; } // (v317) 특성 아이콘 그림
 const ELEMENT_PASSIVE = {
   fire: {
     epic: {
-      a: { icon:'💥', name:'폭발', desc:'20% 확률로 공격력 x1.5', crit:{chance:0.2, mult:1.5} },
-      b: { icon:'💨', name:'돌진', desc:'공격력 +10%', atkMult:1.10 }
+      a: { icon:trIc('tr_fire_ea'), name:'폭발', desc:'20% 확률로 공격력 x1.5', crit:{chance:0.2, mult:1.5} },
+      b: { icon:trIc('tr_fire_eb'), name:'돌진', desc:'공격력 +10%', atkMult:1.10 }
     },
     legendary: {
-      a: { icon:'💥', name:'대폭발', desc:'35% 확률로 공격력 x2.0', crit:{chance:0.35, mult:2.0} },
-      b: { icon:'😡', name:'광란', desc:'공격력 +35%', atkMult:1.35 }
+      a: { icon:trIc('tr_fire_la'), name:'대폭발', desc:'35% 확률로 공격력 x2.0', crit:{chance:0.35, mult:2.0} },
+      b: { icon:trIc('tr_fire_lb'), name:'광란', desc:'공격력 +35%', atkMult:1.35 }
     }
   },
   water: {
     epic: {
-      a: { icon:'🩹', name:'완화', desc:'패배 시 정수 +10 획득', reviveBonus:10 },
-      b: { icon:'🌊', name:'적응', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 }
+      a: { icon:trIc('tr_water_ea'), name:'완화', desc:'패배 시 정수 +10 획득', reviveBonus:10 },
+      b: { icon:trIc('tr_water_eb'), name:'적응', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 }
     },
     legendary: {
-      a: { icon:'💖', name:'회생', desc:'패배 시 정수 +20 획득', reviveBonus:20 },
-      b: { icon:'🌊', name:'해일', desc:'상성 무시', unfavorableFloor:1.0 }
+      a: { icon:trIc('tr_water_la'), name:'회생', desc:'패배 시 정수 +20 획득', reviveBonus:20 },
+      b: { icon:trIc('tr_water_lb'), name:'해일', desc:'상성 무시', unfavorableFloor:1.0 }
     }
   },
   wood: {
     epic: {
-      a: { icon:'🌱', name:'만개', desc:'이 정령 최대 강화 레벨 +5', enhanceCapBonus:5 },
-      b: { icon:'🌲', name:'무성함', desc:'공격력 +10%', atkMult:1.10 }
+      a: { icon:trIc('tr_wood_ea'), name:'만개', desc:'이 정령 최대 강화 레벨 +5', enhanceCapBonus:5 },
+      b: { icon:trIc('tr_wood_eb'), name:'무성함', desc:'공격력 +10%', atkMult:1.10 }
     },
     legendary: {
-      a: { icon:'🌳', name:'천년수', desc:'이 정령 최대 강화 레벨 +10', enhanceCapBonus:10 },
-      b: { icon:'🌲', name:'거목', desc:'공격력 +20%', atkMult:1.20 }
+      a: { icon:trIc('tr_wood_la'), name:'천년수', desc:'이 정령 최대 강화 레벨 +10', enhanceCapBonus:10 },
+      b: { icon:trIc('tr_wood_lb'), name:'거목', desc:'공격력 +20%', atkMult:1.20 }
     }
   },
   light: {
     epic: {
-      a: { icon:'🕊️', name:'정화', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 },
-      b: { icon:'💡', name:'광휘', desc:'공격력 +8%', atkMult:1.08 }
+      a: { icon:trIc('tr_light_ea'), name:'정화', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 },
+      b: { icon:trIc('tr_light_eb'), name:'광휘', desc:'공격력 +8%', atkMult:1.08 }
     },
     legendary: {
-      a: { icon:'⚖️', name:'심판', desc:'상성 무시', unfavorableFloor:1.0 },
-      b: { icon:'🌅', name:'서광', desc:'공격력 +15%', atkMult:1.15 }
+      a: { icon:trIc('tr_light_la'), name:'심판', desc:'상성 무시', unfavorableFloor:1.0 },
+      b: { icon:trIc('tr_light_lb'), name:'서광', desc:'공격력 +15%', atkMult:1.15 }
     }
   },
   dark: {
     epic: {
-      a: { icon:'🖤', name:'탐욕', desc:'전투 승리 시 정수 보상 +15%', rewardBonus:0.15 },
-      b: { icon:'<img class="uic" src="assets/ui/ic_special.webp" alt="">', name:'침식', desc:'공격력 +10%', atkMult:1.10 }
+      a: { icon:trIc('tr_dark_ea'), name:'탐욕', desc:'전투 승리 시 정수 보상 +15%', rewardBonus:0.15 },
+      b: { icon:trIc('tr_dark_eb'), name:'침식', desc:'공격력 +10%', atkMult:1.10 }
     },
     legendary: {
-      a: { icon:'<img class="uic" src="assets/ui/ic_skull.webp" alt="">', name:'파멸의 탐식', desc:'전투 승리 시 정수 보상 +30%', rewardBonus:0.3 },
-      b: { icon:'🥀', name:'황폐', desc:'공격력 +20%', atkMult:1.20 }
+      a: { icon:trIc('tr_dark_la'), name:'파멸의 탐식', desc:'전투 승리 시 정수 보상 +30%', rewardBonus:0.3 },
+      b: { icon:trIc('tr_dark_lb'), name:'황폐', desc:'공격력 +20%', atkMult:1.20 }
     }
   }
 };
