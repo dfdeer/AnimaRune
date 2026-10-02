@@ -2436,7 +2436,10 @@ function makeActCtx(sf, a, tSide, tIdx){
   const C = { sf, a, g:a.g, tSide, t: unitAt(sf, tSide, tIdx), hits: [] };
   C.P = arr=>arr[a.g];
   C.side = s=>aliveUnits(sideUnits(sf, s));
-  C.around = shape=>gridNeighbors(C.t.idx, shape, sideWidth(sf, tSide)).map(i=>unitAt(sf, tSide, i)).filter(u=>u && u.alive);
+  C.around = shape=>{ const w = sideWidth(sf, tSide), out = gridNeighbors(C.t.idx, shape, w).map(i=>unitAt(sf, tSide, i));
+    // (v317) 챕터 보스(탐험·출정·월드 보스·균열)는 후열 3칸을 다 차지 — 전열 어느 칸을 때려도 '바로 뒤'는 보스 (예전엔 전열 가운데 뒤만)
+    if(sf.mode!=='raid' && (shape==='pierce' || shape==='cross') && isFrontRow(C.t.idx, w)){ const b = sideUnits(sf, tSide).find(u=>u.isBoss && !isFrontRow(u.idx, w)); if(b && !out.includes(b)) out.push(b); }
+    return out.filter(u=>u && u.alive && u!==C.t); };
   C.hit = (u, mult)=>{
     if(!u || !u.alive) return null;
     const r = dealDamage(sf, a, u, mult);
