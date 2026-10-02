@@ -3352,8 +3352,8 @@ async function admLoadUsers(){
     const sn = await raidNet.db.doc('players').get(), v = (sn && sn.exists && sn.data() && typeof sn.data()==='object') ? sn.data() : {};
     // (v336) 구글 연동 계정만 sessions/<uid>(지금 하는 기기)가 있음 → 새 버전으로 다시 접속 안 한 사람도 보임 (g 표시는 보조)
     let ses = {}; try{ const ss = await raidNet.db.doc('sessions').get(); ses = (ss && ss.exists && ss.data() && typeof ss.data()==='object') ? ss.data() : {}; }catch(e){}
-    admUsers.list = Object.keys(v).filter(k=>k!==raidNet.uid && v[k] && typeof v[k]==='object' && (v[k].g || ses[k])).map(k=>{ const p = v[k];
-      const u = { uid:k, name: (typeof p.name==='string' && p.name.trim()) ? p.name.slice(0,12) : '소환사-'+k.slice(0,4), code: (typeof p.code==='string' && /^[A-Z0-9]{8}$/.test(p.code)) ? p.code : '',
+    admUsers.list = Object.keys(v).filter(k=>k!==raidNet.uid && v[k] && typeof v[k]==='object').map(k=>{ const p = v[k]; // (v337) 익명 계정도 — 구글(g 표시나 세션)과 나눠서 보여 줌
+      const u = { uid:k, google: !!(p.g || ses[k]), name: (typeof p.name==='string' && p.name.trim()) ? p.name.slice(0,12) : '소환사-'+k.slice(0,4), code: (typeof p.code==='string' && /^[A-Z0-9]{8}$/.test(p.code)) ? p.code : '',
         rep: (typeof p.rep==='string' && SPIRITS[p.rep]) ? p.rep : null, lv: (p.prof && Number.isFinite(p.prof.lv)) ? Math.floor(p.prof.lv) : null, seen: Number.isFinite(p.seen) ? p.seen : 0 };
       if(!raidNet.names[k]) raidNet.names[k] = u.name;
       if(!friendNet.seen[k]) friendNet.seen[k] = u.seen;
@@ -3365,7 +3365,7 @@ async function admLoadUsers(){
 function admUserRowHtml(u, isFr){
   const o = friendOnline(u.uid), sent = state.friendSent && state.friendSent[u.uid];
   return '<div class="fr-row"><span class="fr-avw" data-f-prof="'+u.uid+'" style="cursor:pointer;"><span class="fr-av">'+(u.rep?spArt(SPIRITS[u.rep]):'🔮')+'</span><span class="fr-dot'+(o?' on':'')+'"></span>'+(u.lv ? '<span class="fr-lv">'+u.lv+'</span>' : '')+'</span>'
-    + '<div class="fr-nm" data-f-prof="'+u.uid+'" style="cursor:pointer;"><b>'+escTxt(u.name)+'</b><small>'+friendSeenTxt(u.uid)+(u.code?' · '+u.code:'')+'</small></div>'
+    + '<div class="fr-nm" data-f-prof="'+u.uid+'" style="cursor:pointer;"><b>'+escTxt(u.name)+(isFr && !u.google ? ' <small style="opacity:.6;">익명</small>' : '')+'</b><small>'+friendSeenTxt(u.uid)+(u.code?' · '+u.code:'')+'</small></div>'
     + (isFr ? '' : (sent ? '<small class="sub" style="flex-shrink:0;">요청함</small>' : (u.code ? '<button class="btn secondary small" data-adm-req="'+u.code+'">친구 요청</button>' : '')))+'</div>';
 }
 function friendOnline(id){ return friendNet.online.has(id); }
@@ -3573,10 +3573,12 @@ function renderFriendsTab(){
     else if(!admUsers.list) h += '<div class="fr-empty">불러오는 중…</div>';
     else {
       const ord = (a,b)=> (friendOnline(b.uid)?1:0)-(friendOnline(a.uid)?1:0) || (friendNet.seen[b.uid]||0)-(friendNet.seen[a.uid]||0);
-      const frs = admUsers.list.filter(u=>friendNet.friends[u.uid]).sort(ord), oth = admUsers.list.filter(u=>!friendNet.friends[u.uid]).sort(ord);
-      const sec = (t, arr, isFr)=> '<div class="fr-cap">'+t+' '+arr.length+'</div>'+(arr.length ? '<div class="fr-list">'+arr.map(u=>admUserRowHtml(u, isFr)).join('')+'</div>' : '<div class="fr-empty" style="padding:14px;">없음</div>');
-      h += '<div class="fr-cap" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;"><span>구글 로그인 유저 '+admUsers.list.length+' · 접속 중 '+admUsers.list.filter(u=>friendOnline(u.uid)).length+'</span>'+ref+'</div>'
-        + '<div class="fr-scroll fit-rest" data-below="0" data-min="160"><div style="display:flex; flex-direction:column; gap:10px;">'+sec('친구', frs, true)+sec('친구 아님', oth, false)+'</div></div>';
+      const all = admUsers.list, frs = all.filter(u=>friendNet.friends[u.uid]).sort(ord), oth = all.filter(u=>!friendNet.friends[u.uid] && u.google).sort(ord), anon = all.filter(u=>!friendNet.friends[u.uid] && !u.google).sort(ord);
+      const CAP = 150; // 익명 계정은 많을 수 있어서 접속 중·최근 접속 순으로 앞쪽만
+      const sec = (t, arr, isFr)=> '<div class="fr-cap">'+t+' '+arr.length+'</div>'+(arr.length ? '<div class="fr-list">'+arr.slice(0,CAP).map(u=>admUserRowHtml(u, isFr)).join('')+'</div>'+(arr.length>CAP ? '<div class="sub" style="text-align:center; font-size:11px;">외 '+(arr.length-CAP)+'명 (오래전 접속)</div>' : '') : '<div class="fr-empty" style="padding:14px;">없음</div>');
+      const nG = all.filter(u=>u.google).length;
+      h += '<div class="fr-cap" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0;"><span>구글 '+nG+' · 익명 '+(all.length-nG)+' · 접속 중 '+all.filter(u=>friendOnline(u.uid)).length+'</span>'+ref+'</div>'
+        + '<div class="fr-scroll fit-rest" data-below="0" data-min="160"><div style="display:flex; flex-direction:column; gap:10px;">'+sec('친구', frs, true)+sec('구글 · 친구 아님', oth, false)+sec('익명 · 친구 아님', anon, false)+'</div></div>';
     }
   }else{
     h += '<div class="fr-card"><b>친구 코드로 추가</b><div class="sub">친구에게 받은 8자리 코드 입력 → 친구 요청</div>'
@@ -14168,7 +14170,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 336, APP_VERSION = '4.5.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 337, APP_VERSION = '4.5.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
