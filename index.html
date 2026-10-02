@@ -2567,8 +2567,8 @@ function makeActCtx(sf, a, tSide, tIdx){
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
   C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, amt)); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); }; // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
-  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); return true; };
-  C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:label }); };
+  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); return true; };
+  C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, text:label }); };
   C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','seal','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
@@ -2600,7 +2600,7 @@ function performAction(sf, a, act, tSide, tIdx){
     pushLog(sf, logUnitName(a.side, a)+' '+sk.name+' → '+logUnitName(tSide, C.t));
   }
   if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
-  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, hits:C.hits });
+  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
 }
@@ -5659,7 +5659,7 @@ function keepPanelHeight(root){ const pn = root.querySelector('.bs-panel'); if(!
   pn.style.minHeight = ''; const h = Math.ceil(pn.getBoundingClientRect().height); if(pn.querySelector('.bs-acts') && h > bsPanelH) bsPanelH = h; if(bsPanelH) pn.style.minHeight = bsPanelH+'px'; }
 function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
   const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
-  if(prevDeadUnits) root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)) b.classList.add('bu-dying'); }); // (v327) 방금 쓰러진 정령만 쓰러지는 연출
+  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; } }); if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
   eachStatusFx(root, (key, el)=>{ if(statusFxSeen.has(key)){ const t0 = statusFxSeen.get(key), t = Math.max(0, now - t0); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); next.set(key, t0); } else { const c = Math.max(0, ...fxAnims(el).map(a=>a.currentTime||0)); next.set(key, now - c); } });
   statusFxSeen = next; }
 function mountBattleScreen(){
@@ -6001,7 +6001,7 @@ function showSkillStageScreen(){
   const curUnit = (side==='me' && !raidWaiting) ? unitAt(sf, 'me', cur.idx) : null;
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
-  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); } // (v295) 부활음
+  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); battleSfxFor(sf, fx); } // (v295) 부활음 · (v332) 전투 효과음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
   if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; }
@@ -7180,17 +7180,25 @@ const aT = off=> (aBase!==null ? aBase : audioCtx.currentTime) + (off||0);
 function sMusicBox(f, off, peak, dur, bus){ const t0 = aT(off); sOsc(f,'sine',t0,dur,peak,0.004,bus); sOsc(f*2.01,'sine',t0,dur*0.45,peak*0.22,0.003,bus); sOsc(f*4.2,'sine',t0,0.16,peak*0.12,0.002,bus); }
 function sMarimba(f, off, peak, dur, bus){ const t0 = aT(off); dur = dur||0.55; sOsc(f,'sine',t0,dur,peak,0.006,bus); sOsc(f*3.98,'sine',t0,0.09,peak*0.3,0.003,bus); sOsc(f*9.9,'sine',t0,0.035,peak*0.08,0.002,bus); }
 function sGlock(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.9,peak,0.002,bus); sOsc(f*2.76,'sine',t0,0.3,peak*0.35,0.002,bus); sOsc(f*5.4,'sine',t0,0.12,peak*0.15,0.002,bus); }
-function sSlide(f1, f2, off, dur, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, 0.006, dur+0.04); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.08); }
+function sSlide(f1, f2, off, dur, peak, bus, type){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type||'sine'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, 0.006, dur+0.04); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.08); }
 function sWood(f, off, peak, bus){ const t0 = aT(off); sOsc(f,'sine',t0,0.06,peak,0.001,bus); sOsc(f*2.3,'sine',t0,0.03,peak*0.4,0.001,bus); }
 function sPluck(f, off, peak, dur, bright, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), o2 = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain(), g2 = audioCtx.createGain();
   o.type='triangle'; o2.type='square'; o.frequency.value = f; o2.frequency.value = f; g2.gain.value = bright ? 0.25 : 0.08;
   lp.type='lowpass'; lp.Q.value = 2; lp.frequency.setValueAtTime(bright?2600:1500, t0); lp.frequency.exponentialRampToValueAtTime(260, t0+dur*0.6);
   envG(g, t0, peak, 0.005, dur); o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o2.start(t0); o.stop(t0+dur+0.05); o2.stop(t0+dur+0.05); }
-function sBoop(off, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(190, t0); o.frequency.exponentialRampToValueAtTime(70, t0+0.12); envG(g, t0, peak, 0.004, 0.18); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+0.22); }
+function sBoop(off, peak, bus, f1, f2, dur){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); dur = dur||0.12; o.type='sine'; o.frequency.setValueAtTime(f1||190, t0); o.frequency.exponentialRampToValueAtTime(f2||70, t0+dur); envG(g, t0, peak, 0.004, dur+0.06); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.1); }
+// (v332) 전투 효과음용 — 잡음(필터 모양·길이로 타격·불꽃·바람) · 떨리며 내려가는 음
+let noiseBufCache = null;
+function noiseBuf(){ if(noiseBufCache && noiseBufCache.ctx===audioCtx) return noiseBufCache.buf; const len = Math.floor(audioCtx.sampleRate), buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0); let x = 12345; for(let i=0;i<len;i++){ x = (x*16807)%2147483647; d[i] = (x/2147483647)*2-1; } noiseBufCache = { ctx:audioCtx, buf }; return buf; }
+function sNoise(off, dur, peak, bus, ftype, f1, f2, q, atk){ const t0 = aT(off), src = audioCtx.createBufferSource(), fl = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); src.buffer = noiseBuf(); fl.type = ftype||'lowpass'; fl.Q.value = q||0.8; fl.frequency.setValueAtTime(f1, t0); if(f2) fl.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, atk||0.003, dur); src.connect(fl); fl.connect(g); g.connect(bus); src.start(t0); src.stop(t0+dur+0.05); }
+function sWobble(f1, f2, off, dur, peak, bus, rate, depth){ const t0 = aT(off), o = audioCtx.createOscillator(), l = audioCtx.createOscillator(), lg = audioCtx.createGain(), g = audioCtx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); l.frequency.value = rate; lg.gain.value = depth; l.connect(lg); lg.connect(o.frequency); envG(g, t0, peak, 0.01, dur); o.connect(g); g.connect(bus); o.start(t0); l.start(t0); o.stop(t0+dur+0.05); l.stop(t0+dur+0.05); }
 // (v2.10.2) 효과음마다 크기를 재서(가장 큰 0.05초 구간의 RMS) 맞춘 배율 — 측정값: 버튼 0.017 ~ 승리 0.141로 8배 차이였음
 // 목표: 모두 0.05 · 승리·에픽·전설 소환만 0.06 (다시 재려면 OfflineAudioContext로 sfxPlay를 렌더링해서 같은 방식으로)
 const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summonCharge:1.13, summonEpic:0.55, summonLegend:0.51,
-  fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88 };
+  fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
+  // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
+  bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
+  bSk_fire:0.55, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61 };
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
 function sfxPlay(name){
@@ -7215,6 +7223,40 @@ function sfxPlay(name){
   else if(name==='lose'){ [523,466,415,392].forEach((f,i)=>sMarimba(f,i*0.16,0.12,0.6,B)); sPluck(196,0.64,0.1,0.6,false,B); }
   else if(name==='claim'){ sGlock(1319,0,0.08,B); sGlock(1760,0.06,0.08,B); sMusicBox(2637,0.12,0.04,0.6,B); } // 짜랑
   else if(name==='battleStart'){ sWood(880,0,0.14,B); sWood(1175,0.1,0.14,B); sPluck(196,0.2,0.12,0.3,true,B); }
+  // (v332) 전투 효과음
+  else if(name==='bHit'){ sNoise(0,0.07,0.5,B,'lowpass',1400,500); sBoop(0,0.35,B,170,70,0.09); }
+  else if(name==='bCrit'){ sNoise(0,0.14,0.55,B,'bandpass',3200,900,0.9); sBoop(0,0.45,B,220,55,0.16); sGlock(1568,0.03,0.12,B); }
+  else if(name==='bStrong') sSlide(1100,2100,0,0.09,0.12,B);
+  else if(name==='bWeak') sSlide(420,240,0,0.12,0.2,B);
+  else if(name==='bDot'){ sSlide(300,700,0,0.05,0.2,B); sSlide(380,900,0.07,0.05,0.16,B); }
+  else if(name==='bFall'){ sSlide(560,110,0,0.38,0.22,B,'triangle'); sWood(180,0.36,0.3,B); }
+  else if(name==='bHeal') [784,988,1175].forEach((f,i)=>sMarimba(f,i*0.06,0.13,0.45,B));
+  else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
+  else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
+  else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
+  else if(name==='bSk_fire'){ sNoise(0,0.28,0.35,B,'lowpass',400,3000,1,0.05); sBoop(0.18,0.25,B,160,70,0.1); }
+  else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
+  else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
+  else if(name==='bSk_light'){ sNoise(0,0.25,0.12,B,'highpass',5000,8000,0.7,0.06); sGlock(2637,0.12,0.09,B); }
+  else if(name==='bSk_dark'){ sWobble(260,130,0,0.35,0.2,B,6,12); sNoise(0,0.3,0.12,B,'lowpass',600,200,1,0.08); }
+}
+// (v332) 전투 효과음 — 행동 하나의 결과(hits)를 보고 스킬 시전 → 맞는 소리 → 회복·보호막·상태 효과 순서로 살짝씩 띄워 냄 (0.12초에 3개 제한에 안 걸리게)
+function battleSfxOn(){ return state.settings.battleSfx!==false; }
+function battleSfxFor(sf, fx){
+  if(!battleSfxOn() || !fx) return;
+  const hits = (fx.hits||[]).filter(h=>!h.rv), m = skillSpeedMult(), q = [];
+  let base = 150;
+  if(fx.kind==='act' && fx.skill){ const a = unitAt(sf, fx.actorSide, fx.actorIdx); if(a && ELEMENTS.includes(a.element)){ sfx('bSk_'+a.element); base = 220; } }
+  const dmg = hits.filter(h=>h.kind==='dmg' && !h.dot), dot = hits.filter(h=>h.kind==='dmg' && h.dot);
+  if(dmg.length){ q.push(dmg.some(h=>h.crit) ? 'bCrit' : 'bHit'); if(dmg.some(h=>h.eff>1)) q.push('bStrong'); else if(dmg.some(h=>h.eff<1)) q.push('bWeak'); }
+  else if(dot.length) q.push('bDot');
+  const st = hits.filter(h=>h.kind==='status' && !h.ward && (h.neg!==undefined || fx.kind==='act')); // 라운드 처리(풀림 등)에서 나온 글자는 뺌
+  const isNeg = h=> h.neg!==undefined ? h.neg : (fx.kind==='act' && h.side!==fx.actorSide);
+  if(st.some(isNeg)) q.push('bDebuff');
+  if(hits.some(h=>h.kind==='heal' && h.amount>0)) q.push('bHeal');
+  if(hits.some(h=>h.kind==='shield')) q.push('bShield');
+  if(st.some(h=>!isNeg(h))) q.push('bBuff');
+  q.slice(0, 4).forEach((n, i)=>sfxAt(Math.round((base + i*90)*m), ()=>{ if(battleSfxOn()) sfx(n); }));
 }
 // 배경음 (E안: 차분한 편곡) — 멜로디 사인(천천히 스며듦) · 길게 이어지는 베이스 · 낮고 어두운 화음 패드 · 한 박에 한 번 작은 삼각파 · 여덟 박에 한 번 은은한 킥 · 2.8초 울림
 const BGM_STEP = 0.48;
@@ -9181,6 +9223,7 @@ function showSettingsModal(){
   html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
   html += '</div>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">🔇 다른 창 볼 때 소리 끄기 <small style="opacity:.7;">(알탭 등)</small></span><input type="checkbox" id="muteBlurChk" '+(s.muteBlur!==false?'checked':'')+'></label>';
+  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">⚔️ 전투 효과음 <small style="opacity:.7;">(타격·스킬·회복 등)</small></span><input type="checkbox" id="battleSfxChk" '+(s.battleSfx!==false?'checked':'')+'></label>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
   if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
   if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">'+uiIc('bell')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
@@ -9205,6 +9248,7 @@ function showSettingsModal(){
   });
   document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
   document.getElementById('muteBlurChk').addEventListener('change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
+  document.getElementById('battleSfxChk').addEventListener('change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
   { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
   { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
@@ -9578,6 +9622,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:332, v:'4.4.0', date:'2026-10-02', secs:[
+    { t:'전투 효과음', items:[ '전투에 효과음 추가 — 타격 · 치명타 · 속성 유리·불리 · 지속 피해 · 쓰러짐 · 회복 · 보호막 · 이로운 효과 · 해로운 효과', '스킬을 쓸 때 속성(불·물·숲·빛·그림자)마다 다른 효과음', '설정에 「전투 효과음」 켜기·끄기 (기본 켜짐) — 효과음 볼륨은 그대로 따름' ]}
+  ]},
   { build:331, v:'4.3.1', date:'2026-10-02', secs:[
     { t:'화면', items:[ '도전·요일 던전 화면에서 아래 카드가 살짝 잘려 스크롤되던 것 수정 — 화면이 짧으면 위 그림 높이를 줄여 한눈에 보이게' ]}
   ]},
@@ -13925,6 +13972,7 @@ function sanitizeState(){
   });
   // 설정·일일 기록·화로·출정
   s.settings.muteBlur = s.settings.muteBlur!==false; // (v324) 기본 켜짐
+  s.settings.battleSfx = s.settings.battleSfx!==false; // (v332) 전투 효과음 기본 켜짐
   s.settings.bgmVolume = fin(s.settings.bgmVolume) ? Math.min(1, Math.max(0, s.settings.bgmVolume)) : 0.3;
   s.settings.sfxVolume = fin(s.settings.sfxVolume) ? Math.min(1, Math.max(0, s.settings.sfxVolume)) : 0.35;
   s.settings.spendAsk = s.settings.spendAsk!==false; // (v296) 재화 사용 확인창
@@ -14022,7 +14070,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 331, APP_VERSION = '4.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 332, APP_VERSION = '4.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
