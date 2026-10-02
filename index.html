@@ -9578,6 +9578,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:331, v:'4.3.1', date:'2026-10-02', secs:[
+    { t:'화면', items:[ '도전·요일 던전 화면에서 아래 카드가 살짝 잘려 스크롤되던 것 수정 — 화면이 짧으면 위 그림 높이를 줄여 한눈에 보이게' ]}
+  ]},
   { build:330, v:'4.3.0', date:'2026-10-02', secs:[
     { t:'장비 한 개씩 따로', items:[ '같은 장비도 하나하나 따로 강화·부가 능력·고유 효과·잠금을 가짐 — 같은 장비를 정령마다 다르게 맞출 수 있음', '같은 종류를 여러 개 갖고 있던 장비는 1개만 지금 상태 그대로 두고 나머지는 새 장비(+0 · 부가 능력·고유 효과 없음)로 나눔', '한 장비는 정령 한 명만 낄 수 있음 — 여러 정령이 같은 장비를 끼고 있었다면 나눈 새 장비를 끼워 줌', '합성·분해 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화·능력 붙은 장비는 자동 합성에서 빠짐)' ]},
     { t:'정령 중복 배치 금지', items:[ '같은 정령은 한 팀에 한 번만 — 이미 놓인 정령을 고르면 그 자리로 옮김', '이미 중복으로 놓여 있던 자리는 비움 (팀·균열·결투 덱·프리셋)' ]},
@@ -11372,17 +11375,25 @@ function sceneCarPlace(el, animate){
   tr.style.width = Math.round(iw*sc)+'px'; tr.style.transform = 'translate('+Math.round(x)+'px,'+Math.round(yy)+'px)';
   el.style.setProperty('--cx', (((+sp.dataset.x)*sc + x)/W*100).toFixed(1)+'%'); // 고른 곳 화면 위치 (회색 그라데이션이 따라감)
 }
+// (v331) 그림이 화면보다 길면(폰 위아래 안전 영역 등) 그림 높이를 줄여 아래 카드까지 스크롤 없이 보이게 · 한 화면 안에서는 줄기만 함(고를 때마다 출렁이지 않게)
+function sceneCarFit(el){
+  const m = el.closest('main'); if(!m) return;
+  const cur = el.offsetHeight, pb = parseFloat(getComputedStyle(m).paddingBottom)||0, over = m.scrollHeight - m.clientHeight - Math.max(0, pb - 16); // 아래 여백은 16px만 남기고 봐줌
+  if(over <= 0) return;
+  const h = Math.max(220, cur - over);
+  if(h < cur){ el.style.height = h+'px'; sceneCarPlace(el, false); }
+}
 function sceneCarBind(id, keys, onSel, onOpen){
   const el = document.getElementById(id); if(!el) return;
-  requestAnimationFrame(()=>sceneCarPlace(el, false));
-  const go = k=>{ if(k===el.dataset.sel){ if(onOpen) onOpen(k); return; } el.dataset.sel = k; el.querySelectorAll('.sc-spot').forEach(b=>b.classList.toggle('sel', b.dataset.sc===k)); sceneCarPlace(el, true); onSel(k); };
+  requestAnimationFrame(()=>{ sceneCarPlace(el, false); sceneCarFit(el); });
+  const go = k=>{ if(k===el.dataset.sel){ if(onOpen) onOpen(k); return; } el.dataset.sel = k; el.querySelectorAll('.sc-spot').forEach(b=>b.classList.toggle('sel', b.dataset.sc===k)); sceneCarPlace(el, true); onSel(k); sceneCarFit(el); };
   const step = d=>{ const i = keys.indexOf(el.dataset.sel); go(keys[(i + d + keys.length) % keys.length]); };
   el.querySelectorAll('[data-sc]').forEach(b=>b.addEventListener('click', ()=>go(b.dataset.sc)));
   el.querySelectorAll('[data-sc-step]').forEach(b=>b.addEventListener('click', ()=>step(+b.dataset.scStep)));
   let sx = null; el.addEventListener('touchstart', e=>{ sx = e.touches[0].clientX; }, {passive:true});
   el.addEventListener('touchend', e=>{ if(sx===null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if(Math.abs(dx) > 40) step(dx<0 ? 1 : -1); });
 }
-window.addEventListener('resize', ()=>document.querySelectorAll('.sc-car').forEach(el=>sceneCarPlace(el, false)));
+window.addEventListener('resize', ()=>document.querySelectorAll('.sc-car').forEach(el=>{ el.style.height = ''; sceneCarPlace(el, false); sceneCarFit(el); }));
 // (v317) 요일 던전 — 그림 속 문 5개를 직접 눌러 고름 · 오늘 열린 문은 빛나고, 닫힌 문은 잠김 · 고른 문의 던전 정보가 아래에
 const DG_DOORS = { fire:107, water:301, wood:511, light:717, dark:913 }; // 그림 속 문 가운데 가로 위치(px, 그림 폭 1024)
 let dgSel = null;
@@ -14013,7 +14024,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 330, APP_VERSION = '4.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 331, APP_VERSION = '4.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
