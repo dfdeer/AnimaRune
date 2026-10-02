@@ -5564,33 +5564,34 @@ function upcomingOrder(sf, n){
 function buildQueuePreview(sf){ const c = JSON.parse(JSON.stringify(sf)); return buildQueue(c); }
 function effLabel(tm){ return tm>1 ? '▲유리' : (tm<1 ? '▼불리' : ''); }
 // (v173) 상태 효과: 이로운 효과는 초록, 해로운 효과는 빨강 배지 · 전투 화면에서 배지를 누르면 설명
+function stIc(k){ return '<img class="uic" src="assets/ui/st/st_'+k+'.webp" alt="" draggable="false">'; } // (v317) 상태 효과 아이콘 그림
 function statusList(u){
   const s = u.st, o = [], r = x=> (x && x.r) ? ' · '+x.r+'R 남음' : '';
   if(u.isBoss && u.groggy) o.push({i:'<img class="uic" src="assets/ui/ic_groggy.webp" alt="">', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
-  if(s.jail) o.push({i:'🧊', t:'갇힘', d:'얼음 기둥을 깨면 풀려남 · 갇힌 동안 행동 불가', good:false}); // (v272)
-  if(raidGazed(state.skillFight, u)) o.push({i:'👁️', t:'시선', d:'보스를 때리면 준 피해 25%를 돌려받음 · 대신 회복·보호막 1.5배 · 그로기 게이지를 못 깎음', good:false});
+  if(s.jail) o.push({i:stIc('jail'), t:'갇힘', d:'얼음 기둥을 깨면 풀려남 · 갇힌 동안 행동 불가', good:false}); // (v272)
+  if(raidGazed(state.skillFight, u)) o.push({i:stIc('gaze'), t:'시선', d:'보스를 때리면 준 피해 25%를 돌려받음 · 대신 회복·보호막 1.5배 · 그로기 게이지를 못 깎음', good:false});
   if(s.shield>0) o.push({i:'<img class="uic" src="assets/ui/ic_shield.webp" alt="">', t:'보호막', d:fmtHp(s.shield)+' 피해 흡수'+(s.shieldR?' · '+s.shieldR+'R':''), good:true});
   if(s.taunt) o.push({i:'<img class="uic" src="assets/ui/ic_target.webp" alt="">', t:'도발', d:'적이 이 정령만 공격', good:true});
-  if(s.guard) o.push({i:'🌱', t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
-  if(s.haste) o.push({i:'⏩', t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
-  if(s.buff || s.empower) o.push({i:'✨', t:'강화', d:'공격력 증가'+r(s.buff), good:true});
-  if(s.regen) o.push({i:'💧', t:'재생', d:'라운드마다 체력 회복'+r(s.regen), good:true});
-  if(s.reflect) o.push({i:'🌵', t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
+  if(s.guard) o.push({i:stIc('guardup'), t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
+  if(s.haste) o.push({i:stIc('haste'), t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
+  if(s.buff || s.empower) o.push({i:stIc('buff'), t:'강화', d:'공격력 증가'+r(s.buff), good:true});
+  if(s.regen) o.push({i:stIc('regen'), t:'재생', d:'라운드마다 체력 회복'+r(s.regen), good:true});
+  if(s.reflect) o.push({i:stIc('reflect'), t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
   if(s.ward) o.push({i:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', t:'보호', d:'해로운 효과 1회 막음', good:true});
-  if(s.burn) o.push({i:'🔥', n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
-  if(s.poison) o.push({i:'☠️', t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
-  if(s.freeze) o.push({i:'❄️', t:'빙결', d:'다음 행동 1회 못 함', good:false});
-  if(s.slow || s.chill) o.push({i:'⏬', t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
-  if(s.bind || s.web) o.push({i:'🕸️', t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
+  if(s.burn) o.push({i:stIc('burn'), n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
+  if(s.poison) o.push({i:stIc('poison'), t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
+  if(s.freeze) o.push({i:stIc('freeze'), t:'빙결', d:'다음 행동 1회 못 함', good:false});
+  if(s.slow || s.chill) o.push({i:stIc('slow'), t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
+  if(s.bind || s.web) o.push({i:stIc('bind'), t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
   if(s.erode) o.push({i:'🌑', n:s.erode, t:'잠식 '+s.erode+'중첩', d:'라운드마다 중첩당 최대체력 일부를 잃음 · 보호막으로 못 막음 · 회복을 받으면 2중첩 사라짐', good:false}); // (v317)
   if(s.shJail) o.push({i:'🕳️', t:'그림자 감옥', d:'다음 행동 못 함 — 회복을 받으면 풀려남', good:false});
-  if(s.seal) o.push({i:'🔏', t:'봉인', d:'스킬 못 씀 · 기본 공격만'+r(s.seal), good:false});
+  if(s.seal) o.push({i:stIc('seal'), t:'봉인', d:'스킬 못 씀 · 기본 공격만'+r(s.seal), good:false});
   if(u.addKind==='pillar' && u.alive) o.push({i:'⏳', n:u.addTimer, t:'붕괴 '+u.addTimer+'R', d:u.addTimer+'라운드 안에 못 깨면 갇힌 정령이 쓰러짐 · 🔥화염 공격 2배', good:false});
   if(u.addKind==='seed' && u.alive) o.push({i:'🌸', n:u.addTimer, t:'개화 '+u.addTimer+'R', d:u.addTimer+'라운드 뒤 개화 — 보스 회복 + 아군 전체 독 · 살아 있는 동안 보스 받는 피해 −30% · 🔥화염 공격 2배', good:false});
   if(u.isAdd && u.fuse) o.push({i:'💣', n:u.fuse, t:'자폭 '+u.fuse+'R', d:u.fuse+'라운드 뒤 자폭 — 아군 전체 피해 · 먼저 잡으면 막음', good:false});
-  if(u.isBoss && u.inv) o.push({i:'🔄', t:'역류', d:'이번 라운드 상성 반전 — 불리한 속성이 유리', good:true});
+  if(u.isBoss && u.inv) o.push({i:stIc('inv'), t:'역류', d:'이번 라운드 상성 반전 — 불리한 속성이 유리', good:true});
   if(u.cast) o.push({i:u.cast.ic, t:u.cast.nm+' 준비', d:u.cast.el ? '이번 라운드에 '+elIc(u.cast.el)+' '+ELEMENT_INFO[u.cast.el].name+' 공격을 '+Math.max(0,u.cast.need-u.cast.dealt)+'번 더 맞히거나 그로기로 만들면 저지' : '이번 라운드에 '+fmtHp(Math.max(0,u.cast.need-u.cast.dealt))+' 더 피해를 주거나 그로기로 만들면 저지', good:true});
-  if(s.curse) o.push({i:'<img class="uic" src="assets/ui/ic_skull.webp" alt="">', t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
+  if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   const left = { '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0 };
   o.forEach(x=>{ const v = left[x.t]; if(v>0 && v<99) x.left = v; });
   return o;
