@@ -4910,9 +4910,9 @@ const BOSS_UNIT_KITS = {
     s2:{ name:'수정 파편', icon:artIc('bk_abyss_2'), cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%',
       run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
   cboss_shadowLord: { role:'챕터 보스', icon:'👑',
-    s1:{ name:'그림자 송곳니', icon:'🦇', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 잠식 1중첩',
+    s1:{ name:'그림자 송곳니', icon:artIc('bk_shadow_1'), cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 잠식 1중첩',
       run:C=>{ C.hit(C.t, 1.7); if(C.t.alive) C.t.st.erode = Math.min(SHADOW_ERODE_MAX, (C.t.st.erode||0)+1); } },
-    s2:{ name:'밤의 장막', icon:'🌑', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70%',
+    s2:{ name:'밤의 장막', icon:artIc('bk_shadow_2'), cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70%',
       run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.7)); } } },
   // ── 보스의 부하 ──
   ward: { role:'결계석', icon:'🔷',
@@ -9415,6 +9415,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:323, v:'4.0.6', date:'2026-10-02', secs:[
+    { t:'아이콘', items:[ '그림자 군주 스킬(그림자 송곳니 · 밤의 장막) 아이콘을 그림으로' ]}
+  ]},
   { build:322, v:'4.0.5', date:'2026-10-02', secs:[
     { t:'아이콘', items:[ '홈 패스 아이콘을 새 그림으로', '별빛 균열 아이콘 추가 — 홈 균열 버튼 · 균열 화면 제목' ]}
   ]},
@@ -13805,7 +13808,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 322, APP_VERSION = '4.0.5'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 323, APP_VERSION = '4.0.6'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
