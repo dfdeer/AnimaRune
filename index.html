@@ -260,6 +260,10 @@
   .rf-s3{display:flex; gap:1px;} .rf-s3 i .star-ic{width:16px; height:16px; filter:grayscale(1) brightness(.45);} .rf-s3 i.on .star-ic{filter:none;}
   .rf-fl small{flex-shrink:0; min-width:34px; text-align:right; font-size:11px; color:#ffe08a; font-weight:800;}
   .rf-stars{display:flex; justify-content:center; gap:10px; margin:8px 0;} .rf-st{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; color:var(--sub);} .rf-st .star-ic{width:24px; height:24px; filter:grayscale(1) brightness(.45);} .rf-st.on .star-ic{filter:none;} .rf-st.on small{color:#ffe08a;} .rf-st.new .star-ic{animation:rfPop .6s ease-out;}
+  .rf-pus{display:flex; justify-content:center; gap:14px; margin-top:8px;} .rf-pu{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:12px;} .rf-pu .av{width:54px; height:54px; border-radius:12px; overflow:hidden; display:block;} .rf-pu .av img{width:100%; height:100%;}
+  .rf-mini{width:28px; height:28px; border-radius:8px; overflow:hidden; display:block; flex-shrink:0;} .rf-mini img{width:100%; height:100%;}
+  .rf-boss2{display:flex; align-items:center; gap:10px; margin:8px 0 6px; padding:8px 10px; border-radius:12px; background:#0005; cursor:pointer;} .rf-bimg2{width:54px; height:54px; object-fit:contain; flex-shrink:0;} .rf-boss2 b{display:block; font-size:15px;} .rf-boss2 small{display:block; font-size:11px; color:var(--sub); line-height:1.4; margin-top:2px;}
+  .rf-tip{display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:12px; background:linear-gradient(90deg,#4a3510aa,#2a1d0844); border:1px solid #c9a24a66;} .rf-tip .av{width:40px; height:40px; border-radius:10px; overflow:hidden; display:block; flex-shrink:0;} .rf-tip .av img{width:100%; height:100%;} .rf-tip b{display:block; font-size:13px; color:#ffe08a;} .rf-tip small{display:block; font-size:11px; line-height:1.4;}
   @keyframes rfPop{0%{transform:scale(.2);}70%{transform:scale(1.3);}100%{transform:scale(1);}}
   @media (max-height:700px){ .ex-mode{margin-bottom:3px;} .ex-mode button{padding:2px 0; font-size:11px; border-radius:9px;} }
   .ex-head.hard{background:linear-gradient(160deg,#3a1030,#1d1030) !important; border-color:#ff5a6a66 !important;} .ex-map.hard .ex-shade{background:radial-gradient(ellipse at center, #0000 40%, #5a001a66 100%), #3a001522 !important;}
@@ -5780,7 +5784,7 @@ function battleThemeOf(sf){
   if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
-  if(sf.mode==='rift') return BATTLE_THEMES[CHAPTER_MASKS[RIFT_FLOORS[(sf.riftF||1)-1].g].theme] || 'cave'; // (v317)
+  if(sf.mode==='rift'){ const gi = CHAPTER_BOSS_GIMMICK.indexOf(sf.gimmick && sf.gimmick.type); return BATTLE_THEMES[CHAPTER_MASKS[Math.max(0, gi)].theme] || 'cave'; } // (v317)
   if(sf.mode==='trial') return 'trial';
   if(sf.mode==='worldboss') return 'wb';
   if(sf.mode==='duel') return 'arena';
@@ -10898,37 +10902,58 @@ function showDungeonPrep(el, n, keep){
   });
 }
 // ===================== (v317) 별빛 균열 — 탐험 추가 콘텐츠 · 반달(픽업과 같은 기간)마다 초기화 · 12층 · 층마다 별 3개 · 별마다 별빛 조각 =====================
-// 층 = 챕터 보스 한 판(웨이브 없이 보스만). 기믹은 g(챕터 0~4)·h(하드 기믹), 세기는 ref 보스(노말 n / 하드 h, 챕터 c)의 공격·체력 × k
-// 9층 = 하드 1 보스 · 10층 = 하드 3 보스 · 11층 = 하드 5 보스 · 12층 = 하드 5보다 강하게 (사용자 결정)
+// (v317) 균열은 그 기간 픽업 신화 둘을 위한 무대 — 픽업이 바뀌면 층 구성도 새로 짜이고 별도 초기화 (사용자 결정)
+// 홀수 층은 첫 번째 픽업, 짝수 층은 두 번째 픽업에 맞춤: 보스 속성 = 그 픽업이 유리한 속성 · 기믹 = 그 픽업 스킬·패시브가 받아치기 좋은 것(RIFT_FIT)
+// 세기는 층마다 고정(RIFT_TIERS: 하드 여부 h · 기준 보스 ref · 배율 k) — 9층 = 하드 1 · 10층 = 하드 3 · 11층 = 하드 5 · 12층 = 하드 5 ×1.25 (사용자 결정)
 const RIFT_NAME = '별빛 균열';
-const RIFT_FLOORS = [
-  {g:0, h:0, ref:['n',0], k:1},   {g:1, h:0, ref:['n',1], k:1},   {g:2, h:0, ref:['n',2], k:1},   {g:3, h:0, ref:['n',3], k:1},
-  {g:4, h:0, ref:['n',4], k:1},   {g:1, h:1, ref:['h',0], k:0.6}, {g:3, h:1, ref:['h',0], k:0.75},{g:4, h:1, ref:['h',0], k:0.9},
-  {g:0, h:1, ref:['h',0], k:1},   {g:2, h:1, ref:['h',2], k:1},   {g:4, h:1, ref:['h',4], k:1},   {g:1, h:1, ref:['h',4], k:1.25}
+const RIFT_TIERS = [
+  {h:0, ref:['n',0], k:1},   {h:0, ref:['n',1], k:1},   {h:0, ref:['n',2], k:1},    {h:0, ref:['n',3], k:1},
+  {h:0, ref:['n',4], k:1},   {h:1, ref:['h',0], k:0.6}, {h:1, ref:['h',0], k:0.75}, {h:1, ref:['h',0], k:0.9},
+  {h:1, ref:['h',0], k:1},   {h:1, ref:['h',2], k:1},   {h:1, ref:['h',4], k:1},    {h:1, ref:['h',4], k:1.25}
 ];
+const RIFT_FLOORS = RIFT_TIERS; // 층 수
+// 픽업 신화별로 잘 받아치는 기믹 (앞에 있을수록 자주) · why = 준비 창에 보이는 한 줄
+const RIFT_FIT = {
+  fire_mythic_a:  [{g:'ruinGuardian', why:'불꽃 돌진 뒤 칸 피해로 결계석과 보스를 같이 침'}, {g:'ancientTree', why:'부활 폭발로 끌려 나온 뒤에도 반격'}, {g:'frostGiant', why:'체력 50% 이하 공격력 증가로 얼음 갑옷을 뚫음'}],
+  fire_mythic_b:  [{g:'ancientTree', why:'화상 피해가 재생을 앞지름'}, {g:'frostGiant', why:'화상은 얼음 갑옷과 상관없이 매 라운드 들어감'}, {g:'ruinGuardian', why:'옆으로 번지는 화상이 결계석에도 쌓임'}],
+  water_mythic_a: [{g:'lavaLord', why:'매 라운드 화상을 해일의 축복이 전부 씻어 냄'}, {g:'abyssCrystal', why:'심연 응시 저주를 지움'}, {g:'ancientTree', why:'포자 독을 치유로 버팀'}],
+  water_mythic_b: [{g:'lavaLord', why:'용암 정령을 빙결로 묶어 자폭을 막음'}, {g:'ruinGuardian', why:'결계석을 한꺼번에 빙결'}, {g:'frostGiant', why:'절대영도를 모으는 동안 빙결로 시간을 범'}],
+  wood_mythic_a:  [{g:'frostGiant', why:'눈보라·절대영도를 도발과 피해 감소로 받아 냄'}, {g:'ancientTree', why:'덩굴에 끌려 나온 후열을 바로 뒤에서 지킴'}, {g:'lavaLord', why:'가시 갑옷 반사로 화상 장판 속에서도 버팀'}],
+  wood_mythic_b:  [{g:'frostGiant', why:'독은 최대체력 비례라 얼음 갑옷에 안 깎임'}, {g:'ancientTree', why:'독이 재생을 완전히 막음'}, {g:'lavaLord', why:'독이 화염 흡수 회복을 막음'}],
+  light_mythic_a: [{g:'ruinGuardian', why:'보호가 석화의 눈·봉인의 문양을 막음'}, {g:'lavaLord', why:'보호막이 화상 장판을 받아 냄'}, {g:'abyssCrystal', why:'혼돈으로 벗겨진 보호막을 바로 다시 씌움'}],
+  light_mythic_b: [{g:'frostGiant', why:'여명의 호령으로 절대영도를 한 라운드 안에 저지'}, {g:'ruinGuardian', why:'다시 생기기 전에 결계석을 빠르게 깸'}, {g:'abyssCrystal', why:'다음 속성에 맞는 정령을 먼저 움직임'}],
+  dark_mythic_a:  [{g:'ruinGuardian', why:'결계석을 처형하고 한 번 더 행동'}, {g:'lavaLord', why:'용암 정령 처형으로 연속 행동'}, {g:'abyssCrystal', why:'흡혈로 심연 파동을 버팀'}],
+  dark_mythic_b:  [{g:'ancientTree', why:'악몽 포식으로 가시 껍질·가시 덩굴을 벗김'}, {g:'ruinGuardian', why:'모든 적에게 저주를 걸어 결계석부터 빠르게'}, {g:'frostGiant', why:'저주로 얼음 갑옷 너머 피해를 키움'}]
+};
+const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
 const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
 const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
-const RIFT_BLESS = 0.25; // 이번 기간 축복 속성 공격력 +25%
+const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
 function riftBossStage(hard, c){ return (hard ? HARD_BASE : 0) + c*CHAPTER_LENGTH + CHAPTER_LENGTH-1; }
 function riftPeriod(){ return pickupPeriod(); }
-function riftBlessEl(idx){ return ELEMENTS[((idx % ELEMENTS.length) + ELEMENTS.length) % ELEMENTS.length]; }
-function riftState(){ const per = riftPeriod(); let r = state.rift; if(!isPlainObj(r) || (r.p!==per.idx && pickupOnline())) r = state.rift = { p: per.idx, st: {} }; /* 기간이 바뀌면 초기화 — 폰 시각이 틀릴 수 있어 서버 시각을 쓸 때(온라인)만 */ if(!isPlainObj(r.st)) r.st = {}; return r; }
+function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 · 이유
+  per = per || riftPeriod(); const pu = per.pair[(f-1)%2], fits = RIFT_FIT[pu], fit = fits[Math.floor((f-1)/2) % fits.length];
+  return { pu, gim: fit.g, gi: CHAPTER_BOSS_GIMMICK.indexOf(fit.g), el: RIFT_BEATS[SPIRITS[pu].element], why: fit.why, hard: !!RIFT_TIERS[f-1].h };
+}
+function riftState(){ const per = riftPeriod(); let r = state.rift; if(!isPlainObj(r) || (r.p!==per.idx && pickupOnline())) r = state.rift = { p: per.idx, st: {} }; /* 기간(=픽업)이 바뀌면 초기화 — 폰 시각이 틀릴 수 있어 서버 시각을 쓸 때(온라인)만 */ if(!isPlainObj(r.st)) r.st = {}; return r; }
 function riftStars(f){ const b = riftState().st[f]||0; return (b&1?1:0)+(b&2?1:0)+(b&4?1:0); }
 function riftTotalStars(){ let n = 0; for(let f=1; f<=RIFT_FLOORS.length; f++) n += riftStars(f); return n; }
 function riftFloorOpen(f){ return f===1 || (riftState().st[f-1]&1); }
 function riftUnlocked(){ return !!state.adminUnlockAll || chapter1BossCleared(); }
-function riftMakeEnemies(f){ // 기믹 보스를 만들고 ref 보스 세기에 맞춤 (결계석·용암 정령도 같은 비율)
-  const F = RIFT_FLOORS[f-1], st = riftBossStage(F.h, F.g);
-  const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}), ref = buildBossWaveFight(riftBossStage(F.ref[0]==='h', F.ref[1]), BOSS_WAVE_COUNT, [], {});
+function riftSetEl(u, el){ u.element = el; if(SPIRITS[el+'_'+SPIRITS[u.key].rarity+'_'+SPIRITS[u.key].variant]) u.key = el+'_'+SPIRITS[u.key].rarity+'_'+SPIRITS[u.key].variant; if(u.isWard) u.dispName = ELEMENT_INFO[el].name+' 결계석'; }
+function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸고, 세기를 그 층 기준 보스에 맞춤 (결계석·용암 정령도 같은 비율)
+  const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
+  const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {});
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
-  const ka = rb.atk/b.atk*F.k, kh = rb.maxHp/b.maxHp*F.k;
-  bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0; if(u.shieldMax) u.shieldMax = Math.round(u.shieldMax*kh); });
+  const ka = rb.atk/b.atk*T.k, kh = rb.maxHp/b.maxHp*T.k;
+  bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0;
+    if(P.gim!=='abyssCrystal' && u.isBoss) riftSetEl(u, P.el); }); // 결계석은 원래대로 서로 다른 속성
   return bf;
 }
 function buildRiftFight(f){
-  const F = RIFT_FLOORS[f-1], per = riftPeriod(), bless = riftBlessEl(per.idx);
-  const bf = riftMakeEnemies(f), my = buildBossWaveFight(riftBossStage(F.h, F.g), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
-  my.myUnits.forEach(u=>{ if(u.element===bless) u.atk = Math.round(u.atk*(1+RIFT_BLESS)); });
+  const per = riftPeriod(), P = riftPlan(f, per), els = per.pair.map(k=>SPIRITS[k].element);
+  const bf = riftMakeEnemies(f, per), my = buildBossWaveFight(riftBossStage(P.hard, P.gi), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
+  my.myUnits.forEach(u=>{ const m = (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
   const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'] });
   sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
   return sf;
@@ -10961,7 +10986,7 @@ function riftResultOverlayHtml(sf){
 }
 function leaveRiftFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'rift'; save(); render(); }
 function riftRetry(f){ if(!pickupOnline()){ toast('온라인 연결 후 도전'); leaveRiftFight(); return; } state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
-function riftFloorInfo(f){ const F = RIFT_FLOORS[f-1], gim = CHAPTER_BOSS_GIMMICK[F.g]; return { gim, info: BOSS_GIMMICK_INFO[gim], hard: !!F.h }; }
+function riftFloorInfo(f){ const P = riftPlan(f); return Object.assign(P, { info: BOSS_GIMMICK_INFO[P.gim] }); }
 function riftRecCP(f){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); }
 function showRiftPrep(f, keep){
   if(!pickupOnline()){ toast('온라인 연결 후 도전'); return; }
@@ -10969,9 +10994,11 @@ function showRiftPrep(f, keep){
   state.riftForm = Array.isArray(state.riftForm) ? state.riftForm : [];
   if(!keep){ const fm = state.riftForm.slice(0, GRID_SLOTS); state.formation = Array.from({length:GRID_SLOTS}, (_,i)=> (fm[i] && ownedCount(fm[i])>0) ? fm[i] : null); }
   state.riftForm = state.formation.slice(); save();
-  const fi = riftFloorInfo(f), per = riftPeriod(), bless = riftBlessEl(per.idx), pv = buildRiftFight(f), rs = riftState();
+  const fi = riftFloorInfo(f), per = riftPeriod(), pv = buildRiftFight(f), rs = riftState(), pu = SPIRITS[fi.pu];
   let h = '<h3 style="text-align:center; margin:0;">'+STAR_IC+' '+RIFT_NAME+' · '+f+'층</h3>';
-  h += '<div class="dg-rule">'+bossImg(fi.gim, 'rf-bimg', fi.info.icon)+' <b>'+fi.info.name+'</b>'+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+' · 축복 '+elIc(bless)+' '+ELEMENT_INFO[bless].name+' 공격력 +'+Math.round(RIFT_BLESS*100)+'%</div>';
+  h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
+  h += '<div class="rf-tip"><span class="av r-mythic">'+spArt(pu)+'</span><div><b>추천 · '+pu.name+'</b><small>'+fi.why+'</small></div></div>';
+  h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="rfClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="rfRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
@@ -10992,15 +11019,16 @@ function showRiftPrep(f, keep){
 }
 function renderRiftTab(){
   if(!riftUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+RIFT_NAME+' 잠김<div class="sub" style="margin-top:6px;">'+chapterBossName(1)+' 처치 시 해금</div></div>';
-  const on = pickupOnline(), per = riftPeriod(), rs = riftState(), bless = riftBlessEl(per.idx), tot = riftTotalStars(), max = RIFT_FLOORS.length*3;
+  const on = pickupOnline(), per = riftPeriod(), rs = riftState(), tot = riftTotalStars(), max = RIFT_FLOORS.length*3;
   let h = '<div class="rf-head"><div class="rf-t">'+STAR_IC+' '+RIFT_NAME+'</div><div class="rf-sub">'+(on ? pickupLeftText(per.left)+' 뒤 초기화' : '온라인일 때만 열림')+' · 별 <b>'+tot+'</b>/'+max+'</div>'
-    + '<div class="rf-bless">축복 '+elIc(bless)+' '+ELEMENT_INFO[bless].name+' 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+STAR_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>' + TOP_MARK;
+    + '<div class="rf-pus">'+per.pair.map(k=>'<span class="rf-pu"><span class="av r-mythic">'+spArt(SPIRITS[k])+'</span><b>'+elIc(SPIRITS[k].element)+' '+SPIRITS[k].name+'</b></span>').join('')+'</div>'
+    + '<div class="rf-bless">픽업이 바뀌면 새로 열림 · '+STAR_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>' + TOP_MARK;
   if(!on) h += '<div class="card" style="text-align:center; margin-top:10px;">🔌 온라인일 때만 도전 가능</div>';
   h += '<div class="rf-list">';
   for(let f=1; f<=RIFT_FLOORS.length; f++){
-    const fi = riftFloorInfo(f), b = rs.st[f]||0, open = riftFloorOpen(f);
-    h += '<button class="rf-fl'+(open?'':' lock')+(b&1?' done':'')+(fi.hard?' hard':'')+'" data-rift-f="'+f+'"'+(on?'':' disabled')+'>'
-      + '<span class="rf-no">'+f+'</span><span class="rf-boss">'+bossImg(fi.gim, 'rf-bimg', fi.info.icon)+'<b>'+fi.info.name+'</b>'+(fi.hard?'<i>HARD</i>':'')+'</span>'
+    const hard = !!RIFT_TIERS[f-1].h, b = rs.st[f]||0, open = riftFloorOpen(f); // 보스는 눌러서 준비 창에서 확인 (목록엔 안 보임 · 사용자 결정)
+    h += '<button class="rf-fl'+(open?'':' lock')+(b&1?' done':'')+(hard?' hard':'')+'" data-rift-f="'+f+'"'+(on?'':' disabled')+'>'
+      + '<span class="rf-no">'+f+'</span><span class="rf-boss"><span class="rf-mini av r-mythic">'+spArt(SPIRITS[per.pair[(f-1)%2]])+'</span><b>'+SPIRITS[per.pair[(f-1)%2]].name+' 무대</b>'+(hard?'<i>HARD</i>':'')+'</span>'
       + '<span class="rf-s3">'+[1,2,4].map(x=>'<i class="'+(b&x?'on':'')+'">'+STAR_IC+'</i>').join('')+'</span>'
       + '<small>'+(open ? '★ '+RIFT_STAR_SHARD[f-1] : uiIc('lock'))+'</small></button>';
   }
