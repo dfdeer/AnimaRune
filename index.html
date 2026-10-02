@@ -663,8 +663,8 @@
   .bu-icon{position:relative; z-index:1; font-size:calc(var(--sz) * var(--k,1) * .8); line-height:1; filter:drop-shadow(0 2px 2px #0005); transform-origin:50% 100%; animation:buBreath 3s ease-in-out infinite; animation-delay:var(--bd,0s);} /* (v327) 가만히 있을 때 숨 쉬듯 — 지연은 전체 시계 기준이라 다시 그려도 이어짐 */
   @keyframes buBreath{0%,100%{scale:1 1;} 50%{scale:1.012 1.035;}}
   .bu-dead .bu-icon, .st-frz .bu-icon{animation:none;}
-  .bu-dying .bu-icon{animation:buDie .65s ease-in both;} .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .6s ease-out .2s both; pointer-events:none; z-index:5;}
-  @keyframes buDie{0%{transform:none; opacity:1; filter:brightness(2) drop-shadow(0 0 8px #fff);} 35%{transform:translateY(-8%) rotate(-8deg); opacity:1; filter:brightness(1.4);} 100%{transform:rotate(80deg) scale(.8); opacity:.35; filter:grayscale(1);}}
+  .bu.bu-dying .bu-icon{animation:buDie .9s ease-in .2s both; transform-origin:50% 50%;} /* 맞는 연출(fx-hit)보다 우선 · 맞은 뒤 쓰러짐 */ .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .7s ease-out .55s both; pointer-events:none; z-index:5;}
+  @keyframes buDie{0%{transform:none; opacity:1; filter:brightness(2.2) drop-shadow(0 0 10px #fff);} 30%{transform:translateY(-12%) rotate(-10deg) scale(1.05); opacity:1; filter:brightness(1.6) drop-shadow(0 0 6px #fff);} 70%{transform:rotate(70deg) scale(.85); opacity:.6; filter:grayscale(.6);} 100%{transform:rotate(80deg) scale(.8); opacity:.35; filter:grayscale(1);}}
   @keyframes buPuff{0%{transform:scale(.4); opacity:0;} 30%{opacity:1;} 100%{transform:scale(1.6); opacity:0;}}
   .bu-shadow{position:absolute; left:50%; bottom:-4px; width:calc(var(--sz) * var(--k,1) * .95); height:calc(var(--sz) * var(--k,1) * .24); transform:translateX(-50%); border-radius:50%;
     background:radial-gradient(ellipse,#3b4d6a70 0%,transparent 70%);}
@@ -692,7 +692,7 @@
   .bu-hpnum{font-size:9px; font-weight:700; color:#33435c; margin-top:1px; position:relative; z-index:6;}
   .bu-plate{position:relative; z-index:6;} /* (v266) 이름표·체력 글자는 그림(보스 그림 여백 포함)·차례 표시(▼)보다 위에 */
   .bu-dead .bu-icon, .bu-dead .bu-plate, .bu-dead .bu-hp, .bu-dead .bu-hpnum, .bu-dead .bu-shadow{opacity:.35; filter:grayscale(1);}
-  .bu-dead .bu-icon{transform:rotate(80deg) scale(.8);}
+  .bu-dead .bu-icon{transform:rotate(80deg) scale(.8); transform-origin:50% 50%;} /* (v329) 숨쉬기용 아래 기준점 때문에 쓰러진 그림이 칸 밖으로 나가던 것 — 가운데 기준으로 */
 
   /* 행동 연출 */
   .fx-lunge-up .bu-body{animation:fxLungeUp .45s ease-out;}
@@ -5643,19 +5643,21 @@ function showSkillStagePrepModal(i){
 function updateScrollLock(){ document.documentElement.classList.add('lock-scroll'); } // (v187) 모든 화면에서 문서는 고정, 화면 영역(main)만 스크롤
 // (v324) 전투 화면은 행동마다 통째로 다시 그려서, 상태 효과 연출(불꽃·얼음 결정·저주 등)의 CSS 애니메이션이 매번 처음부터 다시 시작됐음
 // → 정령+효과별로 처음 보인 시각을 기억해 두고, 다시 그린 뒤 애니메이션 시간을 그만큼 앞으로 돌림 (새로 걸린 효과만 등장 연출부터)
-const STATUS_FX_SEL = '.fx-burn,.fx-slow,.fx-seal,.fx-jail,.fx-gaze,.fx-poi,.fx-web,.fx-curse,.fx-cc,.fx-csk,.fx-frz:not(.thaw),.fx-tint,.fx-shd,.fx-tnt,.fx-hst,.fx-buf,.fx-rgn';
+const STATUS_FX_SEL = '.fx-burn,.fx-slow,.fx-seal,.fx-jail,.fx-gaze,.fx-poi,.fx-web,.fx-curse,.fx-cc,.fx-csk,.fx-frz:not(.thaw),.fx-tint,.fx-shd,.fx-tnt,.fx-hst,.fx-buf,.fx-rgn,.bu-cast';
 let statusFxSeen = new Map();
 function eachStatusFx(root, fn){ root.querySelectorAll('.bu[data-u]').forEach(bu=>{ const cnt = {}; bu.querySelectorAll(STATUS_FX_SEL).forEach(el=>{ const c = [...el.classList].find(x=>x.indexOf('fx-')===0) || 'fx'; cnt[c] = (cnt[c]||0)+1; fn(bu.dataset.u+'|'+c+'|'+cnt[c], el); }); }); }
 function fxAnims(el){ try{ return el.getAnimations ? el.getAnimations({subtree:true}) : []; }catch(e){ return []; } }
 let prevDeadUnits = null;
-function captureStatusFx(root){ // 다시 그리기 직전: 지금 돌고 있는 연출이 언제 시작됐는지 기억
-  const now = document.timeline ? document.timeline.currentTime : performance.now(); statusFxSeen = new Map();
-  prevDeadUnits = root && root.querySelector('.bu[data-u]') ? new Set([...root.querySelectorAll('.bu[data-u]')].filter(b=>b.classList.contains('bu-dead')).map(b=>b.dataset.u)) : null;
-  if(root) eachStatusFx(root, (key, el)=>{ const a = fxAnims(el)[0]; if(a && a.currentTime!=null) statusFxSeen.set(key, now - a.currentTime); }); }
-function syncStatusFx(root){ // 다시 그린 뒤: 같은 정령의 같은 효과는 이어서 돌림 · 새로 걸린 효과는 등장 연출부터
-  const now = document.timeline ? document.timeline.currentTime : performance.now();
+// (v329) 효과별로 「처음 보인 시각」을 계속 기억 — 끝난 등장 연출(속박 거미줄·감옥·봉인 등)은 브라우저 기록에서 사라져서 예전 방식(직전 진행 시간 읽기)으로는 못 잡았음
+function captureStatusFx(root){ // 다시 그리기 직전
+  const has = root && root.querySelector('.bu[data-u]');
+  if(!has) statusFxSeen = new Map(); // 새 전투 화면이면 처음부터
+  prevDeadUnits = has ? new Set([...root.querySelectorAll('.bu[data-u]')].filter(b=>b.classList.contains('bu-dead')).map(b=>b.dataset.u)) : null; }
+function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
+  const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
   if(prevDeadUnits) root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)) b.classList.add('bu-dying'); }); // (v327) 방금 쓰러진 정령만 쓰러지는 연출
-  eachStatusFx(root, (key, el)=>{ if(!statusFxSeen.has(key)) return; const t = now - statusFxSeen.get(key); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); }); }
+  eachStatusFx(root, (key, el)=>{ if(statusFxSeen.has(key)){ const t0 = statusFxSeen.get(key), t = Math.max(0, now - t0); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); next.set(key, t0); } else { const c = Math.max(0, ...fxAnims(el).map(a=>a.currentTime||0)); next.set(key, now - c); } });
+  statusFxSeen = next; }
 function mountBattleScreen(){
   let el = document.getElementById('battleScreen');
   if(!el){ el = document.createElement('div'); el.id = 'battleScreen'; document.getElementById('app').appendChild(el); }
@@ -9547,6 +9549,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:329, v:'4.2.1', date:'2026-10-02', secs:[
+    { t:'버그 수정', items:[ '속박·감옥·봉인 등 상태 효과 연출이 행동할 때마다 처음부터 다시 나오던 것 수정 (4.0.7에서 일부만 고쳐졌던 것)', '쓰러진 정령 그림이 칸 밖으로 나가던 것 수정' ]},
+    { t:'전투 연출', items:[ '쓰러지는 연출을 더 잘 보이게 — 맞은 뒤 번쩍 → 기울며 쓰러짐 → 연기' ]}
+  ]},
   { build:328, v:'4.2.0', date:'2026-10-02', secs:[
     { t:'장비 고유 효과 (새 성장)', items:[ '레전더리·신화 장비마다 고유 효과 하나 — 장비 창의 「고유 효과」에서 후보 3개 중 골라 붙임 (처음 후보는 무료)', '후보 다시 뽑기 각인석 2개 · 지금 붙은 효과는 새 후보에서 빠짐 · 후보 안에서는 언제든 바꿀 수 있음', '끼운 정령에게 붙고 무기·방어구 각각 하나씩 · 부가 능력 상한과 따로 더해짐', '효과 (레전더리 / 신화): 선제 첫 행동 피해 +15% / +25% · 수호막 전투 시작 보호막 8% / 12% · 불씨 공격 시 화상 1중첩 · 독침 독 2% / 3% · 서리 빙결 6% / 10% · 저주 12% / 18% · 샘 라운드마다 회복 2% / 3% · 질풍 속도 +3 / +5 · 예리함 치명타 +5% / +8% · 흡혈 +4% / +6% · 철벽 받는 피해 −4% / −6%', '고유 효과 창에서 전체 목록 보기' ]}
   ]},
@@ -13965,7 +13971,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 328, APP_VERSION = '4.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 329, APP_VERSION = '4.2.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
