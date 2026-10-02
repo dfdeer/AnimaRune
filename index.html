@@ -1190,6 +1190,9 @@
   #splash .sp-bar i{display:block; height:100%; width:8%; border-radius:99px; background:linear-gradient(90deg, #b48cff, #ffd35a); animation:spLoad 2.4s cubic-bezier(.2,.7,.3,1) forwards;}
   #splash.done .sp-bar i{width:100%; animation:none; transition:width .25s ease;}
   @keyframes spLoad{to{width:88%;}}
+  #splash .sp-go{position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom, 0px) + 5vh - 8px); text-align:center; color:#fff; font-family:var(--fun, "Jua"), sans-serif; font-size:clamp(17px, 5vw, 22px); letter-spacing:1px; text-shadow:0 2px 0 #3b2a7a, 0 0 12px #b48cff; opacity:0; pointer-events:none;}
+  #splash.ready{cursor:pointer;} #splash.ready .sp-bar{opacity:0; transition:opacity .2s;} #splash.ready .sp-go{animation:spBlink 1.4s ease-in-out infinite;}
+  @keyframes spBlink{0%,100%{opacity:.35;} 50%{opacity:1;}}
   .rw-tip{position:fixed; z-index:999; max-width:260px; padding:6px 10px; border-radius:9px; background:#0d0b22f0; border:1px solid #ffd55788; color:#fff; font-size:12px; font-weight:700; line-height:1.4; box-shadow:0 4px 14px #0008; pointer-events:none; animation:rwTip .15s ease-out;}
   @keyframes rwTip{from{opacity:0; transform:translateY(4px);}}
   .gm-head{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:#ffffff08; margin-bottom:4px;}
@@ -1511,7 +1514,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 </script>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><div class="sp-t">아니마룬</div><div class="sp-s">AnimaRune</div><div class="sp-bar"><i></i></div></div>
+<div id="splash" aria-hidden="true"><div class="sp-t">아니마룬</div><div class="sp-s">AnimaRune</div><div class="sp-bar"><i></i></div><div class="sp-go">화면을 터치해서 시작</div></div>
 <div id="app">
   <header>
     <div class="title"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="tname"> 아니마룬</span></div>
@@ -3849,10 +3852,12 @@ window.addEventListener('resize', relayoutScreens);
 window.addEventListener('orientationchange', ()=>setTimeout(relayoutScreens, 250));
 window.addEventListener('pageshow', relayoutScreens);
 window.addEventListener('load', relayoutScreens);
-/* 시작 화면: 다 불러오면 막대를 채우고 사라짐 (최소 0.9초, 늦어도 8초 뒤엔 걷힘) */
-(function(){ const sp = document.getElementById('splash'); if(!sp) return; const t0 = Date.now(); let gone = false;
-  const hide = ()=>{ if(gone) return; gone = true; sp.classList.add('done'); setTimeout(()=>{ sp.classList.add('out'); setTimeout(()=>sp.remove(), 500); }, Math.max(250, 900-(Date.now()-t0))); };
-  if(document.readyState==='complete') hide(); else window.addEventListener('load', hide); setTimeout(hide, 8000); })();
+/* 시작 화면: 다 불러오면 막대를 채우고 「터치해서 시작」 → 누르면 걷힘 (늦어도 8초 뒤엔 누를 수 있게) */
+(function(){ const sp = document.getElementById('splash'); if(!sp) return; const t0 = Date.now(); let ready = false, gone = false;
+  const go = ()=>{ if(!ready || gone) return; gone = true; sp.classList.add('out'); setTimeout(()=>sp.remove(), 500); };
+  const ok = ()=>{ if(ready) return; sp.classList.add('done'); setTimeout(()=>{ ready = true; sp.classList.add('ready'); }, Math.max(300, 900-(Date.now()-t0))); };
+  sp.addEventListener('click', go);
+  if(document.readyState==='complete') ok(); else window.addEventListener('load', ok); setTimeout(ok, 8000); })();
 if(window.visualViewport) window.visualViewport.addEventListener('resize', relayoutScreens);
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(relayoutScreens).catch(()=>{});
 if(window.ResizeObserver){ const ro = new ResizeObserver(relayoutScreens); ['header','#levelBar','nav','#main'].forEach(sel=>{ const e = document.querySelector(sel); if(e) ro.observe(e, {box:'border-box'}); }); ro.observe(document.body, {box:'border-box'}); } // 여백(안전 영역) 변화까지 잡으려고 border-box 기준
