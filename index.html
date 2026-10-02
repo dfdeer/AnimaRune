@@ -1298,8 +1298,8 @@
   .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
   .tlog-it{display:flex; gap:8px; align-items:baseline; padding:8px 4px; border-bottom:1px solid #ffffff12; font-size:13px; line-height:1.45; text-align:left;} .tlog-it small{flex-shrink:0; color:var(--sub); font-size:11px; min-width:38px;} .tlog-it .uic{width:18px; height:18px;}
   .toast .tt{opacity:.9;}
-  .toast .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
-  .toast .tn{font-weight:800; color:#ffd557; margin:0 4px;}
+  .toast .tnr, .tlog-it .tnr{display:inline-block; white-space:nowrap; margin-left:8px;}
+  .toast .tn, .tlog-it .tn{font-weight:800; color:#ffd557; margin:0 4px;} /* (v320) 알림 기록에서도 제목·보상 아이콘 사이 띄움 */
   .quest-item{display:flex; justify-content:space-between; align-items:center; background:var(--panel2); border-radius:10px; padding:10px; margin-bottom:8px;}
   .picker-item{display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; background:var(--panel2); margin-bottom:6px;}
   .picker-item.avail{box-shadow:inset 0 0 0 1px #5cd65c44;}
@@ -7178,7 +7178,7 @@ function toast(msg, ms, html){
   el.addEventListener('click', showToastLog); // (v296) 누르면 알림 기록
   if(html) el.innerHTML = msg;
   else if(String(msg).indexOf('<img class="uic"')>=0){ // (v219) 재화 아이콘(그림)이 들어간 글자 알림 — 아이콘 태그만 살리고 나머지는 글자로
-    el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/ic_[a-z_]+\.webp" alt="[^"<>]*"(?: draggable="false")?>)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
+    el.innerHTML = String(msg).split(/(<img class="uic" src="assets\/ui\/[a-z0-9_\/]+\.webp" alt="[^"<>]*"(?: draggable="false")?>)/).map((t,i)=> i%2 ? t : t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))).join('');
   }else el.textContent = msg;
   const content = el.innerHTML, sig = toastSig(content), dur = ms||2200;
   const last = toastLog[0]; if(last && last.sig===sig && Date.now()-last.t < 8000){ last.n = (last.n||1)+1; last.html = content; last.t = Date.now(); } else { toastLog.unshift({ html:content, sig, t:Date.now(), n:1 }); if(toastLog.length > TOAST_LOG_MAX) toastLog.length = TOAST_LOG_MAX; }
@@ -9413,6 +9413,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:320, v:'4.0.3', date:'2026-10-02', secs:[
+    { t:'화면', items:[ '알림 기록에서 알림 제목과 보상 아이콘이 붙어 보이던 것 수정', '일부 알림에서 새 아이콘 그림 대신 글자가 보일 수 있던 것 수정' ]}
+  ]},
   { build:319, v:'4.0.2', date:'2026-10-02', secs:[
     { t:'화면', items:[ '승리 창 제목의 금색 배너를 빼고 예전처럼 글자만 (위 왕관 그림은 그대로)' ]}
   ]},
@@ -13794,7 +13797,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 319, APP_VERSION = '4.0.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 320, APP_VERSION = '4.0.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
