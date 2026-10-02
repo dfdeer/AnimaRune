@@ -732,7 +732,7 @@
   @keyframes bsBanner{0%{opacity:0; transform:scaleX(.3)} 18%{opacity:1; transform:scaleX(1)} 75%{opacity:1} 100%{opacity:0; visibility:hidden}}
 
   /* 하단 조작부 */
-  .bs-panel{background:linear-gradient(160deg,#2a2660,#1d1b48); border:1px solid #ffffff14; border-radius:16px; padding:10px; min-height:104px; display:flex; flex-direction:column; justify-content:center;}
+  .bs-panel{background:linear-gradient(160deg,#2a2660,#1d1b48); border:1px solid #ffffff14; border-radius:16px; padding:10px; min-height:178px; display:flex; flex-direction:column; justify-content:center;}
   .bs-who{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
   .bs-who .pic{width:36px; height:36px; border-radius:50%; background:#141233; border:2px solid #ffd557; display:flex; align-items:center; justify-content:center; font-size:20px;}
   .bs-who .nm{font-weight:800; font-size:13px;}
@@ -1273,7 +1273,7 @@
     .bs-mid{height:20px;}
     .bu-marker{top:-11px; font-size:11px;}
     .bu-plate{margin-top:calc(10px * min(var(--k,1),1));}
-    .bs-panel{min-height:96px; padding:8px 10px;}
+    .bs-panel{min-height:150px; padding:8px 10px;}
     .bs-who{margin-bottom:6px;}
   }
   .boss-tabs{display:flex; gap:6px; margin-top:8px;}
@@ -5651,8 +5651,12 @@ let prevDeadUnits = null;
 // (v329) 효과별로 「처음 보인 시각」을 계속 기억 — 끝난 등장 연출(속박 거미줄·감옥·봉인 등)은 브라우저 기록에서 사라져서 예전 방식(직전 진행 시간 읽기)으로는 못 잡았음
 function captureStatusFx(root){ // 다시 그리기 직전
   const has = root && root.querySelector('.bu[data-u]');
-  if(!has) statusFxSeen = new Map(); // 새 전투 화면이면 처음부터
+  if(!has){ statusFxSeen = new Map(); bsPanelH = 0; } // 새 전투 화면이면 처음부터
   prevDeadUnits = has ? new Set([...root.querySelectorAll('.bu[data-u]')].filter(b=>b.classList.contains('bu-dead')).map(b=>b.dataset.u)) : null; }
+// (v329) 아래 행동 칸 — 내 차례(스킬 버튼)와 기다리는 동안(「준비 중」 등)의 높이가 달라 화면이 출렁였음 → 이번 전투에서 가장 컸던 높이로 고정
+let bsPanelH = 0;
+function keepPanelHeight(root){ const pn = root.querySelector('.bs-panel'); if(!pn) return; if(!root.querySelector('.bu[data-u]')) return;
+  pn.style.minHeight = ''; const h = Math.ceil(pn.getBoundingClientRect().height); if(pn.querySelector('.bs-acts') && h > bsPanelH) bsPanelH = h; if(bsPanelH) pn.style.minHeight = bsPanelH+'px'; }
 function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
   const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
   if(prevDeadUnits) root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)) b.classList.add('bu-dying'); }); // (v327) 방금 쓰러진 정령만 쓰러지는 연출
@@ -6142,6 +6146,7 @@ function showSkillStageScreen(){
   root.className = intro ? 'bs-intro' : '';
   captureStatusFx(root);
   setHtmlKeepImgs(root, html);
+  keepPanelHeight(root); // (v329) 아래 칸 높이 고정 (전장 크기 계산 전에)
   fitBattleScreen();
   syncStatusFx(root); // (v324) 상태 효과 연출이 화면을 다시 그릴 때마다 처음부터 다시 돌던 것 — 이어서 돌게
   if(document.getElementById('raidVoteYes')) document.getElementById('raidVoteYes').addEventListener('click', ()=>raidSurrenderVote(true));
@@ -9551,7 +9556,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:329, v:'4.2.1', date:'2026-10-02', secs:[
     { t:'버그 수정', items:[ '속박·감옥·봉인 등 상태 효과 연출이 행동할 때마다 처음부터 다시 나오던 것 수정 (4.0.7에서 일부만 고쳐졌던 것)', '쓰러진 정령 그림이 칸 밖으로 나가던 것 수정' ]},
-    { t:'전투 연출', items:[ '쓰러지는 연출을 더 잘 보이게 — 맞은 뒤 번쩍 → 기울며 쓰러짐 → 연기' ]}
+    { t:'전투 연출', items:[ '쓰러지는 연출을 더 잘 보이게 — 맞은 뒤 번쩍 → 기울며 쓰러짐 → 연기' ]},
+    { t:'전투 화면', items:[ '아래 행동 칸 높이를 항상 같게 — 내 차례와 기다리는 동안 크기가 달라 화면이 출렁이던 것' ]}
   ]},
   { build:328, v:'4.2.0', date:'2026-10-02', secs:[
     { t:'장비 고유 효과 (새 성장)', items:[ '레전더리·신화 장비마다 고유 효과 하나 — 장비 창의 「고유 효과」에서 후보 3개 중 골라 붙임 (처음 후보는 무료)', '후보 다시 뽑기 각인석 2개 · 지금 붙은 효과는 새 후보에서 빠짐 · 후보 안에서는 언제든 바꿀 수 있음', '끼운 정령에게 붙고 무기·방어구 각각 하나씩 · 부가 능력 상한과 따로 더해짐', '효과 (레전더리 / 신화): 선제 첫 행동 피해 +15% / +25% · 수호막 전투 시작 보호막 8% / 12% · 불씨 공격 시 화상 1중첩 · 독침 독 2% / 3% · 서리 빙결 6% / 10% · 저주 12% / 18% · 샘 라운드마다 회복 2% / 3% · 질풍 속도 +3 / +5 · 예리함 치명타 +5% / +8% · 흡혈 +4% / +6% · 철벽 받는 피해 −4% / −6%', '고유 효과 창에서 전체 목록 보기' ]}
