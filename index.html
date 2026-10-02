@@ -457,9 +457,14 @@
   .slot.bonus-max{border:2px dashed #ffd55799; background:linear-gradient(160deg,#37321f,#25221a); box-shadow:none;}
   .bonus-tag.max,.bonus-pill.max{background:transparent; color:#ffd557dd; border:1px dashed #ffd55799;}
   .tw-row{display:grid; grid-template-columns:62% 38%; height:54px; align-items:center;}
-  .tw-body{height:100%; display:flex; align-items:center; justify-content:center;
-    background:repeating-linear-gradient(90deg, transparent 0 34px, #0000002e 34px 36px), repeating-linear-gradient(0deg, #00000038 0 2px, transparent 2px 27px), linear-gradient(90deg,#2a2840,#3b3860 50%,#2a2840);
-    border-left:4px solid #17152b; border-right:4px solid #17152b;}
+  .tw-body{height:100%; display:flex; align-items:center; justify-content:center; position:relative; z-index:1;}
+  /* (v317) 탑 그림 — 벽 타일(탑 부분 가로 10.9~88.8%)을 왼쪽 62% 칸에 맞춰 반복 · 꼭대기·입구는 탑 폭이 벽과 같게 맞춤 */
+  #towerScroll{overflow-x:hidden;}
+  .tw-shaft{position:relative;} .tw-shaft::before{content:''; position:absolute; top:0; bottom:0; left:0; width:62%; background:url(assets/tower_wall.webp) 50% 0 / 128.4% auto repeat-y; pointer-events:none;}
+  .tw-row > :last-child{position:relative; z-index:1;}
+  .tw-top{position:relative; z-index:2; margin:-14px 0 -3%; pointer-events:none;} .tw-top img{display:block; width:108.8%; margin-left:-22.9%;}
+  .tw-gate{position:relative; z-index:2; margin:-4.6% 0 0; pointer-events:none;} .tw-gate img{display:block; width:89%; margin-left:-13.6%;}
+  .tw-btn.done{box-shadow:0 2px 0 #0004;} .tw-btn.lock{box-shadow:0 2px 0 #0004;}
   .tw-btn{width:82%; height:38px; border-radius:10px; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; gap:6px; border:2px solid;}
   .tw-btn.done{background:#34406f; border-color:#6b7bff99; color:#fff;}
   .tw-btn.now{background:linear-gradient(135deg,#ffc857,#ff9b57); border-color:#ffe08a; color:#2a1400; animation:twPulse 1.6s infinite;}
@@ -11512,10 +11517,8 @@ function renderTowerTab(){
     if(tp.length) html += '<button class="btn gold" id="towerClaimAll" style="margin:0 0 10px;">'+uiIc('gift')+' 탑 보상 모두 받기 · '+tp.length+'개</button>'; }
   html += TOP_MARK;
   html += '<div id="towerScroll" class="fit-rest" data-below="0" data-min="260" style="position:relative; max-height:62vh; overflow-y:auto; border-radius:16px; background:linear-gradient(180deg,#2a2660 0%,#1a1844 70%); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d; border:2px solid #0b0a22; padding:14px 8px 10px;">';
-  // 지붕
-  html += '<div class="tw-row" style="height:50px;"><div style="height:100%; display:flex; justify-content:center; align-items:flex-end; position:relative;">'
-    + '<div style="position:absolute; top:-2px; font-size:16px;">🚩</div>'
-    + '<div style="width:96%; height:38px; background:linear-gradient(180deg,#7a55a8,#3b3860); clip-path:polygon(50% 0,100% 100%,0 100%);"></div></div><div></div></div>';
+  // (v317) 꼭대기 — 탑이 구름 속으로 끝없이 이어짐 · 층 칸 뒤로 벽 그림을 위아래로 이어 붙임
+  html += '<div class="tw-top"><img src="assets/tower_top.webp" alt=""></div><div class="tw-shaft">';
   for(let f=topFloor; f>=1; f--){
     const cleared = f <= best, isNow = f===frontier, locked = f>frontier;
     const grade = state.towerFloorGrades && state.towerFloorGrades[f];
@@ -11525,7 +11528,7 @@ function renderTowerTab(){
       + '<div style="display:flex; align-items:center;">'+towerRewardChipHtml(f)+'</div></div>';
   }
   // 입구
-  html += '<div class="tw-row" style="height:44px;"><div style="height:100%; display:flex; justify-content:center; align-items:center; font-size:22px; background:linear-gradient(180deg,#3b3860,#1f1d38); border:4px solid #17152b; border-top:0; border-radius:0 0 12px 12px;">🚪</div><div></div></div>';
+  html += '</div><div class="tw-gate"><img src="assets/tower_gate.webp" alt=""></div>';
   html += '</div>';
   // (v187) 안내 문구는 위쪽 고정 영역으로 옮김(층 목록이 화면에 딱 맞도록)
   return html;
