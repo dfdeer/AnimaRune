@@ -6740,7 +6740,7 @@ function showAdminSetupModal(){
     if(!state.tickets) state.tickets = {}; ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'].forEach(k=>state.tickets[k] = 999);
     Object.keys(SPIRITS).forEach(k=>{ if(!(state.owned[k]>0)) state.owned[k] = 1; state.discovered[k] = true; });
     // (v296) 장비 전부 1개씩 · 룬 종류·등급마다 1개씩(보관함에 없는 것만) · 룬 승급석
-    allEquipKeys().forEach(k=>{ if(!(equipOwnedCount(k)>0)) addEquip(k); else state.equipSeen[k] = true; });
+    allEquipKeys().forEach(k=>{ if(!(equipTypeCount(k)>0)) addEquip(k); else state.equipSeen[k] = true; });
     state.runeInv = state.runeInv || []; state.runeUpStones = Math.max(state.runeUpStones||0, 999);
     const have = r=>state.runeInv.some(x=>x.id===r.id && x.tier===r.tier), want = [];
     Object.keys(RUNE_BASE).forEach(id=>Object.keys(RUNE_BASE[id].vals).forEach(t=>want.push({id, tier:t})));
@@ -7379,9 +7379,20 @@ const EQUIP_NAMES = {
 const EQUIP_SUMMON_COST = 200;
 function isEquipUnlocked(){ return !!state.adminUnlockAll || chapter1BossCleared(); } // (v106) 정령장비는 챕터 1 보스 격파 시 해금
 function equipKey(slot, element, rarity){ return slot+'_'+element+'_'+rarity; }
-function equipInfo(key){ const p = key.split('_'); return { key, slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].emo, img:'<img class="eqimg" src="assets/ui/eq_'+p[0]+'_'+p[1]+'.webp" alt="" draggable="false">' }; } // (v205) img = 화면용 그림, icon = 글(알림)용 이모지
+function equipInfo(key){ const p = String(key).split('#')[0].split('_'); return { key, type:p.join('_'), slot:p[0], element:p[1], rarity:p[2], name:EQUIP_NAMES[p[0]][p[1]], icon:EQUIP_SLOT_INFO[p[0]].icon+ELEMENT_INFO[p[1]].emo, img:'<img class="eqimg" src="assets/ui/eq_'+p[0]+'_'+p[1]+'.webp" alt="" draggable="false">' }; } // (v205) img = 화면용 그림, icon = 글(알림)용 이모지
 function allEquipKeys(){ const out = []; RARITY_ORDER.forEach(r=>EQUIP_SLOTS.forEach(sl=>ELEMENTS.forEach(e=>out.push(equipKey(sl,e,r))))); return out; }
 function equipOwnedCount(key){ return (state.equipOwned && state.equipOwned[key]) || 0; }
+// (v330) 장비를 한 개씩 따로 — 같은 종류 두 번째부터는 '종류#번호' 키 (강화·부가 능력·고유 효과·잠금·장착이 모두 이 키 단위)
+function eqType(k){ return String(k).split('#')[0]; }
+function ownedEquipItems(){ const o = state.equipOwned || {}; return Object.keys(o).filter(k=>o[k]>0); }
+function equipTypeCount(type){ return ownedEquipItems().filter(k=>eqType(k)===type).length; }
+function eqClearItem(k){ ['equipEnh','eqSub','eqTrait','lockedEquip'].forEach(b=>{ if(state[b]) delete state[b][k]; }); }
+function eqRemoveItem(k){ if(state.equipOwned) delete state.equipOwned[k]; eqClearItem(k); const eq = state.equipped || {}; Object.keys(eq).forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ if(eq[sp] && eq[sp][sl]===k) eq[sp][sl] = null; })); }
+function eqAddItem(type){ state.equipOwned = state.equipOwned || {}; state.equipSeen = state.equipSeen || {}; const isNew = !state.equipSeen[type]; let k = type;
+  if((state.equipOwned[k]||0)>0){ let n = 2; while((state.equipOwned[type+'#'+n]||0)>0) n++; k = type+'#'+n; }
+  eqClearItem(k); state.equipOwned[k] = 1; state.equipSeen[type] = true; return { key:k, isNew }; }
+function eqInvest(k){ return equipEnhLevel(k)*10 + (eqSubState(k) ? 1 : 0) + ((state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id) ? 5 : 0); } // 덜 키운 것부터 재료로
+function eqSameTypeFree(k){ const t = eqType(k); return ownedEquipItems().filter(x=>eqType(x)===t && equipFreeCount(x)>0 && !isEqLocked(x)); }
 function equipUsedCount(key){
   let n = 0; const eq = state.equipped || {};
   Object.keys(eq).forEach(sp=>{ if(ownedCount(sp)>0) EQUIP_SLOTS.forEach(sl=>{ if(eq[sp] && eq[sp][sl]===key) n++; }); });
@@ -7394,7 +7405,10 @@ const EQ_ENH_STEP = 0.10, EQ_ENH_MAX = { common:3, rare:5, epic:7, legendary:9, 
 function equipEnhLevel(k){ return (state.equipEnh && state.equipEnh[k]) || 0; }
 function equipEnhMax(k){ return EQ_ENH_MAX[equipInfo(k).rarity] || 0; }
 function equipEnhMult(k){ return 1 + EQ_ENH_STEP*equipEnhLevel(k); }
-function equipEnhCost(k){ const lv = equipEnhLevel(k), r = RARITY_ORDER.indexOf(equipInfo(k).rarity); return { essence: 40 + lv*25 + r*20, stone: 3 + lv*3 + r*2 }; }
+// (v330) 장비 강화 비용 — 정령과 같은 등급 배율(ENH_COST_MUL)에 정령 비용의 절반 · 예전 값보다 싸지지는 않게 (신화 +10 합계 정수 약 6,000 · 강화석 약 550)
+const EQ_ENH_COST_RATE = 0.5;
+function equipEnhCost(k){ const lv = equipEnhLevel(k), r = RARITY_ORDER.indexOf(equipInfo(k).rarity), mul = (ENH_COST_MUL[r]||1)*EQ_ENH_COST_RATE;
+  return { essence: Math.max(40 + lv*25 + r*20, Math.round((30 + lv*20)*mul)), stone: Math.max(3 + lv*3 + r*2, Math.round((2 + lv*2)*mul)) }; }
 function eqEnhTag(k){ const n = equipEnhLevel(k); return n>0 ? '<span class="enh-tag">+'+n+'</span>' : ''; }
 function doEquipEnhance(k){
   const lv = equipEnhLevel(k); if(lv>=equipEnhMax(k)) return false;
@@ -7413,17 +7427,17 @@ function unequipItem(spKey, slot){ if(state.equipped[spKey]){ state.equipped[spK
 function cleanupEquipment(){ // 보유하지 않게 된 정령의 장착 정보 정리, 장착 수가 보유 수를 넘으면 초과분 해제
   const eq = state.equipped || {};
   Object.keys(eq).forEach(sp=>{ if(ownedCount(sp)<=0) delete eq[sp]; });
-  allEquipKeys().forEach(k=>{ let over = equipUsedCount(k) - equipOwnedCount(k);
-    if(over>0) Object.keys(eq).forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ if(over>0 && eq[sp] && eq[sp][sl]===k){ eq[sp][sl] = null; over--; } })); });
+  const seen = {}; Object.keys(eq).forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ const k = eq[sp] && eq[sp][sl]; if(!k) return; // (v330) 없는 장비 · 한 장비를 두 정령이 끼고 있으면 뒤쪽 해제
+    if(equipOwnedCount(k)<=0 || seen[k]) eq[sp][sl] = null; else seen[k] = true; }));
 }
 // 추천 장착: 정령력이 높은 정령부터, 부위별로 남은 장비 중 효과가 가장 큰 것(속성 일치 우선)을 끼움
 function autoEquipAll(){
   if(!isEquipUnlocked()) return;
   state.equipped = {};
   const spirits = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
-  const free = {}; allEquipKeys().forEach(k=>{ free[k] = equipOwnedCount(k); });
+  const free = {}; ownedEquipItems().forEach(k=>{ free[k] = equipOwnedCount(k); });
   EQUIP_SLOTS.forEach(slot=>{
-    const items = allEquipKeys().filter(k=>equipInfo(k).slot===slot && free[k]>0);
+    const items = ownedEquipItems().filter(k=>equipInfo(k).slot===slot && free[k]>0);
     const pairs = [];
     spirits.forEach(sp=>items.forEach(k=>pairs.push({sp, k, v:unitPower(sp)*equipEffect(k,sp)}))); // 정령이 강할수록, 속성이 맞을수록 이득이 큼
     pairs.sort((x,y)=>y.v-x.v);
@@ -7448,7 +7462,7 @@ function recentEquipRowHtml(){
   return '<div class="card"><div class="ttl" style="margin-bottom:8px;">🕘 최근 소환</div><div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:2px;">'
     + list.map(k=>{ const i = equipInfo(k); return '<div data-recent-equip="'+k+'" style="cursor:pointer; flex-shrink:0; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--panel2); border:2px solid '+RARITY_HEX[i.rarity]+'; overflow:hidden; font-size:17px;">'+i.img+'</div>'; }).join('') + '</div></div>';
 }
-function addEquip(key){ const isNew = !state.equipSeen[key]; state.equipOwned[key] = (state.equipOwned[key]||0) + 1; state.equipSeen[key] = true; return isNew; }
+function addEquip(type){ return eqAddItem(eqType(type)).isNew; } // (v330) 늘 새 낱개로
 function equipResultView(key){
   const i = equipInfo(key);
   return { sp:{element:i.element, rarity:i.rarity, name:i.name, variant:'e'}, custom:{ icon:i.img, sub:EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+' · '+equipEffectText(key), own:'보유 '+equipOwnedCount(key) } };
@@ -7498,22 +7512,23 @@ function doEquipMultiSummonNow(){
   render();
 }
 // 합성: 장착하지 않은 같은 장비 3개 → 한 단계 위(같은 부위·속성)
-function canEquipFuse(key){ return equipInfo(key).rarity!=='mythic' && equipFreeCount(key)>=3 && !isEqLocked(key); }
+function canEquipFuse(key){ return equipInfo(key).rarity!=='mythic' && eqSameTypeFree(key).length>=3; } // (v330) 같은 종류에서 장착·잠금 안 된 것 3개
 // 장비 분해: 정령 분해표의 2배 (장비 소환 가격이 정령의 2배라서)
 const EQUIP_DISMANTLE_GAIN = [2,6,16,40,100];
 function doEquipDismantle(key, n){
   if(!isEquipUnlocked() || isEqLocked(key)) return; // (v218) 잠금
-  n = Math.min(n||1, equipFreeCount(key));
+  const pool = eqSameTypeFree(key).sort((a,b)=> (b===key)-(a===key) || eqInvest(a)-eqInvest(b)); // (v330) 이 장비 먼저, 나머지는 덜 키운 것부터
+  n = Math.min(n||1, pool.length);
   if(n<=0) return;
   const gain = EQUIP_DISMANTLE_GAIN[RARITY_ORDER.indexOf(equipInfo(key).rarity)] * n;
-  state.equipOwned[key] -= n;
+  pool.slice(0, n).forEach(eqRemoveItem);
   state.enhanceStone = (state.enhanceStone||0) + gain;
   save();
   toastReward({stone:gain}, '<img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해 '+n+'개');
   render();
 }
 function showEquipDismantleModal(key){
-  const i = equipInfo(key), info = RARITY_INFO[i.rarity], max = equipFreeCount(key);
+  const i = equipInfo(key), info = RARITY_INFO[i.rarity], max = eqSameTypeFree(key).length;
   const per = EQUIP_DISMANTLE_GAIN[RARITY_ORDER.indexOf(i.rarity)];
   if(max<=0){ showEquipDetailModal(key); return; }
   document.getElementById('modalRoot').innerHTML =
@@ -7521,7 +7536,7 @@ function showEquipDismantleModal(key){
     + '<button class="close-x" id="modalClose">x</button>'
     + '<div style="font-size:44px;">'+i.img+'</div>'
     + '<h3><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> '+i.name+' 분해 <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
-    + '<div class="sub">장착 안 한 '+max+'개 · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
+    + '<div class="sub">같은 종류 중 장착·잠금 안 한 '+max+'개 (이 장비 먼저, 그다음 덜 키운 것부터) · 1개당 <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+per+'</div>'
     + '<div class="ttl" style="font-size:22px; margin:14px 0 4px;"><span id="dismantleN">1</span>개 → <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +<span id="dismantleGain">'+per+'</span></div>'
     + '<input type="range" id="dismantleRange" min="1" max="'+max+'" value="1" step="1" style="width:100%; accent-color:#9a6bff; margin:8px 0;">'
     + '<div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub);"><span>1</span><span>'+max+'</span></div>'
@@ -7532,7 +7547,7 @@ function showEquipDismantleModal(key){
   const range = document.getElementById('dismantleRange');
   range.addEventListener('input', ()=>{ const n = parseInt(range.value); document.getElementById('dismantleN').textContent = n; document.getElementById('dismantleGain').textContent = per*n; });
   document.getElementById('dismantleCancel').addEventListener('click', ()=>showEquipDetailModal(key));
-  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else closeModal(); });
+  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else { const o = ownedEquipItems().find(x=>eqType(x)===eqType(key)); if(o) showEquipDetailModal(o); else closeModal(); } });
 }
 function equipElementComplete(el){ return EQUIP_SLOTS.every(sl=>RARITY_ORDER.every(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)])); }
 function equipElementCount(el){ return EQUIP_SLOTS.reduce((n,sl)=>n+RARITY_ORDER.filter(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)]).length,0); }
@@ -7928,7 +7943,8 @@ function fuseInfoFor(keys){ // (v250) 재료 3개 → 합성 정보 (칸 합성�
 function fuseFill(k, n){ for(let i=0;i<3 && n>0;i++) if(!fuseSlots[i]){ fuseSlots[i] = k; n--; } }
 function openFuseTab(mode, key){ // 다른 곳(정령 관리·장비 상세)에서 합성 탭으로 — 그 재료를 최대 3개까지 미리 넣음
   fuseMode = mode; fuseSlots = [null, null, null];
-  if(key){ const n = Math.min(3, mode==='equip' ? equipFreeCount(key) : ownedCount(key)); if(!(mode==='equip' ? isEqLocked(key) : isSpLocked(key))) fuseFill(key, n); }
+  if(key && mode==='equip'){ eqSameTypeFree(key).sort((a,b)=> (b===key)-(a===key) || eqInvest(a)-eqInvest(b)).slice(0,3).forEach(k=>fuseFill(k, 1)); } // (v330) 같은 종류 낱개 3개
+  else if(key){ const n = Math.min(3, ownedCount(key)); if(!isSpLocked(key)) fuseFill(key, n); }
   closeModal(); activeTab = 'spirits'; spiritsSub = 'fuse'; render(); const m = document.getElementById('main'); if(m) m.scrollTop = 0;
 }
 function fuseNameOf(k){ return fuseMode==='equip' ? equipInfo(k).name : SPIRITS[k].name; }
@@ -7953,7 +7969,7 @@ function renderFuseTab(){
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
       + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+' <span style="opacity:.8;">(재료 강화 합 +'+info.inheritFrom+' ÷ 3)</span></div>'
-        + '<div class="fz-warn">⚠️ 합성하면 재료로 쓴 '+(fuseMode==='equip'?'장비':'정령')+'의 강화는 +0 — 남아 있는 같은 '+(fuseMode==='equip'?'장비':'정령')+'도 +0<br>실패하면 남는 1'+unit+'만 강화 그대로 · 같은 '+(fuseMode==='equip'?'장비를':'정령을')+' 여러 개 넣어도 강화는 한 번만 셈</div>' : '')
+        + (fuseMode==='equip' ? '<div class="fz-warn">⚠️ 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">⚠️ 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
       + '</div>'
       + (info.rate<100 && fuseGuardEligible(info.nr) ? '<div class="sub fz-small" style="margin-top:6px;">'+uiIc('guard')+' 아래 합성 바의 방패를 켜면 실패해도 재료 유지 · 보유 '+ticketCount('fuseGuard')+'장</div>' : '');
   }
@@ -7963,7 +7979,7 @@ function renderFuseTab(){
   let keys;
   if(fuseMode==='equip'){
     if(!isEquipUnlocked()) return h + '<div class="card sub" style="text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div>';
-    keys = allEquipKeys().filter(k=>equipOwnedCount(k)>0 && equipInfo(k).rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
+    keys = ownedEquipItems().filter(k=>equipInfo(k).rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(equipInfo(b).rarity)-RARITY_ORDER.indexOf(equipInfo(a).rarity));
   }else keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0 && SPIRITS[k].rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
   h += fuseLogHtml();
   h += '<h2>재료 고르기</h2>';
@@ -8035,11 +8051,15 @@ function fuseExecute(keys){
   else { state.dailyStats.fusions += 1; state.lifetimeFusions = (state.lifetimeFusions||0) + 1; }
   passBump('fuse'); // (v297) 실패해도 합성 1번
   const r = fuseRoll(info.src, info.nr, info.streakKey);
-  const take = k=>{ if(eq) state.equipOwned[k] -= 1; else state.owned[k] -= 1; };
+  const take = k=>{ if(eq) eqRemoveItem(k); else state.owned[k] -= 1; }; // (v330) 장비는 낱개라 재료로 쓰면 그 장비의 강화·부가 능력·고유 효과도 사라짐
   const give = k=>{ if(eq) return addEquip(k); const isNew = !state.discovered[k]; state.owned[k] = (state.owned[k]||0) + 1; state.discovered[k] = true; return isNew; };
   if(!r.ok){
     let survivor = null, downTo = null;
-    if(!r.guard){
+    if(!r.guard && eq){ // (v330) 장비: 고른 1개만 남고(강화 등 그대로) 나머지 2개는 사라짐 · 강등되면 남은 것 대신 한 단계 아래 새 장비(강화만 옮김)
+      survivor = info.keys[Math.floor(Math.random()*3)];
+      info.keys.filter(k=>k!==survivor).forEach(take);
+      if(r.down){ const i = equipInfo(survivor), lv = equipEnhLevel(survivor); const dt = equipKey(i.slot, i.element, fusePrevRarity(i.rarity)); take(survivor); const a = eqAddItem(dt); downTo = a.key; if(lv){ state.equipEnh = state.equipEnh || {}; state.equipEnh[downTo] = Math.min(lv, equipEnhMax(downTo)); } }
+    } else if(!r.guard){
       info.keys.forEach(take);
       survivor = info.keys[Math.floor(Math.random()*3)];
       if(r.down){
@@ -8057,7 +8077,7 @@ function fuseExecute(keys){
   }
   info.keys.forEach(take);
   [...new Set(info.keys)].forEach(k=>fuseEnhSet(k, 0, eq)); // (v301) 성공: 재료의 강화는 결과로 넘어가고(합 ÷ 3) 재료 쪽은 +0 — 종 단위라 남아 있는 같은 정령도 +0
-  const res = fusePick(info.out), isNew = give(res);
+  let res = fusePick(info.out), isNew; if(eq){ const a = eqAddItem(res); res = a.key; isNew = a.isNew; } else isNew = give(res); // (v330) 장비 결과는 새 낱개 키
   logFuse({ m:fuseMode, k:info.keys, ok:true, r:res, p:info.out[res], s:info.rate, t:Date.now() });
   let inherited = 0, awInh = 0;
   if(!eq){
@@ -8110,20 +8130,23 @@ function autoFuseCfg(){
 }
 function autoFusePlan(cfg){ // → [[k,k,k], ...]
   const eq = fuseMode==='equip', groups = [];
-  const keys = (eq ? allEquipKeys().filter(k=>equipOwnedCount(k)>0) : Object.keys(SPIRITS).filter(k=>ownedCount(k)>0)).filter(k=>{
-    if(eq){ const i = equipInfo(k); return !isEqLocked(k) && !equipEnhLevel(k) && cfg.r.includes(i.rarity) && cfg.el.includes(i.element) && cfg.v.includes(i.slot); }
+  const keys = (eq ? ownedEquipItems() : Object.keys(SPIRITS).filter(k=>ownedCount(k)>0)).filter(k=>{
+    if(eq){ const i = equipInfo(k); return !isEqLocked(k) && !equipEnhLevel(k) && !(state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id) && equipFreeCount(k)>0 && cfg.r.includes(i.rarity) && cfg.el.includes(i.element) && cfg.v.includes(i.slot); }
     const sp = SPIRITS[k]; return !isSpLocked(k) && !enhanceLevel(k) && cfg.r.includes(sp.rarity) && cfg.v.includes(sp.element+'_'+sp.variant);
   });
   const bucket = {}; // 같은 등급(장비는 같은 부위까지)끼리만 섞임
+  const eqKeepLeft = {}; // (v330) 장비: 종류마다 남길 개수(cfg.keep)를 장착·잠금·강화한 것부터 채우고 나머지만 재료로
+  if(eq) keys.sort((a,b)=>eqInvest(b)-eqInvest(a));
   keys.forEach(k=>{
-    const spare = (eq ? equipFreeCount(k) : ownedCount(k)) - cfg.keep; if(spare<=0) return;
+    if(eq){ const t = eqType(k); if(!(t in eqKeepLeft)) eqKeepLeft[t] = Math.max(0, cfg.keep - (equipTypeCount(t) - keys.filter(x=>eqType(x)===t).length)); if(eqKeepLeft[t]>0){ eqKeepLeft[t]--; return; } }
+    const spare = (eq ? 1 : ownedCount(k) - cfg.keep); if(spare<=0) return;
     const b = eq ? equipInfo(k).rarity+'|'+equipInfo(k).slot : SPIRITS[k].rarity;
     (bucket[b] = bucket[b] || []).push({ k, n: spare });
   });
   Object.keys(bucket).forEach(b=>{
     const list = bucket[b], rest = [];
     list.forEach(x=>{ for(let i=0;i<Math.floor(x.n/3);i++) groups.push([x.k, x.k, x.k]); for(let i=0;i<x.n%3;i++) rest.push(x.k); }); // 같은 것 3개 먼저
-    rest.sort((a,c)=>{ const ea = eq ? equipInfo(a).element : SPIRITS[a].element, ec = eq ? equipInfo(c).element : SPIRITS[c].element; return ELEMENTS.indexOf(ea)-ELEMENTS.indexOf(ec); }); // 남은 것은 같은 속성끼리 가깝게
+    rest.sort((a,c)=>{ const ea = eq ? equipInfo(a).element : SPIRITS[a].element, ec = eq ? equipInfo(c).element : SPIRITS[c].element; return ELEMENTS.indexOf(ea)-ELEMENTS.indexOf(ec) || (eq ? (eqType(a)<eqType(c)?-1:eqType(a)>eqType(c)?1:0) : 0); }); // 남은 것은 같은 속성끼리 가깝게
     for(let i=0; i+2<rest.length; i+=3) groups.push(rest.slice(i, i+3));
   });
   return groups;
@@ -8201,6 +8224,7 @@ function showFuseFailResult(r){
     ticketKey: r.eq ? 'equip' : undefined });
 }
 // 특성 리롤: 에픽/레전더리는 variant(a/b)에 따라 패시브가 다르므로, 종 전체를 반대 variant로 전환할 수 있음
+function dedupeKeys(arr){ const seen = new Set(); return (arr||[]).map(k=>{ if(!k) return k; if(seen.has(k)) return null; seen.add(k); return k; }); } // (v330) 같은 정령은 한 팀에 하나만
 function usedCountExcluding(key, excludeIdx){
   let c=0;
   state.formation.forEach((k,idx)=>{ if(k===key && idx!==excludeIdx) c++; });
@@ -8298,7 +8322,7 @@ function showPresetModal(){
     if(presetList()[i]) confirmBox('프리셋 덮어쓰기', escTxt(presetList()[i].name)+'을(를) 지금 진형으로 바꿈', '덮어쓰기', doSave); else doSave(); }));
   o.querySelectorAll('[data-pr-load]').forEach(b=>b.addEventListener('click', ()=>{ const p = presetList()[+b.dataset.prLoad]; if(!p) return; const keys = presetFit(p.keys);
     if(!keys.some(Boolean)){ toast('이 화면에서 쓸 수 있는 정령 없음'); return; }
-    const ctx = presetCtx; close(); ctx.set(keys); save(); toast(uiIc('log')+' '+p.name+' 불러옴'); ctx.reopen(); }));
+    const ctx = presetCtx; close(); ctx.set(dedupeKeys(keys)); save(); toast(uiIc('log')+' '+p.name+' 불러옴'); ctx.reopen(); }));
   o.querySelectorAll('[data-pr-del]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.prDel; confirmBox('프리셋 삭제?', escTxt(presetList()[i].name), '삭제', ()=>{ presetList()[i] = null; save(); re(); }, {danger:true}); }));
   o.querySelectorAll('[data-pr-name]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.prName, p = presetList()[i]; const nm = prompt('프리셋 이름', p.name); if(nm===null) return; const v = nm.trim().slice(0,12); if(!v) return; p.name = v; save(); re(); }));
 }
@@ -8848,7 +8872,7 @@ function renderEquipSummonPage(){
   h += '<div style="height:6px; border-radius:4px; background:#2d2a62; overflow:hidden; margin-top:4px;"><div style="height:100%; width:'+(prog/20*100)+'%; background:linear-gradient(90deg,#5b6bff,#9a6bff);"></div></div>';
   h += '</div>';
   // (v181) 내 장비 관리는 정령 탭 › 장비로 옮김 — 여기서는 바로가기만
-  const cnt = allEquipKeys().reduce((a,k)=>a+equipOwnedCount(k),0);
+  const cnt = ownedEquipItems().length;
   h += equipTicketCardHtml();
   h += recentEquipRowHtml();
   h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
@@ -8858,7 +8882,7 @@ function renderEquipSummonPage(){
 function equipSpeciesTile(k){
   const i = equipInfo(k), info = RARITY_INFO[i.rarity], n = equipOwnedCount(k), used = equipUsedCount(k);
   return '<div class="species-tile" data-equip-key="'+k+'">'
-    + '<div class="count">x'+n+'</div>'
+    + ((eqSubState(k) || (state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id)) ? '<div class="count" style="color:#ffe08a;">'+((state.eqTrait && state.eqTrait[k] && EQ_TRAITS[state.eqTrait[k].id]) ? EQ_TRAITS[state.eqTrait[k].id].ic : '🔷')+'</div>' : '')
     + (canEquipFuse(k) ? '<div class="passive-badge" style="color:#5cd65c; font-weight:900;" title="합성 가능">▲</div>' : '')
     + '<div class="icon av r-'+i.rarity+'">'+i.img+'</div>'
     + '<div class="name">'+(isEqLocked(k)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+i.name+'</div>'
@@ -8867,8 +8891,8 @@ function equipSpeciesTile(k){
     + '</div>';
 }
 function equipInventoryHtml(){
-  const owned = allEquipKeys().filter(k=>equipOwnedCount(k)>0);
-  const total = owned.reduce((a,k)=>a+equipOwnedCount(k),0), fusible = owned.filter(canEquipFuse).length;
+  const owned = ownedEquipItems();
+  const total = owned.length, fusible = [...new Set(owned.map(eqType))].filter(canEquipFuse).length;
   let h = '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
     + '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button>'+(owned.length ? '<button class="btn secondary small" id="autoEquipBtn" style="width:auto;">🔧 추천 장착</button>' : '')+'</span></div>';
   h += '<button class="btn secondary" id="goEqFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기'+(fusible?' <span style="color:#5cd65c;">▲ '+fusible+'종</span>':'')+'</button>';
@@ -8885,7 +8909,7 @@ function equipInventoryHtml(){
   return h;
 }
 function showEquipDetailModal(key){
-  const i = equipInfo(key), info = RARITY_INFO[i.rarity], n = equipOwnedCount(key), used = equipUsedCount(key);
+  const i = equipInfo(key), info = RARITY_INFO[i.rarity], n = equipTypeCount(eqType(key)), used = ownedEquipItems().filter(x=>eqType(x)===eqType(key) && equipUsedCount(x)>0).length;
   if(n<=0){ closeModal(); return; }
   const users = Object.keys(state.equipped||{}).filter(sp=>ownedCount(sp)>0 && EQUIP_SLOTS.some(sl=>state.equipped[sp][sl]===key));
   let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
@@ -8940,7 +8964,7 @@ function showEquipEnhanceModal(key, fxLabel){
 }
 function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
-  const items = allEquipKeys().filter(k=>equipInfo(k).slot===slot && equipOwnedCount(k)>0).sort((a,b)=>equipEffect(b,spKey)-equipEffect(a,spKey));
+  const items = ownedEquipItems().filter(k=>equipInfo(k).slot===slot).sort((a,b)=>equipEffect(b,spKey)-equipEffect(a,spKey));
   const bestKey = items.find(k=>equipFreeCount(k)>0 || k===cur);
   let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가</div>';
   if(!items.length) html += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 '+si.name+' 없음 — 소환 탭 › 정령장비 소환</div>';
@@ -8963,7 +8987,7 @@ function equipSlotsHtml(spKey){
   let h = '<div style="display:flex; gap:8px; margin-top:10px;">';
   EQUIP_SLOTS.forEach(slot=>{
     const k = equippedKey(spKey, slot), si = EQUIP_SLOT_INFO[slot];
-    const any = allEquipKeys().some(x=>equipInfo(x).slot===slot && equipOwnedCount(x)>0);
+    const any = ownedEquipItems().some(x=>equipInfo(x).slot===slot);
     h += '<div data-equip-slot="'+slot+'" style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
       + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
@@ -9554,6 +9578,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:330, v:'4.3.0', date:'2026-10-02', secs:[
+    { t:'장비 한 개씩 따로', items:[ '같은 장비도 하나하나 따로 강화·부가 능력·고유 효과·잠금을 가짐 — 같은 장비를 정령마다 다르게 맞출 수 있음', '같은 종류를 여러 개 갖고 있던 장비는 1개만 지금 상태 그대로 두고 나머지는 새 장비(+0 · 부가 능력·고유 효과 없음)로 나눔', '한 장비는 정령 한 명만 낄 수 있음 — 여러 정령이 같은 장비를 끼고 있었다면 나눈 새 장비를 끼워 줌', '합성·분해 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화·능력 붙은 장비는 자동 합성에서 빠짐)' ]},
+    { t:'정령 중복 배치 금지', items:[ '같은 정령은 한 팀에 한 번만 — 이미 놓인 정령을 고르면 그 자리로 옮김', '이미 중복으로 놓여 있던 자리는 비움 (팀·균열·결투 덱·프리셋)' ]},
+    { t:'장비 강화 비용', items:[ '최대 강화까지 합계 — 신화(+10): 정수 2,325 → 6,000 · 강화석 245 → 551', '레전더리(+9): 정수 1,800 → 2,980 · 강화석 189 → 273', '에픽(+7): 정수 1,085 → 1,157 · 일반·레어는 그대로' ]}
+  ]},
   { build:329, v:'4.2.1', date:'2026-10-02', secs:[
     { t:'버그 수정', items:[ '속박·감옥·봉인 등 상태 효과 연출이 행동할 때마다 처음부터 다시 나오던 것 수정 (4.0.7에서 일부만 고쳐졌던 것)', '쓰러진 정령 그림이 칸 밖으로 나가던 것 수정' ]},
     { t:'전투 연출', items:[ '쓰러지는 연출을 더 잘 보이게 — 맞은 뒤 번쩍 → 기울며 쓰러짐 → 연기' ]},
@@ -10111,7 +10140,7 @@ const ACHIEVEMENTS = [
   {id:'equip_first', name:'첫 장비', desc:'정령장비를 처음 소환하기', reward:{stone:20}, category:'general', check:()=> (state.lifetimeEquipSummons||0)>=1},
   {id:'equip_10', name:'장비 수집가', desc:'정령장비 10회 소환하기', reward:{essence:150}, category:'general', check:()=> (state.lifetimeEquipSummons||0)>=10},
   {id:'equip_fuse_first', name:'장비 합성', desc:'정령장비를 처음 합성하기', reward:{stone:30}, category:'general', check:()=> (state.lifetimeEquipFusions||0)>=1},
-  {id:'equip_epic', name:'에픽 장비', desc:'에픽 이상 정령장비 보유', reward:{stone:40}, category:'general', check:()=> allEquipKeys().some(k=>RARITY_ORDER.indexOf(equipInfo(k).rarity)>=2 && equipOwnedCount(k)>0)},
+  {id:'equip_epic', name:'에픽 장비', desc:'에픽 이상 정령장비 보유', reward:{stone:40}, category:'general', check:()=> allEquipKeys().some(k=>RARITY_ORDER.indexOf(equipInfo(k).rarity)>=2 && equipTypeCount(k)>0)},
   {id:'equip_dex_25', name:'장비 도감 25%', desc:'전체 정령장비 중 25% 발견', reward:{stone:20}, category:'general', check:()=> equipDexProgress()>=0.25},
   {id:'equip_dex_50', name:'장비 도감 50%', desc:'전체 정령장비 중 50% 발견', reward:{items:{equip:2}}, category:'general', check:()=> equipDexProgress()>=0.5},
   {id:'equip_dex_75', name:'장비 도감 75%', desc:'전체 정령장비 중 75% 발견', reward:{essence:600, items:{equip:3}}, category:'general', check:()=> equipDexProgress()>=0.75},
@@ -13234,7 +13263,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     html += '<button class="btn secondary" id="clearSlot" style="margin-bottom:10px;">슬롯 비우기</button>';
   }
   // (v128) 가용 정령은 초록 테두리·"가용 N/보유"로 눈에 띄게 위에, 전부 다른 슬롯에서 쓰는 정령은 흐리게 아래에 ("사용 중 · 슬롯 N")
-  const entries = options.map(key=>({ key, owned: ownedCount(key), free: ownedCount(key) - usedCountExcluding(key, slotIdx),
+  const entries = options.map(key=>({ key, owned: ownedCount(key), free: (ownedCount(key)>0 && !usedCountExcluding(key, slotIdx)) ? 1 : 0, // (v330) 같은 정령 중복 배치 금지
     users: state.formation.map((k,i)=> (k===key && i!==slotIdx) ? i+1 : null).filter(Boolean), isCur: state.formation[slotIdx]===key }));
   // (v173) 정렬(전투력·등급·속성·역할) + 한 줄 카드로 정리 + ⓘ로 스킬 보기
   const sortBy = state.pickSort || 'cp';
@@ -13287,7 +13316,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     el.addEventListener('click', ()=>{
       if(el.dataset.lp==='1'){ el.dataset.lp = ''; return; } // 길게 눌러 정보를 연 뒤 손을 뗀 클릭은 배치 안 함
       const key = el.dataset.pick;
-      const free = ownedCount(key) - usedCountExcluding(key, slotIdx);
+      const free = (ownedCount(key)>0 && !usedCountExcluding(key, slotIdx)) ? 1 : 0; // (v330) 이미 다른 칸에 있으면 그 칸에서 옮겨 옴
       if(free>0){
         state.formation[slotIdx] = key;
         save(); returnFn();
@@ -13442,7 +13471,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-sp-sub]').forEach(el=>el.addEventListener('click', ()=>{ spiritsSub = el.dataset.spSub; render(); document.getElementById('main').scrollTop = 0; }));
   const ets = document.getElementById('equipToSpirits'); if(ets) ets.addEventListener('click', ()=>{ spiritsSub = 'equip'; activeTab = 'spirits'; render(); });
   { const st = document.getElementById('spiritsToTab'); if(st) st.addEventListener('click', ()=>{ spiritsSub = 'spirits'; activeTab = 'spirits'; render(); }); }
-  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k = el.dataset.recentEquip; if(equipOwnedCount(k)>0) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
+  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
   document.querySelectorAll('[data-eq-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.equipSort = el.dataset.eqSort; save(); render(); }));
@@ -13726,7 +13755,7 @@ function sanitizeState(){
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   s.starShard = fin(s.starShard) ? Math.max(0, Math.floor(s.starShard)) : 0; // (v317)
   if(isPlainObj(s.rift) && Number.isInteger(s.rift.p) && isPlainObj(s.rift.st)){ Object.keys(s.rift.st).forEach(k=>{ const f = Number(k), v = s.rift.st[k]; if(!Number.isInteger(f) || f<1 || f>RIFT_FLOORS.length || !Number.isInteger(v)) delete s.rift.st[k]; else s.rift.st[k] = v & 7; }); } else s.rift = null; // (v317) 별빛 균열
-  s.riftForm = Array.isArray(s.riftForm) ? s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null) : [];
+  s.riftForm = Array.isArray(s.riftForm) ? dedupeKeys(s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)) : [];
   if(!isPlainObj(s.pickup)) s.pickup = {}; { const pk = s.pickup; pk.pity = fin(pk.pity) ? Math.max(0, Math.min(PICKUP_PITY-1, Math.floor(pk.pity))) : 0; pk.guar = !!pk.guar; pk.sel = (typeof pk.sel==='string' && SPIRITS[pk.sel] && SPIRITS[pk.sel].rarity==='mythic') ? pk.sel : ''; }
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeQuests','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
@@ -13747,10 +13776,15 @@ function sanitizeState(){
   if(!s.lockedSpirits || typeof s.lockedSpirits!=='object' || Array.isArray(s.lockedSpirits)) s.lockedSpirits = {};
   Object.keys(s.lockedSpirits).forEach(k=>{ if(!SPIRITS[k] || !s.lockedSpirits[k]) delete s.lockedSpirits[k]; else s.lockedSpirits[k] = true; });
   // 정령장비
-  const eks = new Set(allEquipKeys());
+  const eks0 = new Set(allEquipKeys()), eks = { has: k=>{ const m = /^([a-z]+_[a-z]+_[a-z]+)(#([2-9]|[1-9][0-9]{1,3}))?$/.exec(String(k)); return !!(m && eks0.has(m[1])); } }; // (v330) 낱개 키 '종류#번호'도
   Object.keys(s.equipOwned).forEach(k=>{ const v = s.equipOwned[k]; if(!eks.has(k) || !fin(v) || v<0) delete s.equipOwned[k]; else s.equipOwned[k] = Math.floor(v); });
-  Object.keys(s.equipSeen).forEach(k=>{ if(!eks.has(k) || !s.equipSeen[k]) delete s.equipSeen[k]; else s.equipSeen[k] = true; });
-  Object.keys(s.equipOwned).forEach(k=>{ if(s.equipOwned[k]>0) s.equipSeen[k] = true; });
+  if(!s.eqInst){ // (v330) 한 번만: 같은 종류 n개 → 1개는 지금 상태 그대로, 나머지는 '종류#2…' 새 장비(+0 · 부가 능력·고유 효과 없음) · 같은 종류를 여러 정령이 끼고 있었으면 두 번째 정령부터 새 장비로
+    const fresh = {};
+    Object.keys(s.equipOwned).forEach(k=>{ const v = s.equipOwned[k]; if(k.indexOf('#')>=0 || v<=1) return; s.equipOwned[k] = 1; fresh[k] = []; for(let n=2; n<=v; n++){ s.equipOwned[k+'#'+n] = 1; fresh[k].push(k+'#'+n); } });
+    const used = {}; if(isPlainObj(s.equipped)) Object.keys(s.equipped).forEach(sp=>{ const e = s.equipped[sp]; if(!isPlainObj(e)) return; EQUIP_SLOTS.forEach(sl=>{ const k = e[sl]; if(!k) return; if(!used[k]){ used[k] = true; return; } e[sl] = (fresh[k] && fresh[k].length) ? fresh[k].shift() : null; }); });
+    s.eqInst = 1; }
+  Object.keys(s.equipSeen).forEach(k=>{ if(!eks0.has(k) || !s.equipSeen[k]) delete s.equipSeen[k]; else s.equipSeen[k] = true; });
+  Object.keys(s.equipOwned).forEach(k=>{ if(s.equipOwned[k]>0) s.equipSeen[k.split('#')[0]] = true; });
   if(!s.lockedEquip || typeof s.lockedEquip!=='object' || Array.isArray(s.lockedEquip)) s.lockedEquip = {};
   Object.keys(s.lockedEquip).forEach(k=>{ if(!eks.has(k) || !s.lockedEquip[k]) delete s.lockedEquip[k]; else s.lockedEquip[k] = true; });
   Object.keys(s.equipped).forEach(sp=>{
@@ -13760,6 +13794,7 @@ function sanitizeState(){
   });
   // 진형(5칸), 스테이지 기록
   s.formation = Array.from({length: (Array.isArray(s.formation) && s.formation.length===GRID_SLOTS) ? GRID_SLOTS : 5}, (_,i)=> (typeof s.formation[i]==='string' && SPIRITS[s.formation[i]]) ? s.formation[i] : null);
+  s.formation = dedupeKeys(s.formation); // (v330) 같은 정령 중복 배치 정리
   cleanupFormation();
   if(!TAB_IDS.includes(s.lastTab)) s.lastTab = 'summon';
   { const ov = s.openView;
@@ -13811,9 +13846,9 @@ function sanitizeState(){
     if(!(s.raidShopBuys && typeof s.raidShopBuys==='object' && typeof s.raidShopBuys.week==='string' && s.raidShopBuys.n && typeof s.raidShopBuys.n==='object')) s.raidShopBuys = null;
     if(typeof s.homeSpirit!=='string' || !SPIRITS[s.homeSpirit]) s.homeSpirit = null;
     { const M = {}, old = Date.now()-120*86400000; if(s.mailClaimed && typeof s.mailClaimed==='object') Object.keys(s.mailClaimed).forEach(k=>{ const v = s.mailClaimed[k]; if(/^[aus]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) M[k] = v; }); s.mailClaimed = M; s.adminUnlockAll = s.adminUnlockAll===true; const H = {}; if(s.mailHidden && typeof s.mailHidden==='object') Object.keys(s.mailHidden).forEach(k=>{ const v = s.mailHidden[k]; if(/^[aus]:[A-Za-z0-9_-]{1,40}$/.test(k) && Number.isFinite(v) && v>old) H[k] = v; }); s.mailHidden = H; } s.askSeen = Number.isFinite(s.askSeen) ? s.askSeen : 0; s.inboxSeen = Number.isFinite(s.inboxSeen) ? s.inboxSeen : 0; // (v296) 문의 알림 // (v242) 받은 우편 · 관리자 해금
-    { const E = {}; if(s.equipEnh && typeof s.equipEnh==='object') Object.keys(s.equipEnh).forEach(k=>{ const p = k.split('_'); const v = s.equipEnh[k]; if(p.length===3 && EQUIP_SLOTS.includes(p[0]) && ELEMENTS.includes(p[1]) && EQ_ENH_MAX[p[2]] && Number.isInteger(v) && v>0) E[k] = Math.min(v, EQ_ENH_MAX[p[2]]); }); s.equipEnh = E; } // (v241) 장비 강화
+    { const E = {}; if(s.equipEnh && typeof s.equipEnh==='object') Object.keys(s.equipEnh).forEach(k=>{ const p = k.split('#')[0].split('_'); const v = s.equipEnh[k]; if(p.length===3 && EQUIP_SLOTS.includes(p[0]) && ELEMENTS.includes(p[1]) && EQ_ENH_MAX[p[2]] && Number.isInteger(v) && v>0) E[k] = Math.min(v, EQ_ENH_MAX[p[2]]); }); s.equipEnh = E; } // (v241) 장비 강화
     { const F = {}; if(s.friendSent && typeof s.friendSent==='object') Object.keys(s.friendSent).slice(0,50).forEach(k=>{ const v = s.friendSent[k]; if(/^[A-Za-z0-9_-]{4,64}$/.test(k) && v && typeof v==='object') F[k] = { t: Number.isFinite(v.t) ? v.t : 0, code: typeof v.code==='string' ? v.code.slice(0,8) : '' }; }); s.friendSent = F; } // (v238) 보낸 친구 요청
-    if(Array.isArray(s.duelDeck)) s.duelDeck = s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null); else s.duelDeck = null;
+    if(Array.isArray(s.duelDeck)) s.duelDeck = dedupeKeys(s.duelDeck.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)); else s.duelDeck = null;
     { const P = {}; if(s.raidProgress && typeof s.raidProgress==='object') Object.keys(s.raidProgress).forEach(k=>{ if(raidBossById(k) && Array.isArray(s.raidProgress[k])) P[k] = s.raidProgress[k].filter(d=>RAID_DIFFS.some(x=>x.id===d)); }); s.raidProgress = P; }
     if(!raidBossById(s.raidBossSel)) s.raidBossSel = null;
   }
@@ -13936,12 +13971,13 @@ function sanitizeState(){
   { // (v298) 각인 · 장비 부가 능력 · 초월 — 모양이 이상한 건 버림
     const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<4).slice(0,3); if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
     s.engrave = cleanBox(s.engrave, k=>!!SPIRITS[k]);
-    s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)$/.test(k));
-    { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
+    s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/.test(k));
+    { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)(#\d+)?$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
     if(s.transPity && typeof s.transPity==='object') Object.keys(s.transPity).forEach(k=>{ const v = s.transPity[k]; if(SPIRITS[k] && Number.isFinite(v) && v>0) TP[k] = Math.min(1, v); }); s.transPity = TP;
     if(s.engrGift!==true){ s.tickets.engr = (s.tickets.engr||0) + 5; s.engrGift = true; } } // 새 성장 시작 선물 각인석 5
   s.presets = Array.isArray(s.presets) ? s.presets.slice(0,5).map(p=> (p && typeof p==='object' && Array.isArray(p.keys)) ? { name: String(p.name||'프리셋').slice(0,12), keys: p.keys.slice(0,6).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null) } : null) : []; // (v297) 파티 프리셋
+  s.presets = s.presets.map(p=> p ? Object.assign(p, { keys: dedupeKeys(p.keys) }) : p); // (v330)
   { const P = s.pass; // (v297) 시즌 패스 — 모양이 이상하면 새로 (경험치 상한 30레벨×100)
     if(P!==undefined && P!==null && !(isPlainObj(P) && Number.isFinite(P.xp) && Number.isInteger(P.season) && isPlainObj(P.got) && isPlainObj(P.got.f) && isPlainObj(P.got.p))) s.pass = null;
     else if(P){ P.xp = Math.max(0, Math.min(3000, Math.floor(P.xp))); P.prem = P.prem===true; if(!isPlainObj(P.day) || !isPlainObj(P.day.c) || !isPlainObj(P.day.done)) P.day = null; if(!isPlainObj(P.week) || !isPlainObj(P.week.c) || !isPlainObj(P.week.done)) P.week = null; } }
@@ -13977,7 +14013,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 329, APP_VERSION = '4.2.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 330, APP_VERSION = '4.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
