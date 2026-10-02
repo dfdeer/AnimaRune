@@ -1099,9 +1099,7 @@
   .ps-sub2{margin-top:6px;} .ps-sub2 button{padding-top:5px; padding-bottom:5px; font-size:12px;}
   .ps-note{text-align:center; font-size:11px; color:var(--sub); margin-top:6px;}
   #main[data-tbg=pass].scrolled .scr-top, #main[data-tbg=dispatch].scrolled .scr-top, #main[data-tbg=friends].scrolled .scr-top, #main[data-tbg=duel].scrolled .scr-top, #main[data-tbg=raid].scrolled .scr-top, #main[data-tbg=worldboss].scrolled .scr-top, #main[data-tbg=trial].scrolled .scr-top{background:#120e2ee0; box-shadow:0 6px 10px -4px #000a; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
-  #main[data-tbg=pass] .scr-top, #main[data-tbg=dispatch] .scr-top, #main[data-tbg=friends] .scr-top, #main[data-tbg=duel] .scr-top, #main[data-tbg=raid] .scr-top, #main[data-tbg=worldboss] .scr-top, #main[data-tbg=trial] .scr-top{margin-bottom:max(8px, calc(var(--scene-gap, 0px)));}
-  #main[data-tbg=pass], #main[data-tbg=raid], #main[data-tbg=dispatch], #main[data-tbg=trial]{--scene-gap:22vh;} /* (v317) 처음엔 배경 그림이 보이게 목록을 조금 아래에서 시작 */
-  #main[data-tbg=pass] .ps-cols{margin:8px 0 0;} .ps-cols-fix{display:none !important;} #main.ps-colsfix .ps-cols-fix{display:grid !important;} .ps-cols-in{margin:0 0 6px !important;}
+  #main[data-tbg=pass] .ps-cols{margin:8px 0 0;}
   #main[data-tbg=pass] .ps-head, #main[data-tbg=pass] .ps-ms{background:#16123a9c; border:1px solid #ffffff22; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
   #main[data-tbg=pass] .ps-row:not(.reach) .ps-no{background:#16123a9c;}
   #main[data-tbg=pass] .ps-cell{background:#16123a9c; border-color:#ffffff22; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);}
@@ -8231,8 +8229,7 @@ function renderPassTab(){
   h += '<div class="ps-tabs"><div class="seg"><button data-ps-v="rw" class="'+(passView==='rw'?'on':'')+'">보상'+(cl?' <i class="ps-n">'+cl+'</i>':'')+'</button><button data-ps-v="ms" class="'+(passView==='ms'?'on':'')+'">미션'+(msReady?' <i class="ps-n">!</i>':'')+'</button></div>';
   if(passView==='rw'){
     if(cl) h += '<button class="btn gold small ps-all" id="passAll">모두 받기</button>';
-    const cols = '<span></span><span>일반</span><span>✨ 프리미엄</span>'; // (v317) 위 고정 칸의 열 이름은 목록의 열 이름이 위로 지나간 뒤에만 보임
-    h += '</div><div class="ps-cols ps-cols-fix">'+cols+'</div>' + TOP_MARK + '<div class="ps-cols ps-cols-in">'+cols+'</div><div class="ps-list">';
+    h += '</div><div class="ps-cols"><span></span><span>일반</span><span>✨ 프리미엄</span></div>' + TOP_MARK + '<div class="ps-list">';
     for(let i=1;i<=PASS_MAX_LV;i++){ const r = PASS_REWARDS[i-1], reach = i<=lv;
       const fs = ps.got.f[i] ? 'got' : reach ? 'ready' : 'lock', pst = ps.got.p[i] ? 'got' : !ps.prem ? 'prem-lock' : reach ? 'ready' : 'lock';
       h += '<div class="ps-row'+(reach?' reach':'')+(i===lv+1?' next':'')+'"><span class="ps-no">'+i+'</span><button class="ps-btn" data-ps-c="f:'+i+'">'+passRwCell(r.f, fs)+'</button><button class="ps-btn" data-ps-c="p:'+i+'">'+passRwCell(r.p, pst)+'</button></div>'; }
@@ -8389,7 +8386,7 @@ function showGuideModal(){
     btn.addEventListener('click', ()=>{ guideCategory = btn.dataset.guideCat; window.__modalScrollReset = true; showGuideModal(); });
   });
 }
-function mainScrollMark(main){ main.classList.toggle('scrolled', main.scrollTop>6); const ci = main.querySelector('.ps-cols-in'), st = main.querySelector('.scr-top'); main.classList.toggle('ps-colsfix', !!(ci && st && ci.getBoundingClientRect().top < st.getBoundingClientRect().bottom - 2)); } // (v317)
+function mainScrollMark(main){ main.classList.toggle('scrolled', main.scrollTop>6); } // (v317)
 const TOP_MARK = '<!--top-->'; // 화면 html에 넣으면 이 앞부분이 위쪽에 고정됨
 let lastRenderedTab = null;
 function headerNum(n){ n = Math.floor(n||0); if(n < 100000) return String(n); const m = n/10000; return (m < 100 ? Math.floor(m*10)/10 : Math.floor(m))+'만'; }
