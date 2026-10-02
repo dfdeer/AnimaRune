@@ -249,6 +249,18 @@
   .ex-dot{position:absolute; top:-3px; left:-3px; width:11px; height:11px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 6px #ff5757;}
   .ex-mode{display:flex; gap:4px; margin-bottom:5px; padding:3px; border-radius:14px; background:#0006;} .ex-mode button{position:relative; flex:1; padding:5px 0; border-radius:11px; border-color:transparent !important; border:1px solid #ffffff1a; background:#1d1b48; color:var(--sub); font-weight:900; font-size:13px;}
   .ex-mode button.on{background:#5b6bff33; border-color:#8a96ff; color:var(--text);} .ex-mode button.hard.on{background:linear-gradient(135deg,#6a1428,#3a1030); border-color:#ff5a6a; color:#ffd0d6; box-shadow:0 0 12px #ff3a5a55;} .ex-mode button.lock{opacity:.55;} .ex-mode .uic{width:14px; height:14px;}
+  .ex-mode button.rift{flex:1.25; color:#ffe9a8; background:linear-gradient(135deg,#3a2c6e,#241b52); border-color:#c9a24a88 !important;} .ex-mode button.rift .star-ic{width:13px; height:13px; vertical-align:-2px;} /* (v317) 별빛 균열 */
+  .rf-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9a24a66;} .rf-t{font-size:18px; font-weight:900; color:#ffe08a;} .rf-t .star-ic{width:20px; height:20px; vertical-align:-3px;}
+  .rf-sub{font-size:12px; color:var(--sub); margin-top:2px;} .rf-sub b{color:#ffe08a;} .rf-bless{display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; background:#0006; font-size:11px; font-weight:800;} .rf-bless .star-ic{width:12px; height:12px; vertical-align:-2px;}
+  .rf-list{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding-bottom:12px;}
+  .rf-fl{display:flex; align-items:center; gap:8px; width:100%; padding:7px 10px; border-radius:12px; background:#16123ad8; border:1px solid #ffffff22; color:var(--text); text-align:left; cursor:pointer;}
+  .rf-fl.hard{border-color:#ff6a7a55; background:linear-gradient(90deg,#3a1030d8,#16123ad8);} .rf-fl.done{border-color:#c9a24a88;} .rf-fl.lock{opacity:.5;} .rf-fl:disabled{opacity:.45;}
+  .rf-no{flex-shrink:0; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; background:#2d2a62; border:1.5px solid #8a7bd0;} .rf-fl.done .rf-no{background:radial-gradient(circle at 35% 30%,#fff0b0,#e0a52a 60%,#a86e10); color:#3b2500; border-color:#fff3c4;}
+  .rf-boss{flex:1; min-width:0; display:flex; align-items:center; gap:6px; font-size:13px;} .rf-boss i{font-style:normal; font-size:9px; font-weight:900; color:#ffd0d6; background:#a8203a; border-radius:6px; padding:1px 5px;} .rf-bimg{width:30px; height:30px; object-fit:contain;}
+  .rf-s3{display:flex; gap:1px;} .rf-s3 i .star-ic{width:16px; height:16px; filter:grayscale(1) brightness(.45);} .rf-s3 i.on .star-ic{filter:none;}
+  .rf-fl small{flex-shrink:0; min-width:34px; text-align:right; font-size:11px; color:#ffe08a; font-weight:800;}
+  .rf-stars{display:flex; justify-content:center; gap:10px; margin:8px 0;} .rf-st{display:flex; flex-direction:column; align-items:center; gap:2px; font-size:10px; color:var(--sub);} .rf-st .star-ic{width:24px; height:24px; filter:grayscale(1) brightness(.45);} .rf-st.on .star-ic{filter:none;} .rf-st.on small{color:#ffe08a;} .rf-st.new .star-ic{animation:rfPop .6s ease-out;}
+  @keyframes rfPop{0%{transform:scale(.2);}70%{transform:scale(1.3);}100%{transform:scale(1);}}
   @media (max-height:700px){ .ex-mode{margin-bottom:3px;} .ex-mode button{padding:2px 0; font-size:11px; border-radius:9px;} }
   .ex-head.hard{background:linear-gradient(160deg,#3a1030,#1d1030) !important; border-color:#ff5a6a66 !important;} .ex-map.hard .ex-shade{background:radial-gradient(ellipse at center, #0000 40%, #5a001a66 100%), #3a001522 !important;}
   #main.ex-full .scr-top{background:none;}
@@ -3543,7 +3555,7 @@ function friendInviteListHtml(){ // 로비(방장·팀원 없음)에서 접속 �
 }
 // ===================== (v169) 홈 화면 =====================
 // 대표 정령을 크게 보여주고, 탐험(메인 버튼)과 탑·출정·레이드로 가는 입구. 배경은 지금은 SVG로 그리고 나중에 일러스트로 교체 가능
-const HOME_MODE_TABS = ['pickup','tower','dungeon','trial','challenge','pass','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel','worldboss']; // (v278) 월드 보스 화면 // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
+const HOME_MODE_TABS = ['rift','pickup','tower','dungeon','trial','challenge','pass','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel','worldboss']; // (v278) 월드 보스 화면 // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
 function homeRepSpirit(){
   if(state.homeSpirit && SPIRITS[state.homeSpirit] && (ownedCount(state.homeSpirit)>0 || state.discovered[state.homeSpirit])) return state.homeSpirit; // (v296) 도감에 한 번이라도 등록된 정령이면 대표로 쓸 수 있음
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
@@ -4350,6 +4362,7 @@ function checkSkillStageOutcome0(sf){
   if(sf.mode==='boss') return checkBossWaveOutcome(sf);
   if(sf.mode==='expedition') return checkExpeditionOutcome(sf);
   if(sf.mode==='dungeon') return checkDungeonOutcome(sf); // (v266)
+  if(sf.mode==='rift') return checkRiftOutcome(sf); // (v317) 별빛 균열
   if(sf.mode==='trial') return checkTrialOutcome(sf);
   if(sf.mode==='worldboss') return checkWorldBossOutcome(sf);
   if(sf.mode==='raid') return checkRaidOutcome(sf);
@@ -4394,7 +4407,7 @@ const pctHp = u=>u.pctHp || u.maxHp;
 function roundStartEffects(sf){
   sf.myUnits.concat(sf.enemyUnits).forEach(u=>{ if(u.alive && u.st.shield>0){ u.st.shieldR = (u.st.shieldR||2) - 1; if(u.st.shieldR<=0){ u.st.shield = 0; delete u.st.shieldR; } } }); // (v173) 보호막 지속시간
   groggyRoundStart(sf); // (v179) 그로기 해제·게이지 회복(기믹보다 먼저)
-  if(sf.mode==='boss' || ((sf.mode==='expedition' || sf.mode==='worldboss') && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정·월드 보스도 기믹
+  if(sf.mode==='boss' || ((sf.mode==='expedition' || sf.mode==='worldboss' || sf.mode==='rift') && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정·월드 보스도 기믹
   if(sf.mode==='raid') applyRaidGimmicks(sf);
   runeRoundStart(sf);
   const hits = [];
@@ -5623,7 +5636,7 @@ function battleUnitHtml(u, opts){
   }else if(u.isBoss) cls.push('bu-boss');
   // (v260) 보스 예고 줄: 절대영도 저지 막대 · 심연의 수정 다음 속성 · 역류
   if(u.isBoss && u.alive){
-    const sfx = state.skillFight, g = sfx && sfx.mode==='boss' ? sfx.gimmick : null;
+    const sfx = state.skillFight, g = sfx && (sfx.mode==='boss' || sfx.mode==='rift') ? sfx.gimmick : null;
     if(u.cast){ const left = Math.max(0, u.cast.need - u.cast.dealt), pct = Math.min(100, u.cast.dealt/u.cast.need*100);
       gg += '<div class="bu-cast'+(left<=0||u.cast.broken?' done':'')+'" data-stat="'+u.side+':'+u.idx+'"><div style="width:'+(u.cast.broken?100:pct)+'%;"></div><span>'+u.cast.ic+' '+((left<=0||u.cast.broken)?'저지!':'저지 '+(u.cast.el ? elIc(u.cast.el)+'×'+left : fmtHp(left)))+'</span></div>'; }
     const tags = [];
@@ -5699,7 +5712,7 @@ function bossBattleInfoHtml(u){
   const sf = state.skillFight;
   if(sf && sf.mode==='raid'){ const info = raidBossById(sf.raidBossId); return info ? raidBossInfoHtml(info) : ''; }
   const g = u.gimmick || (sf && sf.gimmick), G = g && BOSS_GIMMICKS[g]; if(!G) return '';
-  const hard = sf && ((sf.mode==='boss' && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3));
+  const hard = sf && (((sf.mode==='boss' || sf.mode==='rift') && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3));
   return bossSkillSectionHtml(u.line) + gmSectionHtml('기믹', G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g); // (v270) 보스 스킬 먼저
 }
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
@@ -5767,6 +5780,7 @@ function battleThemeOf(sf){
   if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
+  if(sf.mode==='rift') return BATTLE_THEMES[CHAPTER_MASKS[RIFT_FLOORS[(sf.riftF||1)-1].g].theme] || 'cave'; // (v317)
   if(sf.mode==='trial') return 'trial';
   if(sf.mode==='worldboss') return 'wb';
   if(sf.mode==='duel') return 'arena';
@@ -5869,6 +5883,7 @@ function showSkillStageScreen(){
     : sf.mode==='worldboss' ? '🌍 월드 보스 · R'+Math.min(sf.round, WB_ROUNDS)+'/'+WB_ROUNDS
     : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')+' · R'+sf.round+((trialDef(sf.trialId)||{}).maxRounds ? '/'+trialDef(sf.trialId).maxRounds : '')
     : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계 · R'+sf.round
+    : sf.mode==='rift' ? STAR_IC+' '+RIFT_NAME+' '+sf.riftF+'층 · R'+sf.round
     : sf.mode==='duel' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투 · vs '+(sf.duelName||'상대')
     : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')+' · R'+sf.round
     : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx)+' · R'+sf.round;
@@ -5943,7 +5958,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
+  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
   setHtmlKeepImgs(root, html);
   fitBattleScreen();
@@ -5956,6 +5971,7 @@ function showSkillStageScreen(){
     if(sf.mode==='boss'){ endBossWaveRun(false); render(); openStagePrep(i); return; }
     if(sf.mode==='expedition'){ state.skillFight=null; unmountBattleScreen(); save(); render(); return; }
     if(sf.mode==='dungeon'){ leaveDungeonFight(); return; }
+    if(sf.mode==='rift'){ leaveRiftFight(); return; }
     if(sf.mode==='trial'){ leaveTrialFight(); return; }
     if(sf.mode==='worldboss'){ if(!sf.result){ sf.round = WB_ROUNDS+1; checkWorldBossOutcome(sf); } leaveWorldBossFight(); return; } // 중간에 나가도 그때까지 피해는 기록
     if(sf.mode==='duel'){
@@ -5992,6 +6008,7 @@ function showSkillStageScreen(){
     const retry = sf.mode==='boss' ? ()=>{ const roster = state.bossFight.roster.slice(); const i = sf.stageIdx; endBossWaveRun(false); startBossWaveRun(i, roster); }
       : sf.mode==='trial' ? ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
       : sf.mode==='dungeon' ? ()=>{ state.skillFight = buildDungeonFight(sf.dungeonEl, sf.dungeonN); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
+      : sf.mode==='rift' ? ()=>riftRetry(sf.riftF)
       : !sf.mode ? restartSkillStageFight : null;
     confirmBox('전투 나가기', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; },
       { danger:true, alt: retry ? { label:'다시하기', fn:()=>{ if(state.skillFight===sf) retry(); } } : null });
@@ -6019,6 +6036,10 @@ function showSkillStageScreen(){
   }else if(sf.mode==='trial'){ // (v266) 시련의 전당
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveTrialFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
+  }else if(sf.mode==='rift'){ // (v317) 별빛 균열
+    if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveRiftFight);
+    if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>riftRetry(sf.riftF));
+    if(q('rfNextBtn')) q('rfNextBtn').addEventListener('click', ()=>{ const f = sf.riftF; leaveRiftFight(); showRiftPrep(f+1); });
   }else if(sf.mode==='dungeon'){ // (v266) 요일 던전
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveDungeonFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const el = sf.dungeonEl, n = sf.dungeonN; state.skillFight = buildDungeonFight(el, n); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
@@ -6242,7 +6263,7 @@ function mailClean(m){
   const rw = m.reward && typeof m.reward==='object' ? m.reward : {}, items = {};
   if(rw.items && typeof rw.items==='object') Object.keys(rw.items).forEach(k=>{ if(TICKET_INFO[k] && n(rw.items[k])>0) items[k] = n(rw.items[k]); });
   const runes = {}; if(rw.runes && typeof rw.runes==='object') Object.keys(rw.runes).forEach(k=>{ if(mailRuneInfo(k) && n(rw.runes[k])>0) runes[k] = Math.min(RUNE_INV_MAX, n(rw.runes[k])); }); // (v300)
-  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), c: tm(m.c), et: tm(m.et), toName: String(m.toName||'').slice(0,20), toCode: String(m.toCode||'').slice(0,8), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), wbGems: n(rw.wbGems), shards: n(rw.shards), upStones: n(rw.upStones), items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null } }; // (v266) gems = 고대 룬석(레이드 재화) · (v300) 세계 룬석 · 정령 파편 · 룬 승급석 · 룬
+  return { title: String(m.title||'우편').slice(0,40), body: String(m.body||'').slice(0,300), t: tm(m.t), exp: tm(m.exp), c: tm(m.c), et: tm(m.et), toName: String(m.toName||'').slice(0,20), toCode: String(m.toCode||'').slice(0,8), reward: { essence: n(rw.essence), stone: n(rw.stone), gems: n(rw.gems), wbGems: n(rw.wbGems), shards: n(rw.shards), upStones: n(rw.upStones), star: n(rw.star), items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null } }; // (v266) gems = 고대 룬석(레이드 재화) · (v300) 세계 룬석 · 정령 파편 · 룬 승급석 · 룬
 }
 function mailList(){
   const now = Date.now(), out = [];
@@ -6291,17 +6312,17 @@ function mailBadgeUpdate(){
 function mailClaim(ids){
   const ms = mailList().filter(m=>ids.includes(m.id) && !m.claimed); if(!ms.length) return;
   if(!state.mailClaimed) state.mailClaimed = {};
-  let essence = 0, stone = 0, gems = 0, wbGems = 0, shards = 0, upStones = 0; const items = {}, runes = {};
+  let essence = 0, stone = 0, gems = 0, wbGems = 0, shards = 0, upStones = 0, star = 0; const items = {}, runes = {};
   ms.forEach(m=>{ const R = m.reward.runes || {}; Object.keys(R).forEach(k=>{ runes[k] = (runes[k]||0) + R[k]; }); });
   { const nr = Object.values(runes).reduce((a,b)=>a+b, 0); if(nr && (state.runeInv||[]).length + nr > RUNE_INV_MAX){ toast('룬 보관함 자리 부족 — 룬 '+nr+'개 받을 자리 필요'); return; } } // (v300)
-  ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; wbGems += m.reward.wbGems||0; shards += m.reward.shards||0; upStones += m.reward.upStones||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
+  ms.forEach(m=>{ essence += m.reward.essence; stone += m.reward.stone; gems += m.reward.gems||0; wbGems += m.reward.wbGems||0; shards += m.reward.shards||0; upStones += m.reward.upStones||0; star += m.reward.star||0; if(m.reward.items) Object.keys(m.reward.items).forEach(k=>{ items[k] = (items[k]||0) + m.reward.items[k]; }); state.mailClaimed[m.id] = Date.now();
     if(m.scope==='s'){ const x = (state.sysMail||[]).find(y=>y.id===m.raw); if(x) x.got = Date.now(); }
     if(m.scope==='u') raidNet.db.doc('mail/user/'+raidNet.uid+'/'+m.raw+'/c').set(Date.now()).catch(()=>{}); }); // (v296) 받은 개인 우편도 지우지 않고 받은 표시만(c) — 전체 우편처럼 보관 기간까지 남음 · 관리자가 받았는지 확인
   state.essence += essence; state.enhanceStone = (state.enhanceStone||0) + stone; state.raidGems = (state.raidGems||0) + gems; grantItems(Object.keys(items).length ? items : null);
-  state.wbGems = (state.wbGems||0) + wbGems; state.shards = (state.shards||0) + shards; state.runeUpStones = (state.runeUpStones||0) + upStones;
+  state.wbGems = (state.wbGems||0) + wbGems; state.shards = (state.shards||0) + shards; state.runeUpStones = (state.runeUpStones||0) + upStones; state.starShard = (state.starShard||0) + star;
   Object.keys(runes).forEach(k=>{ for(let i=0;i<runes[k];i++){ const r = mailRuneMake(k); if(r){ state.runeInv = state.runeInv || []; state.runeInv.push(r); } } });
   save(); sfx('claim'); render();
-  toastReward({ essence, stone, gems, wbGems, shards, upStones, items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null }, '📬 우편 '+ms.length+'개 보상 받음');
+  toastReward({ essence, stone, gems, wbGems, shards, upStones, star, items: Object.keys(items).length ? items : null, runes: Object.keys(runes).length ? runes : null }, '📬 우편 '+ms.length+'개 보상 받음');
 }
 function mailLeftTxt(m){ if(!m.exp) return ''; const d = Math.ceil((m.exp-Date.now())/86400000); return d<=1 ? '오늘까지' : d+'일 남음'; }
 function showMailboxModal(why){
@@ -6823,6 +6844,7 @@ function defaultState(){
     expeditionBestReach: 0,
     lifetimeExpeditionClears: 0,
     lifetimeQuests: 0, // (v313) 받은 일일 의뢰 수 — 계정 점수
+    rift: null, riftForm: [], // (v317) 별빛 균열 — 기간 번호(p) · 층별 별(st: 1 클리어 · 2 라운드 · 4 무사)
     starShard: 0, pickup: { pity:0, guar:false, sel:'' }, // (v317) 픽업 소환 — 별빛 조각 · 천장(pity) · 다음 신화 픽업 확정(guar) · 고른 픽업(sel)
     lifetimeRerolls: 0,
     towerFloorRewardClaimed: {},
@@ -7086,7 +7108,7 @@ function showToastLog(){
 }
 // 보상 알림은 '이름 보상 획득  <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+40' 형식(아이콘+숫자만 강조). 다른 곳의 보상 표기(<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+N <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+N 🎟️×N)와 같은 모양
 function toastReward(rw, title, ms){
-  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', rw.shards?'<img class="uic" src="assets/ui/ic_shard.webp" alt="파편">+'+rw.shards:'', rw.upStones?'⬆️+'+rw.upStones:'', itemsShort(rw.items), rw.runes?Object.keys(rw.runes).map(k=>{ const r = mailRuneInfo(k); return r ? r.ic+'×'+rw.runes[k] : ''; }).join(' '):''].filter(Boolean);
+  const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', rw.shards?'<img class="uic" src="assets/ui/ic_shard.webp" alt="파편">+'+rw.shards:'', rw.upStones?'⬆️+'+rw.upStones:'', rw.star?STAR_IC+'+'+rw.star:'', itemsShort(rw.items), rw.runes?Object.keys(rw.runes).map(k=>{ const r = mailRuneInfo(k); return r ? r.ic+'×'+rw.runes[k] : ''; }).join(' '):''].filter(Boolean);
   toast('<span class="tt">'+(title||'보상 획득')+'</span><span class="tnr">'+parts.map(p=>'<span class="tn">'+p+'</span>').join('')+'</span>', ms||3200, true);
 }
 function toast(msg, ms, html){
@@ -8262,6 +8284,7 @@ function bindPassTab(){
   document.querySelectorAll('[data-ps-m]').forEach(b=>b.addEventListener('click', ()=>{ passClaimMission(b.dataset.psM); render(); }));
 }
 // ===================== 일일 의뢰 =====================
+const QUEST_STAR = 2;
 const QUESTS = [
   {id:'q1', name:'정령 소환 1회 하기', reward:30, check:()=> state.dailyStats.summons>=1},
   {id:'q2', name:'정령 합성 1회 하기', reward:50, check:()=> state.dailyStats.fusions>=1},
@@ -8274,10 +8297,10 @@ function claimQuest(id){
   if(!q) return;
   if(state.questsClaimed[id]) return;
   if(!q.check()){ toast('조건 미달성'); return; }
-  state.essence += q.reward;
+  state.essence += q.reward; state.starShard = (state.starShard||0) + QUEST_STAR; // (v317) 의뢰마다 별빛 조각
   state.questsClaimed[id] = true; passBump('quest'); state.lifetimeQuests = (state.lifetimeQuests||0) + 1; // (v313) 계정 점수
   save();
-  toastReward({essence:q.reward}, '📋 의뢰 보상 획득');
+  toastReward({essence:q.reward, star:QUEST_STAR}, '📋 의뢰 보상 획득');
   render();
 }
 
@@ -8455,10 +8478,10 @@ function render(){
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
   const frSc = document.querySelector('.fr-scroll'), frTop = (frSc && (activeTab==='friends' || activeTab==='duel') && frSc.dataset.tab===activeTab) ? frSc.scrollTop : 0; // (v280) 친구 목록을 다시 그려도 스크롤 위치 유지
   const main = document.getElementById('main');
-  const TAB_RENDER = { pickup:renderPickupTab, summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
+  const TAB_RENDER = { pickup:renderPickupTab, rift:renderRiftTab, summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
-    const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
+    const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : activeTab==='rift' ? '← 탐험' : '← 홈')+'</button>' : '';
     const html = (TAB_RENDER[activeTab] || renderStageTab)(), k = html.indexOf(TOP_MARK);
     const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '');
     const sameScreen = main.__rKey === rKey; main.__rKey = rKey;
@@ -9320,9 +9343,11 @@ function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
 function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
 function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
 const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1} };
-function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L }; if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
+function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: ACCOUNT_LV_STAR }; // (v317) 레벨마다 별빛 조각
+  if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
-function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
+const ACCOUNT_LV_STAR = 10;
+function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.starShard = (state.starShard||0) + (r.star||0); state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
@@ -9918,7 +9943,7 @@ function grantItems(items){
 }
 function itemsText(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+' '+TICKET_INFO[k].name+' ×'+items[k]).join(' · ') : ''; }
 function itemsShort(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+'×'+items[k]).join(' ') : ''; }
-function rewardBrief(rw){ return [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean).join(' '); }
+function rewardBrief(rw){ return [rw.star?STAR_IC+'+'+rw.star:'', rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.wbGems?'<span class="wbgem">'+uiIc('runestone')+'</span>+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean).join(' '); }
 function rewardWords(rw){ return [rw.essence?'정수 +'+rw.essence:'', rw.stone?'강화석 +'+rw.stone:'', itemsText(rw.items)].filter(Boolean).join(' · '); }
 function addPendingReward(id, icon, label, essence, stone, tab, items){
   if(!state.pendingRewards) state.pendingRewards = [];
@@ -10871,6 +10896,119 @@ function showDungeonPrep(el, n, keep){
     if(!state.formation.some(Boolean)){ toast(info.name+' 정령을 1마리 이상 배치'); return; }
     closeModal(); state.skillFight = buildDungeonFight(el, n); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
   });
+}
+// ===================== (v317) 별빛 균열 — 탐험 추가 콘텐츠 · 반달(픽업과 같은 기간)마다 초기화 · 12층 · 층마다 별 3개 · 별마다 별빛 조각 =====================
+// 층 = 챕터 보스 한 판(웨이브 없이 보스만). 기믹은 g(챕터 0~4)·h(하드 기믹), 세기는 ref 보스(노말 n / 하드 h, 챕터 c)의 공격·체력 × k
+// 9층 = 하드 1 보스 · 10층 = 하드 3 보스 · 11층 = 하드 5 보스 · 12층 = 하드 5보다 강하게 (사용자 결정)
+const RIFT_NAME = '별빛 균열';
+const RIFT_FLOORS = [
+  {g:0, h:0, ref:['n',0], k:1},   {g:1, h:0, ref:['n',1], k:1},   {g:2, h:0, ref:['n',2], k:1},   {g:3, h:0, ref:['n',3], k:1},
+  {g:4, h:0, ref:['n',4], k:1},   {g:1, h:1, ref:['h',0], k:0.6}, {g:3, h:1, ref:['h',0], k:0.75},{g:4, h:1, ref:['h',0], k:0.9},
+  {g:0, h:1, ref:['h',0], k:1},   {g:2, h:1, ref:['h',2], k:1},   {g:4, h:1, ref:['h',4], k:1},   {g:1, h:1, ref:['h',4], k:1.25}
+];
+const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
+const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
+const RIFT_BLESS = 0.25; // 이번 기간 축복 속성 공격력 +25%
+function riftBossStage(hard, c){ return (hard ? HARD_BASE : 0) + c*CHAPTER_LENGTH + CHAPTER_LENGTH-1; }
+function riftPeriod(){ return pickupPeriod(); }
+function riftBlessEl(idx){ return ELEMENTS[((idx % ELEMENTS.length) + ELEMENTS.length) % ELEMENTS.length]; }
+function riftState(){ const per = riftPeriod(); let r = state.rift; if(!isPlainObj(r) || (r.p!==per.idx && pickupOnline())) r = state.rift = { p: per.idx, st: {} }; /* 기간이 바뀌면 초기화 — 폰 시각이 틀릴 수 있어 서버 시각을 쓸 때(온라인)만 */ if(!isPlainObj(r.st)) r.st = {}; return r; }
+function riftStars(f){ const b = riftState().st[f]||0; return (b&1?1:0)+(b&2?1:0)+(b&4?1:0); }
+function riftTotalStars(){ let n = 0; for(let f=1; f<=RIFT_FLOORS.length; f++) n += riftStars(f); return n; }
+function riftFloorOpen(f){ return f===1 || (riftState().st[f-1]&1); }
+function riftUnlocked(){ return !!state.adminUnlockAll || chapter1BossCleared(); }
+function riftMakeEnemies(f){ // 기믹 보스를 만들고 ref 보스 세기에 맞춤 (결계석·용암 정령도 같은 비율)
+  const F = RIFT_FLOORS[f-1], st = riftBossStage(F.h, F.g);
+  const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}), ref = buildBossWaveFight(riftBossStage(F.ref[0]==='h', F.ref[1]), BOSS_WAVE_COUNT, [], {});
+  const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
+  const ka = rb.atk/b.atk*F.k, kh = rb.maxHp/b.maxHp*F.k;
+  bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0; if(u.shieldMax) u.shieldMax = Math.round(u.shieldMax*kh); });
+  return bf;
+}
+function buildRiftFight(f){
+  const F = RIFT_FLOORS[f-1], per = riftPeriod(), bless = riftBlessEl(per.idx);
+  const bf = riftMakeEnemies(f), my = buildBossWaveFight(riftBossStage(F.h, F.g), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
+  my.myUnits.forEach(u=>{ if(u.element===bless) u.atk = Math.round(u.atk*(1+RIFT_BLESS)); });
+  const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'] });
+  sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
+  return sf;
+}
+function checkRiftOutcome(sf){
+  if(sf.result) return true;
+  if(!aliveUnits(sf.enemyUnits).length){
+    const f = sf.riftF, rs = riftState(), live = sf.riftP===rs.p;
+    const bits = 1 | (sf.round<=RIFT_ROUND_GOAL ? 2 : 0) | (sf.myUnits.every(u=>u.alive) ? 4 : 0);
+    const old = live ? (rs.st[f]||0) : 0, add = live ? bits & ~old : 0, n = (add&1?1:0)+(add&2?1:0)+(add&4?1:0);
+    sf.result = { win:true, rounds: sf.round, bits, add, shard: n*RIFT_STAR_SHARD[f-1], stale: !live };
+    if(live){ rs.st[f] = old | bits; if(n){ state.starShard = (state.starShard||0) + sf.result.shard; } save(); }
+    return true;
+  }
+  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round }; return true; }
+  return false;
+}
+function riftStarRowHtml(bits, add){ const s = (b, t)=>'<span class="rf-st'+(bits&b?' on':'')+(add&b?' new':'')+'">'+STAR_IC+'<small>'+t+'</small></span>';
+  return '<div class="rf-stars">'+s(1,'클리어')+s(2,RIFT_ROUND_GOAL+'R 안에')+s(4,'아무도 안 쓰러짐')+'</div>'; }
+function riftResultOverlayHtml(sf){
+  const r = sf.result, f = sf.riftF;
+  let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
+  if(r.win){
+    h += '<div class="bs-ricon">'+STAR_IC+'</div><div class="bs-rtitle">'+f+'층 돌파!</div><div class="bs-rsub">'+RIFT_NAME+' · '+r.rounds+'라운드</div>' + riftStarRowHtml(r.bits, r.add);
+    h += r.stale ? '<div class="bs-rsub">기간이 바뀜 · 보상 없음</div>' : r.shard ? '<div class="bs-rrew"><div>🎉 새 별 보상</div><div style="margin-top:4px;">'+STAR_IC+' 별빛 조각 +'+r.shard+'</div></div>' : '<div class="bs-rsub">새로 얻은 별 없음</div>';
+  }else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/ic_skull.webp" alt=""></div><div class="bs-rtitle">패배</div><div class="bs-rsub">'+RIFT_NAME+' '+f+'층 · '+r.rounds+'라운드</div>';
+  const next = r.win && f < RIFT_FLOORS.length;
+  h += '<div class="bs-rbtns"><button class="btn secondary" id="skillRetryBtn">🔁 '+(next?'다시':'다시 도전')+'</button>'+(next ? '<button class="btn secondary" id="rfNextBtn">'+(f+1)+'층 ▶</button>' : '')+'<button class="btn" id="skillResultCloseBtn">나가기</button></div></div></div>';
+  return h;
+}
+function leaveRiftFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'rift'; save(); render(); }
+function riftRetry(f){ if(!pickupOnline()){ toast('온라인 연결 후 도전'); leaveRiftFight(); return; } state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
+function riftFloorInfo(f){ const F = RIFT_FLOORS[f-1], gim = CHAPTER_BOSS_GIMMICK[F.g]; return { gim, info: BOSS_GIMMICK_INFO[gim], hard: !!F.h }; }
+function riftRecCP(f){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); }
+function showRiftPrep(f, keep){
+  if(!pickupOnline()){ toast('온라인 연결 후 도전'); return; }
+  if(!riftFloorOpen(f)){ toast((f-1)+'층을 먼저 돌파'); return; }
+  state.riftForm = Array.isArray(state.riftForm) ? state.riftForm : [];
+  if(!keep){ const fm = state.riftForm.slice(0, GRID_SLOTS); state.formation = Array.from({length:GRID_SLOTS}, (_,i)=> (fm[i] && ownedCount(fm[i])>0) ? fm[i] : null); }
+  state.riftForm = state.formation.slice(); save();
+  const fi = riftFloorInfo(f), per = riftPeriod(), bless = riftBlessEl(per.idx), pv = buildRiftFight(f), rs = riftState();
+  let h = '<h3 style="text-align:center; margin:0;">'+STAR_IC+' '+RIFT_NAME+' · '+f+'층</h3>';
+  h += '<div class="dg-rule">'+bossImg(fi.gim, 'rf-bimg', fi.info.icon)+' <b>'+fi.info.name+'</b>'+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+' · 축복 '+elIc(bless)+' '+ELEMENT_INFO[bless].name+' 공격력 +'+Math.round(RIFT_BLESS*100)+'%</div>';
+  h += riftStarRowHtml(rs.st[f]||0, 0);
+  h += formationRowsHtml();
+  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="rfClear" style="flex:1; margin:0;">🧹 비우기</button><button class="btn secondary" id="rfRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">📋 프리셋</button></div>';
+  h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '상대 '+fmtCP(teamCP(pv.enemyUnits)), riftRecCP(f));
+  h += '<div class="dg-rw">별 하나당 '+STAR_IC+' 별빛 조각 '+RIFT_STAR_SHARD[f-1]+' · 이미 얻은 별은 다시 안 줌</div>';
+  h += '<button class="btn sticky-ok" id="rfStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(); bindPrepUnitInfo(pv);
+  document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.riftForm = state.formation.slice(); save(); showRiftPrep(f, true); })));
+  document.getElementById('rfClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; showRiftPrep(f, true); });
+  presetUse(formCtx(RIFT_NAME+' 진형', ()=>showRiftPrep(f, true), null, ()=>{ state.riftForm = state.formation.slice(); }));
+  document.getElementById('rfRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], null); showRiftPrep(f, true); });
+  document.getElementById('rfStart').addEventListener('click', ()=>{
+    if(!state.formation.some(Boolean)){ toast('정령을 1마리 이상 배치'); return; }
+    if(!pickupOnline()){ toast('온라인 연결 후 도전'); return; }
+    closeModal(); state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
+  });
+}
+function renderRiftTab(){
+  if(!riftUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+RIFT_NAME+' 잠김<div class="sub" style="margin-top:6px;">'+chapterBossName(1)+' 처치 시 해금</div></div>';
+  const on = pickupOnline(), per = riftPeriod(), rs = riftState(), bless = riftBlessEl(per.idx), tot = riftTotalStars(), max = RIFT_FLOORS.length*3;
+  let h = '<div class="rf-head"><div class="rf-t">'+STAR_IC+' '+RIFT_NAME+'</div><div class="rf-sub">'+(on ? pickupLeftText(per.left)+' 뒤 초기화' : '온라인일 때만 열림')+' · 별 <b>'+tot+'</b>/'+max+'</div>'
+    + '<div class="rf-bless">축복 '+elIc(bless)+' '+ELEMENT_INFO[bless].name+' 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+STAR_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>' + TOP_MARK;
+  if(!on) h += '<div class="card" style="text-align:center; margin-top:10px;">🔌 온라인일 때만 도전 가능</div>';
+  h += '<div class="rf-list">';
+  for(let f=1; f<=RIFT_FLOORS.length; f++){
+    const fi = riftFloorInfo(f), b = rs.st[f]||0, open = riftFloorOpen(f);
+    h += '<button class="rf-fl'+(open?'':' lock')+(b&1?' done':'')+(fi.hard?' hard':'')+'" data-rift-f="'+f+'"'+(on?'':' disabled')+'>'
+      + '<span class="rf-no">'+f+'</span><span class="rf-boss">'+bossImg(fi.gim, 'rf-bimg', fi.info.icon)+'<b>'+fi.info.name+'</b>'+(fi.hard?'<i>HARD</i>':'')+'</span>'
+      + '<span class="rf-s3">'+[1,2,4].map(x=>'<i class="'+(b&x?'on':'')+'">'+STAR_IC+'</i>').join('')+'</span>'
+      + '<small>'+(open ? '★ '+RIFT_STAR_SHARD[f-1] : uiIc('lock'))+'</small></button>';
+  }
+  h += '</div>';
+  return h;
+}
+function bindRiftTab(){
+  document.querySelectorAll('[data-rift-f]').forEach(b=>b.addEventListener('click', ()=>showRiftPrep(+b.dataset.riftF)));
 }
 // (v266) 도전: 탑 · 요일 던전 · 시련의 전당을 한곳에 (홈 옆 버튼이 넘치지 않게)
 const CHALLENGE_TABS = ['tower','dungeon','trial'];
@@ -12372,7 +12510,7 @@ function renderStageTab(){
   const sceneTheme = BATTLE_THEMES[CHAPTER_MASKS[(chapterBase(ch)-1)%MAX_CHAPTERS].theme] || 'snow';
   const hardPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(HARD_CH_BASE+1+k)), normPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(1+k));
   // (v253) 탐험 머리 — 난이도 탭 · 챕터 이름(노말·하드 같은 형식, 하드는 뱃지) · 챕터 점(눌러서 이동) · 진행 막대 · 보상
-  let html = '<div class="ex-mode"><button data-stage-mode="n" class="'+(hard?'':'on')+'">노말'+(hard && normPend ? '<span class="ex-adot"></span>' : '')+'</button><button data-stage-mode="h" class="hard'+(hard?' on':'')+(hardUnlocked()?'':' lock')+'">'+(hardUnlocked()?'🔥':uiIc('lock'))+' 하드'+(!hard && hardPend ? '<span class="ex-adot"></span>' : '')+'</button></div>';
+  let html = '<div class="ex-mode"><button data-stage-mode="n" class="'+(hard?'':'on')+'">노말'+(hard && normPend ? '<span class="ex-adot"></span>' : '')+'</button><button data-stage-mode="h" class="hard'+(hard?' on':'')+(hardUnlocked()?'':' lock')+'">'+(hardUnlocked()?'🔥':uiIc('lock'))+' 하드'+(!hard && hardPend ? '<span class="ex-adot"></span>' : '')+'</button>'+(riftUnlocked() ? '<button data-rift-open="1" class="rift">'+STAR_IC+' '+RIFT_NAME+'</button>' : '')+'</div>';
   const pips = [...Array(MAX_CHAPTERS)].map((_,k)=>{ const c = lo+k, done = c<cur, open = c<=cur; return '<button class="ex-pip'+(c===ch?' on':'')+(done?' done':'')+(open?'':' lock')+'" data-ch-jump="'+c+'" aria-label="'+chapterLabel(c)+'">'+(chapterHasPending(c)?'<i></i>':'')+'</button>'; }).join('');
   html += '<div class="ex-head'+(hard?' hard':'')+'" style="--tc:'+(hard?'#ff6a7a':theme.color)+';">'
     + '<div class="ex-hrow"><button class="ex-arrow" id="chapterPrev" '+(ch<=lo?'disabled':'')+'>◀'+arrowDot(pendBefore)+'</button>'
@@ -12718,6 +12856,7 @@ function rewardPillsHtml(rw){
   if(rw.wbGems) h += pill('<span class="wbgem">'+uiIc('runestone')+'</span> '+rw.wbGems, '세계 룬석'); // (v278)
   if(rw.shards) h += pill('<img class="uic" src="assets/ui/ic_shard.webp" alt=""> '+rw.shards, '정령 파편'); // (v300)
   if(rw.upStones) h += pill('⬆️ '+rw.upStones, '룬 승급석');
+  if(rw.star) h += pill(STAR_IC+' '+rw.star, '별빛 조각'); // (v317)
   if(rw.items) Object.keys(rw.items).forEach(k=>{ const ti = TICKET_INFO[k]; if(!ti) return; h += pill(ti.icon+' ×'+rw.items[k], ti.name); });
   if(rw.runes) Object.keys(rw.runes).forEach(k=>{ const r = typeof mailRuneInfo==='function' && mailRuneInfo(k); if(r) h += pill(r.ic+' ×'+rw.runes[k], r.nm); });
   return h;
@@ -12755,7 +12894,7 @@ function showAchievementsModal(keep){
       if(done) rightSide = '<div style="font-size:18px;"><img class="uic" src="assets/ui/ic_check.webp" alt=""></div>';
       else if(ok) rightSide = '<button class="btn small" data-claim="'+q.id+'" style="animation:nodepulse 1.4s ease-in-out infinite;"><img class="uic" src="assets/ui/ic_gift.webp" alt=""> 받기</button>';
       else rightSide = '<div style="font-size:18px; opacity:0.4;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""></div>';
-      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+(done?'<span style="opacity:0.5;">'+q.name+'</span>':q.name)+'</div><div>'+rewardPillsHtml({essence:q.reward})+'</div></div>'
+      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+(done?'<span style="opacity:0.5;">'+q.name+'</span>':q.name)+'</div><div>'+rewardPillsHtml({essence:q.reward, star:QUEST_STAR})+'</div></div>'
         + '<div style="flex-shrink:0; min-width:48px; text-align:center;">'+rightSide+'</div></div>';
     });
   }else{
@@ -12983,6 +13122,7 @@ function attachHandlers(){
   if(activeTab==='friends' || activeTab==='duel') bindFriendPanel(); // (v181)
   if(activeTab==='duel') bindDuelTab();
   if(activeTab==='dungeon') bindDungeonTab();
+  if(activeTab==='rift') bindRiftTab(); // (v317)
   if(activeTab==='dispatch') bindDispatchTab();
   if(activeTab==='pickup') bindPickupTab(); // (v317)
   if(activeTab==='trial') bindTrialTab();
@@ -13091,7 +13231,7 @@ function attachHandlers(){
   if(activeTab==='raid') bindRaidTab();
   if(activeTab==='worldboss') bindWorldBossTab(); // (v278)
   if(activeTab==='home') bindHomeTab();
-  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', ()=>{ activeTab = CHALLENGE_TABS.includes(activeTab) ? 'challenge' : activeTab==='worldboss' ? 'raid' : 'home'; render(); save(); }); } // (v266) 탑·요일 던전·시련은 도전 화면으로
+  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', ()=>{ activeTab = CHALLENGE_TABS.includes(activeTab) ? 'challenge' : activeTab==='worldboss' ? 'raid' : activeTab==='rift' ? 'stage' : 'home'; render(); save(); }); } // (v266) 탑·요일 던전·시련은 도전 화면으로
   document.querySelectorAll('[data-manage]').forEach(el=>{
     el.addEventListener('click', ()=>showManageModal(el.dataset.manage));
   });
@@ -13125,6 +13265,7 @@ function attachHandlers(){
       showSpiritInfoModal(key);
     });
   });
+  document.querySelectorAll('[data-rift-open]').forEach(b=>b.addEventListener('click', ()=>{ activeTab = 'rift'; render(); save(); })); // (v317) 별빛 균열
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
     const toHard = b.dataset.stageMode==='h';
     if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 하드 모드: '+bossUnlockTxt(hardNormalReq(1))); return; }
@@ -13252,13 +13393,13 @@ function migrateHardV253(){
 // 지금 보상 정의로 다시 계산한 합계(rwLedger)를 세이브에 같이 둠(rwGot, 저장할 때마다 갱신)
 // 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
 // 주의: 진행 기록의 모양(스테이지 번호 등)을 옮기는 업데이트와 RW_VER 올림을 같은 버전에 섞지 말 것 — 옮긴 만큼이 늘어난 보상으로 잡힘
-const RW_VER = 1;
+const RW_VER = 2; // (v317) 계정 레벨 보상에 별빛 조각
 const RW_CAT_NM = { stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
 const RW_V0_ADDED = { boss:/^i\.(eq_|eqpick_|engr$|mythic$)/, tower:/^i\.(eq_|eqpick_)/, dg:/^i\.(eq_|eqpick_|engr$)/, trial:/^i\.(eq_|eqpick_|engr$)/, lv:/^i\.(eq_|eqpick_)/ }; // 장부가 없던 세이브(v312 이하)의 기준 = 지금 정의 − v2.11.0·v3.0.0에서 더한 장비권·각인석
 function rwLedger(){
   const s = state, L = {}, rank = {C:1,B:2,A:3,S:4};
   const add = (c, rw)=>{ if(!rw) return; const o = L[c] = L[c] || {};
-    ['essence','stone'].forEach(k=>{ if(rw[k]>0) o[k] = (o[k]||0) + rw[k]; });
+    ['essence','stone','star'].forEach(k=>{ if(rw[k]>0) o[k] = (o[k]||0) + rw[k]; });
     if(rw.items) Object.keys(rw.items).forEach(k=>{ if(rw.items[k]>0) o['i.'+k] = (o['i.'+k]||0) + rw.items[k]; }); };
   Object.keys(s.stageBest||{}).forEach(k=>{ const i = Number(k); if(!Number.isInteger(i) || !s.stageBest[k]) return; const g = rank[s.stageBest[k]]||0;
     if(isBossStage(i)){ add('boss', { essence: bossFirstReward(i), items: bossFirstItems(i) }); for(let r=1;r<=g;r++) add('stage', { items:{ equip: chapterEff(bossChapter(i)) } }); }
@@ -13276,10 +13417,10 @@ function rwMigrate(){ // 접속(세이브를 불러온 직후)에 한 번
   if(s.rwVer===RW_VER && isPlainObj(s.rwGot)) return;
   const now = rwLedger(); let got = s.rwGot;
   if(!Number.isInteger(s.rwVer) || !isPlainObj(got)){ got = JSON.parse(JSON.stringify(now)); Object.keys(RW_V0_ADDED).forEach(c=>{ const o = got[c]; if(o) Object.keys(o).forEach(k=>{ if(RW_V0_ADDED[c].test(k)) delete o[k]; }); }); }
-  const rw = { essence:0, stone:0, items:{} }, cats = [];
+  const rw = { essence:0, stone:0, star:0, items:{} }, cats = [];
   Object.keys(now).forEach(c=>{ const a = now[c], b = isPlainObj(got[c]) ? got[c] : {}; let any = false;
     Object.keys(a).forEach(k=>{ const d = Math.floor(a[k] - (Number(b[k])||0)); if(!(d>0)) return; any = true;
-      if(k==='essence' || k==='stone') rw[k] += d; else { const t = k.slice(2); rw.items[t] = (rw.items[t]||0) + d; } });
+      if(k==='essence' || k==='stone' || k==='star') rw[k] += d; else { const t = k.slice(2); rw.items[t] = (rw.items[t]||0) + d; } });
     if(any) cats.push(RW_CAT_NM[c]||c); });
   const id = 'rw'+RW_VER;
   if(cats.length && !s.sysMail.some(x=>x.id===id)) s.sysMail.push({ id, title:'보상 개편 추가 지급', body:'아래 보상이 개편되어 늘어난 만큼 추가 지급\n· '+cats.join('\n· '), t: Date.now(), reward: rw });
@@ -13295,6 +13436,8 @@ function sanitizeState(){
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   s.starShard = fin(s.starShard) ? Math.max(0, Math.floor(s.starShard)) : 0; // (v317)
+  if(isPlainObj(s.rift) && Number.isInteger(s.rift.p) && isPlainObj(s.rift.st)){ Object.keys(s.rift.st).forEach(k=>{ const f = Number(k), v = s.rift.st[k]; if(!Number.isInteger(f) || f<1 || f>RIFT_FLOORS.length || !Number.isInteger(v)) delete s.rift.st[k]; else s.rift.st[k] = v & 7; }); } else s.rift = null; // (v317) 별빛 균열
+  s.riftForm = Array.isArray(s.riftForm) ? s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null) : [];
   if(!isPlainObj(s.pickup)) s.pickup = {}; { const pk = s.pickup; pk.pity = fin(pk.pity) ? Math.max(0, Math.min(PICKUP_PITY-1, Math.floor(pk.pity))) : 0; pk.guar = !!pk.guar; pk.sel = (typeof pk.sel==='string' && SPIRITS[pk.sel] && SPIRITS[pk.sel].rarity==='mythic') ? pk.sel : ''; }
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeQuests','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
   ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
@@ -13404,6 +13547,8 @@ function sanitizeState(){
       modeOk = Number.isFinite(sf.wbStart);
     }else if(sf && sf.mode==='trial'){
       modeOk = !!trialDef(sf.trialId);
+    }else if(sf && sf.mode==='rift'){
+      modeOk = Number.isInteger(sf.riftF) && sf.riftF>=1 && sf.riftF<=RIFT_FLOORS.length; // (v317) 별빛 균열
     }else if(sf && sf.mode==='dungeon'){
       modeOk = ELEMENTS.includes(sf.dungeonEl) && Number.isInteger(sf.dungeonN) && sf.dungeonN>=1; // (v266) 요일 던전
     }else if(sf && sf.mode==='raid'){
