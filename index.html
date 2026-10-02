@@ -1691,11 +1691,11 @@ function stageEnemyComposition(i){
 // (v104) 정령장비 반영: 정수를 신화 포화(챕터4 끝)까지 정령에 쓰고 그 뒤 장비에 쓴다고 가정하고 평균 승률 약 55~60%로 다시 맞춤
 // (v109) 상성이 적에게도 대칭 적용되면서 상성을 잘 맞춘 진형이 훨씬 강해져서 챕터 2~5 끝값을 다시 맞춤
 // (v168) ×3은 너무 가팔라서 ×1.25로 완화 — +5강 단일등급 6마리 기준: 레어는 챕터1 일반 스테이지까지(보스는 에픽 필요), 에픽은 챕터2 후반, 레전더리는 챕터4 중반, 신화는 전부 클리어
-const CHAPTER_ENEMY_START = [10, 48, 187.5, 231.25, 506.25]; // 노말 챕터 1~5 (챕터를 늘리면 여기 뒤에 이어 붙임)
+const CHAPTER_ENEMY_START = [10, 48, 187.5, 231.25, 506.25, 760]; // 노말 챕터 1~5 (챕터를 늘리면 여기 뒤에 이어 붙임)
 // (v253) 하드는 스테이지 번호를 500번대로 따로 씀 → 노말 챕터를 늘려도 번호가 안 겹침. 규칙: 하드 N ≈ 노말 N+5 수준 (하드 1 시작 800 > 노말 5 끝 722.5)
-const HARD_ENEMY_START = [1040, 1300, 1625, 2015, 2470], HARD_ENEMY_END = [1300, 1625, 2015, 2470, 3055]; // (v256) 빨리 못 깨게 약 30% 올림 // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
-const CHAPTER_ENEMY_END   = [34, 165, 227.5, 506.25, 722.5];
-const HARD_STAGE_MULTS = [1, 1, 1.12, 1.12, 1.12]; // (v277) 하드 챕터별 일반 스테이지 적 세기 배율 (보스 웨이브·던전은 영향 없음)
+const HARD_ENEMY_START = [1040, 1300, 1625, 2015, 2470, 3055], HARD_ENEMY_END = [1300, 1625, 2015, 2470, 3055, 3800]; // (v317) 6 = 그림자 // (v256) 빨리 못 깨게 약 30% 올림 // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
+const CHAPTER_ENEMY_END   = [34, 165, 227.5, 506.25, 722.5, 1000]; // (v317) 6 = 그림자 — 노말 5 끝과 하드 1 시작 사이
+const HARD_STAGE_MULTS = [1, 1, 1.12, 1.12, 1.12, 1.12]; // (v277) 하드 챕터별 일반 스테이지 적 세기 배율 (보스 웨이브·던전은 영향 없음)
 function enemySlotPower(i){
   const li = stageLocal(i), local = li % CHAPTER_LENGTH;
   const chapterIdx = Math.floor(li/CHAPTER_LENGTH), S = isHardStage(i) ? HARD_ENEMY_START : CHAPTER_ENEMY_START, E = isHardStage(i) ? HARD_ENEMY_END : CHAPTER_ENEMY_END;
@@ -2431,6 +2431,8 @@ function dealDamage(sf, a, d, mult, opts){
 function healAmount(target, amt){
   const p = target.st.poison;
   if(p) amt *= (p.srcG>=3 ? 0 : 0.5);
+  if(amt>=1 && target.st.erode){ target.st.erode = Math.max(0, target.st.erode - SHADOW_HEAL_CLEAR); if(!target.st.erode) delete target.st.erode; } // (v317) 그림자 군주 잠식: 회복을 받으면 2중첩 사라짐
+  if(amt>=1 && target.st.shJail){ delete target.st.shJail; delete target.st.freeze; } // 그림자 감옥: 회복하면 풀림
   return Math.round(amt);
 }
 // ---------- 행동 문맥(스킬 run에 넘기는 도구) ----------
@@ -4882,6 +4884,11 @@ const BOSS_UNIT_KITS = {
       run:C=>{ C.hit(C.t, 1.8); } },
     s2:{ name:'수정 파편', icon:'💎', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%',
       run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
+  cboss_shadowLord: { role:'챕터 보스', icon:'👑',
+    s1:{ name:'그림자 송곳니', icon:'🦇', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 잠식 1중첩',
+      run:C=>{ C.hit(C.t, 1.7); if(C.t.alive) C.t.st.erode = Math.min(SHADOW_ERODE_MAX, (C.t.st.erode||0)+1); } },
+    s2:{ name:'밤의 장막', icon:'🌑', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70%',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.7)); } } },
   // ── 보스의 부하 ──
   ward: { role:'결계석', icon:'🔷',
     s1:{ name:'결계 방전', icon:'⚡', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120%',
@@ -4926,8 +4933,8 @@ function stageFirstReward(i){ i = stageEff(i); return Math.round((50 + i*15) * 1
 function stageGradeReward(i, tier){ return Math.round(stageFirstReward(i) * STAGE_GRADE_SHARE[tier]); }
 function bossFirstReward(i){ return Math.round(stageFirstReward(i) * 1.5); }
 // (v245) 챕터 보스 첫 격파 선택권 — 1: 레어 1 · 2: 에픽 1 · 3: 레어 3+에픽 1 · 4: 에픽 3 · 5: 레전더리 1
-const BOSS_FIRST_ITEMS = { 1:{pick_rare:1, eq_rare:1, engr:2}, 2:{pick_epic:1, eqpick_rare:1, engr:2}, 3:{pick_rare:3, pick_epic:1, eq_epic:1, engr:2}, 4:{pick_epic:3, eqpick_epic:1, engr:2}, 5:{pick_legendary:1, eq_legendary:1, engr:2} }; // (v297) 장비 확정권·선택권 추가
-const BOSS_FIRST_ITEMS_HARD = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_legendary:1, eqpick_epic:1, engr:4}, 3:{pick_epic:2, pick_legendary:1, eq_legendary:1, engr:4}, 4:{pick_legendary:2, eqpick_legendary:1, engr:4}, 5:{pick_legendary:2, pick_epic:2, mythic:1, eq_mythic:1, engr:4} }; // (v251) 하드 1~5
+const BOSS_FIRST_ITEMS = { 1:{pick_rare:1, eq_rare:1, engr:2}, 2:{pick_epic:1, eqpick_rare:1, engr:2}, 3:{pick_rare:3, pick_epic:1, eq_epic:1, engr:2}, 4:{pick_epic:3, eqpick_epic:1, engr:2}, 5:{pick_legendary:1, eq_legendary:1, engr:2}, 6:{pick_legendary:1, eqpick_epic:1, engr:3} }; // (v297) 장비 확정권·선택권 추가
+const BOSS_FIRST_ITEMS_HARD = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_legendary:1, eqpick_epic:1, engr:4}, 3:{pick_epic:2, pick_legendary:1, eq_legendary:1, engr:4}, 4:{pick_legendary:2, eqpick_legendary:1, engr:4}, 5:{pick_legendary:2, pick_epic:2, mythic:1, eq_mythic:1, engr:4}, 6:{pick_legendary:2, mythic:1, eqpick_legendary:1, engr:5} }; // (v251) 하드 1~5
 function bossFirstItems(i){ const ch = bossChapter(i), it = isHardChapter(ch) ? BOSS_FIRST_ITEMS_HARD[chapterBase(ch)] : BOSS_FIRST_ITEMS[ch]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ i = stageEff(i); return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
@@ -4962,6 +4969,7 @@ function resolveSkillStageBattle(i, rounds, specialMet){
 }
 // (v141) 적 라인업 전체 기준: 이 정령을 이기는 적 수 / 이 정령이 이기는 적 수 (정령 선택창에서만 짧게 표시)
 // ===================== (v150) 보스 3웨이브: 7마리(5 출전+2 대기) 로스터 + 챕터별 기믹 =====================
+const SHADOW_ERODE_MAX = 6, SHADOW_ERODE_PCT = 0.05, SHADOW_ERODE_PCT_H = 0.07, SHADOW_HEAL_CLEAR = 2; // (v317) 그림자 군주 — 잠식
 const BOSS_WAVE_COUNT = 3;
 const WAVE_FATIGUE_MAX = 0.15; // 연전 −5%/웨이브, 최대 −15% (WAVE_FATIGUE_STEP은 기존 상수 재사용)
 const BOSS_REST_HEAL = 0.2; // 한 웨이브 쉬면 체력 20% 회복
@@ -4971,16 +4979,17 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 // 1~2라운드 만에 녹았음(그로기·기믹을 쓸 틈이 없음). 레이드 보스는 위 값을 그대로 씀
 // 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
 // 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
-let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23]; // 챕터 1~5
-const HARD_BOSS_ATK_MULTS = [1.9, 1.2, 2.5, 3.3, 8.64], HARD_BOSS_HP_MULTS = [16, 15, 65, 60, 357.5]; // (v304) 하드 5 공격 3.6→8.64 · 체력 65→357.5 (최종 관문 — 사용자 결정, 근거는 docs/인수인계.md) // (v253) 하드 1~5 · (v256) 체력 약 25% 올림 · (v272) 보스 전용 스킬(v2.70)로 하드 1·3·4가 너무 어려워져 공격력 2.4→1.9(하드 3은 1.6) · (v275) 하드 1→5 순서대로 어려워지게: 하드 2 공격 2.4→1.2·체력 25→15, 하드 4 공격 1.9→2.3, 하드 5 공격 2.4→3.0·체력 35→50 (신화+10·각성·장비 사다리 시뮬 기준) · (v277) 하드 3부터 룬을 쓴다고 보고: 하드 3 공격 1.6→2.5·체력 44→65, 하드 4 공격 2.3→3.3·체력 38→60, 하드 5 공격 3.0→3.6·체력 50→65
-const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null]; // null=심연의 수정(매 라운드 변환)
-const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal'];
+let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4, 1.0], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23, 40]; // 챕터 1~5
+const HARD_BOSS_ATK_MULTS = [1.9, 1.2, 2.5, 3.3, 8.64, 8.64], HARD_BOSS_HP_MULTS = [16, 15, 65, 60, 357.5, 357.5]; // (v304) 하드 5 공격 3.6→8.64 · 체력 65→357.5 (최종 관문 — 사용자 결정, 근거는 docs/인수인계.md) // (v253) 하드 1~5 · (v256) 체력 약 25% 올림 · (v272) 보스 전용 스킬(v2.70)로 하드 1·3·4가 너무 어려워져 공격력 2.4→1.9(하드 3은 1.6) · (v275) 하드 1→5 순서대로 어려워지게: 하드 2 공격 2.4→1.2·체력 25→15, 하드 4 공격 1.9→2.3, 하드 5 공격 2.4→3.0·체력 35→50 (신화+10·각성·장비 사다리 시뮬 기준) · (v277) 하드 3부터 룬을 쓴다고 보고: 하드 3 공격 1.6→2.5·체력 44→65, 하드 4 공격 2.3→3.3·체력 38→60, 하드 5 공격 3.0→3.6·체력 50→65
+const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null,'dark']; // null=심연의 수정(매 라운드 변환)
+const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord'];
 const BOSS_GIMMICK_INFO = {
   frostGiant:  {name:'서리거인', icon:'🧊', desc:'얼음 갑옷 — 받는 피해 절반 · 3라운드마다 가장 빠른 아군 빙결'},
   lavaLord:    {name:'용암군주', icon:'🌋', desc:'화염 피해를 흡수해 회복 · 매 라운드 화상 장판으로 아군 전체에 화상 부여'},
   ancientTree: {name:'고대수목', icon:'🌳', desc:'2라운드마다 덩굴로 아군 후열 하나를 전열로 끌어냄 · 매 라운드 자체 재생'},
   ruinGuardian:{name:'유적파수꾼', icon:'🗿', desc:'서로 다른 속성의 결계석 2개가 살아있는 동안 보스 무적 — 결계석부터 파괴해야 함'},
-  abyssCrystal:{name:'심연의 수정', icon:'🔮', desc:'매 라운드 속성이 바뀜 · 다음 라운드 속성이 미리 표시됨'}
+  abyssCrystal:{name:'심연의 수정', icon:'🔮', desc:'매 라운드 속성이 바뀜 · 다음 라운드 속성이 미리 표시됨'},
+  shadowLord:  {name:'그림자 군주', icon:'🌑', desc:'매 라운드 아군 전체에 잠식이 쌓여 체력을 빼앗고 그만큼 회복 — 회복을 받으면 잠식이 줄어듦'}
 };
 // (v260) 챕터 보스 기믹 한 곳에 정리 — base(기본) · extra(노말·하드 공통 추가) · hard(하드 전용, fresh=완전히 새 기믹)
 // 보스 정보 화면이 이 표를 그대로 그림: ic 아이콘 · nm 이름 · when 발동 시점 · d 한 줄 설명
@@ -5016,7 +5025,13 @@ const BOSS_GIMMICKS = {
     extra:[{ic:'👁️', nm:'심연 응시', when:'매 R', d:'공격력이 가장 높은 아군 저주 (받는 피해 +25%)'},
            {ic:'🌀', nm:'심연 파동', when:'3R마다', d:'아군 전체 공격력 60% 피해'}],
     hard: [{ic:'🌑', nm:'혼돈', when:'매 R', d:'아군 1명의 이로운 효과(보호막·강화·가속 등) 전부 제거'},
-           {ic:'🔄', nm:'역류', when:'3R마다', fresh:true, d:'그 라운드는 상성 반전 — 유리한 공격이 불리, 불리한 공격이 유리 (한 라운드 전에 예고)'}] }
+           {ic:'🔄', nm:'역류', when:'3R마다', fresh:true, d:'그 라운드는 상성 반전 — 유리한 공격이 불리, 불리한 공격이 유리 (한 라운드 전에 예고)'}] },
+  shadowLord: {
+    base: [{ic:'🌑', nm:'잠식', when:'매 R', d:'아군 전체 잠식 1중첩 (최대 '+SHADOW_ERODE_MAX+') · 중첩당 최대체력 '+Math.round(SHADOW_ERODE_PCT*100)+'% 잃음 · 보호막으로 못 막음 · 회복을 받으면 '+SHADOW_HEAL_CLEAR+'중첩 사라짐'},
+           {ic:'🩸', nm:'어둠의 갈증', when:'매 R', d:'잠식으로 빼앗은 체력의 50%만큼 보스 회복'}],
+    extra:[{ic:'🌘', nm:'그림자 파동', when:'3R마다', d:'아군 전체 공격력 60% 피해 · 잠식 1중첩 더'}],
+    hard: [{ic:'🌑', nm:'깊은 잠식', when:'매 R', d:'잠식 중첩당 '+Math.round(SHADOW_ERODE_PCT*100)+'% → '+Math.round(SHADOW_ERODE_PCT_H*100)+'%'},
+           {ic:'🕳️', nm:'그림자 감옥', when:'4R마다', fresh:true, d:'잠식이 가장 많은 아군 1명을 가둠(다음 행동 못 함) — 그 정령을 회복하면 풀려남'}] }
 };
 function bossChapterIdx(stageIdx){ return Math.floor(stageLocal(stageIdx)/CHAPTER_LENGTH); } // 0~4 (하드도 같은 챕터 번호)
 function bossWaveNormalPower(stageIdx){ return (isHardStage(stageIdx) ? HARD_ENEMY_END : CHAPTER_ENEMY_END)[bossChapterIdx(stageIdx)] * 0.55; } // (v150) 보스 1·2웨이브는 그 챕터 막바지보다 약간 낮게 — 3웨이브 보스에서 진짜 승부를 봄
@@ -5028,7 +5043,7 @@ function bossWaveNormalComp(stageIdx, wave){
   return arr;
 }
 function bossWaveNormalRarity(stageIdx, wave){
-  const arr = [], progress = Math.min(1, stageEff(stageIdx)/(CHAPTER_LENGTH*MAX_CHAPTERS));
+  const arr = [], progress = Math.min(1, stageEff(stageIdx)/(CHAPTER_LENGTH*HARD_EFF_CH));
   for(let j=0;j<GRID_SLOTS;j++){
     const rarityRoll = seededRand(stageIdx*733.1+wave*41.3+j*19.1+5), variantRoll = seededRand(stageIdx*733.1+wave*41.3+j*19.1+7);
     arr.push({ rarity: weightedPickSeeded(enemyRarityWeights(progress), rarityRoll), variant: variantRoll<0.5?'a':'b' });
@@ -5094,7 +5109,15 @@ function applyBossGimmick(sf){
   applyBossExtra(sf, g, boss);
   if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss);
 }
+function shadowErode(sf, boss, add){ // 아군 전체 잠식 add중첩 → 체력 감소(보호막 무시) → 보스 회복
+  const hard = isHardStage(sf.stageIdx) || (sf.gimmick && sf.gimmick.hard), pct = hard ? SHADOW_ERODE_PCT_H : SHADOW_ERODE_PCT; let took = 0;
+  aliveUnits(sf.myUnits).forEach(u=>{ u.st.erode = Math.min(SHADOW_ERODE_MAX, (u.st.erode||0) + add); const d = Math.min(u.hp, Math.round(u.maxHp*pct*u.st.erode)); if(d<=0) return;
+    u.hp -= d; took += d; if(u.hp<=0) killUnit(sf, u); });
+  if(took>0 && boss.alive){ boss.hp = Math.min(boss.maxHp, boss.hp + Math.round(took*0.5)); }
+  pushLog(sf, '🌑 <b>잠식</b> — 체력 '+fmtHp(took)+' 빼앗김');
+}
 function applyBaseBossGimmick(sf, g, boss){
+  if(g.type==='shadowLord'){ aliveUnits(sf.myUnits).forEach(u=>{ if(u.st.shJail && !u.st.freeze) delete u.st.shJail; }); shadowErode(sf, boss, 1); return; }
   if(g.type==='frostGiant'){
     if(sf.round % 3 === 0){
       const alive = aliveUnits(sf.myUnits);
@@ -5133,6 +5156,7 @@ function applyBaseBossGimmick(sf, g, boss){
 function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보스마다 완전히 새 기믹 하나씩 추가
   const r = sf.round, allies = ()=>aliveUnits(sf.myUnits); if(!allies().length) return;
   const nm = n=>'<b>'+n+'</b>';
+  if(g.type==='shadowLord'){ if(r%4===0){ const t = allies().sort((x,y)=>(y.st.erode||0)-(x.st.erode||0))[0]; if(t){ t.st.shJail = true; t.st.freeze = true; pushLog(sf, '🕳️ '+nm('그림자 감옥')+' — '+(t.dispName||SPIRITS[t.key].name)); } } return; }
   if(g.type==='frostGiant'){
     if(boss.cast){ // 절대영도 판정 — 지난 라운드에 모은 힘
       const c = boss.cast; delete boss.cast;
@@ -5178,6 +5202,7 @@ function applyBossExtra(sf, g, boss){ // (v256) 추가 기믹 — (v258) 노말�
   const r = sf.round, nm = n=>'<b>'+n+'</b>';
   if(g.type==='frostGiant' && r%3===0){ allies.forEach(u=>{ dealDamage(sf, boss, u, 0.5, {noCrit:true}); if(u.alive) u.st.slow = {v:15, r:2}; }); pushLog(sf, '🌨️ '+nm('눈보라')+'!'); }
   else if(g.type==='lavaLord' && r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.7, {noCrit:true})); pushLog(sf, '🌋 '+nm('분화')+'!'); }
+  else if(g.type==='shadowLord' && r%3===0){ allies.forEach(u=>dealDamage(sf, boss, u, 0.6, {noCrit:true})); shadowErode(sf, boss, 1); pushLog(sf, '🌘 '+nm('그림자 파동')+'!'); }
   else if(g.type==='ancientTree' && !g.hardShell && boss.hp/boss.maxHp < 0.5){ g.hardShell = true; boss.st.shield = (boss.st.shield||0) + Math.round(pctHp(boss)*0.25); pushLog(sf, '🌳 '+nm('가시 껍질')+'!'); }
   else if(g.type==='ruinGuardian' && !g.wardReborn){
     const wards = sf.enemyUnits.filter(u=>u.isWard);
@@ -5213,6 +5238,8 @@ const GROGGY_RULES = {
     lock:(sf)=> sf.round%2!==0 ? '짝수R에 열림' : '', mult:(sf,a)=> a.element==='fire' ? 2 : 1 },
   ruinGuardian: { desc:'결계석이 남아 있는 동안 <img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠김 · 결계석을 하나 부술 때마다 게이지 −35',
     lock:(sf)=> sf.enemyUnits.some(u=>u.isWard && u.alive) ? '결계석' : '', mult:()=>1 },
+  shadowLord:   { desc:''+ELEMENT_INFO.light.icon+' 빛 공격은 게이지 2배 · 아군 잠식이 모두 사라진 라운드엔 게이지 2배',
+    mult:(sf,a)=> (a.element==='light' ? 2 : 1) * (sf.myUnits.every(u=>!u.alive || !u.st.erode) ? 2 : 1) },
   abyssCrystal: { desc:'지금 속성에 유리한 공격은 게이지 3배 · 불리한 공격은 절반',
     mult:(sf,a,b)=>{ const t = effTypeMult(a, b); return t>1 ? 3 : (t<1 ? 0.5 : 1); } },
   // 레이드 보스
@@ -5295,7 +5322,7 @@ function resolveBossWaveVictory(sf){
   { const ks = (bf.roster||[]).filter(k=>k && SPIRITS[k]); // (v268) 히든 업적 — 레어 이하만으로 하드 보스
     if(ks.length && !isHardStage(stageIdx) && ks.every(k=> SPIRITS[k].rarity==='common')) hidMark('normalCommon'); // (v269) 잡초의 반란: 일반 등급만으로 노말 보스
     if(isHardStage(stageIdx) && !bf.hurt && !sf.meHurt) hidMark('hardFlawless'); // (v270) 무혈 입성
-    if(ks.length && stageIdx===HARD_BASE+MAX_CHAPTERS*CHAPTER_LENGTH-1 && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)) hidMark('hardLowRare5'); } // 다윗과 골리앗: 레어 이하로 챕터 5 하드
+    if(ks.length && stageIdx===HARD_BASE+HARD_EFF_CH*CHAPTER_LENGTH-1 && ks.every(k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity) <= 1)) hidMark('hardLowRare5'); } // 다윗과 골리앗: 레어 이하로 챕터 5 하드
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
@@ -5307,7 +5334,7 @@ function resolveBossWaveVictory(sf){
     addPendingReward(id, '🎉', chapterLabel(chapterNum)+' 보스 첫 격파 (기믹 개편)', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx));
     setTimeout(()=>toast('🎉 기믹 개편 보스 격파 — 첫 격파 보상 한 번 더 · 보상 창에서 수령', 3500), 1200);
   }
-  if(!already && stageIdx===CHAPTER_LENGTH*MAX_CHAPTERS-1) setTimeout(()=>toast('🔥 하드 모드 열림 · 탐험 지도 위 "하드"', 4000), 1800); // (v251) // (v179) 보스도 첫 클리어 보상(눌러서 수령)
+  if(!already && stageIdx===CHAPTER_LENGTH*HARD_EFF_CH-1) setTimeout(()=>toast('🔥 하드 모드 열림 · 탐험 지도 위 "하드"', 4000), 1800); // (v251) // (v179) 보스도 첫 클리어 보상(눌러서 수령)
   if(!already || gradeRank[grade] > gradeRank[already]){
     improved = true;
     const prevRank = already ? gradeRank[already] : 0, newRank = gradeRank[grade];
@@ -5555,6 +5582,8 @@ function statusList(u){
   if(s.freeze) o.push({i:'❄️', t:'빙결', d:'다음 행동 1회 못 함', good:false});
   if(s.slow || s.chill) o.push({i:'⏬', t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
   if(s.bind || s.web) o.push({i:'🕸️', t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
+  if(s.erode) o.push({i:'🌑', n:s.erode, t:'잠식 '+s.erode+'중첩', d:'라운드마다 중첩당 최대체력 일부를 잃음 · 보호막으로 못 막음 · 회복을 받으면 2중첩 사라짐', good:false}); // (v317)
+  if(s.shJail) o.push({i:'🕳️', t:'그림자 감옥', d:'다음 행동 못 함 — 회복을 받으면 풀려남', good:false});
   if(s.seal) o.push({i:'🔏', t:'봉인', d:'스킬 못 씀 · 기본 공격만'+r(s.seal), good:false});
   if(u.addKind==='pillar' && u.alive) o.push({i:'⏳', n:u.addTimer, t:'붕괴 '+u.addTimer+'R', d:u.addTimer+'라운드 안에 못 깨면 갇힌 정령이 쓰러짐 · 🔥화염 공격 2배', good:false});
   if(u.addKind==='seed' && u.alive) o.push({i:'🌸', n:u.addTimer, t:'개화 '+u.addTimer+'R', d:u.addTimer+'라운드 뒤 개화 — 보스 회복 + 아군 전체 독 · 살아 있는 동안 보스 받는 피해 −30% · 🔥화염 공격 2배', good:false});
@@ -5781,8 +5810,8 @@ function battleLayout(sf){
   return { slots, tags, rs: raid && !alone ? 0.19 : 0.25, sz };
 }
 // (v179) 전투 배경: 스테이지는 챕터 지역(설원·화산·숲·사막·동굴), 레이드는 보스마다, 출정은 들판 길, 결투는 투기장
-const BATTLE_THEMES = ['snow','volcano','forest','desert','cave'];
-const DARK_THEMES = ['volcano','cave','wb','raid-infernoDrake','raid-abyssEye']; // (v204) 태고수 레이드는 그림 배경이 밝아서 제외 // 어두운 배경은 글자를 밝게
+const BATTLE_THEMES = ['snow','volcano','forest','desert','cave','shadow']; // (v317) shadow = 그림자 (전용 그림 오기 전엔 동굴 그림)
+const DARK_THEMES = ['volcano','cave','shadow','wb','raid-infernoDrake','raid-abyssEye']; // (v204) 태고수 레이드는 그림 배경이 밝아서 제외 // 어두운 배경은 글자를 밝게
 function battleThemeOf(sf){
   if(sf.mode==='raid') return 'raid-'+(raidBossById(sf.raidBossId) ? sf.raidBossId : 'frostTyrant');
   if(sf.mode==='expedition') return 'plains';
@@ -5795,7 +5824,7 @@ function battleThemeOf(sf){
   return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
 }
 // (v201) 그림이 준비된 전투 배경 — 그 외 테마는 CSS로 그린 기존 배경
-const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp', trial:'assets/bg_trial.webp', wb:'assets/battle_worldboss.webp' }; // (v317) 시련 · 월드 보스 전용 배경
+const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp', shadow:'assets/battle_cave.webp', trial:'assets/bg_trial.webp', wb:'assets/battle_worldboss.webp' }; // (v317) 시련 · 월드 보스 전용 배경
 // (v273) 배경마다 바닥이 있는 높이가 달라서 확대·위치를 따로 — 정령이 하늘·벽이 아니라 바닥 위에 서게. flip: 좌우 반전
 const BATTLE_BG_FIT = {
   'raid-frostTyrant':  { size:145, y:65, flip:true },
@@ -10792,7 +10821,7 @@ function dungeonDaysOf(el){ return DUNGEON_DAY_EL.map((e,d)=> e===el ? DAY_NAMES
 function dungeonBest(el){ return (state.dungeonBest && state.dungeonBest[el]) || 0; }
 function dungeonGuardian(n){ return n%5===0; }
 // 적 1마리 공격력: 1단계 = 노말 챕터 2 시작 수준 → 15단계 = 하드 5 끝 수준(기하 증가) · 16단계부터는 단계마다 ×1.08
-function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = HARD_ENEMY_END[HARD_ENEMY_END.length-1]; return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
+function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = HARD_ENEMY_END[HARD_EFF_CH-1]; /* (v317) 챕터 6을 더해도 던전 세기는 하드 5 기준 그대로 */ return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
 function dungeonReward(n){
   const rw = { essence: Math.round(400 + n*120), stone: Math.round(20 + n*6), items: null };
   const it = {};
@@ -10919,12 +10948,12 @@ const RIFT_FLOORS = RIFT_TIERS; // 층 수
 const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 넣었을 때 레전더리 대신보다 더 잘 깨는 기믹 순 (화면엔 안 보임 · 사용자 결정)
   fire_mythic_a:  [{g:'frostGiant', why:'체력 50% 이하 공격력 증가·부활 폭발로 얼음 갑옷을 밀어붙임'}, {g:'ancientTree', why:'상성 유리 + 연쇄 돌진'}, {g:'abyssCrystal', why:'부활 폭발로 파동을 버팀'}],
   fire_mythic_b:  [{g:'ancientTree', why:'화상 피해가 재생을 앞지름'}, {g:'frostGiant', why:'화상은 얼음 갑옷과 상관없이 매 라운드 들어감'}, {g:'ruinGuardian', why:'옆으로 번지는 화상이 결계석에도 쌓임'}],
-  water_mythic_a: [{g:'lavaLord', why:'매 라운드 화상을 해일의 축복이 전부 씻어 냄'}, {g:'abyssCrystal', why:'심연 응시 저주를 지움'}, {g:'ancientTree', why:'포자 독을 치유로 버팀'}],
+  water_mythic_a: [{g:'shadowLord', why:'회복으로 잠식을 지우고 그림자 감옥을 풂'}, {g:'lavaLord', why:'매 라운드 화상을 해일의 축복이 전부 씻어 냄'}, {g:'abyssCrystal', why:'심연 응시 저주를 지움'}, {g:'ancientTree', why:'포자 독을 치유로 버팀'}],
   water_mythic_b: [{g:'lavaLord', why:'용암 정령을 빙결로 묶어 자폭을 막음'}, {g:'frostGiant', why:'절대영도를 모으는 동안 빙결로 시간을 범'}, {g:'abyssCrystal', why:'느려진 보스가 파동을 늦게 씀'}],
   wood_mythic_a:  [{g:'lavaLord', why:'도발과 가시 갑옷 반사로 화상 장판·자폭을 받아 냄'}, {g:'frostGiant', why:'눈보라·절대영도를 도발과 피해 감소로 받아 냄'}, {g:'ancientTree', why:'덩굴에 끌려 나온 후열을 바로 뒤에서 지킴'}],
   wood_mythic_b:  [{g:'lavaLord', why:'독이 화염 흡수 회복을 막고 용암 정령에 번짐'}, {g:'frostGiant', why:'독은 최대체력 비례라 얼음 갑옷에 안 깎임'}, {g:'ancientTree', why:'독이 재생을 완전히 막음'}],
-  light_mythic_a: [{g:'lavaLord', why:'보호막이 화상 장판·자폭을 받아 냄'}, {g:'ruinGuardian', why:'보호가 석화의 눈·봉인의 문양을 막음'}, {g:'abyssCrystal', why:'혼돈으로 벗겨진 보호막을 바로 다시 씌움'}],
-  light_mythic_b: [{g:'lavaLord', why:'자폭 전에 연속 행동으로 용암 정령을 정리'}, {g:'frostGiant', why:'여명의 호령으로 절대영도를 한 라운드 안에 저지'}, {g:'abyssCrystal', why:'다음 속성에 맞는 정령을 먼저 움직임'}],
+  light_mythic_a: [{g:'shadowLord', why:'상성 유리 + 보호막·부활로 잠식을 버팀'}, {g:'lavaLord', why:'보호막이 화상 장판·자폭을 받아 냄'}, {g:'ruinGuardian', why:'보호가 석화의 눈·봉인의 문양을 막음'}, {g:'abyssCrystal', why:'혼돈으로 벗겨진 보호막을 바로 다시 씌움'}],
+  light_mythic_b: [{g:'shadowLord', why:'상성 유리 + 빠른 연속 행동으로 잠식이 쌓이기 전에 끝냄'}, {g:'lavaLord', why:'자폭 전에 연속 행동으로 용암 정령을 정리'}, {g:'frostGiant', why:'여명의 호령으로 절대영도를 한 라운드 안에 저지'}, {g:'abyssCrystal', why:'다음 속성에 맞는 정령을 먼저 움직임'}],
   dark_mythic_a:  [{g:'frostGiant', why:'상성 유리 + 굶주림으로 큰 체력을 깎아 처형'}, {g:'lavaLord', why:'용암 정령 처형으로 연속 행동'}, {g:'ancientTree', why:'흡혈로 포자 독을 버팀'}],
   dark_mythic_b: [{g:'frostGiant', why:'상성 유리 + 저주로 얼음 갑옷 너머 피해를 키움'}, {g:'ancientTree', why:'악몽 포식으로 가시 껍질·가시 덩굴을 벗김'}, {g:'abyssCrystal', why:'모든 적 저주로 빠르게 정리'}]
 };
@@ -11740,7 +11769,7 @@ function expMakeRoom(run, type, stepIndex){
   if(type==='battle' || type==='elite') return { type, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex + (type==='elite'?4:0)) };
   if(type==='event') return { type, eventId: EXPEDITION_EVENTS[Math.floor(Math.random()*EXPEDITION_EVENTS.length)].id };
   if(type==='shop'){ const pool = EXP_RELICS.filter(r=>!expHasRelic(run, r.id)).sort(()=>Math.random()-0.5); return { type, stock: pool.slice(0,2).map(r=>({id:r.id, price: r.rare ? 110 : 70, sold:false})), heal:false }; }
-  if(type==='boss'){ const g = CHAPTER_BOSS_GIMMICK[Math.floor(Math.random()*CHAPTER_BOSS_GIMMICK.length)]; return { type, gimmick: g, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex) }; }
+  if(type==='boss'){ const g = CHAPTER_BOSS_GIMMICK[Math.floor(Math.random()*HARD_EFF_CH)]; /* (v317) 출정 보스는 기존 5종 그대로 */ return { type, gimmick: g, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex) }; }
   return { type }; // '?' · rest · treasure
 }
 function expGenerateMap(run){
@@ -12409,7 +12438,8 @@ function markPillHtml(mark){
 }
 // 챕터 5개 고정 — 각 챕터는 촘촘한 덩어리(격자) 형태이고 실루엣이 전부 다름
 // (v148) 챕터 10스테이지로 축소되면서 마스크도 9칸+보스로 재설계(기존 19+1은 CHAPTER_LENGTH=20 전용이었음). 전부 연결됨을 스크립트로 검증 완료
-const MAX_CHAPTERS = 5; // 노말 챕터 수
+const MAX_CHAPTERS = 6; // 노말 챕터 수 · (v317) 6 = 그림자
+const HARD_EFF_CH = 5; // (v317) 하드 난이도·보상 기준(하드 N ≈ 노말 N+5)과 하드 해금은 챕터 5 기준 그대로 — 챕터를 늘려도 기존 하드가 바뀌거나 잠기지 않게
 // (v251) 하드 모드 — 노말 5챕터 보스를 깨면 열림. 같은 지도·보스를 쓰되 적이 훨씬 강함. 스테이지 번호 50~99(내부 챕터 6~10)
 // (v253) 하드 = 스테이지 500~ · 내부 챕터 51~ — 노말 챕터를 늘려도(6, 7…) 번호가 안 겹침
 const HARD_BASE = 500, HARD_CH_BASE = 50;
@@ -12417,12 +12447,12 @@ function isHardChapter(ch){ return ch > HARD_CH_BASE; }
 function isHardStage(i){ return i >= HARD_BASE; }
 function stageLocal(i){ return isHardStage(i) ? i - HARD_BASE : i; }                 // 난이도 안에서의 번호(0~)
 function chapterBase(ch){ return isHardChapter(ch) ? ch - HARD_CH_BASE : ch; }       // 화면에 보이는 챕터 번호(1~)
-function stageEff(i){ return isHardStage(i) ? stageLocal(i) + CHAPTER_LENGTH*MAX_CHAPTERS : i; } // 난이도·보상 기준 위치: 하드 N = 노말 N+5
-function chapterEff(ch){ return isHardChapter(ch) ? chapterBase(ch) + MAX_CHAPTERS : ch; }
+function stageEff(i){ return isHardStage(i) ? stageLocal(i) + CHAPTER_LENGTH*HARD_EFF_CH : i; } // 난이도·보상 기준 위치: 하드 N = 노말 N+5
+function chapterEff(ch){ return isHardChapter(ch) ? chapterBase(ch) + HARD_EFF_CH : ch; }
 function isValidStage(n){ return Number.isInteger(n) && ((n>=0 && n<CHAPTER_LENGTH*MAX_CHAPTERS) || (n>=HARD_BASE && n<HARD_BASE+CHAPTER_LENGTH*MAX_CHAPTERS)); }
-function hardUnlocked(){ return !!state.adminUnlockAll || !!state.stageBest[CHAPTER_LENGTH*MAX_CHAPTERS-1]; } // 하드 탭이 열리는 조건 = 하드 1 조건
+function hardUnlocked(){ return !!state.adminUnlockAll || !!state.stageBest[CHAPTER_LENGTH*HARD_EFF_CH-1]; } // 하드 탭이 열리는 조건 = 하드 1 조건
 // (v253) 하드 N 해금: 노말 min(N+4, 마지막 노말 챕터) 보스 + 하드 N−1 보스 — 하드 N ≈ 노말 N+5 수준이라 그 바로 전 노말까지 깨야 열림. 노말 챕터를 늘리면 자동으로 따라감
-function hardNormalReq(base){ return Math.min(base + MAX_CHAPTERS - 1, MAX_CHAPTERS); }
+function hardNormalReq(base){ return base<=HARD_EFF_CH ? HARD_EFF_CH : Math.min(base, MAX_CHAPTERS); } // (v317) 하드 1~5 = 노말 5 보스 · 하드 6~ = 같은 번호 노말 보스
 function hardChapterOpen(ch){ const b = chapterBase(ch); if(state.adminUnlockAll) return true; if(!state.stageBest[hardNormalReq(b)*CHAPTER_LENGTH-1]) return false; return b===1 || !!state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]; }
 function currentHardChapterNum(){ let b = 1; while(b<=MAX_CHAPTERS && state.stageBest[HARD_BASE + b*CHAPTER_LENGTH - 1]) b++; return HARD_CH_BASE + b; }
 // (v257) 잠금 안내는 보스 이름으로 — "서리거인 처치 시 해금", 하드는 "서리거인(하드) 처치 시 해금"
@@ -12441,14 +12471,16 @@ const CHAPTER_MASKS = [
   {theme:1, rows:['.###.','##.##','.##.','..B.']}, // 화산 - 분화구(가운데 구멍, 갈래 1곳)
   {theme:2, rows:['.###.','#####','..#..','..B..']}, // 숲 - 나무(넓은 잎 갈래 4곳, 좁은 줄기)
   {theme:3, rows:['##...','####.','.###','...B']}, // 사막 - 모래언덕(겹치는 비스듬한 띠, 갈래 4곳)
-  {theme:4, rows:['..#..','..#..','#####','..#..','..#..','..B..']} // 동굴 - 십자로(굵은 가로축, 갈래 1곳)
+  {theme:4, rows:['..#..','..#..','#####','..#..','..#..','..B..']}, // 동굴 - 십자로(굵은 가로축, 갈래 1곳)
+  {theme:5, rows:['#...#','##.##','.###.','..B..']} // (v317) 그림자 - 초승달(양 끝에서 모여드는 V자)
 ];
 const MAP_THEMES = [
   {name:'설원', icon:'❄️', color:'#7fd3ff'},
   {name:'화산', icon:'🌋', color:'#ff7a5a'},
   {name:'숲',   icon:'🌲', color:'#7fe07f'},
   {name:'사막', icon:'🌵', color:'#ffc95a'},
-  {name:'동굴', icon:'🕸️', color:'#b39dff'}
+  {name:'동굴', icon:'🕸️', color:'#b39dff'},
+  {name:'그림자', icon:'🌑', color:'#9a6bff'}
 ];
 function chapterTheme(chapterNum){
   const idx = (Math.max(1, chapterBase(chapterNum))-1) % MAX_CHAPTERS;
