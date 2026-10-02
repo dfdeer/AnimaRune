@@ -428,6 +428,22 @@
   .av.r-epic::after{border-image-source:url(assets/ui/frame_epic.webp);} .av.r-legendary::after{border-image-source:url(assets/ui/frame_legendary.webp);}
   .av.r-mythic::after{border-image-source:url(assets/ui/frame_mythic.webp);}
   .species-tile .av{margin:2px 0 3px;} .slot .av{font-size:22px;}
+  /* (v335) 성좌 테두리 — 그림 대신 코드로: 천천히 도는 보라·하늘·민트·노랑 빛 (사용자가 시안을 보고 고름) */
+  @property --asang{syntax:'<angle>'; inherits:false; initial-value:0deg;}
+  @keyframes asSpin{to{--asang:360deg;}}
+  .av.r-astral::after{border-image:none !important; border:max(2px,.09em) solid transparent; border-radius:22%; background:conic-gradient(from var(--asang), #ff7ad9, #7ab8ff, #7affc8, #fff07a, #ff7ad9) border-box !important; -webkit-mask:linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; animation:asSpin 4s linear infinite;}
+  .species-tile:has(.av.r-astral){box-shadow:0 0 0 1.5px #c9a6ff, 0 0 14px #b98aff88 !important;}
+  .rarity-tag.astral, .as-name{background:linear-gradient(90deg,#ff7ad933,#7ab8ff33,#7affc833) !important; color:#e8d4ff !important; text-shadow:0 0 6px #c9a6ff;}
+  .as-name{padding:0 6px; border-radius:6px; font-family:var(--fun); }
+  .sm-card.astral{box-shadow:0 0 0 2px #c9a6ff, 0 0 30px #b98aff !important;} .sm-card.astral .sm-rarity{background:linear-gradient(90deg,#ff7ad9,#7ab8ff,#7affc8) !important; color:#1b1440 !important; border-color:#fff8 !important;}
+  .aw-row.as-row b{background:linear-gradient(90deg,#ff9ae4,#9ac8ff,#9affd8); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .as-top{display:flex; align-items:center; gap:14px; margin:6px 0 10px;}
+  /* (v335) 기억 조각 — 보석 틀 안에 정령 얼굴 */
+  .mem-ic{display:inline-block; position:relative; width:1.25em; height:1.25em; vertical-align:-.25em; clip-path:polygon(50% 0, 100% 30%, 100% 70%, 50% 100%, 0 70%, 0 30%); background:linear-gradient(160deg,#ffd1f4,#a98bff 45%,#5fc8ff); }
+  .mem-ic::before{content:''; position:absolute; inset:9%; clip-path:inherit; background:radial-gradient(circle at 50% 40%, #3a2f6a, #1a1538);}
+  .mem-ic img{position:absolute; inset:12%; width:76%; height:76%; object-fit:cover; clip-path:polygon(50% 0, 100% 30%, 100% 70%, 50% 100%, 0 70%, 0 30%);}
+  .mem-ic:not(:has(img))::after{content:'✦'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.62em; color:#fff3c4; text-shadow:0 0 4px #ffd166;}
+  .mt-mem{font-size:10px; color:#e8d4ff; margin-top:2px; white-space:nowrap;}
   /* (v205) 정령 그림을 칸에 꽉 채우고, 어두운 정령(거미·박쥐·까마귀)도 보이게 칸 바닥을 가운데가 밝은 원형으로 */
   .av{background:radial-gradient(circle at 50% 45%, #4a4470 0%, #2c2746 55%, #1c1930 100%);} .av .spimg{width:100%; height:100%; margin:0;}
   .spimg{filter:drop-shadow(0 0 1px #ffffff99) drop-shadow(0 0 3px #ffffff33);} /* 아주 옅은 밝은 테두리 — 어두운 배경에서 윤곽이 묻히지 않게 */
@@ -1620,7 +1636,8 @@ const RARITY_INFO = {
   rare:{name:'레어', mult:2.5, color:'#5798ff'},
   epic:{name:'에픽', mult:6, color:'#b657ff'},
   legendary:{name:'레전더리', mult:15, color:'#ffc857'},
-  mythic:{name:'신화', mult:35, color:'#ff5777'}
+  mythic:{name:'신화', mult:35, color:'#ff5777'},
+  astral:{name:'성좌', mult:45, color:'#c9a6ff'} // (v335) 신화 위 등급 — RARITY_ORDER엔 안 넣음(정령 키·비용 표는 신화 그대로) · 화면 표시·능력치 배율에만
 }; // (v269) 색은 hex로 — 'var(--legendary)'에 투명도 두 자리('88')를 붙이면 잘못된 값이라 테두리·배경이 무시돼 신화만 색이 보였음 (:root 변수와 같은 값 유지)
 const NAMES = {
   // (v157) 짜치는 "속성+등급형용사+종" 반복 조합을 버리고 고유명사·신화 모티프 위주로 재작성
@@ -1936,7 +1953,7 @@ const TRANS_MAX = 10, TRANS_STEP = 0.05, TRANS_RATE = [1, .9, .8, .7, .6, .5, .4
 function transLevel(k){ return (state.trans && state.trans[k]) || 0; }
 function transMult(k){ return 1 + TRANS_STEP*transLevel(k); }
 function transChance(k){ const lv = transLevel(k); if(lv>=TRANS_MAX) return 0; return Math.min(1, TRANS_RATE[lv] + ((state.transPity && state.transPity[k])||0)); }
-function transCost(k){ const lv = transLevel(k); return { copies:1, essence: (300 + 200*RARITY_ORDER.indexOf(SPIRITS[k].rarity)) * (lv+1) }; }
+function transCost(k){ const lv = transLevel(k); return { ...(memSpirit(k) ? { mem:MEM_PER_COPY, memKey:k } : { copies:1 }), essence: (300 + 200*RARITY_ORDER.indexOf(SPIRITS[k].rarity)) * (lv+1) }; }
 function transTag(k){ const t = transLevel(k); return t ? '<span class="tr-tag">✦'+t+'</span>' : ''; }
 // (v310) 초월은 강화의 다음 단계 — 각성 끝 + 강화 최대(보통 +15)에서 열리고, 강화 숫자에 이어서 노란 +16, +17… 로 표시
 function transOpen(k){ return awakenLevel(k)>=AWAKEN_MAX && enhanceLevel(k)>=maxEnhanceFor(k); }
@@ -2088,8 +2105,8 @@ function showTransModal(k){
   h += '<div class="tr-steps">'+Array.from({length:TRANS_MAX}, (_,i)=>'<i class="'+(i<lv?'on':'')+(i===4||i===9?' big':'')+'"></i>').join('')+'</div>';
   if(!transOpen(k)) h += '<div class="sub" style="text-align:center; padding:10px 0;">각성 '+AWAKEN_MAX+'단계 · 강화 +'+maxEnhanceFor(k)+'까지 하면 열림 (지금 각성 '+aw+' · +'+enhanceLevel(k)+')</div>';
   else if(lv >= TRANS_MAX) h += '<div style="text-align:center; padding:10px 0; font-weight:900; color:#ffd557;">최대 초월 — 공격·체력 +'+Math.round(TRANS_STEP*TRANS_MAX*100)+'%</div>';
-  else { const c = transCost(k), ch = transChance(k), pity = (state.transPity && state.transPity[k]) || 0, spare = awakenSpare(k), can = spare>=c.copies && state.essence>=c.essence;
-    h += '<div class="tr-info"><div><span>성공 확률</span><b>'+Math.round(ch*100)+'%</b>'+(pity?'<small>실패 보정 +'+Math.round(pity*100)+'%p</small>':'')+'</div><div><span>재료</span><b>같은 정령 '+c.copies+' · '+uiIc('essence')+' '+c.essence+'</b><small>남는 같은 정령 '+spare+'마리</small></div><div><span>성공하면</span><b>'+(lv+1)+'단계 · 공격·체력 +'+Math.round(TRANS_STEP*(lv+1)*100)+'%</b></div></div>'
+  else { const c = transCost(k), ch = transChance(k), pity = (state.transPity && state.transPity[k]) || 0, spare = awakenSpare(k), can = copyHave(k, c) && state.essence>=c.essence;
+    h += '<div class="tr-info"><div><span>성공 확률</span><b>'+Math.round(ch*100)+'%</b>'+(pity?'<small>실패 보정 +'+Math.round(pity*100)+'%p</small>':'')+'</div><div><span>재료</span><b>'+(c.mem ? memIc(k)+' 기억 조각 '+c.mem : '같은 정령 '+c.copies)+' · '+uiIc('essence')+' '+c.essence+'</b><small>'+(c.mem ? '가진 기억 조각 '+memCount(k)+'개' : '남는 같은 정령 '+spare+'마리')+'</small></div><div><span>성공하면</span><b>'+(lv+1)+'단계 · 공격·체력 +'+Math.round(TRANS_STEP*(lv+1)*100)+'%</b></div></div>'
       + '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">실패하면 재료는 사라지고 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p</div>'
       + '<button class="btn gold" id="trGo" style="margin-top:8px;" '+(can?'':'disabled')+'>🌟 초월 시도</button>'; }
   h += '<button class="btn secondary" id="trBack" style="margin-top:8px;">‹ 돌아가기</button>';
@@ -2097,9 +2114,9 @@ function showTransModal(k){
   bindModalClose(back);
   document.getElementById('trBack').addEventListener('click', back);
   const go = document.getElementById('trGo'); if(go) go.addEventListener('click', ()=>{ const c = transCost(k);
-    spendAsk(sp.name+' 초월 시도', {essence:c.essence, copies:c.copies}, ()=>{
-      if(!transOpen(k) || transLevel(k)>=TRANS_MAX || awakenSpare(k)<c.copies || state.essence<c.essence) return;
-      const ch = transChance(k); state.essence -= c.essence; state.owned[k] -= c.copies; cleanupFormation();
+    spendAsk(sp.name+' 초월 시도', c, ()=>{
+      if(!transOpen(k) || transLevel(k)>=TRANS_MAX || !copyHave(k, c) || state.essence<c.essence) return;
+      const ch = transChance(k); state.essence -= c.essence; copySpend(k, c); cleanupFormation();
       state.trans = state.trans || {}; state.transPity = state.transPity || {};
       if(Math.random() < ch){ state.trans[k] = transLevel(k)+1; state.transPity[k] = 0; sfx('enhance'); toast('🌟 초월 성공 — '+sp.name+' +'+(enhanceLevel(k)+state.trans[k])); }
       else { state.transPity[k] = (state.transPity[k]||0) + TRANS_PITY; sfx('fail'); toast('💨 초월 실패 — 다음 확률 +'+Math.round(TRANS_PITY*100)+'%p'); }
@@ -6378,7 +6395,7 @@ function showBossPrepModal(stageIdx){
   });
 }
 // (v98) 출전 명단 초안 — 창을 닫았다 열어도(새로고침 포함) 남도록 세이브 상태에 보스별로 저장
-const RARITY_HEX = {common:'#b8bcc4', rare:'#5798ff', epic:'#b657ff', legendary:'#ffc857', mythic:'#ff5777'}; // 상단 CSS 변수(--common 등)와 같은 색
+const RARITY_HEX = {common:'#b8bcc4', rare:'#5798ff', epic:'#b657ff', legendary:'#ffc857', mythic:'#ff5777', astral:'#c9a6ff'}; // 상단 CSS 변수(--common 등)와 같은 색
 const BOSS_MAX_COMBO_MULT = 2.2;
 function bossComboMult(matched, total){
   if(matched<=0) return 1;
@@ -6420,13 +6437,62 @@ const AWAKEN_MAX = 5, AWAKEN_POWER = 0.08, AWAKEN_COPIES = [1,1,2,2,3];
 const AWAKEN_RATE = { common:1.8, rare:1.8, epic:0.7, legendary:0.24, mythic:0.08 }; // 단계마다 +(배율−1)/5
 function awakenRate(key){ return AWAKEN_RATE[SPIRITS[key].rarity] || AWAKEN_POWER; }
 function awakenLevel(key){ return (state.awaken && state.awaken[key]) || 0; }
-function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { copies: AWAKEN_COPIES[lv], essence: Math.round(80 * (AWAKEN_COST_MUL[RARITY_ORDER.indexOf(SPIRITS[key].rarity)]||1) * (lv+1)) }; } // (v297) 정수 80 × 등급 배율(2 · 5 · 10 · 18 · 30) × 단계
+function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return null; return { ...(memSpirit(key) ? { mem: AWAKEN_COPIES[lv]*MEM_PER_COPY, memKey:key } : { copies: AWAKEN_COPIES[lv] }), essence: Math.round(80 * (AWAKEN_COST_MUL[RARITY_ORDER.indexOf(SPIRITS[key].rarity)]||1) * (lv+1)) }; } // (v297) 정수 80 × 등급 배율(2 · 5 · 10 · 18 · 30) × 단계
 function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
+// ===================== (v335) 성좌 · 기억 조각 =====================
+// 신화(한정 성좌 포함)는 같은 정령을 1마리만 가짐 — 또 나오면 기억 조각 50개. 신화의 각성·초월·성좌 승급 재료는 같은 정령 대신 기억 조각
+// 성좌: 신화 위 등급 · 기존 신화는 각성 5단계 + 조각 150 + 정수로 승급(키·이름·기술 그대로, state.astral) · 한정 정령(SPIRITS[k].limited)은 처음부터 성좌
+const MEM_PER_COPY = 50, ASTRAL_MEM = 150, ASTRAL_ESSENCE = 20000;
+function memSpirit(k){ return !!(SPIRITS[k] && SPIRITS[k].rarity==='mythic'); }
+function memCount(k){ return (state.mem && state.mem[k]) || 0; }
+function memAdd(k, n){ if(!n) return; state.mem = state.mem || {}; state.mem[k] = Math.max(0, (state.mem[k]||0) + n); if(!state.mem[k]) delete state.mem[k]; }
+function isAstral(k){ return !!(SPIRITS[k] && (SPIRITS[k].limited || (state.astral && state.astral[k]))); }
+function spRar(sp){ return sp && sp.key && isAstral(sp.key) ? 'astral' : (sp ? sp.rarity : 'common'); } // 화면에 보이는 등급 (내 정령 기준)
+// 정령 얻기 — 신화가 이미 있으면 기억 조각 50 · 반환 {isNew, mem}
+function gainSpirit(k){
+  const isNew = !state.discovered[k]; state.discovered[k] = true;
+  if(memSpirit(k) && ownedCount(k)>=1){ memAdd(k, MEM_PER_COPY); return { isNew:false, mem:MEM_PER_COPY }; }
+  state.owned[k] = (state.owned[k]||0) + 1; return { isNew, mem:0 };
+}
+// 기억 조각 아이콘 — 보석 틀 안에 그 정령 얼굴 (k 없으면 빈 보석)
+function memIc(k, cls){ return '<span class="mem-ic'+(cls?' '+cls:'')+'">'+(k && SPIRITS[k] ? '<img src="assets/spirits/'+k+'.webp" alt="" draggable="false">' : '')+'</span>'; }
+// 각성·초월 재료가 있는지 (신화 = 기억 조각, 그 아래 = 남는 같은 정령)
+function copyHave(k, c){ return c.mem ? memCount(k)>=c.mem : awakenSpare(k)>=(c.copies||0); }
+function copySpend(k, c){ if(c.mem) memAdd(k, -c.mem); else state.owned[k] -= (c.copies||0); }
+function copyHaveTxt(k, c){ return c.mem ? memCount(k)+' / '+c.mem : awakenSpare(k)+' / '+c.copies+'마리'; }
+function copyLabel(k){ return memSpirit(k) ? memIc(k)+' 기억 조각' : spArt(SPIRITS[k])+' 같은 정령'; }
+function astralCan(k){ return memSpirit(k) && !isAstral(k) && awakenLevel(k)>=AWAKEN_MAX && ownedCount(k)>=1; }
+function doAstral(k){
+  if(!astralCan(k)) return false;
+  if(memCount(k)<ASTRAL_MEM){ toast('기억 조각 부족 ('+ASTRAL_MEM+' 필요)'); return false; }
+  if(state.essence<ASTRAL_ESSENCE){ toast('정수 부족 ('+ASTRAL_ESSENCE+' 필요)'); return false; }
+  memAdd(k, -ASTRAL_MEM); state.essence -= ASTRAL_ESSENCE; state.astral = state.astral || {}; state.astral[k] = 1;
+  checkAchievements(); save(); sfx('summonLegend'); return true;
+}
+function showAstralModal(k){
+  const sp = SPIRITS[k], have = memCount(k), aw = awakenLevel(k), ok = astralCan(k) && have>=ASTRAL_MEM && state.essence>=ASTRAL_ESSENCE;
+  let h = '<button class="aw-back" id="asBack">‹ 정령 정보</button>';
+  h += '<div class="as-top"><div class="av r-'+(isAstral(k)?'astral':'mythic')+' up-host" id="upHost" style="font-size:44px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+'</b><div class="sub">'+(isAstral(k) ? '이미 성좌' : '신화 → <span class="as-name">성좌</span>')+'</div></div></div>';
+  h += '<div class="aw-cost"><div class="aw-ch">성좌가 되면</div><div class="sub" style="font-size:12px; line-height:1.6;">능력치 배율 신화 '+RARITY_INFO.mythic.mult+' → 성좌 '+RARITY_INFO.astral.mult+' (+'+Math.round((RARITY_INFO.astral.mult/RARITY_INFO.mythic.mult-1)*100)+'%)<br>이름·스킬·그림은 그대로 · 강화·각성·초월·각인·장비 모두 유지</div></div>';
+  if(!isAstral(k)){
+    h += '<div class="aw-cost"><div class="aw-ch">필요한 것</div>'
+      + '<div class="aw-cr"><span>'+uiIc('awaken')+' 각성</span><b class="'+(aw>=AWAKEN_MAX?'':'lack')+'">'+aw+' / '+AWAKEN_MAX+'단계</b></div>'
+      + '<div class="aw-cr"><span>'+memIc(k)+' 기억 조각</span><b class="'+(have>=ASTRAL_MEM?'':'lack')+'">'+have+' / '+ASTRAL_MEM+'</b></div>'
+      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(state.essence>=ASTRAL_ESSENCE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ASTRAL_ESSENCE+'</b></div></div>';
+    h += '<button class="btn gold sticky-ok" id="asGo" '+(ok?'':'disabled')+'>✦ 성좌로 승급</button>';
+  }
+  h += memHowHtml();
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose();
+  document.getElementById('asBack').addEventListener('click', ()=>showManageModal(k));
+  const g = document.getElementById('asGo'); if(g) g.addEventListener('click', ()=>spendAsk(sp.name+' 성좌 승급', {essence:ASTRAL_ESSENCE, mem:ASTRAL_MEM, memKey:k}, ()=>{ if(doAstral(k)){ render(); showAstralModal(k); const uh = document.getElementById('upHost'); if(uh){ uh.classList.add('pop'); upgradeFx(uh, '성좌!', 'awk'); } toast('✦ '+sp.name+' 성좌 승급'); } }));
+}
+function memHowHtml(){ return '<div class="sub" style="font-size:11px; line-height:1.6; margin-top:8px; text-align:left;">'+memIc(null)+' <b>기억 조각</b> — 신화는 한 마리만 가짐 · 같은 신화가 또 나오면 조각 '+MEM_PER_COPY+'개 · 픽업 소환은 1회마다 고른 정령 조각 1개 · 각성·초월·성좌 승급 재료</div>'; }
 function doAwaken(key, quiet){
   const c = awakenCost(key); if(!c) return;
-  if(awakenSpare(key) < c.copies){ toast('같은 정령이 '+c.copies+'마리 더 필요'); return; }
+  if(!copyHave(key, c)){ toast(c.mem ? '기억 조각 부족 ('+c.mem+' 필요)' : '같은 정령이 '+c.copies+'마리 더 필요'); return; }
   if(state.essence < c.essence){ toast('정수 부족 ('+c.essence+' 필요)'); return; }
-  state.essence -= c.essence; state.owned[key] -= c.copies;
+  state.essence -= c.essence; copySpend(key, c);
   if(!state.awaken) state.awaken = {};
   state.awaken[key] = awakenLevel(key) + 1;
   cleanupFormation(); checkAchievements(); save(); sfx('enhance');
@@ -6800,7 +6866,7 @@ function showEnhanceModal(key, fxLabel){
   const sp = SPIRITS[key], lv = enhanceLevel(key), mx = maxEnhanceFor(key), maxed = lv>=mx, cost = enhanceCost(key);
   const pNow = unitPower(key), pNext = pNow * (1 + 0.05*(lv+1)) / (1 + 0.05*lv);
   let h = '<button class="aw-back" id="enBack">‹ 정령 정보</button>';
-  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+enhTag(key)+awakenBadge(awakenLevel(key))+'</b><div class="sub">강화 '+lv+' / '+mx+' · 정령력 +'+Math.round(lv*5)+'%</div></div></div>';
+  h += '<div class="aw-top"><div class="av r-'+spRar(sp)+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+enhTag(key)+awakenBadge(awakenLevel(key))+'</b><div class="sub">강화 '+lv+' / '+mx+' · 정령력 +'+Math.round(lv*5)+'%</div></div></div>';
   h += '<div class="en-bar"><i style="width:'+Math.round(lv/Math.max(1,mx)*100)+'%"></i></div>';
   if(!maxed){
     const okE = state.essence>=cost.essence, okS = (state.enhanceStone||0)>=cost.stone;
@@ -6831,7 +6897,7 @@ function awakenStepInfo(key, lv){
 function showAwakenModal(key, fxLabel){
   const sp = SPIRITS[key], lv = awakenLevel(key), ac = awakenCost(key);
   let h = '<button class="aw-back" id="awBack">‹ 정령 정보</button>';
-  h += '<div class="aw-top"><div class="av r-'+sp.rarity+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*awakenRate(key)*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
+  h += '<div class="aw-top"><div class="av r-'+spRar(sp)+' up-host" id="upHost" style="font-size:40px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+' '+awakenBadge(lv)+'</b><div class="sub">각성 '+lv+'/'+AWAKEN_MAX+' · 정령력 +'+Math.round(lv*awakenRate(key)*100)+'% · 강화 한도 +'+lv+'</div></div></div>';
   h += '<div class="aw-steps">';
   for(let s = 1; s <= AWAKEN_MAX; s++){
     const st = s<=lv ? 'done' : (s===lv+1 ? 'next' : 'lock'), perk = awakenStepInfo(key, s);
@@ -6839,18 +6905,18 @@ function showAwakenModal(key, fxLabel){
   }
   h += '</div>';
   if(ac){
-    const spare = awakenSpare(key), okC = spare>=ac.copies, okE = state.essence>=ac.essence;
+    const okC = copyHave(key, ac), okE = state.essence>=ac.essence;
     h += '<div class="aw-cost"><div class="aw-ch">'+(lv+1)+'단계 각성에 필요한 것</div>'
-      + '<div class="aw-cr"><span>'+spArt(sp)+' 같은 정령</span><b class="'+(okC?'':'lack')+'">'+spare+' / '+ac.copies+'마리</b></div>'
+      + '<div class="aw-cr"><span>'+copyLabel(key)+'</span><b class="'+(okC?'':'lack')+'">'+copyHaveTxt(key, ac)+'</b></div>'
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ac.essence+'</b></div>'
-      + '<div class="sub" style="font-size:11px; margin-top:4px;">같은 정령은 1마리를 남기고 사용 (보유 '+ownedCount(key)+'마리)</div></div>';
+      + (ac.mem ? memHowHtml() : '<div class="sub" style="font-size:11px; margin-top:4px;">같은 정령은 1마리를 남기고 사용 (보유 '+ownedCount(key)+'마리)</div>')+'</div>';
     h += '<button class="btn gold sticky-ok" id="awDo" '+(okC&&okE?'':'disabled')+'>'+uiIc('awaken')+' '+(lv+1)+'단계 각성하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 각성</b></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('awBack').addEventListener('click', ()=>showManageModal(key));
   const d = document.getElementById('awDo'); if(d) d.addEventListener('click', ()=>{ const c = awakenCost(key), go = ()=>{ const before = awakenLevel(key); doAwaken(key, true); render(); showAwakenModal(key, awakenLevel(key)>before ? '각성 '+awakenLevel(key)+'단계!' : null); };
-    spendAsk(SPIRITS[key].name+' 각성', c||{}, go, !!c && awakenSpare(key)>=c.copies && state.essence>=c.essence); });
+    spendAsk(SPIRITS[key].name+' 각성', c||{}, go, !!c && copyHave(key, c) && state.essence>=c.essence); });
   if(fxLabel){ const uh = document.getElementById('upHost'); if(uh) uh.classList.add('pop'); upgradeFx(uh, fxLabel, 'awk'); }
 }
 // (v238) 강화 +N 작은 딱지 — 전투 준비 칸·고르기 목록 등
@@ -6872,7 +6938,7 @@ function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
 }
 function unitPower(speciesKey){
   const sp = SPIRITS[speciesKey];
-  const base = BASE_ATK * RARITY_INFO[sp.rarity].mult * ELEMENT_ATK_MULT[sp.element];
+  const base = BASE_ATK * RARITY_INFO[isAstral(speciesKey) ? 'astral' : sp.rarity].mult * ELEMENT_ATK_MULT[sp.element]; // (v335) 성좌는 배율 45
   return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
@@ -7047,6 +7113,7 @@ function defaultState(){
   // 소환으로만 정령을 얻기 시작함.
   return {
     essence: 650, // (v166) 6칸 진형에 맞춰 시작 정수 상향
+    mem: {}, astral: {}, // (v335) 기억 조각 · 성좌 승급 (memInst는 기본값에 넣지 않음 — 넣으면 예전 세이브도 바꾸기를 건너뜀)
     saveRev: 0, // (v132) 저장할 때마다 +1 — 클라우드 백업과 비교할 때 최신 판별용
     saveSchema: SAVE_SCHEMA_VERSION, // (v158) 세이브 코드 불러오기에서 구버전 판별용
     enhanceStone: 0,
@@ -7699,9 +7766,7 @@ function doShopTicketNow(){
   const element = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
   const variant = VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
   const key = element+'_'+rarity+'_'+variant;
-  const isNew = !state.discovered[key];
-  state.owned[key] = (state.owned[key]||0) + 1;
-  state.discovered[key] = true;
+  const g = gainSpirit(key), isNew = g.isNew;
   pushRecentSummon(key);
   checkAchievements();
   save();
@@ -7714,8 +7779,7 @@ function doLegendaryTicketNow(){ // (v253) 레전더리 확정권 — 티켓으�
   if(ticketCount('legendary')<=0){ toast('레전더리 확정권 없음'); return; }
   state.tickets.legendary -= 1;
   const key = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_legendary_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
-  const isNew = !state.discovered[key];
-  state.owned[key] = (state.owned[key]||0) + 1; state.discovered[key] = true;
+  const isNew = gainSpirit(key).isNew;
   pushRecentSummon(key); checkAchievements(); save();
   showResultModal(SPIRITS[key], isNew);
   render(); // (v296) 빠져 있어서 보유 수가 다른 탭에 다녀와야 줄어든 것으로 보였음
@@ -7724,8 +7788,8 @@ function doLegendaryTicketNow(){ // (v253) 레전더리 확정권 — 티켓으�
 function doMythicTicket(){ if(ticketCount('mythic')<=0){ toast('신화 확정권 없음'); return; } spendAsk(TICKET_INFO.mythic.name, {tk:'mythic', n:1}, ()=>{
   if(ticketCount('mythic')<=0) return; state.tickets.mythic -= 1;
   const key = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_mythic_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
-  const isNew = !state.discovered[key]; state.owned[key] = (state.owned[key]||0) + 1; state.discovered[key] = true;
-  pushRecentSummon(key); checkAchievements(); save(); showResultModal(SPIRITS[key], isNew); render(); }); }
+  const g = gainSpirit(key);
+  pushRecentSummon(key); checkAchievements(); save(); showResultModal(SPIRITS[key], g.isNew, null, {mem:g.mem}); render(); }); }
 // ===================== (v317) 픽업 소환 =====================
 // 반달(한국 시각 1~15일 · 16일~말일)마다 신화 2종 · 별빛 조각으로 소환 · 온라인일 때만(서버 시각으로 기간 계산, 폰 시계를 바꿔 다음 픽업을 미리 뽑지 못하게)
 // 천장: 신화 없이 80회째는 아무 신화 확정 · 신화가 고른 픽업이 아니었으면 다음 신화는 고른 픽업 확정(최악 160회) · 천장 횟수는 다음 픽업으로 이어짐
@@ -7764,17 +7828,17 @@ function doPickup(n){
   const go = ()=>{
     if(!pickupOnline() || (state.starShard||0) < PICKUP_COST*n) return;
     const pk = pickupState(); state.starShard -= PICKUP_COST*n;
-    const keys = [], flags = []; let refund = 0;
+    const keys = [], flags = [], memF = []; let refund = 0;
     for(let i=0;i<n;i++){ const key = pickupRoll(pk); keys.push(key);
-      if(SPIRITS[key].rarity==='mythic' && transLevel(key)>=TRANS_MAX){ refund += PICKUP_DUP_REFUND; flags.push(false); continue; } // 초월까지 끝낸 신화는 별빛 조각으로 환급
-      flags.push(!state.discovered[key]); state.owned[key] = (state.owned[key]||0) + 1; state.discovered[key] = true; }
+      if(SPIRITS[key].rarity==='mythic' && transLevel(key)>=TRANS_MAX && isAstral(key)){ refund += PICKUP_DUP_REFUND; flags.push(false); memF.push(0); continue; } // 초월·성좌까지 끝낸 신화는 별빛 조각으로 환급
+      const g = gainSpirit(key); flags.push(g.isNew); memF.push(g.mem); }
     keys.forEach(pushRecentSummon); state.starShard += refund;
     state.dailyStats.summons += n; passBump('summon', n); state.lifetimeSummons = (state.lifetimeSummons||0) + n;
     checkAchievements(); save();
     const again = ()=>doPickup(n), opts = { star:true, canAgain:()=>canPickup(n), againLabel:()=>'✨ '+n+'회 더 '+SHARD_IC+' '+(PICKUP_COST*n) };
-    if(n===1) showResultModal(SPIRITS[keys[0]], flags[0], again, opts);
-    else showMultiResultModal(keys, flags, again, Object.assign({ title: uiIc('pickup')+' 픽업 '+n+'회 결과' }, opts));
-    if(refund) setTimeout(()=>toast('초월을 끝낸 신화 → 별빛 조각 +'+refund), 900);
+    if(n===1) showResultModal(SPIRITS[keys[0]], flags[0], again, Object.assign({ mem:memF[0] }, opts));
+    else showMultiResultModal(keys, flags, again, Object.assign({ title: uiIc('pickup')+' 픽업 '+n+'회 결과', mem:memF }, opts));
+    if(refund) setTimeout(()=>toast('초월·성좌를 끝낸 신화 → 별빛 조각 +'+refund), 900);
     render();
   };
   if(n>1 && state.settings.multiNoAsk) return go();
@@ -7872,9 +7936,7 @@ function doEpicTicketNow(){
   const element = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
   const variant = VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
   const key = element+'_epic_'+variant;
-  const isNew = !state.discovered[key];
-  state.owned[key] = (state.owned[key]||0) + 1;
-  state.discovered[key] = true;
+  const isNew = gainSpirit(key).isNew;
   pushRecentSummon(key);
   checkAchievements();
   save();
@@ -7899,15 +7961,13 @@ function performSummon(againFn){
   const element = pickSummonElement(0, []);
   const variant = VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
   const key = element+'_'+rarity+'_'+variant;
-  const isNew = !state.discovered[key];
-  state.owned[key] = (state.owned[key]||0) + 1;
-  state.discovered[key] = true;
+  const g = gainSpirit(key), isNew = g.isNew;
   pushRecentSummon(key);
   state.dailyStats.summons += 1; passBump('summon');
   state.lifetimeSummons = (state.lifetimeSummons||0) + 1;
   checkAchievements();
   save();
-  showResultModal(SPIRITS[key], isNew, againFn);
+  showResultModal(SPIRITS[key], isNew, againFn, {mem:g.mem});
   render();
 }
 // (v296) 재화 사용 확인창 — 누르면 바로 쓰던 것을 '사용' 한 번 더 (설정에서 끌 수 있음)
@@ -7943,18 +8003,17 @@ function doMultiSummonNow(){
     const last = SPIRITS[results[results.length-1]];
     results[results.length-1] = last.element+'_'+rarity+'_'+last.variant;
   }
+  const memF = [];
   const isNewFlags = results.map(key=>{
-    const isNew = !state.discovered[key];
-    state.owned[key] = (state.owned[key]||0) + 1;
-    state.discovered[key] = true;
+    const g = gainSpirit(key); memF.push(g.mem);
     pushRecentSummon(key);
-    return isNew;
+    return g.isNew;
   });
   state.dailyStats.summons += MULTI_SUMMON_COUNT; passBump('summon', MULTI_SUMMON_COUNT);
   state.lifetimeSummons = (state.lifetimeSummons||0) + MULTI_SUMMON_COUNT;
   checkAchievements();
   save();
-  showMultiResultModal(results, isNewFlags, doMultiSummon);
+  showMultiResultModal(results, isNewFlags, doMultiSummon, {mem:memF});
   render();
 }
 // (v133) 전체 합성 — 지금 가능한 조합을 전부 처리하고, 그걸로 다음 등급 합성이 또 가능해지면 연쇄로 계속 진행
@@ -8130,7 +8189,7 @@ function fuseExecute(keys){
   passBump('fuse'); // (v297) 실패해도 합성 1번
   const r = fuseRoll(info.src, info.nr, info.streakKey);
   const take = k=>{ if(eq) eqRemoveItem(k); else state.owned[k] -= 1; }; // (v330) 장비는 낱개라 재료로 쓰면 그 장비의 강화·부가 능력·고유 효과도 사라짐
-  const give = k=>{ if(eq) return addEquip(k); const isNew = !state.discovered[k]; state.owned[k] = (state.owned[k]||0) + 1; state.discovered[k] = true; return isNew; };
+  const give = k=>{ if(eq) return addEquip(k); return gainSpirit(k).isNew; }; // (v335) 이미 있는 신화가 합성으로 또 나오면 기억 조각
   if(!r.ok){
     let survivor = null, downTo = null;
     if(!r.guard && eq){ // (v330) 장비: 고른 1개만 남고(강화 등 그대로) 나머지 2개는 사라짐 · 강등되면 남은 것 대신 한 단계 아래 새 장비(강화만 옮김)
@@ -8385,7 +8444,7 @@ function showPresetModal(){
   if(!presetCtx){ toast('진형 화면에서 사용'); return; }
   const list = presetList(), cur = presetCtx.get();
   const row = (p, i)=>{ const ks = p ? p.keys : [], lost = p ? ks.filter(Boolean).length - presetFit(ks).filter(Boolean).length : 0;
-    const ic = k=> k && SPIRITS[k] ? '<span class="ps-ic av r-'+SPIRITS[k].rarity+'">'+spArt(SPIRITS[k])+'</span>' : '<span class="ps-ic empty"></span>';
+    const ic = k=> k && SPIRITS[k] ? '<span class="ps-ic av r-'+spRar(SPIRITS[k])+'">'+spArt(SPIRITS[k])+'</span>' : '<span class="ps-ic empty"></span>';
     return '<div class="pr-row"><div class="pr-top"><b>'+(p ? escTxt(p.name) : '빈 프리셋 '+(i+1))+'</b>'+(p ? '<button class="pr-ed" data-pr-name="'+i+'">✏️</button>' : '')+'</div>'
       + (p ? '<div class="pr-grid">'+[0,1,2].map(j=>ic(ks[j])).join('')+'<i></i>'+[3,4,5].map(j=>ic(ks[j])).join('')+'</div>'+(lost ? '<div class="sub" style="font-size:10px; color:#ffb0b0;">이 화면에선 '+lost+'마리 못 씀 → 빈칸</div>' : '') : '')
       + '<div class="pr-btns">'+(p ? '<button class="btn small" data-pr-load="'+i+'">불러오기</button>' : '')+'<button class="btn secondary small" data-pr-save="'+i+'">'+(p ? '지금 진형으로 덮어쓰기' : '지금 진형 저장')+'</button>'+(p ? '<button class="btn secondary small" data-pr-del="'+i+'">삭제</button>' : '')+'</div></div>'; };
@@ -8810,7 +8869,7 @@ function tile(key){ // 정령 탭 보유 목록·출정 대기 목록 — 개수
   const owned = ownedCount(key), away = dispatchedCount(key);
   const disc = state.discovered[key];
   const sp = SPIRITS[key];
-  const info = RARITY_INFO[sp.rarity];
+  const info = RARITY_INFO[spRar(sp)];
   if(!disc){
     return '<div class="species-tile undiscovered"><div class="icon">❔</div><div class="name">???</div></div>';
   }
@@ -8818,9 +8877,9 @@ function tile(key){ // 정령 탭 보유 목록·출정 대기 목록 — 개수
   return '<div class="species-tile'+(owned<=0 && away>0 ? ' away' : '')+'" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0 ? '<div class="count">x'+owned+'</div>' : (away>0 ? '<div class="count" style="color:#57d3ff;">'+uiIc('dispatch')+'</div>' : ''))
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
-    + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
+    + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
     + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+enhShowHtml(key)+' '+awakenStars(key)+'</div>' : '')
     + '</div>';
 }
@@ -8828,13 +8887,13 @@ function dexTile(key){ // (v266) 도감 전용 — 그림·속성·이름만
   const owned = ownedCount(key);
   const disc = state.discovered[key];
   const sp = SPIRITS[key];
-  const info = RARITY_INFO[sp.rarity];
+  const info = RARITY_INFO[spRar(sp)];
   if(!disc){
     return '<div class="species-tile dx undiscovered"><div class="icon av"><span style="font-size:.7em; color:var(--sub);">?</span></div><div class="name">???</div></div>'; // 발견한 칸과 높이를 맞춤
   }
   // (v266) 도감은 그림·속성·이름만 — 등급은 테두리와 이름 색으로 (개수·강화·특성 딱지는 정령 탭에서)
   return '<div class="species-tile dx" '+(owned>0?('data-manage="'+key+'"'):'')+' title="'+info.name+'">'
-    + '<div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name" style="color:'+info.color+';">'+sp.name+'</div>'
     + '</div>';
 }
@@ -8848,7 +8907,7 @@ function recentSummonRowHtml(){
   list.forEach(key=>{
     const sp = SPIRITS[key];
     if(!sp) return;
-    const info = RARITY_INFO[sp.rarity];
+    const info = RARITY_INFO[spRar(sp)];
     html += '<div data-recent-summon="'+key+'" style="cursor:pointer; flex-shrink:0; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--panel2); border:2px solid '+info.color+'; overflow:hidden;">'+spArt(sp)+'</div>';
   });
   html += '</div></div>';
@@ -8916,16 +8975,15 @@ function renderSummonTab(){
 function showPickTicketModal(tk, sel){
   const r = TICKET_INFO[tk].pick, keys = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity===r).sort((a,b)=>ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element) || (SPIRITS[a].variant<SPIRITS[b].variant?-1:1));
   let h = '<h3 style="text-align:center;">'+TICKET_INFO[tk].icon+' '+TICKET_INFO[tk].name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">받을 정령 선택 · 보유 '+ticketCount(tk)+'장</div><div class="pick-grid">';
-  h += keys.map(k=>{ const sp = SPIRITS[k], kit = LINE_KITS[sp.element+'_'+sp.variant]; return '<button class="pick-cell'+(sel===k?' on':'')+'" data-pk="'+k+'"><span class="av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span><b>'+sp.name+'</b><small>'+kit.role+' · 보유 '+ownedCount(k)+'</small></button>'; }).join('');
+  h += keys.map(k=>{ const sp = SPIRITS[k], kit = LINE_KITS[sp.element+'_'+sp.variant]; return '<button class="pick-cell'+(sel===k?' on':'')+'" data-pk="'+k+'"><span class="av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span><b>'+sp.name+'</b><small>'+kit.role+' · 보유 '+ownedCount(k)+'</small></button>'; }).join('');
   h += '</div><button id="pickGo" class="btn gold sticky-ok" style="margin-top:10px;" '+(sel?'':'disabled')+'>'+(sel ? SPIRITS[sel].name+' 받기' : '정령 선택')+'</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', ()=>showPickTicketModal(tk, b.dataset.pk)));
   const go = document.getElementById('pickGo'); if(go && sel) go.addEventListener('click', ()=>{
     if(ticketCount(tk)<=0){ toast('선택권 없음'); return; }
-    state.tickets[tk] -= 1; const isNew = !state.discovered[sel];
-    state.owned[sel] = (state.owned[sel]||0) + 1; state.discovered[sel] = true;
-    checkAchievements(); save(); render(); showResultModal(SPIRITS[sel], isNew, null, {});
+    state.tickets[tk] -= 1; const g = gainSpirit(sel);
+    checkAchievements(); save(); render(); showResultModal(SPIRITS[sel], g.isNew, null, {mem:g.mem});
   });
 }
 function equipBtnHtml(id, label, costLabel, count, enough, extraStyle){
@@ -9479,7 +9537,7 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+'</div><div>'+sp.name+'</div></div>';
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+'</div><div>'+sp.name+'</div></div>';
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 <img class="uic" src="assets/ui/ic_check.webp" alt="">. labelFn(tier) = 보상 표기
 // (v246) 보상 창 공통 줄 — [이름·조건] [보상] [상태] 한 줄씩. 받을 수 있는 줄은 줄 전체를 눌러서 받기
@@ -10754,8 +10812,8 @@ const EXP_ROSTER_MAX = 8;
 let expRosterPick = null;
 function rosterPickTileHtml(k, picked, extra, num){
   const sp = SPIRITS[k];
-  return '<button class="roster-pick r-'+sp.rarity+(picked?' picked':'')+'" data-exp-pick="'+k+'" style="border-color:'+RARITY_INFO[sp.rarity].color+'88; background:linear-gradient(160deg,'+RARITY_INFO[sp.rarity].color+'2a,#1e1c40 80%);">'
-    + '<span class="pick-check">'+(num || '✓')+'</span><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
+  return '<button class="roster-pick r-'+spRar(sp)+(picked?' picked':'')+'" data-exp-pick="'+k+'" style="border-color:'+RARITY_INFO[sp.rarity].color+'88; background:linear-gradient(160deg,'+RARITY_INFO[sp.rarity].color+'2a,#1e1c40 80%);">'
+    + '<span class="pick-check">'+(num || '✓')+'</span><div class="ico"><div class="icon av r-'+spRar(sp)+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
     + '<div class="nm">'+sp.name+'</div>'+(extra || '<div class="pw"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(k))+(enhanceLevel(k)?'<span class="lv">+'+enhanceLevel(k)+'</span>':'')+'</div>')+'</button>';
 }
 function showExpeditionRosterPicker(){
@@ -11540,7 +11598,7 @@ function dispatchAwayHtml(filter){
 }
 function dispatchAwayTilesHtml(filter){ // (v267) 격자형 고르기 창용 — 누를 수 없는 흐린 칸
   return dispatchAwayKeys(filter).map(k=>{ const sp = SPIRITS[k], left = dispatchReturnLeft(k);
-    return '<div class="roster-pick away" style="opacity:.5; cursor:default; border-color:#57d3ff66; background:#1e1c40;"><div class="ico"><div class="icon av r-'+sp.rarity+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
+    return '<div class="roster-pick away" style="opacity:.5; cursor:default; border-color:#57d3ff66; background:#1e1c40;"><div class="ico"><div class="icon av r-'+spRar(sp)+'" style="font-size:24px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div></div>'
       + '<div class="nm">'+sp.name+'</div><div class="pw" style="color:#57d3ff; white-space:nowrap;">'+uiIc('dispatch')+' '+(left>0 ? fmtLeft(left) : '도착')+'</div></div>'; }).join('');
 }
 function dispatchedCount(k){ const d = state.dispatch; if(!d || !Array.isArray(d.slots)) return 0; let n = 0; d.slots.forEach(s=>(s.keys||[]).forEach(x=>{ if(x===k) n++; })); return n; }
@@ -12247,7 +12305,7 @@ function expMapHtml(run){
 function spendTxt(c){ const p = [];
   if(c.star) p.push(SHARD_IC+' 별빛 조각 <b>'+c.star+'</b>'); if(c.essence) p.push(uiIc('essence')+' 정수 <b>'+c.essence+'</b>'); if(c.stone) p.push(uiIc('stone')+' 강화석 <b>'+c.stone+'</b>');
   if(c.shards) p.push(uiIc('shard')+' 정령 파편 <b>'+c.shards+'</b>'); if(c.upStone) p.push(uiIc('upstone')+' 룬 승급석 <b>'+c.upStone+'</b>'); if(c.wbGems) p.push(uiIc('wbgem')+' 세계 룬석 <b>'+c.wbGems+'</b>');
-  if(c.tk) p.push(TICKET_INFO[c.tk].icon+' '+TICKET_INFO[c.tk].name+' <b>'+(c.n||1)+'</b>장'); if(c.copies) p.push('같은 정령 <b>'+c.copies+'</b>마리');
+  if(c.tk) p.push(TICKET_INFO[c.tk].icon+' '+TICKET_INFO[c.tk].name+' <b>'+(c.n||1)+'</b>장'); if(c.copies) p.push('같은 정령 <b>'+c.copies+'</b>마리'); if(c.mem) p.push(memIc(c.memKey)+' 기억 조각 <b>'+c.mem+'</b>');
   return p.join(' · '); }
 function spendAsk(title, c, fn, ok){ if(ok===false || (state.settings && state.settings.spendAsk===false)){ fn(); return; } confirmBox(title, spendTxt(c)+' 사용', '사용', fn); }
 // (v268) 확인창 — 실수로 누르면 되돌리기 어려운 동작(런 포기·전투 나가기) 전에 한 번 더 묻기
@@ -13007,7 +13065,8 @@ const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 �
   rare:     {c2:'#57d3ff', stars:2, rev:0.6,  rays:0, particles:10, glow:24, flash:0.45, sfx:'summonRare'},
   epic:     {c2:'#6b6bff', stars:3, rev:0.95, rays:1, particles:20, glow:36, flash:0.75, sfx:'summonEpic'},
   legendary:{c2:'#ff9657', stars:4, rev:1.2,  rays:2, particles:30, glow:48, flash:1,    sfx:'summonLegend'},
-  mythic:   {c2:'#ffcd57', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'}
+  mythic:   {c2:'#ffcd57', stars:5, rev:1.4,  rays:2, particles:40, glow:58, flash:1,    sfx:'summonLegend'},
+  astral:   {c2:'#7affc8', stars:5, rev:1.6,  rays:2, particles:48, glow:64, flash:1,    sfx:'summonLegend'}
 };
 function summonVars(rarity, revOverride){ const hex = RARITY_HEX[rarity], t = SUMMON_THEME[rarity]; return '--rc:'+hex+'; --rc2:'+t.c2+'; --rca:'+hex+'66; --rcb:'+hex+'2e; --glow:'+t.glow+'px; --rev:'+(revOverride||t.rev)+'s; --flash:'+t.flash+';'; }
 function walletTicketHtml(opts){ if(opts && opts.star) return '<span>'+SHARD_IC+' '+(state.starShard||0)+'</span>'; const k = (opts && opts.ticketKey) || 'summon'; return ticketCount(k)>0 ? '<span>'+TICKET_INFO[k].icon+' '+ticketCount(k)+'</span>' : ''; }
@@ -13016,9 +13075,9 @@ function showResultModal(sp, isNew, again, opts){
   const custom = opts && opts.custom; // 장비 등 정령이 아닌 대상: {icon, sub, own}
   const fuse = opts && opts.fuse; // 합성 연출: 재료 3개가 중앙으로 모여든 뒤 결과 카드 공개
   const fail = !!(opts && opts.fail); // (v232) 합성 실패도 성공과 똑같이 모여드는 연출 뒤에 공개(처음부터 실패를 알 수 없게)
-  const revT = fuse ? Math.max(SUMMON_THEME[sp.rarity].rev, 1.1) : SUMMON_THEME[sp.rarity].rev;
+  const revT = fuse ? Math.max(SUMMON_THEME[custom ? sp.rarity : spRar(sp)].rev, 1.1) : SUMMON_THEME[custom ? sp.rarity : spRar(sp)].rev;
   const key = sp.element+'_'+sp.rarity+'_'+sp.variant;
-  const t = SUMMON_THEME[sp.rarity], info = RARITY_INFO[sp.rarity], passive = custom ? null : passiveFor(key);
+  const vr = custom ? sp.rarity : spRar(sp), t = SUMMON_THEME[vr], info = RARITY_INFO[vr], passive = custom ? null : passiveFor(key), memG = opts && opts.mem; // (v335) 성좌 표시 · 이미 있는 신화는 기억 조각
   const own = custom ? 0 : ownedCount(key);
   let fx = '';
   for(let i=0;i<(fail?0:t.particles);i++){
@@ -13028,23 +13087,23 @@ function showResultModal(sp, isNew, again, opts){
   const stars = Array.from({length:t.stars},(_,i)=>'<span style="--i:'+i+';">★</span>').join('');
   const canAgain = again && (opts && opts.canAgain ? opts.canAgain() : canSummonOnce());
   document.getElementById('modalRoot').innerHTML =
-    '<div class="modal-bg summon-bg'+(sp.rarity==='mythic'?' rainbow':'')+'" id="modalBg" style="'+summonVars(sp.rarity, revT)+'">'
+    '<div class="modal-bg summon-bg'+(vr==='mythic'||vr==='astral'?' rainbow':'')+'" id="modalBg" style="'+summonVars(vr, revT)+'">'
     + '<div class="sm-wallet"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+state.essence+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+(state.enhanceStone||0)+'</span>'+walletTicketHtml(opts)+'</div>'
     + '<div class="summon-stage" id="smStage">'
     + '<div class="sm-halo"></div>'
-    + (!fail && sp.rarity==='mythic' ? '<div class="sm-burst"></div>' : '') // (v318) 신화 광채 그림
+    + (!fail && (vr==='mythic'||vr==='astral') ? '<div class="sm-burst"></div>' : '') // (v318) 신화 광채 그림
     + (!fail && t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (!fail && t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
     + (fuse ? (fail ? '<div class="sm-title fail">💨 합성 실패…</div>' : '<div class="sm-title">✨ 합성 성공!</div>')+[[-120,-70],[120,-70],[0,120]].map((p,i)=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div>').join('') : '')
     + '<div class="sm-orb"></div><div class="sm-ring"></div><div class="sm-ring r2"></div>' + fx
     + '<div class="sm-flash'+(fail?' fail':'')+'"></div>'
-    + '<div class="sm-card'+(fail?' fail':(t.rays>=1||sp.rarity==='rare'?' shine':''))+'">'
+    + '<div class="sm-card'+(fail?' fail':(t.rays>=1||sp.rarity==='rare'?' shine':''))+(vr==='astral'?' astral':'')+'">'
     + (isNew ? '<div class="sm-new">NEW</div>' : '')
     + '<div class="sm-stars">'+(fail?'':stars)+'</div>'
     + '<div class="sm-icon">'+(custom ? custom.icon : spArt(sp))+'</div>'
     + '<div class="sm-rarity">'+(fail?'실패':info.name)+'</div>'
     + '<div class="sm-name">'+sp.name+'</div>'
     + '<div class="sm-pass">'+(custom ? custom.sub : ELEMENT_INFO[sp.element].name+(passive ? ' · '+passive.icon+' '+passive.name : ''))+'</div>'
-    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? (fuse.label || fuse.name+' ×3 합성')+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : '보유 '+own)))+'</div>'
+    + '<div class="sm-own">'+(custom ? custom.own : (fuse ? (fuse.label || fuse.name+' ×3 합성')+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : (memG ? '이미 있음 → '+memIc(key)+' 기억 조각 +'+memG : '보유 '+own))))+'</div>'
     + '</div>'
     + '<div class="sm-actions">'
     + (again ? '<button class="btn" id="smAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 한 번 더 '+summonCostLabel())+'</button>' : '')
@@ -13057,9 +13116,10 @@ function showResultModal(sp, isNew, again, opts){
 }
 function showMultiResultModal(keys, isNewFlags, again, opts){
   window.__modalScrollReset = true;
-  const infoOf = (opts && opts.info) ? opts.info : (k)=>({rarity:SPIRITS[k].rarity, icon:spArt(SPIRITS[k]), name:SPIRITS[k].name});
+  const infoOf = (opts && opts.info) ? opts.info : (k)=>({rarity:spRar(SPIRITS[k]), icon:spArt(SPIRITS[k]), name:SPIRITS[k].name});
+  const memF = (opts && opts.mem) || [];
   const stagger = 150, startAt = 350; // ms
-  const order = ['mythic','legendary','epic','rare','common'];
+  const order = ['astral','mythic','legendary','epic','rare','common'];
   const best = order.find(r=>keys.some(k=>infoOf(k).rarity===r));
   const counts = {}; keys.forEach(k=>{ const r = infoOf(k).rarity; counts[r] = (counts[r]||0)+1; });
   const chips = order.filter(r=>counts[r]).map(r=>'<span class="mt-chip" style="border-color:'+RARITY_HEX[r]+'; color:'+RARITY_HEX[r]+';"><i style="background:'+RARITY_HEX[r]+'"></i>'+RARITY_INFO[r].name+' '+counts[r]+'</span>').join('');
@@ -13075,12 +13135,13 @@ function showMultiResultModal(keys, isNewFlags, again, opts){
       + '<div class="st">'+'★'.repeat(t.stars)+'</div>'
       + '<div class="nm">'+sp.name+'</div>'
       + '<div class="rl" style="background:'+hex+';">'+RARITY_INFO[sp.rarity].name+'</div>'
+      + (memF[idx] ? '<div class="mt-mem">'+memIc(key)+'+'+memF[idx]+'</div>' : '')
       + '</div>';
   });
   grid += '</div>';
   const canAgain = again && (opts && opts.canAgain ? opts.canAgain() : canSummonMulti());
   document.getElementById('modalRoot').innerHTML =
-    '<div class="modal-bg wide summon-bg'+(best==='mythic'?' rainbow':'')+'" id="modalBg" style="'+summonVars(best)+'">'
+    '<div class="modal-bg wide summon-bg'+(best==='mythic'||best==='astral'?' rainbow':'')+'" id="modalBg" style="'+summonVars(best)+'">'
     + '<div class="sm-flash" style="--rev:0s;"></div>'
     + '<div class="sm-wallet"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+state.essence+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+(state.enhanceStone||0)+'</span>'+walletTicketHtml(opts)+'</div>'
     + '<div class="modal wide" style="text-align:center; position:relative; z-index:2; background:linear-gradient(160deg,#2a2660ee,#1d1b48ee);">'
@@ -13154,7 +13215,7 @@ function spiritLineHtml(key){
 }
 function showManageModal(key){
   const sp = SPIRITS[key];
-  const info = RARITY_INFO[sp.rarity];
+  const info = RARITY_INFO[spRar(sp)];
   const lvl = enhanceLevel(key);
   const maxLvl = maxEnhanceFor(key);
   const maxed = lvl>=maxLvl;
@@ -13162,7 +13223,7 @@ function showManageModal(key){
   const canEnhance = !maxed && state.essence>=cost.essence && (state.enhanceStone||0)>=cost.stone;
   let html = '<div style="text-align:center;">';
   html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
-  html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+awakenStars(key)+'</h3>';
+  html += '<h3>'+sp.name+' <span class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+awakenStars(key)+'</h3>';
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
@@ -13173,15 +13234,17 @@ function showManageModal(key){
   html += runeManageHtml(key);
   html += equipSlotsHtml(key);
   const trRow = transOpen(key) || (transLevel(key)>0 && maxed); // (v310) 강화를 다 하면 강화 줄이 초월 줄로 바뀜
-  if(trRow){ const tl = transLevel(key), canT = tl<TRANS_MAX && awakenSpare(key)>0 && state.essence>=transCost(key).essence;
+  if(trRow){ const tl = transLevel(key), canT = tl<TRANS_MAX && copyHave(key, transCost(key)) && state.essence>=transCost(key).essence;
     html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 <span class="tr-num">+'+(lvl+tl)+'</span></b><span class="sub">/ '+(lvl+TRANS_MAX)+(tl ? ' · 공·체 +'+Math.round(tl*TRANS_STEP*100)+'%' : ' · 강화 다음 단계')+'</span><span class="aw-go'+(canT?' on':'')+'">'+(tl>=TRANS_MAX ? '최대' : (canT?'초월 가능 ':'')+'자세히')+' ›</span></button>'; }
   else html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
-  { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && awakenSpare(key)>=ac.copies && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
-    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>'; }
+  { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && copyHave(key, ac) && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
+    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>';
+    if(memSpirit(key)){ const as = isAstral(key), canA = astralCan(key) && memCount(key)>=ASTRAL_MEM && state.essence>=ASTRAL_ESSENCE; // (v335) 성좌 승급 · 기억 조각
+      html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 조각 '+ASTRAL_MEM : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span></button>'; } }
   { // (v298) 각인 · 초월
     const e = engrState(key), ok = awakenLevel(key)>=AWAKEN_MAX, tl = transLevel(key);
     html += '<button class="aw-row eg-row" id="engrOpenBtn">✨<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
-    if(transLevel(key)>0 && !maxed) html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 '+tl+'단계</b><span class="sub">'+(ok ? (tl ? '공격·체력 +'+Math.round(tl*TRANS_STEP*100)+'%' : '각성 5단계 달성 · 도전 가능') : '각성 5단계 뒤에 열림')+'</span><span class="aw-go'+(ok && tl<TRANS_MAX && awakenSpare(key)>0 ?' on':'')+'">'+(tl>=TRANS_MAX?'최대':'자세히')+' ›</span></button>'; } // 예전에 강화를 덜 하고 초월한 정령만 따로 줄
+    if(transLevel(key)>0 && !maxed) html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 '+tl+'단계</b><span class="sub">'+(ok ? (tl ? '공격·체력 +'+Math.round(tl*TRANS_STEP*100)+'%' : '각성 5단계 달성 · 도전 가능') : '각성 5단계 뒤에 열림')+'</span><span class="aw-go'+(ok && tl<TRANS_MAX && copyHave(key, transCost(key)) ?' on':'')+'">'+(tl>=TRANS_MAX?'최대':'자세히')+' ›</span></button>'; } // 예전에 강화를 덜 하고 초월한 정령만 따로 줄
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
     html += '<div class="mg-acts">'
       + (sp.rarity!=='mythic' ? '<button class="btn secondary" id="toFuseBtn" '+(lk?'disabled':'')+'>'+uiIc('fuse')+'<span>합성</span></button>' : '')
@@ -13199,6 +13262,7 @@ function showManageModal(key){
   { const ao = document.getElementById('awOpenBtn'); if(ao) ao.addEventListener('click', ()=>showAwakenModal(key)); }
   { const eg = document.getElementById('engrOpenBtn'); if(eg) eg.addEventListener('click', ()=>showSubModal('sp', key, ()=>showManageModal(key))); }
   { const tr = document.getElementById('transOpenBtn'); if(tr) tr.addEventListener('click', ()=>showTransModal(key)); }
+  { const ab = document.getElementById('astralOpenBtn'); if(ab) ab.addEventListener('click', ()=>showAstralModal(key)); }
   const lkBtn = document.getElementById('spLockBtn');
   if(lkBtn) lkBtn.addEventListener('click', ()=>{ if(!state.lockedSpirits) state.lockedSpirits = {}; if(state.lockedSpirits[key]) delete state.lockedSpirits[key]; else { state.lockedSpirits[key] = true; toast('🔒 잠금 · 합성·분해 재료에서 제외'); } save(); render(); showManageModal(key); });
   const tfBtn = document.getElementById('toFuseBtn');
@@ -13394,7 +13458,7 @@ function showSlotPicker(slotIdx, returnFn, enemyEl, rosterFilter, lineup){
     else if(lineup){ const t = lineupThreat(key, lineup); adv = t.weak>=2 ? '<span class="pk-adv down">약 '+t.weak+'</span>' : (t.strong>=2 ? '<span class="pk-adv up">강 '+t.strong+'</span>' : ''); }
     html += '<div class="pk-tile '+(e.isCur?'cur':(free>0?'avail':'busy'))+'" data-pick="'+key+'" data-pk-info="'+key+'" title="'+sp.name+' · '+kit.role+'">'
       + '<span class="pk-tl-tag">'+enhTag(key)+'</span>'+(adv ? '<span class="pk-tl-adv">'+adv+'</span>' : '')
-      + '<div class="av r-'+sp.rarity+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+      + '<div class="av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
       + '<div class="pk-tl-nm">'+(e.isCur ? '📍' : '')+sp.name+'</div>'
       + '<div class="pk-tl-ft"><i class="'+(front?'f':'b')+'">'+kit.role.split('·')[0]+'</i><b>'+fmtCP(spiritCP(key))+'</b></div>'
       + (free<=0 && !e.isCur ? '<div class="pk-tl-busy">칸 '+e.users.join('·')+'</div>' : '')
@@ -13863,6 +13927,12 @@ function sanitizeState(){
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
   Object.keys(s.owned).forEach(k=>{ if(s.owned[k]>0) s.discovered[k] = true; });
+  { const M = {}; if(isPlainObj(s.mem)) Object.keys(s.mem).forEach(k=>{ const v = s.mem[k]; if(SPIRITS[k] && SPIRITS[k].rarity==='mythic' && fin(v) && v>0) M[k] = Math.min(1e6, Math.floor(v)); }); s.mem = M; } // (v335) 기억 조각
+  { const A = {}; if(isPlainObj(s.astral)) Object.keys(s.astral).forEach(k=>{ if(SPIRITS[k] && SPIRITS[k].rarity==='mythic' && !SPIRITS[k].limited && s.astral[k]) A[k] = 1; }); s.astral = A; } // (v335) 성좌 승급한 신화
+  if(!s.memInst){ // (v335) 한 번만: 신화는 1마리만 — 남는 사본은 마리당 기억 조각 50 (파견 중인 사본만큼은 남김)
+    const need = {}; if(s.dispatch && Array.isArray(s.dispatch.slots)) s.dispatch.slots.forEach(x=>{ if(x && Array.isArray(x.keys)) x.keys.forEach(k=>{ need[k] = (need[k]||0)+1; }); });
+    Object.keys(s.owned).forEach(k=>{ if(SPIRITS[k].rarity!=='mythic') return; const keep = Math.max(1, need[k]||0), n = s.owned[k]; if(n>keep){ s.mem[k] = (s.mem[k]||0) + (n-keep)*MEM_PER_COPY; s.owned[k] = keep; } });
+    s.memInst = 1; }
   Object.keys(s.enhanceLevel).forEach(k=>{ const v = s.enhanceLevel[k]; if(!SPIRITS[k] || !fin(v) || v<=0) delete s.enhanceLevel[k]; else s.enhanceLevel[k] = Math.min(Math.floor(v), maxEnhanceFor(k)); });
   s.recentSummons = s.recentSummons.filter(k=>typeof k==='string' && SPIRITS[k]).slice(0,8);
   s.recentEquips = Array.isArray(s.recentEquips) ? s.recentEquips.filter(k=>typeof k==='string' && /^[a-z]+_[a-z]+_[a-z]+$/.test(k)).slice(0,8) : []; // (v296)
