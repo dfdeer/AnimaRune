@@ -8237,7 +8237,7 @@ function renderPickupTab(){
   if(!on) h += '<div class="pu-off">📡 픽업 소환은 온라인일 때만 가능</div>';
   h += '<div class="pu-btns"><button class="btn" id="puOne" '+(canPickup(1)?'':'disabled')+'>1회 '+SHARD_IC+' '+PICKUP_COST+'</button><button class="btn gold" id="puTen" '+(canPickup(10)?'':'disabled')+'>10회 '+SHARD_IC+' '+PICKUP_COST*10+'</button></div>';
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>';
-  h += '<div class="pu-rate">신화·성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 픽업) · 레전더리 '+PICKUP_RATES[1].w+'% · 에픽 '+PICKUP_RATES[2].w+'% · 레어 '+PICKUP_RATES[3].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(sp.limited ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>';
+  h += '<div class="pu-rate">신화·성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 픽업) · 레전더리 '+PICKUP_RATES[1].w+'% · 에픽 '+PICKUP_RATES[2].w+'% · 레어 '+PICKUP_RATES[3].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
   h += '</div>';
   return h;
 }
@@ -10077,6 +10077,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:350, v:'5.0.5', date:'2026-10-03', secs:[
+    { t:'픽업', items:[ '두 정령을 넘겨 볼 때 그림 크기가 달라지던 것 수정' ]}
+  ]},
   { build:349, v:'5.0.4', date:'2026-10-03', secs:[
     { t:'우편', items:[ '5.0.0 업데이트 기념 별빛 조각 100개 (10월 17일까지 접속하면 우편함에)' ]},
     { t:'픽업', items:[ '고른 정령 휘장이 그림 앞에 보이게' ]}
@@ -14889,7 +14892,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 349, APP_VERSION = '5.0.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 350, APP_VERSION = '5.0.5'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
