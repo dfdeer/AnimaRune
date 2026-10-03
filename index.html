@@ -170,7 +170,7 @@
   .pu-card{position:relative; text-align:center; padding:4px 34px 6px; animation:webIn .3s ease-out;}
   .pu-art{height:var(--puh,250px); display:flex; align-items:flex-end; justify-content:center;} .pu-art .spimg{width:var(--puh,250px); height:var(--puh,250px); object-fit:contain; filter:drop-shadow(0 0 18px color-mix(in srgb, var(--ec) 70%, transparent)) drop-shadow(0 8px 10px #000a); animation:puFloat 3s ease-in-out infinite;}
   @keyframes puFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);}}
-  .pu-rar{margin-top:4px; font-size:15px; letter-spacing:2px; color:#ff5777; text-shadow:0 0 6px #ff577799, 0 1px 2px #000c;}
+  .pu-rar{margin-top:4px; font-size:15px; letter-spacing:2px; color:#ff5777; text-shadow:0 0 6px #ff577799, 0 1px 2px #000c;} .pu-rar.astral{color:#c9a6ff; text-shadow:0 0 6px #c9a6ffcc, 0 0 12px #8fd4ff66, 0 1px 2px #000c;} /* (v5.1.0) 성좌 별은 성좌 색 */
   .pu-nm{font-size:24px; font-weight:900; margin-top:4px; text-shadow:0 2px 6px #000c;} .pu-sub{font-size:12px; color:#fffc; margin-top:2px;}
   .pu-nav{position:absolute; top:40%; z-index:2; width:34px; height:50px; border-radius:12px; border:1px solid #ffffff33; background:#0006; color:#fff; font-size:28px; line-height:1;} .pu-nav.l{left:-2px;} .pu-nav.r{right:-2px;}
   .pu-pick{display:flex; justify-content:center; gap:10px; margin-top:10px;}
@@ -8128,7 +8128,7 @@ function doMythicTicket(){ if(ticketCount('mythic')<=0){ toast('신화 확정권
 // 반달(한국 시각 1~15일 · 16일~말일)마다 신화 2종 · 별빛 조각으로 소환 · 온라인일 때만(서버 시각으로 기간 계산, 폰 시계를 바꿔 다음 픽업을 미리 뽑지 못하게)
 // 천장: 신화 없이 80회째는 아무 신화 확정 · 신화가 고른 픽업이 아니었으면 다음 신화는 고른 픽업 확정(최악 160회) · 천장 횟수는 다음 픽업으로 이어짐
 const PICKUP_COST = 10, PICKUP_PITY = 80, PICKUP_SEL_RATE = 0.5, PICKUP_DUP_REFUND = 100;
-const PICKUP_RATES = [ {r:'mythic', w:1.5}, {r:'legendary', w:3.5}, {r:'epic', w:15}, {r:'rare', w:80} ];
+const PICKUP_RATES = [ {r:'astral', w:0.6}, {r:'mythic', w:0.9}, {r:'legendary', w:3.5}, {r:'epic', w:15}, {r:'rare', w:80} ]; // (v5.1.0) 성좌(이번 픽업 둘)와 신화(그 밖의 신화)를 따로 · 천장은 성좌만 (사용자 결정)
 const PICKUP_PAIRS = [ ['fire_mythic_a','water_mythic_b'], ['wood_mythic_a','light_mythic_b'], ['dark_mythic_a','fire_mythic_b'], ['water_mythic_a','wood_mythic_b'], ['light_mythic_a','dark_mythic_b'] ];
 const PICKUP_P0 = (2026*12+9)*2; // 2026년 10월 1~15일 = 첫 픽업
 // (v343) 한정 성좌 픽업 — 한 기간에 한정 1 + 짝 신화 1 (짝은 같이 쓰기 좋은 기존 신화로 고정)
@@ -8161,15 +8161,13 @@ function pickupPeriod(ms){ // 지금(또는 ms) 픽업 기간 — 번호 · 신�
 function pickupLeftText(ms){ const m = Math.floor(ms/60000), d = Math.floor(m/1440), h = Math.floor((m%1440)/60); return d>0 ? d+'일 '+h+'시간' : (h>0 ? h+'시간 '+(m%60)+'분' : Math.max(1, m%60)+'분'); }
 function pickupLeftShort(ms){ const m = Math.floor(ms/60000), d = Math.floor(m/1440), h = Math.floor((m%1440)/60); return d>0 ? d+'일' : (h>0 ? h+'시간' : Math.max(1, m)+'분'); }
 function pickupState(){ const pk = state.pickup = state.pickup || { pity:0, guar:false, sel:'' }; const per = pickupPeriod(); if(!per.pair.includes(pk.sel)) pk.sel = per.pair[0]; return pk; }
-function pickupRoll(pk){ // 한 번 뽑기 → 정령 키
-  const forceMyth = pk.pity + 1 >= PICKUP_PITY;
-  const r = forceMyth ? 'mythic' : weightedPick(PICKUP_RATES);
-  if(r!=='mythic'){ pk.pity += 1; return ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_'+r+'_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)]; }
-  let key;
-  if(pk.guar || Math.random() < PICKUP_SEL_RATE) key = pk.sel;
-  else key = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_mythic_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)]; // 아무 신화 (고른 픽업이 나올 수도 있음)
-  pk.guar = key!==pk.sel; pk.pity = 0;
-  return key;
+function pickupRoll(pk){ // 한 번 뽑기 → 정령 키 · (v5.1.0) 천장(pity)·반천장(guar)은 성좌(이번 픽업 둘)만
+  const pair = pickupPeriod().pair, forceAst = pk.pity + 1 >= PICKUP_PITY;
+  const r = forceAst ? 'astral' : weightedPick(PICKUP_RATES);
+  if(r==='astral'){ const other = pair.find(k=>k!==pk.sel) || pk.sel, key = (pk.guar || Math.random() < PICKUP_SEL_RATE) ? pk.sel : other; pk.guar = key!==pk.sel; pk.pity = 0; return key; }
+  pk.pity += 1;
+  if(r==='mythic'){ const pool = ELEMENTS.flatMap(e=>VARIANTS.map(v=>e+'_mythic_'+v)).filter(k=>SPIRITS[k] && !pair.includes(k)); return pool[Math.floor(Math.random()*pool.length)]; } // 이번 픽업이 아닌 신화 (신화로 나옴)
+  return ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_'+r+'_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
 }
 function canPickup(n){ return pickupOnline() && (state.starShard||0) >= PICKUP_COST*n; }
 function doPickup(n){
@@ -8229,16 +8227,16 @@ function renderPickupTab(){
   h += '<div class="pu-page">';
   h += '<div class="pu-leftrow"><span class="pu-left">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 남음' : '📡 오프라인')+'</span></div>';
   h += '<div class="pu-stage" style="--ec:'+ELEMENT_INFO[el].color+';"><button class="pu-nav l" data-pu="-1" aria-label="이전">‹</button>'
-    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub">'+'<b class="as-name">성좌</b>'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
+    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar'+(spRar(sp)==='astral'?' astral':'')+'">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub">'+'<b class="as-name">성좌</b>'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
     + '<button class="pu-nav r" data-pu="1" aria-label="다음">›</button></div>';
   h += '<div class="pu-pick">'+per.pair.map((x,i)=>'<button class="pu-th'+(i===pickupView?' on':'')+'" data-puv="'+i+'" style="--ec:'+ELEMENT_INFO[SPIRITS[x].element].color+';">'+spArt(SPIRITS[x])+'<b>'+SPIRITS[x].name+'</b></button>').join('')+'</div>';
   h += '<div class="pu-sel">160회 안에 <b>'+sp.name+'</b> 확정 · 넘겨서 고르기</div>';
-  h += '<div class="pu-pity"><div class="pu-pt"><span>신화 확정까지</span><b>'+(PICKUP_PITY-pk.pity)+'회</b></div><div class="pu-barw"><div class="pu-bar"><i style="width:'+(pk.pity/PICKUP_PITY*100)+'%"></i></div><img class="pu-gem'+(PICKUP_PITY-pk.pity<=10?' near':'')+'" src="assets/ui/deco_pity_gem.webp" alt="" draggable="false"></div>'
-    + '<div class="pu-note">'+(pk.guar ? '✅ 다음 신화·성좌는 <b>'+sp.name+'</b> 확정 (80회 안)' : '고른 픽업이 아닌 신화가 나오면, 다음 80회 안에 고른 픽업 확정')+'</div></div>';
+  h += '<div class="pu-pity"><div class="pu-pt"><span>성좌 확정까지</span><b>'+(PICKUP_PITY-pk.pity)+'회</b></div><div class="pu-barw"><div class="pu-bar"><i style="width:'+(pk.pity/PICKUP_PITY*100)+'%"></i></div><img class="pu-gem'+(PICKUP_PITY-pk.pity<=10?' near':'')+'" src="assets/ui/deco_pity_gem.webp" alt="" draggable="false"></div>'
+    + '<div class="pu-note">'+(pk.guar ? '✅ 다음 성좌는 <b>'+sp.name+'</b> 확정 (80회 안)' : '다른 성좌가 나오면, 다음 80회 안에 고른 성좌 확정')+'</div></div>';
   if(!on) h += '<div class="pu-off">📡 픽업 소환은 온라인일 때만 가능</div>';
   h += '<div class="pu-btns"><button class="btn" id="puOne" '+(canPickup(1)?'':'disabled')+'>1회 '+SHARD_IC+' '+PICKUP_COST+'</button><button class="btn gold" id="puTen" '+(canPickup(10)?'':'disabled')+'>10회 '+SHARD_IC+' '+PICKUP_COST*10+'</button></div>';
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>';
-  h += '<div class="pu-rate">신화·성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 픽업) · 레전더리 '+PICKUP_RATES[1].w+'% · 에픽 '+PICKUP_RATES[2].w+'% · 레어 '+PICKUP_RATES[3].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
+  h += '<div class="pu-rate">성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 성좌) · 신화 '+PICKUP_RATES[1].w+'% · 레전더리 '+PICKUP_RATES[2].w+'% · 에픽 '+PICKUP_RATES[3].w+'% · 레어 '+PICKUP_RATES[4].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
   h += '</div>';
   return h;
 }
@@ -10078,6 +10076,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:352, v:'5.1.0', date:'2026-10-03', secs:[
+    { t:'픽업 확률', items:[ '성좌(이번 픽업 둘)와 신화를 따로 — 성좌 0.6% (그중 50%가 고른 성좌) · 신화 0.9% · 레전더리 3.5% · 에픽 15% · 레어 80%', '천장은 성좌만 — 80회 안에 성좌 확정 (예전: 신화·성좌 1.5%, 신화가 나와도 천장 초기화)', '다른 성좌가 나오면 다음 80회 안에 고른 성좌 확정 · 신화는 천장에 영향 없음', '픽업에서 나오는 신화는 이번 픽업이 아닌 신화' ]},
+    { t:'화면', items:[ '성좌 별을 성좌 색으로' ]}
+  ]},
   { build:351, v:'5.0.6', date:'2026-10-03', secs:[
     { t:'픽업', items:[ '등급 표시를 「성좌」로 · 표시 칸 간격 맞춤', '확정 안내 문구 다듬기', '뽑은 뒤 기억 조각 알림이 글자로 깨져 보이던 것 수정' ]},
     { t:'소환', items:[ 'NEW 리본 글자가 리본 띠에 맞게' ]}
@@ -14897,7 +14899,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 351, APP_VERSION = '5.0.6'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 352, APP_VERSION = '5.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
