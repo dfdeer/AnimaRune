@@ -3953,7 +3953,7 @@ function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MO
 const BOSS_IMG_IDS = ['sanc_janus','sanc_castor','sanc_pollux','sanc_echo','sanc_atlas','sanc_prism','sanc_legion','frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 // (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
-const ART_FACE = { sanc_echo:'R', sanc_atlas:'R', sanc_legion:'R', sanc_castor:'R', sanc_pollux:'R', fire_mythic_sc:'R', fire_mythic_su:'R', water_mythic_hb:'R', light_mythic_as:'R', wood_mythic_sg:'L', dark_mythic_dk:'L', /* (v344) 한정 성좌·성역 쌍둥이 */ dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
+const ART_FACE = { sanc_echo:'R', sanc_atlas:'R', sanc_legion:'R', sanc_castor:'R', sanc_pollux:'R', fire_mythic_sc:'R', fire_mythic_su:'R', water_mythic_hb:'R', light_mythic_as:'R', wood_mythic_sg:'L', dark_mythic_dk:'R', /* (v344) 한정 성좌·성역 쌍둥이 */ dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
   fire_common_b:'L', fire_epic_b:'L', wood_epic_a:'L', wood_mythic_a:'L',
   dark_rare_b:'L', fire_common_a:'L', fire_epic_a:'L', fire_legendary_a:'L', fire_mythic_a:'L', fire_rare_a:'L', fire_rare_b:'L', light_common_b:'L', water_common_b:'L', water_epic_b:'L', water_legendary_b:'L', water_mythic_b:'L', wood_rare_a:'L' };
 function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; return u.side==='enemy' ? f==='R' : f==='L'; }
@@ -8176,11 +8176,12 @@ function doPickup(n){
   if((state.starShard||0) < PICKUP_COST*n){ toast('별빛 조각 부족 ('+(PICKUP_COST*n)+' 필요)'); return; }
   const go = ()=>{
     if(!pickupOnline() || (state.starShard||0) < PICKUP_COST*n) return;
-    const pk = pickupState(), selK = pk.sel; state.starShard -= PICKUP_COST*n;
+    const pk = pickupState(), selK = pk.sel, per = pickupPeriod(); state.starShard -= PICKUP_COST*n;
     const keys = [], flags = [], memF = []; let refund = 0;
     for(let i=0;i<n;i++){ const key = pickupRoll(pk); keys.push(key);
       if(SPIRITS[key].rarity==='mythic' && transLevel(key)>=TRANS_MAX && isAstral(key)){ refund += PICKUP_DUP_REFUND; flags.push(false); memF.push(0); continue; } // 초월·성좌까지 끝낸 신화는 별빛 조각으로 환급
-      const g = gainSpirit(key); flags.push(g.isNew); memF.push(g.mem); }
+      const g = gainSpirit(key); flags.push(g.isNew); memF.push(g.mem);
+      if(per.pair.includes(key) && !isAstral(key)){ state.astral = state.astral || {}; state.astral[key] = 1; } } // (v345) 픽업 짝 신화도 성좌로 나옴 (사용자 결정) — 이미 가진 신화면 그 정령이 성좌로 오름
     keys.forEach(pushRecentSummon); state.starShard += refund;
     if(selK && SPIRITS[selK]) memAdd(selK, PICKUP_MEM_PER_PULL*n); // (v343) 고른 정령 기억 조각
     state.dailyStats.summons += n; passBump('summon', n); state.lifetimeSummons = (state.lifetimeSummons||0) + n;
@@ -8227,7 +8228,7 @@ function renderPickupTab(){
   h += '<div class="pu-page">';
   h += '<div class="pu-leftrow"><span class="pu-left">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 남음' : '📡 오프라인')+'</span></div>';
   h += '<div class="pu-stage" style="--ec:'+ELEMENT_INFO[el].color+';"><button class="pu-nav l" data-pu="-1" aria-label="이전">‹</button>'
-    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub">'+(sp.limited ? '<b class="as-name" style="padding:0 6px; border-radius:6px;">한정 성좌</b>' : '<b style="color:'+RARITY_HEX.mythic+';">신화</b>')+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
+    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub">'+'<b class="as-name" style="padding:0 6px; border-radius:6px;">'+(sp.limited ? '한정 성좌' : '성좌')+'</b>'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
     + '<button class="pu-nav r" data-pu="1" aria-label="다음">›</button></div>';
   h += '<div class="pu-pick">'+per.pair.map((x,i)=>'<button class="pu-th'+(i===pickupView?' on':'')+'" data-puv="'+i+'" style="--ec:'+ELEMENT_INFO[SPIRITS[x].element].color+';">'+spArt(SPIRITS[x])+'<b>'+SPIRITS[x].name+'</b></button>').join('')+'</div>';
   h += '<div class="pu-sel">160회 안에 <b>'+sp.name+'</b> 확정 · 넘겨서 고르기</div>';
@@ -10079,7 +10080,7 @@ const PATCH_NOTES = [
   { build:345, v:'5.0.0', date:'2026-10-03', secs:[
     { t:'성좌 (새 등급)', items:[ '신화 위 새 등급 「성좌」 — 등급 배율 45 (신화 35)', '신화를 각성 5단계까지 키운 뒤 기억 조각 150 · 정수 20,000으로 승급 (이름·기술·그림·키운 것 그대로)', '신화는 같은 정령을 1마리만 가짐 — 또 나오면 기억 조각 50개 · 갖고 있던 남는 신화는 마리당 조각 50개로 바뀜', '신화·성좌의 각성 재료는 기억 조각 (50·50·100·100·150) · 초월은 시도마다 조각 50' ]},
     { t:'한정 성좌 8종', items:[ '처음부터 성좌인 한정 정령 — 픽업에서만 얻음', '스칼렛(화염 · 시한폭탄) · 수르트(화염 · 희생) · 므네모시네(물결 · 되감기) · 하백(물결 · 연결)', '산군(숲결 · 반격) · 아스트라이아(빛 · 별 표식) · 로키(그림자 · 강탈) · 도깨비(그림자 · 자리 바꾸기)' ]},
-    { t:'픽업', items:[ '기간마다 한정 성좌 1 + 짝 신화 1 (지금 기간부터)', '한정 성좌 순서는 무작위 · 방금 나온 정령은 다음·다다음 기간에 안 나옴', '픽업 1회마다 고른 정령의 기억 조각 1개' ]},
+    { t:'픽업', items:[ '기간마다 한정 성좌 1 + 짝 정령 1 (지금 기간부터)', '짝 정령도 픽업에서 뽑으면 성좌로 나옴 — 이미 가진 신화면 그 정령이 성좌로 오름 (기억 조각 50개도 받음)', '한정 성좌 순서는 무작위 · 방금 나온 정령은 다음·다다음 기간에 안 나옴', '픽업 1회마다 고른 정령의 기억 조각 1개' ]},
     { t:'별빛 균열', items:[ '층 목록이 별길 지도로 바뀜', '한정 성좌마다 맞춘 층 구성', '11·12층은 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워지는 보스', '공명: 픽업 둘을 같이 넣으면 둘 다 공격력 +15% (모든 층)', '연계 층 기믹 8종 — 열기 갑옷 · 투지의 시험 · 시간 포식 · 탁류 · 빛 먹는 가죽 · 별 장막 · 근위대 · 덩굴 벽 (자세한 규칙은 준비 창)' ]},
     { t:'화면', items:[ '기믹·유물·파견·도움말 등의 이모지를 그림 아이콘으로 바꿈' ]}
   ]},
@@ -11778,16 +11779,16 @@ function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 
 // 공명: 픽업 둘을 같이 넣으면 둘 다 공격력 +15% (모든 층) · 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
 const RIFT_DUO_FROM = 11, RIFT_RESO = 0.15;
 const RIFT_DUO = {
-  fire_mythic_sc:  { id:'sc', name:'꺼지지 않는 화로', el:'light', art:'lavaLord',    gm:'열기 갑옷', d:'터뜨리는 공격(시한폭탄·발화) 말고는 받는 피해 −50% · 2라운드마다 열기 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 빙결·둔화되면 충전이 꺼짐' },
+  fire_mythic_sc:  { id:'sc', name:'꺼지지 않는 화로', el:'light', art:'lavaLord',    gm:'열기 갑옷', d:'터뜨리는 공격(시한폭탄·발화) 말고는 받는 피해 −65% · 2라운드마다 열기 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 빙결·둔화되면 충전이 꺼짐' },
   fire_mythic_su:  { id:'su', name:'투지를 시험하는 자', el:'wood', art:'frostGiant', gm:'투지의 시험', d:'체력 50%가 넘는 정령의 공격은 받는 피해 −50% · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 체력 50% 이하 정령에게 3번 맞으면 충전이 꺼짐' },
   water_mythic_mn: { id:'mn', name:'시간을 먹는 자', el:'dark', art:'abyssCrystal',  gm:'시간 포식', d:'쓰러져 있는 아군 하나마다 공격력 +25% (되살아나면 빠짐) · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 200% · 그때 도발 중인 아군이 있으면 그 아군이 혼자 공격력 250%로 받아 냄' },
   water_mythic_hb: { id:'hb', name:'탁류의 집행자', el:'fire', art:'shadowLord',     gm:'탁류', d:'연결되지 않은 아군은 받는 회복 절반 · 2라운드마다 공격력이 가장 높은 아군에 처형 표식 → 다음 라운드 시작에 최대체력 60% 피해 (연결이 나눠 받음)' },
-  wood_mythic_sg:  { id:'sg', name:'빛을 삼키는 짐승', el:'water', art:'ancientTree', gm:'빛 먹는 가죽', d:'보호막이 있는 정령의 공격과 반격 말고는 받는 피해 −50% · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 150% · 충전 중 반격을 2번 받으면 충전이 꺼짐' },
+  wood_mythic_sg:  { id:'sg', name:'빛을 삼키는 짐승', el:'water', art:'ancientTree', gm:'빛 먹는 가죽', d:'보호막이 있는 정령의 공격과 반격 말고는 받는 피해 −35% · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 130% · 충전 중 반격을 받으면 충전이 꺼짐' },
   light_mythic_as: { id:'as', name:'별을 가린 장막', el:'dark', art:'abyssCrystal',  gm:'별 장막', d:'터뜨리는 공격(시한폭탄·발화)과 별똥별 말고는 받는 피해 −60% · 라운드 시작마다 최대체력 4% 회복 (화상 중이면 회복 못 함)' },
   dark_mythic_lk:  { id:'lk', name:'그림자 근위대장', el:'light', art:'ruinGuardian', gm:'근위대', d:'근위병 둘이 앞을 막음 · 라운드 시작마다 근위병이 보호막(자기 최대체력 30%)과 강화(공격력 +30%)를 얻음 · 이로운 효과가 남은 근위병이 있으면 보스 받는 피해 −50%' },
   dark_mythic_dk:  { id:'dk', name:'가시덩굴 군주', el:'water', art:'ancientTree', gm:'덩굴 벽', d:'앞줄 덩굴 둘이 보스를 가림 · 쓰러진 덩굴은 2라운드 뒤 다시 자람 · 독이 없는 덩굴 하나마다 라운드 시작에 보스 최대체력 3% 회복' }
 };
-const RIFT_DUO_CHARGE = { sc:1.8, su:1.8, mn:2.0, sg:1.5 }; // 충전 강타 배율
+const RIFT_DUO_CHARGE = { sc:1.8, su:1.8, mn:2.0, sg:1.3 }; // 충전 강타 배율
 LINE_KITS.rduo_boss = { role:'균열 수호자', icon:'🌌', passive:{ name:'없음', desc:()=>'수호자는 정령 특성 없음 (기믹 참고)' },
   s1:{ name:'균열 강타', icon:'💥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%', run:C=>{ C.hit(C.t, 2.0); } },
   s2:{ name:'별의 파동', icon:'🌠', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } };
@@ -11842,9 +11843,9 @@ function applyRiftDuo(sf){ // 라운드 시작마다
 }
 function riftDuoDmgAdjust(sf, a, d, v, opts){
   const S = sf.duo, id = S.id; if(!a || a.side===d.side || !d.isBoss) return v;
-  if(id==='sc') return opts.detonate ? v : v*0.5;
+  if(id==='sc') return opts.detonate ? v : v*0.35;
   if(id==='su'){ if(a.hp <= a.maxHp*0.5){ if(S.charge && ++S.charge.n>=3) S.charge.off = true; return v; } return v*0.5; }
-  if(id==='sg'){ if(opts.counter){ if(S.charge && ++S.charge.n>=2) S.charge.off = true; return v; } return a.st.shield>0 ? v : v*0.5; }
+  if(id==='sg'){ if(opts.counter){ if(S.charge) S.charge.off = true; return v; } return a.st.shield>0 ? v : v*0.65; }
   if(id==='as') return (opts.detonate || opts.starfall) ? v : v*0.4;
   if(id==='lk') return aliveUnits(sf.enemyUnits).some(u=>u.isAdd && (u.st.shield>0 || u.st.buff)) ? v*0.5 : v;
   return v;
