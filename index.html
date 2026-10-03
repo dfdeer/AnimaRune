@@ -717,6 +717,13 @@
   .fx-hit .bu-body{animation:fxHit .4s ease-out .15s;}
   .fx-hit .bu-icon{animation:fxFlash .55s ease-out .15s;}
   .fx-heal .bu-icon{animation:fxGlow .8s ease-out;}
+  /* (v343) 승리·패배 반응 — 이긴 편은 깡충 뛰고, 진 편은 고개를 떨굼 */
+  .bs-won .bu-mine:not(.bu-dead) .bu-icon, .bs-lost .bu-enemy:not(.bu-dead) .bu-icon{animation:buCheer .55s ease-in-out .1s 3 both;}
+  .bs-won .bs-slot:nth-child(even) .bu-mine:not(.bu-dead) .bu-icon, .bs-lost .bs-slot:nth-child(even) .bu-enemy:not(.bu-dead) .bu-icon{animation-delay:.38s;}
+  .bs-lost .bu-mine:not(.bu-dead) .bu-icon, .bs-won .bu-enemy:not(.bu-dead) .bu-icon{animation:buSlump .8s ease-out .2s both;}
+  @keyframes buCheer{0%,100%{transform:translateY(0) scale(1,1);} 15%{transform:translateY(0) scale(1.06,.92);} 45%{transform:translateY(-16%) scale(.96,1.05);} 75%{transform:translateY(0) scale(1.05,.94);}}
+  @keyframes buSlump{to{transform:translateY(5%) rotate(-7deg) scale(.95); filter:saturate(.45) brightness(.8) drop-shadow(0 2px 2px #0005);}}
+  @media (prefers-reduced-motion: reduce){ .bs-won .bu-icon, .bs-lost .bu-icon{animation:none !important;} }
   @keyframes fxLungeUp{0%{transform:translateX(0)} 35%{transform:translateX(24px) scale(1.1)} 100%{transform:translateX(0)}} /* (v169) 내 편은 오른쪽으로 돌진 */
   @keyframes fxLungeDown{0%{transform:translateX(0)} 35%{transform:translateX(-24px) scale(1.1)} 100%{transform:translateX(0)}}
   @keyframes fxHit{0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)}}
@@ -767,6 +774,17 @@
   .fx-strong .bu-icon{animation:fxFlashBig .6s ease-out .15s;}
   .fx-weak .bu-body{animation:fxHitSmall .35s ease-out .15s;}
   @keyframes fxFlashBig{0%{filter:brightness(2.8) drop-shadow(0 0 16px #ff9d57)} 100%{filter:drop-shadow(0 2px 2px #0005)}}
+  /* (v343) 치명타 히트스톱 — 맞는 순간 잠깐 멈췄다가 크게 흔들림 */
+  .fx-crit .bu-body{animation:fxStop .09s steps(1) .15s, fxHitCrit .42s ease-out .24s;} .fx-crit .bu-icon{animation:fxFlashBig .6s ease-out .15s;}
+  @keyframes fxStop{0%,100%{transform:scale(1.07);}}
+  @keyframes fxHitCrit{0%,100%{transform:translateX(0)} 15%{transform:translateX(-11px) rotate(-3deg)} 35%{transform:translateX(9px) rotate(2deg)} 55%{transform:translateX(-5px)} 75%{transform:translateX(3px)}}
+  /* (v343) 화면(탭)이 바뀔 때 살짝 떠오르며 나타남 */
+  #main.tab-in > *:not(.ex-bgfull):not(.pu-bg){animation:tabIn .26s ease-out both;}
+  .mg-hero .spimg{animation:mgFloat 3.2s ease-in-out infinite;} .mg-hero{filter:drop-shadow(0 8px 6px #0006);}
+  @keyframes mgFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-6%);}}
+  @media (prefers-reduced-motion: reduce){ .mg-hero .spimg{animation:none;} }
+  @keyframes tabIn{from{opacity:0;} to{opacity:1;}} /* 위치를 옮기면 고정(fixed) 요소가 잠깐 어긋나서 투명도만 */
+  @media (prefers-reduced-motion: reduce){ #main.tab-in > *{animation:none !important;} .fx-crit .bu-body{animation:none;} }
   @keyframes fxHitSmall{0%,100%{transform:translateX(0)} 30%{transform:translateX(-3px)} 60%{transform:translateX(3px)}}
   .bs-tgt{font-size:12px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .bs-tgt .eff{font-weight:900; padding:0 5px; border-radius:6px; background:#ffffff14;}
@@ -6342,7 +6360,7 @@ function showSkillStageScreen(){
     const d0 = mine.find(h=>h.kind==='dmg');
     if(dmg || (d0 && d0.amount===0)){
       const strong = d0 && d0.eff>1, weak = d0 && d0.eff<1, crit = mine.some(h=>h.crit), dot = d0 && d0.dot;
-      out.cls += ' fx-hit'+(strong?' fx-strong':'')+(weak?' fx-weak':'');
+      out.cls += ' fx-hit'+(strong?' fx-strong':'')+(weak?' fx-weak':'')+(crit?' fx-crit':'');
       out.text = '-'+dmg+(crit?'!':'')+(strong?'<small>유리!</small>':(weak?'<small>불리</small>':(dot?'<small>'+(d0.src||'지속')+'</small>':'')));
       out.textCls = crit ? 'crit' : (strong ? 'strong' : (weak ? 'weak' : ''));
     }else if(heal){ const hs = mine.find(h=>h.kind==='heal' && h.src); out.cls += ' fx-heal'; out.text = '+'+heal+(hs?'<small>'+hs.src+'</small>':''); out.textCls = 'heal'; }
@@ -6407,7 +6425,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-special"><span class="sp-badge"><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><b>'+pr.name+'</b><span class="sp-mine">'+(best>1.0001 ? '우리 팀 최대 ×'+(Math.round(best*100)/100) : (worst<0.9999 ? '우리 팀 ×'+(Math.round(worst*100)/100)+' 있음' : '보너스 없음'))+'</span></div>'; } // (v185) 규칙 이름 + 우리 팀이 받는 배율
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
-  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+'">'+battleSceneHtml(theme)
+  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+(sf.result && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
     + '<div class="bs-logtop"><div class="bs-log">'+logText((sf.log||[]).slice(-1)[0]||'', !!sf.mirrored)+'</div></div>'
     + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
@@ -9139,7 +9157,7 @@ function render(){
     const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '');
     const sameScreen = main.__rKey === rKey; main.__rKey = rKey;
     setHtmlKeepImgs(main, (back || k>=0) ? '<div class="scr-top">'+back+(k>=0 ? html.slice(0,k) : '')+'</div>'+(k>=0 ? html.slice(k+TOP_MARK.length) : html) : html, sameScreen);
-    if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; } mainScrollMark(main);
+    if(lastRenderedTab!==activeTab){ main.scrollTop = 0; lastRenderedTab = activeTab; main.classList.remove('tab-in'); void main.offsetWidth; main.classList.add('tab-in'); clearTimeout(main._tabInT); main._tabInT = setTimeout(()=>main.classList.remove('tab-in'), 400); } mainScrollMark(main);
   }
   main.classList.toggle('is-home', activeTab==='home');
   if(!main._scl){ main._scl = 1; main.addEventListener('scroll', ()=>mainScrollMark(main), {passive:true}); } // (v317) 배경 탭: 내리기 전엔 위쪽 고정 영역을 투명하게
@@ -10008,6 +10026,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:343, v:'4.6.4', date:'2026-10-03', secs:[
+    { t:'전투', items:[ '이기면 정령이 깡충 뛰고, 지면 고개를 떨굼', '치명타가 들어가는 순간 잠깐 멈췄다가 크게 흔들림' ]},
+    { t:'화면', items:[ '탭을 바꿀 때 부드럽게 나타남', '정령 정보 창의 그림이 둥실 떠 있음' ]}
+  ]},
   { build:342, v:'4.6.3', date:'2026-10-03', secs:[
     { t:'시련의 전당', items:[ '힌트 다듬기 (처형자의 춤 빼고 9곳)' ]}
   ]},
@@ -13522,7 +13544,7 @@ function showSpiritInfoModal(key){
   const info = RARITY_INFO[sp.rarity];
   const passive = passiveFor(key);
   let html = '<div style="text-align:center;">';
-  html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
+  html += '<div class="mg-hero" style="font-size:44px;">'+spArt(sp)+'</div>'; // (v343) 정령 그림이 둥실 떠 있음
   html += '<h3>'+sp.name+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>';
   html += '<div class="sub">'+ELEMENT_INFO[sp.element].name+' 속성</div>';
   if(passive){
@@ -13550,7 +13572,7 @@ function showManageModal(key){
   const cost = enhanceCost(key);
   const canEnhance = !maxed && state.essence>=cost.essence && (state.enhanceStone||0)>=cost.stone;
   let html = '<div style="text-align:center;">';
-  html += '<div style="font-size:44px;">'+spArt(sp)+'</div>';
+  html += '<div class="mg-hero" style="font-size:44px;">'+spArt(sp)+'</div>'; // (v343) 정령 그림이 둥실 떠 있음
   html += '<h3>'+sp.name+' <span class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+awakenStars(key)+'</h3>';
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
@@ -14512,7 +14534,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 342, APP_VERSION = '4.6.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 343, APP_VERSION = '4.6.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
