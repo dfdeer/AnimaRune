@@ -256,6 +256,15 @@
   .rf-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9a24a66;} .rf-t{font-size:18px; font-weight:900; color:#ffe08a;} .rf-t .star-ic{width:20px; height:20px; vertical-align:-3px;}
   .rf-sub{font-size:12px; color:var(--sub); margin-top:2px;} .rf-sub b{color:#ffe08a;} .rf-bless{display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; background:#0006; font-size:11px; font-weight:800;} .rf-bless .star-ic{width:12px; height:12px; vertical-align:-2px;}
   .rf-list{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding-bottom:12px;}
+  /* (v344) 성역 */
+  .sc-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9b8ff66;} .sc-t{font-size:18px; font-weight:900; color:#e8dcff;} .sc-crest{font-size:12px; color:var(--sub); margin-top:3px;} .sc-crest b{color:#ffe08a;}
+  .sc-list{display:flex; flex-direction:column; gap:8px; margin-top:10px; padding-bottom:12px;}
+  .sc-card{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border-radius:14px; background:linear-gradient(90deg,#2a2266e0,#16123ad8); border:1px solid #b9a4ff55; color:var(--text); text-align:left; cursor:pointer;}
+  .sc-art{flex-shrink:0; width:60px; height:60px; border-radius:12px; background:#0006; display:flex; align-items:center; justify-content:center; overflow:hidden;} .sc-img{width:100%; height:100%; object-fit:contain;} .sc-emo{font-size:34px;}
+  .sc-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .sc-info b{font-size:15px;} .sc-info small{font-size:11px; color:var(--sub);}
+  .sc-pips{display:flex; gap:3px; margin-top:2px;} .sc-pips i{width:12px; height:6px; border-radius:3px; background:#ffffff1f;} .sc-pips i.on{background:linear-gradient(90deg,#ffe08a,#ffb347); box-shadow:0 0 4px #ffd36a99;}
+  .sc-lv{flex-shrink:0; font-size:12px; font-weight:900; color:#ffe08a;}
+  .sc-tiers{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; margin:8px 0;} .sc-tier{padding:6px 0; border-radius:8px; border:1px solid #ffffff22; background:#1d1946; color:var(--text); font-weight:900; font-size:12px;} .sc-tier.done{background:#4a3a10; border-color:#ffd36a88; color:#ffe9b0;} .sc-tier.on{outline:2px solid #c9b8ff; background:#3b2f8a;} .sc-tier:disabled{opacity:.35;}
   /* (v343) 균열 지도 */
   .rf-h2{display:flex; align-items:center; gap:10px; text-align:left; padding:8px 10px;} .rf-hl{flex:1; min-width:0;} .rf-h2 .rf-t{font-size:16px;} .rf-h2 .rf-sub{display:flex; align-items:center; gap:3px;} .rf-h2 .rf-bless{margin-top:4px;}
   .rf-h2 .rf-pus{margin-top:0; gap:6px;} .rf-h2 .rf-pu .av{width:46px; height:46px; font-size:28px;} .rf-h2 .rf-pu b{font-size:10px; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -2023,7 +2032,7 @@ function subTotals(k){
   if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전은 상한 밖
   return t;
 }
-function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
+function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k) * sanctumCrestMult(); } // (v344) × 성역 문장 // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
 // (v298) 초월 10단계 특전 — 종(계열)마다 역할에 맞게 다름 (사용자 결정)
 const TRANS10 = {
   fire_a:  { ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
@@ -2658,6 +2667,7 @@ function dealDamage(sf, a, d, mult, opts){
     v = adj.v;
   }
   if(sf.mode==='raid') v = raidDmgAdjust(sf, a, d, v); // (v272)
+  if(sf.mode==='sanctum') v = sanctumDmgAdjust(sf, a, d, v); // (v344) 성역
   const s = d.st;
   v *= 1 + (s.curse ? s.curse.v : 0) + (s.web ? s.web.v : 0) + (s.exposed ? s.exposed.v : 0); // (v343) 도깨비 둔갑 노출
   if(opts.detonate && s.star && s.star.n>0){ v *= 1 + 0.4*s.star.n; delete s.star; } // (v343) 아스트라이아 별의 공명 — 터뜨리는 공격이 표식을 씀
@@ -3880,7 +3890,7 @@ function friendInviteListHtml(){ // 로비(방장·팀원 없음)에서 접속 �
 }
 // ===================== (v169) 홈 화면 =====================
 // 대표 정령을 크게 보여주고, 탐험(메인 버튼)과 탑·출정·레이드로 가는 입구. 배경은 지금은 SVG로 그리고 나중에 일러스트로 교체 가능
-const HOME_MODE_TABS = ['rift','pickup','tower','dungeon','trial','challenge','pass','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel','worldboss']; // (v278) 월드 보스 화면 // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
+const HOME_MODE_TABS = ['sanctum','rift','pickup','tower','dungeon','trial','challenge','pass','dispatch','expedition','raid','stage','summon','spirits','hearth','friends','duel','worldboss']; // (v278) 월드 보스 화면 // (v173) 홈 외 모든 화면은 ← 홈으로 돌아감
 function homeRepSpirit(){
   if(state.homeSpirit && SPIRITS[state.homeSpirit] && (ownedCount(state.homeSpirit)>0 || state.discovered[state.homeSpirit])) return state.homeSpirit; // (v296) 도감에 한 번이라도 등록된 정령이면 대표로 쓸 수 있음
   const owned = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0);
@@ -4732,6 +4742,7 @@ function checkSkillStageOutcome0(sf){
   if(sf.mode==='expedition') return checkExpeditionOutcome(sf);
   if(sf.mode==='dungeon') return checkDungeonOutcome(sf); // (v266)
   if(sf.mode==='rift') return checkRiftOutcome(sf); // (v317) 별빛 균열
+  if(sf.mode==='sanctum') return checkSanctumOutcome(sf); // (v344) 성역
   if(sf.mode==='trial') return checkTrialOutcome(sf);
   if(sf.mode==='worldboss') return checkWorldBossOutcome(sf);
   if(sf.mode==='raid') return checkRaidOutcome(sf);
@@ -4778,6 +4789,7 @@ function roundStartEffects(sf){
   groggyRoundStart(sf); // (v179) 그로기 해제·게이지 회복(기믹보다 먼저)
   if(sf.mode==='boss' || ((sf.mode==='expedition' || sf.mode==='worldboss' || sf.mode==='rift') && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정·월드 보스도 기믹
   if(sf.mode==='raid') applyRaidGimmicks(sf);
+  if(sf.mode==='sanctum') applySanctumGimmick(sf); // (v344) 성역
   runeRoundStart(sf);
   const hits = [];
   const all = [...sf.myUnits, ...sf.enemyUnits];
@@ -6076,6 +6088,8 @@ function statusList(u){
   if(u.isAdd && u.fuse) o.push({i:stIc('fuse'), n:u.fuse, t:'자폭 '+u.fuse+'R', d:u.fuse+'라운드 뒤 자폭 — 아군 전체 피해 · 먼저 잡으면 막음', good:false});
   if(u.isBoss && u.inv) o.push({i:stIc('inv'), t:'역류', d:'이번 라운드 상성 반전 — 불리한 속성이 유리', good:true});
   if(u.cast) o.push({i:gmIcon({ic:u.cast.ic, nm:u.cast.nm}), t:u.cast.nm+' 준비', d:u.cast.el ? '이번 라운드에 '+elIc(u.cast.el)+' '+ELEMENT_INFO[u.cast.el].name+' 공격을 '+Math.max(0,u.cast.need-u.cast.dealt)+'번 더 맞히거나 그로기로 만들면 저지' : '이번 라운드에 '+fmtHp(Math.max(0,u.cast.need-u.cast.dealt))+' 더 피해를 주거나 그로기로 만들면 저지', good:true});
+  if(s.doom) o.push({i:'⛰️', t:'붕괴 표식', d:'다음 라운드 시작에 최대체력 60% 피해 · 그 전에 보스를 때리면 표식이 보스에게 넘어감', good:false}); // (v344) 성역 아틀라스
+  if(u.isBoss && u.sancWeak) o.push({i:elIc(u.sancWeak), t:'약점 '+ELEMENT_INFO[u.sancWeak].name, d:ELEMENT_INFO[u.sancWeak].name+' 공격 2배 · 나머지 절반 · 다음 약점 '+ELEMENT_INFO[u.sancNext].name, good:false}); // (v344) 성역 프리즘
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   // (v343) 한정 성좌 효과
   if(s.bomb) o.push({i:stIc('bomb'), n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음', good:false});
@@ -6317,6 +6331,7 @@ function battleThemeOf(sf){
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
   if(sf.mode==='rift'){ const gi = CHAPTER_BOSS_GIMMICK.indexOf(sf.gimmick && sf.gimmick.type); return BATTLE_THEMES[CHAPTER_MASKS[Math.max(0, gi)].theme] || 'cave'; } // (v317)
+  if(sf.mode==='sanctum') return 'raid-dawnJudge'; // (v344) 성역 — 하늘 신전 그림을 빌려 씀 (전용 배경 battle_sanctum이 오면 바꿈)
   if(sf.mode==='trial') return 'trial';
   if(sf.mode==='worldboss') return 'wb';
   if(sf.mode==='duel') return 'arena';
@@ -6420,6 +6435,7 @@ function showSkillStageScreen(){
     : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')+' · R'+sf.round+((trialDef(sf.trialId)||{}).maxRounds ? '/'+trialDef(sf.trialId).maxRounds : '')
     : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계 · R'+sf.round
     : sf.mode==='rift' ? uiIc('rift')+' '+RIFT_NAME+' '+sf.riftF+'층 · R'+sf.round
+    : sf.mode==='sanctum' ? '🏛️ '+(sanctumBoss(sf.scId)||{}).name+' '+sf.scTier+'단계 · R'+sf.round
     : sf.mode==='duel' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투 · vs '+(sf.duelName||'상대')
     : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')+' · R'+sf.round
     : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx)+' · R'+sf.round;
@@ -6494,7 +6510,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
+  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='sanctum' ? sanctumResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
   captureStatusFx(root);
   setHtmlKeepImgs(root, html);
@@ -6511,6 +6527,7 @@ function showSkillStageScreen(){
     if(sf.mode==='expedition'){ state.skillFight=null; unmountBattleScreen(); save(); render(); return; }
     if(sf.mode==='dungeon'){ leaveDungeonFight(); return; }
     if(sf.mode==='rift'){ leaveRiftFight(); return; }
+    if(sf.mode==='sanctum'){ leaveSanctumFight(); return; }
     if(sf.mode==='trial'){ leaveTrialFight(); return; }
     if(sf.mode==='worldboss'){ if(!sf.result){ sf.round = WB_ROUNDS+1; checkWorldBossOutcome(sf); } leaveWorldBossFight(); return; } // 중간에 나가도 그때까지 피해는 기록
     if(sf.mode==='duel'){
@@ -6548,6 +6565,7 @@ function showSkillStageScreen(){
       : sf.mode==='trial' ? ()=>{ const t = trialDef(sf.trialId); if(!t) return; state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
       : sf.mode==='dungeon' ? ()=>{ state.skillFight = buildDungeonFight(sf.dungeonEl, sf.dungeonN); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
       : sf.mode==='rift' ? ()=>riftRetry(sf.riftF)
+      : sf.mode==='sanctum' ? ()=>sanctumRetry(sf.scId, sf.scTier)
       : !sf.mode ? restartSkillStageFight : null;
     confirmBox('전투 나가기', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; },
       { danger:true, alt: retry ? { label:'다시하기', fn:()=>{ if(state.skillFight===sf) retry(); } } : null });
@@ -6579,6 +6597,10 @@ function showSkillStageScreen(){
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveRiftFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>riftRetry(sf.riftF));
     if(q('rfNextBtn')) q('rfNextBtn').addEventListener('click', ()=>{ const f = sf.riftF; leaveRiftFight(); showRiftPrep(f+1); });
+  }else if(sf.mode==='sanctum'){ // (v344) 성역
+    if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveSanctumFight);
+    if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>sanctumRetry(sf.scId, sf.scTier));
+    if(q('scNextBtn')) q('scNextBtn').addEventListener('click', ()=>{ const id = sf.scId, t = sf.scTier; leaveSanctumFight(); showSanctumPrep(id, t+1); });
   }else if(sf.mode==='dungeon'){ // (v266) 요일 던전
     if(q('skillResultCloseBtn')) q('skillResultCloseBtn').addEventListener('click', leaveDungeonFight);
     if(q('skillRetryBtn')) q('skillRetryBtn').addEventListener('click', ()=>{ const el = sf.dungeonEl, n = sf.dungeonN; state.skillFight = buildDungeonFight(el, n); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); });
@@ -7242,7 +7264,7 @@ function unitPower(speciesKey){
   return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
-function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
+function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey) * sanctumCrestMult(); } // (v344) × 성역 문장 // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
 function trIc(k){ return '<img class="uic" src="assets/ui/tr/'+k+'.webp" alt="" draggable="false">'; } // (v317) 특성 아이콘 그림
 const ELEMENT_PASSIVE = {
@@ -9167,7 +9189,7 @@ function render(){
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
   const frSc = document.querySelector('.fr-scroll'), frTop = (frSc && (activeTab==='friends' || activeTab==='duel') && frSc.dataset.tab===activeTab) ? frSc.scrollTop : 0; // (v280) 친구 목록을 다시 그려도 스크롤 위치 유지
   const main = document.getElementById('main');
-  const TAB_RENDER = { pickup:renderPickupTab, rift:renderRiftTab, summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
+  const TAB_RENDER = { pickup:renderPickupTab, rift:renderRiftTab, sanctum:renderSanctumTab, summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
     const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
@@ -11812,6 +11834,177 @@ function showRiftPrep(f, keep){
     closeModal(); state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen();
   });
 }
+// ===================== (v344) 성역 — 수호자 6명 × 1~10단계 · 처음 보는 기믹 · 단계마다 문장(영구 능력치) =====================
+// 출시 전에는 SANCTUM_ON = false 로 숨김 (관리자 세팅에서만 보임) · 기획: docs/성역_기획.md
+const SANCTUM_ON = false, SANCTUM_NAME = '성역', SANCTUM_TIERS = 10, SANCTUM_TIER_K = 1.18, SANCTUM_CREST = 0.005;
+const SANCTUM_REF_STAGE = ()=> HARD_BASE + 4*CHAPTER_LENGTH + CHAPTER_LENGTH-1; // 하드 5 챕터 보스 = 1단계 세기 기준
+const SANCTUM_BOSSES = [
+  { id:'janus',  name:'야누스',   sub:'두 얼굴의 수호자', el:'light', icon:'🎭', hp:1.0, atk:1.0, gm:'얼굴 바뀜', d:'체력이 절반 아래로 내려간 다음 라운드에 그림자 얼굴로 바뀜 — 속성 그림자 · 스킬 2개가 바뀌고 공격력 +20% · 걸린 해로운 효과를 전부 털어 냄' },
+  { id:'twins',  name:'카스토르·폴룩스', sub:'쌍둥이 수호자', el:'fire', icon:'♊', hp:0.6, atk:0.75, gm:'쌍둥이 부활', d:'보스 둘 · 한쪽이 쓰러지면 남은 쪽 공격력 +40%, 2라운드 뒤 쓰러진 쪽을 체력 50%로 되살림 — 둘을 비슷하게 깎아 함께 쓰러뜨리기' },
+  { id:'echo',   name:'에코',     sub:'거울의 수호자', el:'light', icon:'🪞', hp:0.9, atk:0.9, gm:'복제', d:'전투 시작에 우리 팀에서 전투력이 가장 높은 정령을 복제해 앞줄에 세움 (체력 1.5배) · 복제가 살아 있으면 보스 받는 피해 −40%' },
+  { id:'atlas',  name:'아틀라스', sub:'무너지는 하늘', el:'wood', icon:'⛰️', hp:1.1, atk:1.0, gm:'붕괴 표식', d:'2라운드마다 공격력이 가장 높은 아군에 붕괴 표식 → 다음 라운드 시작에 최대체력 60% 피해 · 표식 받은 정령이 그 전에 보스를 때리면 표식이 보스에게 넘어가 보스가 최대체력 8% 피해' },
+  { id:'prism',  name:'프리즘',   sub:'일곱 빛', el:'light', icon:'🔺', hp:1.0, atk:0.95, gm:'약점 순환', d:'라운드마다 약점 속성이 바뀜 (다음 약점 미리 표시) — 약점 속성 공격은 2배, 나머지는 절반' },
+  { id:'legion', name:'레기온',   sub:'군단의 왕', el:'dark', icon:'💀', hp:0.9, atk:0.9, gm:'군단', d:'라운드마다 졸개 2마리를 불러냄 (최대 4) · 졸개가 2마리 이상이면 보스 받는 피해 −50% · 졸개는 3라운드 뒤 자폭 (아군 전체 피해)' }
+];
+const SANCTUM_KITS = {
+  sboss_janus:  { s1:{ name:'빛의 검', icon:'⚔️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%', run:C=>{ C.hit(C.t, 2.0); } },
+                  s2:{ name:'새벽의 심판', icon:'☀️', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+  sboss_janus2: { s1:{ name:'어둠의 검', icon:'🗡️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 220% · 저주 (받는 피해 +20%, 2R)', run:C=>{ C.hit(C.t, 2.2); C.neg(C.t, st=>{ st.curse = { v:Math.max(0.2, (st.curse&&st.curse.v)||0), r:2 }; }, '<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); } },
+                  s2:{ name:'일식', icon:'🌑', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 100%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 1.0)); } } },
+  sboss_castor: { s1:{ name:'불꽃 창', icon:'🔥', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180% · 화상 2중첩', run:C=>{ C.hit(C.t, 1.8); if(C.t.alive) C.burn(C.t, 2); } },
+                  s2:{ name:'쌍성 돌격', icon:'💫', cd:4, kind:'harm', desc:()=>'대상과 양옆에 공격력 120%', run:C=>{ [C.t, ...C.around('row')].forEach(u=>C.hit(u, 1.2)); } } },
+  sboss_pollux: { s1:{ name:'물살 창', icon:'💧', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 둔화 (속도 −15, 2R)', run:C=>{ C.hit(C.t, 1.7); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '🐌둔화'); } },
+                  s2:{ name:'조류', icon:'🌊', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70% · 쌍둥이에게 보호막 (쌍둥이 최대체력 10%)', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.7)); C.side(C.a.side).filter(u=>u.isBoss).forEach(u=>C.shield(u, u.maxHp*0.1)); } } },
+  sboss_echo:   { s1:{ name:'반사광', icon:'✨', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180%', run:C=>{ C.hit(C.t, 1.8); } },
+                  s2:{ name:'거울 파편', icon:'🪞', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%', run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
+  sboss_atlas:  { s1:{ name:'대지 강타', icon:'🪨', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%', run:C=>{ C.hit(C.t, 2.0); } },
+                  s2:{ name:'지진', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상 편 앞줄 전체에 공격력 120%', run:C=>{ FRONT_OF(C, C.tSide).forEach(u=>C.hit(u, 1.2)); } } },
+  sboss_prism:  { s1:{ name:'분광', icon:'🔺', cd:3, kind:'harm', desc:()=>'대상에게 공격력 190%', run:C=>{ C.hit(C.t, 1.9); } },
+                  s2:{ name:'무지개 폭발', icon:'🌈', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+  sboss_legion: { s1:{ name:'군단의 깃발', icon:'🚩', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170%', run:C=>{ C.hit(C.t, 1.7); } },
+                  s2:{ name:'진군 명령', icon:'📯', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.7)); } } },
+  sadd_legion:  { s1:{ name:'그림자 손톱', icon:'💀', cd:3, kind:'harm', desc:()=>'대상에게 공격력 120%', run:C=>{ C.hit(C.t, 1.2); } },
+                  s2:{ name:'그림자 손톱', icon:'💀', cd:4, kind:'harm', desc:()=>'대상에게 공격력 120%', run:C=>{ C.hit(C.t, 1.2); } } }
+};
+Object.keys(SANCTUM_KITS).forEach(id=>{ const k = SANCTUM_KITS[id]; LINE_KITS[id] = { role:'성역 수호자', icon:'🏛️', passive:{ name:'없음', desc:()=>'수호자는 정령 특성 없음 (기믹 참고)' }, s1:k.s1, s2:k.s2 }; });
+function sanctumBoss(id){ return SANCTUM_BOSSES.find(b=>b.id===id) || null; }
+function sanctumVisible(){ return SANCTUM_ON || !!state.adminUnlockAll; }
+function sanctumUnlocked(){ return !!state.adminUnlockAll || !!(state.stageBest && state.stageBest[SANCTUM_REF_STAGE()]); }
+function sanctumState(){ let s = state.sanctum; if(!isPlainObj(s)) s = state.sanctum = { best:{} }; if(!isPlainObj(s.best)) s.best = {}; return s; }
+function sanctumBest(id){ return Math.max(0, Math.min(SANCTUM_TIERS, Math.floor(sanctumState().best[id]||0))); }
+function sanctumCrestTotal(){ return SANCTUM_BOSSES.reduce((a,b)=>a+sanctumBest(b.id), 0); }
+function sanctumCrestMult(){ return 1 + SANCTUM_CREST * sanctumCrestTotal(); } // 문장: 모든 정령 공격력·체력 (unitAtk · spiritHpMult 에 곱함)
+function sanctumReward(t){ return { essence: 2500*t, stone: 80*t, shard: 10*t }; }
+function sanctumMakeBoss(id, key, el, atk, hpMult, kit, name, ref, B, k, idx){
+  const b = makeBattleUnit('enemy', idx, key, atk, 1);
+  b.maxHp = Math.max(1, Math.round(ref.maxHp*B.hp*k)); b.hp = b.maxHp; b.atk = Math.max(1, Math.round(ref.atk*B.atk*k));
+  b.element = el; b.isBoss = true; b.gimmick = 'sanc_'+id; b.dispName = name; b.bossIcon = B.icon; ensureGroggy(b); setBossKit(b, kit);
+  return b;
+}
+function buildSanctumFight(id, tier){
+  const B = sanctumBoss(id), k = Math.pow(SANCTUM_TIER_K, tier-1), refF = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, [], {}), ref = refF.enemyUnits.find(u=>u.isBoss);
+  const my = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {}).myUnits;
+  let enemies;
+  if(id==='twins') enemies = [ sanctumMakeBoss('castor', 'fire_legendary_a', 'fire', 0, 1, 'sboss_castor', '카스토르', ref, B, k, 3), sanctumMakeBoss('pollux', 'water_legendary_b', 'water', 0, 1, 'sboss_pollux', '폴룩스', ref, B, k, 5) ];
+  else enemies = [ sanctumMakeBoss(id, B.el+'_legendary_a', B.el, 0, 1, 'sboss_'+id, B.name, ref, B, k, 4) ];
+  const sf = { v:344, mode:'sanctum', scId:id, scTier:tier, stageIdx:SANCTUM_REF_STAGE(), round:1, phase:'acting', queue:[], queuePos:0, myUnits:my, enemyUnits:enemies,
+    log:[SANCTUM_NAME+' · '+B.name+' '+tier+'단계!'], result:null, fxSeq:0, lastFx:null, sanc:{ down:{} } };
+  const boss = enemies[0];
+  if(id==='echo' && my.length){ // 복제: 우리 팀 최고 전투력 정령
+    const top = my.reduce((x,y)=> unitCP(y)>unitCP(x) ? y : x), c = makeBattleUnit('enemy', 1, top.key, top.atk, ALLY_HP_MULT, 1, 1, null, top.aw||0, top.sub||null);
+    c.maxHp = Math.round(top.maxHp*1.5); c.hp = c.maxHp; c.mirror = true; c.dispName = '거울 '+(SPIRITS[top.key].name); enemies.unshift(c);
+  }
+  if(id==='prism'){ sf.sanc.weak = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]; sf.sanc.next = sanctumNextWeak(sf.sanc.weak); boss.element = RIFT_BEATS[sf.sanc.weak]; boss.sancWeak = sf.sanc.weak; boss.sancNext = sf.sanc.next; }
+  if(id==='legion') sanctumSummon(sf, boss, 2);
+  startRoundQueue(sf);
+  return sf;
+}
+function sanctumNextWeak(cur){ const o = ELEMENTS.filter(e=>e!==cur); return o[Math.floor(Math.random()*o.length)]; }
+function sanctumSummon(sf, boss, n){
+  sf.enemyUnits = sf.enemyUnits.filter(u=>!(u.isAdd && !u.alive)); // 쓰러진 졸개 자리 비움
+  for(let i=0; i<n; i++){
+    if(aliveUnits(sf.enemyUnits).filter(u=>u.isAdd).length >= 4) break;
+    const pos = [3,5,0,1,2].find(p=>!sf.enemyUnits.some(u=>u.idx===p)); if(pos===undefined) break;
+    const a = makeBattleUnit('enemy', pos, 'dark_rare_a', 1, 1); a.atk = Math.max(1, Math.round(boss.atk*0.3)); a.maxHp = Math.max(1, Math.round(boss.maxHp*0.05)); a.hp = a.maxHp;
+    a.isAdd = true; a.fuse = 3; a.dispName = '그림자 졸개'; setBossKit(a, 'sadd_legion'); sf.enemyUnits.push(a);
+  }
+}
+function applySanctumGimmick(sf){ // 라운드 시작마다
+  const id = sf.scId, S = sf.sanc = sf.sanc || { down:{} }, bosses = sf.enemyUnits.filter(u=>u.isBoss);
+  const boss = bosses.find(u=>u.alive); if(!boss) return;
+  if(id==='janus' && !S.phase2 && boss.hp <= boss.maxHp*0.5){ // 얼굴 바뀜
+    S.phase2 = true; boss.element = 'dark'; setBossKit(boss, 'sboss_janus2'); boss.dispName = '야누스 (그림자)'; boss.atk = Math.round(boss.atk*1.2); boss.cd1 = 0; boss.cd2 = 0;
+    ['freeze','seal','bind','poison','burn','curse','web','slow','chill','bomb','star','exposed'].forEach(k=>{ delete boss.st[k]; }); delete boss.st.burnDmg; delete boss.st.burnCap;
+    pushLog(sf, '🎭 야누스가 그림자 얼굴로 바뀜!');
+  }
+  if(id==='twins') bosses.forEach(t=>{ const o = bosses.find(x=>x!==t); if(t.alive || !o || !o.alive) return;
+    if(S.down[t.idx]===undefined){ S.down[t.idx] = sf.round; o.st.buff = { v:Math.max(0.4, (o.st.buff&&o.st.buff.v)||0), r:99 }; pushLog(sf, '♊ '+o.dispName+' 격노!'); }
+    else if(sf.round - S.down[t.idx] >= 2){ t.alive = true; t.hp = Math.round(t.maxHp*0.5); t.st = {}; t.hidden = false; delete S.down[t.idx]; if(o.st.buff && o.st.buff.r>=90) delete o.st.buff; pushLog(sf, '♊ '+t.dispName+' 부활!'); } });
+  if(id==='atlas'){
+    aliveUnits(sf.myUnits).forEach(u=>{ if(u.st.doom && u.st.doom.due<=sf.round){ delete u.st.doom; let d = Math.round(u.maxHp*0.6); if(u.st.shield>0){ const ab = Math.min(u.st.shield, d); u.st.shield -= ab; d -= ab; if(u.st.shield<=0) delete u.st.shield; } u.hp = Math.max(0, u.hp - d); hidHurt(sf, u, d); pushLog(sf, '⛰️ 하늘이 무너짐 → '+logUnitName(u.side, u)); if(u.hp<=0) killUnit(sf, u); } });
+    if(S.bossDoom){ S.bossDoom = false; const d = Math.round(boss.maxHp*0.08); boss.hp = Math.max(1, boss.hp - d); pushLog(sf, '⛰️ 넘겨받은 붕괴 → 보스 '+d); }
+    if(sf.round % 2 === 0){ const pool = aliveUnits(sf.myUnits).filter(u=>!u.st.doom); if(pool.length){ const t = pool.reduce((x,y)=> y.atk>x.atk ? y : x); t.st.doom = { due: sf.round+1 }; pushLog(sf, '⛰️ 붕괴 표식 → '+logUnitName(t.side, t)); } }
+  }
+  if(id==='prism'){ S.weak = S.next || sanctumNextWeak(S.weak); S.next = sanctumNextWeak(S.weak); boss.element = RIFT_BEATS[S.weak]; boss.sancWeak = S.weak; boss.sancNext = S.next; }
+  if(id==='legion'){
+    sf.enemyUnits.filter(u=>u.isAdd && u.alive).forEach(a=>{ a.fuse--; if(a.fuse<=0){ aliveUnits(sf.myUnits).forEach(m=>dealDamage(sf, a, m, 1.0, { noCrit:true, noCounter:true })); pushLog(sf, '💥 그림자 졸개 자폭'); killUnit(sf, a); } });
+    sanctumSummon(sf, boss, 2);
+  }
+}
+function sanctumDmgAdjust(sf, a, d, v){
+  const id = sf.scId;
+  if(id==='atlas' && a && a.side==='me' && d.isBoss && a.st && a.st.doom){ delete a.st.doom; sf.sanc.bossDoom = true; (sf._rv = sf._rv || []).push({ side:a.side, idx:a.idx, kind:'status', text:'⛰️표식 넘김' }); }
+  if(!d.isBoss || !a || a.side===d.side) return v;
+  if(id==='echo' && aliveUnits(sf.enemyUnits).some(u=>u.mirror)) v *= 0.6;
+  if(id==='prism' && sf.sanc.weak) v *= a.element===sf.sanc.weak ? 2 : 0.5;
+  if(id==='legion' && aliveUnits(sf.enemyUnits).filter(u=>u.isAdd).length >= 2) v *= 0.5;
+  return v;
+}
+function checkSanctumOutcome(sf){
+  if(sf.result) return true;
+  if(!aliveUnits(sf.enemyUnits).length){
+    const st = sanctumState(), id = sf.scId, t = sf.scTier, first = t > sanctumBest(id), rw = first ? sanctumReward(t) : null;
+    if(first){ st.best[id] = t; state.essence += rw.essence; state.enhanceStone = (state.enhanceStone||0) + rw.stone; state.starShard = (state.starShard||0) + rw.shard; save(); }
+    sf.result = { win:true, rounds:sf.round, first, rw };
+    return true;
+  }
+  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds:sf.round }; return true; }
+  return false;
+}
+function sanctumRecCP(id, t){ const f = buildSanctumFight(id, t); return recCP(teamCP(f.enemyUnits) * (REC_CP_MULT.boss || 1)); }
+function sanctumRewardHtml(rw){ return '<span>'+uiIc('essence')+' '+fmtHp(rw.essence)+'</span> <span>'+artIc('ic_upstone')+' '+rw.stone+'</span> <span>'+SHARD_IC+' '+rw.shard+'</span>'; }
+function sanctumResultOverlayHtml(sf){
+  const r = sf.result, B = sanctumBoss(sf.scId), t = sf.scTier;
+  let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
+  if(r.win){
+    h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_victory.webp" alt=""></div><div class="bs-rtitle">'+B.name+' '+t+'단계 돌파!</div><div class="bs-rsub">'+SANCTUM_NAME+' · '+r.rounds+'라운드</div>';
+    h += r.first ? '<div class="bs-rrew"><div>'+artIc('deco_chest')+' 첫 돌파 보상</div><div style="margin-top:4px;">'+sanctumRewardHtml(r.rw)+'</div><div style="margin-top:4px;">🏅 문장 '+t+'단계 · 모든 정령 공격력·체력 +'+(Math.round(SANCTUM_CREST*sanctumCrestTotal()*1000)/10)+'%</div></div>' : '<div class="bs-rsub">이미 돌파한 단계 · 보상 없음</div>';
+  }else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_defeat.webp" alt=""></div><div class="bs-rtitle">패배</div><div class="bs-rsub">'+B.name+' '+t+'단계 · '+r.rounds+'라운드</div>';
+  const next = r.win && t < SANCTUM_TIERS;
+  h += '<div class="bs-rbtns"><button class="btn secondary" id="skillRetryBtn">🔁 다시</button>'+(next ? '<button class="btn secondary" id="scNextBtn">'+(t+1)+'단계 ▶</button>' : '')+'<button class="btn" id="skillResultCloseBtn">나가기</button></div></div></div>';
+  return h;
+}
+function leaveSanctumFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'sanctum'; save(); render(); }
+function sanctumRetry(id, t){ state.skillFight = buildSanctumFight(id, t); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
+function renderSanctumTab(){
+  if(!sanctumUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+SANCTUM_NAME+' 잠김<div class="sub" style="margin-top:6px;">하드 '+chapterBossName(5)+' 처치 시 해금</div></div>';
+  const tot = sanctumCrestTotal();
+  let h = '<div class="sc-head"><div class="sc-t">🏛️ '+SANCTUM_NAME+'</div><div class="sc-crest">🏅 문장 <b>'+tot+'</b>/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS)+' · 모든 정령 공격력·체력 <b>+'+(Math.round(SANCTUM_CREST*tot*1000)/10)+'%</b></div></div>' + TOP_MARK;
+  h += '<div class="sc-list">';
+  SANCTUM_BOSSES.forEach(B=>{ const b = sanctumBest(B.id);
+    h += '<button class="sc-card" data-sc-open="'+B.id+'"><span class="sc-art">'+bossImg('sanc_'+B.id, 'sc-img', '<span class="sc-emo">'+B.icon+'</span>')+'</span><span class="sc-info"><b>'+B.name+'</b><small>'+B.sub+' · '+B.gm+'</small>'
+      + '<span class="sc-pips">'+Array.from({length:SANCTUM_TIERS}, (_,i)=>'<i class="'+(i<b?'on':'')+'"></i>').join('')+'</span></span><span class="sc-lv">'+(b>=SANCTUM_TIERS ? '완료' : (b+1)+'단계')+'</span></button>'; });
+  h += '</div>';
+  return h;
+}
+function bindSanctumTab(){ document.querySelectorAll('[data-sc-open]').forEach(b=>b.addEventListener('click', ()=>showSanctumPrep(b.dataset.scOpen))); }
+function showSanctumPrep(id, t, keep){
+  const B = sanctumBoss(id); if(!B) return;
+  const best = sanctumBest(id); t = Math.max(1, Math.min(SANCTUM_TIERS, Math.min(best+1, t || best+1)));
+  state.sanctumForm = Array.isArray(state.sanctumForm) ? state.sanctumForm : [];
+  if(!keep){ const fm = state.sanctumForm.slice(0, GRID_SLOTS); state.formation = Array.from({length:GRID_SLOTS}, (_,i)=> (fm[i] && ownedCount(fm[i])>0) ? fm[i] : null); }
+  state.sanctumForm = state.formation.slice(); save();
+  const pv = buildSanctumFight(id, t);
+  let h = '<h3 style="text-align:center; margin:0;">🏛️ '+SANCTUM_NAME+' · '+B.name+'</h3>';
+  h += '<div class="rf-boss2">'+bossImg('sanc_'+id, 'rf-bimg2', '<span style="font-size:40px;">'+B.icon+'</span>')+'<div><b>'+elIc(B.el)+' '+B.name+' <span class="sub">'+B.sub+'</span></b><small><b>'+B.gm+'</b> — '+B.d+'</small></div></div>';
+  h += '<div class="sc-tiers">'+Array.from({length:SANCTUM_TIERS}, (_,i)=>i+1).map(n=>'<button class="sc-tier'+(n===t?' on':'')+(n<=best?' done':'')+'" data-sc-t="'+n+'"'+(n>best+1?' disabled':'')+'>'+n+'</button>').join('')+'</div>';
+  h += formationRowsHtml();
+  h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="scClear" style="flex:1; margin:0;">'+uiIc('clear')+' 비우기</button><button class="btn secondary" id="scRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">'+uiIc('log')+' 프리셋</button></div>';
+  h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '상대 '+fmtCP(teamCP(pv.enemyUnits)), sanctumRecCP(id, t));
+  h += '<div class="dg-rw">'+(t>best ? '첫 돌파 보상 '+sanctumRewardHtml(sanctumReward(t))+' · 🏅 문장 +1' : '이미 돌파한 단계 · 보상 없음')+'</div>';
+  h += '<button class="btn sticky-ok" id="scStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+t+'단계 도전</button>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
+  bindModalClose(); bindPrepUnitInfo(pv);
+  document.querySelectorAll('[data-sc-t]').forEach(b=>b.addEventListener('click', ()=>showSanctumPrep(id, +b.dataset.scT, true)));
+  document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.sanctumForm = state.formation.slice(); save(); showSanctumPrep(id, t, true); })));
+  document.getElementById('scClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; showSanctumPrep(id, t, true); });
+  presetUse(formCtx(SANCTUM_NAME+' 진형', ()=>showSanctumPrep(id, t, true), null, ()=>{ state.sanctumForm = state.formation.slice(); }));
+  document.getElementById('scRec').addEventListener('click', ()=>{ state.formation = recommendFormation([], null); showSanctumPrep(id, t, true); });
+  document.getElementById('scStart').addEventListener('click', ()=>{
+    if(!state.formation.some(Boolean)){ toast('정령을 1마리 이상 배치'); return; }
+    closeModal(); sanctumRetry(id, t);
+  });
+}
 function renderRiftTab(){
   if(!riftUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+RIFT_NAME+' 잠김<div class="sub" style="margin-top:6px;">'+chapterBossName(1)+' 처치 시 해금</div></div>';
   const on = pickupOnline(), per = riftPeriod(), rs = riftState(), tot = riftTotalStars(), max = RIFT_FLOORS.length*3;
@@ -11856,10 +12049,11 @@ function challengeCards(){
     { tab:'dungeon', img:'target', name:'요일 던전', sub: isUnlocked('dungeon') ? dgTxt+' · 전체 '+dgDone+'/'+(DUNGEON_MAX*ELEMENTS.length) : chapterBossName(1)+' 처치 시 해금', lock: !isUnlocked('dungeon') }
   ];
   if(typeof trialCard==='function') cards.push(trialCard());
+  if(sanctumVisible()){ const ok = sanctumUnlocked(); cards.push({ tab:'sanctum', img:'trophy', name:SANCTUM_NAME, sub: ok ? '문장 '+sanctumCrestTotal()+'/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS) : '하드 '+chapterBossName(5)+' 처치 시 해금', lock:!ok }); } // (v344) 출시 전엔 숨김
   return cards;
 }
 // (v317) 도전 — 그림 속 탑·신전·동굴을 넘겨 보며 고름 (가운데에 온 곳을 한 번 더 누르거나 아래 버튼으로 들어감)
-const CH_SPOTS = { tower:{x:112, y:215, w:190, h:400, lab:'무한의 탑'}, trial:{x:540, y:330, w:240, h:240, lab:'시련의 전당'}, dungeon:{x:958, y:385, w:150, h:230, lab:'요일 던전'} };
+const CH_SPOTS = { tower:{x:112, y:215, w:190, h:400, lab:'무한의 탑'}, trial:{x:540, y:330, w:240, h:240, lab:'시련의 전당'}, dungeon:{x:958, y:385, w:150, h:230, lab:'요일 던전'}, sanctum:{x:520, y:110, w:220, h:150, lab:'성역'} };
 let chSel = 'tower';
 function chDetailHtml(k){ const c = challengeCards().find(x=>x.tab===k); if(!c) return '';
   return '<div class="card ch-detail"><div class="ch-dh">'+uiIc(c.img)+'<span><b>'+c.name+'</b><small>'+c.sub+'</small></span>'+(c.dot?'<i class="ch-dot"></i>':'')+'</div>'
@@ -13985,6 +14179,7 @@ function attachHandlers(){
   if(activeTab==='duel') bindDuelTab();
   if(activeTab==='dungeon') bindDungeonTab();
   if(activeTab==='rift') bindRiftTab(); // (v317)
+  if(activeTab==='sanctum') bindSanctumTab(); // (v344)
   if(activeTab==='dispatch') bindDispatchTab();
   if(activeTab==='pickup') bindPickupTab(); // (v317)
   if(activeTab==='trial') bindTrialTab();
@@ -14299,6 +14494,7 @@ function sanitizeState(){
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   s.starShard = fin(s.starShard) ? Math.max(0, Math.floor(s.starShard)) : 0; // (v317)
+  { const B = {}; if(isPlainObj(s.sanctum) && isPlainObj(s.sanctum.best)) SANCTUM_BOSSES.forEach(b=>{ const v = s.sanctum.best[b.id]; if(Number.isFinite(v) && v>0) B[b.id] = Math.min(SANCTUM_TIERS, Math.floor(v)); }); s.sanctum = { best:B }; } // (v344) 성역 문장
   if(isPlainObj(s.rift) && Number.isInteger(s.rift.p) && isPlainObj(s.rift.st)){ Object.keys(s.rift.st).forEach(k=>{ const f = Number(k), v = s.rift.st[k]; if(!Number.isInteger(f) || f<1 || f>RIFT_FLOORS.length || !Number.isInteger(v)) delete s.rift.st[k]; else s.rift.st[k] = v & 7; }); } else s.rift = null; // (v317) 별빛 균열
   s.riftForm = Array.isArray(s.riftForm) ? dedupeKeys(s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)) : [];
   if(!isPlainObj(s.pickup)) s.pickup = {}; { const pk = s.pickup; pk.pity = fin(pk.pity) ? Math.max(0, Math.min(PICKUP_PITY-1, Math.floor(pk.pity))) : 0; pk.guar = !!pk.guar; pk.sel = (typeof pk.sel==='string' && SPIRITS[pk.sel] && SPIRITS[pk.sel].rarity==='mythic') ? pk.sel : ''; }
@@ -14422,6 +14618,8 @@ function sanitizeState(){
       modeOk = Number.isFinite(sf.wbStart);
     }else if(sf && sf.mode==='trial'){
       modeOk = !!trialDef(sf.trialId);
+    }else if(sf && sf.mode==='sanctum'){
+      modeOk = !!sanctumBoss(sf.scId) && Number.isInteger(sf.scTier) && sf.scTier>=1 && sf.scTier<=SANCTUM_TIERS; // (v344) 성역
     }else if(sf && sf.mode==='rift'){
       modeOk = Number.isInteger(sf.riftF) && sf.riftF>=1 && sf.riftF<=RIFT_FLOORS.length; // (v317) 별빛 균열
     }else if(sf && sf.mode==='dungeon'){
