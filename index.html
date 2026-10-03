@@ -1659,6 +1659,21 @@ ELEMENTS.forEach(el=>{
     });
   });
 });
+// (v343) 한정 성좌 8종 — 픽업에서만 나옴 · 처음부터 성좌(능력치 배율 45) · 키는 <속성>_mythic_<두 글자>, 계열(line)은 <속성>_<두 글자>
+// 일반 소환·합성·확정권·적 구성은 VARIANTS(a·b)로 키를 만들어서 여기 정령은 안 나옴
+const LIMITED_SPIRITS = [
+  { key:'fire_mythic_sc',  element:'fire',  variant:'sc', name:'스칼렛' },
+  { key:'fire_mythic_su',  element:'fire',  variant:'su', name:'수르트' },
+  { key:'water_mythic_mn', element:'water', variant:'mn', name:'므네모시네' },
+  { key:'water_mythic_hb', element:'water', variant:'hb', name:'하백' },
+  { key:'wood_mythic_sg',  element:'wood',  variant:'sg', name:'산군' },
+  { key:'light_mythic_as', element:'light', variant:'as', name:'아스트라이아' },
+  { key:'dark_mythic_lk',  element:'dark',  variant:'lk', name:'로키' },
+  { key:'dark_mythic_dk',  element:'dark',  variant:'dk', name:'도깨비' }
+];
+LIMITED_SPIRITS.forEach(x=>{ SPIRITS[x.key] = { key:x.key, element:x.element, rarity:'mythic', variant:x.variant, name:x.name, limited:true }; });
+const DEX_KEYS = Object.keys(SPIRITS).filter(k=>!SPIRITS[k].limited); // 도감 달성률·업적은 기존 50마리 기준 (한정은 따로 셈)
+function dexFoundCount(){ const d = (state && state.discovered) || {}; return DEX_KEYS.filter(k=>d[k]).length; }
 const BASE_ATK = 12;
 const SUMMON_COST = 100;
 const CHAPTER_LENGTH = 10;
@@ -1984,7 +1999,16 @@ const TRANS10 = {
   light_a: { ic:'✨', d:'받는 피해 −12%', sub:{ dr:.12 } },
   light_b: { ic:'💨', d:'속도 +8', sub:{ spd:8 } },
   dark_a:  { ic:'🩸', d:'흡혈 +12%', sub:{ life:.12 } },
-  dark_b:  { ic:'🌑', d:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)', sub:{ curse:.25 } }
+  dark_b:  { ic:'🌑', d:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)', sub:{ curse:.25 } },
+  // (v343) 한정 성좌 — 기존 초월 특전과 같은 전투 처리(sub)를 씀
+  fire_sc: { ic:'♨️', d:'공격이 맞으면 화상 1중첩', sub:{ burn:1 } },
+  fire_su: { ic:'✨', d:'받는 피해 −12%', sub:{ dr:.12 } },
+  water_mn:{ ic:'💧', d:'라운드 시작마다 체력이 가장 낮은 아군 5% 회복', sub:{ rheal:.05 } },
+  water_hb:{ ic:'🛡️', d:'전투 시작 보호막 (체력 15%, 2라운드)', sub:{ sh:.15 } },
+  wood_sg: { ic:'🩸', d:'흡혈 +12%', sub:{ life:.12 } },
+  light_as:{ ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
+  dark_lk: { ic:'💨', d:'속도 +8', sub:{ spd:8 } },
+  dark_dk: { ic:'🌑', d:'공격이 맞으면 25% 확률로 저주 (받는 피해 +15%, 2라운드)', sub:{ curse:.25 } }
 };
 // ===================== (v328) 장비 고유 효과 — 레전더리·신화 장비마다 하나. 후보 3개 중에서 골라 붙임 · 각인석으로 후보 다시 뽑기
 // 값은 [레전더리, 신화] · 효과는 초월 특전과 같은 전투 처리(sub)를 씀 · 부가 능력 상한 밖에서 더해짐 (장비 2개면 2개)
@@ -2375,12 +2399,20 @@ const AWAKEN5 = {
   light_a:{ t:'정화의 빛', d:'수호의 빛이 해로운 효과 1개도 제거' },
   light_b:{ t:'긴 별빛', d:'별빛 가속 지속 1라운드 더 (2 → 3라운드)' },
   dark_a:{ t:'탐욕', d:'생명 흡수 흡혈량 40% → 60%' },
-  dark_b:{ t:'깊은 저주', d:'저주 지속 1라운드 더' }
+  dark_b:{ t:'깊은 저주', d:'저주 지속 1라운드 더' },
+  fire_sc:{ t:'대폭발', d:'시한폭탄 피해 +30%' },
+  fire_su:{ t:'번지는 제물', d:'불꽃 제물이 공격력이 가장 높은 다른 아군 1명도 강화' },
+  water_mn:{ t:'빠른 되감기', d:'되감기 쿨타임 −1' },
+  water_hb:{ t:'두 갈래 물길', d:'물길 잇기로 아군 2명과 연결 (체력 비율이 가장 낮은 아군 추가)' },
+  wood_sg:{ t:'짓누르기', d:'반격할 때 25% 확률로 속박 (다음 라운드 맨 뒤로)' },
+  light_as:{ t:'쌍둥이별', d:'별자리 표식이 한 번에 2개' },
+  dark_lk:{ t:'두 손', d:'손버릇이 효과를 2개 빼앗음' },
+  dark_dk:{ t:'홀림', d:'둔갑으로 끌어낸 적에게 속박 (다음 라운드 맨 뒤로)' }
 };
 function aw5(u){ return !!u && (u.aw||0)>=5; }
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
-function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0)); }
+function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0) - ((act==='s1' && u.line==='water_mn' && aw>=5) ? 1 : 0)); } // (v343) 므네모시네 ★5 되감기 쿨 −1
 function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride, subOverride){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity);
   // (v225) 각성: ★1 패시브 · ★3 스킬2가 등급과 상관없이 열림 · ★5 스킬 효과 한 등급 위. 레이드·결투 상대는 보내온 값(awOverride)
@@ -2414,7 +2446,7 @@ function enemyGridForStage(i){
   pool.forEach((u,k)=>{ const pos = ENEMY_FILL_ORDER[k]; els[pos] = u.el; rv[pos] = u.rv; });
   return { els, rv };
 }
-const ENEMY_FRONT_LINES = ['fire_a','wood_a','dark_a']; // 전열에 서는 계열(돌격·탱커·흡혈처형)
+const ENEMY_FRONT_LINES = ['fire_a','wood_a','dark_a','fire_su','water_hb','wood_sg','dark_dk']; // 전열에 서는 계열(돌격·탱커·흡혈처형) · (v343) 한정 성좌 전열 4종 (편성 화면 '전열' 표시용)
 // (v146) 특수 규칙 이식: 황금/봉인 슬롯·속성 필드 = 그 자리 공격력 배율, 순서·커버리지·인접·다양성·연쇄(+정예·자원)는 조건 충족 쪽 팀 전체 배율.
 // 둘 다 dealDamage에서 공격력에만 곱해지고 체력(HP)에는 영향 없음(공격력 배율이라는 표시와 일치시키기 위함).
 function specialUnitMult(spec, idx, element, elements, isPlayer){
@@ -2464,6 +2496,7 @@ function validEnemyTargets(sf){
   // (v216 버그수정) 적이 도발 중이면 도발한 정령만 고를 수 있음 — 예전엔 적 AI만 도발을 따르고 내 쪽 대상 고르기는 무시해서 다른 정령이 골라지고 공격까지 됐음
   const taunt = aliveUnits(sf.enemyUnits).filter(u=>u.st && u.st.taunt);
   if(taunt.length) return taunt.map(u=>u.idx);
+  { const c = curActCtx(sf); if(c && c.sk && c.sk.anyFoe) return aliveUnits(sf.enemyUnits).filter(u=>!u.inert).map(u=>u.idx); } // (v343) 도깨비 둔갑 — 뒷줄도 고름
   return frontFirst(sf.enemyUnits, sideWidth(sf,'enemy')).map(u=>u.idx);
 }
 function skillUnitName(side, u){ if(!u) return '—'; return (side==='enemy' ? '적 ' : '')+(u.dispName || SPIRITS[u.key].name); }
@@ -2474,9 +2507,10 @@ function logText(line, mirrored){ return String(line||'').split(LOG_EN).join(mir
 function skillTargetable(sf, side, idx){
   const u = unitAt(sf, side, idx);
   if(!u || !u.alive) return false;
+  { const c = curActCtx(sf); if(c && c.sk){ if(c.sk.allyOnly && side!=='me') return false; if(c.sk.notSelf && side==='me' && (u===c.a || (c.sk.swap && !swapAllowed(sf, c.a, u)))) return false; } } // (v343) 아군 전용·자신 제외 스킬
   return side==='me' ? true : validEnemyTargets(sf).includes(idx);
 }
-function effSpeed(u){ const s = u.st; return speedForElementRarity(u.element, SPIRITS[u.key].rarity) + runeSpeed(u) + (s.haste?s.haste.v:0) - (s.slow?s.slow.v:0) - (s.chill||0); }
+function effSpeed(u){ const s = u.st; return speedForElementRarity(u.element, SPIRITS[u.key].rarity) + runeSpeed(u) + (s.haste?s.haste.v:0) - (s.slow?s.slow.v:0) - (s.chill||0) + (u.stealSpd||0); } // (v343) 로키 날쌘 손
 function pushLog(sf, line){ sf.log = (sf.log||[]).concat(line).slice(-5); }
 function setFx(sf, fx){ sf.fxSeq = (sf.fxSeq||0) + 1; fx.id = sf.fxSeq; if(sf._rv){ fx.hits = (fx.hits||[]).concat(sf._rv); delete sf._rv; } sf.lastFx = fx; } // (v268) 부활 글자도 같이
 
@@ -2485,6 +2519,7 @@ function atkBonus(sf, a, d){
   let b = 0; const s = a.st;
   if(s.buff) b += s.buff.v;
   if(s.empower) b += s.empower;
+  if(s.pyre) b += s.pyre.v; if(s.soul) b += s.soul.v; if(s.club) b += 0.4; // (v343) 수르트 불꽃 제물·타오르는 혼 · 도깨비 방망이
   if(a.line==='fire_a' && unitPG(a)>=1 && a.hp/a.maxHp<=0.5) b += [0,.15,.20,.25,.30][unitPG(a)];
   if((s.shield||0)>0){ let best = 0; aliveUnits(sideUnits(sf, a.side)).forEach(u=>{ if(u.line==='light_a' && unitPG(u)>=1) best = Math.max(best, [0,.08,.10,.12,.15][unitPG(u)]); }); b += best; }
   if(a.line==='dark_a' && unitPG(a)>=1) b += (1 - d.hp/d.maxHp)*100*[0,.003,.004,.005,.006][unitPG(a)];
@@ -2494,6 +2529,10 @@ function dmgReduction(sf, d){
   let r = 0;
   if(d.line==='wood_a' && unitPG(d)>=1) r += [0,.08,.10,.12,.15][unitPG(d)];
   if(d.st && d.st.guard) r += d.st.guard.v; // (v192) 굳건함(숲결 탱커 뿌리 내리기)
+  if(d.st && d.st.veil) r += d.st.veil.v; // (v343) 도깨비불
+  if(d.line==='fire_su' && d.hp/d.maxHp<=0.3) r += 0.25; // (v343) 수르트 타오르는 혼
+  if(d.line==='wood_sg' && d.hp/d.maxHp>=0.5) r += 0.15; // (v343) 산군 산의 주인
+  if(d.line==='water_hb' && d.st && d.st.linkHost) r += 0.2; // (v343) 하백 물길 잇기
   r += runeDr(d);
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && !f.inert && f.line==='wood_a' && f.g>=4) r += 0.2; } }
   return r;
@@ -2504,8 +2543,11 @@ function killUnit(sf, u){
   u.hp = 0; u.alive = false;
   if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
+  const bomb = u.st.bomb || null, loop = u.st.loop || null; // (v343)
+  if(u.line==='water_hb' && u.st.linkHost && u.st.linkHost.boost){ u.maxHp = Math.max(1, u.maxHp - u.st.linkHost.boost); } // (v343) 깊은 강 해제
   u.st = {};
   if(u.isAdd){ u.hidden = true; delete u.fuse; raidOnAddDeath(sf, u); } // (v260) 용암 정령은 쓰러지면 사라짐 · (v272) 레이드 기둥·씨앗
+  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); }); } // (v343) 스칼렛 불씨 전이
   if(u.isBoss){ delete u.cast; (sf.enemyUnits||[]).forEach(x=>{ if(x.isAdd && x.alive){ x.alive = false; x.hp = 0; x.hidden = true; x.st = {}; } }); (sf.myUnits||[]).forEach(m=>{ if(m.st && m.st.jail) delete m.st.jail; }); return; } // (v260 버그수정) 보스는 정령 패시브(화염-a 부활)를 쓰지 않음 — 용암군주·겁화룡이 체력 30%로 되살아나던 문제
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
   if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed){
@@ -2514,15 +2556,60 @@ function killUnit(sf, u){
     if(u.g>=4) aliveUnits(sideUnits(sf, foeOf(u.side))).forEach(e=>{ const r = dealDamage(sf, u, e, 0.8, {noCrit:true}); if(r) sf._rv.push({ side:e.side, idx:e.idx, kind:'dmg', amount:r.total, eff:effTypeMult(u, e), dot:true, src:'부활 폭발' }); }); // (v295) 폭발 피해도 숫자로 (예전엔 피해만 들어가고 안 보였음)
     return;
   }
+  if(loop && !u.loopUsed){ u.loopUsed = true; u.alive = true; u.hp = Math.max(1, Math.min(u.maxHp, loop.hp)); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'⏳되돌아옴', src:'시간의 고리' }); pushLog(sf, (u.dispName||SPIRITS[u.key].name)+' 시간의 고리로 일어남'); return; } // (v343) 므네모시네
   // 빛-a 신화: 같은 편 쓰러진 아군 1회 부활
   const angel = aliveUnits(sideUnits(sf, u.side)).find(x=>x.line==='light_a' && x.g>=4 && !x.reviveGiven);
   if(angel){ angel.reviveGiven = true; u.alive = true; u.hp = Math.round(u.maxHp*0.5); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'✨부활!', src:SPIRITS[angel.key].name+' (체력 50%)' }); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
+  if(u.line==='fire_su'){ aliveUnits(sideUnits(sf, u.side)).forEach(x=>{ x.st.soul = { v:0.2, r:2 }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'🔥타오르는 혼' }); }); } // (v343) 수르트가 쓰러지면 아군 공격력 +20%
   // 숲결-b 패시브: 독 걸린 채 쓰러지면 옆 칸으로 독 전파
   const pch = poisoned ? [0,.5,.65,.8,1][poisoned.srcG] : 0;
   if(poisoned && poisoned.srcG>=1 && (sf.noRng ? pch>=1 : Math.random() < pch)){ // (v266) 시련: 확률 전염 없음 · 100%면 첫 이웃에게
     const nb = gridNeighbors(u.idx, 'row').map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive);
     if(nb.length){ const t = nb[sf.noRng ? 0 : Math.floor(Math.random()*nb.length)]; if(!t.st.ward) t.st.poison = {r:3, pct:poisoned.pct, srcG:poisoned.srcG}; else t.st.ward--; }
   }
+}
+// ---------- (v343) 한정 성좌 전투 처리 ----------
+const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
+function bombExplode(sf, u, hits){
+  const b = u.st.bomb; if(!b) return; delete u.st.bomb;
+  const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
+  if(!src || !u.alive) return;
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1), { noCrit:true, noCounter:true, detonate:true });
+  if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:'💣폭발' });
+  pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
+}
+const STEAL_ORDER = ['shield','buff','haste','regen','guard','reflect','ward','taunt']; // 로키가 빼앗는 순서 (가장 센 것부터)
+const STEAL_NM = { shield:'보호막', buff:'강화', haste:'가속', regen:'재생', guard:'굳건함', reflect:'반사', ward:'보호', taunt:'도발' };
+function stealEffect(C, from){
+  if(!from || !from.alive || from.isBoss || from.isWard || from.isAdd || from.side===C.a.side) return false; // 보스 기믹·물체는 못 빼앗음
+  const k = STEAL_ORDER.find(x=> x==='shield' ? (from.st.shield||0)>0 : !!from.st[x]); if(!k) return false;
+  const v = from.st[k], vR = from.st.shieldR; delete from.st[k]; if(k==='shield') delete from.st.shieldR;
+  C.hits.push({ side:from.side, idx:from.idx, kind:'status', neg:true, text:'🫳'+STEAL_NM[k]+' 빼앗김' });
+  if(k!=='taunt'){ // 도발은 빼앗아 없애기만
+    const to = C.side(C.a.side).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0];
+    if(to){ const st = to.st;
+      if(k==='shield'){ st.shield = (st.shield||0) + v; st.shieldR = Math.max(st.shieldR||0, vR||2); }
+      else if(k==='ward') st.ward = (st.ward||0) + v;
+      else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
+      C.hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🎁'+STEAL_NM[k] }); }
+  }
+  C.a.stealSpd = Math.min(12, (C.a.stealSpd||0) + 3);
+  return true;
+}
+function swapSlots(sf, side, i1, i2){ // 같은 편 두 칸의 정령을 맞바꿈 (빈 칸이면 옮김) · 이번 라운드 행동 순서도 같이 고침
+  if(i1===i2) return; const A = unitAt(sf, side, i1), B = unitAt(sf, side, i2);
+  if(A) A.idx = i2; if(B) B.idx = i1;
+  (sf.queue||[]).forEach(q=>{ if(q.side!==side) return; if(q.idx===i1) q.idx = i2; else if(q.idx===i2) q.idx = i1; });
+}
+function swapAllowed(sf, a, t){ // 레이드는 내 칸끼리만 (칸에 따라 조작하는 사람이 정해짐)
+  if(sf.mode!=='raid' || a.side!=='me') return true;
+  return P1_SLOTS.includes(a.idx) === P1_SLOTS.includes(t.idx);
+}
+function curActCtx(sf){ // 지금 내가 고른 행동 (대상 고르기 규칙용)
+  if(!sf || sf!==state.skillFight || !sf.queue) return null;
+  const q = sf.queue[sf.queuePos]; if(!q || q.side!=='me') return null;
+  const a = unitAt(sf, 'me', q.idx); if(!a || !a.alive) return null;
+  const sk = unitSkill(a, skillSel.act||'basic'); return { a, sk };
 }
 function dealDamage(sf, a, d, mult, opts){
   opts = opts || {};
@@ -2536,7 +2623,8 @@ function dealDamage(sf, a, d, mult, opts){
   }
   if(sf.mode==='raid') v = raidDmgAdjust(sf, a, d, v); // (v272)
   const s = d.st;
-  v *= 1 + (s.curse ? s.curse.v : 0) + (s.web ? s.web.v : 0);
+  v *= 1 + (s.curse ? s.curse.v : 0) + (s.web ? s.web.v : 0) + (s.exposed ? s.exposed.v : 0); // (v343) 도깨비 둔갑 노출
+  if(opts.detonate && s.star && s.star.n>0){ v *= 1 + 0.4*s.star.n; delete s.star; } // (v343) 아스트라이아 별의 공명 — 터뜨리는 공격이 표식을 씀
   v *= Math.max(0.1, 1 - dmgReduction(sf, d));
   if(d.groggy) v *= GROGGY_DMG_MULT; // (v179) 그로기: 받는 피해 2배
   let critCh = BASE_CRIT + runeCrit(a);
@@ -2545,10 +2633,15 @@ function dealDamage(sf, a, d, mult, opts){
   if(crit) v *= CRIT_MULT;
   const total = Math.max(0, Math.round(v));
   let rest = total;
+  if(s.link && rest>0){ const host = aliveUnits(sideUnits(sf, d.side)).find(x=>x!==d && x.line==='water_hb' && x.st.linkHost); // (v343) 하백 물길 잇기: 40%를 대신 받음
+    if(host){ const share = Math.round(rest*0.4); rest -= share; let hv = Math.round(share*Math.max(0.1, 1 - dmgReduction(sf, host))); const hb = hv;
+      if(host.st.shield>0){ const ab = Math.min(host.st.shield, hv); host.st.shield -= ab; hv -= ab; if(host.st.shield<=0) delete host.st.shield; }
+      host.hp = Math.max(0, host.hp - hv); if(hv>0) hidHurt(sf, host, hv); (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:hb, dot:true, src:'🔗물길' }); if(host.hp<=0) killUnit(sf, host); } }
   const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; }
   d.hp = Math.max(0, d.hp - rest);
   if(rest>0) hidHurt(sf, d, rest); // (v270)
+  if(rest > d.maxHp*0.3 && d.hp>0 && aliveUnits(sideUnits(sf, d.side)).some(x=>x.line==='water_mn')) s.memHeal = (s.memHeal||0) + Math.round(rest*0.5); // (v343) 므네모시네 흐르는 기억
   if(d.cast && total>0 && a.side!==d.side) d.cast.dealt += d.cast.el ? (a.element===d.cast.el ? 1 : 0) : total; // (v260) 절대영도 저지 피해 · (v272) 용의 숨결은 물결 공격 횟수
   if(total>0 && d.isBoss && raidGazed(sf, a) && a.alive){ const rd = Math.round(total*0.25); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); } // (v272) 시선 교차: 시선 받은 편이 때리면 25% 돌려받음
   runeOnHit(sf, a, d, total);
@@ -2556,6 +2649,10 @@ function dealDamage(sf, a, d, mult, opts){
   const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
   if(d.hp<=0 && d.alive && a && a!==d && a.side===d.side) hidFriendlyKill(sf, a, d); // (v266) 히든 업적: 같은 편을 쓰러뜨림
   if(d.hp<=0) killUnit(sf, d);
+  if(d.alive && d.st.counter && !opts.noCounter && a && a.alive && a.side!==d.side && d.st.counter.seq!==(sf.actSeq||0)){ // (v343) 산군 반격 — 적 행동 하나에 1번
+    d.st.counter.seq = sf.actSeq||0; d.counterN = (d.counterN||0) + 1;
+    const cr = dealDamage(sf, d, a, 0.7, { noCrit:true, noCounter:true });
+    if(cr){ (sf._rv = sf._rv || []).push({ side:a.side, idx:a.idx, kind:'dmg', amount:cr.total, eff:effTypeMult(d, a), src:'🐯반격' }); if(aw5(d) && a.alive && !sf.noRng && Math.random()<0.25 && !a.isBoss) a.st.bind = true; } }
   return { total, crit, groggy };
 }
 function healAmount(target, amt){
@@ -2574,9 +2671,9 @@ function makeActCtx(sf, a, tSide, tIdx){
     // (v317) 챕터 보스(탐험·출정·월드 보스·균열)는 후열 3칸을 다 차지 — 전열 어느 칸을 때려도 '바로 뒤'는 보스 (예전엔 전열 가운데 뒤만)
     if(sf.mode!=='raid' && (shape==='pierce' || shape==='cross') && isFrontRow(C.t.idx, w)){ const b = sideUnits(sf, tSide).find(u=>u.isBoss && !isFrontRow(u.idx, w)); if(b && !out.includes(b)) out.push(b); }
     return out.filter(u=>u && u.alive && u!==C.t); };
-  C.hit = (u, mult)=>{
+  C.hit = (u, mult, opts)=>{
     if(!u || !u.alive) return null;
-    const r = dealDamage(sf, a, u, mult);
+    const r = dealDamage(sf, a, u, mult, opts);
     if(!r) return null;
     C.hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, crit:r.crit, eff:effTypeMult(a, u) });
     if(r.groggy) C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'<img class="uic" src="assets/ui/ic_groggy.webp" alt="">그로기!' });
@@ -2606,6 +2703,8 @@ function performAction(sf, a, act, tSide, tIdx){
   if(!C.t) return C;
   if(a.side==='me' && act!=='basic'){ const sk = kitOf(a) && kitOf(a)[act]; if(sk && sk.kind==='harm') sf.meHarmSkill = true; } // (v270) 평화주의자
   const empBefore = a.st.empower || 0; // (v269) 이번 행동 전부터 있던 강화만 이번 행동에서 소모
+  const clubBefore = !!a.st.club; // (v343) 도깨비 방망이 — 자리를 바꾼 다음 공격에서 소모
+  if(a.st.counter) delete a.st.counter; // (v343) 산군 반격 자세는 다음 차례까지
   const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
     C.hit(C.t, 1);
@@ -2618,6 +2717,7 @@ function performAction(sf, a, act, tSide, tIdx){
     if(act==='s1') a.cd1 = C.resetCd1 ? 0 : unitCd(a, 's1'); else a.cd2 = unitCd(a, 's2');
     pushLog(sf, logUnitName(a.side, a)+' '+sk.name+' → '+logUnitName(tSide, C.t));
   }
+  if(clubBefore && (act==='basic' || (unitSkill(a, act)||{}).kind==='harm')) delete a.st.club;
   if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
   setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
@@ -3402,7 +3502,7 @@ function friendSeenTxt(id){
 // (v263) 친구 프로필: 내 기록(계정 레벨·보유 정령·도감·클리어·탑)을 players/<나>/prof 에 올려 둠 — 바뀐 때만
 function myProfileStats(){
   return { lv: accountLevel(), own: Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length,
-    dex: Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length, clear: totalStagesCleared(), tower: state.towerBest||0 };
+    dex: dexFoundCount(), clear: totalStagesCleared(), tower: state.towerBest||0 };
 }
 let friendProfSent = '';
 function friendPushProf(){
@@ -3417,7 +3517,7 @@ async function showFriendProfile(k){
   const codeRow = ()=> '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+(fcode||'불러오는 중…')+'</div>'+(fcode?'<button class="btn secondary small" onclick="friendCopyCode(\''+fcode+'\')">복사</button>':'')+'</div>';
   const body = p=>'<div class="pf-top"><div class="pf-ava av r-'+(sp?sp.rarity:'common')+'">'+(sp?spArt(sp):'<img class="spimg" src="assets/ui/ic_summon.webp" alt="">')+'</div>'
     + '<div class="pf-id"><div class="pf-name">'+escTxt(raidNameOf(k))+'</div><div class="sub">'+(p?'계정 Lv.'+p.lv:'계정 Lv.—')+(sp?' · 대표 '+sp.name:'')+'</div><div class="sub" style="font-size:11px;">'+friendSeenTxt(k)+'</div></div></div>'
-    + '<div class="pf-stats">'+stat('보유 정령', p?p.own:'—')+stat('도감', p?p.dex+'/'+Object.keys(SPIRITS).length:'—')+stat('클리어', p?p.clear:'—')+stat('탑 최고', p?p.tower+'층':'—')+'</div>'
+    + '<div class="pf-stats">'+stat('보유 정령', p?p.own:'—')+stat('도감', p?p.dex+'/'+DEX_KEYS.length:'—')+stat('클리어', p?p.clear:'—')+stat('탑 최고', p?p.tower+'층':'—')+'</div>'
     + (p ? '' : '<div class="sub" style="text-align:center; font-size:11px; margin-top:8px;">아직 기록 없음 — 최신 버전으로 접속하면 보임</div>')
     + codeRow();
   openInfoOverlay('프로필', body(null));
@@ -3905,11 +4005,11 @@ function showProfileModal(tab){ // (v210) 홈 이름표를 누르면 뜨는 프�
   if(pfTab==='level') h += accountLevelTabHtml();
   else if(pfTab==='reward') h += accountRewardTabHtml();
   else {
-    const own = Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length, dex = Object.keys(state.discovered||{}).filter(k=>state.discovered[k] && SPIRITS[k]).length;
+    const own = Object.keys(state.owned||{}).filter(k=>state.owned[k]>0 && SPIRITS[k]).length, dex = dexFoundCount();
     const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
     h += '<div class="pf-label">닉네임</div><div class="pf-row"><input id="pfNameInput" class="pf-in" maxlength="12" value="'+escTxt(name)+'" placeholder="최대 12자"><button class="btn small" id="pfNameBtn">저장</button></div>';
     h += '<div class="sub" style="font-size:11px; margin-top:4px;">친구 목록·결투·레이드에 보이는 이름</div>';
-    h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+Object.keys(SPIRITS).length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
+    h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+DEX_KEYS.length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
     if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
     h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
   }
@@ -4619,7 +4719,7 @@ function buildQueue(sf){
   [...sf.myUnits, ...sf.enemyUnits].forEach(u=>{ if(u.st.bind) delete u.st.bind; });
   return e.map(x=>({ side:x.side, idx:x.idx, speed:x.speed }));
 }
-function startRoundQueue(sf){ sf.queue = buildQueue(sf); sf.queuePos = 0; sf.phase = 'acting'; }
+function startRoundQueue(sf){ sf.queue = buildQueue(sf); sf.queuePos = 0; sf.phase = 'acting'; [...(sf.myUnits||[]), ...(sf.enemyUnits||[])].forEach(u=>{ if(u.alive) u.rsHp = u.hp; }); } // (v343) 라운드 시작 체력 — 므네모시네 되감기
 // 지금 차례: 'me' | 'enemy' | 'end'. 쓰러진 유닛은 건너뛰고, 빙결이면 한 번 쉬게 함
 function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
@@ -4654,7 +4754,10 @@ function roundStartEffects(sf){
     if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
     if(s.regen){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, pctHp(u)*s.regen.v)); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
-    ['slow','haste','curse','web','buff','regen','reflect','guard','seal'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } });
+    if(s.memHeal){ const b = u.hp; u.hp = Math.min(u.maxHp, u.hp + healAmount(u, s.memHeal)); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
+    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
+    if(s.linkHost){ s.linkHost.r--; if(s.linkHost.r<=0){ u.maxHp = Math.max(1, u.maxHp - (s.linkHost.boost||0)); u.hp = Math.min(u.hp, u.maxHp); delete s.linkHost; } }
+    if(s.bomb){ s.bomb.r--; if(s.bomb.r<=0){ bombExplode(sf, u, hits); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
   });
@@ -4676,6 +4779,21 @@ function roundStartEffects(sf){
 }
 
 // ---------- 적 AI ----------
+const LIMITED_LINES = ['fire_sc','fire_su','water_mn','water_hb','wood_sg','light_as','dark_lk','dark_dk'];
+function aiLimited(sf, a, act){ // 반환: {act,side,idx} · 'skip'(이 스킬은 아낌) · null(일반 규칙대로)
+  const own = aliveUnits(sideUnits(sf, a.side)), foe = foeOf(a.side), foes = aliveUnits(sideUnits(sf, foe)).filter(u=>!u.inert);
+  const ratio = u=> u.hp/u.maxHp, low = list=> list.reduce((x,y)=> ratio(y) < ratio(x) ? y : x);
+  const k = a.line+':'+act;
+  if(k==='fire_sc:s2') return (foes.some(u=>u.st.bomb) || foes.length>=3) ? null : 'skip';
+  if(k==='fire_su:s1'){ if(ratio(a) < 0.35) return 'skip'; const t = own.reduce((x,y)=> y.atk>x.atk ? y : x); return { act, side:a.side, idx:t.idx }; }
+  if(k==='water_mn:s1'){ let best = null, gap = 0; own.forEach(u=>{ const g = (Number.isFinite(u.rsHp) ? u.rsHp : u.hp) - u.hp; if(g>gap){ gap = g; best = u; } }); return (best && gap >= best.maxHp*0.15) ? { act, side:a.side, idx:best.idx } : 'skip'; }
+  if(k==='water_mn:s2'){ const n = own.filter(u=>!u.loopUsed && !u.st.loop).length; return (n>=2 && (sf.round>=2 || own.some(u=>ratio(u)<0.6))) ? { act, side:a.side, idx:a.idx } : 'skip'; }
+  if(k==='water_hb:s1'){ const o = own.filter(u=>u!==a && !u.st.link); return o.length ? { act, side:a.side, idx:low(o).idx } : 'skip'; }
+  if(k==='light_as:s2'){ const pool = (aliveUnits(sideUnits(sf, foe)).filter(u=>u.st.taunt).length ? foes.filter(u=>u.st.taunt) : frontFirst(sideUnits(sf, foe), sideWidth(sf, foe))).filter(u=>u.st.star && u.st.star.n>=2); return pool.length ? { act, side:foe, idx:pool.reduce((x,y)=> y.st.star.n>x.st.star.n ? y : x).idx } : 'skip'; }
+  if(k==='dark_dk:s1'){ if(foes.some(u=>u.st.taunt)) return null; const back = foes.filter(u=>!isFrontRow(u.idx, sideWidth(sf, foe)) && !u.isBoss); return back.length ? { act, side:foe, idx:low(back).idx } : null; }
+  if(k==='dark_dk:s2'){ const o = own.filter(u=>u!==a && ratio(u)<0.4 && swapAllowed(sf, a, u)); return o.length ? { act, side:a.side, idx:low(o).idx } : 'skip'; }
+  return null;
+}
 function aiPickFoeTarget(sf, a){
   const foe = foeOf(a.side);
   const pool = frontFirst(sideUnits(sf, foe), sideWidth(sf, foe));
@@ -4697,6 +4815,7 @@ function aiChooseAction(sf, a){
     if(!skillAvailable(a, act)) continue;
     const sk = act==='basic' ? null : kit[act];
     const kind = sk ? sk.kind : 'harm';
+    if(sk && LIMITED_LINES.includes(a.line)){ const c = aiLimited(sf, a, act); if(c==='skip') continue; if(c) return c; } // (v343) 한정 성좌 자동 전투
     if(sk && sk.self){ if(a.st.taunt) continue; return { act, side:a.side, idx:a.idx }; } // (v192) 이미 도발 중이면 아껴 둠
     if(kind==='harm'){
       const t = aiPickFoeTarget(sf, a); if(!t) return null;
@@ -4745,7 +4864,8 @@ function retargetForAct(sf, a, act){ // 고른 행동의 종류에 맞게 대상
 }
 function isSupportUnit(a){ const k = kitOf(a); return k.s1.kind!=='harm' && k.s2.kind!=='harm'; }
 function autoAllyTarget(sf, a){ // 회복·보호는 체력 비율이 가장 낮은 아군(뿌리내리기는 전열 우선), 강화는 공격력이 가장 높은 아군
-  const own = aliveUnits(sideUnits(sf, a.side)); if(!own.length) return a.idx;
+  let own = aliveUnits(sideUnits(sf, a.side)); if(!own.length) return a.idx;
+  { const sk = skillSel.act && skillSel.act!=='basic' ? unitSkill(a, skillSel.act) : null; if(sk && sk.notSelf){ const o = own.filter(u=>u!==a && (!sk.swap || swapAllowed(sf, a, u))); if(!o.length) return a.idx; return o.reduce((x,y)=> y.hp/y.maxHp < x.hp/x.maxHp ? y : x).idx; } } // (v343) 물길 잇기·도깨비불은 자신 제외
   const kind = kitOf(a).s1.kind;
   if(kind==='buff') return own.reduce((x,y)=> y.atk>x.atk ? y : x).idx;
   let pool = own;
@@ -4925,7 +5045,7 @@ const LINE_KITS = {
         '대상의 화상을 전부 터뜨려 중첩당 공격력 '+pctTxt([0,0,.6,.8,1.0][g]),
         g>=3?'터뜨린 뒤 십자 방향 대상에게 화상 1중첩':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
+      run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5, n>0 ? {detonate:true} : null); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', icon:artIc('pv_water_a'), desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:artIc('sk_water_a_1'), cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
@@ -5045,7 +5165,82 @@ const LINE_KITS = {
         '대상의 이로운 효과를 전부 제거',
         '제거한 효과 수만큼 공격력 '+pctTxt([0,0,.6,.8,1.0][g])+' (없어도 최소 60%)'
       ].join('<br>'),
-      run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } }
+      run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
+  // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
+  fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
+    passive:{ name:'불씨 전이', icon:'🧨', desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)' },
+    s1:{ name:'시한 낙인', icon:'💣', cd:3, kind:'harm', tag:()=> '폭탄',
+      desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
+      run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
+    s2:{ name:'연쇄 점화', icon:'🎆', cd:4, kind:'harm', tag:()=> '전체 · 폭탄 즉시',
+      desc:()=>'대상 편 전체에 공격력 60%<br>폭탄이 붙은 적은 그 자리에서 바로 터짐',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.6)); C.side(C.tSide).filter(u=>u.st.bomb).forEach(u=>bombExplode(C.sf, u, C.hits)); } } },
+  fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
+    passive:{ name:'타오르는 혼', icon:'🔥', desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
+    s1:{ name:'불꽃 제물', icon:'🕯️', cd:3, kind:'buff', tag:()=> '자기 체력 15%',
+      desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +30% (2라운드)<br>체력이 모자라면 1만 남음',
+      run:C=>{ const a = C.a, cost = Math.round(a.maxHp*0.15), before = a.hp; a.hp = Math.max(1, a.hp - cost); a.rsHp = Math.max(1, (Number.isFinite(a.rsHp) ? a.rsHp : before) - cost); if(before>a.hp){ hidHurt(C.sf, a, before-a.hp); C.hits.push({ side:a.side, idx:a.idx, kind:'dmg', amount:before-a.hp, dot:true, src:'불꽃 제물' }); }
+        const give = u=>C.pos(u, st=>{ st.pyre = { v:0.3, r:2 }; }, '🕯️공격력 +30%'); give(C.t);
+        if(aw5(a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>y.atk-x.atk)[0]; if(o) give(o); } } },
+    s2:{ name:'종말의 불길', icon:'☄️', cd:4, kind:'harm', tag:()=> '잃은 체력 비례',
+      desc:()=>'대상에게 공격력 150% + 자기가 잃은 체력의 30%만큼 추가 피해',
+      run:C=>{ const lost = Math.max(0, C.a.maxHp - C.a.hp); C.hit(C.t, 1.5 + lost*0.3/Math.max(1, C.a.atk)); } } },
+  water_mn: { role:'되감기', icon:ELEMENT_INFO.water.icon,
+    passive:{ name:'흐르는 기억', icon:'🌀', desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
+    s1:{ name:'되감기', icon:'⏪', cd:3, kind:'heal', allyOnly:true, tag:()=> '아군 전용',
+      desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거<br>불꽃 제물로 태운 체력은 안 돌아옴',
+      run:C=>{ const t = C.t; if(t.side!==C.a.side) return; const to = Math.max(1, Math.min(t.maxHp, Math.round(Number.isFinite(t.rsHp) ? t.rsHp : t.hp))), d = to - t.hp;
+        if(d>0) C.heal(t, d); else if(d<0){ t.hp = to; C.hits.push({ side:t.side, idx:t.idx, kind:'dmg', amount:-d, dot:true, src:'되감기' }); }
+        C.cleanse(t, 1); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } },
+    s2:{ name:'시간의 고리', icon:'⏳', cd:4, kind:'buff', allyOnly:true, tag:()=> '아군 전체 · 부활 표식',
+      desc:()=>'아군 전체에 2라운드 표식: 그 사이 쓰러지면 표식 받을 때 체력의 50%로 일어남<br>아군마다 전투당 1번',
+      run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*0.5)) }; }, '⏳고리'); }); } } },
+  water_hb: { role:'연결', icon:ELEMENT_INFO.water.icon,
+    passive:{ name:'깊은 강', icon:'🌊', desc:()=>'연결 중이면 최대체력 +15%' },
+    s1:{ name:'물길 잇기', icon:'🔗', cd:3, kind:'shield', allyOnly:true, notSelf:true, tag:()=> '연결 3R',
+      desc:()=>'아군 하나와 3라운드 연결: 그 아군이 받는 피해의 40%를 하백이 대신 받음<br>연결 중 하백이 받는 피해 −20%',
+      run:C=>{ const a = C.a; if(C.t.side!==a.side || C.t===a) return; const link = u=>C.pos(u, st=>{ st.link = { r:3 }; }, '🔗연결');
+        link(C.t); if(aw5(a)){ const o = C.side(a.side).filter(u=>u!==a && u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) link(o); }
+        if(!a.st.linkHost){ const b = Math.round(a.maxHp*0.15); a.maxHp += b; a.hp += b; a.st.linkHost = { r:3, boost:b }; } else a.st.linkHost.r = 3;
+        C.hits.push({ side:a.side, idx:a.idx, kind:'status', text:'🌊깊은 강' }); } },
+    s2:{ name:'범람', icon:'🌊', cd:4, kind:'harm', tag:()=> '전체 · 둔화',
+      desc:()=>'대상 편 전체에 공격력 90% + 둔화 (속도 −10, 2라운드)',
+      run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.9); if(u.alive) C.neg(u, st=>{ st.slow = { v:Math.max(10, (st.slow&&st.slow.v)||0), r:2 }; }, '🐌둔화'); }); } } },
+  wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
+    passive:{ name:'산의 주인', icon:'⛰️', desc:()=>'체력 50% 이상이면 받는 피해 −15%' },
+    s1:{ name:'포효', icon:'🐯', cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 반격',
+      desc:()=>'자신에게 도발 + 반격 자세 (산군의 다음 차례까지)<br>적이 산군을 때리면 그 적에게 공격력 70%로 반격 · 적의 행동 하나에 1번',
+      run:C=>{ C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1 }; }, '🐯반격 자세'); } },
+    s2:{ name:'산의 일격', icon:'🪨', cd:4, kind:'harm', tag:()=> '반격 횟수 비례',
+      desc:()=>'대상에게 공격력 200% + 이번 전투 반격 횟수마다 +10% (최대 +100%)',
+      run:C=>{ C.hit(C.t, 2.0 + Math.min(1, 0.1*(C.a.counterN||0))); } } },
+  light_as: { role:'별 표식', icon:ELEMENT_INFO.light.icon,
+    passive:{ name:'별의 공명', icon:'🌟', desc:()=>'표식 붙은 적이 터뜨리는 공격(발화 · 시한폭탄)을 맞으면 표식을 전부 써서 그 피해 +표식당 40%' },
+    s1:{ name:'별자리 표식', icon:'✴️', cd:3, kind:'harm', tag:()=> '표식',
+      desc:()=>'대상에게 공격력 140% + 별 표식 1개 (최대 3개, 3라운드)',
+      run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const n = aw5(C.a) ? 2 : 1; C.neg(C.t, st=>{ st.star = { n:Math.min(3, ((st.star&&st.star.n)||0)+n), r:3 }; }, '✴️별 표식'); } } },
+    s2:{ name:'별똥별', icon:'🌠', cd:4, kind:'harm', tag:()=> '표식 소모',
+      desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
+      run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2); } } },
+  dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
+    passive:{ name:'날쌘 손', icon:'🫳', desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)' },
+    s1:{ name:'손버릇', icon:'🃏', cd:3, kind:'harm', tag:()=> '효과 빼앗기',
+      desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
+      run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
+    s2:{ name:'장난꾼의 잔치', icon:'🎭', cd:4, kind:'harm', tag:()=> '전체 · 빼앗기',
+      desc:()=>'대상 편 전체에서 이로운 효과를 1개씩 빼앗아 아군에게 나눠 준 뒤 전체에 공격력 80%',
+      run:C=>{ C.side(C.tSide).forEach(u=>stealEffect(C, u)); C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+  dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
+    passive:{ name:'방망이', icon:'🏏', desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
+    s1:{ name:'둔갑', icon:'🎭', cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
+      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
+      run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
+        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } }
+        C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:0.2, r:2 }; }, '🎯노출'); if(aw5(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
+    s2:{ name:'도깨비불', icon:'🔵', cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
+      desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
+      run:C=>{ const a = C.a, t = C.t; if(t.side!==a.side || t===a || !swapAllowed(C.sf, a, t)) return; swapSlots(C.sf, a.side, a.idx, t.idx);
+        [a, t].forEach(u=>C.pos(u, st=>{ st.veil = { v:0.3, r:2 }; }, '🔵도깨비불')); a.st.club = true; } } }
 };
 // (v269) 레이드 보스 전용 스킬 — 예전엔 보스가 속 정령(예: 혹한의 폭군 = 물결 레전더리 A형 '세이렌')의 스킬·특성을 그대로 써서
 // 정보창에 없는 회복(세이렌 특성 '맑은 물' · 치유 스킬)을 했음. 이제 보스마다 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
@@ -5846,7 +6041,20 @@ function statusList(u){
   if(u.isBoss && u.inv) o.push({i:stIc('inv'), t:'역류', d:'이번 라운드 상성 반전 — 불리한 속성이 유리', good:true});
   if(u.cast) o.push({i:gmIcon({ic:u.cast.ic, nm:u.cast.nm}), t:u.cast.nm+' 준비', d:u.cast.el ? '이번 라운드에 '+elIc(u.cast.el)+' '+ELEMENT_INFO[u.cast.el].name+' 공격을 '+Math.max(0,u.cast.need-u.cast.dealt)+'번 더 맞히거나 그로기로 만들면 저지' : '이번 라운드에 '+fmtHp(Math.max(0,u.cast.need-u.cast.dealt))+' 더 피해를 주거나 그로기로 만들면 저지', good:true});
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
-  const left = { '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0 };
+  // (v343) 한정 성좌 효과
+  if(s.bomb) o.push({i:'💣', n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음', good:false});
+  if(s.star) o.push({i:'✴️', n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
+  if(s.exposed) o.push({i:'🎯', t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
+  if(s.pyre) o.push({i:'🕯️', t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
+  if(s.soul) o.push({i:'🔥', t:'타오르는 혼', d:'공격력 +'+Math.round(s.soul.v*100)+'%'+r(s.soul), good:true});
+  if(s.loop) o.push({i:'⏳', t:'시간의 고리', d:'쓰러지면 체력 '+fmtHp(s.loop.hp)+'로 일어남'+r(s.loop), good:true});
+  if(s.memHeal) o.push({i:'🌀', t:'흐르는 기억', d:'다음 라운드 시작에 '+fmtHp(s.memHeal)+' 회복', good:true});
+  if(s.link) o.push({i:'🔗', t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
+  if(s.linkHost) o.push({i:'🌊', t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
+  if(s.counter) o.push({i:'🐯', t:'반격 자세', d:'맞으면 공격력 70%로 반격 (적 행동 하나에 1번) · 다음 차례까지', good:true});
+  if(s.veil) o.push({i:'🔵', t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
+  if(s.club) o.push({i:'🏏', t:'방망이', d:'다음 공격 공격력 +40%', good:true});
+  const left = { '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0, '별 표식':0, '노출':s.exposed&&s.exposed.r, '불꽃 제물':s.pyre&&s.pyre.r, '타오르는 혼':s.soul&&s.soul.r, '시간의 고리':s.loop&&s.loop.r, '물길 연결':s.link&&s.link.r, '물길 잇기':s.linkHost&&s.linkHost.r, '도깨비불':s.veil&&s.veil.r };
   o.forEach(x=>{ const v = left[x.t]; if(v>0 && v<99) x.left = v; });
   return o;
 }
@@ -7053,11 +7261,12 @@ const ELEMENT_PASSIVE = {
     }
   }
 };
+const LIMITED_TRAIT_OF = { sc:'b', su:'a', mn:'a', hb:'b', sg:'a', as:'b', lk:'b', dk:'a' }; // 스칼렛 광란 · 수르트 대폭발 · 므네모시네 회생 · 하백 해일 · 산군 천년수 · 아스트라이아 서광 · 로키 황폐 · 도깨비 파멸의 탐식
 const MYTHIC_PASSIVE = { icon:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">', name:'통솔', desc:'모든 팀원의 공격력 +10%' };
 function passiveForERV(element, rarity, variant){
   if(rarity==='common' || rarity==='rare') return null; // 일반·레어는 아직 variant 간 차이 없음(쌍둥이)
   if(rarity==='mythic'){ // (v297) 레전더리 특성 + 통솔 — 예전엔 에픽 특성 + 통솔이라 최대 강화·공격력 특성이 레전더리보다 낮았음
-    const legP = ELEMENT_PASSIVE[element].legendary[variant];
+    const legP = ELEMENT_PASSIVE[element].legendary[LIMITED_TRAIT_OF[variant] || variant]; // (v343) 한정 성좌는 같은 속성 레전더리 특성 중 하나를 빌려 씀
     return Object.assign({}, legP, {
       name: legP.name+' + 통솔',
       desc: legP.desc+' · '+MYTHIC_PASSIVE.desc
@@ -7761,8 +7970,8 @@ function dexRewardRow(id, title, progressText){
   return '<div class="fuse-alert" style="align-items:center;"><span>'+title+'<div class="sub" style="font-size:10px;">'+rewardWords(a.reward)+'</div></span><span>'+right+'</span></div>';
 }
 function dexRewardsHtml(kind){ // (v120) 제목 없이 목록만 — <img class="uic" src="assets/ui/ic_gift.webp" alt=""> 버튼 팝업 안에 들어감
-  const eq = kind==='equip', total = eq ? allEquipKeys().length : Object.keys(SPIRITS).length;
-  const found = eq ? equipSeenCount() : Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length;
+  const eq = kind==='equip', total = eq ? allEquipKeys().length : DEX_KEYS.length;
+  const found = eq ? equipSeenCount() : dexFoundCount();
   let h = '';
   [25,50,75,100].forEach(p=>{ h += dexRewardRow((eq?'equip_dex_':'dex_')+p, (p===100?'도감 완성':'도감 '+p+'%'), found+'/'+total); });
   ELEMENTS.forEach(el=>{ h += dexRewardRow((eq?'eqdexel_':'dexel_')+el, elLabel(el)+' 완성', (eq?equipElementCount(el):spiritElementCount(el))+'/10'); });
@@ -7853,6 +8062,21 @@ const PICKUP_COST = 10, PICKUP_PITY = 80, PICKUP_SEL_RATE = 0.5, PICKUP_DUP_REFU
 const PICKUP_RATES = [ {r:'mythic', w:1.5}, {r:'legendary', w:3.5}, {r:'epic', w:15}, {r:'rare', w:80} ];
 const PICKUP_PAIRS = [ ['fire_mythic_a','water_mythic_b'], ['wood_mythic_a','light_mythic_b'], ['dark_mythic_a','fire_mythic_b'], ['water_mythic_a','wood_mythic_b'], ['light_mythic_a','dark_mythic_b'] ];
 const PICKUP_P0 = (2026*12+9)*2; // 2026년 10월 1~15일 = 첫 픽업
+// (v343) 한정 성좌 픽업 — 한 기간에 한정 1 + 짝 신화 1 (짝은 같이 쓰기 좋은 기존 신화로 고정)
+// 순서는 기간 번호로 정해지는 무작위 (모두 같은 순서) · 바로 앞 두 기간에 나온 한정은 빠짐 · LIMITED_P0 전 기간은 예전 2신화 픽업
+const LIMITED_P0 = PICKUP_P0 + 1; // 2026년 10월 16일~
+const LIMITED_PAIR = { fire_mythic_sc:'water_mythic_b', fire_mythic_su:'fire_mythic_a', water_mythic_mn:'wood_mythic_a', water_mythic_hb:'water_mythic_a', wood_mythic_sg:'light_mythic_a', light_mythic_as:'fire_mythic_b', dark_mythic_lk:'dark_mythic_b', dark_mythic_dk:'wood_mythic_b' };
+const PICKUP_MEM_PER_PULL = 1; // 픽업 1회마다 고른 정령 기억 조각
+const limSeqCache = [];
+function pickupLimitedAt(idx){ // idx 기간의 한정 성좌
+  const keys = LIMITED_SPIRITS.map(x=>x.key), n = idx - LIMITED_P0; if(n<0) return null;
+  while(limSeqCache.length <= n){ const i = limSeqCache.length, recent = limSeqCache.slice(Math.max(0, i-2)), pool = keys.filter(k=>!recent.includes(k));
+    const w = pool.map(k=>{ const last = limSeqCache.lastIndexOf(k); return Math.pow(last<0 ? 12 : i - last, 2); }); // 오래 안 나온 정령일수록 잘 나옴 (고르게 돌아오게)
+    let x = seededRand((LIMITED_P0+i)*7.31 + 13.7) * w.reduce((a,b)=>a+b, 0), pick = pool[pool.length-1];
+    for(let j=0; j<pool.length; j++){ if(x < w[j]){ pick = pool[j]; break; } x -= w[j]; }
+    limSeqCache.push(pick); }
+  return limSeqCache[n];
+}
 const SHARD_IC = '<img class="uic" src="assets/ui/ic_starshard.webp" alt="별빛 조각" draggable="false">'; // (v318) 별빛 조각 재화 그림 (균열 별 평가는 STAR_IC 그대로)
 const STAR_IC = '<svg class="star-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l2.6 6.5 6.9.5-5.3 4.5 1.7 6.8L12 16.4 6.1 20.1l1.7-6.8L2.5 8.8l6.9-.5z" fill="#ffcf4a" stroke="#b8641a" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 5.5l1.3 3.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/></svg>';
 function pickupOnline(){ return navigator.onLine!==false && !!raidNet.db && !!raidNet.tOffOk; }
@@ -7861,7 +8085,8 @@ function pickupPeriod(ms){ // 지금(또는 ms) 픽업 기간 — 번호 · 신�
   if(ms===undefined) ms = pickupOnline() ? serverNow() : Date.now();
   const k = pickupKst(ms), half = k.day<=15 ? 0 : 1, idx = (k.y*12+k.m)*2 + half;
   const endUtc = half ? Date.UTC(k.y, k.m+1, 1) : Date.UTC(k.y, k.m, 16), end = endUtc - 9*3600000;
-  const pair = PICKUP_PAIRS[(((idx-PICKUP_P0) % PICKUP_PAIRS.length) + PICKUP_PAIRS.length) % PICKUP_PAIRS.length];
+  const lim = pickupLimitedAt(idx);
+  const pair = lim ? [lim, LIMITED_PAIR[lim]] : PICKUP_PAIRS[(((idx-PICKUP_P0) % PICKUP_PAIRS.length) + PICKUP_PAIRS.length) % PICKUP_PAIRS.length];
   return { idx, pair, end, left: Math.max(0, end - ms) };
 }
 function pickupLeftText(ms){ const m = Math.floor(ms/60000), d = Math.floor(m/1440), h = Math.floor((m%1440)/60); return d>0 ? d+'일 '+h+'시간' : (h>0 ? h+'시간 '+(m%60)+'분' : Math.max(1, m%60)+'분'); }
@@ -7883,18 +8108,20 @@ function doPickup(n){
   if((state.starShard||0) < PICKUP_COST*n){ toast('별빛 조각 부족 ('+(PICKUP_COST*n)+' 필요)'); return; }
   const go = ()=>{
     if(!pickupOnline() || (state.starShard||0) < PICKUP_COST*n) return;
-    const pk = pickupState(); state.starShard -= PICKUP_COST*n;
+    const pk = pickupState(), selK = pk.sel; state.starShard -= PICKUP_COST*n;
     const keys = [], flags = [], memF = []; let refund = 0;
     for(let i=0;i<n;i++){ const key = pickupRoll(pk); keys.push(key);
       if(SPIRITS[key].rarity==='mythic' && transLevel(key)>=TRANS_MAX && isAstral(key)){ refund += PICKUP_DUP_REFUND; flags.push(false); memF.push(0); continue; } // 초월·성좌까지 끝낸 신화는 별빛 조각으로 환급
       const g = gainSpirit(key); flags.push(g.isNew); memF.push(g.mem); }
     keys.forEach(pushRecentSummon); state.starShard += refund;
+    if(selK && SPIRITS[selK]) memAdd(selK, PICKUP_MEM_PER_PULL*n); // (v343) 고른 정령 기억 조각
     state.dailyStats.summons += n; passBump('summon', n); state.lifetimeSummons = (state.lifetimeSummons||0) + n;
     checkAchievements(); save();
     const again = ()=>doPickup(n), opts = { star:true, canAgain:()=>canPickup(n), againLabel:()=>'✨ '+n+'회 더 '+SHARD_IC+' '+(PICKUP_COST*n) };
     if(n===1) showResultModal(SPIRITS[keys[0]], flags[0], again, Object.assign({ mem:memF[0] }, opts));
     else showMultiResultModal(keys, flags, again, Object.assign({ title: uiIc('pickup')+' 픽업 '+n+'회 결과', mem:memF }, opts));
     if(refund) setTimeout(()=>toast('초월·성좌를 끝낸 신화 → 별빛 조각 +'+refund), 900);
+    if(selK && SPIRITS[selK]) setTimeout(()=>toast(memIc(selK)+' '+SPIRITS[selK].name+' 기억 조각 +'+(PICKUP_MEM_PER_PULL*n)), refund ? 2400 : 900);
     render();
   };
   if(n>1 && state.settings.multiNoAsk) return go();
@@ -7932,7 +8159,7 @@ function renderPickupTab(){
   h += '<div class="pu-page">';
   h += '<div class="pu-leftrow"><span class="pu-left">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 남음' : '📡 오프라인')+'</span></div>';
   h += '<div class="pu-stage" style="--ec:'+ELEMENT_INFO[el].color+';"><button class="pu-nav l" data-pu="-1" aria-label="이전">‹</button>'
-    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub"><b style="color:'+RARITY_HEX.mythic+';">신화</b> · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
+    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'</div><div class="pu-sub">'+(sp.limited ? '<b class="as-name" style="padding:0 6px; border-radius:6px;">한정 성좌</b>' : '<b style="color:'+RARITY_HEX.mythic+';">신화</b>')+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</div></div>'
     + '<button class="pu-nav r" data-pu="1" aria-label="다음">›</button></div>';
   h += '<div class="pu-pick">'+per.pair.map((x,i)=>'<button class="pu-th'+(i===pickupView?' on':'')+'" data-puv="'+i+'" style="--ec:'+ELEMENT_INFO[SPIRITS[x].element].color+';">'+spArt(SPIRITS[x])+'<b>'+SPIRITS[x].name+'</b></button>').join('')+'</div>';
   h += '<div class="pu-sel">160회 안에 <b>'+sp.name+'</b> 확정 · 넘겨서 고르기</div>';
@@ -7941,7 +8168,7 @@ function renderPickupTab(){
   if(!on) h += '<div class="pu-off">📡 픽업 소환은 온라인일 때만 가능</div>';
   h += '<div class="pu-btns"><button class="btn" id="puOne" '+(canPickup(1)?'':'disabled')+'>1회 '+SHARD_IC+' '+PICKUP_COST+'</button><button class="btn gold" id="puTen" '+(canPickup(10)?'':'disabled')+'>10회 '+SHARD_IC+' '+PICKUP_COST*10+'</button></div>';
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>';
-  h += '<div class="pu-rate">신화 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 픽업) · 레전더리 '+PICKUP_RATES[1].w+'% · 에픽 '+PICKUP_RATES[2].w+'% · 레어 '+PICKUP_RATES[3].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급</div>';
+  h += '<div class="pu-rate">신화·성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 픽업) · 레전더리 '+PICKUP_RATES[1].w+'% · 에픽 '+PICKUP_RATES[2].w+'% · 레어 '+PICKUP_RATES[3].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(sp.limited ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>';
   h += '</div>';
   return h;
 }
@@ -9040,7 +9267,7 @@ function renderSummonTab(){
   return html;
 }
 function showPickTicketModal(tk, sel){
-  const r = TICKET_INFO[tk].pick, keys = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity===r).sort((a,b)=>ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element) || (SPIRITS[a].variant<SPIRITS[b].variant?-1:1));
+  const r = TICKET_INFO[tk].pick, keys = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity===r && !SPIRITS[k].limited).sort((a,b)=>ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element) || (SPIRITS[a].variant<SPIRITS[b].variant?-1:1));
   let h = '<h3 style="text-align:center;">'+TICKET_INFO[tk].icon+' '+TICKET_INFO[tk].name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">받을 정령 선택 · 보유 '+ticketCount(tk)+'장</div><div class="pick-grid">';
   h += keys.map(k=>{ const sp = SPIRITS[k], kit = LINE_KITS[sp.element+'_'+sp.variant]; return '<button class="pick-cell'+(sel===k?' on':'')+'" data-pk="'+k+'"><span class="av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</span><b>'+sp.name+'</b><small>'+kit.role+' · 보유 '+ownedCount(k)+'</small></button>'; }).join('');
   h += '</div><button id="pickGo" class="btn gold sticky-ok" style="margin-top:10px;" '+(sel?'':'disabled')+'>'+(sel ? SPIRITS[sel].name+' 받기' : '정령 선택')+'</button>';
@@ -9728,9 +9955,7 @@ function chapterRewardLadderHtml(chapterNum){
 }
 // ===================== 업적 =====================
 function dexProgress(){
-  const total = Object.keys(SPIRITS).length;
-  const found = Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length;
-  return found/total;
+  return dexFoundCount()/DEX_KEYS.length;
 }
 // ===================== 계정 레벨 (별도 경험치 없이 전체 진행도로 계산 — 컨텐츠 해금용) =====================
 // (v269) Lv.30까지 — Lv.N 필요 점수 5·N·(N−1) (Lv.2 10 · Lv.5 100 · Lv.10 450 · Lv.20 1900 · Lv.30 4350). 예전엔 Lv.5가 끝이고 출정 해금에만 쓰였음
@@ -9742,12 +9967,12 @@ function accountPoints(){
   // 시작 시 스타터 5종(속성별 1개)이 이미 discovered 상태라 dexFound가 5부터 시작함.
   // 그대로 점수에 넣으면 새 게임 시작부터 계정 레벨 경험치 바가 절반(5/10) 차있는 버그가 생기므로
   // 스타터 개수만큼 빼고 "직접 발견한" 종만 점수로 인정한다.
-  const dexFound = Math.max(0, Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length - ELEMENTS.length);
+  const dexFound = Math.max(0, dexFoundCount() - ELEMENTS.length);
   return accountPointParts(dexFound).reduce((t,x)=>t+x.pts, 0);
 }
 // (v269) 계정 점수 — 진행 기록에서 바로 계산(따로 저장하는 경험치 없음)
 function accountPointParts(dexFound){
-  if(dexFound===undefined) dexFound = Math.max(0, Object.keys(state.discovered||{}).filter(k=>state.discovered[k]).length - ELEMENTS.length);
+  if(dexFound===undefined) dexFound = Math.max(0, dexFoundCount() - ELEMENTS.length);
   const dg = Object.values(state.dungeonBest||{}).reduce((t,v)=>t+(Number(v)||0), 0);
   const raid = Object.values(state.raidProgress||{}).reduce((t,l)=>t+(Array.isArray(l)?l.length:0), 0);
   const ach = Object.keys(state.achievementsClaimed||{}).filter(k=>state.achievementsClaimed[k]).length;
@@ -11443,7 +11668,16 @@ const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 �
   light_mythic_a: [{g:'shadowLord', why:'상성 유리 + 보호막·부활로 잠식을 버팀'}, {g:'lavaLord', why:'보호막이 화상 장판·자폭을 받아 냄'}, {g:'ruinGuardian', why:'보호가 석화의 눈·봉인의 문양을 막음'}, {g:'abyssCrystal', why:'혼돈으로 벗겨진 보호막을 바로 다시 씌움'}],
   light_mythic_b: [{g:'shadowLord', why:'상성 유리 + 빠른 연속 행동으로 잠식이 쌓이기 전에 끝냄'}, {g:'lavaLord', why:'자폭 전에 연속 행동으로 용암 정령을 정리'}, {g:'frostGiant', why:'여명의 호령으로 절대영도를 한 라운드 안에 저지'}, {g:'abyssCrystal', why:'다음 속성에 맞는 정령을 먼저 움직임'}],
   dark_mythic_a:  [{g:'frostGiant', why:'상성 유리 + 굶주림으로 큰 체력을 깎아 처형'}, {g:'lavaLord', why:'용암 정령 처형으로 연속 행동'}, {g:'ancientTree', why:'흡혈로 포자 독을 버팀'}],
-  dark_mythic_b: [{g:'frostGiant', why:'상성 유리 + 저주로 얼음 갑옷 너머 피해를 키움'}, {g:'ancientTree', why:'악몽 포식으로 가시 껍질·가시 덩굴을 벗김'}, {g:'abyssCrystal', why:'모든 적 저주로 빠르게 정리'}]
+  dark_mythic_b: [{g:'frostGiant', why:'상성 유리 + 저주로 얼음 갑옷 너머 피해를 키움'}, {g:'ancientTree', why:'악몽 포식으로 가시 껍질·가시 덩굴을 벗김'}, {g:'abyssCrystal', why:'모든 적 저주로 빠르게 정리'}],
+  // (v343) 한정 성좌 — 기획안의 균열 짝 (시뮬 확인 전 초안)
+  fire_mythic_sc:  [{g:'ancientTree', why:'상성 유리 + 폭탄 한 방이 재생을 앞지름'}, {g:'lavaLord', why:'용암 정령이 쓰러지면 폭탄이 옆으로 옮겨 붙음'}],
+  fire_mythic_su:  [{g:'frostGiant', why:'잃은 체력만큼 세지는 종말의 불길로 얼음 갑옷을 뚫음'}, {g:'shadowLord', why:'쓰러질 때 아군 공격력을 올려 잠식이 쌓이기 전에 끝냄'}],
+  water_mythic_mn: [{g:'ancientTree', why:'포자 독·덩굴 피해를 되감기로 지움'}, {g:'frostGiant', why:'절대영도를 맞아도 시간의 고리로 일어남'}],
+  water_mythic_hb: [{g:'ancientTree', why:'덩굴로 끌려 나온 후열의 피해를 대신 받음'}, {g:'ruinGuardian', why:'외눈 광선을 나눠 받아 한 명이 쓰러지지 않게 함'}],
+  wood_mythic_sg:  [{g:'frostGiant', why:'눈보라를 맞을 때마다 반격'}, {g:'lavaLord', why:'용암 정령이 계속 때려 반격이 쌓임'}],
+  light_mythic_as: [{g:'shadowLord', why:'상성 유리 + 별 표식을 쌓아 한 번에 터뜨림'}, {g:'abyssCrystal', why:'속성이 바뀌어도 표식은 그대로 남음'}],
+  dark_mythic_lk:  [{g:'frostGiant', why:'얼음 갑옷 대신 정령 효과를 빼앗아 아군을 지킴'}, {g:'ruinGuardian', why:'결계석의 보호막을 빼앗음'}],
+  dark_mythic_dk:  [{g:'ruinGuardian', why:'결계석 뒤에 숨은 적을 앞으로 끌어냄'}, {g:'lavaLord', why:'뒤쪽 용암 정령을 끌어내 자폭 전에 처리'}]
 };
 const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
 const RIFT_GIM_K = { lavaLord: 0.3 }; // (v317) 시뮬: 같은 세기로 맞추면 용암군주만 훨씬 어려움(화상 장판·용암 정령·격노) — 다른 보스와 비슷하게 낮춤
@@ -13304,7 +13538,7 @@ let manageReturnFn = null; // (v129) 도감에서 열었으면 닫을 때 도감
 function spiritLineHtml(key){
   const sp = SPIRITS[key];
   const chain = RARITY_ORDER.map(r=>sp.element+'_'+r+'_'+sp.variant).filter(k=>SPIRITS[k]);
-  return '<div class="sp-line"><span class="sp-line-t">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' '+sp.variant.toUpperCase()+'종</span>'
+  return '<div class="sp-line"><span class="sp-line-t">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' '+(sp.limited ? '한정 성좌' : sp.variant.toUpperCase()+'종')+'</span>'
     + '<div class="sp-line-row">'+chain.map(k=>{ const s2 = SPIRITS[k], seen = state.discovered[k]; return '<span class="sp-line-i'+(k===key?' cur':'')+'" style="--rc:'+RARITY_INFO[s2.rarity].color+';">'+(seen ? spArt(s2) : '<b>?</b>')+'<small>'+(seen ? s2.name : '???')+'</small></span>'; }).join('<i>›</i>')+'</div></div>';
 }
 function showManageModal(key){
@@ -13376,9 +13610,9 @@ function showManageModal(key){
 // (v268) 도감: 4칸 + 정렬(등급·속성·역할) — 정렬 기준마다 묶음 제목으로 구분
 function showDexModal(){
   const sortBy = ['rarity','element','role'].includes(state.dexSort) ? state.dexSort : 'rarity';
-  const keys = Object.keys(SPIRITS), ri = k=> RARITY_ORDER.indexOf(SPIRITS[k].rarity), ei = k=> ELEMENTS.indexOf(SPIRITS[k].element), line = k=> SPIRITS[k].element+'_'+SPIRITS[k].variant;
+  const keys = Object.keys(SPIRITS), ri = k=> SPIRITS[k].limited ? RARITY_ORDER.length : RARITY_ORDER.indexOf(SPIRITS[k].rarity), /* (v343) 한정 성좌는 맨 위 '성좌' 묶음 */ ei = k=> ELEMENTS.indexOf(SPIRITS[k].element), line = k=> SPIRITS[k].element+'_'+SPIRITS[k].variant;
   const lines = Object.keys(LINE_KITS);
-  const groupOf = { rarity: k=> SPIRITS[k].rarity, element: k=> SPIRITS[k].element, role: k=> line(k) }[sortBy];
+  const groupOf = { rarity: k=> SPIRITS[k].limited ? 'astral' : SPIRITS[k].rarity, element: k=> SPIRITS[k].element, role: k=> line(k) }[sortBy];
   const order = { rarity:(a,b)=> ri(b)-ri(a) || ei(a)-ei(b) || line(a).localeCompare(line(b)),
     element:(a,b)=> ei(a)-ei(b) || ri(b)-ri(a) || line(a).localeCompare(line(b)),
     role:(a,b)=> lines.indexOf(line(a))-lines.indexOf(line(b)) || ri(b)-ri(a) }[sortBy];
