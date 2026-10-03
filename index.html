@@ -260,7 +260,7 @@
   .sc-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9b8ff66;} .sc-t{font-size:18px; font-weight:900; color:#e8dcff;} .sc-crest{font-size:12px; color:var(--sub); margin-top:3px;} .sc-crest b{color:#ffe08a;}
   .sc-list{display:flex; flex-direction:column; gap:8px; margin-top:10px; padding-bottom:12px;}
   .sc-card{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border-radius:14px; background:linear-gradient(90deg,#2a2266e0,#16123ad8); border:1px solid #b9a4ff55; color:var(--text); text-align:left; cursor:pointer;}
-  .sc-art{flex-shrink:0; width:60px; height:60px; border-radius:12px; background:#0006; display:flex; align-items:center; justify-content:center; overflow:hidden;} .sc-img{width:100%; height:100%; object-fit:contain;} .sc-emo{font-size:34px;}
+  .sc-art{flex-shrink:0; width:60px; height:60px; border-radius:12px; background:#0006; display:flex; align-items:center; justify-content:center; overflow:hidden;} .sc-img{width:100%; height:100%; object-fit:contain;} .sc-emo{font-size:34px;} .sc-pair{display:flex; align-items:center; justify-content:center; flex-shrink:0;} .sc-pair img{width:60%; height:auto; object-fit:contain; margin:0 -5%;}
   .sc-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .sc-info b{font-size:15px;} .sc-info small{font-size:11px; color:var(--sub);}
   .sc-pips{display:flex; gap:3px; margin-top:2px;} .sc-pips i{width:12px; height:6px; border-radius:3px; background:#ffffff1f;} .sc-pips i.on{background:linear-gradient(90deg,#ffe08a,#ffb347); box-shadow:0 0 4px #ffd36a99;}
   .sc-lv{flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:11px; font-weight:900; color:#ffe08a;} .sc-cr{position:relative; width:34px; height:34px;} .sc-cr .uic{width:34px; height:34px; margin:0;} .sc-cr.off .uic{filter:grayscale(1) brightness(.55);} .sc-cr i{position:absolute; right:-4px; bottom:-3px; min-width:15px; padding:0 3px; border-radius:8px; background:#1b1640; border:1px solid #ffd36a; font-style:normal; font-size:10px; line-height:14px; text-align:center; color:#ffe08a;}
@@ -3950,7 +3950,7 @@ function homeBgLayer(mode){
 }
 function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MODES.indexOf(m); const d = (i - c + 3) % 3; return d===0 ? 'center' : (d===1 ? 'right' : 'left'); }
 // (v201) 보스 그림 — assets/boss/<챕터 보스 기믹 id 또는 레이드 보스 id>.webp (없으면 기존 이모지)
-const BOSS_IMG_IDS = ['sanc_janus','sanc_twins','sanc_castor','sanc_pollux','sanc_echo','sanc_atlas','sanc_prism','sanc_legion','frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
+const BOSS_IMG_IDS = ['sanc_janus','sanc_castor','sanc_pollux','sanc_echo','sanc_atlas','sanc_prism','sanc_legion','frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 // (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
 const ART_FACE = { sanc_echo:'R', sanc_atlas:'R', sanc_legion:'R', sanc_castor:'R', sanc_pollux:'R', fire_mythic_sc:'R', fire_mythic_su:'R', water_mythic_hb:'R', light_mythic_as:'R', wood_mythic_sg:'L', dark_mythic_dk:'L', /* (v344) 한정 성좌·성역 쌍둥이 */ dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
@@ -11965,6 +11965,7 @@ const SANCTUM_KITS = {
                   s2:{ name:'그림자 손톱', icon:'💀', cd:4, kind:'harm', desc:()=>'대상에게 공격력 120%', run:C=>{ C.hit(C.t, 1.2); } } }
 };
 Object.keys(SANCTUM_KITS).forEach(id=>{ const k = SANCTUM_KITS[id]; LINE_KITS[id] = { role:'성역 수호자', icon:uiIc('sanctum'), passive:{ name:'없음', desc:()=>'수호자는 정령 특성 없음 (기믹 참고)' }, s1:k.s1, s2:k.s2 }; });
+function sanctumArt(id, cls, fb){ return id==='twins' ? '<span class="sc-pair '+cls+'">'+bossImg('sanc_castor', '')+bossImg('sanc_pollux', '')+'</span>' : bossImg('sanc_'+id, cls, fb); } // (v344) 쌍둥이는 두 그림을 나란히
 function sanctumBoss(id){ return SANCTUM_BOSSES.find(b=>b.id===id) || null; }
 function sanctumVisible(){ return SANCTUM_ON || !!state.adminUnlockAll; }
 function sanctumUnlocked(){ return !!state.adminUnlockAll || !!(state.stageBest && state.stageBest[SANCTUM_REF_STAGE()]); }
@@ -12069,7 +12070,7 @@ function renderSanctumTab(){
   let h = '<div class="sc-head"><div class="sc-t">'+uiIc('sanctum')+' '+SANCTUM_NAME+'</div><div class="sc-crest">'+uiIc('medal')+' 문장 <b>'+tot+'</b>/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS)+(tot ? '' : ' · 수호자를 단계마다 깨면 모임')+'</div></div>' + TOP_MARK;
   h += '<div class="sc-list">';
   SANCTUM_BOSSES.forEach(B=>{ const b = sanctumBest(B.id);
-    h += '<button class="sc-card" data-sc-open="'+B.id+'"><span class="sc-art">'+bossImg('sanc_'+B.id, 'sc-img', '<span class="sc-emo">'+B.icon+'</span>')+'</span><span class="sc-info"><b>'+B.name+'</b><small>'+B.sub+' · '+artIc(B.gi)+B.gm+'</small>'
+    h += '<button class="sc-card" data-sc-open="'+B.id+'"><span class="sc-art">'+sanctumArt(B.id, 'sc-img', '<span class="sc-emo">'+B.icon+'</span>')+'</span><span class="sc-info"><b>'+B.name+'</b><small>'+B.sub+' · '+artIc(B.gi)+B.gm+'</small>'
       + '<span class="sc-pips">'+Array.from({length:SANCTUM_TIERS}, (_,i)=>'<i class="'+(i<b?'on':'')+'"></i>').join('')+'</span></span><span class="sc-lv"><span class="sc-cr'+(b?'':' off')+'">'+artIc('cr_'+B.id)+'<i>'+b+'</i></span>'+(b>=SANCTUM_TIERS ? '완료' : (b+1)+'단계')+'</span></button>'; });
   h += '</div>';
   return h;
@@ -12083,7 +12084,7 @@ function showSanctumPrep(id, t, keep){
   state.sanctumForm = state.formation.slice(); save();
   const pv = buildSanctumFight(id, t);
   let h = '<h3 style="text-align:center; margin:0;">'+uiIc('sanctum')+' '+SANCTUM_NAME+' · '+B.name+'</h3>';
-  h += '<div class="rf-boss2">'+bossImg('sanc_'+id, 'rf-bimg2', '<span style="font-size:40px;">'+B.icon+'</span>')+'<div><b>'+elIc(B.el)+' '+B.name+' <span class="sub">'+B.sub+'</span></b><small><b style="display:flex; align-items:center; gap:3px;">'+artIc(B.gi)+B.gm+'</b>'+B.d+'</small></div></div>';
+  h += '<div class="rf-boss2">'+sanctumArt(id, 'rf-bimg2', '<span style="font-size:40px;">'+B.icon+'</span>')+'<div><b>'+elIc(B.el)+' '+B.name+' <span class="sub">'+B.sub+'</span></b><small><b style="display:flex; align-items:center; gap:3px;">'+artIc(B.gi)+B.gm+'</b>'+B.d+'</small></div></div>';
   h += '<div class="sc-tiers">'+Array.from({length:SANCTUM_TIERS}, (_,i)=>i+1).map(n=>'<button class="sc-tier'+(n===t?' on':'')+(n<=best?' done':'')+'" data-sc-t="'+n+'"'+(n>best+1?' disabled':'')+'>'+n+'</button>').join('')+'</div>';
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="scClear" style="flex:1; margin:0;">'+uiIc('clear')+' 비우기</button><button class="btn secondary" id="scRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">'+uiIc('log')+' 프리셋</button></div>';
