@@ -167,6 +167,13 @@ async function tick(env){
       const r = await sendTo(env, v, uid, kind, DUE_MSG[kind], budget); r.gone.forEach(g=>{ upd[g] = null; });
     }
   }
+  // 앞자리 업데이트 알림 — 10분마다 배포된 sw.js의 APP_VERSION을 보고, 앞자리가 오르면 알림을 켠 모든 사람에게 한 번 (사용자 결정)
+  if(new Date(now).getUTCMinutes() % 10 === 0){ try{
+    const t = await (await fetch(SUBJECT+'sw.js?t='+now)).text(), m = t.match(/APP_VERSION\s*=\s*'(\d+)\.(\d+)\.(\d+)'/);
+    if(m){ const major = +m[1], p = await dbGet(env, 'pushCfg/major'), prev = typeof p==='number' ? p : 4; // 처음 켤 때는 5.0.0 알림이 가게 4부터
+      if(major > prev){ upd['pushCfg/major'] = major; upd['pushQ/upd'+major] = { head:'🎉 '+m[1]+'.0 업데이트', title:'새 콘텐츠 · 우편함에 업데이트 선물', kind:'update', t: now, after:'' }; }
+      else if(typeof p!=='number') upd['pushCfg/major'] = major; }
+  }catch(e){ console.log('ver check', String(e)); } }
   // 전체 우편 대기열 — 사람 이름순으로 이어서
   const q = await dbGet(env, 'pushQ') || {};
   for(const [id, item] of Object.entries(q)){
@@ -174,7 +181,7 @@ async function tick(env){
     if(!item || now - (item.t||0) > 24*3600*1000){ upd['pushQ/'+id] = null; continue; }
     const uids = Object.keys(await dbGet(env, 'push', { shallow: 'true' }) || {}).sort().filter(u=>u > (item.after||''));
     let last = item.after || '';
-    for(const uid of uids){ if(budget.n <= 0) break; const r = await sendTo(env, v, uid, 'mail', { title:'📮 우편 도착', body: item.title }, budget); r.gone.forEach(g=>{ upd[g] = null; }); last = uid; }
+    for(const uid of uids){ if(budget.n <= 0) break; const r = await sendTo(env, v, uid, item.kind || 'mail', { title: item.head || '📮 우편 도착', body: item.title }, budget); r.gone.forEach(g=>{ upd[g] = null; }); last = uid; }
     if(budget.n > 0) upd['pushQ/'+id] = null; else upd['pushQ/'+id+'/after'] = last;
   }
   // 하루 지난 '보낸 표시' 정리 (하루 한 번쯤)
