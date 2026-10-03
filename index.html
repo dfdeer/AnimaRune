@@ -5204,7 +5204,7 @@ const LINE_KITS = {
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
   // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
   fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
-    passive:{ name:'불씨 전이', icon:'🧨', desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)' },
+    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
       run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
@@ -5212,7 +5212,7 @@ const LINE_KITS = {
       desc:()=>'대상 편 전체에 공격력 60%<br>폭탄이 붙은 적은 그 자리에서 바로 터짐',
       run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.6)); C.side(C.tSide).filter(u=>u.st.bomb).forEach(u=>bombExplode(C.sf, u, C.hits)); } } },
   fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
-    passive:{ name:'타오르는 혼', icon:'🔥', desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
+    passive:{ name:'타오르는 혼', icon:artIc('pv_fire_su'), desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
       desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +30% (2라운드)<br>체력이 모자라면 1만 남음',
       run:C=>{ const a = C.a, cost = Math.round(a.maxHp*0.15), before = a.hp; a.hp = Math.max(1, a.hp - cost); a.rsHp = Math.max(1, (Number.isFinite(a.rsHp) ? a.rsHp : before) - cost); if(before>a.hp){ hidHurt(C.sf, a, before-a.hp); C.hits.push({ side:a.side, idx:a.idx, kind:'dmg', amount:before-a.hp, dot:true, src:'불꽃 제물' }); }
@@ -5222,7 +5222,7 @@ const LINE_KITS = {
       desc:()=>'대상에게 공격력 150% + 자기가 잃은 체력의 30%만큼 추가 피해',
       run:C=>{ const lost = Math.max(0, C.a.maxHp - C.a.hp); C.hit(C.t, 1.5 + lost*0.3/Math.max(1, C.a.atk)); } } },
   water_mn: { role:'되감기', icon:ELEMENT_INFO.water.icon,
-    passive:{ name:'흐르는 기억', icon:'🌀', desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
+    passive:{ name:'흐르는 기억', icon:artIc('pv_water_mn'), desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
     s1:{ name:'되감기', icon:artIc('sk_water_mn_1'), cd:3, kind:'heal', allyOnly:true, tag:()=> '아군 전용',
       desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거<br>불꽃 제물로 태운 체력은 안 돌아옴',
       run:C=>{ const t = C.t; if(t.side!==C.a.side) return; const to = Math.max(1, Math.min(t.maxHp, Math.round(Number.isFinite(t.rsHp) ? t.rsHp : t.hp))), d = to - t.hp;
@@ -5232,7 +5232,7 @@ const LINE_KITS = {
       desc:()=>'아군 전체에 2라운드 표식: 그 사이 쓰러지면 표식 받을 때 체력의 50%로 일어남<br>아군마다 전투당 1번',
       run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*0.5)) }; }, '⏳고리'); }); } } },
   water_hb: { role:'연결', icon:ELEMENT_INFO.water.icon,
-    passive:{ name:'깊은 강', icon:'🌊', desc:()=>'연결 중이면 최대체력 +15%' },
+    passive:{ name:'깊은 강', icon:artIc('pv_water_hb'), desc:()=>'연결 중이면 최대체력 +15%' },
     s1:{ name:'물길 잇기', icon:artIc('sk_water_hb_1'), cd:3, kind:'shield', allyOnly:true, notSelf:true, tag:()=> '연결 3R',
       desc:()=>'아군 하나와 3라운드 연결: 그 아군이 받는 피해의 40%를 하백이 대신 받음<br>연결 중 하백이 받는 피해 −20%',
       run:C=>{ const a = C.a; if(C.t.side!==a.side || C.t===a) return; const link = u=>C.pos(u, st=>{ st.link = { r:3 }; }, '🔗연결');
@@ -5243,7 +5243,7 @@ const LINE_KITS = {
       desc:()=>'대상 편 전체에 공격력 90% + 둔화 (속도 −10, 2라운드)',
       run:C=>{ C.side(C.tSide).forEach(u=>{ C.hit(u, 0.9); if(u.alive) C.neg(u, st=>{ st.slow = { v:Math.max(10, (st.slow&&st.slow.v)||0), r:2 }; }, '🐌둔화'); }); } } },
   wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
-    passive:{ name:'산의 주인', icon:'⛰️', desc:()=>'체력 50% 이상이면 받는 피해 −15%' },
+    passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%' },
     s1:{ name:'포효', icon:artIc('sk_wood_sg_1'), cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 반격',
       desc:()=>'자신에게 도발 + 반격 자세 (산군의 다음 차례까지)<br>적이 산군을 때리면 그 적에게 공격력 70%로 반격 · 적의 행동 하나에 1번',
       run:C=>{ C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1 }; }, '🐯반격 자세'); } },
@@ -5251,7 +5251,7 @@ const LINE_KITS = {
       desc:()=>'대상에게 공격력 200% + 이번 전투 반격 횟수마다 +10% (최대 +100%)',
       run:C=>{ C.hit(C.t, 2.0 + Math.min(1, 0.1*(C.a.counterN||0))); } } },
   light_as: { role:'별 표식', icon:ELEMENT_INFO.light.icon,
-    passive:{ name:'별의 공명', icon:'🌟', desc:()=>'표식 붙은 적이 터뜨리는 공격(발화 · 시한폭탄)을 맞으면 표식을 전부 써서 그 피해 +표식당 40%' },
+    passive:{ name:'별의 공명', icon:artIc('pv_light_as'), desc:()=>'표식 붙은 적이 터뜨리는 공격(발화 · 시한폭탄)을 맞으면 표식을 전부 써서 그 피해 +표식당 40%' },
     s1:{ name:'별자리 표식', icon:artIc('sk_light_as_1'), cd:3, kind:'harm', tag:()=> '표식',
       desc:()=>'대상에게 공격력 140% + 별 표식 1개 (최대 3개, 3라운드)',
       run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const n = aw5(C.a) ? 2 : 1; C.neg(C.t, st=>{ st.star = { n:Math.min(3, ((st.star&&st.star.n)||0)+n), r:3 }; }, '✴️별 표식'); } } },
@@ -5259,7 +5259,7 @@ const LINE_KITS = {
       desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
       run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2); } } },
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
-    passive:{ name:'날쌘 손', icon:'🫳', desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)' },
+    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
       desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
       run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
@@ -5267,7 +5267,7 @@ const LINE_KITS = {
       desc:()=>'대상 편 전체에서 이로운 효과를 1개씩 빼앗아 아군에게 나눠 준 뒤 전체에 공격력 80%',
       run:C=>{ C.side(C.tSide).forEach(u=>stealEffect(C, u)); C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
   dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
-    passive:{ name:'방망이', icon:'🏏', desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
+    passive:{ name:'방망이', icon:artIc('pv_dark_dk'), desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
     s1:{ name:'둔갑', icon:artIc('sk_dark_dk_1'), cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
       desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
@@ -6078,18 +6078,18 @@ function statusList(u){
   if(u.cast) o.push({i:gmIcon({ic:u.cast.ic, nm:u.cast.nm}), t:u.cast.nm+' 준비', d:u.cast.el ? '이번 라운드에 '+elIc(u.cast.el)+' '+ELEMENT_INFO[u.cast.el].name+' 공격을 '+Math.max(0,u.cast.need-u.cast.dealt)+'번 더 맞히거나 그로기로 만들면 저지' : '이번 라운드에 '+fmtHp(Math.max(0,u.cast.need-u.cast.dealt))+' 더 피해를 주거나 그로기로 만들면 저지', good:true});
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   // (v343) 한정 성좌 효과
-  if(s.bomb) o.push({i:'💣', n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음', good:false});
-  if(s.star) o.push({i:'✴️', n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
-  if(s.exposed) o.push({i:'🎯', t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
-  if(s.pyre) o.push({i:'🕯️', t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
-  if(s.soul) o.push({i:'🔥', t:'타오르는 혼', d:'공격력 +'+Math.round(s.soul.v*100)+'%'+r(s.soul), good:true});
-  if(s.loop) o.push({i:'⏳', t:'시간의 고리', d:'쓰러지면 체력 '+fmtHp(s.loop.hp)+'로 일어남'+r(s.loop), good:true});
-  if(s.memHeal) o.push({i:'🌀', t:'흐르는 기억', d:'다음 라운드 시작에 '+fmtHp(s.memHeal)+' 회복', good:true});
-  if(s.link) o.push({i:'🔗', t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
-  if(s.linkHost) o.push({i:'🌊', t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
-  if(s.counter) o.push({i:'🐯', t:'반격 자세', d:'맞으면 공격력 70%로 반격 (적 행동 하나에 1번) · 다음 차례까지', good:true});
-  if(s.veil) o.push({i:'🔵', t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
-  if(s.club) o.push({i:'🏏', t:'방망이', d:'다음 공격 공격력 +40%', good:true});
+  if(s.bomb) o.push({i:stIc('bomb'), n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음', good:false});
+  if(s.star) o.push({i:stIc('star'), n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
+  if(s.exposed) o.push({i:stIc('exposed'), t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
+  if(s.pyre) o.push({i:stIc('pyre'), t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
+  if(s.soul) o.push({i:stIc('soul'), t:'타오르는 혼', d:'공격력 +'+Math.round(s.soul.v*100)+'%'+r(s.soul), good:true});
+  if(s.loop) o.push({i:stIc('loop'), t:'시간의 고리', d:'쓰러지면 체력 '+fmtHp(s.loop.hp)+'로 일어남'+r(s.loop), good:true});
+  if(s.memHeal) o.push({i:stIc('memheal'), t:'흐르는 기억', d:'다음 라운드 시작에 '+fmtHp(s.memHeal)+' 회복', good:true});
+  if(s.link) o.push({i:stIc('link'), t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
+  if(s.linkHost) o.push({i:stIc('linkhost'), t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
+  if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70%로 반격 (적 행동 하나에 1번) · 다음 차례까지', good:true});
+  if(s.veil) o.push({i:stIc('veil'), t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
+  if(s.club) o.push({i:stIc('club'), t:'방망이', d:'다음 공격 공격력 +40%', good:true});
   const left = { '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0, '별 표식':0, '노출':s.exposed&&s.exposed.r, '불꽃 제물':s.pyre&&s.pyre.r, '타오르는 혼':s.soul&&s.soul.r, '시간의 고리':s.loop&&s.loop.r, '물길 연결':s.link&&s.link.r, '물길 잇기':s.linkHost&&s.linkHost.r, '도깨비불':s.veil&&s.veil.r };
   o.forEach(x=>{ const v = left[x.t]; if(v>0 && v<99) x.left = v; });
   return o;
