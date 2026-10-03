@@ -189,7 +189,7 @@
   #main.pu-tight .pu-topbar{margin-top:2px;} #main.pu-tight .pu-card{padding-top:0; padding-bottom:2px;} #main.pu-tight .pu-rar{margin-top:0; font-size:13px;} #main.pu-tight .pu-nm{font-size:20px; margin-top:0;} #main.pu-tight .pu-pick{margin-top:4px;} #main.pu-tight .pu-th .spimg{width:26px; height:26px;} #main.pu-tight .pu-sel{margin-top:4px;} #main.pu-tight .pu-pity{margin-top:6px; padding:6px 10px;} #main.pu-tight .pu-off{margin-top:6px;} #main.pu-tight .pu-btns{margin-top:8px;} #main.pu-tight .pu-rate{margin-top:4px; font-size:10px; line-height:1.4;} /* (v339) 작은 화면 */
   .pu-btns{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;} .pu-btns .btn{margin:0; white-space:nowrap;}
   .home-ic{position:relative; width:52px; height:56px; border-radius:14px; background:#1a1540dd; border:1px solid #8a74e066; color:var(--text); font-size:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; box-shadow:0 4px 10px #0006;}
-  .home-ic small{font-size:10px; font-weight:800; color:#d8ccff;} .home-ic.rf{border-color:#ffcf4a88; background:linear-gradient(160deg,#3a2c6edd,#1a1540dd);} .home-ic.rf .uic{filter:drop-shadow(0 0 6px #b48cff88);} .home-ic.rf small{color:#ffe38a;} /* (v321) 별빛 균열 — 홈 픽업 아래 */
+  .home-ic small{font-size:10px; font-weight:800; color:#d8ccff;} .home-ic.rf{border-color:#ffcf4a88; background:linear-gradient(160deg,#3a2c6edd,#1a1540dd);} .home-ic.sc{border-color:#c9b8ffaa; background:linear-gradient(160deg,#2c2a6edd,#141238dd);} .home-ic.rf .uic{filter:drop-shadow(0 0 6px #b48cff88);} .home-ic.rf small{color:#ffe38a;} /* (v321) 별빛 균열 — 홈 픽업 아래 */
   .home-dot{position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:#ff5757; box-shadow:0 0 6px #ff5757;}
   /* (v196) 대표 정령은 홈 배경의 '받침(소환진)' 위에 섬 — 발끝 높이는 fitHome()이 배경 그림(1024×1536, 받침 중심 세로 74.9%) 기준으로 계산해 --hero-foot에 넣음 */
   .home-hero{position:absolute; z-index:2; left:50%; top:var(--hero-foot, 72%); transform:translateX(-50%); width:72%; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer;}
@@ -2032,7 +2032,7 @@ function subTotals(k){
   if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전은 상한 밖
   return t;
 }
-function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k) * sanctumCrestMult(); } // (v344) × 성역 문장 // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
+function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
 // (v298) 초월 10단계 특전 — 종(계열)마다 역할에 맞게 다름 (사용자 결정)
 const TRANS10 = {
   fire_a:  { ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
@@ -3945,10 +3945,10 @@ function homeBgLayer(mode){
 }
 function homeCarouselPos(m){ const c = HOME_MODES.indexOf(homeMode), i = HOME_MODES.indexOf(m); const d = (i - c + 3) % 3; return d===0 ? 'center' : (d===1 ? 'right' : 'left'); }
 // (v201) 보스 그림 — assets/boss/<챕터 보스 기믹 id 또는 레이드 보스 id>.webp (없으면 기존 이모지)
-const BOSS_IMG_IDS = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
+const BOSS_IMG_IDS = ['sanc_janus','sanc_twins','sanc_castor','sanc_pollux','sanc_echo','sanc_atlas','sanc_prism','sanc_legion','frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord','frostTyrant','infernoDrake','abyssEye','eldertree','dawnJudge'];
 function bossImg(id, cls, fallback){ return BOSS_IMG_IDS.includes(id) ? '<img class="'+(cls||'bimg')+'" src="assets/boss/'+id+'.webp" alt="" draggable="false">' : (fallback||''); }
 // (v219) 그림이 원래 바라보는 방향: R=오른쪽 · L=왼쪽 · 없으면 정면 — 전투에서 아군은 오른쪽, 적은 왼쪽을 보게 뒤집음
-const ART_FACE = { dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
+const ART_FACE = { sanc_echo:'R', sanc_atlas:'R', sanc_legion:'R', dark_legendary_a:'R', light_legendary_b:'R', light_mythic_b:'R', light_rare_b:'R', wood_common_a:'R', wood_rare_b:'R', frostGiant:'R', frostTyrant:'R', infernoDrake:'R', dawnJudge:'R', abyssEye:'R', eldertree:'R', light_epic_b:'R', // (v273) 겁화룡·심판관·심연의 눈·유니콘도 오른쪽을 봐서 적 자리에선 뒤집음 · (v274) 태고수(얼굴이 살짝 오른쪽)
   fire_common_b:'L', fire_epic_b:'L', wood_epic_a:'L', wood_mythic_a:'L',
   dark_rare_b:'L', fire_common_a:'L', fire_epic_a:'L', fire_legendary_a:'L', fire_mythic_a:'L', fire_rare_a:'L', fire_rare_b:'L', light_common_b:'L', water_common_b:'L', water_epic_b:'L', water_legendary_b:'L', water_mythic_b:'L', wood_rare_a:'L' };
 function artFlipFor(u){ const f = ART_FACE[u.bossIcon ? unitBossId(u) : u.key]; return u.side==='enemy' ? f==='R' : f==='L'; }
@@ -4031,7 +4031,7 @@ function renderHomeTab(){
   h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">'+uiIc('level')+' Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
   h += homePickupBtnHtml(); // (v317) 픽업 소환 — 홈에만
   h += '<div class="home-side left"><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
-  h += '<div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+'<button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
+  h += '<div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1"><span class="uic" style="font-size:22px; line-height:1;">🏛️</span><small>성역</small></button>' : '')+'<button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[sp.rarity].color+';">'+RARITY_INFO[sp.rarity].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo home-empty"><img class="spimg hero" src="assets/ui/ic_summon.webp" alt="" draggable="false"></div><div class="home-name">첫 정령 소환하기</div><div class="home-cta">눌러서 소환하러 가기 ›</div>') // (v209) 정령이 없을 땐 소환 구슬 그림 — 누르면 소환 화면
@@ -4055,7 +4055,7 @@ function showProfileModal(tab){ // (v210) 홈 이름표를 누르면 뜨는 프�
     const stat = (lab, v)=>'<div class="pf-stat"><b>'+v+'</b><small>'+lab+'</small></div>';
     h += '<div class="pf-label">닉네임</div><div class="pf-row"><input id="pfNameInput" class="pf-in" maxlength="12" value="'+escTxt(name)+'" placeholder="최대 12자"><button class="btn small" id="pfNameBtn">저장</button></div>';
     h += '<div class="sub" style="font-size:11px; margin-top:4px;">친구 목록·결투·레이드에 보이는 이름</div>';
-    h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+DEX_KEYS.length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+'</div>';
+    h += '<div class="pf-stats">'+stat('보유 정령', own)+stat('도감', dex+'/'+DEX_KEYS.length)+stat('클리어', totalStagesCleared())+stat('탑 최고', (state.towerBest||0)+'층')+(sanctumVisible() && sanctumCrestTotal() ? stat('성역 문장', sanctumCrestTotal()+'/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS)) : '')+'</div>'; // (v344) 성역 문장은 자랑거리
     if(friendNet.on && friendNet.code) h += '<div class="pf-label">친구 코드</div><div class="pf-row"><div class="pf-code">'+friendNet.code+'</div><button class="btn secondary small" id="pfCodeBtn">복사</button></div>';
     h += '<button class="btn secondary" id="pfRepBtn" style="margin-top:12px;">'+(sp?'대표 정령 바꾸기':'정령 소환하러 가기')+'</button>';
   }
@@ -6331,7 +6331,7 @@ function battleThemeOf(sf){
   if(sf.mode==='expedition') return 'plains';
   if(sf.mode==='dungeon') return DUNGEON_THEME[sf.dungeonEl] || 'cave';
   if(sf.mode==='rift'){ const gi = CHAPTER_BOSS_GIMMICK.indexOf(sf.gimmick && sf.gimmick.type); return BATTLE_THEMES[CHAPTER_MASKS[Math.max(0, gi)].theme] || 'cave'; } // (v317)
-  if(sf.mode==='sanctum') return 'raid-dawnJudge'; // (v344) 성역 — 하늘 신전 그림을 빌려 씀 (전용 배경 battle_sanctum이 오면 바꿈)
+  if(sf.mode==='sanctum') return 'sanctum'; // (v344) 성역 전용 배경
   if(sf.mode==='trial') return 'trial';
   if(sf.mode==='worldboss') return 'wb';
   if(sf.mode==='duel') return 'arena';
@@ -6339,7 +6339,7 @@ function battleThemeOf(sf){
   return BATTLE_THEMES[CHAPTER_MASKS[ch].theme] || 'snow';
 }
 // (v201) 그림이 준비된 전투 배경 — 그 외 테마는 CSS로 그린 기존 배경
-const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp', shadow:'assets/battle_shadow.webp', trial:'assets/bg_trial.webp', wb:'assets/battle_worldboss.webp' }; // (v317) 시련 · 월드 보스 전용 배경
+const BATTLE_BG_IMAGES = { snow:'assets/battle_snow.webp', sanctum:'assets/battle_sanctum.webp', 'raid-frostTyrant':'assets/battle_raid_frostTyrant.webp', 'raid-infernoDrake':'assets/battle_raid_infernoDrake.webp', 'raid-abyssEye':'assets/battle_raid_abyssEye.webp', 'raid-eldertree':'assets/battle_raid_eldertree.webp', 'raid-dawnJudge':'assets/battle_raid_dawnJudge.webp', plains:'assets/battle_plains.webp', arena:'assets/battle_arena.webp', volcano:'assets/battle_volcano.webp', forest:'assets/battle_forest.webp', desert:'assets/battle_desert.webp', cave:'assets/battle_cave.webp', shadow:'assets/battle_shadow.webp', trial:'assets/bg_trial.webp', wb:'assets/battle_worldboss.webp' }; // (v317) 시련 · 월드 보스 전용 배경
 // (v273) 배경마다 바닥이 있는 높이가 달라서 확대·위치를 따로 — 정령이 하늘·벽이 아니라 바닥 위에 서게. flip: 좌우 반전
 const BATTLE_BG_FIT = {
   'raid-frostTyrant':  { size:145, y:65, flip:true },
@@ -7264,7 +7264,7 @@ function unitPower(speciesKey){
   return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
-function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey) * sanctumCrestMult(); } // (v344) × 성역 문장 // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
+function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
 function trIc(k){ return '<img class="uic" src="assets/ui/tr/'+k+'.webp" alt="" draggable="false">'; } // (v317) 특성 아이콘 그림
 const ELEMENT_PASSIVE = {
@@ -8188,7 +8188,7 @@ function doPickup(n){
 let pickupView = 0;
 // (v317) 픽업 탭 — 소환 탭처럼 화면 하나 · 배경은 지금 보는 신화의 속성 색 + 속성 입자(불씨·물방울·잎·빛·어둠)
 const TAB_THEME_ONLY = ['dungeon','challenge']; // 배경 그림 없이 판 재질만 (요일 던전은 그림을 위쪽 장면으로 씀)
-const TAB_BG_IMAGES = { summon:'assets/bg_summon.webp', spirits:'assets/bg_spirits.webp', hearth:'assets/bg_hearth.webp', tower:'assets/bg_tower.webp', pass:'assets/bg_pass.webp', dispatch:'assets/bg_dispatch.webp', friends:'assets/bg_friends.webp', duel:'assets/bg_friends.webp', raid:'assets/bg_raid.webp', worldboss:'assets/bg_worldboss.webp', trial:'assets/bg_trial.webp' }; // (v317) 탭 배경 그림 (받은 것부터)
+const TAB_BG_IMAGES = { sanctum:'assets/battle_sanctum.webp', summon:'assets/bg_summon.webp', spirits:'assets/bg_spirits.webp', hearth:'assets/bg_hearth.webp', tower:'assets/bg_tower.webp', pass:'assets/bg_pass.webp', dispatch:'assets/bg_dispatch.webp', friends:'assets/bg_friends.webp', duel:'assets/bg_friends.webp', raid:'assets/bg_raid.webp', worldboss:'assets/bg_worldboss.webp', trial:'assets/bg_trial.webp' }; // (v317) 탭 배경 그림 (받은 것부터)
 const PU_FX = { fire:'ember', water:'bubble', wood:'leaf', light:'spark', dark:'wisp' };
 // (v317) 속성별 픽업 배경 그림 (받은 것부터) — ped: 그림 속 제단 윗면 높이(그림 높이 대비). 정령 발끝을 여기에 맞춤
 const PU_BG_IMAGES = { fire:{ src:'assets/pickup_fire.webp', ped:0.495 }, water:{ src:'assets/pickup_water.webp', ped:0.535 }, wood:{ src:'assets/pickup_wood.webp', ped:0.545 }, light:{ src:'assets/pickup_light.webp', ped:0.495 }, dark:{ src:'assets/pickup_dark.webp', ped:0.51 } };
@@ -11836,7 +11836,7 @@ function showRiftPrep(f, keep){
 }
 // ===================== (v344) 성역 — 수호자 6명 × 1~10단계 · 처음 보는 기믹 · 단계마다 문장(영구 능력치) =====================
 // 출시 전에는 SANCTUM_ON = false 로 숨김 (관리자 세팅에서만 보임) · 기획: docs/성역_기획.md
-const SANCTUM_ON = false, SANCTUM_NAME = '성역', SANCTUM_TIERS = 10, SANCTUM_TIER_K = 1.18, SANCTUM_CREST = 0.005;
+const SANCTUM_ON = false, SANCTUM_NAME = '성역', SANCTUM_TIERS = 10, SANCTUM_TIER_K = 1.18; // (v344) 문장은 능력치 없이 모으는 메달 (사용자 결정: 영구 능력치는 결투·기존 콘텐츠 밸런스를 흔들어서 뺌)
 const SANCTUM_REF_STAGE = ()=> HARD_BASE + 4*CHAPTER_LENGTH + CHAPTER_LENGTH-1; // 하드 5 챕터 보스 = 1단계 세기 기준
 const SANCTUM_BOSSES = [
   { id:'janus',  name:'야누스',   sub:'두 얼굴의 수호자', el:'light', icon:'🎭', hp:1.0, atk:1.0, gm:'얼굴 바뀜', d:'체력이 절반 아래로 내려간 다음 라운드에 그림자 얼굴로 바뀜 — 속성 그림자 · 스킬 2개가 바뀌고 공격력 +20% · 걸린 해로운 효과를 전부 털어 냄' },
@@ -11873,8 +11873,7 @@ function sanctumUnlocked(){ return !!state.adminUnlockAll || !!(state.stageBest 
 function sanctumState(){ let s = state.sanctum; if(!isPlainObj(s)) s = state.sanctum = { best:{} }; if(!isPlainObj(s.best)) s.best = {}; return s; }
 function sanctumBest(id){ return Math.max(0, Math.min(SANCTUM_TIERS, Math.floor(sanctumState().best[id]||0))); }
 function sanctumCrestTotal(){ return SANCTUM_BOSSES.reduce((a,b)=>a+sanctumBest(b.id), 0); }
-function sanctumCrestMult(){ return 1 + SANCTUM_CREST * sanctumCrestTotal(); } // 문장: 모든 정령 공격력·체력 (unitAtk · spiritHpMult 에 곱함)
-function sanctumReward(t){ return { essence: 2500*t, stone: 80*t, shard: 10*t }; }
+function sanctumReward(t){ return { essence: 4000*t + (t>=SANCTUM_TIERS ? 20000 : 0), stone: 120*t, shard: 15*t + (t>=SANCTUM_TIERS ? 100 : 0) }; } // 10단계는 덤
 function sanctumMakeBoss(id, key, el, atk, hpMult, kit, name, ref, B, k, idx){
   const b = makeBattleUnit('enemy', idx, key, atk, 1);
   b.maxHp = Math.max(1, Math.round(ref.maxHp*B.hp*k)); b.hp = b.maxHp; b.atk = Math.max(1, Math.round(ref.atk*B.atk*k));
@@ -11958,7 +11957,7 @@ function sanctumResultOverlayHtml(sf){
   let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
   if(r.win){
     h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_victory.webp" alt=""></div><div class="bs-rtitle">'+B.name+' '+t+'단계 돌파!</div><div class="bs-rsub">'+SANCTUM_NAME+' · '+r.rounds+'라운드</div>';
-    h += r.first ? '<div class="bs-rrew"><div>'+artIc('deco_chest')+' 첫 돌파 보상</div><div style="margin-top:4px;">'+sanctumRewardHtml(r.rw)+'</div><div style="margin-top:4px;">🏅 문장 '+t+'단계 · 모든 정령 공격력·체력 +'+(Math.round(SANCTUM_CREST*sanctumCrestTotal()*1000)/10)+'%</div></div>' : '<div class="bs-rsub">이미 돌파한 단계 · 보상 없음</div>';
+    h += r.first ? '<div class="bs-rrew"><div>'+artIc('deco_chest')+' 첫 돌파 보상</div><div style="margin-top:4px;">'+sanctumRewardHtml(r.rw)+'</div><div style="margin-top:4px;">🏅 '+B.name+'의 문장 '+t+'/'+SANCTUM_TIERS+(t>=SANCTUM_TIERS ? ' · 완성!' : '')+'</div></div>' : '<div class="bs-rsub">이미 돌파한 단계 · 보상 없음</div>';
   }else h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_defeat.webp" alt=""></div><div class="bs-rtitle">패배</div><div class="bs-rsub">'+B.name+' '+t+'단계 · '+r.rounds+'라운드</div>';
   const next = r.win && t < SANCTUM_TIERS;
   h += '<div class="bs-rbtns"><button class="btn secondary" id="skillRetryBtn">🔁 다시</button>'+(next ? '<button class="btn secondary" id="scNextBtn">'+(t+1)+'단계 ▶</button>' : '')+'<button class="btn" id="skillResultCloseBtn">나가기</button></div></div></div>';
@@ -11969,7 +11968,7 @@ function sanctumRetry(id, t){ state.skillFight = buildSanctumFight(id, t); skill
 function renderSanctumTab(){
   if(!sanctumUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+SANCTUM_NAME+' 잠김<div class="sub" style="margin-top:6px;">하드 '+chapterBossName(5)+' 처치 시 해금</div></div>';
   const tot = sanctumCrestTotal();
-  let h = '<div class="sc-head"><div class="sc-t">🏛️ '+SANCTUM_NAME+'</div><div class="sc-crest">🏅 문장 <b>'+tot+'</b>/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS)+' · 모든 정령 공격력·체력 <b>+'+(Math.round(SANCTUM_CREST*tot*1000)/10)+'%</b></div></div>' + TOP_MARK;
+  let h = '<div class="sc-head"><div class="sc-t">🏛️ '+SANCTUM_NAME+'</div><div class="sc-crest">🏅 문장 <b>'+tot+'</b>/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS)+(tot ? '' : ' · 수호자를 단계마다 깨면 모임')+'</div></div>' + TOP_MARK;
   h += '<div class="sc-list">';
   SANCTUM_BOSSES.forEach(B=>{ const b = sanctumBest(B.id);
     h += '<button class="sc-card" data-sc-open="'+B.id+'"><span class="sc-art">'+bossImg('sanc_'+B.id, 'sc-img', '<span class="sc-emo">'+B.icon+'</span>')+'</span><span class="sc-info"><b>'+B.name+'</b><small>'+B.sub+' · '+B.gm+'</small>'
@@ -12049,11 +12048,10 @@ function challengeCards(){
     { tab:'dungeon', img:'target', name:'요일 던전', sub: isUnlocked('dungeon') ? dgTxt+' · 전체 '+dgDone+'/'+(DUNGEON_MAX*ELEMENTS.length) : chapterBossName(1)+' 처치 시 해금', lock: !isUnlocked('dungeon') }
   ];
   if(typeof trialCard==='function') cards.push(trialCard());
-  if(sanctumVisible()){ const ok = sanctumUnlocked(); cards.push({ tab:'sanctum', img:'trophy', name:SANCTUM_NAME, sub: ok ? '문장 '+sanctumCrestTotal()+'/'+(SANCTUM_BOSSES.length*SANCTUM_TIERS) : '하드 '+chapterBossName(5)+' 처치 시 해금', lock:!ok }); } // (v344) 출시 전엔 숨김
   return cards;
 }
 // (v317) 도전 — 그림 속 탑·신전·동굴을 넘겨 보며 고름 (가운데에 온 곳을 한 번 더 누르거나 아래 버튼으로 들어감)
-const CH_SPOTS = { tower:{x:112, y:215, w:190, h:400, lab:'무한의 탑'}, trial:{x:540, y:330, w:240, h:240, lab:'시련의 전당'}, dungeon:{x:958, y:385, w:150, h:230, lab:'요일 던전'}, sanctum:{x:520, y:110, w:220, h:150, lab:'성역'} };
+const CH_SPOTS = { tower:{x:112, y:215, w:190, h:400, lab:'무한의 탑'}, trial:{x:540, y:330, w:240, h:240, lab:'시련의 전당'}, dungeon:{x:958, y:385, w:150, h:230, lab:'요일 던전'} };
 let chSel = 'tower';
 function chDetailHtml(k){ const c = challengeCards().find(x=>x.tab===k); if(!c) return '';
   return '<div class="card ch-detail"><div class="ch-dh">'+uiIc(c.img)+'<span><b>'+c.name+'</b><small>'+c.sub+'</small></span>'+(c.dot?'<i class="ch-dot"></i>':'')+'</div>'
@@ -14323,6 +14321,7 @@ function attachHandlers(){
     });
   });
   document.querySelectorAll('[data-rift-open]').forEach(b=>b.addEventListener('click', ()=>{ if(xpLockBlock()) return; activeTab = 'rift'; render(); save(); })); // (v317) 별빛 균열
+  document.querySelectorAll('[data-sanctum-open]').forEach(b=>b.addEventListener('click', ()=>{ if(xpLockBlock()) return; activeTab = 'sanctum'; render(); save(); })); // (v344) 성역 (홈 오른쪽 · 균열 아래)
   document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
     const toHard = b.dataset.stageMode==='h';
     if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 하드 모드: '+bossUnlockTxt(hardNormalReq(1))); return; }
