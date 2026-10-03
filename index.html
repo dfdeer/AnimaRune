@@ -175,7 +175,7 @@
   .pu-nav{position:absolute; top:40%; z-index:2; width:34px; height:50px; border-radius:12px; border:1px solid #ffffff33; background:#0006; color:#fff; font-size:28px; line-height:1;} .pu-nav.l{left:-2px;} .pu-nav.r{right:-2px;}
   .pu-pick{display:flex; justify-content:center; gap:10px; margin-top:10px;}
   .pu-th{display:flex; align-items:center; gap:6px; padding:4px 12px 4px 4px; border-radius:22px; background:#0007; border:1.5px solid #ffffff2a; color:#fffc; font-size:12px;} .pu-th .spimg{width:32px; height:32px; border-radius:50%; object-fit:cover; background:#ffffff14;}
-  .pu-th{position:relative; gap:20px; padding-left:10px; --av:32px;} .pu-th .spimg{transition:transform .15s;} .pu-th.on .spimg{transform:scale(.88);} .pu-th b{display:block; width:var(--nmw,80px); text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} /* (v5.0.1) 이름 칸 너비를 고정해서 두 칸 너비 같게 */ .pu-th.on::before{content:''; position:absolute; left:calc(10px + var(--av)/2); top:50%; width:calc(var(--av)*2.3); height:calc(var(--av)*2.3); transform:translate(-49.4%,-56.25%); background:url(assets/ui/deco_pickup_frame.webp) center/contain no-repeat; pointer-events:none;} .pu-th b{position:relative; z-index:1;} /* (v318) 픽업 휘장 · (v344) 구멍을 아바타 가운데에 맞추고 이름과 간격 */
+  .pu-th{position:relative; gap:16px; padding-left:10px; --av:32px; --fk:var(--frk,1.7);} .pu-th b{display:block; width:var(--nmw,80px); text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;} /* (v5.0.1) 이름 칸 너비를 고정해서 두 칸 너비 같게 */ .pu-th.on::before{content:''; position:absolute; left:calc(10px + var(--av)/2); top:50%; width:calc(var(--av)*var(--fk)); height:calc(var(--av)*var(--fk)); transform:translate(-49.4%,-56.25%); background:url(assets/ui/deco_pickup_frame.webp) center/contain no-repeat; pointer-events:none;} .pu-th b{position:relative; z-index:1;} /* (v318) 픽업 휘장 · (v344) 구멍을 아바타 가운데에 맞추고 이름과 간격 */
   .pu-barw{position:relative; margin-top:6px; padding-right:12px;} .pu-barw .pu-bar{margin-top:0;} .pu-gem{position:absolute; right:0; top:50%; width:24px; height:24px; transform:translateY(-50%); filter:drop-shadow(0 0 4px #ffcf4a99); opacity:.55;} .pu-gem.near{opacity:1; animation:puGem 1.4s ease-in-out infinite;} @keyframes puGem{50%{transform:translateY(-50%) scale(1.15);}}
   .pu-th.on{border-color:var(--ec); color:#fff; box-shadow:0 0 10px color-mix(in srgb, var(--ec) 60%, transparent); background:color-mix(in srgb, var(--ec) 22%, #000a);}
   .pu-sel{text-align:center; font-size:12px; margin-top:8px; color:#fffc;} .pu-sel b{color:#ffe38a;}
@@ -10077,6 +10077,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:348, v:'5.0.3', date:'2026-10-03', secs:[
+    { t:'픽업', items:[ '고른 정령 휘장을 작고 얇게 — 그림 위에 겹쳐 보임' ]}
+  ]},
   { build:347, v:'5.0.2', date:'2026-10-03', secs:[
     { t:'픽업', items:[ '고른 정령 그림이 휘장 안쪽에 들어가게', '홈 픽업 버튼 — 한정 정령이 앞, 짝 정령은 뒤로 겹쳐 보이게' ]}
   ]},
@@ -14872,7 +14875,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 347, APP_VERSION = '5.0.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 348, APP_VERSION = '5.0.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
