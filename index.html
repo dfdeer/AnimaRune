@@ -832,7 +832,8 @@
   .pq-bar{width:1px; height:34px; background:#ffffff30; margin:0 4px;}
   .pq-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
   .pq-chip{flex:0 0 34px; text-align:center; font-size:11px; font-weight:800; color:var(--sub);}
-  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} .pq-slots .slot{aspect-ratio:auto; height:96px;} .xp-fat{position:absolute; top:3px; left:4px; z-index:3; padding:0 4px; border-radius:6px; background:#2a0d18e0; color:#ff8a8a; font-size:10px; font-weight:800; line-height:15px; pointer-events:none;} /* (v305) 정령을 넣어도 칸 너비가 그대로 · (v307) 높이도 처음부터 넣었을 때 크기로 */
+  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} .pq-slots .slot{aspect-ratio:auto; height:96px;} .slot-aw{position:absolute; top:3px; left:4px; z-index:3; display:flex; align-items:center; gap:1px; padding:0 4px 0 2px; border-radius:6px; background:#1b1942e6; color:#ffd9a0; font-size:10px; font-weight:800; line-height:15px; pointer-events:none;} .slot-aw img{width:13px; height:13px;}
+ .xp-fat{position:absolute; bottom:27px; right:4px; top:auto; left:auto; z-index:3; padding:0 4px; border-radius:6px; background:#2a0d18e0; color:#ff8a8a; font-size:10px; font-weight:800; line-height:15px; pointer-events:none;} /* (v305) 정령을 넣어도 칸 너비가 그대로 · (v307) 높이도 처음부터 넣었을 때 크기로 */
   .pq-slots .slot{flex:0 0 calc((100% - 16px) / 3); aspect-ratio:1;}
   .bs-acts .btn small .warn, .bs-tgt .warn{color:#ffae57;}
   /* ===== (v142) 결과 창: 전장 위에 흐린 막 + 카드 ===== */
@@ -5982,7 +5983,7 @@ function showSkillStagePrepModal(i){
     + '<span class="pq-grp"><span class="pq-cap">전열</span><span class="pq-icons">'+frontIdx.map(eIco).join('')+'</span></span><span class="pq-bar"></span>'
     + '<span class="pq-grp"><span class="pq-cap">후열</span><span class="pq-icons">'+backIdx.map(eIco).join('')+'</span></span></div>';
   const pv = buildSkillStageFight(i); html += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '상대 '+fmtCP(teamCP(pv.enemyUnits))+(isSpecialStage(i) ? ' · 특수 규칙 배율 반영' : ''), recCP(teamCP(pv.enemyUnits)*REC_CP_MULT.stage));
-  html += '<div class="sub" style="text-align:center; font-size:11px; margin:-2px 0 4px;">상대 그림·내 칸의 ⓘ를 누르면 자세한 정보</div>';
+  html += '<div class="sub" style="text-align:center; font-size:11px; margin:-2px 0 4px;">상대 그림을 누르거나 내 칸을 꾹 누르면 자세한 정보</div>';
   const spMarks = spSpec ? specialSlotMarks(spSpec, state.formation.slice(0, GRID_SLOTS).map(k=>k&&SPIRITS[k]?SPIRITS[k].element:null), GRID_SLOTS, true) : [];
   const spSlot = k=>{ // 규칙이 붙은 칸은 금색/붉은 테두리 + 배율 태그(빈 황금·봉인 칸도 표시)
     if(spMarks[k] && state.formation[k]) return slotHtmlMarked(k, spMarks[k]);
@@ -6300,7 +6301,7 @@ function bossBattleInfoHtml(u){
 }
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
-  root.querySelectorAll('[data-slot]').forEach(el=>{ const i = +el.dataset.slot; if(!unitAt(pv, 'me', i) || el.querySelector('.slot-info')) return; const b = document.createElement('span'); b.className = 'slot-info'; b.dataset.unitInfo = 'me:'+i; b.textContent = 'ⓘ'; (el.lastElementChild && !el.lastElementChild.classList.contains('icon') ? el.lastElementChild : el).appendChild(b); }); // 이름 줄 옆에 붙임 — 모서리에 두면 좁은 폰에서 그림과 겹쳤음
+  // (v5.2.1) 내 칸 ⓘ는 없앰 — 칸을 꾹 누르면 같은 정령 관리 창 (사용자 결정)
   root.querySelectorAll('[data-unit-info]').forEach(el=>el.addEventListener('click', e=>{ e.stopPropagation(); const [sd, ix] = el.dataset.unitInfo.split(':'); const u = unitAt(pv, sd, +ix); if(!u) return;
     if(sd==='me' && SPIRITS[u.key] && ownedCount(u.key)>0){ manageReturnFn = (presetCtx && presetCtx.reopen) || null; showManageModal(u.key); return; } // (v307) 내 칸 ⓘ → 정령 관리 창(장비·룬·강화 등) · 상대는 그대로
     showUnitDetail(u); }));
@@ -6806,7 +6807,7 @@ function spRar(sp){ return sp && sp.key && isAstral(sp.key) ? 'astral' : (sp ? s
 // 정령 얻기 — 신화가 이미 있으면 기억 조각 50 · 반환 {isNew, mem}
 function gainSpirit(k){
   const isNew = !state.discovered[k]; state.discovered[k] = true;
-  if(memSpirit(k) && ownedCount(k)>=1){ memAdd(k, MEM_PER_COPY); return { isNew:false, mem:MEM_PER_COPY }; }
+  if(memSpirit(k) && (state.owned[k]||0)>=1){ memAdd(k, MEM_PER_COPY); return { isNew:false, mem:MEM_PER_COPY }; } // (v5.2.1) 파견 간 원본도 가진 것으로 침 — 예전엔 파견 중이면 0마리로 봐서 새로 뽑은 신화가 2번째 정령으로 들어왔음
   state.owned[k] = (state.owned[k]||0) + 1; return { isNew, mem:0 };
 }
 // 기억 조각 아이콘 — 보석 틀 안에 그 정령 얼굴 (k 없으면 빈 보석)
@@ -9936,7 +9937,8 @@ function slotHtml(idx){
     return '<div class="slot" data-slot="'+idx+'"><div class="icon">➕</div><div>빈 슬롯</div></div>';
   }
   const sp = SPIRITS[key];
-  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+'</div><div>'+sp.name+'</div></div>';
+  const aw = awakenLevel(key);
+  return '<div class="slot filled" data-slot="'+idx+'">'+(aw ? '<span class="slot-aw"><img src="assets/ui/ic_awaken.webp" alt="">'+aw+'</span>' : '')+'<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+'</div><div>'+sp.name+'</div></div>'; // (v5.2.1) 각성 단계는 칸 왼쪽 위
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 <img class="uic" src="assets/ui/ic_check.webp" alt="">. labelFn(tier) = 보상 표기
 // (v246) 보상 창 공통 줄 — [이름·조건] [보상] [상태] 한 줄씩. 받을 수 있는 줄은 줄 전체를 눌러서 받기
@@ -10113,6 +10115,12 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:357, v:'5.3.0', date:'2026-10-08', secs:[
+    { t:'정령', items:[ '신화 정령을 파견 보낸 동안 같은 신화를 또 얻으면 2번째 정령으로 들어오던 것 — 이제 기억 조각 50개로 (파견 간 정령이 원본)' ]}
+  ]},
+  { build:356, v:'5.2.1', date:'2026-10-08', secs:[
+    { t:'전투 준비', items:[ '출전 칸 왼쪽 위에 각성 단계 표시', '출정 피로는 칸 오른쪽 아래로', '내 칸의 ⓘ 버튼 없앰 — 칸을 꾹 누르면 정령 정보' ]}
+  ]},
   { build:355, v:'5.2.0', date:'2026-10-08', secs:[
     { t:'파견', items:[ '보상 계산 수정 — 넣은 정령 등급의 합을 칸 수로 나눔(빈 칸은 0) · 낮은 등급 정령을 더 넣어도 보상이 줄지 않음 (예전: 넣은 정령끼리 평균이라 줄어들고, 1마리와 3마리가 같았음)', '조건 달성 보상 ×1.5는 칸을 다 채웠을 때만', '성좌 정령은 한 등급 위로 쳐서 보상 더', '다 채우기 전에는 「N마리 더 넣으면 확정」으로 표시' ]},
     { t:'월드 보스', items:[ '소탕 여러 번이 기록 1건으로 합쳐져 최고 피해가 부풀려지던 것 수정 — 소탕 횟수만큼 도전 횟수로 세고 최고 피해는 한 번 피해로' ]},
@@ -14958,7 +14966,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 355, APP_VERSION = '5.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 357, APP_VERSION = '5.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
