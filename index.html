@@ -2659,7 +2659,7 @@ function bombExplode(sf, u, hits, mul){
   const b = u.st.bomb; if(!b) return; delete u.st.bomb;
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
-  const shock = (u.st.freeze || u.st.slow || u.st.chill) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화(한기 포함)된 적의 폭탄
+  const shock = (u.st.freeze || u.st.slow) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화된 적의 폭탄 · (v6.1.0) 한기는 수치·방식이 달라 따로 표시하고 뺌 (사용자 결정)
   const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock, { noCrit:true, noCounter:true, detonate:true });
   if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
@@ -2680,6 +2680,7 @@ function stealEffect(C, from){
       C.hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🎁'+STEAL_NM[k] }); }
   }
   C.a.stealSpd = Math.min(12, (C.a.stealSpd||0) + 3);
+  if(C.a.line==='dark_lk' && C.a.lkRound!==C.sf.round){ C.a.lkRound = C.sf.round; stealEffect(C, from); } // (v6.1.0) 로키 자신이 빼앗을 때도 가로채기 — 같은 대상에서 1개 더 (라운드에 1번, 사용자 결정)
   return true;
 }
 // (v6.0.0) 로키 가로채기: 다른 아군이 적의 이로운 효과를 지우면(악몽 포식 등) 그중 1개를 로키가 가로채 체력 비율이 가장 낮은 아군에게 · 라운드에 1번
@@ -5356,7 +5357,7 @@ const LINE_KITS = {
       desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
       run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2, n>0 ? { starfall:true } : null); } } },
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
-    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)<br>가로채기: 다른 아군이 적의 이로운 효과를 지우면 그중 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (라운드에 1번)' },
+    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)<br>가로채기: 적의 이로운 효과가 지워지거나 빼앗길 때 1개를 더 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (다른 아군이 지운 것 포함 · 라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
       desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
       run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
@@ -5366,10 +5367,9 @@ const LINE_KITS = {
   dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'방망이', icon:artIc('pv_dark_dk'), desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
     s1:{ name:'둔갑', icon:artIc('sk_dark_dk_1'), cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
-      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>끌려 나온 적에게 독이 있으면 양옆 적에게 독이 옮겨 붙음 (남은 라운드 그대로)<br>보스는 끌어내지 못하고 공격만',
+      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
-        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' });
-          if(t.st.poison){ const ps = t.st.poison; C.around('row').forEach(u=>{ if(!u.st.poison || (u.st.poison.pct||0) < ps.pct) C.neg(u, st=>{ st.poison = { r:ps.r, pct:ps.pct, srcG:ps.srcG }; }, '☠독 번짐'); }); } } } // (v6.0.0) 독 든 적을 끌어내면 양옆에 독이 옮겨 붙음
+        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } } // (v6.1.0) 독 번짐 뺌 (사용자 결정)
         C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:0.2, r:2 }; }, '🎯노출'); if(aw5(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
     s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
       desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
@@ -6174,7 +6174,8 @@ function statusList(u){
   if(s.burn) o.push({i:stIc('burn'), n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
   if(s.poison) o.push({i:stIc('poison'), t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
   if(s.freeze) o.push({i:stIc('freeze'), t:'빙결', d:'다음 행동 1회 못 함', good:false});
-  if(s.slow || s.chill) o.push({i:stIc('slow'), t:'둔화', d:'속도 −'+((s.slow?s.slow.v:0)+(s.chill||0))+r(s.slow), good:false});
+  if(s.slow) o.push({i:stIc('slow'), t:'둔화', d:'속도 −'+s.slow.v+r(s.slow), good:false});
+  if(s.chill) o.push({i:'<img class="uic" src="assets/ui/gm_chill.webp" alt="" draggable="false">', t:'한기', d:'속도 −'+s.chill+' (때릴 때마다 쌓임 · 풀 때까지)', good:false}); // (v6.1.0) 둔화(정해진 값·2라운드)와 달라 얼음 결정으로 따로
   if(s.bind || s.web) o.push({i:stIc('bind'), t:'속박', d:'행동 순서 맨 뒤로 · 받는 피해 증가'+r(s.web), good:false});
   if(s.erode) o.push({i:stIc('erode'), n:s.erode, t:'잠식 '+s.erode+'중첩', d:'라운드마다 중첩당 최대체력 일부를 잃음 · 보호막으로 못 막음 · 회복을 받으면 2중첩 사라짐', good:false}); // (v317)
   if(s.shJail) o.push({i:stIc('shjail'), t:'그림자 감옥', d:'다음 행동 못 함 — 회복을 받으면 풀려남', good:false});
@@ -10300,6 +10301,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:360, v:'6.1.0', date:'2026-10-08', secs:[
+    { t:'스킬', items:[ '로키 「날쌘 손」 가로채기: 로키가 직접 빼앗을 때도 같은 대상에서 1개 더 빼앗음 (라운드에 1번 · 다른 아군이 지운 효과 가로채기와 같이 셈)', '스칼렛 열충격: 빙결·둔화만 (한기는 뺌)', '도깨비 「둔갑」: 끌어낸 적의 독이 양옆으로 옮겨 붙던 것 뺌' ]},
+    { t:'전투', items:[ '요르문간드 「한기」를 둔화와 따로 표시 (얼음 결정 아이콘 · 때릴 때마다 쌓이고 풀 때까지 남음)' ]}
+  ]},
   { build:359, v:'6.0.0', date:'2026-10-08', secs:[
     { t:'출석 체크', items:[ '홈 오른쪽 위 「출석」 배너 · 하루 한 번 「받기」 (온라인일 때만) · 받을 게 있으면 접속할 때 출석 창이 한 번 뜸', '28일 출석 달력: 빠진 날 상관없이 받을 때마다 한 칸씩 · 28칸을 다 채우면 다음 날 새 달력', '7일 묶음 1~6번째 칸: 정수 800 · 강화석 30 · 정수 800 · 정령 소환권 2 · 정수 800 · 강화석 30', '7일째 별빛 조각 30 + 레어 정령 확정권 1 · 14일째 별빛 조각 30 + 에픽 정령 확정권 1 · 21일째 별빛 조각 30 + 에픽 장비 확정권 1 · 28일째 별빛 조각 60 + 레전더리 정령 선택권 1', '새 정령사 7일 출석 (계정당 한 번, 지금 있는 계정도 받음): 1일 정수 1000 · 2일 정령 소환권 5 · 3일 강화석 100 · 4일 정령장비 소환권 3 · 5일 에픽 정령 선택권 1 · 6일 별빛 조각 50 · 7일 별빛 조각 50 + 신화 정령 선택권 1', '업데이트 기념 별빛 조각 100 (우편)' ]},
     { t:'스킬', items:[ '스칼렛 「불씨 전이」: 열충격 추가 — 빙결·둔화(한기 포함)된 적의 폭탄은 터질 때 피해 +50%', '수르트 「불꽃 제물」: 대상 아군 체력이 50% 이하면 공격력 +30% → +50%', '므네모시네 「되감기」: 되감은 아군의 재사용 대기 중인 기술 하나가 1라운드 당겨짐 (스킬1 먼저 · 자신에게 쓰면 없음)', '로키 「날쌘 손」: 가로채기 추가 — 다른 아군이 적의 이로운 효과를 지우면 그중 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 (라운드에 1번 · 속도 +3)', '도깨비 「둔갑」: 끌어낸 적에게 독이 있으면 양옆 적에게 독이 옮겨 붙음 (남은 라운드 그대로)' ]},
@@ -15212,7 +15217,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 359, APP_VERSION = '6.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 360, APP_VERSION = '6.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
