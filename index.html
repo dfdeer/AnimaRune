@@ -10065,7 +10065,7 @@ function chapterPctReward(chapterNum, t){
   if(p===25) return { essence: Math.round(100*sc), stone: 0, items: null };
   if(p===50) return { essence: 0, stone: Math.round(10*sc), items: {summon:5} };
   if(p===75) return { essence: Math.round(200*sc), stone: Math.round(15*sc), items: null };
-  return { essence: Math.round(300*sc), stone: Math.round(20*sc), star: isHardChapter(chapterNum) ? 40 : 20, items: isHardChapter(chapterNum) ? {legendary:1, summon:5} : {rare:1, summon:5} }; // (v253) 하드 100%는 레전더리 확정권 · (v5.3.0) 100%에 정수 300×배율 · 별빛 조각 노말 20 · 하드 40
+  return { essence: Math.round(300*sc), stone: Math.round(20*sc), star: isHardChapter(chapterNum) ? 20 : 10, items: isHardChapter(chapterNum) ? {legendary:1, summon:5} : {rare:1, summon:5} }; // (v253) 하드 100%는 레전더리 확정권 · (v5.3.0) 100%에 정수 300×배율 · 별빛 조각 노말 10 · 하드 20
 }
 function checkChapterPctRewards(chapterNum){
   const count = chapterClearCount(chapterNum);
@@ -10139,16 +10139,16 @@ function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
 function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
 function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
 const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1} };
-function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: L%5===0 ? ACCOUNT_LV_STAR5 : ACCOUNT_LV_STAR }; // (v5.3.0) 5의 배수 레벨은 별빛 조각 50 // (v317) 레벨마다 별빛 조각
+function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: L%5===0 ? ACCOUNT_LV_STAR5 : ACCOUNT_LV_STAR }; // (v5.3.0) 5의 배수 레벨은 별빛 조각 30 // (v317) 레벨마다 별빛 조각
   if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
-const ACCOUNT_LV_STAR = 10, ACCOUNT_LV_STAR5 = 50;
+const ACCOUNT_LV_STAR = 10, ACCOUNT_LV_STAR5 = 30;
 function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.starShard = (state.starShard||0) + (r.star||0); state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:357, v:'5.3.0', date:'2026-10-08', secs:[
-    { t:'보상', items:[ '챕터 보스 첫 격파에 별빛 조각 — 노말 50 · 하드 100 (이미 깬 보스는 우편으로 지급)', '일일 의뢰 정수 30~50 → 300', '패스 주간 미션 「레이드 승리 1번」 경험치 80 → 150', '업적 보상에 별빛 조각 — 보통 10 · 큰 업적과 히든 업적 30', '계정 레벨 5·10·15… 레벨 보상 별빛 조각 10 → 50', '챕터 진행도 100% 보상에 정수(300 × 챕터 배율)와 별빛 조각 (노말 20 · 하드 40)', '요일 던전 5·10·15단계 첫 돌파에 별빛 조각 50·100·150', '시련의 전당 첫 통과에 별빛 조각 20~100', '무한의 탑 25층마다 별빛 조각 30 · 100층마다 100', '이미 받은 보상은 늘어난 만큼 우편으로 지급' ]},
+    { t:'보상', items:[ '챕터 보스 첫 격파에 별빛 조각 — 노말 50 · 하드 100 (이미 깬 보스는 우편으로 지급)', '일일 의뢰 정수 30~50 → 300', '패스 주간 미션 「레이드 승리 1번」 경험치 80 → 150', '업적 보상에 별빛 조각 — 보통 5 · 큰 업적과 히든 업적 15', '계정 레벨 5·10·15… 레벨 보상 별빛 조각 10 → 30', '챕터 진행도 100% 보상에 정수(300 × 챕터 배율)와 별빛 조각 (노말 10 · 하드 20)', '요일 던전 5·10·15단계 첫 돌파에 별빛 조각 10·30·50', '시련의 전당 첫 통과에 별빛 조각 10~50', '무한의 탑 25층마다 별빛 조각 20 · 100층마다 50', '이미 받은 보상은 늘어난 만큼 우편으로 지급' ]},
     { t:'월드 보스', items:[ '최고 기록 보상 추가 — 직접 도전 한 번에 준 피해가 1만·2만·3만·5만·8만·12만·20만·30만·50만에 닿으면 한 번씩 (별빛 조각·정수·확정권)' ]},
     { t:'파견', items:[ '보낸 정령도 전투·합성·각성에 그대로 쓸 수 있음 (예전: 돌아올 때까지 못 씀) · 한 정령은 파견 한 곳에만' ]},
     { t:'출정', items:[ '상점 가격이 사이클마다 +50% (1사이클 유물 70 · 희귀 유물 110 · 회복 물약 45 기준)' ]},
@@ -10871,8 +10871,8 @@ ELEMENTS.forEach(el=>{
   ACHIEVEMENTS.push({id:'dexel_'+el, name:ELEMENT_INFO[el].name+' 도감 완성', desc:'모든 '+ELEMENT_INFO[el].name+' 정령 발견 (10종)', reward:{stone:30, items:{rare:1}}, category:'general', check:()=> isElementComplete(el)});
   ACHIEVEMENTS.push({id:'eqdexel_'+el, name:ELEMENT_INFO[el].name+' 장비 도감 완성', desc:'모든 '+ELEMENT_INFO[el].name+' 장비 발견 (10종)', reward:{stone:30, items:{equip:1}}, category:'general', check:()=> equipElementComplete(el)});
 });
-// (v5.3.0) 업적 보상에 별빛 조각 — 보통 10 · 히든이거나 큰 업적(레전더리 이상 선택권 · 정수 1000+ · 강화석 200+)은 30 (보상 개편, 받은 사람은 우편으로)
-ACHIEVEMENTS.forEach(a=>{ const r = a.reward = a.reward || {}; if(r.star) return; const it = r.items || {}; const big = a.secret || it.pick_legendary || it.pick_mythic || (r.essence||0)>=1000 || (r.stone||0)>=200; r.star = big ? 30 : 10; });
+// (v5.3.0) 업적 보상에 별빛 조각 — 보통 5 · 히든이거나 큰 업적(레전더리 이상 선택권 · 정수 1000+ · 강화석 200+)은 15 (보상 개편, 받은 사람은 우편으로)
+ACHIEVEMENTS.forEach(a=>{ const r = a.reward = a.reward || {}; if(r.star) return; const it = r.items || {}; const big = a.secret || it.pick_legendary || it.pick_mythic || (r.essence||0)>=1000 || (r.stone||0)>=200; r.star = big ? 15 : 5; });
 // ===================== 보상함 (모든 보상은 직접 눌러서 수령) =====================
 // (v103) 티켓 종류 — 정령 소환권(무료 1회) / 레어·에픽 정령 확정권 / 정령장비 소환권
 const TICKET_INFO = {
@@ -11147,7 +11147,7 @@ function challengeTower(floor){
   playTowerBattleAnimation(floor, playerPowerDisplay, enemyPowerDisplay, grade, slotDetails, enemySlotAtks, enemyComp);
 }
 // (v155) 경제 구조: 스테이지=정수, 탑=강화석+층 소환권, 보스=장비권, 출정=장비·재료(강화석) — 층 보상은 정수 대신 강화석이 기본
-function towerFloorReward(f){ const r = towerFloorRewardBase(f); if(f%25===0) r.star = f%100===0 ? 100 : 30; return r; } // (v5.3.0) 25층마다 별빛 조각 30 · 100층마다 100
+function towerFloorReward(f){ const r = towerFloorRewardBase(f); if(f%25===0) r.star = f%100===0 ? 50 : 20; return r; } // (v5.3.0) 25층마다 별빛 조각 20 · 100층마다 50
 function towerFloorRewardBase(f){
   // (v245) 선택권 층: 100층마다 레전더리 · 50층마다 에픽 · 30층마다 레어 (그 층의 확정권 대신)
   if(f%100===0) return {items:{pick_legendary:1, eq_legendary:1}};  // 100, 200… (v297) + 레전더리 장비 확정권
@@ -11762,7 +11762,7 @@ function dungeonReward(n){
   if(n===5) it.rare = 2; if(n===10) it.pick_epic = 1; if(n===15) it.pick_legendary = 1;
   if(n===7) it.eq_rare = 1; if(n===12) it.eqpick_epic = 1; if(n===15) it.eq_legendary = 1; // (v297) 장비 확정권·선택권
   it.engr = n%5===0 ? 3 : 1; // (v298) 각인석
-  if(n%5===0) rw.star = 10*n; // (v5.3.0) 5·10·15단계 첫 돌파에 별빛 조각 50·100·150
+  if(n%5===0) rw.star = n===5 ? 10 : n===10 ? 30 : 50; // (v5.3.0) 5·10·15단계 첫 돌파에 별빛 조각 10·30·50
   if(n===18) it.eq_epic = 1; if(n===20){ delete it.pick_epic; it.pick_legendary = 1; it.eqpick_legendary = 1; } // (v297) 새 16~20단계
   if(n>15 && n%5===0) it.pick_epic = 1;
   if(Object.keys(it).length) rw.items = it;
@@ -12580,8 +12580,8 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     allies:[{key:'water_mythic_a', idx:4},{key:'light_mythic_b', idx:3},{key:'dark_mythic_a', idx:1},{key:'fire_mythic_b', idx:0}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:650, hp:1.422},{key:'water_mythic_a', idx:4, atk:650, hp:1.422},{key:'light_mythic_a', idx:3, atk:650, hp:1.422},{key:'fire_mythic_a', idx:0, atk:700, hp:1.422},{key:'dark_legendary_b', idx:5, atk:650, hp:1.422},{key:'fire_epic_b', idx:2, atk:650, hp:1.422}] }
 ];
-// (v5.3.0) 시련 첫 통과에 별빛 조각 — 정수 보상 크기에 맞춰 1500 → 20 · 2500 → 30 · 4000 → 50 · 6000 → 100
-TRIALS.forEach(t=>{ const e = (t.reward && t.reward.essence)||0; if(t.reward && !t.reward.star) t.reward.star = e>=6000 ? 100 : e>=4000 ? 50 : e>=2500 ? 30 : 20; });
+// (v5.3.0) 시련 첫 통과에 별빛 조각 — 정수 보상 크기에 맞춰 1500 → 10 · 2500 → 15 · 4000 → 25 · 6000 → 50
+TRIALS.forEach(t=>{ const e = (t.reward && t.reward.essence)||0; if(t.reward && !t.reward.star) t.reward.star = e>=6000 ? 50 : e>=4000 ? 25 : e>=2500 ? 15 : 10; });
 function trialDef(id){ return TRIALS.find(t=>t.id===id) || null; }
 function trialCleared(id){ return !!(state.trialClear && state.trialClear[id]); }
 function trialHintOpen(id){ return trialCleared(id) || !!(state.trialTried && state.trialTried[id]); } // (v268) 힌트는 한 번 실패하거나 통과한 뒤에 열림
@@ -14719,6 +14719,7 @@ function migrateHardV253(){
 // 지금 보상 정의로 다시 계산한 합계(rwLedger)를 세이브에 같이 둠(rwGot, 저장할 때마다 갱신)
 // 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
 // 주의: 진행 기록의 모양(스테이지 번호 등)을 옮기는 업데이트와 RW_VER 올림을 같은 버전에 섞지 말 것 — 옮긴 만큼이 늘어난 보상으로 잡힘
+// (v5.3.0) 별빛 조각 예산 기준: 반복 수입 ≈ 주 240 (일일 의뢰 2×4×7 · 균열 기간(15일)당 약 360 · 패스 무료 28일 60) · 픽업 1회 10, 천장 80회 = 800 · 이번 한 번 보상 추가분 ≈ 1600 (약 7주치) — 이벤트·새 콘텐츠 몫을 남겨 둠
 const RW_VER = 4; // (v5.3.0) 업적·계정 레벨 5의 배수·챕터 진행도 100%·요일 던전 5단계마다·시련·탑 25층마다에 별빛 조각 · 챕터 100%에 정수
 const RW_VER_OLD_NOTE = 3; // (v317) 계정 레벨 보상에 별빛 조각 · (v5.3.0) 챕터 보스 첫 격파에 별빛 조각 (노말 50 · 하드 100)
 const RW_CAT_NM = { wbrec:'월드 보스 최고 기록', stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
