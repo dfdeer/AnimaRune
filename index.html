@@ -76,6 +76,29 @@
   .home-pu .hp-av{position:relative; z-index:2;} .home-pu .hp-av.b{margin-left:-14px; z-index:1; width:32px; height:32px; filter:brightness(.8);} /* (v5.0.2) 앞 정령(한정)이 앞으로, 짝은 뒤로 살짝 가려짐 */ .home-pu .hp-av .spimg{width:90%; height:90%; object-fit:contain; object-position:50% 50%;} /* (v5.0.1) 원 안에 정령 전체 */
   .home-pu .hp-tx{display:flex; flex-direction:column; align-items:flex-start; margin-left:7px; line-height:1.15;}
   .home-pu .hp-tx b{font-size:14px; color:#ffe38a; text-shadow:0 1px 2px #000a;} .home-pu .hp-tx small{font-size:11px; font-weight:800; color:#fff; background:#0008; border-radius:8px; padding:1px 6px; margin-top:2px;}
+  /* (v6.0.0) 출석 배너 · 출석 창 */
+  .home-rcol .home-pu.att{position:relative; border-color:#8fe3b4; background:linear-gradient(135deg,#1c4a3ce6,#152038e6); animation:none; box-shadow:0 0 10px #8fe3b444, 0 4px 10px #0006;}
+  .home-pu.att .hp-av{background:radial-gradient(circle,#effff5 0%,#3fae7a 75%); border-color:#8fe3b4;} .home-pu.att .hp-av .uic{width:26px; height:26px; margin:0;}
+  .home-pu.att .hp-tx b{color:#c4ffdc;} .home-pu.att .home-dot{top:-2px; right:-2px; width:10px; height:10px;}
+  .modal-bg.att-bg{padding-left:10px; padding-right:10px;}
+  .att-modal{max-width:400px; padding:16px 12px 14px;}
+  .att-sec{background:#0e0b2280; border:1px solid #ffffff14; border-radius:12px; padding:8px 6px 6px; margin-bottom:10px;}
+  .att-sec.new{border-color:#ffcf4a66; background:linear-gradient(160deg,#3a2a1060,#0e0b2280);}
+  .att-h{display:flex; align-items:baseline; justify-content:space-between; gap:6px; padding:0 4px 6px;} .att-h b{font-size:13px; color:#ffe38a;} .att-sec:not(.new) .att-h b{color:#c4ffdc;} .att-h small{font-size:11px; color:var(--sub); white-space:nowrap;}
+  .att-grid{display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:3px;}
+  .att-c{position:relative; min-width:0; height:54px; border-radius:8px; background:#2b2660; border:1px solid #ffffff1c; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:2px 1px 1px; overflow:hidden;}
+  .att-c.big{background:linear-gradient(160deg,#5a3f12,#2b2660); border-color:#ffcf4a88;}
+  .att-c .att-d{font-style:normal; font-size:9px; line-height:11px; color:var(--sub); font-weight:700; white-space:nowrap;}
+  .att-rw{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; width:100%;}
+  .att-r{display:flex; flex-direction:column; align-items:center; line-height:1;} .att-r .uic{width:20px; height:20px; margin:0;} .att-r small{font-size:10px; font-weight:800; color:#fff; text-shadow:0 1px 2px #000; margin-top:-1px; white-space:nowrap;}
+  .att-rw.two{gap:1px;} .att-rw.two .att-r{flex-direction:row; gap:1px;} .att-rw.two .att-r .uic{width:15px; height:15px;} .att-rw.two .att-r small{font-size:9px; margin-top:0;} /* 보상 둘: 한 줄에 아이콘+숫자씩 두 줄 */
+  .att-r .tk-eqp .tk-eqp-b{width:50%; height:50%; right:-2px; bottom:-2px;}
+  .att-c.got > :not(.att-ok){opacity:.45;} .att-c.got{filter:none; background:#1c1940;}
+  .att-c .att-ok{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;} .att-c .att-ok .uic{width:24px; height:24px; filter:drop-shadow(0 1px 2px #000);}
+  .att-c.now{border:2px solid #8fe3b4; box-shadow:0 0 10px #8fe3b4aa, inset 0 0 8px #8fe3b444; animation:attNow 1.6s ease-in-out infinite;} .att-c.now .att-d{color:#c4ffdc;}
+  @keyframes attNow{0%,100%{box-shadow:0 0 6px #8fe3b466, inset 0 0 6px #8fe3b433;} 50%{box-shadow:0 0 14px #8fe3b4cc, inset 0 0 10px #8fe3b466;}}
+  .att-note{font-size:11px; color:var(--sub); text-align:center; margin-top:6px;}
+  .att-modal .btn{margin-top:2px;}
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
   #main.tab-bg{background:linear-gradient(180deg,#0b0a2430 0%,#0b0a2455 55%,#0b0a24a0 100%), var(--tabbg) 50% 0 / cover no-repeat; background-color:#14112e;} #main.tab-bg .scr-top{background:none;}
@@ -2628,14 +2651,17 @@ function killUnit(sf, u){
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
 var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.5; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 50% 추가 피해 — 계산으로 정함(최대체력 = 공격력 2.7배): 범람은 테티스와 쓰면 보통 130~150% · 반격은 포효만 약 97%, 광명 보호막까지 약 125%
-var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
+var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0;
+// (v6.0.0) 한정 성좌 짝 기술 연계 (사용자 결정): 스칼렛 열충격 · 수르트 불꽃 제물(체력 50% 이하 대상) · 므네모시네 되감기 재사용 대기 · 로키 가로채기
+var SC_SHOCK = 1.5, SU_PYRE = 0.3, SU_PYRE_LOW = 0.5, MN_CD_BACK = 1; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
 function bombExplode(sf, u, hits, mul){
   const b = u.st.bomb; if(!b) return; delete u.st.bomb;
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
-  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1), { noCrit:true, noCounter:true, detonate:true });
-  if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:'💣폭발' });
+  const shock = (u.st.freeze || u.st.slow || u.st.chill) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화(한기 포함)된 적의 폭탄
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock, { noCrit:true, noCounter:true, detonate:true });
+  if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
 }
 const STEAL_ORDER = ['shield','buff','haste','regen','guard','reflect','ward','taunt']; // 로키가 빼앗는 순서 (가장 센 것부터)
@@ -2655,6 +2681,22 @@ function stealEffect(C, from){
   }
   C.a.stealSpd = Math.min(12, (C.a.stealSpd||0) + 3);
   return true;
+}
+// (v6.0.0) 로키 가로채기: 다른 아군이 적의 이로운 효과를 지우면(악몽 포식 등) 그중 1개를 로키가 가로채 체력 비율이 가장 낮은 아군에게 · 라운드에 1번
+function lokiIntercept(sf, a, from){
+  if(!from || from.side===a.side || from.isBoss || from.isWard || from.isAdd) return null;
+  const lk = aliveUnits(sideUnits(sf, a.side)).find(u=>u.line==='dark_lk' && u!==a);
+  return (lk && lk.lkRound!==sf.round) ? lk : null;
+}
+function lokiGive(sf, lk, from, old, hits){
+  const k = STEAL_ORDER.find(x=> x!=='taunt' && (x==='shield' ? (old.shield||0)>0 : !!old[x])); if(!k) return;
+  const to = aliveUnits(sideUnits(sf, lk.side)).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0]; if(!to) return;
+  const v = old[k], st = to.st; lk.lkRound = sf.round;
+  if(k==='shield'){ st.shield = (st.shield||0) + v; st.shieldR = Math.max(st.shieldR||0, old.shieldR||2); }
+  else if(k==='ward') st.ward = (st.ward||0) + v;
+  else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
+  lk.stealSpd = Math.min(12, (lk.stealSpd||0) + 3);
+  hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🫳가로채기 · '+STEAL_NM[k] });
 }
 function swapSlots(sf, side, i1, i2){ // 같은 편 두 칸의 정령을 맞바꿈 (빈 칸이면 옮김) · 이번 라운드 행동 순서도 같이 고침
   if(i1===i2) return; const A = unitAt(sf, side, i1), B = unitAt(sf, side, i2);
@@ -2759,7 +2801,7 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','seal','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
-  C.strip = u=>{ let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); return n; };
+  C.strip = u=>{ const lk = lokiIntercept(sf, a, u), keep = lk ? JSON.parse(JSON.stringify(u.st)) : null; let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); if(lk && n) lokiGive(sf, lk, u, keep, C.hits); return n; };
   C.actNext = u=>{
     if(!u.alive) return;
     const q = sf.queue;
@@ -3609,7 +3651,9 @@ async function showFriendProfile(k){
 function friendCopyCode(c){ if(!/^[A-Z0-9]{8}$/.test(c)) return; try{ navigator.clipboard.writeText(c).then(()=>toast('친구 코드 복사됨'), ()=>toast('복사 실패 — 코드를 직접 적기')); }catch(e){ toast('복사 실패 — 코드를 직접 적기'); } }
 // (v264) 서버 시각 = 내 시계 + 서버와의 차이(.info/serverTimeOffset)
 function serverNow(){ return Date.now() + (raidNet.tOff||0); }
-function watchServerOffset(){ const fb = raidNet.fb; if(!fb || raidNet.tOffOn) return; raidNet.tOffOn = true; try{ fb.onValue(fb.ref(fb.rtdb, '.info/serverTimeOffset'), s=>{ const v = s.val(); raidNet.tOff = Number.isFinite(v) ? v : 0; raidNet.tOffOk = true; }); }catch(e){} }
+function watchServerOffset(){ const fb = raidNet.fb; if(!fb || raidNet.tOffOn) return; raidNet.tOffOn = true; try{ fb.onValue(fb.ref(fb.rtdb, '.info/serverTimeOffset'), s=>{ const v = s.val(); raidNet.tOff = Number.isFinite(v) ? v : 0; const first = !raidNet.tOffOk; raidNet.tOffOk = true; if(first) srvDayReady(); }); }catch(e){} }
+// (v6.0.0) 서버 시각을 처음 받은 순간 — 하루가 바뀌었으면 일일 의뢰·통계 초기화 · 홈 다시 그림(출석 배너)
+function srvDayReady(){ try{ if(typeof state==='undefined' || !state || !state.dailyStats) return; checkDailyRollover(); if(activeTab==='home' && !document.getElementById('battleScreen')) render(); }catch(e){} }
 let friendSeenLast = 0;
 function friendSeenPing(force){
   if(!friendNet.on || !friendsAvailable() || !raidNet.db) return;
@@ -4223,6 +4267,7 @@ function bindHomeTab(){
     else if(a==='guide') showGuideModal();
     else if(a==='settings') showSettingsModal();
     else if(a==='profile') showProfileModal('info');
+    else if(a==='attend') showAttendModal(); // (v6.0.0) 출석
     else if(a==='pickup'){ const pp = pickupPeriod(); pickupView = Math.max(0, pp.pair.indexOf(pickupState().sel)); activeTab = 'pickup'; render(); save(); }
     else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
     else if(a==='expedition' && !isUnlocked('expedition')){ activeTab = 'expedition'; render(); save(); }
@@ -5256,7 +5301,7 @@ const LINE_KITS = {
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
   // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
   fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
-    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)' },
+    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
       run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
@@ -5266,9 +5311,9 @@ const LINE_KITS = {
   fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'타오르는 혼', icon:artIc('pv_fire_su'), desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
-      desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +30% (2라운드)<br>체력이 모자라면 1만 남음',
+      desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +'+pctTxt(SU_PYRE)+' (2라운드)<br>대상 체력이 50% 이하면 +'+pctTxt(SU_PYRE_LOW)+'<br>체력이 모자라면 1만 남음',
       run:C=>{ const a = C.a, cost = Math.round(a.maxHp*0.15), before = a.hp; a.hp = Math.max(1, a.hp - cost); a.rsHp = Math.max(1, (Number.isFinite(a.rsHp) ? a.rsHp : before) - cost); if(before>a.hp){ hidHurt(C.sf, a, before-a.hp); C.hits.push({ side:a.side, idx:a.idx, kind:'dmg', amount:before-a.hp, dot:true, src:'불꽃 제물' }); }
-        const give = u=>C.pos(u, st=>{ st.pyre = { v:0.3, r:2 }; }, '🕯️공격력 +30%'); give(C.t);
+        const give = u=>{ const v = u.hp/u.maxHp<=0.5 ? SU_PYRE_LOW : SU_PYRE; C.pos(u, st=>{ st.pyre = { v, r:2 }; }, '🕯️공격력 +'+Math.round(v*100)+'%'); }; give(C.t);
         if(aw5(a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>y.atk-x.atk)[0]; if(o) give(o); } } },
     s2:{ name:'종말의 불길', icon:artIc('sk_fire_su_2'), cd:4, kind:'harm', tag:()=> '잃은 체력 비례',
       desc:()=>'대상에게 공격력 150% + 자기가 잃은 체력의 30%만큼 추가 피해',
@@ -5276,10 +5321,10 @@ const LINE_KITS = {
   water_mn: { role:'되감기', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'흐르는 기억', icon:artIc('pv_water_mn'), desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
     s1:{ name:'되감기', icon:artIc('sk_water_mn_1'), cd:3, kind:'heal', allyOnly:true, tag:()=> '아군 전용',
-      desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거<br>불꽃 제물로 태운 체력은 안 돌아옴',
+      desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거 · 재사용 대기 중인 기술 하나가 '+MN_CD_BACK+'라운드 당겨짐 (스킬1 먼저)<br>불꽃 제물로 태운 체력은 안 돌아옴',
       run:C=>{ const t = C.t; if(t.side!==C.a.side) return; const to = Math.max(1, Math.min(t.maxHp, Math.round(Number.isFinite(t.rsHp) ? t.rsHp : t.hp))), d = to - t.hp;
         if(d>0) C.heal(t, d); else if(d<0){ t.hp = to; C.hits.push({ side:t.side, idx:t.idx, kind:'dmg', amount:-d, dot:true, src:'되감기' }); }
-        C.cleanse(t, 1); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } },
+        C.cleanse(t, 1); if(t!==C.a){ if(t.cd1>0) t.cd1 = Math.max(0, t.cd1-MN_CD_BACK); else if(t.cd2>0) t.cd2 = Math.max(0, t.cd2-MN_CD_BACK); } C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } }, // (v6.0.0) 재사용 대기 당기기 (자신은 바로 뒤에 대기가 새로 잡혀서 뺌)
     s2:{ name:'시간의 고리', icon:artIc('sk_water_mn_2'), cd:4, kind:'buff', allyOnly:true, tag:()=> '아군 전체 · 부활 표식',
       desc:()=>'아군 전체에 2라운드 표식: 그 사이 쓰러지면 표식 받을 때 체력의 50%로 일어남<br>아군마다 전투당 1번',
       run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*0.5)) }; }, '⏳고리'); }); } } },
@@ -5311,7 +5356,7 @@ const LINE_KITS = {
       desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
       run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2, n>0 ? { starfall:true } : null); } } },
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
-    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)' },
+    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)<br>가로채기: 다른 아군이 적의 이로운 효과를 지우면 그중 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
       desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
       run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
@@ -5321,9 +5366,10 @@ const LINE_KITS = {
   dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'방망이', icon:artIc('pv_dark_dk'), desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
     s1:{ name:'둔갑', icon:artIc('sk_dark_dk_1'), cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
-      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
+      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>끌려 나온 적에게 독이 있으면 양옆 적에게 독이 옮겨 붙음 (남은 라운드 그대로)<br>보스는 끌어내지 못하고 공격만',
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
-        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } }
+        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' });
+          if(t.st.poison){ const ps = t.st.poison; C.around('row').forEach(u=>{ if(!u.st.poison || (u.st.poison.pct||0) < ps.pct) C.neg(u, st=>{ st.poison = { r:ps.r, pct:ps.pct, srcG:ps.srcG }; }, '☠독 번짐'); }); } } } // (v6.0.0) 독 든 적을 끌어내면 양옆에 독이 옮겨 붙음
         C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:0.2, r:2 }; }, '🎯노출'); if(aw5(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
     s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
       desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
@@ -7474,9 +7520,21 @@ function showDismantleModal(key){
 // ===================== 상태 =====================
 const SAVE_KEY = 'spiritSummonerSave_v2'; // (v158) 챕터 10스테이지 개편으로 예전 세이브(v1, 챕터20 기준)와 호환 안 됨 — 키 자체를 바꿔서 예전 세이브는 그냥 안 쓰이게 함
 const SAVE_SCHEMA_VERSION = 2; // (v158) 세이브 코드(내보내기/불러오기)로 옛날 저장을 다시 들여오는 것까지 막기 위한 버전 표식
+// (v6.0.0) 하루 기준 = 서버 시각(한국 시간 자정) — 폰 날짜를 바꿔 일일 보상을 여러 번 받던 것
+// 서버 시각을 받았으면 그 날짜를 state.srvDay로 기억 · 오프라인이면 기억한 날 그대로(폰 시계를 바꿔도 안 넘어감) · 처음(기억 없음)엔 폰 시각을 한국 시간으로
+// 날짜 형식은 예전과 같은 '연-월-일'(0 안 채움) · 날짜는 앞으로만 감
+var srvDayBoot = ''; // 세이브를 불러오는 중(state가 아직 없을 때)에도 기억한 날을 쓰게 — load()가 채움
+function kstDayStr(ms){ const d = new Date(ms + 9*3600000); return d.getUTCFullYear()+'-'+(d.getUTCMonth()+1)+'-'+d.getUTCDate(); }
+function dayNum(s){ const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s||'')); return m ? (+m[1])*10000 + (+m[2])*100 + (+m[3]) : 0; }
+function laterDay(a, b){ return dayNum(a) >= dayNum(b) ? (a||b||'') : b; }
 function todayStr(){
-  const d = new Date();
-  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  let st = null; try{ st = state || null; }catch(e){} // 세이브를 불러오는 중엔 state가 아직 없음
+  const mem = laterDay(st && typeof st.srvDay==='string' ? st.srvDay : '', srvDayBoot);
+  const on = typeof raidNet!=='undefined' && raidNet && raidNet.tOffOk;
+  let t = on ? kstDayStr(serverNow()) : (mem || kstDayStr(Date.now()));
+  if(mem && dayNum(t) < dayNum(mem)) t = mem;
+  if(on){ srvDayBoot = t; if(st && st.srvDay!==t) st.srvDay = t; }
+  return t;
 }
 // (v107) 예전에는 load()에서만 날짜를 확인해서, 앱을 켜둔 채 자정을 넘기면 새로고침 전까지 어제 의뢰·통계가 그대로였음
 function checkDailyRollover(){
@@ -7516,6 +7574,7 @@ function defaultState(){
     lifetimeExpeditionClears: 0,
     lifetimeQuests: 0, // (v313) 받은 일일 의뢰 수 — 계정 점수
     rift: null, riftForm: [], // (v317) 별빛 균열 — 기간 번호(p) · 층별 별(st: 1 클리어 · 2 라운드 · 4 무사)
+    att: { n:0, day:'', total:0 }, attNew: { n:0, day:'' }, // (v6.0.0) 출석 — 28일 달력(n 채운 칸 · day 마지막으로 받은 날 · total 누적) · 새 정령사 7일(한 번만)
     starShard: 0, pickup: { pity:0, guar:false, sel:'' }, // (v317) 픽업 소환 — 별빛 조각 · 천장(pity) · 다음 신화 픽업 확정(guar) · 고른 픽업(sel)
     lifetimeRerolls: 0,
     towerFloorRewardClaimed: {},
@@ -7563,6 +7622,7 @@ function load(){
     raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return defaultState();
     const s = mergeWithDefaults(defaultState(), JSON.parse(raw));
+    if(typeof s.srvDay==='string' && dayNum(s.srvDay)) srvDayBoot = laterDay(s.srvDay, srvDayBoot); // (v6.0.0) 기억한 서버 날짜부터
     try{ const d = JSON.parse(localStorage.getItem(SAVE_DAILY_KEY)||'null'); if(!d || d.date!==todayStr()) localStorage.setItem(SAVE_DAILY_KEY, JSON.stringify({ date: todayStr(), raw })); }catch(e){}
     // 날짜 롤오버 체크 (나머지 필드 보정은 mergeWithDefaults + sanitizeState가 담당)
     if(s.dailyStats.date !== todayStr()){
@@ -8313,7 +8373,96 @@ function puFit(){
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
 // (v5.3.1) 홈 이벤트 배너 — 기간 한정 이벤트(빙고·출석 등)가 열리면 여기서 배너를 돌려줌 · 픽업 배너와 같은 모양(.home-pu)으로 픽업 밑에 쌓임 · 없으면 빈 칸
-function homeEventBannersHtml(){ return ''; }
+function homeEventBannersHtml(){ return attBannerHtml(); }
+// ===================== (v6.0.0) 출석 체크 — 온라인일 때만 · 하루 = 서버 시각(한국 시간) 날짜(todayStr) =====================
+// 28일 달력(누적, 연속 아님 · 28칸을 다 채우면 다음 날 새 달력 1칸부터) + 새 정령사 7일(계정당 한 번, 기존 유저도)
+const ATT_DAYS = 28;
+const ATT_CYCLE = [ {essence:800}, {stone:30}, {essence:800}, {items:{summon:2}}, {essence:800}, {stone:30} ]; // 7일 묶음 안 1~6번째 칸
+const ATT_WEEK = [ {star:30, items:{rare:1}}, {star:30, items:{epic:1}}, {star:30, items:{eq_epic:1}}, {star:60, items:{pick_legendary:1}} ]; // 7·14·21·28일째
+const ATT_NEW = [ {essence:1000}, {items:{summon:5}}, {stone:100}, {items:{equip:3}}, {items:{pick_epic:1}}, {star:50}, {star:50, items:{pick_mythic:1}} ];
+function attReward(i){ return i%7===0 ? ATT_WEEK[i/7-1] : ATT_CYCLE[(i-1)%7]; } // i = 1~28
+function attS(){ if(!isPlainObj(state.att)) state.att = { n:0, day:'', total:0 }; if(!isPlainObj(state.attNew)) state.attNew = { n:0, day:'' }; return state; }
+function attViewN(){ const a = attS().att; return (a.n>=ATT_DAYS && a.day!==todayStr()) ? 0 : a.n; } // 28칸을 채운 다음 날부터 새 달력
+function attCan28(){ return attS().att.day!==todayStr(); }
+function attCanNew(){ const b = attS().attNew; return b.n < ATT_NEW.length && b.day!==todayStr(); }
+function attClaimable(){ return attCan28() || attCanNew(); }
+function attHasDot(){ return pickupOnline() && attClaimable(); }
+function attGive(rw, acc){
+  if(rw.essence){ state.essence += rw.essence; acc.essence += rw.essence; }
+  if(rw.stone){ state.enhanceStone += rw.stone; acc.stone += rw.stone; }
+  if(rw.star){ state.starShard = (state.starShard||0) + rw.star; acc.star += rw.star; }
+  if(rw.items){ grantItems(rw.items); Object.keys(rw.items).forEach(k=>{ acc.items[k] = (acc.items[k]||0) + rw.items[k]; }); }
+}
+function attClaim(){
+  if(!pickupOnline()){ toast('출석은 인터넷 연결 필요'); return; }
+  const t = todayStr(), S = attS(), acc = { essence:0, stone:0, star:0, items:{} }; let got = 0;
+  if(S.att.day!==t){ if(S.att.n>=ATT_DAYS) S.att.n = 0; S.att.n += 1; S.att.day = t; S.att.total += 1; attGive(attReward(S.att.n), acc); got++; }
+  if(S.attNew.n < ATT_NEW.length && S.attNew.day!==t){ S.attNew.n += 1; S.attNew.day = t; attGive(ATT_NEW[S.attNew.n-1], acc); got++; }
+  if(!got){ toast('오늘 출석 완료'); return; }
+  if(!Object.keys(acc.items).length) delete acc.items;
+  save(); sfx('claim'); toastReward(acc, uiIc('gift')+' 출석 보상');
+  attRefresh(); if(activeTab==='home' && !document.getElementById('battleScreen')) render();
+}
+const ATT_ESS_IC = '<img class="uic" src="assets/ui/ic_essence.webp" alt="정수" draggable="false">', ATT_STONE_IC = '<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석" draggable="false">';
+function attRwHtml(rw){
+  const p = [];
+  if(rw.star) p.push(SHARD_IC+'<small>'+rw.star+'</small>');
+  if(rw.essence) p.push(ATT_ESS_IC+'<small>'+rw.essence+'</small>');
+  if(rw.stone) p.push(ATT_STONE_IC+'<small>'+rw.stone+'</small>');
+  if(rw.items) Object.keys(rw.items).forEach(k=>p.push(TICKET_INFO[k].icon+'<small>×'+rw.items[k]+'</small>'));
+  return '<span class="att-rw'+(p.length>1?' two':'')+'">'+p.map(x=>'<span class="att-r">'+x+'</span>').join('')+'</span>';
+}
+function attRwName(rw){ return rewardWords(rw).replace(/<[^>]*>/g,'').replace(/"/g,''); }
+function attCellHtml(day, rw, got, now, big){
+  return '<div class="att-c'+(got?' got':'')+(now?' now':'')+(big?' big':'')+'" title="'+day+'일 · '+attRwName(rw)+'"><i class="att-d">'+(now?'오늘':day+'일')+'</i>'+attRwHtml(rw)+(got?'<span class="att-ok">'+uiIc('check')+'</span>':'')+'</div>';
+}
+function attBodyHtml(){
+  const S = attS(), on = pickupOnline(), can = attClaimable();
+  let h = '';
+  if(S.attNew.n < ATT_NEW.length || S.attNew.day===todayStr()){ // 마지막 칸을 받은 날까지는 보여 줌
+    const b = S.attNew, nowI = attCanNew() ? b.n+1 : 0;
+    h += '<div class="att-sec new"><div class="att-h"><b>새 정령사 7일 출석</b><small>한 번만 · '+b.n+'/'+ATT_NEW.length+'</small></div><div class="att-grid">'
+      + ATT_NEW.map((rw,i)=>attCellHtml(i+1, rw, i<b.n, i+1===nowI, i===ATT_NEW.length-1)).join('') + '</div></div>';
+  }
+  const vn = attViewN(), nowI = attCan28() ? vn+1 : 0;
+  h += '<div class="att-sec"><div class="att-h"><b>28일 출석 달력</b><small>이번 달력 '+vn+'/'+ATT_DAYS+' · 누적 '+S.att.total+'일</small></div><div class="att-grid">';
+  for(let i=1;i<=ATT_DAYS;i++) h += attCellHtml(i, attReward(i), i<=vn, i===nowI, i%7===0);
+  h += '</div><div class="att-note">빠진 날 상관없이 누적 · 28칸을 채우면 다음 날 새 달력</div></div>';
+  h += !on ? '<button class="btn" disabled>'+uiIc('offline')+' 인터넷 연결 필요</button>'
+    : can ? '<button class="btn gold" id="attGo">'+uiIc('gift')+' 받기</button>' : '<button class="btn" disabled>오늘 출석 완료 · 내일 다시</button>';
+  h += '<div class="att-note">매일 0시(한국 시간) 새로 받기 · 온라인일 때만</div>';
+  return h;
+}
+function attRefresh(){ const b = document.getElementById('attBody'); if(!b) return; b.innerHTML = attBodyHtml(); const g = document.getElementById('attGo'); if(g) g.addEventListener('click', attClaim); }
+function showAttendModal(){
+  const old = document.getElementById('attPop'); if(old) old.remove();
+  const o = document.createElement('div'); o.className = 'modal-bg att-bg'; o.id = 'attPop'; o.style.zIndex = '200';
+  o.innerHTML = '<div class="modal att-modal" style="position:relative;"><button class="close-x" id="attClose">x</button><h3 style="text-align:center; margin-top:0;">'+uiIc('gift')+' 출석</h3><div id="attBody"></div></div>';
+  document.body.appendChild(o);
+  o.addEventListener('click', ev=>{ if(ev.target===o) o.remove(); });
+  o.querySelector('#attClose').addEventListener('click', ()=>o.remove());
+  attRefresh();
+}
+function attBannerHtml(){
+  const dot = attHasDot();
+  const sub = dot ? '오늘 받기' : attViewN()+'/'+ATT_DAYS;
+  return '<button class="home-pu att" data-home="attend"><span class="hp-av">'+uiIc('gift')+'</span><span class="hp-tx"><b>출석</b><small>'+sub+'</small></span>'+(dot?'<span class="home-dot"></span>':'')+'</button>';
+}
+// 접속해서 오늘 받을 게 있고 온라인이면 하루 한 번 자동으로 — 시작 화면·업데이트 알림·다른 창·전투가 다 끝난 홈에서만 (업데이트 알림이 먼저)
+function attAutoTry(){
+  try{
+    if(typeof state==='undefined' || !state || !pickupOnline() || !attClaimable()) return;
+    const t = todayStr(); if(state.attAuto===t) return;
+    if(activeTab!=='home' || document.getElementById('splash') || document.getElementById('battleScreen')) return;
+    if([...document.querySelectorAll('.modal-bg')].some(m=>getComputedStyle(m).display!=='none')) return;
+    { const mr = document.getElementById('modalRoot'); if(mr && mr.children.length) return; }
+    { const hm = document.getElementById('headerMenu'); if(hm && hm.style.display==='block') return; }
+    if(!updCheckDone && performance.now() < 10000) return; // 업데이트 확인이 끝날 때까지(최대 10초)
+    if(updLatest > APP_BUILD && !updSnoozed && !updPatchOnly()) return; // 업데이트 알림 창이 먼저
+    state.attAuto = t; save(); showAttendModal();
+  }catch(e){}
+}
+setInterval(attAutoTry, 2000);
 function homePickupBtnHtml(){ const per = pickupPeriod(), sp = SPIRITS[per.pair[0]], sp2 = SPIRITS[per.pair[1]];
   return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+uiIc('time')+' '+pickupLeftShort(per.left)+'</small></span></button>'; }
 // (v297) 장비 확정권 — 그 등급 장비 1개 (부위·속성 무작위)
@@ -10151,6 +10300,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:359, v:'6.0.0', date:'2026-10-08', secs:[
+    { t:'출석 체크', items:[ '홈 오른쪽 위 「출석」 배너 · 하루 한 번 「받기」 (온라인일 때만) · 받을 게 있으면 접속할 때 출석 창이 한 번 뜸', '28일 출석 달력: 빠진 날 상관없이 받을 때마다 한 칸씩 · 28칸을 다 채우면 다음 날 새 달력', '7일 묶음 1~6번째 칸: 정수 800 · 강화석 30 · 정수 800 · 정령 소환권 2 · 정수 800 · 강화석 30', '7일째 별빛 조각 30 + 레어 정령 확정권 1 · 14일째 별빛 조각 30 + 에픽 정령 확정권 1 · 21일째 별빛 조각 30 + 에픽 장비 확정권 1 · 28일째 별빛 조각 60 + 레전더리 정령 선택권 1', '새 정령사 7일 출석 (계정당 한 번, 지금 있는 계정도 받음): 1일 정수 1000 · 2일 정령 소환권 5 · 3일 강화석 100 · 4일 정령장비 소환권 3 · 5일 에픽 정령 선택권 1 · 6일 별빛 조각 50 · 7일 별빛 조각 50 + 신화 정령 선택권 1', '업데이트 기념 별빛 조각 100 (우편)' ]},
+    { t:'스킬', items:[ '스칼렛 「불씨 전이」: 열충격 추가 — 빙결·둔화(한기 포함)된 적의 폭탄은 터질 때 피해 +50%', '수르트 「불꽃 제물」: 대상 아군 체력이 50% 이하면 공격력 +30% → +50%', '므네모시네 「되감기」: 되감은 아군의 재사용 대기 중인 기술 하나가 1라운드 당겨짐 (스킬1 먼저 · 자신에게 쓰면 없음)', '로키 「날쌘 손」: 가로채기 추가 — 다른 아군이 적의 이로운 효과를 지우면 그중 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 (라운드에 1번 · 속도 +3)', '도깨비 「둔갑」: 끌어낸 적에게 독이 있으면 양옆 적에게 독이 옮겨 붙음 (남은 라운드 그대로)' ]},
+    { t:'하루 기준', items:[ '일일 의뢰·일일 기록·패스 일일 미션·파견·출정권 구매·월드 보스 하루 도전 등 하루 단위 초기화가 서버 시각 기준 한국 시간 0시로 바뀜 (기기 날짜를 바꿔도 넘어가지 않음)', '오프라인일 때는 마지막으로 접속한 날 그대로 · 다시 연결되면 날짜가 맞춰짐' ]}
+  ]},
   { build:358, v:'5.3.1', date:'2026-10-08', secs:[
     { t:'홈 화면', items:[ '친구·가이드·설정 버튼을 홈에서 뺌 — 친구는 위쪽 줄, 가이드·설정은 메뉴(☰)에서', '오른쪽 위 픽업 밑에 이벤트 배너 자리 · 배너가 늘면 오른쪽 버튼이 아래로 내려감' ]}
   ]},
@@ -14750,6 +14904,7 @@ function rwLedger(){
 }
 // (v5.0.4) 앞자리 업데이트 선물 우편 — 접속하면 한 번 우편함에 (기간 안에 들어온 사람만) · 사용자 결정: 앞자리 업데이트마다 별빛 조각 100
 const UPDATE_GIFTS = [
+  { id:'upd600', until: Date.UTC(2026,9,22,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,17,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
 function updateGiftMigrate(){
@@ -14781,6 +14936,11 @@ function sanitizeState(){
   if(!fin(s.pnSeen)) s.pnSeen = 0; // (v269) 본 패치노트
   ['essence','enhanceStone','towerBest','towerBestPower','expeditionBestReach'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, s[k]) : 0; });
   s.starShard = fin(s.starShard) ? Math.max(0, Math.floor(s.starShard)) : 0; // (v317)
+  if(typeof s.srvDay!=='string' || !dayNum(s.srvDay)) delete s.srvDay; // (v6.0.0) 기억한 서버 날짜
+  if(typeof s.attAuto!=='string') delete s.attAuto; // (v6.0.0) 출석 창을 자동으로 띄운 날
+  { const a = isPlainObj(s.att) ? s.att : {}, b = isPlainObj(s.attNew) ? s.attNew : {}, dy = v => (typeof v==='string' && dayNum(v)) ? v : ''; // (v6.0.0) 출석
+    s.att = { n: fin(a.n) ? Math.max(0, Math.min(ATT_DAYS, Math.floor(a.n))) : 0, day: dy(a.day), total: fin(a.total) ? Math.max(0, Math.floor(a.total)) : 0 };
+    s.attNew = { n: fin(b.n) ? Math.max(0, Math.min(ATT_NEW.length, Math.floor(b.n))) : 0, day: dy(b.day) }; }
   { const B = {}; if(isPlainObj(s.sanctum) && isPlainObj(s.sanctum.best)) SANCTUM_BOSSES.forEach(b=>{ const v = s.sanctum.best[b.id]; if(Number.isFinite(v) && v>0) B[b.id] = Math.min(SANCTUM_TIERS, Math.floor(v)); }); s.sanctum = { best:B }; } // (v344) 성역 문장
   if(isPlainObj(s.rift) && Number.isInteger(s.rift.p) && isPlainObj(s.rift.st)){ Object.keys(s.rift.st).forEach(k=>{ const f = Number(k), v = s.rift.st[k]; if(!Number.isInteger(f) || f<1 || f>RIFT_FLOORS.length || !Number.isInteger(v)) delete s.rift.st[k]; else s.rift.st[k] = v & 7; }); } else s.rift = null; // (v317) 별빛 균열
   s.riftForm = Array.isArray(s.riftForm) ? dedupeKeys(s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)) : [];
@@ -15052,7 +15212,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 358, APP_VERSION = '5.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 359, APP_VERSION = '6.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
@@ -15074,7 +15234,7 @@ async function appUpdateNow(){
 }
 // (v265) 게임을 켜거나 다시 열었을 때 새 버전이 있으면 알림 창(지금 업데이트 / 나중에)
 // 전투·레이드 방·보스 연전 중이면 창을 띄우지 않고 위에 작은 막대만 → 전투 화면을 나오면 그때 알림 창
-var updLatest = 0, updSnoozed = false, updCheckedAt = 0; // var: 전투 화면 정리(unmountBattleScreen)가 이 줄보다 먼저 불려도 안전하게
+var updLatest = 0, updSnoozed = false, updCheckedAt = 0, updCheckDone = false; // var: 전투 화면 정리(unmountBattleScreen)가 이 줄보다 먼저 불려도 안전하게
 function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
 // (v2.10.2) 끝자리만 바뀐 자잘한 업데이트(소리·문구 등)는 알림 창을 띄우지 않고 메뉴와 업데이트 버튼에 빨간 점만 — 가운데·앞자리가 바뀌면(큰 버그·수치 조정·새 콘텐츠) 지금처럼 알림 창
 function verParts(v){ const p = String(v||'').split('.').map(x=>parseInt(x,10)); if(p.length===2 && String(v).split('.')[1].length===2) return [p[0], Math.floor(p[1]/10), p[1]%10]; return [p[0]||0, p[1]||0, p[2]||0]; } // 예전 '2.93' = 2.9.3
@@ -15102,7 +15262,7 @@ function showUpdatePopup(force){
 async function checkAppUpdate(){
   if(Date.now() - updCheckedAt < 5*60000) { showUpdatePopup(); return; }
   updCheckedAt = Date.now();
-  const latest = await latestBuild(); if(!latest || latest <= APP_BUILD) return;
+  const latest = await latestBuild(); updCheckDone = true; if(!latest || latest <= APP_BUILD) return;
   if(latest > updLatest){ updLatest = latest; updSnoozed = false; } // 더 새 버전이 또 나오면 다시 알림
   updMarkMenu(); showUpdatePopup();
 }
