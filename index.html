@@ -67,7 +67,7 @@
   .home-ava{width:34px; height:34px; border-radius:10px; background:#2b2360; display:flex; align-items:center; justify-content:center; font-size:20px;}
   .home-side{position:absolute; z-index:3; top:70px; display:flex; flex-direction:column; gap:10px;}
   .home-side.left{left:10px;} .home-side.right{right:10px;}
-  .home-rcol{position:absolute; z-index:3; top:12px; right:10px; display:flex; flex-direction:column; align-items:flex-end; gap:10px;} .home-banners{display:flex; flex-direction:column; align-items:flex-end; gap:6px;} .home-rcol .home-side.right{position:static; right:auto; top:auto;} .home-rcol .home-pu{position:static;} /* (v5.3.1) 배너 줄 + 오른쪽 버튼 */
+  .home-rcol{position:absolute; z-index:3; top:12px; right:10px; display:flex; flex-direction:column; align-items:flex-end; gap:10px;} .home-banners{display:flex; flex-direction:column; align-items:stretch; gap:6px;} /* (v6.1.1) 배너 폭을 맞춤 */ .home-rcol .home-side.right{position:static; right:auto; top:auto;} .home-rcol .home-pu{position:static;} /* (v5.3.1) 배너 줄 + 오른쪽 버튼 */
   .home.compact .home-rcol{gap:6px;}
   /* (v317) 픽업 소환 — 홈 오른쪽 위 · 신화 2종 얼굴 + 남은 기간 */
   .home-pu{position:absolute; z-index:3; top:12px; right:10px; display:flex; align-items:center; gap:0; padding:5px 12px 5px 6px; border-radius:16px; background:linear-gradient(135deg,#3a1d6ee6,#1a1540e6); border:1.5px solid #ffcf4a; color:var(--text); box-shadow:0 0 12px #ffcf4a66, 0 4px 10px #0006; animation:puGlow 2.4s ease-in-out infinite;}
@@ -77,7 +77,7 @@
   .home-pu .hp-tx{display:flex; flex-direction:column; align-items:flex-start; margin-left:7px; line-height:1.15;}
   .home-pu .hp-tx b{font-size:14px; color:#ffe38a; text-shadow:0 1px 2px #000a;} .home-pu .hp-tx small{font-size:11px; font-weight:800; color:#fff; background:#0008; border-radius:8px; padding:1px 6px; margin-top:2px;}
   /* (v6.0.0) 출석 배너 · 출석 창 */
-  .home-rcol .home-pu.att{position:relative; border-color:#8fe3b4; background:linear-gradient(135deg,#1c4a3ce6,#152038e6); animation:none; box-shadow:0 0 10px #8fe3b444, 0 4px 10px #0006;}
+  .home-rcol .home-pu.att{position:relative; top:auto; right:auto; border-color:#8fe3b4; background:linear-gradient(135deg,#1c4a3ce6,#152038e6); animation:none; box-shadow:0 0 10px #8fe3b444, 0 4px 10px #0006;}
   .home-pu.att .hp-av{background:radial-gradient(circle,#effff5 0%,#3fae7a 75%); border-color:#8fe3b4;} .home-pu.att .hp-av .uic{width:26px; height:26px; margin:0;}
   .home-pu.att .hp-tx b{color:#c4ffdc;} .home-pu.att .home-dot{top:-2px; right:-2px; width:10px; height:10px;}
   .modal-bg.att-bg{padding-left:10px; padding-right:10px;}
@@ -4107,7 +4107,7 @@ function renderHomeTab(){
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
   h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">'+uiIc('level')+' Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
-  h += '<div class="home-side left"><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button></div>'; // (v5.3.1) 가이드는 메뉴(☰)에 있어 홈에선 뺌
+  h += '<div class="home-side left"><button class="home-ic" data-home="attend">'+uiIc('gift')+'<small>출석</small>'+(attHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button></div>'; // (v5.3.1) 가이드는 메뉴(☰)에 있어 홈에선 뺌
   // (v5.3.1) 오른쪽 위 배너 줄(픽업 + 이벤트) 밑에 오른쪽 버튼 — 배너가 늘면 버튼이 알아서 밑으로
   h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
   h += '<div class="home-hero" data-home="hero">'
@@ -8374,7 +8374,7 @@ function puFit(){
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
 // (v5.3.1) 홈 이벤트 배너 — 기간 한정 이벤트(빙고·출석 등)가 열리면 여기서 배너를 돌려줌 · 픽업 배너와 같은 모양(.home-pu)으로 픽업 밑에 쌓임 · 없으면 빈 칸
-function homeEventBannersHtml(){ return attBannerHtml(); }
+function homeEventBannersHtml(){ return ''; } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
 // ===================== (v6.0.0) 출석 체크 — 온라인일 때만 · 하루 = 서버 시각(한국 시간) 날짜(todayStr) =====================
 // 28일 달력(누적, 연속 아님 · 28칸을 다 채우면 다음 날 새 달력 1칸부터) + 새 정령사 7일(계정당 한 번, 기존 유저도)
 const ATT_DAYS = 28;
@@ -10301,6 +10301,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:361, v:'6.1.1', date:'2026-10-08', secs:[
+    { t:'홈 화면', items:[ '출석을 왼쪽 맨 위 버튼으로 옮김 (받을 게 있으면 빨간 점) — 출석 배너가 오른쪽 버튼(균열 등)과 겹치던 것도 해결' ]}
+  ]},
   { build:360, v:'6.1.0', date:'2026-10-08', secs:[
     { t:'스킬', items:[ '로키 「날쌘 손」 가로채기: 로키가 직접 빼앗을 때도 같은 대상에서 1개 더 빼앗음 (라운드에 1번 · 다른 아군이 지운 효과 가로채기와 같이 셈)', '스칼렛 열충격: 빙결·둔화만 (한기는 뺌)', '도깨비 「둔갑」: 끌어낸 적의 독이 양옆으로 옮겨 붙던 것 뺌' ]},
     { t:'전투', items:[ '요르문간드 「한기」를 둔화와 따로 표시 (얼음 결정 아이콘 · 때릴 때마다 쌓이고 풀 때까지 남음)' ]}
@@ -15217,7 +15220,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 360, APP_VERSION = '6.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 361, APP_VERSION = '6.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
