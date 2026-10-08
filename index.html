@@ -67,6 +67,8 @@
   .home-ava{width:34px; height:34px; border-radius:10px; background:#2b2360; display:flex; align-items:center; justify-content:center; font-size:20px;}
   .home-side{position:absolute; z-index:3; top:70px; display:flex; flex-direction:column; gap:10px;}
   .home-side.left{left:10px;} .home-side.right{right:10px;}
+  .home-rcol{position:absolute; z-index:3; top:12px; right:10px; display:flex; flex-direction:column; align-items:flex-end; gap:10px;} .home-banners{display:flex; flex-direction:column; align-items:flex-end; gap:6px;} .home-rcol .home-side.right{position:static; right:auto; top:auto;} .home-rcol .home-pu{position:static;} /* (v5.3.1) 배너 줄 + 오른쪽 버튼 */
+  .home.compact .home-rcol{gap:6px;}
   /* (v317) 픽업 소환 — 홈 오른쪽 위 · 신화 2종 얼굴 + 남은 기간 */
   .home-pu{position:absolute; z-index:3; top:12px; right:10px; display:flex; align-items:center; gap:0; padding:5px 12px 5px 6px; border-radius:16px; background:linear-gradient(135deg,#3a1d6ee6,#1a1540e6); border:1.5px solid #ffcf4a; color:var(--text); box-shadow:0 0 12px #ffcf4a66, 0 4px 10px #0006; animation:puGlow 2.4s ease-in-out infinite;}
   .home-pu:active{transform:scale(.96);}
@@ -4060,9 +4062,9 @@ function renderHomeTab(){
   const sp = rep ? SPIRITS[rep] : null;
   let h = '<div class="home">' + HOME_MODES.map(m=>homeBgLayer(m).replace('class="home-bg"', 'class="home-bg'+(m===homeMode?' on':'')+'"')).join('');
   h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">'+uiIc('level')+' Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
-  h += homePickupBtnHtml(); // (v317) 픽업 소환 — 홈에만
-  h += '<div class="home-side left"><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="guide"><img class="uic" src="assets/ui/ic_guide.webp" alt="" draggable="false"><small>가이드</small></button></div>';
-  h += '<div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="friends"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><small>친구</small><span class="home-dot" id="homeFriendDot" style="display:none;"></span></button><button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="settings"><img class="uic" src="assets/ui/ic_settings.webp" alt="" draggable="false"><small>설정</small></button></div>';
+  h += '<div class="home-side left"><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button></div>'; // (v5.3.1) 가이드는 메뉴(☰)에 있어 홈에선 뺌
+  // (v5.3.1) 오른쪽 위 배너 줄(픽업 + 이벤트) 밑에 오른쪽 버튼 — 배너가 늘면 버튼이 알아서 밑으로
+  h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[spRar(sp)].color+';">'+RARITY_INFO[spRar(sp)].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo home-empty"><img class="spimg hero" src="assets/ui/ic_summon.webp" alt="" draggable="false"></div><div class="home-name">첫 정령 소환하기</div><div class="home-cta">눌러서 소환하러 가기 ›</div>') // (v209) 정령이 없을 땐 소환 구슬 그림 — 누르면 소환 화면
@@ -8310,6 +8312,8 @@ function puFit(){
 }
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
+// (v5.3.1) 홈 이벤트 배너 — 기간 한정 이벤트(빙고·출석 등)가 열리면 여기서 배너를 돌려줌 · 픽업 배너와 같은 모양(.home-pu)으로 픽업 밑에 쌓임 · 없으면 빈 칸
+function homeEventBannersHtml(){ return ''; }
 function homePickupBtnHtml(){ const per = pickupPeriod(), sp = SPIRITS[per.pair[0]], sp2 = SPIRITS[per.pair[1]];
   return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+uiIc('time')+' '+pickupLeftShort(per.left)+'</small></span></button>'; }
 // (v297) 장비 확정권 — 그 등급 장비 1개 (부위·속성 무작위)
@@ -10147,6 +10151,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:358, v:'5.3.1', date:'2026-10-08', secs:[
+    { t:'홈 화면', items:[ '친구·가이드·설정 버튼을 홈에서 뺌 — 친구는 위쪽 줄, 가이드·설정은 메뉴(☰)에서', '오른쪽 위 픽업 밑에 이벤트 배너 자리 · 배너가 늘면 오른쪽 버튼이 아래로 내려감' ]}
+  ]},
   { build:357, v:'5.3.0', date:'2026-10-08', secs:[
     { t:'보상', items:[ '챕터 보스 첫 격파에 별빛 조각 — 노말 50 · 하드 100 (이미 깬 보스는 우편으로 지급)', '일일 의뢰 정수 30~50 → 300', '패스 주간 미션 「레이드 승리 1번」 경험치 80 → 150', '업적 보상에 별빛 조각 — 보통 5 · 큰 업적과 히든 업적 15', '계정 레벨 5·10·15… 레벨 보상 별빛 조각 10 → 30', '챕터 진행도 100% 보상에 정수(300 × 챕터 배율)와 별빛 조각 (노말 10 · 하드 20)', '요일 던전 5·10·15단계 첫 돌파에 별빛 조각 10·30·50', '시련의 전당 첫 통과에 별빛 조각 10~50', '무한의 탑 25층마다 별빛 조각 20 · 100층마다 50', '이미 받은 보상은 늘어난 만큼 우편으로 지급' ]},
     { t:'월드 보스', items:[ '최고 기록 보상 추가 — 직접 도전 한 번에 준 피해가 1만·2만·3만·5만·8만·12만·20만·30만·50만에 닿으면 한 번씩 (별빛 조각·정수·확정권)' ]},
@@ -15045,7 +15052,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 357, APP_VERSION = '5.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 358, APP_VERSION = '5.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
