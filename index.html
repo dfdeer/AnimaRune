@@ -1504,7 +1504,7 @@
   .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
   .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
   .et-cur{display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffcf4a14; border:1px solid #ffcf4a44; text-align:left; flex-wrap:wrap;} .et-cur span{font-size:10px; color:var(--sub);} .et-cur small{flex-basis:100%; font-size:11px; color:var(--sub);}
-  .et-offers{display:flex; flex-direction:column; gap:6px; margin-top:8px;} .et-off{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff1f; color:var(--text); text-align:left; cursor:pointer; font:inherit;} .et-off small{font-size:11px; color:var(--sub);} .et-off i{font-style:normal; font-size:10px; color:#8ec5ff;} .et-off.on{border-color:#ffcf4a; background:#ffcf4a1a;} .et-off.on i{color:#ffe08a;}
+  .et-offers{display:flex; flex-direction:column; gap:6px; margin-top:8px;} .et-off{display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff1f; color:var(--text); text-align:left; cursor:pointer; font:inherit;} .et-off small{font-size:11px; color:var(--sub);} .et-off i{font-style:normal; font-size:10px; color:#8ec5ff;} .et-off.on{border-color:#ffcf4a; background:#ffcf4a1a;} .et-off{position:relative;} .et-off.on{padding-right:64px;} .et-sel{position:absolute; right:10px; top:50%; transform:translateY(-50%); font-style:normal; font-size:11px; font-weight:800; color:#ffcf4a;} /* (v7.1.2) 붙은 효과 표시 */ .et-off.on i{color:#ffe08a;}
   .so-sec{font-weight:900; font-size:12px; color:#ffe9a8; margin:10px 0 4px; text-align:left;} .so-d{text-align:left; font-size:11px; line-height:1.55;}
   .so-q{display:flex; gap:4px;} .so-q span{flex:1; border-radius:8px; padding:5px 2px; text-align:center; background:#ffffff0d; border:1px solid color-mix(in srgb, var(--qc) 50%, transparent);} .so-q i{display:block; font-style:normal; font-size:10px; color:var(--qc);} .so-q b{font-size:13px;}
   .so-t{width:100%; border-collapse:collapse; margin-top:8px; font-size:11px;} .so-t th, .so-t td{padding:4px 2px; text-align:center; border-bottom:1px solid #ffffff14;} .so-t td:first-child{text-align:left; white-space:nowrap;} .so-t th{font-size:10px; color:var(--sub);}
@@ -2345,7 +2345,7 @@ function showEqTraitModal(key, back){
   let h = '<div style="text-align:center;"><div style="font-size:40px;">'+i.img+'</div><h3 style="margin:4px 0;">'+uiIc('special')+' 고유 효과 · '+i.name+'</h3>'
     + '<div class="sub" style="font-size:11px; line-height:1.5;">레전더리·신화 장비마다 하나 · 끼운 정령에게 붙음 (신화가 더 셈)<br>후보 '+EQ_TRAIT_OFFERS+'개 중에서 골라 붙이고, 마음에 안 들면 후보를 다시 뽑음</div></div>';
   if(cur && !(t.offers||[]).includes(cur.id)) h += '<div class="et-cur"><span>지금</span><b>'+cur.d.ic+' '+cur.d.nm+'</b><small>'+cur.d.d(cur.v)+'</small></div>'; // (v7.1.2) 붙은 효과가 후보에 보이면 「지금」 칸은 뺌 — 다시 뽑아 후보에서 빠졌을 때만 보여 줌
-  h += '<div class="et-offers">'+(t.offers||[]).filter(id=>EQ_TRAITS[id]).map(id=>{ const d = EQ_TRAITS[id]; return '<button class="et-off'+(cur && cur.id===id?' on':'')+'" data-et-pick="'+id+'"><b>'+d.ic+' '+d.nm+'</b><small>'+eqTraitTxt(key, id)+'</small><i>'+(cur && cur.id===id ? '붙어 있음' : '이걸로 고르기')+'</i></button>'; }).join('')+'</div>';
+  h += '<div class="et-offers">'+(t.offers||[]).filter(id=>EQ_TRAITS[id]).map(id=>{ const d = EQ_TRAITS[id]; return '<button class="et-off'+(cur && cur.id===id?' on':'')+'" data-et-pick="'+id+'"><b>'+d.ic+' '+d.nm+'</b><small>'+eqTraitTxt(key, id)+'</small>'+(cur && cur.id===id ? '<em class="et-sel">선택됨</em>' : '')+'</button>'; }).join('')+'</div>';
   h += '<button class="btn gold" id="etReroll" style="margin-top:10px;" '+(have>=EQ_TRAIT_REROLL?'':'disabled')+'>'+uiIc('dice')+' 후보 다시 뽑기 · '+TICKET_INFO.engr.icon+' '+EQ_TRAIT_REROLL+' <small>(보유 '+have+')</small></button>';
   h += '<button class="btn secondary small" id="etList" style="margin-top:8px;">📋 고유 효과 전체 목록</button>';
   if(back) h += '<button class="btn secondary" id="etBack" style="margin-top:8px;">‹ 돌아가기</button>';
@@ -10576,7 +10576,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:371, v:'7.1.2', date:'2026-10-08', secs:[
-    { t:'화면', items:[ '장비 고유 효과 창의 「지금」 칸 정리 — 붙은 효과가 후보에 있으면 따로 안 보여 줌' ]}
+    { t:'화면', items:[ '장비 고유 효과 창의 「지금」 칸 정리 — 붙은 효과가 후보에 있으면 따로 안 보여 줌', '후보 칸 아래 「붙어 있음 · 이걸로 고르기」 글자 뺌 — 붙은 효과는 오른쪽에 「선택됨」' ]}
   ]},
   { build:370, v:'7.1.1', date:'2026-10-08', secs:[
     { t:'화면', items:[ '가방 · 각인 · 부가 능력 · 광맥 정제 아이콘을 게임 그림으로 바꿈' ]}
