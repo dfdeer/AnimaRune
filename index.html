@@ -2625,12 +2625,13 @@ function killUnit(sf, u){
   }
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
+var GEUMO_DET = [0,0,.2,.25,.3], SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0; // 시뮬(하드 2 보스·80판): 옛 금오 승 6%·보스 65% 남음 ↔ 새 금오 3%·58% · 스칼렛 0%·85% → 10%·53% (스콜 5%·65%) // (v5.3.0) 금오 발화 중첩당 배율(대상·양옆, 1중첩만 줄임) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬로 맞춤
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
-function bombExplode(sf, u, hits){
+function bombExplode(sf, u, hits, mul){
   const b = u.st.bomb; if(!b) return; delete u.st.bomb;
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
-  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1), { noCrit:true, noCounter:true, detonate:true });
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1), { noCrit:true, noCounter:true, detonate:true });
   if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:'💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
 }
@@ -5113,12 +5114,14 @@ const LINE_KITS = {
         '화상은 라운드마다 중첩당 시전자 공격력 15%만큼 피해'
       ].filter(Boolean).join('<br>'),
       run:C=>{ C.hit(C.t,0.8); C.burn(C.t,C.P([1,1,2,2,3])); if(C.g>=2) C.around('row').forEach(u=>{ C.hit(u,0.4); C.burn(u,1); }); } },
-    s2:{ name:'발화', icon:artIc('sk_fire_b_2'), cd:4, kind:'harm', tag:g=>'화상 폭발'+(g>=3?' · 십자 전파':''),
+    s2:{ name:'발화', icon:artIc('sk_fire_b_2'), cd:4, kind:'harm', tag:g=>'대상·양옆 화상 폭발'+(g>=3?' · 화상 유지':''),
       desc:g=>[
-        '대상의 화상을 전부 터뜨려 중첩당 공격력 '+pctTxt([0,0,.6,.8,1.0][g]),
-        g>=3?'터뜨린 뒤 십자 방향 대상에게 화상 1중첩':null
-      ].filter(Boolean).join('<br>'),
-      run:C=>{ const n=C.t.st.burn||0; C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.5, n>0 ? {detonate:true} : null); C.t.st.burn=0; if(C.g>=3 && n>0) C.around('cross').forEach(u=>C.burn(u,1)); } } },
+        '대상과 양옆 대상의 화상을 터뜨려 각자 중첩당 공격력 '+pctTxt(GEUMO_DET[g]),
+        '터뜨린 뒤 화상은 1중첩만 줄어듦 (계속 탐)',
+        '화상이 없는 대상에게는 공격력 50%'
+      ].join('<br>'),
+      run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · 1중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
+        if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = n-1; if(!u.st.burn) delete u.st.burn; } else if(i===0) C.hit(u, 0.5); }); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', icon:artIc('pv_water_a'), desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:artIc('sk_water_a_1'), cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
@@ -5246,8 +5249,8 @@ const LINE_KITS = {
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
       run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
     s2:{ name:'연쇄 점화', icon:artIc('sk_fire_sc_2'), cd:4, kind:'harm', tag:()=> '전체 · 폭탄 즉시',
-      desc:()=>'대상 편 전체에 공격력 60%<br>폭탄이 붙은 적은 그 자리에서 바로 터짐',
-      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.6)); C.side(C.tSide).filter(u=>u.st.bomb).forEach(u=>bombExplode(C.sf, u, C.hits)); } } },
+      desc:()=>'대상 편 전체에 공격력 '+pctTxt(SC_CHAIN)+'<br>폭탄이 붙은 적은 그 자리에서 바로 터짐 (이때 폭발 피해 +'+Math.round((SC_CHAIN_BOMB-1)*100)+'%)',
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, SC_CHAIN)); C.side(C.tSide).filter(u=>u.st.bomb).forEach(u=>bombExplode(C.sf, u, C.hits, SC_CHAIN_BOMB)); } } }, // (v5.3.0) 피해 강화 (사용자 결정)
   fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'타오르는 혼', icon:artIc('pv_fire_su'), desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
@@ -10138,6 +10141,7 @@ const PATCH_NOTES = [
     { t:'월드 보스', items:[ '최고 기록 보상 추가 — 직접 도전 한 번에 준 피해가 1만·2만·3만·5만·8만·12만·20만·30만·50만에 닿으면 한 번씩 (별빛 조각·정수·확정권)' ]},
     { t:'파견', items:[ '보낸 정령도 전투·합성·각성에 그대로 쓸 수 있음 (예전: 돌아올 때까지 못 씀) · 한 정령은 파견 한 곳에만' ]},
     { t:'출정', items:[ '상점 가격이 사이클마다 +50% (1사이클 유물 70 · 희귀 유물 110 · 회복 물약 45 기준)' ]},
+    { t:'스킬', items:[ '금오 「발화」: 대상의 화상을 전부 터뜨려 중첩당 공격력 60·80·100% → 대상과 양옆의 화상을 각자 터뜨려 중첩당 20·25·30% · 터뜨린 뒤 화상은 1중첩만 줄어듦(계속 탐) · 화상이 없는 대상에게는 50% · 십자 전파 삭제', '스칼렛 「연쇄 점화」: 전체 피해 60% → 130% · 이 스킬로 바로 터지는 폭탄 피해 ×2' ]},
     { t:'정령', items:[ '신화 정령을 파견 보낸 동안 같은 신화를 또 얻으면 2번째 정령으로 들어오던 것 — 이제 기억 조각 50개로 (파견 간 정령이 원본)' ]}
   ]},
   { build:356, v:'5.2.1', date:'2026-10-08', secs:[
