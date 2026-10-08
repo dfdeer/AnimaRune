@@ -1534,14 +1534,19 @@
 @keyframes smFloat{0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);}}
 @keyframes smSlam{0%{opacity:0; transform:scale(2.2);} 100%{opacity:1; transform:scale(1);}}
 /* 10연 결과 타일 */
-.mt{position:relative; text-align:center; padding:9px 2px 6px; border-radius:12px; overflow:hidden; opacity:0;}
+.mt{opacity:0; animation:popIn .45s ease-out var(--pd) both;} /* (v6.2.4) 바깥은 나타나기만 · 안쪽(.mt-in)이 카드 — 뒤집기 */
+.mt-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 6px; margin-top:12px;}
+.mt-in{position:relative; height:100%; box-sizing:border-box; text-align:center; padding:9px 2px 6px; border-radius:12px; overflow:hidden; border:2px solid #5d5a96; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+.mt-in.open{cursor:default; animation:mtCard .56s ease-in-out forwards, mtBd .01s linear .28s forwards;} .mt-in.hi.open{animation:mtCard .56s ease-in-out forwards, mtBd .01s linear .28s forwards, glowPulse 1.1s ease-in-out .56s 2;} .mt-in.best.open{z-index:2; animation:mtCard .7s ease-in-out forwards, mtBd .01s linear .35s forwards, mtBest .9s ease-out .35s both, glowPulse 1.1s ease-in-out 1.2s 2;}
+.mt-in.open .mt-back{animation:mtBackOff .01s linear .28s forwards;} .mt-in.best.open .mt-back{animation-delay:.35s;}
+.mt-wait .mt-in:not(.open):active{transform:scale(.95);}
 .mt .ic{font-size:26px; line-height:1.15;} .mt .ic .spimg, .mt .ic .eqimg{display:block; width:1.7em; height:1.7em; margin:0 auto;}
 .mt .st{font-size:9px; letter-spacing:1px; margin-top:1px;}
 .mt .nm{font-size:10px; font-weight:700; color:var(--text); line-height:1.15; word-break:keep-all; min-height:23px; margin-top:2px; display:flex; align-items:center; justify-content:center;}
 .mt .rl{display:inline-block; margin-top:2px; padding:1px 7px; border-radius:8px; font-size:9px; font-weight:900; color:#fff;}
 .sm-new span, .mt .nw span{display:inline-block; transform:translateX(4%) rotate(-9deg);} /* (v5.0.6) 리본 띠 기울기에 맞춤 */
 .mt .nw{position:absolute; top:1px; left:1px; width:32px; height:20px; background:url(assets/ui/deco_ribbon.webp) center/100% 100% no-repeat; font-size:7.5px; font-weight:900; color:#fff; display:flex; align-items:flex-start; justify-content:center; padding-top:4px; line-height:1; box-sizing:border-box; text-shadow:0 1px 0 #7a0f0f; z-index:2;} /* (v5.0.6) 글자를 리본 위쪽 띠 가운데에 */
-.mt.hi::after{content:''; position:absolute; top:0; bottom:0; width:40%; left:-60%; background:linear-gradient(100deg, transparent, #ffffff55, transparent); transform:skewX(-20deg); animation:smShine 1s ease-out var(--sd) 1 both;}
+.mt-in.hi.open::after{content:''; position:absolute; top:0; bottom:0; width:40%; left:-60%; background:linear-gradient(100deg, transparent, #ffffff55, transparent); transform:skewX(-20deg); animation:smShine 1s ease-out .6s 1 both;}
 .mt-chip{display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:12px; border:1px solid; font-size:11px; font-weight:800; margin:2px;}
 .mt-chip i{width:8px; height:8px; border-radius:50%; display:inline-block;}
 @keyframes glowPulse{ 0%,100%{box-shadow:0 0 6px 1px currentColor;} 50%{box-shadow:0 0 16px 4px currentColor;} }
@@ -1559,21 +1564,25 @@
 @keyframes smDraw{to{stroke-dashoffset:0;}} @keyframes smStarPt{0%{opacity:0; transform:scale(.2);} 60%{opacity:1; transform:scale(1.8);} 100%{opacity:1; transform:scale(1);}} @keyframes smConstOut{to{opacity:.25; transform:scale(1.25);}}
 .sm-met{position:absolute; top:-30px; left:calc(50% + var(--mx)); width:3px; height:90px; border-radius:3px; background:linear-gradient(180deg, transparent, #fff, var(--rc)); box-shadow:0 0 10px var(--rc); opacity:0; transform:rotate(25deg); pointer-events:none; animation:smMet .55s ease-in var(--md) forwards;}
 @keyframes smMet{0%{opacity:0; transform:rotate(25deg) translateY(-40px);} 20%{opacity:1;} 100%{opacity:0; transform:rotate(25deg) translateY(260px);}}
+.sm-skip .summon-stage, .sm-skip .summon-stage *, .sm-skip.sm-sus::before{animation-delay:0s !important;} .sm-skip .sm-orb{animation-duration:.05s, .18s !important;} /* (v6.2.4) 누르면 바로 공개 */
+.sm-tapskip{position:absolute; bottom:-34px; left:0; right:0; text-align:center; font-size:11px; color:#ffffff88; animation:smOut .3s ease-out var(--rev) forwards;} .sm-skip .sm-tapskip{display:none;} @keyframes smOut{to{opacity:0; visibility:hidden;}}
 .summon-stage.sm-shake{animation:smShake .5s ease-out var(--rev);} @keyframes smShake{0%,100%{transform:none;} 15%{transform:translate(-7px,4px);} 30%{transform:translate(6px,-5px);} 45%{transform:translate(-5px,-3px);} 60%{transform:translate(4px,4px);} 80%{transform:translate(-2px,1px);}}
 .sm-ban{position:absolute; top:6px; left:0; right:0; z-index:3; text-align:center; font-family:var(--fun, "Jua"), sans-serif; font-size:26px; letter-spacing:2px; color:#fff; text-shadow:0 0 12px var(--rc), 0 0 24px var(--rc), 0 2px 0 #0009; opacity:0; animation:smBan .7s cubic-bezier(.2,1.5,.4,1) calc(var(--rev) + .2s) forwards;}
 @keyframes smBan{0%{opacity:0; transform:scale(2.4); letter-spacing:12px;} 100%{opacity:1; transform:scale(1); letter-spacing:2px;}}
-.mt-chips{opacity:0; visibility:hidden; animation:smShow .3s ease-out forwards;}
+.mt-top{min-height:24px;} .mt-chips{opacity:0; visibility:hidden; animation:smShow .3s ease-out forwards;}
+.mt-wait .mt-chips, .mt-wait .mt-actions, .mt-wait .mt-skip, .mt-done .mt-tap, .mt-done .mt-openall{display:none;} .mt-wait.sm-sus::before{animation:none;} /* 다 열기 전엔 등급 칩·버튼·배경 빛 숨김 */
+.mt-openall{margin-top:14px;}
 @keyframes mtBd{from{border-color:#5d5a96;} to{border-color:currentColor;}}
-.mt-back{position:absolute; inset:0; z-index:3; border-radius:10px; background:radial-gradient(circle at 50% 42%, #6a5fd055 0 18%, transparent 19%), repeating-conic-gradient(from 0deg at 50% 42%, #ffffff0d 0 10deg, transparent 10deg 20deg), linear-gradient(160deg,#3a3480,#1d1a46); box-shadow:inset 0 0 0 1.5px #ffffff22; transform-origin:50% 50%; animation:mtFlip .26s ease-in var(--fd) forwards;}
+.mt-back{position:absolute; inset:0; z-index:3; border-radius:10px; background:radial-gradient(circle at 50% 42%, #6a5fd055 0 18%, transparent 19%), repeating-conic-gradient(from 0deg at 50% 42%, #ffffff0d 0 10deg, transparent 10deg 20deg), linear-gradient(160deg,#3a3480,#1d1a46); box-shadow:inset 0 0 0 1.5px #ffffff22;}
 .mt-back::after{content:'✦'; position:absolute; left:0; right:0; top:34%; text-align:center; font-size:20px; color:#cfc8ff; text-shadow:0 0 8px #8a7bff;}
 .mt-back.star{background:radial-gradient(circle at 50% 42%, #ffd55744 0 18%, transparent 19%), repeating-conic-gradient(from 0deg at 50% 42%, #ffe7a012 0 10deg, transparent 10deg 20deg), linear-gradient(160deg,#4a3a7a,#1f1840);} .mt-back.star::after{content:'★'; color:#ffe7a0; text-shadow:0 0 8px #ffc857;}
-.mt-back.h{box-shadow:inset 0 0 0 2px currentColor, inset 0 0 18px currentColor; animation:mtHint .5s ease-in-out infinite alternate, mtFlip .26s ease-in var(--fd) forwards;} .mt-back.h::after{color:currentColor; text-shadow:0 0 10px currentColor;}
-.mt-back{animation-duration:.4s;} .mt-back.h{animation-duration:.5s, .4s;}
-.mt-tap{font-size:10px; color:var(--sub); margin:-2px 0 2px; animation:mtTapOut .3s ease-out var(--tapEnd, 4s) forwards;} @keyframes mtTapOut{to{opacity:0;}}
-.mt-fast .mt, .mt-fast .mt-back, .mt-fast .mt-chips, .mt-fast .mt-actions, .mt-fast .mt-skip, .mt-fast .mt-tap, .mt-fast.sm-sus::before{animation-delay:0s !important;} .mt-fast .mt-back{animation-duration:.15s !important;} /* (v6.2.3) 누르면 바로 */
+.mt-back.h{box-shadow:inset 0 0 0 2px currentColor, inset 0 0 18px currentColor; animation:mtHint .5s ease-in-out infinite alternate;} .mt-back.h::after{color:currentColor; text-shadow:0 0 10px currentColor;}
+@keyframes mtBackOff{to{opacity:0; visibility:hidden;}}
+@keyframes mtCard{0%{transform:perspective(520px) rotateY(0deg) scale(1); box-shadow:0 0 0 #0000;} 49.9%{transform:perspective(520px) rotateY(90deg) scale(1.14) translateY(-6px);} 50%{transform:perspective(520px) rotateY(-90deg) scale(1.14) translateY(-6px);} 100%{transform:perspective(520px) rotateY(0deg) scale(1);}} /* (v6.2.4) 카드 전체가 한 방향으로 반 바퀴 — 들렸다가 내려앉음 */
+.mt-tap{font-size:11px; color:var(--sub); padding-top:4px;}
+
 @keyframes mtHint{from{filter:brightness(1);} to{filter:brightness(1.5);}}
-@keyframes mtFlip{0%{transform:perspective(300px) rotateY(0); opacity:1;} 100%{transform:perspective(300px) rotateY(90deg); opacity:0; visibility:hidden;}}
-.mt.best{z-index:2;} @keyframes mtBest{0%{box-shadow:0 0 0 0 currentColor; filter:brightness(2.2);} 40%{filter:brightness(1.3);} 100%{box-shadow:0 0 34px 18px transparent; filter:none;}} /* 최고 등급 카드가 뒤집힐 때 빛이 터짐 */
+@keyframes mtBest{0%{box-shadow:0 0 0 0 currentColor; filter:brightness(2.2);} 40%{filter:brightness(1.3);} 100%{box-shadow:0 0 34px 18px transparent; filter:none;}} /* 최고 등급 카드가 뒤집힐 때 빛이 터짐 */
   .clash-dmg{ text-align:center; font-size:12px; font-weight:800; margin-bottom:2px; opacity:0; animation-fill-mode:forwards; }
   .clash-row{position:relative; display:flex; align-items:center; justify-content:center; height:36px; font-size:24px;}
   .clash-p, .clash-e{width:40%; text-align:center; opacity:0; animation-fill-mode:both;}
@@ -10408,6 +10417,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:366, v:'6.2.4', date:'2026-10-08', secs:[
+    { t:'소환 연출', items:[ '10회 소환 — 카드가 뒷면으로 깔리고 한 장씩 눌러서 열거나 「모두 열기」 · 열 때 카드가 들렸다가 반 바퀴 돌며 앞면이 나옴 · 최고 카드는 맨 마지막에', '1회 소환 — 등급 단계마다 1.5초로 더 천천히 · 화면을 누르면 바로 공개' ]}
+  ]},
   { build:365, v:'6.2.3', date:'2026-10-08', secs:[
     { t:'소환 연출', items:[ '10회 소환 카드가 더 천천히 뒤집힘', '뒤집는 중에 화면을 누르면 한 번에 공개', '1회 소환 등급이 한 단계씩 오르는 연출을 천천히 — 단계마다 구슬이 튀며 색이 바뀌고 화면이 그 색으로 번쩍 · 효과음 추가' ]}
   ]},
@@ -14270,7 +14282,7 @@ const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 �
 };
 function summonVars(rarity, revOverride){ const hex = RARITY_HEX[rarity], t = SUMMON_THEME[rarity]; return '--rc:'+hex+'; --rc2:'+t.c2+'; --rca:'+hex+'66; --rcb:'+hex+'2e; --glow:'+t.glow+'px; --rev:'+(revOverride||t.rev)+'s; --flash:'+t.flash+';'; }
 function walletTicketHtml(opts){ if(opts && opts.star) return '<span>'+SHARD_IC+' '+(state.starShard||0)+'</span>'; const k = (opts && opts.ticketKey) || 'summon'; return ticketCount(k)>0 ? '<span>'+TICKET_INFO[k].icon+' '+ticketCount(k)+'</span>' : ''; }
-const SUS_LADDER = ['rare','epic','legendary','mythic','astral'], SUS_B = 0.8, SUS_S = 0.7; // (v6.2.3) 1회 공개: 첫 단계 0.8초 · 단계마다 0.7초
+const SUS_LADDER = ['rare','epic','legendary','mythic','astral'], SUS_B = 1.0, SUS_S = 1.5; // (v6.2.4) 1회 공개: 첫 단계 1초 · 단계마다 1.5초 (사용자 결정) · 누르면 바로 공개(sm-skip)
 function summonRevT(rar, fuse){ const n = Math.max(0, SUS_LADDER.indexOf(rar)+1); return n ? SUS_B + (n-1)*SUS_S + 0.6 : (fuse ? 1.1 : 0.7); } // 공개 시점(초) — 결과 창과 공개 뒤 알림이 같이 씀
 function showResultModal(sp, isNew, again, opts){
   window.__modalScrollReset = true;
@@ -14323,6 +14335,7 @@ function showResultModal(sp, isNew, again, opts){
     + '<div class="sm-pass">'+(custom ? custom.sub : ELEMENT_INFO[sp.element].name+(passive ? ' · '+passive.icon+' '+passive.name : ''))+'</div>'
     + '<div class="sm-own">'+(custom ? custom.own : (fuse ? (fuse.label || fuse.name+' ×3 합성')+(isNew?' · 도감 등록 +1xp':'') : (isNew ? '도감 등록 +1xp' : (memG ? '이미 있음 → '+memIc(key)+' 기억 조각 +'+memG : '보유 '+own))))+'</div>'
     + '</div>'
+    + '<div class="sm-tapskip">화면을 누르면 바로 공개</div>'
     + '<div class="sm-actions">'
     + (again ? '<button class="btn" id="smAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 한 번 더 '+summonCostLabel())+'</button>' : '')
     + '<button class="btn secondary" id="modalClose2">확인</button></div>'
@@ -14330,29 +14343,30 @@ function showResultModal(sp, isNew, again, opts){
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('smAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
   sfx('summonCharge');
-  steps.forEach((r,i)=>{ sfxAt(Math.round((SUS_B + i*SUS_S)*1000), ()=>{ if(document.getElementById('smStage')) sfx('bBuff'); }); }); // (v6.2.3) 등급이 한 단계 오를 때마다
-  sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ if(fail){ sfx('fail'); return; } sfx(t.sfx); if(fuse) sfx('fuse'); } });
+  const bg = document.getElementById('modalBg'), live = ()=> document.getElementById('modalBg')===bg && !bg.classList.contains('sm-skip');
+  const revealSfx = ()=>{ if(fail){ sfx('fail'); return; } sfx(t.sfx); if(fuse) sfx('fuse'); };
+  steps.forEach((r,i)=>{ sfxAt(Math.round((SUS_B + i*SUS_S)*1000), ()=>{ if(live()) sfx('bBuff'); }); }); // (v6.2.3) 등급이 한 단계 오를 때마다
+  sfxAt(Math.round(revT*1000), ()=>{ if(live()) revealSfx(); });
+  const t0 = Date.now(); // (v6.2.4) 공개 전에 화면을 누르면 바로 공개
+  bg.addEventListener('pointerdown', e=>{ if(bg.classList.contains('sm-skip') || Date.now()-t0 > revT*1000 - 150 || (e.target.closest && e.target.closest('button'))) return; bg.classList.add('sm-skip'); revealSfx(); });
 }
 function showMultiResultModal(keys, isNewFlags, again, opts){
   window.__modalScrollReset = true;
   const infoOf = (opts && opts.info) ? opts.info : (k)=>({rarity:spRar(SPIRITS[k]), icon:spArt(SPIRITS[k]), name:SPIRITS[k].name});
   const memF = (opts && opts.mem) || [];
-  const stagger = 280, startAt = 450; // ms · (v6.2.3) 150 → 280 — 너무 빨랐음 (사용자 결정) · 누르면 바로 다 뒤집힘(mt-fast)
   const order = ['astral','mythic','legendary','epic','rare','common'];
   const best = order.find(r=>keys.some(k=>infoOf(k).rarity===r));
   const counts = {}; keys.forEach(k=>{ const r = infoOf(k).rarity; counts[r] = (counts[r]||0)+1; });
   const chips = order.filter(r=>counts[r]).map(r=>'<span class="mt-chip" style="border-color:'+RARITY_HEX[r]+'; color:'+RARITY_HEX[r]+';"><i style="background:'+RARITY_HEX[r]+'"></i>'+RARITY_INFO[r].name+' '+counts[r]+'</span>').join('');
-  // (v6.2.2) 카드는 뒷면으로 깔린 뒤 한 장씩 뒤집힘 — 에픽 이상은 뒷면이 등급 빛으로 먼저 빛남 · 레전더리 이상 최고 등급 카드는 뒤집힐 때 빛이 터짐 · 등급 칩·배경 빛은 다 뒤집은 뒤에(처음부터 결과가 보이던 것)
-  const FLIP = 520, bestHi = best==='legendary' || best==='mythic' || best==='astral', star = !!(opts && opts.star);
-  let bestDone = false;
-  let grid = '<div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 6px; margin-top:12px;">';
+  // (v6.2.4) 카드는 뒷면으로 깔림 — 한 장씩 눌러서 열거나 「모두 열기」 (사용자 결정: 자동으로 넘기면 너무 빠름)
+  // 에픽 이상은 뒷면이 등급 빛으로 빛남 · 열 때 카드 전체가 들렸다가 반 바퀴 돌며 앞면(mtCard) · 레전더리 이상 최고 카드는 빛이 터짐 · 등급 칩·버튼·배경 빛은 다 연 뒤에
+  const bestHi = best==='legendary' || best==='mythic' || best==='astral', star = !!(opts && opts.star);
+  let bestIdx = -1; if(bestHi) bestIdx = keys.findIndex(k=>infoOf(k).rarity===best);
+  let grid = '<div class="mt-grid">';
   keys.forEach((key,idx)=>{
     const sp = infoOf(key), hex = RARITY_HEX[sp.rarity], t = SUMMON_THEME[sp.rarity];
-    const hi = t.stars>=3; // 에픽 이상은 빛 지나가는 효과 + 발광
-    const delay = startAt + idx*stagger, fd = delay + FLIP;
-    const isBest = bestHi && !bestDone && sp.rarity===best; if(isBest) bestDone = true;
-    const anim = 'animation:popIn 0.5s ease-out both, mtBd .01s linear both'+(hi?', glowPulse 1.1s ease-in-out 2':'')+(isBest?', mtBest .9s ease-out both':'')+'; animation-delay:'+delay+'ms, '+fd+'ms'+(hi?', '+(fd+120)+'ms':'')+(isBest?', '+(fd+60)+'ms':'')+';';
-    grid += '<div class="mt'+(hi?' hi':'')+(isBest?' best':'')+'" style="--sd:'+(fd+150)+'ms; --fd:'+fd+'ms; '+anim+' border:2px solid; color:'+hex+'; background:linear-gradient(160deg,'+hex+'40,#1e1e2b 78%);">'
+    const hi = t.stars>=3;
+    grid += '<div class="mt" style="--pd:'+(120 + idx*60)+'ms;"><div class="mt-in'+(hi?' hi':'')+(idx===bestIdx?' best':'')+'" data-mt="'+idx+'" style="color:'+hex+'; background:linear-gradient(160deg,'+hex+'40,#1e1e2b 78%);">'
       + '<div class="mt-back'+(hi?' h':'')+(star?' star':'')+'"></div>'
       + (isNewFlags[idx] ? '<div class="nw"><span>NEW</span></div>' : '')
       + '<div class="ic">'+sp.icon+'</div>'
@@ -14360,34 +14374,37 @@ function showMultiResultModal(keys, isNewFlags, again, opts){
       + '<div class="nm">'+sp.name+'</div>'
       + '<div class="rl" style="background:'+hex+';">'+RARITY_INFO[sp.rarity].name+'</div>'
       + (memF[idx] ? '<div class="mt-mem">'+memIc(key)+'+'+memF[idx]+'</div>' : '')
-      + '</div>';
+      + '</div></div>';
   });
   grid += '</div>';
   const canAgain = again && (opts && opts.canAgain ? opts.canAgain() : canSummonMulti());
   document.getElementById('modalRoot').innerHTML =
-    '<div class="modal-bg wide summon-bg sm-sus'+(best==='mythic'||best==='astral'?' rainbow':'')+'" id="modalBg" style="'+summonVars(best)+' --rev:'+((startAt+(keys.length-1)*stagger+FLIP)/1000).toFixed(2)+'s; --tapEnd:'+((startAt+(keys.length-1)*stagger+FLIP)/1000).toFixed(2)+'s;">'
+    '<div class="modal-bg wide summon-bg sm-sus mt-wait'+(best==='mythic'||best==='astral'?' rainbow':'')+'" id="modalBg" style="'+summonVars(best)+' --rev:0s;">'
     + '<div class="sm-flash" style="--rev:0s; --rc:#cfd0ff;"></div>'
     + '<div class="sm-wallet"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+state.essence+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> '+(state.enhanceStone||0)+'</span>'+walletTicketHtml(opts)+'</div>'
     + '<div class="modal wide" style="text-align:center; position:relative; z-index:2; background:linear-gradient(160deg,#2a2660ee,#1d1b48ee);">'
     + '<h3 style="margin-bottom:6px;">'+(opts && opts.title ? opts.title : '<img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> '+MULTI_SUMMON_COUNT+'연 소환 결과')+'</h3>'
-    + '<div class="mt-tap">화면을 누르면 한 번에 공개</div>'
-    + '<div class="mt-chips" style="animation-delay:'+(startAt+(keys.length-1)*stagger+FLIP+150)+'ms;">'+chips+'</div>'
+    + '<div class="mt-top"><div class="mt-tap">카드를 눌러서 열기</div><div class="mt-chips">'+chips+'</div></div>'
     + grid
-    + '<div class="mt-actions" style="animation-delay:'+(startAt+keys.length*stagger+FLIP+250)+'ms;">'
+    + '<button class="btn gold mt-openall" id="mOpenAll">✨ 모두 열기</button>'
+    + '<div class="mt-actions">'
     + (again ? '<button class="btn" id="mAgain" style="font-size:13px; white-space:nowrap;" '+(canAgain?'':'disabled')+'>'+(opts && opts.againLabel ? opts.againLabel() : '🔮 '+MULTI_SUMMON_COUNT+'연 더 '+multiCostLabel())+'</button>' : '')
     + '<button class="btn secondary" id="modalClose2">확인</button></div>'
-    + (again ? '<label class="sub-skip mt-skip" style="animation-delay:'+(startAt+keys.length*stagger+FLIP+250)+'ms;"><input type="checkbox" id="mSkip" '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>' : '') // (v312) 결과 창에서도 확인 창 끄기
+    + (again ? '<label class="sub-skip mt-skip"><input type="checkbox" id="mSkip" '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>' : '') // (v312) 결과 창에서도 확인 창 끄기
     + '</div></div>';
+  const bg = document.getElementById('modalBg'), opened = new Set();
+  const openOne = i=>{ if(opened.has(i)) return; const el = bg.querySelector('[data-mt="'+i+'"]'); if(!el) return; opened.add(i);
+    el.classList.add('open'); const t = SUMMON_THEME[infoOf(keys[i]).rarity];
+    setTimeout(()=>{ if(document.getElementById('modalBg')===bg) sfx(t.sfx); }, 280); // 앞면이 보이는 순간
+    if(opened.size===keys.length) setTimeout(()=>{ if(document.getElementById('modalBg')===bg){ bg.classList.remove('mt-wait'); bg.classList.add('mt-done'); } }, 600); };
+  bg.querySelectorAll('[data-mt]').forEach(el=>el.addEventListener('click', ()=>openOne(+el.dataset.mt)));
+  document.getElementById('mOpenAll').addEventListener('click', ()=>{ // 남은 카드를 차례로 — 최고 카드는 맨 끝에 잠깐 쉬었다가
+    const rest = keys.map((k,i)=>i).filter(i=>!opened.has(i) && i!==bestIdx); let tm = 0;
+    rest.forEach(i=>{ setTimeout(()=>openOne(i), tm); tm += 140; });
+    if(bestIdx>=0 && !opened.has(bestIdx)) setTimeout(()=>openOne(bestIdx), tm + (rest.length ? 450 : 0)); });
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('mAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
-  { const bg = document.getElementById('modalBg'), endAt = Date.now() + startAt + keys.length*stagger + FLIP; // (v6.2.3) 뒤집는 중에 화면을 누르면 한 번에 다 공개
-    bg.addEventListener('pointerdown', e=>{ if(bg.classList.contains('mt-fast') || Date.now() > endAt || (e.target.closest && e.target.closest('button, label'))) return; bg.classList.add('mt-fast'); const b = keys.map(k=>SUMMON_THEME[infoOf(k).rarity]).sort((x,y)=>y.stars-x.stars)[0]; if(b) sfx(b.sfx); }); }
   { const c = document.getElementById('mSkip'); if(c) c.addEventListener('change', ()=>{ state.settings.multiNoAsk = c.checked; save(); document.querySelectorAll('[data-multi-skip]').forEach(x=>{ x.checked = c.checked; }); }); }
-  // 타일이 나타나는 순간에 맞춰 등급별 효과음
-  keys.forEach((key,idx)=>{
-    const t = SUMMON_THEME[infoOf(key).rarity];
-    sfxAt(startAt + idx*stagger + FLIP, ()=>{ const bg = document.getElementById('modalBg'); if(bg && !bg.classList.contains('mt-fast')) sfx(t.sfx); }); // (v6.2.2) 뒤집힐 때 · 건너뛰면 안 냄
-  });
 }
 function buildClashSequence(pairs){
   const stagger = 0.64, dur = 1.1; // 0.5배속 (기존 대비 2배 느리게)
@@ -15440,7 +15457,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 365, APP_VERSION = '6.2.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 366, APP_VERSION = '6.2.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
