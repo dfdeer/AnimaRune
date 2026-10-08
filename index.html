@@ -99,6 +99,23 @@
   @keyframes attNow{0%,100%{box-shadow:0 0 6px #8fe3b466, inset 0 0 6px #8fe3b433;} 50%{box-shadow:0 0 14px #8fe3b4cc, inset 0 0 10px #8fe3b466;}}
   .att-note{font-size:11px; color:var(--sub); text-align:center; margin-top:6px;}
   .att-modal .btn{margin-top:2px;}
+  .home-rcol .home-pu.bg{position:relative; top:auto; right:auto; border-color:#ff9ad5; background:linear-gradient(135deg,#5a1d4ee6,#1a1540e6); animation:none; box-shadow:0 0 10px #ff9ad544, 0 4px 10px #0006;} /* (v8.0.0) 빙고 이벤트 배너 */
+  .home-pu.bg .hp-av{background:radial-gradient(circle,#fff0fa 0%,#d0569f 75%); border-color:#ff9ad5;} .home-pu.bg .hp-av .uic{width:26px; height:26px; margin:0;}
+  .home-pu.bg .hp-tx b{color:#ffd1ec;} .home-pu.bg .home-dot{top:-2px; right:-2px; width:10px; height:10px;}
+  .bg-modal{max-width:420px; padding:16px 10px 14px;}
+  .bg-top{display:flex; align-items:baseline; justify-content:space-between; gap:6px; padding:0 4px 6px; font-size:11px; color:var(--sub);} .bg-top b{font-size:13px; color:#ffd1ec;}
+  .bg-grid{display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:4px; background:#0e0b2280; border:1px solid #ff9ad544; border-radius:12px; padding:6px;}
+  .bg-c{position:relative; min-width:0; height:66px; border-radius:8px; background:#2b2660; border:1px solid #ffffff1c; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:3px 2px 2px; overflow:hidden; cursor:pointer;}
+  .bg-c .uic{width:20px; height:20px; margin:0;}
+  .bg-c .bg-nm{font-size:9px; line-height:11px; font-weight:800; color:#fff; text-align:center; word-break:keep-all; margin-top:1px;}
+  .bg-c .bg-pr{font-size:9px; line-height:11px; color:var(--sub); margin-top:auto; white-space:nowrap;}
+  .bg-c .bg-bar{position:absolute; left:0; bottom:0; height:3px; background:#ff9ad5;}
+  .bg-c.done{border:2px solid #ffcf4a; background:linear-gradient(160deg,#5a3f12,#2b2660); box-shadow:0 0 8px #ffcf4a88; animation:attNow 1.6s ease-in-out infinite;} .bg-c.done .bg-pr{color:#ffe38a;}
+  .bg-c.got{background:#3a1d4e; border-color:#ff9ad566;} .bg-c.got > :not(.bg-ok){opacity:.4;}
+  .bg-c .bg-ok{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;} .bg-c .bg-ok i{width:40px; height:40px; border-radius:50%; border:3px solid #ff5fae; background:#ff5fae33; box-shadow:0 0 8px #ff5faeaa;}
+  .bg-c.ln{outline:2px solid #ffcf4a; outline-offset:-2px;}
+  .bg-rw{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 10px; font-size:11px; color:var(--sub); margin:8px 0 6px;} .bg-rw b{color:#ffe38a;} .bg-rw .uic{width:14px; height:14px;}
+  .bg-modal .btn{margin-top:2px;}
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
   #main.tab-bg{background:linear-gradient(180deg,#0b0a2430 0%,#0b0a2455 55%,#0b0a24a0 100%), var(--tabbg) 50% 0 / cover no-repeat; background-color:#14112e;} #main.tab-bg .scr-top{background:none;}
@@ -2305,7 +2322,7 @@ function subRoll(kind, k){
   const e = box[k], first = !e || !e.lines.length;
   if(first){ box[k] = { lines: Array.from({length:max}, subRollLine), lock: Array(max).fill(false) }; }
   else { e.lines = e.lines.map((l,i)=> e.lock[i] ? l : subRollLine()); }
-  state.lifetimeEngraves = (state.lifetimeEngraves||0) + 1;
+  state.lifetimeEngraves = (state.lifetimeEngraves||0) + 1; bingoBump('sub'); // (v8.0.0)
   save(); sfx('enhance');
 }
 let subFixPick = null;
@@ -4487,6 +4504,7 @@ function bindHomeTab(){
     else if(a==='settings') showSettingsModal();
     else if(a==='profile') showProfileModal('info');
     else if(a==='attend') showAttendModal(); // (v6.0.0) 출석
+    else if(a==='bingo') showBingoModal(); // (v8.0.0) 빙고 이벤트
     else if(a==='bag') showBagModal(); // (v6.3.0) 가방
     else if(a==='pickup'){ const pp = pickupPeriod(); pickupView = Math.max(0, pp.pair.indexOf(pickupState().sel)); activeTab = 'pickup'; render(); save(); }
     else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
@@ -6124,7 +6142,7 @@ function resolveBossWaveVictory(sf){
     addStageGradeRewards(stageIdx, prevRank, newRank);
     state.stageBest[stageIdx] = grade;
   }
-  state.dailyStats.stagesCleared += 1; passBump('stage');
+  state.dailyStats.stagesCleared += 1; passBump('stage'); bingoBump('boss');
   checkChapterPctRewards(chapterNum);
   checkAchievements();
   save();
@@ -7703,7 +7721,7 @@ function doDismantle(key, n){
   n = Math.min(n||1, ownedCount(key));
   if(n<=0) return;
   const gain = DISMANTLE_GAIN[RARITY_ORDER.indexOf(SPIRITS[key].rarity)] * n;
-  state.owned[key] -= n;
+  state.owned[key] -= n; bingoBump('dismantle', n); // (v8.0.0)
   cleanupFormation();
   state.enhanceStone = (state.enhanceStone||0) + gain;
   const shards = DISMANTLE_SHARDS[RARITY_ORDER.indexOf(SPIRITS[key].rarity)] * n; // (v170) 정령 파편
@@ -7768,6 +7786,7 @@ function checkDailyRollover(){
   const t = todayStr(); let changed = false;
   if(state.dailyStats.date !== t){ state.dailyStats = {date: t, summons:0, fusions:0, stagesCleared:0, equipSummons:0}; changed = true; }
   if(state.questsClaimed.date !== t){ state.questsClaimed = {date: t, q1:false, q2:false, q3:false}; changed = true; }
+  if(state.bingo && state.bingo.id===BINGO.id && !state.bingo.mailed && pickupPeriod().idx > BINGO.idx){ bingoSettle(); changed = true; } // (v8.0.0) 빙고가 끝나면 남은 보상 우편
   if(changed) save();
 }
 function defaultState(){
@@ -8533,7 +8552,7 @@ function doPickup(n){
       if(per.pair.includes(key) && !isAstral(key)){ state.astral = state.astral || {}; state.astral[key] = 1; } } // (v345) 픽업 짝 신화도 성좌로 나옴 (사용자 결정) — 이미 가진 신화면 그 정령이 성좌로 오름
     keys.forEach(pushRecentSummon); state.starShard += refund;
     if(selK && SPIRITS[selK]) memAdd(selK, PICKUP_MEM_PER_PULL*n); // (v343) 고른 정령 기억 조각
-    state.dailyStats.summons += n; passBump('summon', n); state.lifetimeSummons = (state.lifetimeSummons||0) + n;
+    state.dailyStats.summons += n; passBump('summon', n); bingoBump('pickup', n); state.lifetimeSummons = (state.lifetimeSummons||0) + n;
     checkAchievements(); save();
     const again = ()=>doPickup(n), opts = { star:true, canAgain:()=>canPickup(n), againLabel:()=>'✨ '+n+'회 더 '+SHARD_IC+' '+(PICKUP_COST*n) };
     if(n===1) showResultModal(SPIRITS[keys[0]], flags[0], again, Object.assign({ mem:memF[0] }, opts));
@@ -8615,7 +8634,89 @@ function puFit(){
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
 // (v5.3.1) 홈 이벤트 배너 — 기간 한정 이벤트(빙고·출석 등)가 열리면 여기서 배너를 돌려줌 · 픽업 배너와 같은 모양(.home-pu)으로 픽업 밑에 쌓임 · 없으면 빈 칸
-function homeEventBannersHtml(){ return ''; } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
+function homeEventBannersHtml(){ return bingoBannerHtml(); } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
+// ===================== (v8.0.0) 빙고 이벤트 =====================
+// 기간 한정 — 이번엔 픽업 한 기간(2026년 10월 16~31일)만 (사용자 결정) · 칸 = 그 기간 동안 쌓은 횟수 · 칸 · 줄(12줄) · 판 완성 보상
+// 기간 = pickupPeriod()의 번호(서버 시각) · 기간 안에 한 것만 셈 · 끝난 뒤 못 받은 보상은 우편으로 (bingoSettle)
+const BINGO = { id:'bg1', idx: PICKUP_P0+1, name:'정령 빙고' };
+const BINGO_N = 5, BINGO_CELL_RW = { essence:1000, stone:100 }, BINGO_LINE_RW = { star:50 }, BINGO_FULL_RW = { star:300 }; // (사용자 결정: 넉넉 — 줄 50 · 완성 300)
+const BINGO_CELLS = [ // 가로로 5칸씩 · k = 세는 행동 (bingoBump)
+  {k:'summon', n:50, nm:'정령 소환', u:'회', ic:'summon'}, {k:'stage', n:30, nm:'스테이지 클리어', u:'회', ic:'explore'}, {k:'enh', n:30, nm:'강화', u:'회', ic:'upstone'}, {k:'dispatch', n:10, nm:'파견 완료', u:'회', ic:'dispatch'}, {k:'quest', n:30, nm:'일일 의뢰', u:'개', ic:'quest'},
+  {k:'fuse', n:20, nm:'합성', u:'회', ic:'fuse'}, {k:'dungeon', n:10, nm:'요일 던전 승리', u:'회', ic:'mode'}, {k:'eqsum', n:30, nm:'장비 소환', u:'회', ic:'tk_equip'}, {k:'wb', n:3, nm:'월드 보스 도전', u:'회', ic:'worldboss'}, {k:'mine', n:200, nm:'곡괭이질', u:'번', ic:'pick'},
+  {k:'boss', n:5, nm:'챕터 보스 격파', u:'회', ic:'skull'}, {k:'tower', n:10, nm:'탑 승리', u:'회', ic:'tower'}, {k:'att', n:1, nm:'출석', u:'일', ic:'gift'}, {k:'raid', n:3, nm:'레이드 승리', u:'회', ic:'raid'}, {k:'hearth', n:10, nm:'화로 수확', u:'회', ic:'hearth'},
+  {k:'exp', n:20, nm:'출정 방 클리어', u:'개', ic:'expedition'}, {k:'sub', n:10, nm:'각인 · 부가 능력', u:'회', ic:'engrave'}, {k:'pickup', n:10, nm:'픽업 소환', u:'회', ic:'pickup'}, {k:'rift', n:5, nm:'균열 승리', u:'회', ic:'rift'}, {k:'dismantle', n:30, nm:'정령 분해', u:'마리', ic:'recycle'},
+  {k:'att', n:10, nm:'출석', u:'일', ic:'gift'}, {k:'summon', n:150, nm:'정령 소환', u:'회', ic:'summon'}, {k:'stage', n:80, nm:'스테이지 클리어', u:'회', ic:'explore'}, {k:'enh', n:80, nm:'강화', u:'회', ic:'upstone'}, {k:'quest', n:40, nm:'일일 의뢰', u:'개', ic:'quest'}
+];
+const BINGO_LINES = (()=>{ const L = [], N = BINGO_N; for(let r=0;r<N;r++) L.push(Array.from({length:N}, (_,c)=>r*N+c)); for(let c=0;c<N;c++) L.push(Array.from({length:N}, (_,r)=>r*N+c));
+  L.push(Array.from({length:N}, (_,i)=>i*N+i)); L.push(Array.from({length:N}, (_,i)=>i*N+N-1-i)); return L; })(); // 가로 5 · 세로 5 · 대각선 2
+function bingoActive(){ return pickupPeriod().idx===BINGO.idx; }
+function bingoVisible(){ return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
+function bingoS(){ let b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id){ b = state.bingo = { id:BINGO.id, c:{}, cg:0, lg:0, full:false, mailed:false }; } return b; }
+function bingoBump(k, n){ try{ if(!bingoActive()) return; const b = bingoS(); b.c[k] = Math.min(1e6, (b.c[k]||0) + (n||1)); }catch(e){} }
+function bingoCnt(b, i){ const c = BINGO_CELLS[i]; return Math.min(c.n, b.c[c.k]||0); }
+function bingoDone(b, i){ return bingoCnt(b, i) >= BINGO_CELLS[i].n; }
+function bingoGot(b, i){ return !!(b.cg & (1<<i)); }
+function bingoLineOn(b, l){ return BINGO_LINES[l].every(i=>bingoGot(b, i)); } // 줄은 받은 칸으로 판정
+function bingoPending(b){ // 지금 받을 수 있는 것 — 칸 · 줄 · 완성 (칸을 먼저 받는 것으로 보고 줄을 셈)
+  let cg = b.cg; const cells = []; BINGO_CELLS.forEach((c,i)=>{ if(!(cg & (1<<i)) && bingoDone(b, i)){ cells.push(i); cg |= (1<<i); } });
+  const lines = []; BINGO_LINES.forEach((L,l)=>{ if(!(b.lg & (1<<l)) && L.every(i=>cg & (1<<i))) lines.push(l); });
+  const full = !b.full && BINGO_CELLS.every((c,i)=>cg & (1<<i));
+  return { cells, lines, full, cg };
+}
+function bingoRwOf(p){ const rw = { essence: BINGO_CELL_RW.essence*p.cells.length, stone: BINGO_CELL_RW.stone*p.cells.length, star: BINGO_LINE_RW.star*p.lines.length + (p.full ? BINGO_FULL_RW.star : 0) }; return rw; }
+function bingoHasDot(){ if(!bingoActive()) return false; const p = bingoPending(bingoS()); return p.cells.length>0 || p.lines.length>0 || p.full; }
+function bingoApply(b, p){ b.cg = p.cg; p.lines.forEach(l=>{ b.lg |= (1<<l); }); if(p.full) b.full = true; }
+function bingoClaim(){
+  if(!bingoActive()){ toast('이벤트 기간이 아님'); return; }
+  const b = bingoS(), p = bingoPending(b);
+  if(!p.cells.length && !p.lines.length && !p.full){ toast('받을 보상 없음'); return; }
+  const rw = bingoRwOf(p); bingoApply(b, p);
+  state.essence += rw.essence; state.enhanceStone = (state.enhanceStone||0) + rw.stone; state.starShard = (state.starShard||0) + rw.star;
+  save(); sfx('claim');
+  toastReward(rw, uiIc('dice')+' 빙고 보상'+(p.full ? ' · 빙고 완성!' : p.lines.length ? ' · '+p.lines.length+'줄 빙고!' : ''));
+  bingoRefresh(); if(activeTab==='home' && !document.getElementById('battleScreen')) render();
+}
+function bingoSettle(){ // 기간이 끝난 뒤 — 다 채우고 못 받은 보상은 우편으로 한 번
+  const b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id || b.mailed || pickupPeriod().idx <= BINGO.idx) return;
+  const p = bingoPending(b); b.mailed = true;
+  if(!p.cells.length && !p.lines.length && !p.full) return;
+  const rw = bingoRwOf(p); bingoApply(b, p); state.sysMail = Array.isArray(state.sysMail) ? state.sysMail : [];
+  const id = 'bingo_'+BINGO.id;
+  if(!state.sysMail.some(x=>x.id===id)) state.sysMail.push({ id, title:BINGO.name+' 남은 보상', body:'이벤트 기간에 채우고 받지 못한 보상', t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:rw });
+}
+function bingoBannerHtml(){
+  if(!bingoVisible()) return '';
+  const on = bingoActive(), dot = bingoHasDot(), b = bingoS(), lines = BINGO_LINES.filter((L,l)=>bingoLineOn(b, l)).length;
+  const sub = !on ? '10월 16일 시작' : dot ? '보상 받기' : lines+'줄 · '+uiIc('time')+' '+pickupLeftShort(pickupPeriod().left);
+  return '<button class="home-pu bg" data-home="bingo"><span class="hp-av">'+uiIc('dice')+'</span><span class="hp-tx"><b>빙고</b><small>'+sub+'</small></span>'+(dot?'<span class="home-dot"></span>':'')+'</button>';
+}
+function showBingoModal(){
+  const old = document.getElementById('bingoPop'); if(old) old.remove();
+  const o = document.createElement('div'); o.className = 'modal-bg'; o.id = 'bingoPop'; o.style.zIndex = '200';
+  o.innerHTML = '<div class="modal bg-modal" style="position:relative;"><button class="close-x" id="bingoClose">x</button><h3 style="text-align:center; margin-top:0;">'+uiIc('dice')+' '+BINGO.name+'</h3><div id="bingoBody"></div></div>';
+  document.body.appendChild(o);
+  o.addEventListener('click', ev=>{ if(ev.target===o) o.remove(); });
+  o.querySelector('#bingoClose').addEventListener('click', ()=>o.remove());
+  bingoRefresh();
+}
+function bingoBodyHtml(){
+  const on = bingoActive(), b = bingoS(), p = on ? bingoPending(b) : { cells:[], lines:[], full:false };
+  const lnCells = new Set(); BINGO_LINES.forEach((L,l)=>{ if(bingoLineOn(b, l)) L.forEach(i=>lnCells.add(i)); });
+  const lines = BINGO_LINES.filter((L,l)=>bingoLineOn(b, l)).length;
+  let h = '<div class="bg-top"><b>'+lines+' / '+BINGO_LINES.length+'줄'+(b.full?' · 완성!':'')+'</b><span>'+(on ? uiIc('time')+' '+pickupLeftText(pickupPeriod().left)+' 남음' : '10월 16일 0시 시작')+'</span></div><div class="bg-grid">';
+  BINGO_CELLS.forEach((c,i)=>{ const got = bingoGot(b, i), done = !got && bingoDone(b, i), n = bingoCnt(b, i);
+    h += '<div class="bg-c'+(got?' got':'')+(done?' done':'')+(lnCells.has(i)?' ln':'')+'" data-bg-c="'+i+'">'+uiIc(c.ic)+'<span class="bg-nm">'+c.nm+'</span><span class="bg-pr">'+(got ? '완료' : n+'/'+c.n)+'</span>'+(got ? '' : '<span class="bg-bar" style="width:'+Math.round(n/c.n*100)+'%"></span>')+(got?'<span class="bg-ok"><i></i></span>':'')+'</div>'; });
+  h += '</div><div class="bg-rw"><span>칸마다 '+rewardWords(BINGO_CELL_RW)+'</span><span>줄마다 '+SHARD_IC+' <b>'+BINGO_LINE_RW.star+'</b></span><span>모두 채우면 '+SHARD_IC+' <b>'+BINGO_FULL_RW.star+'</b> 더</span></div>';
+  const can = p.cells.length || p.lines.length || p.full;
+  h += !on ? '<button class="btn" disabled>10월 16일부터</button>'
+    : can ? '<button class="btn gold" id="bingoGo">'+uiIc('gift')+' 받기'+(p.cells.length ? ' · '+p.cells.length+'칸' : '')+(p.lines.length ? ' · '+p.lines.length+'줄' : '')+'</button>' : '<button class="btn" disabled>채운 칸 없음</button>';
+  h += '<div class="att-note">이벤트 기간에 한 것만 셈 · 칸을 누르면 내용 · 끝나고 못 받은 보상은 우편으로</div>';
+  return h;
+}
+function bingoRefresh(){ const bd = document.getElementById('bingoBody'); if(!bd) return; bd.innerHTML = bingoBodyHtml();
+  const g = document.getElementById('bingoGo'); if(g) g.addEventListener('click', bingoClaim);
+  bd.querySelectorAll('[data-bg-c]').forEach(el=>el.addEventListener('click', ()=>{ const i = +el.dataset.bgC, c = BINGO_CELLS[i], b = bingoS();
+    toast(uiIc(c.ic)+' '+c.nm+' '+c.n+c.u+' · '+(bingoGot(b, i) ? '받음' : bingoCnt(b, i)+'/'+c.n)); })); }
 // ===================== (v6.0.0) 출석 체크 — 온라인일 때만 · 하루 = 서버 시각(한국 시간) 날짜(todayStr) =====================
 // 28일 달력(누적, 연속 아님 · (v6.2.0) 달마다 새 달력 — 한국 시간으로 다음 달 1일에 1칸부터, 28칸을 다 채우면 그달은 끝 (사용자 결정)) + 새 정령사 7일(계정당 한 번, 기존 유저도)
 const ATT_DAYS = 28;
@@ -8640,7 +8741,7 @@ function attGive(rw, acc){
 function attClaim(){
   if(!pickupOnline()){ toast('출석은 인터넷 연결 필요'); return; }
   const t = todayStr(), S = attS(), acc = { essence:0, stone:0, star:0, items:{} }; let got = 0;
-  if(attCan28()){ if(attNewMonth()) S.att.n = 0; S.att.n += 1; S.att.day = t; S.att.total += 1; attGive(attReward(S.att.n), acc); got++; }
+  if(attCan28()){ if(attNewMonth()) S.att.n = 0; S.att.n += 1; S.att.day = t; S.att.total += 1; attGive(attReward(S.att.n), acc); got++; bingoBump('att'); } // (v8.0.0) 빙고 출석
   if(S.attNew.n < ATT_NEW.length && S.attNew.day!==t){ S.attNew.n += 1; S.attNew.day = t; attGive(ATT_NEW[S.attNew.n-1], acc); got++; }
   if(!got){ toast('오늘 출석 완료'); return; }
   if(!Object.keys(acc.items).length) delete acc.items;
@@ -9433,7 +9534,7 @@ function passSeasonSettle(ps){ // 지난 시즌에 못 받은 보상은 자동�
   if(Object.keys(all).length){ passGrant(all); setTimeout(()=>toastReward(all, '🎫 지난 시즌 패스 보상 자동 지급', 4500), 800); }
 }
 function passLevelOf(xp){ return Math.min(PASS_MAX_LV, Math.floor(xp/PASS_LV_XP)); }
-function passBump(k, n){ try{ const ps = passState(); n = n||1; ps.day.c[k] = (ps.day.c[k]||0) + n; ps.week.c[k] = (ps.week.c[k]||0) + n; }catch(e){} }
+function passBump(k, n){ try{ const ps = passState(); n = n||1; ps.day.c[k] = (ps.day.c[k]||0) + n; ps.week.c[k] = (ps.week.c[k]||0) + n; }catch(e){} bingoBump(k, n); } // (v8.0.0) 빙고도 같이 셈
 function passMissionProg(m, daily){ const ps = passState(), box = daily ? ps.day : ps.week; return { cur: Math.min(m.n, box.c[m.k]||0), done: !!box.done[m.id], ready: (box.c[m.k]||0) >= m.n && !box.done[m.id] }; }
 function passWeekLeft(){ return Math.max(0, PASS_WEEK_CAP - (passState().week.xp||0)); }
 function passClaimAllMissions(){ // (v297) 미션 모두 받기 — 알림 한 번으로
@@ -11594,6 +11695,7 @@ function hearthNextSparkMs(){
 function collectHearth(){
   const sparks = hearthSparks();
   if(sparks<=0){ toast('모인 불씨 없음'); return; }
+  bingoBump('hearth'); // (v8.0.0)
   const stoneGain = sparks*HEARTH_STONE_PER_SPARK();
   const essenceGain = sparks*HEARTH_ESSENCE_PER_SPARK();
   state.enhanceStone = (state.enhanceStone||0) + stoneGain;
@@ -11751,7 +11853,7 @@ function vmHit(i){
     return;
   }
   if(m.e<=0){ toast('곡괭이 기력 부족 · '+Math.ceil(vmNextMs(m)/60000)+'분 뒤 1 회복'); return; }
-  m.e--; c.h--;
+  m.e--; c.h--; bingoBump('mine'); // (v8.0.0)
   let rw = null;
   if(c.h<=0){ const t = c.t; rw = vmCellRw(t, m.d, m); rw.t = t; c.t = 0; c.h = 0; vmGive(rw); sfx(t===5 ? 'mRare' : t===3 ? 'mOre' : t===4 ? 'mStone' : 'mBreak'); }
   else sfx('mTap');
@@ -12046,6 +12148,7 @@ function resolveTowerBattle(floor, playerPower, grade){
   let reward = 0, stoneReward = 0, firstClear = false;
   let frontierAdvanced = false;
   if(grade){
+    bingoBump('tower'); // (v8.0.0)
     if(floor === towerFloor()){ state.towerBest = floor; frontierAdvanced = true; } // 프론티어 층을 처음 통과하면 다음 층으로 진행
     if(!state.towerFloorGrades) state.towerFloorGrades = {};
     const gradeRank = {C:1,B:2,A:3,S:4};
@@ -12411,7 +12514,7 @@ function checkExpeditionOutcome(sf){
 }
 function resolveExpeditionBattle(run, isBoss, won){
   if(won){
-    run.totalCleared = (run.totalCleared||0) + 1;
+    run.totalCleared = (run.totalCleared||0) + 1; bingoBump('exp'); // (v8.0.0)
     run.currentIndex += 1;
     const wasElite = run.currentRoom && run.currentRoom.type==='elite';
     expGold(run, isBoss ? 80 : (wasElite ? 50 : 25)); // (v266) 금화
@@ -12537,7 +12640,7 @@ function resolvePuzzleCard(cardPos){
 }
 function advanceExpeditionAfterRoom(run){
   run.currentIndex += 1;
-  run.totalCleared = (run.totalCleared||0) + 1;
+  run.totalCleared = (run.totalCleared||0) + 1; bingoBump('exp'); // (v8.0.0)
   run.currentRoom = null;
   expRecordWeek(run);
   if(run.currentIndex >= EXPEDITION_NODE_COUNT) finishExpeditionCycle(run);
@@ -12685,7 +12788,7 @@ function checkDungeonOutcome(sf){
   if(sf.result) return true;
   if(!aliveUnits(sf.enemyUnits).length){
     const el = sf.dungeonEl, n = sf.dungeonN, first = n > dungeonBest(el);
-    sf.result = { win:true, rounds: sf.round, first };
+    sf.result = { win:true, rounds: sf.round, first }; bingoBump('dungeon'); if(!first) save(); // (v8.0.0)
     if(first){
       state.dungeonBest = state.dungeonBest || {}; state.dungeonBest[el] = n;
       const rw = dungeonReward(n); sf.result.reward = rw;
@@ -12893,7 +12996,7 @@ function checkRiftOutcome(sf){
     const f = sf.riftF, rs = riftState(), live = sf.riftP===rs.p;
     const bits = 1 | (sf.round<=RIFT_ROUND_GOAL ? 2 : 0) | (sf.myUnits.every(u=>u.alive) ? 4 : 0);
     const old = live ? (rs.st[f]||0) : 0, add = live ? bits & ~old : 0, n = (add&1?1:0)+(add&2?1:0)+(add&4?1:0);
-    sf.result = { win:true, rounds: sf.round, bits, add, shard: n*RIFT_STAR_SHARD[f-1], stale: !live };
+    sf.result = { win:true, rounds: sf.round, bits, add, shard: n*RIFT_STAR_SHARD[f-1], stale: !live }; bingoBump('rift'); if(!live) save(); // (v8.0.0)
     if(live){ rs.st[f] = old | bits; if(n){ state.starShard = (state.starShard||0) + sf.result.shard; } save(); }
     return true;
   }
@@ -16003,6 +16106,11 @@ function sanitizeState(){
   { const old = serverNow()-120*86400000; s.sysMail = Array.isArray(s.sysMail) ? s.sysMail.filter(x=> x && typeof x==='object' && typeof x.id==='string' && /^[A-Za-z0-9_-]{1,40}$/.test(x.id) && !(x.got && x.got < old)).slice(-20) : []; s.sysMail.forEach(x=>{ if(!(Number.isFinite(x.exp) && x.exp>0)) x.exp = (Number.isFinite(x.t) && x.t>0 ? x.t : serverNow()) + SYS_MAIL_DAYS*86400000; }); } // (v313) 게임이 직접 넣는 우편
   try{ rwMigrate(); }catch(e){ console.error('rwMigrate', e); } // (v313) 보상 개편 추가 지급
   try{ updateGiftMigrate(); }catch(e){ console.error('updateGift', e); } // (v5.0.4) 업데이트 선물 우편
+  { const b = s.bingo; // (v8.0.0) 빙고 — 모양이 이상하면 버림 · 칸·줄 비트는 범위 안으로
+    if(!isPlainObj(b) || typeof b.id!=='string' || !isPlainObj(b.c)) delete s.bingo;
+    else { const c = {}; Object.keys(b.c).forEach(k=>{ const v = b.c[k]; if(/^[a-z]{1,12}$/.test(k) && Number.isFinite(v) && v>0) c[k] = Math.min(1e6, Math.floor(v)); });
+      s.bingo = { id:String(b.id).slice(0,12), c, cg: Number.isInteger(b.cg) ? b.cg & ((1<<BINGO_CELLS.length)-1) : 0, lg: Number.isInteger(b.lg) ? b.lg & ((1<<BINGO_LINES.length)-1) : 0, full: b.full===true, mailed: b.mailed===true };
+      try{ bingoSettle(); }catch(e){ console.error('bingoSettle', e); } } }
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
 
@@ -16026,7 +16134,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 371, APP_VERSION = '7.1.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 372, APP_VERSION = '7.1.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
