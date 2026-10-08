@@ -2829,6 +2829,7 @@ function dmgReduction(sf, d){
   if(d.line==='fire_su' && d.hp/d.maxHp<=0.3) r += 0.25; // (v343) 수르트 타오르는 혼
   if(d.line==='wood_sg' && d.hp/d.maxHp>=0.5) r += 0.15; // (v343) 산군 산의 주인
   if(d.line==='water_hb' && d.st && d.st.linkHost) r += 0.2; // (v343) 하백 물길 잇기
+  if(sf && sf.riftRule==='flow' && d.side==='me' && d===flowHost(sf)) r += FLOW_DR; // (v7.4.0) 균열 물길 — 물받이
   r += runeDr(d);
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && !f.inert && f.line==='wood_a' && f.g>=4) r += 0.2; } }
   return r;
@@ -2953,10 +2954,16 @@ function dealDamage(sf, a, d, mult, opts){
   if(crit) v *= CRIT_MULT;
   const total = Math.max(0, Math.round(v));
   let rest = total;
+  if(sf.riftRule==='flow' && d.side==='me' && rest>0){ const fh = flowHost(sf); // (v7.4.0) 균열 물길: 다른 아군 피해의 10%를 물받이가 대신 받음 (하백과 연결된 아군은 하백 40%로)
+    if(fh && fh!==d && !(s.link && fh.line==='water_hb' && fh.st.linkHost)){ const share = Math.round(rest*FLOW_SHARE); rest -= share; let hv = Math.round(share*Math.max(0.1, 1 - dmgReduction(sf, fh))); const hb = hv;
+      if(fh.st.shield>0){ const ab = Math.min(fh.st.shield, hv); fh.st.shield -= ab; hv -= ab; if(fh.st.shield<=0) delete fh.st.shield; }
+      if(fh.line==='water_hb') fh.tide = Math.min(fh.maxHp, (fh.tide||0) + hb); // 하백이 대신 받은 물은 수위에도
+      fh.hp = Math.max(0, fh.hp - hv); if(hv>0) hidHurt(sf, fh, hv); (sf._rv = sf._rv || []).push({ side:fh.side, idx:fh.idx, kind:'dmg', amount:hb, dot:true, src:'🌊물길' });
+      if(fh.hp<=0) killUnit(sf, fh); else flowFill(sf, fh, share); } }
   if(s.link && rest>0){ const host = aliveUnits(sideUnits(sf, d.side)).find(x=>x!==d && x.line==='water_hb' && x.st.linkHost); // (v343) 하백 물길 잇기: 40%를 대신 받음
     if(host){ const share = Math.round(rest*0.4); rest -= share; let hv = Math.round(share*Math.max(0.1, 1 - dmgReduction(sf, host))); const hb = hv;
       if(host.st.shield>0){ const ab = Math.min(host.st.shield, hv); host.st.shield -= ab; hv -= ab; if(host.st.shield<=0) delete host.st.shield; }
-      host.tide = Math.min(host.maxHp, (host.tide||0) + hb); host.hp = Math.max(0, host.hp - hv); if(hv>0) hidHurt(sf, host, hv); (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:hb, dot:true, src:'🔗물길' }); if(host.hp<=0) killUnit(sf, host); } }
+      host.tide = Math.min(host.maxHp, (host.tide||0) + hb); host.hp = Math.max(0, host.hp - hv); if(hv>0) hidHurt(sf, host, hv); (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:hb, dot:true, src:'🔗물길' }); if(host.hp<=0) killUnit(sf, host); else if(sf.riftRule==='flow' && host===flowHost(sf)) flowFill(sf, host, share); } }
   const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; if(s.roarSh) s.roarSh = Math.max(0, s.roarSh - ab); } // (v5.3.0) 산군 포효 보호막이 먼저 깎임
   d.hp = Math.max(0, d.hp - rest);
@@ -6472,6 +6479,7 @@ function statusList(u){
   if(s.link) o.push({i:stIc('link'), t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
   if(s.linkHost) o.push({i:stIc('linkhost'), t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
   if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에 · 다음 차례까지', good:true});
+  { const sf = state.skillFight; if(sf && sf.riftRule==='flow' && u && u.side==='me' && u.alive && flowHost(sf)===u) o.push({i:stIc('linkhost'), t:'물받이', d:'다른 아군 피해 '+Math.round(FLOW_SHARE*100)+'% 대신 받음 · 받는 피해 −'+Math.round(FLOW_DR*100)+'% · 물 '+fmtHp((sf.flow&&sf.flow.g)||0)+' / '+fmtHp(u.maxHp*FLOW_FILL)+' — 가득 차면 물살', good:true}); } // (v7.4.0) 균열 물길
   if(u && u.line==='water_hb' && u.tide>0) o.push({i:stIc('linkhost'), t:'수위', d:fmtHp(u.tide)+' — 범람 때 적마다 '+Math.round(HB_TIDE_MUL*100)+'%만큼 추가 피해', good:true});
   if(s.veil) o.push({i:stIc('veil'), t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
   if(s.club) o.push({i:stIc('club'), t:'방망이', d:'다음 공격 공격력 +40%', good:true});
@@ -10732,6 +10740,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:376, v:'7.4.0', date:'2026-10-08', secs:[
+    { t:'별빛 균열 · 기간 규칙', items:[ '한정 성좌 픽업마다 균열 모든 층에 기간 규칙 하나 — 규칙이 있는 기간엔 픽업 공격력 +25% · 본인 +25% 대신 규칙', '하백 픽업 「물길」: 물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 50%에 닿으면 물살 — 적 전체가 다음 라운드 맨 뒤로 + 물받이 공격력 60% 피해', '하백이 물길 잇기 중이면 물받이는 하백 · 연결된 아군 몫(40%)도 물로 모이고 하백이 대신 받은 물은 수위에도 쌓임' ]}
+  ]},
   { build:375, v:'7.3.0', date:'2026-10-08', secs:[
     { t:'별빛 균열', items:[ '11 · 12층 연계 층 없앰 — 다른 층처럼 픽업에 맞춘 보스 기믹이 돌아가며 나옴', '공명(픽업 둘을 같이 넣으면 공격력 +15%) 없앰' ]}
   ]},
@@ -11998,7 +12009,8 @@ function modeHelpHtml(k){
   if(k==='rift'){ const sh = [...new Set(RIFT_STAR_SHARD)];
     return sec(RIFT_NAME) + li([RIFT_FLOORS.length+'층 · 픽업 기간이 바뀔 때마다 층과 보스가 새로 짜이고 별은 처음부터', '홀수 층은 첫 번째 픽업 정령, 짝수 층은 두 번째 픽업 정령에 맞춘 보스 — 그 픽업이 유리한 속성 · 받아치기 좋은 기믹', (RIFT_TIERS.findIndex(t=>t.h)+1)+'층부터 하드 세기', '온라인일 때만 도전'])
       + sec('별') + li(['층마다 별 3개: 클리어 · '+RIFT_ROUND_GOAL+'라운드 안 처치 · 전원 생존', '처음 얻은 별마다 별빛 조각 — 1~4층 '+sh[0]+' · 5~8층 '+sh[1]+' · 9~12층 '+sh[2]])
-      + sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더']); }
+      + (riftRuleOf() ? sec(RIFT_RULE_INFO[riftRuleOf()].ic+' 기간 규칙 「'+RIFT_RULE_INFO[riftRuleOf()].nm+'」') + li(RIFT_RULE_INFO[riftRuleOf()].d) // (v7.4.0)
+        : sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더'])); }
   if(k==='dungeon') return sec('요일 던전') + li(['월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일은 전부 열림 (한국 시간)', '그 속성 정령만 출전 · 적은 그 속성에 불리한 속성 (그림자 던전은 그림자 적)', DUNGEON_MAX+'단계 · 5단계마다 수호자 · 적 5마리, 6단계부터 6마리'])
       + sec('보상') + li(['단계마다 처음 돌파할 때만 — 정수 · 강화석 · 각인석', '5 · 10 · 15 · 20단계는 별빛 조각 10 · 30 · 50 · 50과 확정권 · 선택권', '이미 돌파한 단계는 연습 (보상 없음)']);
   if(k==='trial') return sec('시련의 전당') + li(['내 정령 대신 정해진 정령으로 푸는 퍼즐', '퍼즐마다 라운드 제한 · 목표는 준비 창에', '실패하면 힌트 보기가 열림', '처음 통과할 때만 보상']);
@@ -12934,6 +12946,18 @@ function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 
 // (v344) 연계 층 — 한정 성좌 픽업 기간엔 11·12층이 그 기간 짝(한정 + 짝 신화)이 같이 풀어야 쉬운 기믹 (사용자 결정) · 그 전 기간은 예전처럼 번갈아
 // 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
 const RIFT_DUO_ON = false, RIFT_DUO_FROM = 11; // (v7.3.0) 연계 층·공명 뺌 (사용자 결정 10/8 — 기간 규칙으로 바꿀 예정) · 연계 층 코드는 끄기만 함(진행 중이던 전투 세이브용)
+// (v7.4.0) 균열 기간 규칙 — 한정 성좌 픽업마다 모든 층에 하나 (사용자 결정: 숫자 버프 대신 싸우는 방식이 바뀌게) · 규칙이 있는 기간엔 픽업 공격력 +25%·+25% 대신 규칙만
+const RIFT_RULES = { water_mythic_hb:'flow' };
+const RIFT_RULE_INFO = { flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 절반이면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
+const FLOW_WATER_ATK = 0.10, FLOW_SHARE = 0.10, FLOW_DR = 0.30, FLOW_FILL = 0.5, FLOW_WAVE = 0.6;
+function riftRuleOf(per){ per = per || riftPeriod(); return (per && per.pair && RIFT_RULES[per.pair[0]]) || null; }
+function flowHost(sf){ if(!sf || sf.riftRule!=='flow' || !sf.myUnits) return null; const my = sf.myUnits.filter(u=>u.alive && !u.inert); // 물받이: 물길 잇기 중인 하백 → 아니면 최대체력이 가장 높은 아군
+  return my.find(u=>u.line==='water_hb' && u.st.linkHost) || my.reduce((b,u)=> !b || u.maxHp>b.maxHp ? u : b, null); }
+function flowFill(sf, host, amt){ if(!(amt>0) || !host || !host.alive) return; sf.flow = sf.flow || { g:0 }; sf.flow.g += amt; if(sf.flow.g >= host.maxHp*FLOW_FILL) flowWave(sf, host); }
+function flowWave(sf, host){ // 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해 (큰 피해는 하백 범람에서)
+  sf.flow.g = 0; sf.flow.n = (sf.flow.n||0) + 1; if(sf.log) sf.log.push('🌊 물살 — 적 전체가 다음 라운드 맨 뒤로');
+  aliveUnits(sf.enemyUnits).forEach(e=>{ if(e.inert) return; e.st.bind = true; const r = dealDamage(sf, host, e, FLOW_WAVE, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:e.side, idx:e.idx, kind:'dmg', amount:r.total, src:'🌊물살' }); });
+}
 const RIFT_DUO = {
   fire_mythic_sc:  { id:'sc', name:'꺼지지 않는 화로', el:'light', art:'lavaLord',    gm:'열기 갑옷', d:'터뜨리는 공격(시한폭탄·발화) 말고는 받는 피해 −65% · 2라운드마다 열기 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 빙결·둔화되면 충전이 꺼짐' },
   fire_mythic_su:  { id:'su', name:'투지를 시험하는 자', el:'wood', art:'frostGiant', gm:'투지의 시험', d:'체력 50%가 넘는 정령의 공격은 받는 피해 −50% · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 체력 50% 이하 정령에게 3번 맞으면 충전이 꺼짐' },
@@ -13025,8 +13049,9 @@ function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸
 function buildRiftFight(f){
   const per = riftPeriod(), P = riftPlan(f, per), els = per.pair.map(k=>SPIRITS[k].element);
   const bf = riftMakeEnemies(f, per), my = buildBossWaveFight(riftBossStage(P.hard, Math.max(0, P.gi)), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
-  my.myUnits.forEach(u=>{ const m = (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
-  const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'] });
+  const rule = riftRuleOf(per); // (v7.4.0) 기간 규칙이 있으면 픽업 공격력 버프 대신 규칙
+  my.myUnits.forEach(u=>{ const m = rule ? (rule==='flow' && u.element==='water' ? 1+FLOW_WATER_ATK : 1) : (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
+  const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, riftRule: rule, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'].concat(rule ? [RIFT_RULE_INFO[rule].ic+' 기간 규칙 「'+RIFT_RULE_INFO[rule].nm+'」'] : []) });
   sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
   return sf;
 }
@@ -13070,7 +13095,7 @@ function showRiftPrep(f, keep){
   let h = '<h3 style="text-align:center; margin:0;">'+uiIc('rift')+' '+RIFT_NAME+' · '+f+'층</h3>';
   h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
-  h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
+  { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-bless" style="display:block; text-align:left; margin:6px auto 0;"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div>'; } else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
@@ -16173,7 +16198,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 375, APP_VERSION = '7.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 376, APP_VERSION = '7.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
