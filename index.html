@@ -1307,6 +1307,7 @@
   .vl-bub.hot{background:#ffe27a; border-color:#a8641c;}
   @keyframes vlBob{0%,100%{translate:0 0} 50%{translate:0 -5px}}
   .vl-all{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;} .vl-all-rw{margin-top:4px; font-size:13px; font-weight:700; white-space:nowrap;} .vl-all > div{min-width:0;} .vl-all .btn{width:auto; flex:0 0 auto; padding-left:22px; padding-right:22px;}
+  .up-modal .card .ttl{line-height:1.35;} .up-modal .card .sub{margin-top:4px; line-height:1.45;} .up-modal .card .sub + .sub{margin-top:3px !important;} /* 강화 창 글자 간격 */
   .vl-sub{display:flex; align-items:center; gap:10px; margin:2px 0 10px;} .vl-sub b{font-size:18px;}
   .vm-help{font-size:11px; margin-bottom:8px; line-height:1.4;}
   .vm-bar{display:flex; justify-content:space-between; align-items:baseline; font-size:14px;} .vm-en b{color:#ffd557;}
@@ -11520,7 +11521,8 @@ function collectHearth(){
   render();
 }
 function renderHearthTab(){ return villageOn() ? renderVillageTab() : renderHearthCore(); } // (관리자 시험) 관리자는 정령 마을
-function renderHearthCore(){
+function renderHearthCore(){ return renderHearthHero() + '<h2 style="margin-top:16px;">업그레이드</h2>' + hearthUpgradesHtml(); }
+function renderHearthHero(){
   const sparks = hearthSparks();
   const max = HEARTH_MAX();
   let html = '';
@@ -11533,8 +11535,10 @@ function renderHearthCore(){
   html += '<div style="display:flex; justify-content:center; gap:14px; margin-top:8px; font-size:13px; font-weight:700;"><span><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+(sparks*HEARTH_ESSENCE_PER_SPARK())+'</span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> +'+(sparks*HEARTH_STONE_PER_SPARK())+'</span></div>';
   html += '</div>';
   html += '<div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub);">'+uiIc('hearth')+' 1 = <img class="uic" src="assets/ui/ic_essence.webp" alt="정수">'+HEARTH_ESSENCE_PER_SPARK()+' + <img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">'+HEARTH_STONE_PER_SPARK()+'</div>';
-
-  html += '<h2 style="margin-top:16px;">업그레이드</h2>';
+  return html;
+}
+function hearthUpgradesHtml(){
+  let html = '';
   Object.keys(HEARTH_UPGRADES).forEach(key=>{
     const u = HEARTH_UPGRADES[key];
     const lvl = hearthUpgradeLevel(key);
@@ -11571,7 +11575,7 @@ let villageView = 'map';
 const VM_W = 6, VM_H = 8, VM_REGEN_MS = 15*60*1000, VM_CART_MAX = 96, VM_IDLE_RATE = 0.4;
 const VM_UPGRADES = {
   pick:   { maxLv:10, name:'곡괭이', desc:'곡괭이 기력 최대치 +4', icon:uiIc('pick'), e0:400, eLv:400, s0:60, sLv:40 },
-  refine: { maxLv:10, name:'광맥 정제', desc:'캐는 정수·강화석 +10%', icon:'💎', e0:400, eLv:400, s0:60, sLv:40 }
+  refine: { maxLv:10, name:'광맥 정제', desc:'캐는 정수·강화석·별빛 조각 +10%', icon:'💎', e0:400, eLv:400, s0:60, sLv:40 }
 };
 // 칸 종류 t — 0 판 칸 · 1 흙 · 2 바위 · 3 정수 광석 · 4 강화석 광석 · 5 별빛 광맥 · 6 계단 / h 남은 타격 수
 const VM_CELL_NM = { 1:'흙', 2:'바위', 3:'정수 광석', 4:'강화석 광석', 5:'별빛 광맥', 6:'계단' };
@@ -11617,7 +11621,7 @@ function vmCellRw(t, d, m){
   if(t===2) return Math.random()<0.5 ? { stone: Math.max(1, Math.round(x)) } : {};
   if(t===3) return { essence: Math.round((25 + 5*k)*x) };
   if(t===4) return { stone: Math.round((5 + Math.floor(k/2))*x) };
-  if(t===5) return { star: 1 + Math.floor(k/20), essence: Math.round((50 + 10*k)*x) };
+  if(t===5){ const sv = (1 + Math.floor(k/20))*x; return { star: Math.floor(sv) + (Math.random() < sv - Math.floor(sv) ? 1 : 0), essence: Math.round((50 + 10*k)*x) }; } // 별빛 조각도 정제 배율 — 소수점은 그 확률로 1개 더
   return {};
 }
 function vmEv(d, m){ // 기력 1당 기대 보상 (수레 계산용 — 별빛 조각은 빼고)
@@ -11725,10 +11729,10 @@ const VL_IMG = k=> '<img class="vl-img" src="assets/village/vl_'+k+'.webp'+(VL_I
 function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
   return '<div class="vl-bld'+(o.lock ? ' lock' : '')+'" '+(o.lock ? '' : 'data-vl="'+o.k+'"')+' style="left:'+o.x+'%; top:'+o.y+'%;">'
     + (o.bub ? '<span class="vl-bub'+(o.bub.hot ? ' hot' : '')+'" '+(o.bub.col ? 'data-vl-col="'+o.k+'"' : '')+'>'+o.bub.ic+'</span>' : '')
-    + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span><span class="vl-st">'+o.st+'</span></div>';
+    + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span>'+(o.st ? '<span class="vl-st">'+o.st+'</span>' : '')+'</div>';
 }
 function renderVillageTab(){
-  if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b></div>' + renderHearthCore();
+  if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
   const m = vmState(), s = hearthSparks(), all = vlAllRw(), any = s>0 || m.cart>0, hLv = Object.keys(HEARTH_UPGRADES).reduce((a,k)=>a+hearthUpgradeLevel(k), 0);
   let h = '<div class="vl-title"><b>정령 마을</b><span class="vl-test">관리자 시험 중</span></div>';
@@ -11737,8 +11741,8 @@ function renderVillageTab(){
     bub: s>0 ? { ic:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', col:true, hot:s>=HEARTH_MAX() } : null });
   h += vlBld({ k:'mine', x:60, y:9, svg:'mine', sign:uiIc('pick')+' 광산 <i>B'+m.d+'</i>', st:'기력 '+m.e+'/'+vmMaxE(m),
     bub: m.cart>0 ? { ic:uiIc('cart'), col:true, hot:m.cart>=VM_CART_MAX } : (m.e>=vmMaxE(m) ? { ic:uiIc('pick'), hot:true } : null) });
-  h += vlBld({ k:'lodge', x:9, y:55, svg:'build', sign:'🔒 정령 숙소', st:'준비 중', lock:true });
-  h += vlBld({ k:'work', x:60, y:55, svg:'build', sign:'🔒 작업장', st:'준비 중', lock:true });
+  h += vlBld({ k:'lodge', x:9, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
+  h += vlBld({ k:'work', x:60, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
   h += '</div>';
   h += '<div class="card vl-all"><div><div class="ttl">모두 거두기</div><div class="vl-all-rw">'+(any ? vmRwText(all) : '<span class="sub">거둘 것 없음</span>')+'</div></div>'
     + '<button class="btn" id="vlAllBtn" '+(any ? '' : 'disabled')+'>거두기</button></div>';
@@ -11765,9 +11769,20 @@ function vmUpModalHtml(){
   return h;
 }
 function showVmUpModal(){
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:400px;"><button class="close-x" id="modalClose">x</button>'+vmUpModalHtml()+'</div></div>';
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal up-modal" style="position:relative; max-width:400px;"><button class="close-x" id="modalClose">x</button>'+vmUpModalHtml()+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-vm-up]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.vmUp, m = vmState(), c = vmUpCost(k, m); spendAsk('광산 '+VM_UPGRADES[k].name+' 강화', c, ()=>{ vmUpgrade(k); showVmUpModal(); }, state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); }));
+}
+function bindHearthUpBtns(root, inModal){
+  if(!root) return;
+  root.querySelectorAll('[data-hearth-upgrade]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ const k = btn.dataset.hearthUpgrade, c = hearthUpgradeCost(k); spendAsk('화로 '+HEARTH_UPGRADES[k].name+' 강화', c, ()=>{ doHearthUpgrade(k); if(inModal) showHearthUpModal(); }, hearthUpgradeLevel(k)<hearthMaxLv(k) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
+  });
+}
+function showHearthUpModal(){
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal up-modal" style="position:relative; max-width:400px;"><button class="close-x" id="modalClose">x</button><h3 style="text-align:center; margin-bottom:10px;">'+uiIc('hearth')+' 화로 강화</h3>'+hearthUpgradesHtml()+'</div></div>';
+  bindModalClose();
+  bindHearthUpBtns(document.getElementById('modalRoot'), true);
 }
 function vmFit(){ // 광산 화면은 스크롤 없이 — 판 크기를 화면 높이에 맞추고 수레는 맨 아래에
   const main = document.getElementById('main'), w = document.getElementById('vmWrap'); if(!main || !w) return;
@@ -11790,6 +11805,7 @@ function villageHandlers(){
   document.querySelectorAll('[data-vl]').forEach(b=>b.addEventListener('click', ()=>{ villageView = b.dataset.vl; sfx('click'); render(); document.getElementById('main').scrollTop = 0; }));
   const ab = document.getElementById('vlAllBtn'); if(ab) ab.addEventListener('click', vlCollectAll);
   const ub = document.getElementById('vmUpBtn'); if(ub) ub.addEventListener('click', ()=>{ sfx('click'); showVmUpModal(); });
+  const hub = document.getElementById('hearthUpBtn'); if(hub) hub.addEventListener('click', ()=>{ sfx('click'); showHearthUpModal(); });
   const w = document.getElementById('vmWrap');
   if(w) requestAnimationFrame(vmFit);
   if(w) w.addEventListener('click', e=>{
@@ -15309,9 +15325,7 @@ function attachHandlers(){
   villageHandlers(); // (관리자 시험) 정령 마을
   bindTicketBtns(document.getElementById('main'));
   document.querySelectorAll('[data-tk-open]').forEach(b=>b.addEventListener('click', ()=>{ sfx('click'); showTicketModal(b.dataset.tkOpen); }));
-  document.querySelectorAll('[data-hearth-upgrade]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ const k = btn.dataset.hearthUpgrade, c = hearthUpgradeCost(k); spendAsk('화로 '+HEARTH_UPGRADES[k].name+' 강화', c, ()=>doHearthUpgrade(k), hearthUpgradeLevel(k)<hearthMaxLv(k) && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone); });
-  });
+  bindHearthUpBtns(document.getElementById('main'));
   document.querySelectorAll('[data-tower-floor]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const f = parseInt(btn.dataset.towerFloor);
