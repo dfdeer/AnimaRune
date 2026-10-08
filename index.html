@@ -832,8 +832,8 @@
   .pq-bar{width:1px; height:34px; background:#ffffff30; margin:0 4px;}
   .pq-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
   .pq-chip{flex:0 0 34px; text-align:center; font-size:11px; font-weight:800; color:var(--sub);}
-  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} .pq-slots .slot{aspect-ratio:auto; height:96px;} .slot-aw{position:absolute; top:3px; left:4px; z-index:3; display:flex; align-items:center; gap:1px; padding:0 4px 0 2px; border-radius:6px; background:#1b1942e6; color:#ffd9a0; font-size:10px; font-weight:800; line-height:15px; pointer-events:none;} .slot-aw img{width:13px; height:13px;}
- .xp-fat{position:absolute; bottom:27px; right:4px; top:auto; left:auto; z-index:3; padding:0 4px; border-radius:6px; background:#2a0d18e0; color:#ff8a8a; font-size:10px; font-weight:800; line-height:15px; pointer-events:none;} /* (v305) 정령을 넣어도 칸 너비가 그대로 · (v307) 높이도 처음부터 넣었을 때 크기로 */
+  .pq-slots{flex:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;} .pq-slots .slot{aspect-ratio:auto; height:96px;} .slot-aw{position:absolute; top:-2px; left:-3px; z-index:3; display:flex; align-items:center; gap:1px; padding:0 3px 0 1px; border-radius:6px; background:#2a1d5a; box-shadow:0 1px 3px #0008; color:#ffd9a0; font-size:9px; font-weight:900; line-height:12px; pointer-events:none;} .slot-aw img{width:11px; height:11px;} /* (v5.2.1) 각성 — 그림 틀 왼쪽 위 */
+ .xp-fat{position:absolute; bottom:-2px; right:-3px; z-index:3; padding:0 3px; border-radius:6px; background:#3a0f1f; box-shadow:0 1px 3px #0008; color:#ff9a9a; font-size:9px; font-weight:900; line-height:12px; pointer-events:none;} /* (v305) 정령을 넣어도 칸 너비가 그대로 · (v307) 높이도 처음부터 넣었을 때 크기로 */
   .pq-slots .slot{flex:0 0 calc((100% - 16px) / 3); aspect-ratio:1;}
   .bs-acts .btn small .warn, .bs-tgt .warn{color:#ffae57;}
   /* ===== (v142) 결과 창: 전장 위에 흐린 막 + 카드 ===== */
@@ -9938,7 +9938,7 @@ function slotHtml(idx){
   }
   const sp = SPIRITS[key];
   const aw = awakenLevel(key);
-  return '<div class="slot filled" data-slot="'+idx+'">'+(aw ? '<span class="slot-aw"><img src="assets/ui/ic_awaken.webp" alt="">'+aw+'</span>' : '')+'<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+'</div><div>'+sp.name+'</div></div>'; // (v5.2.1) 각성 단계는 칸 왼쪽 위
+  return '<div class="slot filled" data-slot="'+idx+'"><div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+enhTag(key)+(aw ? '<span class="slot-aw"><img src="assets/ui/ic_awaken.webp" alt="">'+aw+'</span>' : '')+'</div><div>'+sp.name+'</div></div>'; // (v5.2.1) 각성 단계는 칸 왼쪽 위
 }
 // (v179) 등급 달성 보상 타일 C/B/A/S 한 줄 — 달성했고 안 받았으면 눌러서 받기, 받았으면 <img class="uic" src="assets/ui/ic_check.webp" alt="">. labelFn(tier) = 보상 표기
 // (v246) 보상 창 공통 줄 — [이름·조건] [보상] [상태] 한 줄씩. 받을 수 있는 줄은 줄 전체를 눌러서 받기
@@ -10119,7 +10119,7 @@ const PATCH_NOTES = [
     { t:'정령', items:[ '신화 정령을 파견 보낸 동안 같은 신화를 또 얻으면 2번째 정령으로 들어오던 것 — 이제 기억 조각 50개로 (파견 간 정령이 원본)' ]}
   ]},
   { build:356, v:'5.2.1', date:'2026-10-08', secs:[
-    { t:'전투 준비', items:[ '출전 칸 왼쪽 위에 각성 단계 표시', '출정 피로는 칸 오른쪽 아래로', '내 칸의 ⓘ 버튼 없앰 — 칸을 꾹 누르면 정령 정보' ]}
+    { t:'전투 준비', items:[ '출전 칸 정령 그림 틀 왼쪽 위에 각성 단계', '출정 피로는 그림 틀 오른쪽 아래', '내 칸의 ⓘ 버튼 없앰 — 칸을 꾹 누르면 정령 정보' ]}
   ]},
   { build:355, v:'5.2.0', date:'2026-10-08', secs:[
     { t:'파견', items:[ '보상 계산 수정 — 넣은 정령 등급의 합을 칸 수로 나눔(빈 칸은 0) · 낮은 등급 정령을 더 넣어도 보상이 줄지 않음 (예전: 넣은 정령끼리 평균이라 줄어들고, 1마리와 3마리가 같았음)', '조건 달성 보상 ×1.5는 칸을 다 채웠을 때만', '성좌 정령은 한 등급 위로 쳐서 보상 더', '다 채우기 전에는 「N마리 더 넣으면 확정」으로 표시' ]},
@@ -11391,7 +11391,7 @@ function showExpeditionSquadPicker(){
   let html = '<h3 style="text-align:center; margin-bottom:4px;">'+(isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스 전투':'<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투')+' 출전 배치</h3>'
     + '<div class="sub" style="text-align:center; margin-bottom:8px;">8마리 중 6마리를 슬롯에 배치(탭해서 교체) · 대기 2마리는 피로 해소 + 체력 20% 회복 · 2전투 연속 출전부터 공격력 −5%씩(최대 −15%)</div>';
   const expSlot = idx=>{ const key = state.formation[idx]; let h = slotHtml(idx);
-    if(key){ const fm = expFatigueMult((run.consecutive[key]||0)+1); if(fm<1) h = h.replace(/^(<div[^>]*>)/, '$1<span class="xp-fat">🔻'+Math.round((1-fm)*100)+'%</span>'); } // (v5.2.0) 피로는 칸 모서리 작은 표 — 줄로 넣으면 칸이 넘쳐 그림 위가 잘렸음
+    if(key){ const fm = expFatigueMult((run.consecutive[key]||0)+1); if(fm<1) h = h.replace(/(<div class="icon av[^>]*>[\s\S]*?)(<\/div>)/, '$1<span class="xp-fat">🔻'+Math.round((1-fm)*100)+'%</span>$2'); } // (v5.2.1) 그림 틀 오른쪽 아래 모서리 // (v5.2.0) 피로는 칸 모서리 작은 표 — 줄로 넣으면 칸이 넘쳐 그림 위가 잘렸음
     return h; };
   const erow = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(expSlot).join('')+'</div></div>';
   html += erow('전열',[0,1,2]) + erow('후열',[3,4,5]); // (v173) 두 줄 + 전열/후열 표시
