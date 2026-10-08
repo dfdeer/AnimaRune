@@ -1289,7 +1289,7 @@
   .xp-pick{display:flex !important; align-items:center; gap:10px; text-align:left !important; width:100%;} .xp-pick .xp-pic{font-size:22px; width:30px; text-align:center; flex:none;} .xp-pick .xp-pic .uic{width:22px; height:22px;} .xp-pick span:not(.xp-pic){flex:1; display:flex; flex-direction:column;} .xp-pick b{font-size:13.5px;} .xp-pick small{font-size:11.5px; color:#c3c6dc; font-weight:600;} .xp-pick, .xp-pick *{text-shadow:none !important;} /* (v269) 버튼 글자 그림자(아래로 1.5px)가 어두운 선택 칸에선 번져 흐릿하게 보였음 */ .xp-pick em{font-style:normal; font-weight:900; color:#ffd557; white-space:nowrap;} .xp-pick.rare{border-color:#ffc857 !important;}
   .xp-boss{display:flex; align-items:center; gap:10px;} .xp-bossimg{width:54px; height:54px; object-fit:contain;} .xp-boss div{flex:1; display:flex; flex-direction:column;} .xp-boss small{font-size:11px; color:var(--sub);}
   .home-emo-ic{font-size:24px; line-height:1; display:block;}
-  /* (v7.0.0) 가방 */
+  /* (v6.3.0) 가방 */
   .bag-modal{max-width:420px;} .bag-sec{margin:12px 0 6px; font-size:12px; font-weight:800; color:var(--sub);}
   .bag-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px;}
   .bag-it{display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 2px 6px; border-radius:12px; border:1px solid #ffffff1f; background:#ffffff0a; color:var(--text); min-width:0;}
@@ -4358,7 +4358,7 @@ function bindHomeTab(){
     else if(a==='settings') showSettingsModal();
     else if(a==='profile') showProfileModal('info');
     else if(a==='attend') showAttendModal(); // (v6.0.0) 출석
-    else if(a==='bag') showBagModal(); // (v7.0.0) 가방
+    else if(a==='bag') showBagModal(); // (v6.3.0) 가방
     else if(a==='pickup'){ const pp = pickupPeriod(); pickupView = Math.max(0, pp.pair.indexOf(pickupState().sel)); activeTab = 'pickup'; render(); save(); }
     else if(a==='hero'){ if(homeRepSpirit()) showHomeSpiritPicker(); else { activeTab = 'summon'; render(); save(); } }
     else if(a==='expedition' && !isUnlocked('expedition')){ activeTab = 'expedition'; render(); save(); }
@@ -10426,7 +10426,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:367, v:'7.0.0', date:'2026-10-08', secs:[
+  { build:367, v:'6.3.0', date:'2026-10-08', secs:[
     { t:'가방', items:[ '홈 오른쪽 「가방」·메뉴(☰)에서 열기 — 재화 · 입장권 · 소환권 · 확정권 · 선택권 · 강화 재료 · 기억 조각을 한 화면에', '칸을 누르면 설명과 「쓰러 가기」 — 쓰는 곳으로 바로 이동' ]}
   ]},
   { build:366, v:'6.2.4', date:'2026-10-08', secs:[
@@ -11224,7 +11224,7 @@ function grantItems(items){
   Object.keys(items).forEach(k=>{ state.tickets[k] = (state.tickets[k]||0) + items[k]; });
 }
 function itemsText(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+' '+TICKET_INFO[k].name+' ×'+items[k]).join(' · ') : ''; }
-// ===================== (v7.0.0) 가방 — 재화·입장권·소환권·확정권·선택권·기억 조각을 한 화면에 · 칸을 누르면 설명 + 「쓰러 가기」 =====================
+// ===================== (v6.3.0) 가방 — 재화·입장권·소환권·확정권·선택권·기억 조각을 한 화면에 · 칸을 누르면 설명 + 「쓰러 가기」 =====================
 const BAG_IMG = f=>'<img class="uic" src="assets/ui/'+f+'.webp" alt="">';
 function bagTicketInfo(k){ const t = TICKET_INFO[k], R = r=>RARITY_INFO[r].name;
   if(k==='summon') return { d:'정령 1회 소환 (10장이면 10연)', go:'summon0' };
@@ -15215,7 +15215,6 @@ function rwLedger(){
 }
 // (v5.0.4) 앞자리 업데이트 선물 우편 — 접속하면 한 번 우편함에 (기간 안에 들어온 사람만) · 사용자 결정: 앞자리 업데이트마다 별빛 조각 100
 const UPDATE_GIFTS = [
-  { id:'upd700', until: Date.UTC(2026,9,22,15), title:'7.0.0 업데이트 · 가방', body:'가진 재화와 아이템을 한 화면에서\n· 홈 오른쪽 「가방」\n· 칸을 누르면 바로 쓰러 가기\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd600', until: Date.UTC(2026,9,22,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,17,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
@@ -15525,7 +15524,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 367, APP_VERSION = '7.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 367, APP_VERSION = '6.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
