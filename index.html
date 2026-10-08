@@ -131,6 +131,7 @@
   #main[data-tbg=hearth]{--pn-bg:linear-gradient(180deg,#2c2168cc 0%,#16113ae0 100%); --pn-line:#c9a24a; --pn-line2:#c9a24a55; --pn-orn:#ffd77a; --pn-glow:#9a6bff44;}
   #main.tab-bg .card, #main.tab-bg .hearth-hero{position:relative; background:var(--pn-bg) !important; border:1.5px solid var(--pn-line) !important; border-radius:14px; box-shadow:inset 0 0 0 3px #0000004d, inset 0 0 0 4px var(--pn-line2), inset 0 1px 0 #ffffff22, 0 0 18px var(--pn-glow), 0 8px 20px #0009 !important; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
   #main.tab-bg .card::before, #main.tab-bg .card::after, #main.tab-bg .hearth-hero::before, #main.tab-bg .hearth-hero::after{content:''; position:absolute; top:-5px; width:9px; height:9px; transform:rotate(45deg); background:var(--pn-orn); border:1.5px solid #0008; box-shadow:0 0 6px var(--pn-orn); pointer-events:none;}
+  #main.tab-bg .card .card::before, #main.tab-bg .card .card::after, #main.tab-bg .card .hearth-hero::before, #main.tab-bg .card .hearth-hero::after{display:none;} /* (v7.0.0) 다이아 장식은 바깥 틀에만 — 안쪽 카드는 뺌 */
   #main.tab-bg .card::before, #main.tab-bg .hearth-hero::before{left:14px;} #main.tab-bg .card::after, #main.tab-bg .hearth-hero::after{right:14px;}
   #main.tab-bg .seg{background:var(--pn-bg); border:1.5px solid var(--pn-line); box-shadow:inset 0 0 0 3px #0000004d, inset 0 0 0 4px var(--pn-line2), 0 6px 16px #0008; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
   #main.tab-bg h2, #main.tab-bg .sub, #main.tab-bg .sub-skip{text-shadow:0 1px 3px #000c;}
@@ -496,11 +497,9 @@
   .aw-row.as-row b{background:linear-gradient(90deg,#ff9ae4,#9ac8ff,#9affd8); -webkit-background-clip:text; background-clip:text; color:transparent;}
   .as-top{display:flex; align-items:center; gap:14px; margin:6px 0 10px;}
   /* (v335) 기억 조각 — 보석 틀 안에 정령 얼굴 */
-  .mem-ic{display:inline-block; position:relative; width:1.25em; height:1.25em; vertical-align:-.25em; clip-path:polygon(50% 0, 100% 30%, 100% 70%, 50% 100%, 0 70%, 0 30%); background:linear-gradient(160deg,#ffd1f4,#a98bff 45%,#5fc8ff); }
-  .mem-ic::before{content:''; position:absolute; inset:9%; clip-path:inherit; background:radial-gradient(circle at 50% 40%, #3a2f6a, #1a1538);}
-  .mem-ic img{position:absolute; inset:12%; width:76%; height:76%; object-fit:cover; clip-path:polygon(50% 0, 100% 30%, 100% 70%, 50% 100%, 0 70%, 0 30%);}
-  body.adm .mem-ic{clip-path:polygon(50% 4.77%, 97.55% 39.32%, 79.39% 95.22%, 20.61% 95.22%, 2.45% 39.32%);} body.adm .mem-ic::before{inset:8%;} /* (관리자 시험) 정오각형 */
-  body.adm .mem-ic img{position:absolute !important; inset:auto !important; left:14% !important; top:14% !important; width:72% !important; height:72% !important; max-width:none !important; margin:0 !important; object-fit:cover; clip-path:polygon(50% 4.77%, 97.55% 39.32%, 79.39% 95.22%, 20.61% 95.22%, 2.45% 39.32%);} /* (관리자 시험) 어디서든 틀 안에 — 다른 곳의 img 크기 규칙에 안 끌려가게 */
+  .mem-ic{display:inline-block; position:relative; width:1.25em; height:1.25em; vertical-align:-.25em; clip-path:polygon(50% 4.77%, 97.55% 39.32%, 79.39% 95.22%, 20.61% 95.22%, 2.45% 39.32%); background:linear-gradient(160deg,#ffd1f4,#a98bff 45%,#5fc8ff); } /* (v7.0.0) 정오각형 */
+  .mem-ic::before{content:''; position:absolute; inset:8%; clip-path:inherit; background:radial-gradient(circle at 50% 40%, #3a2f6a, #1a1538);}
+  .mem-ic img{position:absolute !important; inset:auto !important; left:14% !important; top:14% !important; width:72% !important; height:72% !important; max-width:none !important; margin:0 !important; object-fit:cover; clip-path:polygon(50% 4.77%, 97.55% 39.32%, 79.39% 95.22%, 20.61% 95.22%, 2.45% 39.32%);} /* (v7.0.0) 어디서든 틀 안에 — 다른 곳의 img 크기 규칙에 안 끌려가게 */
   .mem-ic:not(:has(img))::after{content:'✦'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.62em; color:#fff3c4; text-shadow:0 0 4px #ffd166;}
   .mt-mem{font-size:10px; color:#e8d4ff; margin-top:2px; white-space:nowrap;}
   /* (v205) 정령 그림을 칸에 꽉 채우고, 어두운 정령(거미·박쥐·까마귀)도 보이게 칸 바닥을 가운데가 밝은 원형으로 */
@@ -575,6 +574,16 @@
   .bs-exit{background:#ffffff14; border:1px solid #ffffff33; border-radius:9px; padding:5px 9px; font-size:12px; color:var(--text); white-space:nowrap;}
   .bs-vote{display:flex; align-items:center; justify-content:space-between; gap:6px; padding:7px 10px; border-radius:12px; background:#3a2a10; border:1px solid #ffbc5788; color:#ffd9a0; font-size:12px; font-weight:700;}
   .bs-vote span{display:flex; gap:4px; flex-shrink:0;} .bs-vote .btn{width:auto; padding:4px 10px; font-size:12px;}
+  .rh-curs{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:4px 0 6px;} /* (v7.0.0) 룬 화면 */
+  .rh-cur{display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:12px; background:#0000002e; border:1px solid #ffffff1a; min-width:0;} .rh-cic .uic{width:24px !important; height:24px !important;} .rh-cur span:last-child{display:flex; flex-direction:column; min-width:0; line-height:1.15;} .rh-cur b{font-size:14px;} .rh-cur small{font-size:10px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rh-help{font-size:11px; text-align:center; margin:4px 0 12px;}
+  .rh-head{display:flex; align-items:baseline; gap:8px; margin-bottom:6px;} .rh-head b{font-size:16px;} .rh-cap{font-size:12px; font-weight:800; color:var(--sub);} .rh-cap.full{color:#ff6b6b;}
+  .rh-filters{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;} .rh-f{padding:4px 10px; border-radius:999px; border:1px solid var(--tc,#ffffff44); background:#00000030; color:var(--tc,var(--text)); font:inherit; font-size:12px; font-weight:800;} .rh-f.on{background:var(--tc,#ffd557); color:#1b1440; border-color:transparent;}
+  .rh-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;}
+  .rh-it{position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 4px 8px; border-radius:12px; border:1.5px solid color-mix(in srgb, var(--tc) 55%, transparent); background:linear-gradient(180deg, color-mix(in srgb, var(--tc) 16%, transparent), #00000038); color:var(--text); font:inherit; min-width:0;}
+  .rh-ic .eqimg{width:34px !important; height:34px !important; margin:0;} .rh-it b{font-size:12.5px; line-height:1.2;} .rh-t{font-size:10px; font-weight:800; color:var(--tc);} .rh-it small{font-size:10px; color:var(--sub); line-height:1.25; text-align:center; word-break:keep-all; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .rh-n{position:absolute; top:4px; right:6px; font-style:normal; font-size:11px; font-weight:900; color:#ffd557; text-shadow:0 1px 2px #000;}
+  .rh-oic .eqimg{width:22px; height:22px; vertical-align:middle;}
   .rune-chip{display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:10px; border:1px solid; font-size:12px; font-weight:800; background:#00000030; white-space:nowrap;}
   .rune-chip small{font-size:10px; opacity:.8;} .rune-chip.empty{border:1px dashed #ffffff33; color:var(--sub); font-weight:600;}
   .rune-reveal{position:relative; width:min(88vw,340px); display:flex; flex-direction:column; align-items:center;}
@@ -1223,7 +1232,7 @@
   .tr-steps{display:flex; justify-content:center; align-items:center; gap:5px; margin:10px 0;} /* (v5.2.0) 큰 동그라미도 세로 가운데 */ .tr-steps i{width:16px; height:16px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff2a;} .tr-steps i.big{width:20px; height:20px;} .tr-steps i.on{background:radial-gradient(circle at 35% 30%,#fff2b0,#ffb347); border-color:#ffd557; box-shadow:0 0 8px #ffd55799;}
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info > div > span{min-width:64px; color:var(--sub); font-size:12px;} /* (v5.2.0) 바로 아래 칸만 — 기억 조각 그림(span)까지 64px로 늘어나 찌그러졌음 */ .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
   .tr-perk{margin:8px auto 0; max-width:320px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px dashed #ffd55766; font-size:12px; color:var(--sub);} .tr-perk b{color:var(--text);} .tr-perk.on{border-style:solid; background:#ffd5571f;}
-  .tk-open{margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px;} .tk-open b{color:#ffd557;} /* (관리자 시험) */
+  .tk-open{margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px;} .tk-open b{color:#ffd557;} /* (v7.0.0) */
   .sub-skip{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:8px; font-size:12px; color:var(--sub); cursor:pointer;} .sub-skip input{width:16px; height:16px; accent-color:#ffd557;} /* (v305) */
   .inst-steps{margin:12px 0 4px; padding-left:22px; line-height:1.6;} .inst-steps li{margin-bottom:6px;} .inst-ok{margin-top:14px; padding:10px; border-radius:10px; background:#3fd18a22; text-align:center; font-weight:700;} .inst-warn{margin-top:10px; padding:9px 10px; border-radius:10px; background:#ffb30018; border:1px solid #ffb30055; font-size:12px; line-height:1.55;}
   .tr-tag{margin-left:3px; color:#ffd557; font-weight:900;} .tr-num{color:#ffd557; font-weight:900; text-shadow:0 0 6px #ffb30066;} .enh-tag.tr{background:linear-gradient(135deg,#ffe58a,#ff9d3a); color:#3a1600; box-shadow:0 0 6px #ffb347cc;} .aw-row.eg-row{border-color:#57d3ff55;} .aw-row.tr-row{border-color:#ffd55755;} .aw-row .sub i{white-space:nowrap;}
@@ -1292,8 +1301,8 @@
   .xp-pick{display:flex !important; align-items:center; gap:10px; text-align:left !important; width:100%;} .xp-pick .xp-pic{font-size:22px; width:30px; text-align:center; flex:none;} .xp-pick .xp-pic .uic{width:22px; height:22px;} .xp-pick span:not(.xp-pic){flex:1; display:flex; flex-direction:column;} .xp-pick b{font-size:13.5px;} .xp-pick small{font-size:11.5px; color:#c3c6dc; font-weight:600;} .xp-pick, .xp-pick *{text-shadow:none !important;} /* (v269) 버튼 글자 그림자(아래로 1.5px)가 어두운 선택 칸에선 번져 흐릿하게 보였음 */ .xp-pick em{font-style:normal; font-weight:900; color:#ffd557; white-space:nowrap;} .xp-pick.rare{border-color:#ffc857 !important;}
   .xp-boss{display:flex; align-items:center; gap:10px;} .xp-bossimg{width:54px; height:54px; object-fit:contain;} .xp-boss div{flex:1; display:flex; flex-direction:column;} .xp-boss small{font-size:11px; color:var(--sub);}
   .home-emo-ic{font-size:24px; line-height:1; display:block;}
-  /* (관리자 시험) 정령 마을 · 광산 */
-  .vl-title{display:flex; align-items:center; gap:8px; margin:2px 0 8px;} .vl-title b{font-size:20px;} .vl-test{font-size:10px; font-weight:800; color:#ffb057; border:1px solid #ffb05766; border-radius:999px; padding:1px 7px;}
+  /* (v7.0.0) 정령 마을 · 광산 */
+  .vl-title{display:flex; align-items:center; gap:8px; margin:2px 0 8px;} .vl-title b{font-size:20px;}
   .vl-town{position:relative; aspect-ratio:3/4; border-radius:20px; overflow:hidden; border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d; background:#7cc36a url(assets/village/vl_bg.webp) center/cover no-repeat;}
   .vl-bld{position:absolute; width:31%; display:flex; flex-direction:column; align-items:center; cursor:pointer; -webkit-tap-highlight-color:transparent;}
   .vl-img{width:100%; aspect-ratio:1; object-fit:contain; object-position:50% 100%; display:block; pointer-events:none;} /* 같은 줄 건물은 바닥·말풍선 높이가 같게 — 정사각 칸 아래에 맞춤 */ .vl-bld:not(.lock):active .vl-img{transform:scale(.96);}
@@ -1311,6 +1320,7 @@
   .vl-sub{display:flex; align-items:center; gap:10px; margin:2px 0 10px;} .vl-sub b{font-size:18px;}
   .vm-help{font-size:11px; margin-bottom:8px; line-height:1.4;}
   .vm-bar{display:flex; justify-content:space-between; align-items:baseline; font-size:14px;} .vm-en b{color:#ffd557;}
+  .vm-next{display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:wrap; font-size:11.5px; font-weight:700; color:var(--sub); margin:-4px 0 8px;} .vm-next .uic{width:15px !important; height:15px !important;}
   .vm-en-bar{height:6px; border-radius:3px; background:#2d2a62; overflow:hidden; margin:6px 0 10px;} .vm-en-bar i{display:block; height:100%; background:linear-gradient(90deg,#57d3ff,#9b8cff);}
   .vm-grid{max-width:var(--vmgw,none); margin:0 auto; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:4px; padding:8px; border-radius:16px; background:linear-gradient(180deg,#3a2c22,#1e1712); border:2px solid #00000066; box-shadow:inset 0 3px 8px #000a;}
   .vm-c{position:relative; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; box-shadow:inset 0 2px 0 #ffffff22, inset 0 -3px 0 #0005;}
@@ -1336,7 +1346,7 @@
   .bag-modal{max-width:420px;} .bag-sec{margin:12px 0 6px; font-size:12px; font-weight:800; color:var(--sub);}
   .bag-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px;}
   .bag-it{display:flex; flex-direction:column; align-items:center; gap:1px; padding:8px 2px 6px; border-radius:12px; border:1px solid #ffffff1f; background:#ffffff0a; color:var(--text); min-width:0;}
-  .bag-it.zero{opacity:.45;} .bag-ic{height:30px; display:flex; align-items:center; justify-content:center;} .bag-ic .uic, .bag-ic img, .bag-ic .mem-ic{width:28px !important; height:28px !important; margin:0;} .bag-ic .star-ic{width:26px; height:26px;}
+  .bag-it.zero{opacity:.45;} .bag-ic{height:30px; display:flex; align-items:center; justify-content:center;} .bag-ic .uic, .bag-ic > img, .bag-ic .mem-ic{width:28px !important; height:28px !important; margin:0;} .bag-ic .star-ic{width:26px; height:26px;}
   .bag-it b{font-size:13px;} .bag-it small{font-size:9.5px; color:var(--sub); line-height:1.15; word-break:keep-all; text-align:center; max-width:100%; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
   .bag-det{text-align:center;} .bag-own{font-size:14px; margin-bottom:6px;} .bag-own b{font-size:20px; color:#ffd557;} .bag-oic .uic, .bag-oic img{width:22px; height:22px; vertical-align:middle;}
   .dp-slots{display:flex; flex-direction:column; gap:6px;} .dp-slot{padding:7px 9px; border-radius:12px; background:#16123acc; border:1px solid #ffffff1a; display:flex; align-items:center; gap:9px; font-size:11px;} .dp-slot.empty{justify-content:center; color:var(--sub); border-style:dashed; background:#16123a80; padding:9px;} .dp-mid2{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;} .dp-slot .dp-cancel{margin:0; padding:6px 12px; flex-shrink:0;} .dp-slot.ready{border-color:#ffd557; box-shadow:0 0 10px #ffd55755;}
@@ -1524,8 +1534,8 @@
   @keyframes fadeUp{ 0%{opacity:0; transform:translateY(6px);} 100%{opacity:1; transform:translateY(0);} }
   @keyframes popIn{ 0%{opacity:0; transform:scale(0.3);} 60%{opacity:1; transform:scale(1.15);} 100%{opacity:1; transform:scale(1);} }
   /* (v102) 소환 연출: 등급색(--rc)·투명도 변형(--rca/--rcb)·연출 시작 시점(--rev)을 인라인 변수로 받음 */
-body.adm:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (관리자 시험) 소환 연출 중엔 뒤 화면(흐림 효과 판)을 안 그림 — 렉 */
-body.adm .sm-rays,body.adm .sm-p,body.adm .sm-met,body.adm .sm-tr,body.adm .sm-ring,body.adm .sm-ot{will-change:transform,opacity;}
+body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연출 중엔 뒤 화면(흐림 효과 판)을 안 그림 — 렉 */
+.sm-rays,.sm-p,.sm-met,.sm-tr,.sm-ring,.sm-ot{will-change:transform,opacity;}
 .modal-bg.summon-bg{background:radial-gradient(circle at 50% 42%, var(--rca) 0%, transparent 62%), #07070df2; overflow:hidden;}
 .summon-stage{position:relative; width:100%; max-width:340px; height:480px; display:flex; flex-direction:column; align-items:center; justify-content:center;}
 .sm-halo,.sm-orb,.sm-ring,.sm-rays,.sm-p,.sm-burst{position:absolute; left:50%; top:210px;}
@@ -1559,30 +1569,23 @@ body.adm .sm-rays,body.adm .sm-p,body.adm .sm-met,body.adm .sm-tr,body.adm .sm-r
 .sm-wallet span{padding:4px 10px; border-radius:14px; background:#000000aa; border:1px solid #ffffff2a; font-size:13px; font-weight:800; color:var(--text);}
 #smAgain:disabled,#mAgain:disabled{opacity:.3; filter:grayscale(1); cursor:not-allowed;}
 #modalClose2{background:#34344a; border:1px solid #ffffff33;}
-.sm-orbit{position:absolute; left:50%; top:210px; width:0; height:0; z-index:1; animation:smOrbSpin 1.3s linear infinite; will-change:rotate;} /* (관리자 시험) 한 바퀴 1.3초로 고정 */
+.sm-orbit{position:absolute; left:50%; top:210px; width:0; height:0; z-index:1; animation:smOrbSpin 1.3s linear infinite; will-change:rotate;} /* (v7.0.0) 한 바퀴 1.3초로 고정 */
 .sm-arm{position:absolute; left:0; top:0; rotate:var(--ang);}
 .sm-osrc{position:absolute; left:0; top:0; width:44px; height:44px; margin:-22px 0 0 -22px; font-size:40px; display:flex; align-items:center; justify-content:center; translate:135px 0; filter:drop-shadow(0 0 10px var(--rc)); opacity:0; animation:smSrcIn .35s ease-out forwards, smSrcGo .45s cubic-bezier(.55,0,.85,.4) calc(var(--rev) - .45s) forwards;}
 .sm-upr{rotate:calc(var(--ang) * -1);} .sm-spr{animation:smOrbSpinR 1.3s linear infinite; line-height:1;}
 @keyframes smOrbSpin{to{rotate:360deg;}} @keyframes smOrbSpinR{to{rotate:-360deg;}}
 @keyframes smSrcIn{from{opacity:0; scale:.5;} to{opacity:1; scale:1;}} @keyframes smSrcGo{from{opacity:1; scale:1;} to{opacity:0; scale:.2; translate:0 0;}}
 .sm-skip .sm-orbit{display:none;}
-.sm-src{position:absolute; left:50%; top:210px; margin:-22px 0 0 -22px; font-size:40px; z-index:1; filter:drop-shadow(0 0 10px var(--rc)); opacity:0; animation:smConv var(--rev) cubic-bezier(.5,0,.8,.4) forwards;}
-@keyframes smConv{0%{opacity:0; transform:rotate(0deg) translate(var(--sx),var(--sy)) rotate(0deg) scale(.5);} 14%{opacity:1; transform:rotate(0deg) translate(var(--sx),var(--sy)) rotate(0deg) scale(1.12);} 30%{opacity:1; transform:rotate(0deg) translate(var(--sx),var(--sy)) rotate(0deg) scale(1); animation-timing-function:cubic-bezier(.55,0,.85,.4);} 94%{opacity:1;} 100%{opacity:0; transform:rotate(300deg) translate(0,0) rotate(-300deg) scale(.2);}}
 .sm-card.fail{background:linear-gradient(160deg,#3a3a4c,#1c1c2a 62%); border-color:#6d6d84; box-shadow:0 0 12px #0008;} .sm-card.fail .sm-rarity{background:#56566c; box-shadow:none;} .sm-card.fail .sm-icon{filter:grayscale(.55) drop-shadow(0 0 6px #0009);}
 .sm-flash.fail{background:radial-gradient(circle at 50% 44%, #d8d8e4 0%, #6d6d84 30%, transparent 70%);} .sm-title.fail{color:#c4c4d4; text-shadow:none;}
 .sm-title{position:absolute; top:4px; left:0; right:0; text-align:center; font-weight:900; font-size:18px; color:var(--rc); text-shadow:0 0 12px var(--rca); opacity:0; animation:smFade .3s ease-out calc(var(--rev) + .1s) forwards;}
 /* (v6.2.1) 합성 연출 다듬기: 재료가 제자리에서 빛나며 떠오른 뒤 가운데로 소용돌이치며 빨려 듦(그림은 똑바로) · 빛줄기·마법진이 같이 돎 */
 .sm-obeam{position:absolute; left:0; top:0; width:135px; height:3px; margin-top:-1.5px; transform-origin:0 50%; border-radius:3px; background:linear-gradient(90deg, #fff, var(--rc) 40%, transparent); box-shadow:0 0 8px var(--rc); opacity:0; pointer-events:none; animation:smBeamIn .4s ease-out .15s forwards, smBeamGo .45s cubic-bezier(.55,0,.85,.4) calc(var(--rev) - .45s) forwards;}
-.sm-beam{position:absolute; left:50%; top:210px; width:var(--bl); height:3px; margin-top:-1.5px; transform-origin:0 50%; border-radius:3px; background:linear-gradient(90deg, #fff, var(--rc) 40%, transparent); box-shadow:0 0 8px var(--rc); opacity:0; pointer-events:none; animation:smBeam var(--rev) linear forwards;}
-@keyframes smBeam{0%{opacity:0; transform:rotate(var(--ba)) scaleX(1);} 14%{opacity:0; transform:rotate(var(--ba)) scaleX(1);} 30%{opacity:.85; transform:rotate(var(--ba)) scaleX(1); animation-timing-function:cubic-bezier(.55,0,.85,.4);} 94%{opacity:.85;} 100%{opacity:0; transform:rotate(calc(var(--ba) + 300deg)) scaleX(0);}}
 @keyframes smBeamIn{to{opacity:.85;}} @keyframes smBeamGo{from{opacity:.85; scale:1 1;} to{opacity:0; scale:0 1;}}
-.sm-circle{position:absolute; left:50%; top:210px; width:200px; height:200px; margin:-100px 0 0 -100px; border-radius:50%; border:2px dashed var(--rc); box-shadow:0 0 18px var(--rca), inset 0 0 18px var(--rca); pointer-events:none; opacity:0; animation:smCircle var(--rev) ease-in forwards, smCircleOut .4s ease-out var(--rev) forwards;} body.adm .sm-circle{animation:smCirIn .5s ease-out forwards, smOrbSpin 3.2s linear infinite, smCirOut .4s ease-out var(--rev) forwards;} @keyframes smCirIn{from{opacity:0; scale:.6;} to{opacity:.9; scale:1;}} @keyframes smCirOut{from{opacity:.9; scale:1;} to{opacity:0; scale:1.9;}}
-@keyframes smCircle{0%{opacity:0; transform:scale(.6) rotate(0deg);} 25%{opacity:.85; transform:scale(1) rotate(60deg);} 100%{opacity:.95; transform:scale(.55) rotate(420deg);}}
-@keyframes smCircleOut{0%{opacity:.95; transform:scale(.55) rotate(420deg);} 100%{opacity:0; transform:scale(1.9) rotate(480deg);}}
+.sm-circle{position:absolute; left:50%; top:210px; width:200px; height:200px; margin:-100px 0 0 -100px; border-radius:50%; border:2px dashed var(--rc); box-shadow:0 0 18px var(--rca), inset 0 0 18px var(--rca); pointer-events:none; opacity:0; } .sm-circle{animation:smCirIn .5s ease-out forwards, smOrbSpin 3.2s linear infinite, smCirOut .4s ease-out var(--rev) forwards;} @keyframes smCirIn{from{opacity:0; scale:.6;} to{opacity:.9; scale:1;}} @keyframes smCirOut{from{opacity:.9; scale:1;} to{opacity:0; scale:1.9;}}
 .sm-circle::before{content:''; position:absolute; inset:22px; border-radius:50%; border:1.5px solid var(--rc); opacity:.7;} .sm-circle::after{content:''; position:absolute; inset:-14px; border-radius:50%; border:1px dotted var(--rc); opacity:.5;}
 @keyframes smFade{to{opacity:1;}}
-@keyframes smOrb{0%{transform:scale(.2); opacity:0;} 15%{opacity:1;} 60%{transform:scale(.85);} 80%{transform:scale(1.05) translateX(-3px);} 90%{transform:scale(1) translateX(3px);} 100%{transform:scale(1.35); opacity:1; filter:brightness(2);}}
-@keyframes smOrbA{0%{transform:scale(.2); opacity:0;} 15%{opacity:1;} 60%{transform:scale(.85);} 80%{transform:scale(1.05) translateX(-3px);} 90%{transform:scale(1) translateX(3px);} 100%{transform:scale(1.35); opacity:1;}} body.adm .sm-orb{animation-name:smOrbA, smOrbOut;}
+@keyframes smOrbA{0%{transform:scale(.2); opacity:0;} 15%{opacity:1;} 60%{transform:scale(.85);} 80%{transform:scale(1.05) translateX(-3px);} 90%{transform:scale(1) translateX(3px);} 100%{transform:scale(1.35); opacity:1;}} .sm-orb{animation-name:smOrbA, smOrbOut;}
 @keyframes smOrbOut{to{opacity:0; transform:scale(1.7);}}
 @keyframes smFlash{0%{opacity:0;} 12%{opacity:var(--flash);} 100%{opacity:0;}}
 @keyframes smRing{0%{opacity:.9; transform:scale(.3);} 100%{opacity:0; transform:scale(7);}}
@@ -1616,12 +1619,11 @@ body.adm .sm-rays,body.adm .sm-p,body.adm .sm-met,body.adm .sm-tr,body.adm .sm-r
 .modal-bg.summon-bg.sm-sus{background:#07070df2;} .modal-bg.summon-bg.sm-sus::before{content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 50% 42%, var(--rca) 0%, transparent 62%); opacity:0; animation:smFade .5s ease-out var(--rev) forwards;}
 .sm-sus .sm-orb{background:radial-gradient(circle at 35% 30%, #fff 0%, #c9c6e8 45%, #000000aa 100%); box-shadow:0 0 44px 12px #ffffff3a;}
 .sm-ot{position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff 0%, var(--tc) 45%, #000000aa 100%); box-shadow:0 0 44px 12px color-mix(in srgb, var(--tc) 45%, transparent); opacity:0; animation:smOtPop .45s cubic-bezier(.2,1.6,.4,1) var(--td) forwards;}
-@keyframes smOtPop{0%{opacity:0; transform:scale(1.5); filter:brightness(2.4);} 40%{opacity:1;} 100%{opacity:1; transform:scale(1); filter:none;}} /* (v6.2.3) 단계가 오를 때 구슬이 크게 튀며 색이 바뀜 */
-@keyframes smOtPopA{0%{opacity:0; transform:scale(1.5);} 40%{opacity:1;} 100%{opacity:1; transform:scale(1);}} /* (관리자 시험) 밝기 필터 빼고 크기만 — 렉 */ /* (v6.2.3) 단계가 오를 때 구슬이 크게 튀며 색이 바뀜 */ body.adm .sm-ot{animation-name:smOtPopA;}
+@keyframes smOtPopA{0%{opacity:0; transform:scale(1.5);} 40%{opacity:1;} 100%{opacity:1; transform:scale(1);}} /* (v7.0.0) 밝기 필터 빼고 크기만 — 렉 */ /* (v6.2.3) 단계가 오를 때 구슬이 크게 튀며 색이 바뀜 */ .sm-ot{animation-name:smOtPopA;}
 .sm-tr{position:absolute; left:50%; top:210px; width:90px; height:90px; margin:-45px 0 0 -45px; border-radius:50%; border:5px solid var(--tc); box-shadow:0 0 20px var(--tc), inset 0 0 14px var(--tc); opacity:0; pointer-events:none; animation:smTier .7s ease-out var(--td) forwards;} .sm-tr.r2{border-width:2px; animation-duration:.95s; animation-delay:calc(var(--td) + .1s);}
 @keyframes smTier{0%{opacity:1; transform:scale(.6);} 100%{opacity:0; transform:scale(4);}}
-.sm-tf{position:absolute; inset:-60px; pointer-events:none; background:radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tc) 70%, transparent) 0%, transparent 60%); opacity:0; animation:smTf .5s ease-out var(--td) forwards;} @keyframes smTf{0%{opacity:0;} 25%{opacity:.85;} 100%{opacity:.18;}}
-@keyframes smTfA{0%{opacity:0;} 25%{opacity:.85;} 100%{opacity:0;}} body.adm .sm-tf{animation-name:smTfA; will-change:opacity;} /* (관리자 시험) 화면 색 번쩍임은 사라지게 — 렉 */
+.sm-tf{position:absolute; inset:-60px; pointer-events:none; background:radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tc) 70%, transparent) 0%, transparent 60%); opacity:0; animation:smTfA .5s ease-out var(--td) forwards;}
+@keyframes smTfA{0%{opacity:0;} 25%{opacity:.85;} 100%{opacity:0;}} .sm-tf{animation-name:smTfA; will-change:opacity;} /* (v7.0.0) 화면 색 번쩍임은 사라지게 — 렉 */
 .sm-const{position:absolute; left:50%; top:210px; width:300px; height:300px; margin:-150px 0 0 -150px; pointer-events:none; overflow:visible; animation:smConstOut .6s ease-out var(--rev) forwards;}
 .sm-const line{stroke:#d8e6ff; stroke-width:1.6; stroke-linecap:round; stroke-dasharray:120; stroke-dashoffset:120; filter:drop-shadow(0 0 3px #9fc4ff); animation:smDraw .35s ease-out forwards;}
 .sm-const circle{fill:#fff; opacity:0; filter:drop-shadow(0 0 5px #bcd6ff); transform-box:fill-box; transform-origin:center; animation:smStarPt .4s ease-out forwards;}
@@ -1632,8 +1634,7 @@ body.adm .sm-rays,body.adm .sm-p,body.adm .sm-met,body.adm .sm-tr,body.adm .sm-r
 .sm-tapskip{position:absolute; bottom:-34px; left:0; right:0; text-align:center; font-size:11px; color:#ffffff88; animation:smOut .3s ease-out var(--rev) forwards;} .sm-skip .sm-tapskip{display:none;} @keyframes smOut{to{opacity:0; visibility:hidden;}}
 .summon-stage.sm-shake{animation:smShake .5s ease-out var(--rev);} @keyframes smShake{0%,100%{transform:none;} 15%{transform:translate(-7px,4px);} 30%{transform:translate(6px,-5px);} 45%{transform:translate(-5px,-3px);} 60%{transform:translate(4px,4px);} 80%{transform:translate(-2px,1px);}}
 .sm-ban{position:absolute; top:6px; left:0; right:0; z-index:3; text-align:center; font-family:var(--fun, "Jua"), sans-serif; font-size:26px; letter-spacing:2px; color:#fff; text-shadow:0 0 12px var(--rc), 0 0 24px var(--rc), 0 2px 0 #0009; opacity:0; animation:smBan .7s cubic-bezier(.2,1.5,.4,1) calc(var(--rev) + .2s) forwards;}
-@keyframes smBan{0%{opacity:0; transform:scale(2.4); letter-spacing:12px;} 100%{opacity:1; transform:scale(1); letter-spacing:2px;}}
-@keyframes smBanA{0%{opacity:0; transform:scale(2.4);} 100%{opacity:1; transform:scale(1);}} /* (관리자 시험) 글자 간격 움직임 빼기 — 매 프레임 배치를 다시 해서 렉 */ body.adm .sm-ban{animation-name:smBanA;}
+@keyframes smBanA{0%{opacity:0; transform:scale(2.4);} 100%{opacity:1; transform:scale(1);}} /* (v7.0.0) 글자 간격 움직임 빼기 — 매 프레임 배치를 다시 해서 렉 */ .sm-ban{animation-name:smBanA;}
 .mt-top{min-height:24px;} .mt-chips{opacity:0; visibility:hidden; animation:smShow .3s ease-out forwards;}
 .mt-wait .mt-chips, .mt-wait .mt-actions, .mt-wait .mt-skip, .mt-done .mt-tap, .mt-done .mt-openall{display:none;} .mt-wait.sm-sus::before{animation:none;} /* 다 열기 전엔 등급 칩·버튼·배경 빛 숨김 */
 .mt-openall{margin-top:14px;}
@@ -2393,16 +2394,36 @@ function showRuneHub(){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button><h3 style="text-align:center;">🔮 룬</h3>'+runeHubHtml()+'</div></div>';
   bindModalClose();
 }
+// (v7.0.0) 룬 화면 — 재화는 한 줄로 · 보관함은 같은 룬끼리 묶어 칸으로(×개수) · 등급별로 걸러 보기 · 칸을 누르면 효과·새기는 법
+let runeHubFilter = 'all';
+const RUNE_TIER_ORDER = ['world','boss','legend','rare','common'];
+function runeHubGroups(){
+  const g = {};
+  (state.runeInv || []).forEach(r=>{ if(!runeValid(r)) return; const k = r.tier+':'+r.id; if(!g[k]) g[k] = { r, n:0 }; g[k].n++; });
+  return Object.values(g).sort((a,b)=> RUNE_TIER_ORDER.indexOf(a.r.tier)-RUNE_TIER_ORDER.indexOf(b.r.tier) || (runeName(a.r)<runeName(b.r)?-1:1));
+}
 function runeHubHtml(){
-  const inv = state.runeInv || [];
-  let h = '';
-  h += '<div style="display:flex; gap:8px; margin:6px 0 10px;"><div class="card" style="flex:1; text-align:center; padding:8px;"><div style="font-size:22px;"><img class="uic" src="assets/ui/ic_shard.webp" alt=""></div><b>'+(state.shards||0)+'</b><div class="sub" style="font-size:11px;">정령 파편</div></div>'
-    + '<div class="card" style="flex:1; text-align:center; padding:8px;"><div style="font-size:22px;">'+uiIc('runestone')+'</div><b>'+(state.raidGems||0)+'</b><div class="sub" style="font-size:11px;">고대 룬석</div></div>'
-    + '<div class="card" style="flex:1; text-align:center; padding:8px;"><div style="font-size:22px;">'+uiIc('upstone')+'</div><b>'+(state.runeUpStones||0)+'</b><div class="sub" style="font-size:11px;">승급석</div></div></div>';
-  h += '<div class="sub" style="font-size:11px; text-align:center; margin:6px 0 10px;">파편: 정령 분해 · 룬석: 레이드 → 레이드 상점 · 룬 새기기: 정령 상세 창</div>';
-  h += '<div class="ttl" style="margin-bottom:4px;">보관함 '+inv.length+'/'+RUNE_INV_MAX+'</div>';
-  h += inv.length ? '<div style="display:flex; flex-direction:column; gap:5px;">'+inv.map(r=>'<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">'+runeChipHtml(r)+'<span class="sub" style="font-size:11px; text-align:right;">'+runeDesc(r)+'</span></div>').join('')+'</div>' : '<div class="sub" style="text-align:center;">비어 있음</div>';
+  const inv = state.runeInv || [], groups = runeHubGroups();
+  const cur = (ic, n, nm)=>'<div class="rh-cur"><span class="rh-cic">'+ic+'</span><span><b>'+n+'</b><small>'+nm+'</small></span></div>';
+  let h = '<div class="rh-curs">'+cur('<img class="uic" src="assets/ui/ic_shard.webp" alt="">', state.shards||0, '정령 파편')+cur(uiIc('runestone'), state.raidGems||0, '고대 룬석')+cur(uiIc('upstone'), state.runeUpStones||0, '승급석')+'</div>';
+  h += '<div class="sub rh-help">파편: 정령 분해 · 룬석: 레이드 상점 · 새기기: 정령 상세 창의 룬 칸</div>';
+  const cnt = t=> inv.filter(r=>runeValid(r) && r.tier===t).length;
+  const tiers = RUNE_TIER_ORDER.filter(t=>cnt(t)>0);
+  if(runeHubFilter!=='all' && !tiers.includes(runeHubFilter)) runeHubFilter = 'all';
+  h += '<div class="rh-head"><b>보관함</b><span class="rh-cap'+(inv.length>=RUNE_INV_MAX?' full':'')+'">'+inv.length+'/'+RUNE_INV_MAX+'</span></div>';
+  if(!inv.length) return h + '<div class="sub" style="text-align:center; padding:18px 0;">비어 있음</div>';
+  h += '<div class="rh-filters"><button class="rh-f'+(runeHubFilter==='all'?' on':'')+'" data-rh-f="all">전체 '+inv.length+'</button>'
+    + tiers.map(t=>'<button class="rh-f'+(runeHubFilter===t?' on':'')+'" data-rh-f="'+t+'" style="--tc:'+RUNE_TIERS[t].color+';">'+RUNE_TIERS[t].name+' '+cnt(t)+'</button>').join('')+'</div>';
+  const shown = groups.filter(x=>runeHubFilter==='all' || x.r.tier===runeHubFilter);
+  h += '<div class="rh-grid">'+shown.map(x=>{ const t = RUNE_TIERS[x.r.tier], gi = groups.indexOf(x);
+    return '<button class="rh-it" data-rh-g="'+gi+'" style="--tc:'+t.color+';">'+(x.n>1?'<i class="rh-n">×'+x.n+'</i>':'')
+      + '<span class="rh-ic">'+runeImg(x.r)+'</span><b>'+runeName(x.r).replace(/의 룬$/,'')+'</b><span class="rh-t">'+t.name+'</span><small>'+runeDesc(x.r)+'</small></button>'; }).join('')+'</div>';
   return h;
+}
+function runeHubBind(){
+  document.querySelectorAll('[data-rh-f]').forEach(b=>b.addEventListener('click', ()=>{ runeHubFilter = b.dataset.rhF; sfx('click'); render(); }));
+  document.querySelectorAll('[data-rh-g]').forEach(b=>b.addEventListener('click', ()=>{ const x = runeHubGroups()[+b.dataset.rhG]; if(!x) return; const t = RUNE_TIERS[x.r.tier];
+    openInfoOverlay('<span class="rh-oic">'+runeImg(x.r)+'</span> '+runeName(x.r), '<div style="text-align:center;"><div><span class="rune-chip" style="border-color:'+t.color+'; color:'+t.color+';">'+t.name+'</span> <span class="sub">보유 '+x.n+'개</span></div><div style="margin-top:8px; font-size:14px;">'+runeDesc(x.r)+'</div><div class="sub" style="margin-top:10px; font-size:12px;">정령 탭 → 정령을 눌러 상세 창 → 룬 칸의 「보관함에서」로 새김</div></div>'); }));
 }
 function runeManageHtml(key){
   const r = spiritRune(key), inv = state.runeInv || [];
@@ -7898,7 +7919,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
   bSk_fire:0.55, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
-  mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (관리자 시험) 광산 — 자주 나는 소리라 0.03~0.035
+  mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
 function sfxPlay(name){
@@ -7938,7 +7959,7 @@ function sfxPlay(name){
   else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
   else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
   else if(name==='bSk_light'){ sNoise(0,0.25,0.12,B,'highpass',5000,8000,0.7,0.06); sGlock(2637,0.12,0.09,B); }
-  // (관리자 시험) 광산 — 곡괭이가 돌에 닿는 소리 · 부서지는 소리 · 광석별 반짝임 (낮은 둥 소리 없이)
+  // (v7.0.0) 광산 — 곡괭이가 돌에 닿는 소리 · 부서지는 소리 · 광석별 반짝임 (낮은 둥 소리 없이)
   else if(name==='mTap'){ const t = aT(0); sNoise(0,0.035,0.4,B,'bandpass',4200,2600,3,0.001); sOsc(1850,'triangle',t,0.09,0.06,0.001,B); sOsc(2950,'sine',t,0.06,0.03,0.001,B); }
   else if(name==='mBreak' || name==='mOre' || name==='mStone' || name==='mRare'){
     const t = aT(0); sNoise(0,0.03,0.35,B,'bandpass',4000,2600,3,0.001); sOsc(1700,'triangle',t,0.07,0.05,0.001,B);
@@ -8658,7 +8679,7 @@ function showEquipPickModal(tk, sel){
     state.tickets[tk] -= 1; const isNew = addEquip(sel); pushRecentEquip(sel); checkAchievements(); save(); render();
     const v = equipResultView(sel); showResultModal(v.sp, isNew, null, {custom:v.custom, ticketKey:'equip'}); });
 }
-// (관리자 시험) 소환 화면의 확정권·선택권 — 아래로 내리지 않게 「확정권 · 선택권」 버튼 → 창에서 사용 (가진 권만)
+// (v7.0.0) 소환 화면의 확정권·선택권 — 아래로 내리지 않게 「확정권 · 선택권」 버튼 → 창에서 사용 (가진 권만)
 const TK_SPIRIT = ['rare','epic','legendary','mythic','pick_rare','pick_epic','pick_legendary','pick_mythic'], TK_EQUIP = ['eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic'];
 function tkOwnedSum(kind){ return (kind==='equip' ? TK_EQUIP : TK_SPIRIT).reduce((a,k)=>a+ticketCount(k), 0); }
 function tkOpenBtnHtml(kind){
@@ -8674,7 +8695,7 @@ function spiritTicketRowsHtml(){
   ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0).forEach(k=>rows.push(ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', !rows.length)));
   return rows.join('');
 }
-function bindTicketBtns(root){ // (관리자 시험) 소환 화면·확정권 창 공용
+function bindTicketBtns(root){ // (v7.0.0) 소환 화면·확정권 창 공용
   if(!root) return;
   const stb = root.querySelector('#'+'shopTicketBtn'); if(stb) stb.addEventListener('click', doShopTicket);
   const etb = root.querySelector('#'+'epicTicketBtn'); if(etb) etb.addEventListener('click', doEpicTicket);
@@ -9635,8 +9656,7 @@ function render(){
   document.getElementById('acctLevelFill').style.width = pct+'%';
   { const lb = document.getElementById('levelBar'); if(lb){ if(!lb.__al){ lb.__al = true; lb.style.cursor = 'pointer'; lb.addEventListener('click', ()=>showAccountLevelModal()); } } } // (v269)
   if(lvl > (state.lvSeen||0)){ if(state.lvSeen) toast(uiIc('level')+' 계정 Lv.'+lvl+' 달성 — 프로필의 레벨 보상에서 받기', 3200); state.lvSeen = lvl; }
-  { const hn = document.querySelector('nav button[data-tab="hearth"]'); if(hn && hn.lastChild && hn.lastChild.nodeType===3){ const want = villageOn() ? '마을' : '화로'; if(hn.lastChild.textContent!==want) hn.lastChild.textContent = want; const im = hn.querySelector('img.uic'), src = 'assets/ui/ic_'+(villageOn() ? 'village' : 'hearth')+'.webp'; if(im && im.getAttribute('src')!==src) im.setAttribute('src', src); } } // (관리자 시험) 정령 마을
-  document.body.classList.toggle('adm', villageOn()); // (관리자 시험) 관리자에게만 보이는 화면 규칙
+  { const hn = document.querySelector('nav button[data-tab="hearth"]'); if(hn && hn.lastChild && hn.lastChild.nodeType===3){ const want = villageOn() ? '마을' : '화로'; if(hn.lastChild.textContent!==want) hn.lastChild.textContent = want; const im = hn.querySelector('img.uic'), src = 'assets/ui/ic_'+(villageOn() ? 'village' : 'hearth')+'.webp'; if(im && im.getAttribute('src')!==src) im.setAttribute('src', src); } } // (v7.0.0) 정령 마을
   document.querySelectorAll('nav button').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===activeTab || (b.dataset.tab==='home' && HOME_MODE_TABS.includes(activeTab)));
     if(b.dataset.requires) b.classList.toggle('locked', !isUnlocked(b.dataset.requires));
@@ -9756,7 +9776,7 @@ function renderSummonTab(){
   html += summonBtnHtml('summonBtn', '정령 소환', summonCostLabel(), 1, canSummonOnce());
   html += summonBtnHtml('multiSummonBtn', '정령 소환 x'+MULTI_SUMMON_COUNT, multiCostLabel(), MULTI_SUMMON_COUNT, canSummonMulti(), ' margin-top:10px;');
   html += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>'; // (v305) 확인 창 없이
-  if(isAdmin()) html += tkOpenBtnHtml('spirit'); // (관리자 시험) 확정권·선택권은 창으로
+  html += tkOpenBtnHtml('spirit'); // (v7.0.0) 확정권·선택권은 창으로
   html += '<div class="sub" style="margin-top:10px; text-align:center;">일반 '+pct(sw[0].w)+'% · 레어 '+pct(sw[1].w)+'% · 에픽 '+pct(sw[2].w)+'%'
     + (legendW>0 ? ' · 레전더리 '+pct(legendW)+'%' : '')
     + ' <button id="summonRateInfoBtn" style="'+INFO_BTN_STYLE+'">ⓘ</button></div>';
@@ -9764,22 +9784,6 @@ function renderSummonTab(){
   html += '<div style="height:6px; border-radius:4px; background:#2d2a62; overflow:hidden; margin-top:4px;"><div style="height:100%; width:'+(((state.lifetimeSummons||0)%20)/20*100)+'%; background:linear-gradient(90deg,#5b6bff,#9a6bff);"></div></div>';
   html += '</div>';
 
-  if(!isAdmin()){ // (관리자 시험) 관리자는 「확정권 · 선택권」 창 — 일반은 예전 칸 그대로
-  const sureAt = html.length; // (v317) 가진 확정권이 하나도 없으면 칸째로 안 보임
-  html += '<div class="card">';
-  html += '<div class="ttl" style="margin-bottom:8px;">'+tkIcon('sure','epic')+' 정령 확정권</div>';
-  const ownRare = ticketCount('rare')>0, ownEpic = ticketCount('epic')>0;
-  // (v317) 강화석으로 레어 확정권 · 정수로 에픽 확정권 사던 것 없앰 — 가진 권만 씀
-  if(ownRare) html += ticketRowHtml(TICKET_INFO.rare.icon+' '+TICKET_INFO.rare.name, '레어 이상 확정', ticketCount('rare'), '<button class="btn small" id="shopTicketBtn">사용</button>', true);
-  if(ownEpic) html += ticketRowHtml(TICKET_INFO.epic.icon+' '+TICKET_INFO.epic.name, '에픽 확정', ticketCount('epic'), '<button class="btn small" id="epicTicketBtn">사용</button>', !ownRare);
-  if(ticketCount('legendary')>0) html += ticketRowHtml(TICKET_INFO.legendary.icon+' '+TICKET_INFO.legendary.name, '레전더리 확정 (무작위)', ticketCount('legendary'), '<button class="btn small" id="legTicketBtn">사용</button>'); // 가지고 있을 때만
-  if(ticketCount('mythic')>0) html += ticketRowHtml(TICKET_INFO.mythic.icon+' '+TICKET_INFO.mythic.name, '신화 확정 (무작위)', ticketCount('mythic'), '<button class="btn small" id="mythTicketBtn">사용</button>'); // (v297)
-  html += '</div>';
-  if(!(ownRare || ownEpic || ticketCount('legendary')>0 || ticketCount('mythic')>0)) html = html.slice(0, sureAt);
-  { const picks = ['pick_rare','pick_epic','pick_legendary','pick_mythic'].filter(k=>ticketCount(k)>0); // (v243) 선택권은 가지고 있을 때만
-    if(picks.length){ html += '<div class="card"><div class="ttl" style="margin-bottom:8px;">'+tkIcon('pick','epic')+' 정령 선택권</div>'
-      + picks.map((k,i)=>ticketRowHtml(TICKET_INFO[k].icon+' '+TICKET_INFO[k].name, RARITY_INFO[TICKET_INFO[k].pick].name+' 정령 10종 중 원하는 1마리', ticketCount(k), '<button class="btn small" data-pick-tk="'+k+'">사용</button>', i===0)).join('') + '</div>'; } }
-  }
   html += recentSummonRowHtml();
   { const n = Object.keys(SPIRITS).reduce((a,k)=>a+ownedCount(k),0); // (v296) 장비 소환 화면처럼 내 정령 바로가기
     html += '<button class="btn secondary" id="spiritsToTab">'+uiIc('box')+' 내 정령 '+n+'마리 · 정령 탭에서 관리 ›</button>'; }
@@ -9817,14 +9821,13 @@ function renderEquipSummonPage(){
   h += equipBtnHtml('equipSummonBtn', '장비 소환', equipCostLabel(), 1, canEquipOnce());
   h += equipBtnHtml('equipMultiSummonBtn', '장비 소환 x'+MULTI_SUMMON_COUNT, multiEquipCostLabel(), MULTI_SUMMON_COUNT, canEquipMulti(), ' margin-top:10px;');
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>'; // (v305)
-  if(isAdmin()) h += tkOpenBtnHtml('equip'); // (관리자 시험) 확정권·선택권은 창으로
+  h += tkOpenBtnHtml('equip'); // (v7.0.0) 확정권·선택권은 창으로
   h += '<div class="sub" style="margin-top:10px; text-align:center;">일반 '+pct(w[0].w)+'% · 레어 '+pct(w[1].w)+'% · 에픽 '+pct(w[2].w)+'%'+(lg>0?' · 레전더리 '+pct(lg)+'%':'')+' <button id="equipRateInfoBtn" style="'+INFO_BTN_STYLE+'">ⓘ</button></div>';
   h += '<div class="sub" style="text-align:center; margin-top:6px;">🎖 Lv.'+lv+' <span style="opacity:.7;">('+prog+'/20)</span></div>';
   h += '<div style="height:6px; border-radius:4px; background:#2d2a62; overflow:hidden; margin-top:4px;"><div style="height:100%; width:'+(prog/20*100)+'%; background:linear-gradient(90deg,#5b6bff,#9a6bff);"></div></div>';
   h += '</div>';
   // (v181) 내 장비 관리는 정령 탭 › 장비로 옮김 — 여기서는 바로가기만
   const cnt = ownedEquipItems().length;
-  if(!isAdmin()) h += equipTicketCardHtml();
   h += recentEquipRowHtml();
   h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
   return h;
@@ -10533,6 +10536,14 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:368, v:'7.0.0', date:'2026-10-08', secs:[
+    { t:'정령 마을 (새 콘텐츠)', items:[ '하단 「화로」 탭이 「마을」로 — 마을 지도에서 건물을 눌러 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 누르면 바로 거둠 · 「모두 거두기」로 화로 불씨와 광산 수레를 한 번에', '정령 숙소 · 작업장 자리는 준비 중' ]},
+    { t:'광산', items:[ '맨 위 줄이나 이미 판 칸 옆을 두드려 캠 — 한 번에 곡괭이 기력 1', '흙 · 바위 · 정수 광석 · 강화석 광석 · 별빛 광맥(별빛 조각) · 계단을 찾으면 더 깊은 층으로 내려가고 보상이 커짐', '곡괭이 기력 15분마다 1 회복 · 최대 40', '기력이 가득 차서 넘친 만큼은 정령들이 대신 캐서 수레에 쌓음 — 직접 캐는 양의 40% · 최대 하루치', '5층마다 처음 도달 보상 — 정수 400 · 강화석 40 (5층마다 늘어남) · 10층마다 별빛 조각 20 · 정령 소환권 1 추가', '광산 강화(「강화」 버튼) — 곡괭이: 최대 기력 +4 · 광맥 정제: 캐는 정수·강화석·별빛 조각 +10%', '광산 효과음 추가' ]},
+    { t:'화로', items:[ '강화 최대 레벨 30 (생산력 10 → 30 · 용량 6 → 30 · 속도 8 → 30)', '10레벨마다 강화 비용 10배', '용량 레벨마다 불씨 +2 (최대 72개) · 속도 8레벨(12분)부터 레벨마다 0.25분 (최대 6.5분)', '강화는 「강화」 버튼을 눌러 창에서' ]},
+    { t:'소환', items:[ '확정권·선택권을 소환 버튼 아래 「확정권 · 선택권」 버튼으로 — 창에서 바로 사용 (정령·장비 소환 둘 다)', '1회 소환·합성 연출이 신화·성좌에서 끊기던 것 줄임', '합성 연출 — 재료 셋이 같은 거리에서 고르게 돌고, 등급이 높아도 도는 빠르기가 같음' ]},
+    { t:'룬', items:[ '보관함을 같은 룬끼리 묶은 칸(×개수)으로 · 등급별로 걸러 보기', '칸을 누르면 효과와 새기는 법', '정령 파편 · 고대 룬석 · 승급석을 한 줄로' ]},
+    { t:'화면', items:[ '기억 조각 그림을 정오각형으로 통일 · 가방에서 그림이 틀 밖으로 나가던 것 수정' ]}
+  ]},
   { build:367, v:'6.3.0', date:'2026-10-08', secs:[
     { t:'가방', items:[ '홈 오른쪽 「가방」·메뉴(☰)에서 열기 — 재화 · 입장권 · 소환권 · 확정권 · 선택권 · 강화 재료 · 기억 조각을 한 화면에', '칸을 누르면 설명과 「쓰러 가기」 — 쓰는 곳으로 바로 이동' ]}
   ]},
@@ -11467,10 +11478,10 @@ function hearthUpgradeLevel(key){ return (state.hearthUpgrades && state.hearthUp
 function hearthUpgradeCost(key){
   const u = HEARTH_UPGRADES[key];
   const lvl = hearthUpgradeLevel(key);
-  const x = Math.pow(10, Math.floor(lvl/10)); // (관리자 시험) 10레벨마다 값 10배 — 원래 최대 레벨(6~10) 안에서는 예전과 같음
+  const x = Math.pow(10, Math.floor(lvl/10)); // (v7.0.0) 10레벨마다 값 10배 — 원래 최대 레벨(6~10) 안에서는 예전과 같음
   return { essence: (u.baseEssence + lvl*u.essencePerLv)*x, stone: (u.baseStone + lvl*u.stonePerLv)*x };
 }
-// (관리자 시험) 정령 마을을 켠 계정은 화로 강화를 30레벨까지 · 용량은 2씩 · 속도는 8레벨(12분)부터 0.25분씩
+// (v7.0.0) 정령 마을: 화로 강화를 30레벨까지 · 용량은 2씩 · 속도는 8레벨(12분)부터 0.25분씩
 const HEARTH_EXT_LV = 30;
 function hearthMaxLv(k){ return villageOn() ? HEARTH_EXT_LV : HEARTH_UPGRADES[k].maxLv; }
 function hearthCapAt(l){ return 12 + l*2; }
@@ -11490,8 +11501,8 @@ function doHearthUpgrade(key){
   toast(uiIc('hearth')+' 화로 '+u.name+' Lv.'+(lvl+1)+'!', 2200, true);
   render();
 }
-function HEARTH_MAX(){ return hearthCapAt(hearthUpgradeLevel('capacity')); } // 12~24 (관리자 시험: ~72)
-function HEARTH_INTERVAL_MS(){ return Math.round(hearthMinAt(hearthUpgradeLevel('speed'))*60*1000); } // 20분~12분 (관리자 시험: ~6.5분)
+function HEARTH_MAX(){ return hearthCapAt(hearthUpgradeLevel('capacity')); } // 12~24 (정령 마을: ~72)
+function HEARTH_INTERVAL_MS(){ return Math.round(hearthMinAt(hearthUpgradeLevel('speed'))*60*1000); } // 20분~12분 (정령 마을: ~6.5분)
 function HEARTH_ESSENCE_PER_SPARK(){ return Math.round(10*(1+hearthUpgradeLevel('output')*0.15)); }
 function HEARTH_STONE_PER_SPARK(){ return Math.round(3*(1+hearthUpgradeLevel('output')*0.15)); }
 function hearthSparks(){
@@ -11520,7 +11531,7 @@ function collectHearth(){
   toastReward({essence:essenceGain, stone:stoneGain}, uiIc('hearth')+' 화로 수확');
   render();
 }
-function renderHearthTab(){ return villageOn() ? renderVillageTab() : renderHearthCore(); } // (관리자 시험) 관리자는 정령 마을
+function renderHearthTab(){ return villageOn() ? renderVillageTab() : renderHearthCore(); } // (v7.0.0) 정령 마을
 function renderHearthCore(){ return renderHearthHero() + '<h2 style="margin-top:16px;">업그레이드</h2>' + hearthUpgradesHtml(); }
 function renderHearthHero(){
   const sparks = hearthSparks();
@@ -11566,11 +11577,11 @@ function hearthUpgradesHtml(){
   });
   return html;
 }
-// ===================== (관리자 시험) 정령 마을 — 화로·광산을 시설로 모은 화면 · 지금은 관리자 계정에만 보임 =====================
+// ===================== (v7.0.0) 정령 마을 — 화로·광산을 시설로 모은 화면 =====================
 // 화로 탭 자리에 마을 지도 → 시설(화로·광산)을 눌러 들어감 · 「모두 거두기」로 방치 수입을 한 번에
 // 광산: 곡괭이 기력 1로 한 번 두드림 · 위 줄이나 이미 판 칸 옆만 팔 수 있음 · 계단을 찾으면 더 깊은 층(보상↑)
 //        기력이 가득 찬 채 남는 만큼은 정령들이 대신 캐서 수레에 쌓음(직접 캐는 것의 40% · 최대 하루치)
-function villageOn(){ return isAdmin(); }
+function villageOn(){ return true; } // (v7.0.0) 모두에게 — false면 예전 화로 탭
 let villageView = 'map';
 const VM_W = 6, VM_H = 8, VM_REGEN_MS = 15*60*1000, VM_CART_MAX = 96, VM_IDLE_RATE = 0.4;
 const VM_UPGRADES = {
@@ -11601,6 +11612,7 @@ function vmState(){
   if(!N(m.e)) m.e = vmMaxE(m); m.e = Math.max(0, Math.min(vmMaxE(m), Math.floor(m.e)));
   if(!N(m.et) || m.et>serverNow()) m.et = serverNow();
   if(!N(m.cart) || m.cart<0) m.cart = 0; m.cart = Math.min(VM_CART_MAX, Math.floor(m.cart));
+  if(!isPlainObj(m.rw)) m.rw = {}; Object.keys(m.rw).forEach(f=>{ if(!(+f>0 && +f%5===0 && +f<=m.best)) delete m.rw[f]; });
   if(!Array.isArray(m.g) || m.g.length!==VM_W*VM_H || !m.g.every(c=>isPlainObj(c) && N(c.t) && c.t>=0 && c.t<=6 && N(c.h)) || !m.g.some(c=>c.t===6)) m.g = vmGenGrid(m.d);
   vmTick(m);
   return m;
@@ -11636,10 +11648,21 @@ function vmReach(g, i){
   if(r===0) return true;
   return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].some(([y,x])=> y>=0 && y<VM_H && x>=0 && x<VM_W && g[y*VM_W+x].t===0);
 }
+// (v7.0.0) 깊이 보상 — 5층마다 처음 도달하면 한 번 (10층마다 별빛 조각·정령 소환권 더) · 받은 기록 state.village.mine.rw · 보상 장부(rwLedger) 'mine'
+function vmDepthRw(f){ const k = f/5; return Object.assign({ essence: 400*k, stone: 40*k }, f%10===0 ? { star:20, items:{ summon:1 } } : {}); }
+function vmNextDepthRw(m){ return (Math.floor(m.best/5)+1)*5; }
+function vmDepthRwCheck(m){ // 최고 층까지 아직 안 받은 5층 보상을 모두 지급
+  if(!isPlainObj(m.rw)) m.rw = {};
+  const got = [];
+  for(let f=5; f<=m.best; f+=5){ if(m.rw[f]) continue; m.rw[f] = 1; const rw = vmDepthRw(f); vmGive(rw); got.push([f, rw]); }
+  got.forEach(([f, rw], i)=> setTimeout(()=>{ sfx('claim'); toastReward(rw, uiIc('pick')+' 광산 B'+f+' 도달 보상', 3600); }, 400 + i*900));
+  return got.length;
+}
 function vmGive(rw){
   if(rw.essence) state.essence += rw.essence;
   if(rw.stone) state.enhanceStone = (state.enhanceStone||0) + rw.stone;
   if(rw.star) state.starShard = (state.starShard||0) + rw.star;
+  if(rw.items){ if(!state.tickets) state.tickets = {}; Object.keys(rw.items).forEach(k=>{ state.tickets[k] = (state.tickets[k]||0) + rw.items[k]; }); }
 }
 function vmHit(i){
   const m = vmState(), c = m.g[i];
@@ -11647,7 +11670,7 @@ function vmHit(i){
   if(!vmReach(m.g, i)){ toast('아직 닿지 않는 칸'); return; }
   if(c.t===6){
     confirmBox('계단', '광산 B'+(m.d+1)+'층으로 내려감<br>이 층에 남은 광석은 두고 감', '내려가기', ()=>{
-      m.d++; m.best = Math.max(m.best, m.d); m.g = vmGenGrid(m.d); save(); sfx('enhance'); toast(uiIc('pick')+' 광산 B'+m.d+'층'); vmRefresh();
+      m.d++; m.best = Math.max(m.best, m.d); m.g = vmGenGrid(m.d); vmDepthRwCheck(m); save(); sfx('enhance'); toast(uiIc('pick')+' 광산 B'+m.d+'층'); vmRefresh();
     });
     return;
   }
@@ -11681,6 +11704,7 @@ function vmMineHtml(){
   let h = '<div class="vm-bar"><div><b>B'+m.d+'층</b> <span class="sub">최고 B'+m.best+'</span></div>'
     + '<div class="vm-en">'+uiIc('pick')+' <b>'+m.e+'</b>/'+max+(m.e<max ? ' <span class="sub">· '+Math.ceil(vmNextMs(m)/60000)+'분</span>' : ' <span class="sub">· 가득</span>')+'</div></div>';
   h += '<div class="vm-en-bar"><i style="width:'+(m.e/max*100)+'%"></i></div>';
+  { const nf = vmNextDepthRw(m); h += '<div class="vm-next">'+uiIc('gift')+' B'+nf+' 처음 도달 · '+rewardBrief(vmDepthRw(nf))+'</div>'; }
   h += '<div class="vm-grid">';
   m.g.forEach((c, i)=>{
     if(c.t===0){ h += '<div class="vm-c dug" data-mc="'+i+'"></div>'; return; }
@@ -11735,7 +11759,7 @@ function renderVillageTab(){
   if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
   const m = vmState(), s = hearthSparks(), all = vlAllRw(), any = s>0 || m.cart>0, hLv = Object.keys(HEARTH_UPGRADES).reduce((a,k)=>a+hearthUpgradeLevel(k), 0);
-  let h = '<div class="vl-title"><b>정령 마을</b><span class="vl-test">관리자 시험 중</span></div>';
+  let h = '<div class="vl-title"><b>정령 마을</b></div>';
   h += '<div class="vl-town">';
   h += vlBld({ k:'hearth', x:9, y:9, svg:'hearth', sign:uiIc('hearth')+' 화로 <i>Lv.'+hLv+'</i>', st:'불씨 '+s+'/'+HEARTH_MAX(),
     bub: s>0 ? { ic:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', col:true, hot:s>=HEARTH_MAX() } : null });
@@ -14754,10 +14778,8 @@ function showResultModal(sp, isNew, again, opts){
     + (!fail && (vr==='mythic'||vr==='astral') ? '<div class="sm-burst"></div>' : '') // (v318) 신화 광채 그림
     + (!fail && t.rays>=1 ? '<div class="sm-rays"></div>' : '') + (!fail && t.rays>=2 ? '<div class="sm-rays r2"></div>' : '')
     + (fuse ? (fail ? '<div class="sm-title fail">💨 합성 실패…</div>' : '<div class="sm-title">✨ 합성 성공!</div>')+'<div class="sm-circle"></div>'
-      // (관리자 시험) 재료 셋은 같은 반지름(135px)·같은 간격(120°)으로 늘 같은 빠르기로 돌다가 공개 직전에 가운데로 모임 — 예전엔 반지름이 달랐고 공개 시간이 길수록(높은 등급) 느리게 돎 (사용자 결정)
-      + (isAdmin() ? '<div class="sm-orbit">'+[-150,-30,90].map((a,i)=>'<div class="sm-arm" style="--ang:'+a+'deg;"><div class="sm-obeam"></div><div class="sm-osrc"><div class="sm-upr"><div class="sm-spr">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div></div></div></div>').join('')+'</div>' : ''
-      + [[-120,-70],[120,-70],[0,120]].map(p=>'<div class="sm-beam" style="--bl:'+Math.round(Math.hypot(p[0],p[1]))+'px; --ba:'+Math.round(Math.atan2(p[1],p[0])*180/Math.PI)+'deg;"></div>').join('') // (v6.2.1) 재료와 가운데를 잇는 빛줄기 — 재료와 같이 돌며 줄어듦
-      + [[-120,-70],[120,-70],[0,120]].map((p,i)=>'<div class="sm-src" style="--sx:'+p[0]+'px; --sy:'+p[1]+'px;">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div>').join('')) : '')
+      // (v7.0.0) 재료 셋은 같은 반지름(135px)·같은 간격(120°)으로 늘 같은 빠르기로 돌다가 공개 직전에 가운데로 모임 — 예전엔 반지름이 달랐고 공개 시간이 길수록(높은 등급) 느리게 돎 (사용자 결정)
+      + '<div class="sm-orbit">'+[-150,-30,90].map((a,i)=>'<div class="sm-arm" style="--ang:'+a+'deg;"><div class="sm-obeam"></div><div class="sm-osrc"><div class="sm-upr"><div class="sm-spr">'+((fuse.icons && fuse.icons[i]) || fuse.icon || spArt(fuse))+'</div></div></div></div>').join('')+'</div>' : '')
     + '<div class="sm-orb">'+orbTiers+'</div>'+tierRings+'<div class="sm-ring"></div><div class="sm-ring r2"></div>' + fx
     + (big ? '<div class="sm-ban">'+(vr==='astral' ? '✦ 성좌 강림 ✦' : '신화 강림!')+'</div>' : '')
     + '<div class="sm-flash'+(fail?' fail':'')+'"></div>'
@@ -15322,8 +15344,9 @@ function attachHandlers(){
   document.querySelectorAll('[data-eq-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.equipSort = el.dataset.eqSort; save(); render(); }));
   const ab = document.getElementById('openAchieve'); if(ab) ab.addEventListener('click', showAchievementsModal);
   const hb = document.getElementById('collectHearthBtn'); if(hb) hb.addEventListener('click', collectHearth);
-  villageHandlers(); // (관리자 시험) 정령 마을
+  villageHandlers(); // (v7.0.0) 정령 마을
   bindTicketBtns(document.getElementById('main'));
+  runeHubBind(); // (v7.0.0) 룬 보관함
   document.querySelectorAll('[data-tk-open]').forEach(b=>b.addEventListener('click', ()=>{ sfx('click'); showTicketModal(b.dataset.tkOpen); }));
   bindHearthUpBtns(document.getElementById('main'));
   document.querySelectorAll('[data-tower-floor]').forEach(btn=>{
@@ -15573,10 +15596,12 @@ function rwLedger(){
   Object.keys(s.lvClaimed||{}).forEach(k=>{ const n = Number(k); if(Number.isInteger(n) && n>1 && s.lvClaimed[k]) add('lv', accountLvReward(n)); });
   ACHIEVEMENTS.forEach(a=>{ if(s.achievementsClaimed && s.achievementsClaimed[a.id]) add('ach', a.reward); });
   WB_RECORD_RW.forEach((m,i)=>{ if(s.wbRecClaim && s.wbRecClaim[i]) add('wbrec', m.rw); }); // (v5.3.0)
+  { const vm = s.village && s.village.mine; if(vm && isPlainObj(vm.rw)) Object.keys(vm.rw).forEach(f=>{ if(vm.rw[f] && +f>0 && +f%5===0) add('mine', vmDepthRw(+f)); }); } // (v7.0.0) 광산 깊이 보상
   return L;
 }
 // (v5.0.4) 앞자리 업데이트 선물 우편 — 접속하면 한 번 우편함에 (기간 안에 들어온 사람만) · 사용자 결정: 앞자리 업데이트마다 별빛 조각 100
 const UPDATE_GIFTS = [
+  { id:'upd700', until: Date.UTC(2026,9,22,15), title:'7.0.0 업데이트 · 정령 마을', body:'화로 탭이 「마을」로\n· 광산 해금\n· 화로 강화 상한 증가 (30레벨)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd600', until: Date.UTC(2026,9,22,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,17,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
@@ -15886,7 +15911,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 367, APP_VERSION = '6.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 368, APP_VERSION = '7.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
