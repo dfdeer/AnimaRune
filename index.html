@@ -389,6 +389,7 @@
   .fr-dot{flex-shrink:0; width:10px; height:10px; border-radius:50%; background:#4a4a58; margin:0 4px;}
   .fr-dot.on{background:#5cd65c; box-shadow:0 0 8px #5cd65c;}
   .acc-box{margin-top:10px; padding:10px 12px; border-radius:14px; background:#ffffff0d; text-align:left;} .acc-h{font-weight:800; margin-bottom:4px;}
+  .acc-dt{width:100%; border-collapse:collapse; font-size:12px;} .acc-dt th{font-size:11px; color:var(--sub); font-weight:700; padding:2px 4px;} .acc-dt td{padding:3px 4px; border-bottom:1px solid #ffffff10; text-align:right; white-space:nowrap;} .acc-dt td:first-child{text-align:left; color:var(--sub); white-space:normal;} .acc-dt tr.sec td{text-align:left; color:#ffe38a; font-weight:800; padding-top:8px; border-bottom:1px solid #ffe38a44;} .acc-dt td.more{color:#5cd65c; font-weight:800;} /* (v7.1.3) 진행 비교 */
   .acc-pick{display:flex; flex-direction:column; gap:2px; width:100%; text-align:left; padding:10px 12px; margin-top:8px; border-radius:14px; background:#27235a; border:2px solid #3d3a5a; color:var(--text);} .acc-pick b{font-size:15px;} .acc-pick small{color:var(--sub); font-size:11px;} .acc-pick span{font-size:12px;}
   .fr-avw{position:relative; flex-shrink:0; display:flex;} .fr-avw .fr-dot{position:absolute; right:-3px; bottom:-3px; margin:0; border:2px solid var(--panel);}
   .fr-x{flex-shrink:0; padding:3px 10px 5px; border-radius:9px; border:1px solid #ffffff1a; background:none; color:var(--sub); font-size:17px; font-weight:700; line-height:1;}
@@ -4849,6 +4850,35 @@ function accSummary(s){
   const cleared = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).length;
   return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · 탑 '+(s.towerBest||0)+'층<br>'+uiIc('essence')+' '+Math.floor(s.essence||0)+' · '+uiIc('stone')+' '+Math.floor(s.enhanceStone||0)+' · '+SHARD_IC+' '+Math.floor(s.starShard||0); // (v7.1.3) 재화 더 자세히
 }
+// (v7.1.3) 진행 자세히 보기 — 판단에 필요한 항목만 서버 / 기기 나란히 · 더 많은 쪽 강조
+function accWith(s, fn){ const o = state; try{ state = s; return fn(); }catch(e){ return 0; } finally{ state = o; } } // 전역 state를 쓰는 계산(계정 레벨)을 다른 세이브로
+function accDetailRows(s){
+  const own = k => (s.owned && s.owned[k]||0) > 0, keys = Object.keys(s.owned||{}).filter(k=>SPIRITS[k] && own(k));
+  const sb = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).map(Number), eqs = Object.keys(s.equipOwned||{}).filter(k=>(s.equipOwned[k]||0)>0);
+  const bits = v => (v&1)+((v>>1)&1)+((v>>2)&1), sum = o => Object.values(o||{}).reduce((a,v)=>a+(Number(v)||0), 0);
+  return [
+    ['진행'], ['계정 레벨', accWith(s, accountLevel)], ['스테이지 (노말)', sb.filter(i=>i<HARD_BASE).length], ['스테이지 (하드)', sb.filter(i=>i>=HARD_BASE).length],
+    ['무한의 탑', s.towerBest||0], ['요일 던전 단계 합', sum(s.dungeonBest)], ['시련 통과', Object.values(s.trialClear||{}).filter(Boolean).length], ['출정 최고 단계', s.expeditionBestReach||0],
+    ['균열 별', s.rift && s.rift.st ? Object.values(s.rift.st).reduce((a,v)=>a+bits(Number(v)||0), 0) : 0], ['광산 최고 층', (s.village && s.village.mine && s.village.mine.best)||0],
+    ['정령'], ['가진 정령', keys.length], ['신화 · 성좌', keys.filter(k=>SPIRITS[k].rarity==='mythic').length], ['성좌', keys.filter(k=>SPIRITS[k].limited || (s.astral && s.astral[k])).length],
+    ['각성 5 정령', keys.filter(k=>((s.awaken||{})[k]||0)>=5).length], ['강화 합계', keys.reduce((a,k)=>a+((s.enhanceLevel||{})[k]||0), 0)],
+    ['장비'], ['장비 수', eqs.length], ['신화 장비', eqs.filter(k=>k.split('#')[0].split('_')[2]==='mythic').length],
+    ['재화'], ['정수', Math.floor(s.essence||0)], ['강화석', Math.floor(s.enhanceStone||0)], ['별빛 조각', Math.floor(s.starShard||0)], ['룬석', Math.floor(s.raidGems||0)], ['소환권 · 각종 권', sum(s.tickets)],
+    ['기록'], ['업적 달성', Object.values(s.achievementsClaimed||{}).filter(Boolean).length], ['출석 누적', (s.att && s.att.total)||0], ['일일 의뢰 누적', s.lifetimeQuests||0]
+  ];
+}
+function accDetailShow(cloudS, localS){
+  const A = accDetailRows(cloudS), B = accDetailRows(localS), f = v => typeof v==='number' ? v.toLocaleString('ko-KR') : v;
+  let h = '<table class="acc-dt"><tr><th></th><th>☁️ 서버</th><th>📱 기기</th></tr>';
+  A.forEach((r,i)=>{ if(r.length===1){ h += '<tr class="sec"><td colspan="3">'+r[0]+'</td></tr>'; return; }
+    const x = r[1], y = B[i][1]; h += '<tr><td>'+r[0]+'</td><td'+(x>y?' class="more"':'')+'>'+f(x)+'</td><td'+(y>x?' class="more"':'')+'>'+f(y)+'</td></tr>'; });
+  h += '</table>';
+  const o = document.createElement('div'); o.className = 'modal-bg cf-bg'; o.id = 'accDtPop';
+  o.innerHTML = '<div class="modal" style="position:relative; max-width:380px;"><button class="close-x" id="accDtX">x</button><h3 style="text-align:center; margin-top:0;">진행 비교</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">더 많은 쪽을 초록색으로 표시</div>'+h+'<button class="btn" id="accDtBack" style="width:100%; margin-top:10px;">돌아가기</button></div>';
+  document.body.appendChild(o);
+  const close = ()=>o.remove();
+  o.addEventListener('click', e=>{ if(e.target===o) close(); }); o.querySelector('#accDtX').addEventListener('click', close); o.querySelector('#accDtBack').addEventListener('click', close);
+}
 // (v333) 서버 진행으로 덮기 전 기기 진행을 최근 3개까지 보관 — 설정 「덮어쓰기 전 진행 되살리기」 (예전엔 1개뿐이라 다음에 켤 때 또 덮이면 사라졌음)
 const accBakKey = ()=> SAVE_KEY+'_beforeCloudList'; // 함수로: SAVE_KEY가 이 줄보다 아래에서 정의됨
 function accBackups(){ let L = []; try{ L = JSON.parse(localStorage.getItem(accBakKey())||'[]') || []; }catch(e){ L = []; }
@@ -4881,7 +4911,9 @@ function accChooser(parsed, cloud){
     + '<h3 style="text-align:center;">진행 선택</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">이 기기와 서버의 진행이 다름. 고르지 않은 쪽은 사라짐.</div>'
     + card('accUseCloud', '☁️ 서버에 저장된 진행', tt ? '마지막 저장 '+tt : '', accSummary(parsed))
     + card('accUseLocal', '📱 이 기기의 진행', '지금 기기에 있는 것', accSummary(state))
+    + '<button class="btn secondary" id="accDetail" style="width:100%; margin-top:10px;">'+uiIc('log')+' 자세히 보기</button>'
     + '</div></div>';
+  document.getElementById('accDetail').addEventListener('click', ()=>accDetailShow(parsed, state)); // (v7.1.3) 두 진행 나란히 비교
   // (v7.1.3) 고르면 한 번 더 확인 — 고르지 않은 쪽은 사라지니까 (사용자 결정) · 취소하면 고르기 창 그대로
   document.getElementById('accUseCloud').addEventListener('click', ()=>confirmBox('☁️ 서버 진행으로', '이 기기의 진행은 사라짐<br><small>'+accSummary(state)+'</small>', '서버 진행 쓰기', ()=>{ accApply(parsed); accSetMeta(cloud.rev||0); closeModal(); render(); toast('서버 진행으로 변경'); }, {danger:true}));
   document.getElementById('accUseLocal').addEventListener('click', ()=>confirmBox('📱 이 기기 진행으로', '서버에 저장된 진행은 사라짐<br><small>'+accSummary(parsed)+'</small>', '이 기기 진행 쓰기', async ()=>{ acc.base = cloud.rev||0; closeModal(); await accPush(true); toast('이 기기 진행을 서버에 저장'); }, {danger:true}));
@@ -10705,7 +10737,7 @@ const PATCH_NOTES = [
     { t:'별빛 균열', items:[ '10층 세기 하드 3 보스 ×1 → ×0.46 (추천 전투력 약 34,900 → 16,100)', '11층 세기 하드 5 보스 ×1 → 하드 3 보스 ×0.72 (추천 전투력 약 428,200 → 25,100)', '12층 세기 하드 5 보스 ×1.25 → 하드 3 보스 ×1.03 (추천 전투력 약 535,300 → 35,900)' ]}
   ]},
   { build:373, v:'7.1.3', date:'2026-10-08', secs:[
-    { t:'계정', items:[ '진행 선택 창에서 고르면 한 번 더 확인 — 사라지는 쪽 진행을 보여 줌', '진행 요약에 강화석 · 별빛 조각 추가' ]}
+    { t:'계정', items:[ '진행 선택 창에서 고르면 한 번 더 확인 — 사라지는 쪽 진행을 보여 줌', '진행 요약에 강화석 · 별빛 조각 추가', '진행 선택 창에 「자세히 보기」 — 계정 레벨 · 스테이지 · 정령 · 장비 · 재화 · 기록을 서버와 기기 나란히 비교' ]}
   ]},
   { build:371, v:'7.1.2', date:'2026-10-08', secs:[
     { t:'화면', items:[ '장비 고유 효과 창의 「지금」 칸 정리 — 붙은 효과가 후보에 있으면 따로 안 보여 줌', '후보 칸 아래 「붙어 있음 · 이걸로 고르기」 글자 뺌 — 붙은 효과는 오른쪽에 「선택됨」', '고유 효과 전체 목록을 한 줄 카드로 — 이름 · 설명 왼쪽, 레전더리 · 신화 값 오른쪽' ]}
