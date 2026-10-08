@@ -1798,7 +1798,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
       <button id="headerMenuBtn" style="background:none; border:none; color:var(--text); font-size:22px; padding:2px 6px; cursor:pointer; line-height:1; position:relative;" aria-label="메뉴"><img class="uic" src="assets/ui/ic_menu.webp" alt="" draggable="false"></button>
       <div id="headerMenu" style="display:none; position:absolute; top:100%; right:10px; z-index:60; background:var(--panel2); border:1px solid #5b6bff; border-radius:10px; padding:4px; box-shadow:0 8px 24px #000a;">
         <button data-hmenu="guide" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 가이드북</button>
-        <button data-hmenu="bag" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><span style="width:20px; text-align:center;">🎒</span> 가방</button>
+        <button data-hmenu="bag" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_bag.webp" alt="" draggable="false"> 가방</button>
         <button data-hmenu="notes" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_patchnote.webp" alt="" draggable="false"> 패치노트<span id="hmNoteNew" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="ask" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;"><img class="uic" src="assets/ui/ic_ask.webp" alt="" draggable="false"> 문의하기<span id="hmAskN" class="hm-n" style="display:none;">N</span></button>
         <button data-hmenu="mail" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;">📬 우편함<span id="hmMailN" class="hm-n" style="display:none;"></span></button>
@@ -2288,10 +2288,10 @@ let subFixPick = null;
 function showSubModal(kind, k, back){
   const isEq = kind==='eq', max = subLinesMax(kind, k), e = isEq ? eqSubState(k) : engrState(k), have = ticketCount('engr');
   const nm = isEq ? equipInfo(k).name : SPIRITS[k].name, art = isEq ? equipInfo(k).img : spArt(SPIRITS[k]);
-  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?'🔷 부가 능력':'✨ 각인')+' · '+nm+'</h3>'
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?uiIc('substat')+' 부가 능력':uiIc('engrave')+' 각인')+' · '+nm+'</h3>'
     + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 부가 능력 '+ENGR_LINES+'줄')+'</div></div>'; // (v7.0.1) 품질·상한 문구 뺌 (상한은 v6.2.0에 없앰)
   if(!max) h += '<div class="sub" style="text-align:center; padding:16px 0;">일반 장비는 부가 능력 없음</div>';
-  else if(!e || !e.lines.length) h += '<div class="sub" style="text-align:center; padding:12px 0;">아직 '+(isEq?'감정':'각인')+' 안 함</div><button class="btn gold" id="subGo">'+(isEq?'🔍 감정하기':'✨ 각인하기')+' (무료)</button>';
+  else if(!e || !e.lines.length) h += '<div class="sub" style="text-align:center; padding:12px 0;">아직 '+(isEq?'감정':'각인')+' 안 함</div><button class="btn gold" id="subGo">'+(isEq?uiIc('substat')+' 감정하기':uiIc('engrave')+' 각인하기')+' (무료)</button>';
   else if(subMissing(kind, k)){ const miss = subMissing(kind, k), ks = Object.keys(SUB_STATS), q = SUB_Q.length-1;
     h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, false, i, false)).join('')+'</div>';
     h += '<div class="sub-fix"><b>사라진 신화 줄 '+miss+'개 복구</b><small>오류로 지워진 신화 줄 — 원래 능력을 골라 되살리기 · 고른 뒤 바꿀 수 없음</small>'
@@ -4303,7 +4303,7 @@ function renderHomeTab(){
   h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">'+uiIc('level')+' Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
   h += '<div class="home-side left"><button class="home-ic" data-home="attend">'+uiIc('gift')+'<small>출석</small>'+(attHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button></div>'; // (v5.3.1) 가이드는 메뉴(☰)에 있어 홈에선 뺌
   // (v5.3.1) 오른쪽 위 배너 줄(픽업 + 이벤트) 밑에 오른쪽 버튼 — 배너가 늘면 버튼이 알아서 밑으로
-  h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="bag"><span class="home-emo-ic">🎒</span><small>가방</small></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
+  h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="bag"><img class="uic" src="assets/ui/ic_bag.webp" alt="" draggable="false"><small>가방</small></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[spRar(sp)].color+';">'+RARITY_INFO[spRar(sp)].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo home-empty"><img class="spimg hero" src="assets/ui/ic_summon.webp" alt="" draggable="false"></div><div class="home-name">첫 정령 소환하기</div><div class="home-cta">눌러서 소환하러 가기 ›</div>') // (v209) 정령이 없을 땐 소환 구슬 그림 — 누르면 소환 화면
@@ -9868,14 +9868,14 @@ function renderEquipSummonPage(){
   // (v181) 내 장비 관리는 정령 탭 › 장비로 옮김 — 여기서는 바로가기만
   const cnt = ownedEquipItems().length;
   h += recentEquipRowHtml();
-  h += '<button class="btn secondary" id="equipToSpirits">🎒 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
+  h += '<button class="btn secondary" id="equipToSpirits">'+uiIc('bag')+' 내 장비 '+cnt+'개 · 정령 탭에서 관리 ›</button>';
   return h;
 }
 // (v296) 장비 화면을 정령 화면과 같은 모양으로 — 머리 카드(제목·도감·추천 장착) · 합성하러 가기 · 정렬 칩(등급·속성·부위) · 5칸 타일(개수·등급 띠·강화)
 function equipSpeciesTile(k){
   const i = equipInfo(k), info = RARITY_INFO[i.rarity], n = equipOwnedCount(k), used = equipUsedCount(k);
   return '<div class="species-tile" data-equip-key="'+k+'">'
-    + ((eqSubState(k) || (state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id)) ? '<div class="count" style="color:#ffe08a;">'+((state.eqTrait && state.eqTrait[k] && EQ_TRAITS[state.eqTrait[k].id]) ? EQ_TRAITS[state.eqTrait[k].id].ic : '🔷')+'</div>' : '')
+    + ((eqSubState(k) || (state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id)) ? '<div class="count" style="color:#ffe08a;">'+((state.eqTrait && state.eqTrait[k] && EQ_TRAITS[state.eqTrait[k].id]) ? EQ_TRAITS[state.eqTrait[k].id].ic : uiIc('substat'))+'</div>' : '')
     + (canEquipFuse(k) ? '<div class="passive-badge" style="color:#5cd65c; font-weight:900;" title="합성 가능">▲</div>' : '')
     + '<div class="icon av r-'+i.rarity+'">'+i.img+'</div>'
     + '<div class="name">'+(isEqLocked(k)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+i.name+'</div>'
@@ -9886,7 +9886,7 @@ function equipSpeciesTile(k){
 function equipInventoryHtml(){
   const owned = ownedEquipItems();
   const total = owned.length, fusible = [...new Set(owned.map(eqType))].filter(canEquipFuse).length;
-  let h = '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;"><div class="ttl">🎒 내 장비 <span class="sub">('+total+'개)</span></div>'
+  let h = '<div class="card" style="display:flex; align-items:center; justify-content:space-between; gap:6px;"><div class="ttl">'+uiIc('bag')+' 내 장비 <span class="sub">('+total+'개)</span></div>'
     + '<span style="display:flex; gap:6px;"><button class="btn secondary small" id="equipDexBtn" style="width:auto;"><img class="uic" src="assets/ui/ic_dex.webp" alt=""> 도감</button>'+'</span></div>'
     + (owned.length ? '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary small" id="autoEquipBtn" style="flex:1; margin:0;">🔧 추천 장착</button><button class="btn secondary small" id="unequipAllBtn" style="flex:1; margin:0;" '+(unequipAllCount()?'':'disabled')+'>'+uiIc('clear')+' 전체 해제</button></div>' : ''); // (v6.2.1) 전체 해제 — 머리줄에 셋이면 좁은 화면에서 줄바꿈돼서 아래 한 줄로
   h += '<button class="btn secondary" id="goEqFuseTab" style="margin:10px 0 2px;"><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성하러 가기'+(fusible?' <span style="color:#5cd65c;">▲ '+fusible+'종</span>':'')+'</button>';
@@ -9917,7 +9917,7 @@ function showEquipDetailModal(key){
   { const lv = equipEnhLevel(key), mx = equipEnhMax(key), c = equipEnhCost(key), can = lv<mx && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone;
     html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
   { const mx = EQ_SUB_LINES[i.rarity]||0, e = eqSubState(key); // (v298) 장비 부가 능력
-    html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">🔷<b>부가 능력</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
+    html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">'+uiIc('substat')+'<b>부가 능력</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
   if(eqTraitTier(key)>=0){ const t = eqTraitOf(key); // (v328) 장비 고유 효과
     html += '<button class="aw-row eg-row" id="eqTraitOpen" style="margin-top:8px;">'+uiIc('special')+'<b>고유 효과</b><span class="sub">'+(t ? t.d.ic+' <b style="color:#ffe08a;">'+t.d.nm+'</b> · '+t.d.d(t.v) : '아직 없음 — 눌러서 고르기')+'</span><span class="aw-go'+(t?'':' on')+'">'+(t?'바꾸기':'고르기')+' ›</span></button>'; }
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
@@ -10575,6 +10575,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:370, v:'7.1.1', date:'2026-10-08', secs:[
+    { t:'화면', items:[ '가방 · 각인 · 부가 능력 · 광맥 정제 아이콘을 게임 그림으로 바꿈' ]}
+  ]},
   { build:369, v:'7.1.0', date:'2026-10-08', secs:[
     { t:'각인 · 부가 능력 오류 수정', items:[ '게임을 다시 켤 때 「신화」 품질 줄이 사라지던 것 — 이제 그대로 남음', '사라진 줄은 각인(부가 능력) 창에서 원래 능력을 골라 신화로 되살림 (줄 수가 모자란 정령·장비에만 뜸)', '되살린 정령은 잠금이 풀리니 다시 설정', '각인 창 설명 정리 — 같은 능력끼리 합 상한은 6.2.0에 없어짐' ]},
     { t:'우편', items:[ '업데이트 선물은 출시부터 7일 안에 접속해야 받음', '업데이트 선물 · 보상 개편 우편은 받은 날부터 7일 지나면 사라짐 (우편에 남은 기간 표시)' ]},
@@ -10583,7 +10586,7 @@ const PATCH_NOTES = [
     { t:'화면', items:[ '장비 고유 효과 아이콘을 게임 그림으로 바꿈 (목록 · 고르기 창 · 장비 칸)' ]}
   ]},
   { build:368, v:'7.0.0', date:'2026-10-08', secs:[
-    { t:'정령 마을 (새 콘텐츠)', items:[ '하단 「화로」 탭이 「마을」로 — 마을 지도에서 건물을 눌러 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 누르면 바로 거둠 · 「모두 거두기」로 화로 불씨와 광산 수레를 한 번에', '정령 숙소 · 작업장 자리는 준비 중' ]},
+    { t:'정령 마을 (새 콘텐츠)', items:[ '하단 「화로」 탭이 「마을」로 — 마을 지도에서 건물을 눌러 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 누르면 바로 거둠 · 「모두 거두기」로 화로 불씨와 광산 수레를 한 번에' ]},
     { t:'광산', items:[ '맨 위 줄이나 이미 판 칸 옆을 두드려 캠 — 한 번에 곡괭이 기력 1', '흙 · 바위 · 정수 광석 · 강화석 광석 · 별빛 광맥(별빛 조각) · 계단을 찾으면 더 깊은 층으로 내려가고 보상이 커짐', '곡괭이 기력 15분마다 1 회복 · 최대 40', '기력이 가득 차서 넘친 만큼은 정령들이 대신 캐서 수레에 쌓음 — 직접 캐는 양의 40% · 최대 하루치', '5층마다 처음 도달 보상 — 정수 400 · 강화석 40 (5층마다 늘어남) · 10층마다 별빛 조각 20 · 정령 소환권 1 추가', '광산 강화(「강화」 버튼) — 곡괭이: 최대 기력 +4 · 광맥 정제: 캐는 정수·강화석·별빛 조각 +10%', '광산 효과음 추가' ]},
     { t:'화로', items:[ '강화 최대 레벨 30 (생산력 10 → 30 · 용량 6 → 30 · 속도 8 → 30)', '10레벨마다 강화 비용 10배', '용량 레벨마다 불씨 +2 (최대 72개) · 속도 8레벨(12분)부터 레벨마다 0.25분 (최대 6.5분)', '강화는 「강화」 버튼을 눌러 창에서' ]},
     { t:'소환', items:[ '확정권·선택권을 소환 버튼 아래 「확정권 · 선택권」 버튼으로 — 창에서 바로 사용 (정령·장비 소환 둘 다)', '1회 소환·합성 연출이 신화·성좌에서 끊기던 것 줄임', '합성 연출 — 재료 셋이 같은 거리에서 고르게 돌고, 등급이 높아도 도는 빠르기가 같음' ]},
@@ -11432,7 +11435,7 @@ function bagGo(go){
 }
 function showBagModal(){
   const S = bagSections(), all = []; S.forEach(g=>g.L.forEach(x=>all.push(x)));
-  let h = '<h3 style="text-align:center; margin-bottom:2px;">🎒 가방</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">칸을 누르면 설명 · 「쓰러 가기」</div>';
+  let h = '<h3 style="text-align:center; margin-bottom:2px;">'+uiIc('bag')+' 가방</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">칸을 누르면 설명 · 「쓰러 가기」</div>';
   S.forEach(g=>{ h += '<div class="bag-sec">'+g.t+'</div><div class="bag-grid">'+g.L.map(x=>{ const i = all.indexOf(x);
     return '<button class="bag-it'+(x.n>0?'':' zero')+'" data-bag="'+i+'"><span class="bag-ic">'+x.ic+'</span><b>'+fmtBagN(x.n)+'</b><small>'+x.nm+'</small></button>'; }).join('')+'</div>'; });
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal bag-modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
@@ -11632,7 +11635,7 @@ let villageView = 'map';
 const VM_W = 6, VM_H = 8, VM_REGEN_MS = 15*60*1000, VM_CART_MAX = 96, VM_IDLE_RATE = 0.4;
 const VM_UPGRADES = {
   pick:   { maxLv:10, name:'곡괭이', desc:'곡괭이 기력 최대치 +4', icon:uiIc('pick'), e0:400, eLv:400, s0:60, sLv:40 },
-  refine: { maxLv:10, name:'광맥 정제', desc:'캐는 정수·강화석·별빛 조각 +10%', icon:'💎', e0:400, eLv:400, s0:60, sLv:40 }
+  refine: { maxLv:10, name:'광맥 정제', desc:'캐는 정수·강화석·별빛 조각 +10%', icon:uiIc('refine'), e0:400, eLv:400, s0:60, sLv:40 }
 };
 // 칸 종류 t — 0 판 칸 · 1 흙 · 2 바위 · 3 정수 광석 · 4 강화석 광석 · 5 별빛 광맥 · 6 계단 / h 남은 타격 수
 const VM_CELL_NM = { 1:'흙', 2:'바위', 3:'정수 광석', 4:'강화석 광석', 5:'별빛 광맥', 6:'계단' };
@@ -11842,7 +11845,7 @@ document.addEventListener('click', e=>{ const b = e.target.closest && e.target.c
 function vlHelpHtml(k){
   const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
   const ES = '<img class="uic" src="assets/ui/ic_essence.webp" alt="">', ST = '<img class="uic" src="assets/ui/ic_stone.webp" alt="">';
-  if(k==='map') return sec('정령 마을') + li(['건물을 누르면 그 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 말풍선을 누르면 바로 거둠', '「모두 거두기」로 화로 불씨와 광산 수레를 한 번에', '정령 숙소 · 작업장은 준비 중']);
+  if(k==='map') return sec('정령 마을') + li(['건물을 누르면 그 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 말풍선을 누르면 바로 거둠', '「모두 거두기」로 화로 불씨와 광산 수레를 한 번에']);
   if(k==='hearth'){ const l = hearthUpgradeLevel('speed');
     return sec('불씨') + li(['시간이 지나면 불씨가 하나씩 쌓임 (게임을 꺼 둬도 쌓임)', '지금 '+(Math.round(hearthMinAt(l)*10)/10)+'분마다 1개 · 최대 '+HEARTH_MAX()+'개 — 가득 차면 더 안 쌓임', '불씨 1개 = '+ES+HEARTH_ESSENCE_PER_SPARK()+' + '+ST+HEARTH_STONE_PER_SPARK()])
       + sec('강화 (최대 '+HEARTH_EXT_LV+'레벨)') + li(['생산력: 불씨당 획득량 레벨마다 +15%', '용량: 최대 불씨 레벨마다 +2', '속도: 불씨 쌓이는 시간 단축 (8레벨까지 1분씩 · 그 뒤 15초씩)', '10레벨마다 강화 비용 10배']); }
@@ -15025,7 +15028,7 @@ function showManageModal(key){
       html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 조각 '+ASTRAL_MEM : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span></button>'; } }
   { // (v298) 각인 · 초월
     const e = engrState(key), ok = awakenLevel(key)>=AWAKEN_MAX, tl = transLevel(key);
-    html += '<button class="aw-row eg-row" id="engrOpenBtn">✨<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
+    html += '<button class="aw-row eg-row" id="engrOpenBtn">'+uiIc('engrave')+'<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
     if(transLevel(key)>0 && !maxed) html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 '+tl+'단계</b><span class="sub">'+(ok ? (tl ? '공격·체력 +'+Math.round(tl*TRANS_STEP*100)+'%' : '각성 5단계 달성 · 도전 가능') : '각성 5단계 뒤에 열림')+'</span><span class="aw-go'+(ok && tl<TRANS_MAX && copyHave(key, transCost(key)) ?' on':'')+'">'+(tl>=TRANS_MAX?'최대':'자세히')+' ›</span></button>'; } // 예전에 강화를 덜 하고 초월한 정령만 따로 줄
   { const lk = isSpLocked(key); // (v246) 합성·잠금·분해를 한 줄로 — 잠그면 합성·분해 버튼은 꺼짐
     html += '<div class="mg-acts">'
@@ -15996,7 +15999,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 369, APP_VERSION = '7.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 370, APP_VERSION = '7.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
