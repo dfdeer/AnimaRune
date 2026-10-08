@@ -949,6 +949,10 @@
   .fz-dmid{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; padding:0; border:none; background:none; color:var(--text); line-height:1.1;} .fz-dmid b{font-size:17px; color:#ffd557;} .fz-dmid small{font-size:10px; color:var(--sub);}
   .fz-dg{display:flex; flex-direction:column; align-items:center; padding:3px 5px; border-radius:10px; border:1.5px dashed #9fd8ff66; background:#ffffff0a; color:var(--sub);} .fz-dg .uic{width:22px; height:22px; margin:0;} .fz-dg small{font-size:9px;} .fz-dg.on{border-style:solid; border-color:#9fd8ff; background:#3aa0ff26; color:#cfeaff;} .fz-dg:disabled{opacity:.45;}
   .fz-dgo{width:auto !important; margin:0 !important; padding:10px 12px !important; font-size:14px;} .fz-dx{flex:0 0 auto; width:40px; height:40px; border:1px solid #ffffff2a; border-radius:12px; background:#ffffff12; color:var(--text); font-size:19px; font-weight:800; padding:0;} /* (v5.2.0) 비우기(✕) 크게 */
+ .mh-btn{display:inline-flex; align-items:center; justify-content:center; width:22px !important; height:22px; min-width:22px; padding:0 !important; margin:0 0 0 6px !important; border-radius:50%; border:1px solid #ffffff40; background:#ffffff14; color:var(--sub); font-size:13px; line-height:1; vertical-align:middle; flex:none; box-shadow:none;} .ex-mode .mh-btn{flex:none; width:30px !important; min-width:30px; height:auto; border-radius:11px; margin:0 !important; padding:0 !important;} /* (v7.1.0) 콘텐츠 설명 ⓘ */
+ .vl-hl{margin:0; padding-left:18px; line-height:1.7; word-break:keep-all; font-size:12px; color:var(--sub); text-align:left;} .vl-sub .vl-help{width:auto; margin-right:6px;} .vl-title .vl-help{margin-left:auto; width:auto;} /* (v7.0.1) 마을 설명 */
+ .sub-fix{margin-top:10px; padding:10px; border-radius:12px; border:1.5px solid #ff577788; background:#ff57771a; text-align:center;} .sub-fix>b{display:block; color:#ff8fa3;} .sub-fix>small{display:block; color:var(--sub); font-size:11px; line-height:1.5; margin:2px 0 8px;} .sub-fix-g{display:grid; grid-template-columns:1fr 1fr; gap:6px;} .sub-fix-g button{padding:7px 4px; border-radius:10px; border:1.5px solid #ffffff22; background:#ffffff0a; color:var(--text); font-size:12px; font-weight:700;} .sub-fix-g button.on{border-color:var(--qc); background:#ff577733; color:#fff;} /* (v7.0.1) 신화 줄 복구 */
+ .fz-gorow{display:flex; gap:8px; justify-content:center; align-items:stretch; margin-top:10px;} .fz-gorow .fz-dgo{flex:0 1 220px;} /* (v7.0.1) 합성판 안 합성 버튼 */
  .fz-dock{transition:opacity .18s ease, transform .18s ease;} .fz-dock.off{opacity:0; transform:translateY(14px); pointer-events:none;} .fz-dx:disabled{opacity:.35;} /* (v6.2.1) 위 합성판이 보이는 동안 숨김 */
  .fz-dock{margin-bottom:env(safe-area-inset-bottom, 0px);} /* (v5.2.0) 아이폰: 끝까지 내렸을 때 바가 마지막 줄을 덮던 것 — 붙는 높이만큼 아래 여백 */
   .fz-log{margin:10px 0 2px; padding:6px 10px; border-radius:12px; background:#ffffff08; border:1px solid #ffffff14;} .fz-log summary{cursor:pointer; font-weight:800; font-size:13px; padding:4px 0;} .fz-log summary .sub{font-weight:600; font-size:11px;}
@@ -2173,6 +2177,16 @@ function subLineHtml(l, lock, idx, canLock){ const q = SUB_Q[l.q];
 function engrState(k){ const e = state.engrave && state.engrave[k]; return e && Array.isArray(e.lines) ? e : null; }
 function eqSubState(k){ const e = state.eqSub && state.eqSub[k]; return e && Array.isArray(e.lines) ? e : null; }
 function subLinesMax(kind, k){ return kind==='eq' ? (EQ_SUB_LINES[equipInfo(k).rarity]||0) : ENGR_LINES; }
+// (v7.0.1) v6.2.0~7.0.0 저장 검사가 신화 품질 줄을 지워 줄 수가 모자란 각인·부가 능력 — 원래 능력을 골라 신화로 되살림
+// 정해진 줄 수보다 적은 경우는 이 오류 말고는 생기지 않음 (처음 각인은 늘 꽉 채우고, 줄 수 규칙은 바뀐 적 없음)
+function subMissing(kind, k){ const e = kind==='eq' ? eqSubState(k) : engrState(k); if(!e || !e.lines.length) return 0; return Math.max(0, subLinesMax(kind, k) - e.lines.length); }
+function subFixList(){ const out = [];
+  Object.keys(state.engrave||{}).forEach(k=>{ if(SPIRITS[k] && subMissing('sp', k)) out.push(SPIRITS[k].name); });
+  Object.keys(state.eqSub||{}).forEach(k=>{ try{ if(subMissing('eq', k)) out.push(equipInfo(k).name); }catch(e){} });
+  return out; }
+let subFixNoticed = false;
+function subFixNotice(){ if(subFixNoticed) return; const l = subFixList(); if(!l.length) return; subFixNoticed = true;
+  toast('사라진 신화 각인 복구 가능 — '+l.slice(0,3).join(' · ')+(l.length>3?' 외 '+(l.length-3):'')+' · 각인 창에서 능력 고르기', 6000); }
 function subRerollCost(e){ const locked = e ? (e.lock||[]).filter(Boolean).length : 0; return 1 + 2*locked; }
 // 초월
 const TRANS_MAX = 10, TRANS_STEP = 0.05, TRANS_RATE = [1, .9, .8, .7, .6, .5, .4, .35, .3, .25], TRANS_PITY = 0.10;
@@ -2221,17 +2235,17 @@ const TRANS10 = {
 // ===================== (v328) 장비 고유 효과 — 레전더리·신화 장비마다 하나. 후보 3개 중에서 골라 붙임 · 각인석으로 후보 다시 뽑기
 // 값은 [레전더리, 신화] · 효과는 초월 특전과 같은 전투 처리(sub)를 씀 · 부가 능력 상한 밖에서 더해짐 (장비 2개면 2개)
 const EQ_TRAITS = {
-  vanguard:{ ic:'⚔️', nm:'선제',   sub:'emp',   v:[.15,.25], d:v=>'전투 첫 행동 피해 +'+Math.round(v*100)+'%' },
-  aegis:   { ic:'🛡️', nm:'수호막', sub:'sh',    v:[.08,.12], d:v=>'전투 시작 보호막 (최대체력 '+Math.round(v*100)+'%, 2라운드)' },
-  ember:   { ic:'🔥', nm:'불씨',   sub:'burn',  v:[1,1],     d:()=>'공격이 맞으면 화상 1중첩' },
-  venom:   { ic:'🧪', nm:'독침',   sub:'poi',   v:[.02,.03], d:v=>'공격이 맞으면 독 (3라운드, 최대체력 '+Math.round(v*100)+'%)' },
-  frost:   { ic:'❄️', nm:'서리',   sub:'frz',   v:[.06,.10], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 빙결' },
-  hex:     { ic:'🌑', nm:'저주',   sub:'curse', v:[.12,.18], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 저주 (받는 피해 +15%, 2라운드)' },
-  spring:  { ic:'💧', nm:'샘',     sub:'rheal', v:[.02,.03], d:v=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+Math.round(v*100)+'% 회복' },
-  swift:   { ic:'💨', nm:'질풍',   sub:'spd',   v:[3,5],     d:v=>'속도 +'+v },
-  keen:    { ic:'🎯', nm:'예리함', sub:'crit',  v:[.05,.08], d:v=>'치명타 확률 +'+Math.round(v*100)+'%' },
-  leech:   { ic:'🩸', nm:'흡혈',   sub:'life',  v:[.04,.06], d:v=>'흡혈 +'+Math.round(v*100)+'%' },
-  bulwark: { ic:'🪨', nm:'철벽',   sub:'dr',    v:[.04,.06], d:v=>'받는 피해 −'+Math.round(v*100)+'%' }
+  vanguard:{ ic:uiIc('atk'), nm:'선제',   sub:'emp',   v:[.15,.25], d:v=>'전투 첫 행동 피해 +'+Math.round(v*100)+'%' },
+  aegis:   { ic:uiIc('shield'), nm:'수호막', sub:'sh',    v:[.08,.12], d:v=>'전투 시작 보호막 (최대체력 '+Math.round(v*100)+'%, 2라운드)' },
+  ember:   { ic:stIc('burn'), nm:'불씨',   sub:'burn',  v:[1,1],     d:()=>'공격이 맞으면 화상 1중첩' },
+  venom:   { ic:stIc('poison'), nm:'독침',   sub:'poi',   v:[.02,.03], d:v=>'공격이 맞으면 독 (3라운드, 최대체력 '+Math.round(v*100)+'%)' },
+  frost:   { ic:stIc('freeze'), nm:'서리',   sub:'frz',   v:[.06,.10], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 빙결' },
+  hex:     { ic:stIc('curse'), nm:'저주',   sub:'curse', v:[.12,.18], d:v=>'공격이 맞으면 '+Math.round(v*100)+'% 확률로 저주 (받는 피해 +15%, 2라운드)' },
+  spring:  { ic:stIc('regen'), nm:'샘',     sub:'rheal', v:[.02,.03], d:v=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+Math.round(v*100)+'% 회복' },
+  swift:   { ic:stIc('haste'), nm:'질풍',   sub:'spd',   v:[3,5],     d:v=>'속도 +'+v },
+  keen:    { ic:uiIc('target'), nm:'예리함', sub:'crit',  v:[.05,.08], d:v=>'치명타 확률 +'+Math.round(v*100)+'%' },
+  leech:   { ic:'<img class="uic" src="assets/ui/gm_dark_thirst.webp" alt="" draggable="false">', nm:'흡혈',   sub:'life',  v:[.04,.06], d:v=>'흡혈 +'+Math.round(v*100)+'%' },
+  bulwark: { ic:'<img class="uic" src="assets/ui/gm_ward_stone.webp" alt="" draggable="false">', nm:'철벽',   sub:'dr',    v:[.04,.06], d:v=>'받는 피해 −'+Math.round(v*100)+'%' }
 };
 const EQ_TRAIT_RARITY = { legendary:0, mythic:1 }, EQ_TRAIT_OFFERS = 3, EQ_TRAIT_REROLL = 2;
 function eqTraitTier(key){ const r = equipInfo(key).rarity; return r in EQ_TRAIT_RARITY ? EQ_TRAIT_RARITY[r] : -1; }
@@ -2270,13 +2284,20 @@ function subRoll(kind, k){
   state.lifetimeEngraves = (state.lifetimeEngraves||0) + 1;
   save(); sfx('enhance');
 }
+let subFixPick = null;
 function showSubModal(kind, k, back){
   const isEq = kind==='eq', max = subLinesMax(kind, k), e = isEq ? eqSubState(k) : engrState(k), have = ticketCount('engr');
   const nm = isEq ? equipInfo(k).name : SPIRITS[k].name, art = isEq ? equipInfo(k).img : spArt(SPIRITS[k]);
   let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?'🔷 부가 능력':'✨ 각인')+' · '+nm+'</h3>'
-    + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 부가 능력 '+ENGR_LINES+'줄')+' · 품질 일반·희귀·영웅·전설<br>같은 능력끼리 합은 상한까지만</div></div>';
+    + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 부가 능력 '+ENGR_LINES+'줄')+'</div></div>'; // (v7.0.1) 품질·상한 문구 뺌 (상한은 v6.2.0에 없앰)
   if(!max) h += '<div class="sub" style="text-align:center; padding:16px 0;">일반 장비는 부가 능력 없음</div>';
   else if(!e || !e.lines.length) h += '<div class="sub" style="text-align:center; padding:12px 0;">아직 '+(isEq?'감정':'각인')+' 안 함</div><button class="btn gold" id="subGo">'+(isEq?'🔍 감정하기':'✨ 각인하기')+' (무료)</button>';
+  else if(subMissing(kind, k)){ const miss = subMissing(kind, k), ks = Object.keys(SUB_STATS), q = SUB_Q.length-1;
+    h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, false, i, false)).join('')+'</div>';
+    h += '<div class="sub-fix"><b>사라진 신화 줄 '+miss+'개 복구</b><small>오류로 지워진 신화 줄 — 원래 능력을 골라 되살리기 · 고른 뒤 바꿀 수 없음</small>'
+      + '<div class="sub-fix-g">'+ks.map(st=>'<button data-sub-fix="'+st+'" class="'+(subFixPick===st?'on':'')+'" style="--qc:'+SUB_Q[q].c+';">'+subTxt({s:st, q})+'</button>').join('')+'</div>'
+      + '<button class="btn gold" id="subFixGo" style="margin-top:8px;" '+(subFixPick?'':'disabled')+'>'+(subFixPick ? subTxt({s:subFixPick, q})+' 되살리기' : '능력 고르기')+'</button></div>';
+  }
   else {
     const locked = e.lock.filter(Boolean).length, canLock = max > 1, cost = subRerollCost(e);
     h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, e.lock[i], i, canLock)).join('')+'</div>';
@@ -2290,6 +2311,11 @@ function showSubModal(kind, k, back){
   bindModalClose(back);
   const re = ()=>showSubModal(kind, k, back);
   { const od = document.getElementById('subOdds'); if(od) od.addEventListener('click', showSubOdds); }
+  document.querySelectorAll('[data-sub-fix]').forEach(b=>b.addEventListener('click', ()=>{ subFixPick = b.dataset.subFix; re(); }));
+  { const fx = document.getElementById('subFixGo'); if(fx) fx.addEventListener('click', ()=>{ const e2 = isEq ? eqSubState(k) : engrState(k), st = subFixPick;
+      if(!e2 || !SUB_STATS[st] || !subMissing(kind, k)) return;
+      e2.lines.push({ s:st, q:SUB_Q.length-1 }); e2.lock = e2.lines.map(()=>false); // 지워질 때 잠금 자리가 밀렸으니 잠금은 새로
+      subFixPick = null; save(); sfx('enhance'); toast('신화 줄 복구 — '+subTxt({s:st, q:SUB_Q.length-1})+(subMissing(kind, k)?'':' · 잠금은 다시 설정')); render(); re(); }); }
   document.querySelectorAll('[data-sub-lock]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.subLock, e2 = isEq ? eqSubState(k) : engrState(k); if(!e2) return;
     if(!e2.lock[i] && e2.lock.filter(Boolean).length >= Math.min(ENGR_LOCK_MAX, max-1)){ toast('더 잠글 수 없음'); return; } e2.lock[i] = !e2.lock[i]; save(); re(); }));
   { const sk = document.getElementById('subSkip'); if(sk) sk.addEventListener('change', ()=>{ state.settings.subNoAsk = sk.checked; save(); }); }
@@ -2316,7 +2342,7 @@ function showEqTraitModal(key, back){
   state.eqTrait = state.eqTrait || {}; let t = state.eqTrait[key];
   if(!t){ t = state.eqTrait[key] = { id:null, offers: eqTraitRollOffers(null) }; save(); }
   const cur = eqTraitOf(key), have = ticketCount('engr');
-  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+i.img+'</div><h3 style="margin:4px 0;">✴️ 고유 효과 · '+i.name+'</h3>'
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+i.img+'</div><h3 style="margin:4px 0;">'+uiIc('special')+' 고유 효과 · '+i.name+'</h3>'
     + '<div class="sub" style="font-size:11px; line-height:1.5;">레전더리·신화 장비마다 하나 · 끼운 정령에게 붙음 (신화가 더 셈)<br>후보 '+EQ_TRAIT_OFFERS+'개 중에서 골라 붙이고, 마음에 안 들면 후보를 다시 뽑음</div></div>';
   h += '<div class="et-cur">'+(cur ? '<span>지금</span><b>'+cur.d.ic+' '+cur.d.nm+'</b><small>'+cur.d.d(cur.v)+'</small>' : '<span>지금</span><b class="sub">없음</b>')+'</div>';
   h += '<div class="et-offers">'+(t.offers||[]).filter(id=>EQ_TRAITS[id]).map(id=>{ const d = EQ_TRAITS[id]; return '<button class="et-off'+(cur && cur.id===id?' on':'')+'" data-et-pick="'+id+'"><b>'+d.ic+' '+d.nm+'</b><small>'+eqTraitTxt(key, id)+'</small><i>'+(cur && cur.id===id ? '붙어 있음' : '이걸로 고르기')+'</i></button>'; }).join('')+'</div>';
@@ -2329,7 +2355,7 @@ function showEqTraitModal(key, back){
   document.querySelectorAll('[data-et-pick]').forEach(b=>b.addEventListener('click', ()=>{ const id = b.dataset.etPick; if(!EQ_TRAITS[id]) return; state.eqTrait[key].id = id; save(); sfx('enhance'); toast('✴️ '+i.name+' — '+EQ_TRAITS[id].nm); render(); re(); }));
   document.getElementById('etReroll').addEventListener('click', ()=>{ if(ticketCount('engr') < EQ_TRAIT_REROLL){ toast('각인석 부족'); return; }
     spendAsk('고유 효과 후보 다시 뽑기', {tk:'engr', n:EQ_TRAIT_REROLL}, ()=>{ if(ticketCount('engr') < EQ_TRAIT_REROLL) return; state.tickets.engr -= EQ_TRAIT_REROLL; state.eqTrait[key].offers = eqTraitRollOffers(state.eqTrait[key].id); save(); sfx('enhance'); re(); }); });
-  document.getElementById('etList').addEventListener('click', ()=>openInfoOverlay('✴️ 장비 고유 효과 목록', '<div class="sub so-d" style="margin-bottom:6px;">후보는 '+Object.keys(EQ_TRAITS).length+'가지 중 무작위 '+EQ_TRAIT_OFFERS+'개 (지금 붙은 것은 빼고) · 값은 레전더리 / 신화</div><table class="so-t"><tr><th>효과</th><th>레전더리</th><th>신화</th></tr>'+Object.keys(EQ_TRAITS).map(id=>{ const d = EQ_TRAITS[id]; return '<tr><td>'+d.ic+' '+d.nm+'</td><td>'+d.d(d.v[0])+'</td><td>'+d.d(d.v[1])+'</td></tr>'; }).join('')+'</table>'));
+  document.getElementById('etList').addEventListener('click', ()=>openInfoOverlay(uiIc('special')+' 장비 고유 효과 목록', '<div class="sub so-d" style="margin-bottom:6px;">후보는 '+Object.keys(EQ_TRAITS).length+'가지 중 무작위 '+EQ_TRAIT_OFFERS+'개 (지금 붙은 것은 빼고) · 값은 레전더리 / 신화</div><table class="so-t"><tr><th>효과</th><th>레전더리</th><th>신화</th></tr>'+Object.keys(EQ_TRAITS).map(id=>{ const d = EQ_TRAITS[id]; return '<tr><td>'+d.ic+' '+d.nm+'</td><td>'+d.d(d.v[0])+'</td><td>'+d.d(d.v[1])+'</td></tr>'; }).join('')+'</table>'));
   const bk = document.getElementById('etBack'); if(bk) bk.addEventListener('click', back);
 }
 // ---- 초월 창
@@ -4058,7 +4084,7 @@ function duelScrollWrap(html){ const i = html.indexOf(TOP_MARK); if(i<0) return 
 function renderDuelTab(){ return duelScrollWrap(renderDuelTabInner()); }
 function renderDuelTabInner(){
   const d = myDuelDeck(), cp = d.reduce((a,k)=> a + ((k && SPIRITS[k] && ownedCount(k)>0) ? spiritCP(k) : 0), 0);
-  let h = '<div class="du-hero"><div class="du-hero-ic">'+uiIc('duel')+'</div><div><div class="fr-title" style="margin:0;">결투</div><div class="sub">친구와 실시간 1:1 대결 · 보상 없이 실력 겨루기</div></div></div>' + TOP_MARK + '<div class="fr">';
+  let h = '<div class="du-hero"><div class="du-hero-ic">'+uiIc('duel')+'</div><div><div class="fr-title" style="margin:0;">결투<button class="mh-btn" data-mh="duel" aria-label="설명">ⓘ</button></div><div class="sub">친구와 실시간 1:1 대결 · 보상 없이 실력 겨루기</div></div></div>' + TOP_MARK + '<div class="fr">';
   h += '<div class="fr-card"><div class="du-head"><b><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 내 결투 덱</b><span class="du-cp"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+cp.toLocaleString()+'</span></div>'
     + '<div class="sub">칸을 눌러 정령 교체 · 결투는 항상 이 덱으로</div>'
     + '<div class="du-row"><span class="du-lbl">전열</span>'+[0,1,2].map(i=>duelSlotHtml(d,i)).join('')+'</div>'
@@ -7150,7 +7176,7 @@ function mailClean(m){
 function mailList(){
   const now = serverNow(), out = [];
   [['a', mailNet.all], ['u', mailNet.mine]].forEach(([p, src])=> Object.keys(src||{}).forEach(id=>{ const m = mailClean(src[id]); if(!m || (m.exp && m.exp < now) || (state.mailHidden && state.mailHidden[p+':'+id])) return; /* (v296) 지운 우편은 숨김 */ out.push(Object.assign(m, { id: p+':'+id, raw: id, scope: p, claimed: !!((state.mailClaimed && state.mailClaimed[p+':'+id]) || (p==='u' && m.c)) /* (v296) 개인 우편은 서버의 받은 표시(c)도 봄 */ })); }));
-  (state.sysMail||[]).forEach(x=>{ const m = mailClean(x); if(!m || (state.mailHidden && state.mailHidden['s:'+x.id])) return; out.push(Object.assign(m, { id:'s:'+x.id, raw:x.id, scope:'s', claimed: !!x.got })); }); // (v313) 게임이 직접 넣는 우편 — 받은 표시는 우편 안에(got)
+  (state.sysMail||[]).forEach(x=>{ const m = mailClean(x); if(!m || (!x.got && m.exp && m.exp < now) || (state.mailHidden && state.mailHidden['s:'+x.id])) return; /* (v7.0.1) 기간 지난 안 받은 우편은 숨김 */ out.push(Object.assign(m, { id:'s:'+x.id, raw:x.id, scope:'s', claimed: !!x.got })); }); // (v313) 게임이 직접 넣는 우편 — 받은 표시는 우편 안에(got)
   return out.sort((a,b)=> (a.claimed-b.claimed) || (b.t-a.t));
 }
 function mailUnclaimed(){ return mailList().filter(m=>!m.claimed); }
@@ -8054,7 +8080,7 @@ document.addEventListener('click', (e)=>{
   const t = e.target.closest('button');
   if(!t || t.disabled) return;
   if(SFX_CLICK_EXCLUDE_IDS.includes(t.id)) return;
-  if(t.hasAttribute('data-claim-reward') || t.id==='fzGo') return;
+  if(t.hasAttribute('data-claim-reward') || t.id==='fzGo' || t.hasAttribute('data-fz-go')) return;
   sfx(t.closest('nav') ? 'navClick' : 'click');
 });
 
@@ -8899,7 +8925,8 @@ function renderFuseTab(){
       + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+' <span style="opacity:.8;">(재료 강화 합 +'+info.inheritFrom+' ÷ 3)</span></div>'
         + (fuseMode==='equip' ? '<div class="fz-warn">'+uiIc('warn')+' 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">'+uiIc('warn')+' 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
       + '</div>'
-      + (info.rate<100 && fuseGuardEligible(info.nr) ? '<div class="sub fz-small" style="margin-top:6px;">'+uiIc('guard')+' 아래 합성 바의 방패를 켜면 실패해도 재료 유지 · 보유 '+ticketCount('fuseGuard')+'장</div>' : '');
+      + (info.rate<100 && fuseGuardEligible(info.nr) ? '<div class="sub fz-small" style="margin-top:6px;">'+uiIc('guard')+' 방패를 켜면 실패해도 재료 유지 · 보유 '+ticketCount('fuseGuard')+'장</div>' : '')
+      + fuseGoRowHtml(info); // (v7.0.1) 합성판이 보이는 동안은 아래 바가 숨으니 합성판 안에도 합성 버튼
   }
   h += '</div>';
   // 재료 고르기
@@ -8909,8 +8936,15 @@ function renderFuseTab(){
     if(!isEquipUnlocked()) return h + '<div class="card sub" style="text-align:center;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div>';
     keys = ownedEquipItems().filter(k=>equipInfo(k).rarity!=='mythic').sort((a,b)=>{ const x = equipInfo(a), y = equipInfo(b); return RARITY_ORDER.indexOf(y.rarity)-RARITY_ORDER.indexOf(x.rarity) || EQUIP_SLOTS.indexOf(x.slot)-EQUIP_SLOTS.indexOf(y.slot) || ELEMENTS.indexOf(x.element)-ELEMENTS.indexOf(y.element) || equipEnhLevel(b)-equipEnhLevel(a); }); // (v5.2.0) 같은 등급 안에서 부위·속성끼리 붙게
   }else keys = Object.keys(SPIRITS).filter(k=>ownedCount(k)>0 && SPIRITS[k].rarity!=='mythic').sort((a,b)=>RARITY_ORDER.indexOf(SPIRITS[b].rarity)-RARITY_ORDER.indexOf(SPIRITS[a].rarity) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
-  h += fuseLogHtml();
-  h += '<h2>재료 고르기</h2>';
+  { const eq = fuseMode==='equip', ops = eq ? ['rarity','element','slot'] : ['rarity','element','count'], fs = ops.includes(state.fuseSort) ? state.fuseSort : 'rarity'; // (v7.0.1) 재료 정렬 — 기본(등급) 순서 위에 안정 정렬
+    const elOf = k=> ELEMENTS.indexOf(eq ? equipInfo(k).element : SPIRITS[k].element);
+    if(fs==='element') keys.sort((a,b)=> elOf(a)-elOf(b));
+    else if(fs==='slot') keys.sort((a,b)=> EQUIP_SLOTS.indexOf(equipInfo(a).slot)-EQUIP_SLOTS.indexOf(equipInfo(b).slot));
+    else if(fs==='count') keys.sort((a,b)=> ownedCount(b)-ownedCount(a));
+    h += fuseLogHtml();
+    h += '<h2>재료 고르기</h2>';
+    const lb = { rarity:'<img class="uic" src="assets/ui/ic_star.webp" alt=""> 등급', element:ELEMENT_INFO.fire.icon+' 속성', slot:'<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 부위', count:'<img class="uic" src="assets/ui/ic_box.webp" alt=""> 개수' };
+    if(keys.length) h += '<div class="pk-sort">'+ops.map(k=>'<button data-fz-sort="'+k+'" class="'+(fs===k?'on':'')+'">'+lb[k]+'</button>').join('')+'</div>'; }
   if(!keys.length) return h + '<div class="card sub">'+(fuseMode==='equip'?'합성할 수 있는 장비 없음':'합성할 수 있는 정령 없음 — 신화는 합성 불가')+'</div>';
   h += '<div class="grid5 fz-grid">'+keys.map(k=>{
     const r = fuseMode==='equip' ? equipInfo(k).rarity : SPIRITS[k].rarity, locked = fuseMode==='equip' ? isEqLocked(k) : isSpLocked(k), av = fuseAvail(k);
@@ -8923,6 +8957,11 @@ function renderFuseTab(){
 // (v304) 합성 바 — 재료를 넣으면 화면 아래에 붙어 따라다님: 넣은 3칸(눌러 빼기) · 성공률 · 보호권 · 합성 · 비우기
 // 재료를 고르러 내려가도 위로 올라갈 필요 없이 여기서 바로 합성 · 자세한 결과 확률은 위 합성판에
 // (v6.2.1) 바는 늘 떠 있음(비어 있어도) — 재료를 넣는 순간 바가 생겨 아래쪽 재료를 가리던 것 · 위 합성판이 화면에 보이는 동안은 숨김(fzDockSync, 같은 칸이 두 번 보이지 않게)
+function fuseGoRowHtml(info){
+  const g = info.rate<100 && fuseGuardEligible(info.nr), gn = ticketCount('fuseGuard'), gon = fuseGuardOn && gn>0;
+  return '<div class="fz-gorow">'+(g ? '<button class="fz-dg'+(gon?' on':'')+'" data-fz-guard '+(gn>0?'':'disabled')+' title="합성 보호권">'+uiIc('guard')+'<small>'+(gon?'켜짐':gn+'장')+'</small></button>' : '')
+    + '<button class="btn gold fz-dgo" data-fz-go><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성</button></div>';
+}
 function fuseDockHtml(info){
   const n = fuseSlots.filter(Boolean).length, eq = fuseMode==='equip';
   const mini = fuseSlots.map((k,i)=>'<button class="fz-ds'+(k?' on':'')+'" data-fz-rm="'+i+'">'+(k ? '<span class="av r-'+(eq?equipInfo(k).rarity:SPIRITS[k].rarity)+'">'+fuseArtOf(k)+'</span>' : '＋')+'</button>').join('');
@@ -9427,7 +9466,7 @@ function renderPassTab(){
   const ps = passState(), lv = passLevelOf(ps.xp), inLv = lv>=PASS_MAX_LV ? PASS_LV_XP : ps.xp - lv*PASS_LV_XP, left = passSeasonEnd() - serverNow();
   const dLeft = Math.max(0, Math.ceil(left/86400000)), cl = passClaimable().length;
   // (v317) 위쪽을 한 칸으로 줄임 — 레벨 · 시즌 · 경험치 · 프리미엄 버튼을 한 줄에 (자세한 설명은 해금 창에서)
-  let h = '<div class="ps-head"><div class="ps-lv"><small>패스</small><b>'+lv+'</b></div><div class="ps-mid"><div class="ps-ttl"><b>🎫 시즌 '+ps.season+'</b><small>'+dLeft+'일 남음</small></div><div class="ps-bar"><span style="width:'+(inLv/PASS_LV_XP*100)+'%;"></span></div>'
+  let h = '<div class="ps-head"><div class="ps-lv"><small>패스</small><b>'+lv+'</b></div><div class="ps-mid"><div class="ps-ttl"><b>🎫 시즌 '+ps.season+'<button class="mh-btn" data-mh="pass" aria-label="설명">ⓘ</button></b><small>'+dLeft+'일 남음</small></div><div class="ps-bar"><span style="width:'+(inLv/PASS_LV_XP*100)+'%;"></span></div>'
     + '<div class="ps-sub"><span>'+(lv>=PASS_MAX_LV ? '최대 레벨' : inLv+' / '+PASS_LV_XP+' xp')+'</span><span>이번 주 '+(ps.week.xp||0)+' / '+PASS_WEEK_CAP+'</span></div></div>'
     + (ps.prem ? '<div class="ps-prem on">✨<small>프리미엄</small></div>' : '<button class="btn gold ps-buy" id="passBuy">✨<small>프리미엄<br>해금</small></button>')+'</div>';
   const msReady = passMissionsReady();
@@ -9880,7 +9919,7 @@ function showEquipDetailModal(key){
   { const mx = EQ_SUB_LINES[i.rarity]||0, e = eqSubState(key); // (v298) 장비 부가 능력
     html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">🔷<b>부가 능력</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
   if(eqTraitTier(key)>=0){ const t = eqTraitOf(key); // (v328) 장비 고유 효과
-    html += '<button class="aw-row eg-row" id="eqTraitOpen" style="margin-top:8px;">✴️<b>고유 효과</b><span class="sub">'+(t ? t.d.ic+' <b style="color:#ffe08a;">'+t.d.nm+'</b> · '+t.d.d(t.v) : '아직 없음 — 눌러서 고르기')+'</span><span class="aw-go'+(t?'':' on')+'">'+(t?'바꾸기':'고르기')+' ›</span></button>'; }
+    html += '<button class="aw-row eg-row" id="eqTraitOpen" style="margin-top:8px;">'+uiIc('special')+'<b>고유 효과</b><span class="sub">'+(t ? t.d.ic+' <b style="color:#ffe08a;">'+t.d.nm+'</b> · '+t.d.d(t.v) : '아직 없음 — 눌러서 고르기')+'</span><span class="aw-go'+(t?'':' on')+'">'+(t?'바꾸기':'고르기')+' ›</span></button>'; }
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?uiIc('unlock')+' 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
@@ -10536,6 +10575,13 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:369, v:'7.1.0', date:'2026-10-08', secs:[
+    { t:'각인 · 부가 능력 오류 수정', items:[ '게임을 다시 켤 때 「신화」 품질 줄이 사라지던 것 — 이제 그대로 남음', '사라진 줄은 각인(부가 능력) 창에서 원래 능력을 골라 신화로 되살림 (줄 수가 모자란 정령·장비에만 뜸)', '되살린 정령은 잠금이 풀리니 다시 설정', '각인 창 설명 정리 — 같은 능력끼리 합 상한은 6.2.0에 없어짐' ]},
+    { t:'우편', items:[ '업데이트 선물은 출시부터 7일 안에 접속해야 받음', '업데이트 선물 · 보상 개편 우편은 받은 날부터 7일 지나면 사라짐 (우편에 남은 기간 표시)' ]},
+    { t:'설명 추가', items:[ 'ⓘ 설명 버튼 — 정령 마을 · 화로 · 광산 · 별빛 균열 · 요일 던전 · 시련의 전당 · 정령 파견 · 결투 · 시즌 패스 · 하드 모드', '정령 파견 안내 문구를 지금 규칙으로 (보낸 정령도 그대로 씀)', '광산 수레 설명 글 줄 간격 넓힘' ]},
+    { t:'합성', items:[ '합성판이 화면에 보이면 합성 버튼이 사라지던 것 — 합성판 안에도 합성 버튼', '재료 고르기에 정렬 버튼 (정령: 등급 · 속성 · 개수 / 장비: 등급 · 속성 · 부위)' ]},
+    { t:'화면', items:[ '장비 고유 효과 아이콘을 게임 그림으로 바꿈 (목록 · 고르기 창 · 장비 칸)' ]}
+  ]},
   { build:368, v:'7.0.0', date:'2026-10-08', secs:[
     { t:'정령 마을 (새 콘텐츠)', items:[ '하단 「화로」 탭이 「마을」로 — 마을 지도에서 건물을 눌러 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 누르면 바로 거둠 · 「모두 거두기」로 화로 불씨와 광산 수레를 한 번에', '정령 숙소 · 작업장 자리는 준비 중' ]},
     { t:'광산', items:[ '맨 위 줄이나 이미 판 칸 옆을 두드려 캠 — 한 번에 곡괭이 기력 1', '흙 · 바위 · 정수 광석 · 강화석 광석 · 별빛 광맥(별빛 조각) · 계단을 찾으면 더 깊은 층으로 내려가고 보상이 커짐', '곡괭이 기력 15분마다 1 회복 · 최대 40', '기력이 가득 차서 넘친 만큼은 정령들이 대신 캐서 수레에 쌓음 — 직접 캐는 양의 40% · 최대 하루치', '5층마다 처음 도달 보상 — 정수 400 · 강화석 40 (5층마다 늘어남) · 10층마다 별빛 조각 20 · 정령 소환권 1 추가', '광산 강화(「강화」 버튼) — 곡괭이: 최대 기력 +4 · 광맥 정제: 캐는 정수·강화석·별빛 조각 +10%', '광산 효과음 추가' ]},
@@ -11715,7 +11761,7 @@ function vmMineHtml(){
   });
   h += '</div>';
   const cr = vmCartRw(m);
-  h += '<div class="vm-cart"><div><b>'+uiIc('cart')+' 수레</b> <span class="sub">'+m.cart+'/'+VM_CART_MAX+'</span><div class="sub" style="font-size:11px;">기력이 가득 차서 넘친 만큼 정령들이 대신 캠</div></div>'
+  h += '<div class="vm-cart"><div><b>'+uiIc('cart')+' 수레</b> <span class="sub">'+m.cart+'/'+VM_CART_MAX+'</span><div class="sub" style="font-size:11px; line-height:1.55; margin-top:3px;">기력이 가득 차서 넘친 만큼 정령들이 대신 캠</div></div>'
     + '<button class="btn small" id="vmCartBtn" '+(m.cart>0 ? '' : 'disabled')+'>'+(m.cart>0 ? vmRwText(cr) : '비었음')+'</button></div>';
   return h;
 }
@@ -11756,10 +11802,10 @@ function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
     + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span>'+(o.st ? '<span class="vl-st">'+o.st+'</span>' : '')+'</div>';
 }
 function renderVillageTab(){
-  if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
+  if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="hearth">ⓘ 설명</button><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
   const m = vmState(), s = hearthSparks(), all = vlAllRw(), any = s>0 || m.cart>0, hLv = Object.keys(HEARTH_UPGRADES).reduce((a,k)=>a+hearthUpgradeLevel(k), 0);
-  let h = '<div class="vl-title"><b>정령 마을</b></div>';
+  let h = '<div class="vl-title"><b>정령 마을</b><button class="btn small secondary vl-help" data-vl-help="map">ⓘ 설명</button></div>';
   h += '<div class="vl-town">';
   h += vlBld({ k:'hearth', x:9, y:9, svg:'hearth', sign:uiIc('hearth')+' 화로 <i>Lv.'+hLv+'</i>', st:'불씨 '+s+'/'+HEARTH_MAX(),
     bub: s>0 ? { ic:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', col:true, hot:s>=HEARTH_MAX() } : null });
@@ -11772,8 +11818,42 @@ function renderVillageTab(){
     + '<button class="btn" id="vlAllBtn" '+(any ? '' : 'disabled')+'>거두기</button></div>';
   return h;
 }
+// (v7.1.0) 콘텐츠 설명 창 — ⓘ(data-mh) 누르면 열림 · 수치는 상수에서 그대로 가져옴
+const MODE_HELP_NM = { rift:'별빛 균열', dungeon:'요일 던전', trial:'시련의 전당', dispatch:'정령 파견', duel:'결투', pass:'시즌 패스', hard:'하드 모드' };
+function modeHelpHtml(k){
+  const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+  if(k==='rift'){ const sh = [...new Set(RIFT_STAR_SHARD)];
+    return sec(RIFT_NAME) + li([RIFT_FLOORS.length+'층 · 픽업 기간이 바뀔 때마다 층과 보스가 새로 짜이고 별은 처음부터', '홀수 층은 첫 번째 픽업 정령, 짝수 층은 두 번째 픽업 정령에 맞춘 보스 — 그 픽업이 유리한 속성 · 받아치기 좋은 기믹', (RIFT_TIERS.findIndex(t=>t.h)+1)+'층부터 하드 세기', '온라인일 때만 도전'])
+      + sec('별') + li(['층마다 별 3개: 클리어 · '+RIFT_ROUND_GOAL+'라운드 안 처치 · 전원 생존', '처음 얻은 별마다 별빛 조각 — 1~4층 '+sh[0]+' · 5~8층 '+sh[1]+' · 9~12층 '+sh[2]])
+      + sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더', '픽업 둘을 같이 넣으면 공명 — 둘 다 공격력 +'+Math.round(RIFT_RESO*100)+'%', '한정 성좌 픽업 기간엔 '+RIFT_DUO_FROM+'·'+RIFT_FLOORS.length+'층이 연계 층 (픽업 둘이 같이 풀기 쉬운 기믹)']); }
+  if(k==='dungeon') return sec('요일 던전') + li(['월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일은 전부 열림 (한국 시간)', '그 속성 정령만 출전 · 적은 그 속성에 불리한 속성 (그림자 던전은 그림자 적)', DUNGEON_MAX+'단계 · 5단계마다 수호자 · 적 5마리, 6단계부터 6마리'])
+      + sec('보상') + li(['단계마다 처음 돌파할 때만 — 정수 · 강화석 · 각인석', '5 · 10 · 15 · 20단계는 별빛 조각 10 · 30 · 50 · 50과 확정권 · 선택권', '이미 돌파한 단계는 연습 (보상 없음)']);
+  if(k==='trial') return sec('시련의 전당') + li(['내 정령 대신 정해진 정령으로 푸는 퍼즐', '퍼즐마다 라운드 제한 · 목표는 준비 창에', '실패하면 힌트 보기가 열림', '처음 통과할 때만 보상']);
+  if(k==='dispatch') return sec('정령 파견') + li(['오늘 임무 '+DISPATCH_BOARD+'개 · 자정에 새로 · 임무마다 하루 한 번', '동시에 보낼 수 있는 칸 3개 — 계정 Lv.5 · Lv.25에 하나씩 늘어 최대 5 (지금 '+dispatchSlots()+')', '보낸 정령도 전투 · 합성 · 각성에 그대로 씀 · 한 정령은 파견 한 곳에만'])
+      + sec('보상') + li(['1 · 2 · 4 · 8시간 임무 — 길수록 많음 (4시간 정령 소환권 · 8시간 정령장비 소환권)', '높은 등급 정령을 넣을수록 늘어남 (성좌는 한 등급 위로 침)', '칸을 다 채우고 조건까지 맞추면 ×1.5', '취소하면 보상 없이 돌아오고 그 임무는 다시 보낼 수 있음']);
+  if(k==='duel') return sec('결투') + li(['친구와 실시간 1:1 · 보상 없음', '결투 덱 6칸(전열 3 · 후열 3)으로만 싸움 — 강화 · 각성 · 장비 등은 그대로', '친구 목록에서 신청(접속 중인 친구만)하거나 방 코드 6자리로 참가', '각자 자기 차례에 직접 조작 · 상대가 끊기면 AI가 대신', '도중에 나가면 기권 — 상대 승리']);
+  if(k==='pass') return sec('시즌 패스') + li(['시즌 '+PASS_SEASON_DAYS+'일 · 최대 '+PASS_MAX_LV+'레벨 ('+PASS_LV_XP+' 경험치마다 1레벨)', '일일 · 주간 미션으로 경험치 — 한 주 최대 '+PASS_WEEK_CAP+' (월요일 0시 초기화)', '레벨마다 보상 · 5레벨마다 별빛 조각 (일반 '+PASS_STAR_F+' · 프리미엄 '+PASS_STAR_P+')'])
+      + sec('프리미엄') + li(['세계 룬석 '+PASS_PRICE+' 또는 고대 룬석 '+PASS_PRICE_RAID+'으로 해금 · 지난 레벨 보상도 받음', '시즌이 끝날 때 못 받은 보상은 자동 지급']);
+  if(k==='hard') return sec('하드 모드') + li(['노말 챕터 '+HARD_EFF_CH+' 보스를 깨면 열림', '같은 지도 · 보스지만 적이 훨씬 강함 (하드 N ≈ 노말 N+'+HARD_EFF_CH+' 세기)', '다음 하드 챕터는 앞 하드 챕터 보스를 깨야 열림 (하드 6부터는 같은 번호 노말 보스도)', '보스는 하드 전용 기믹이 붙음 · 첫 클리어 보상은 노말과 따로']);
+  return '';
+}
+document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-mh]'); if(!b) return; e.stopPropagation(); const k = b.dataset.mh; openInfoOverlay('ⓘ '+(MODE_HELP_NM[k]||'설명'), modeHelpHtml(k)); }, true);
+// (v7.0.1) 마을·화로·광산 설명 창
+function vlHelpHtml(k){
+  const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+  const ES = '<img class="uic" src="assets/ui/ic_essence.webp" alt="">', ST = '<img class="uic" src="assets/ui/ic_stone.webp" alt="">';
+  if(k==='map') return sec('정령 마을') + li(['건물을 누르면 그 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 말풍선을 누르면 바로 거둠', '「모두 거두기」로 화로 불씨와 광산 수레를 한 번에', '정령 숙소 · 작업장은 준비 중']);
+  if(k==='hearth'){ const l = hearthUpgradeLevel('speed');
+    return sec('불씨') + li(['시간이 지나면 불씨가 하나씩 쌓임 (게임을 꺼 둬도 쌓임)', '지금 '+(Math.round(hearthMinAt(l)*10)/10)+'분마다 1개 · 최대 '+HEARTH_MAX()+'개 — 가득 차면 더 안 쌓임', '불씨 1개 = '+ES+HEARTH_ESSENCE_PER_SPARK()+' + '+ST+HEARTH_STONE_PER_SPARK()])
+      + sec('강화 (최대 '+HEARTH_EXT_LV+'레벨)') + li(['생산력: 불씨당 획득량 레벨마다 +15%', '용량: 최대 불씨 레벨마다 +2', '속도: 불씨 쌓이는 시간 단축 (8레벨까지 1분씩 · 그 뒤 15초씩)', '10레벨마다 강화 비용 10배']); }
+  return sec('캐기') + li(['맨 위 줄이나 이미 판 칸 옆을 두드려 캠 — 한 번에 곡괭이 기력 1', '흙 1번 · 바위 2번 (B20부터 3번) · 정수·강화석 광석 2번 (B30부터 3번) · 별빛 광맥 3번', '어두운 칸은 아직 닿지 않는 칸'])
+    + sec('칸 보상') + li(['흙: '+ES+' 조금', '바위: 50% 확률로 '+ST+'1', '정수 광석: '+ES, '강화석 광석: '+ST, '별빛 광맥: '+SHARD_IC+' 별빛 조각 + '+ES+' (가장 귀함)', '깊을수록 보상이 많아짐 (B40까지) · 바위·별빛 광맥도 늘어남'])
+    + sec('계단') + li(['층마다 아래 세 줄 중 한 칸에 계단', '닿으면 눌러서 다음 층으로 — 남은 광석은 두고 감 · 다시 위층으로는 못 감', '5층마다 처음 도달하면 '+ES+' · '+ST+' 보상 · 10층마다 '+SHARD_IC+'20 + 정령 소환권 1 추가'])
+    + sec('기력 · 수레') + li(['곡괭이 기력은 15분마다 1 회복 · 최대 '+vmMaxE(vmState()), '기력이 가득 찬 동안 회복될 몫은 정령들이 대신 캐서 수레에 쌓음 (최대 '+VM_CART_MAX+')', '수레는 지금 층 기준으로 직접 캔 것의 '+Math.round(VM_IDLE_RATE*100)+'% 정도 '+ES+' · '+ST+' (별빛 조각은 없음)'])
+    + sec('강화') + li(['곡괭이: 기력 최대치 레벨마다 +4', '광맥 정제: 캐는 정수·강화석·별빛 조각 레벨마다 +10% (수레 포함)']);
+}
 function renderMineView(){
-  let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>광산</b><span style="flex:1;"></span><button class="btn small" id="vmUpBtn">'+uiIc('pick')+' 강화</button></div>';
+  let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>광산</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="mine">ⓘ 설명</button><button class="btn small" id="vmUpBtn">'+uiIc('pick')+' 강화</button></div>';
   h += '<div id="vmWrap">'+vmMineHtml()+'</div>';
   return h;
 }
@@ -11825,6 +11905,7 @@ function vmFit(){ // 광산 화면은 스크롤 없이 — 판 크기를 화면 
 }
 function villageHandlers(){
   if(activeTab!=='hearth' || !villageOn()) return;
+  document.querySelectorAll('[data-vl-help]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.vlHelp; openInfoOverlay('ⓘ '+(k==='map'?'정령 마을':k==='hearth'?'화로':'광산'), vlHelpHtml(k)); }));
   document.querySelectorAll('[data-vl-col]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); if(b.dataset.vlCol==='hearth') collectHearth(); else vmCollectCart(); }));
   document.querySelectorAll('[data-vl]').forEach(b=>b.addEventListener('click', ()=>{ villageView = b.dataset.vl; sfx('click'); render(); document.getElementById('main').scrollTop = 0; }));
   const ab = document.getElementById('vlAllBtn'); if(ab) ab.addEventListener('click', vlCollectAll);
@@ -13011,7 +13092,7 @@ function showSanctumPrep(id, t, keep){
 function renderRiftTab(){
   if(!riftUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+RIFT_NAME+' 잠김<div class="sub" style="margin-top:6px;">'+chapterBossName(1)+' 처치 시 해금</div></div>';
   const on = pickupOnline(), per = riftPeriod(), rs = riftState(), tot = riftTotalStars(), max = RIFT_FLOORS.length*3;
-  let h = '<div class="rf-head rf-h2"><div class="rf-hl"><div class="rf-t">'+uiIc('rift')+' '+RIFT_NAME+'</div><div class="rf-sub">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 뒤 초기화' : '온라인일 때만 열림')+'</div>'
+  let h = '<div class="rf-head rf-h2"><div class="rf-hl"><div class="rf-t">'+uiIc('rift')+' '+RIFT_NAME+'<button class="mh-btn" data-mh="rift" aria-label="설명">ⓘ</button></div><div class="rf-sub">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 뒤 초기화' : '온라인일 때만 열림')+'</div>'
     + '<div class="rf-bless">'+SHARD_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>'
     + '</div>' + TOP_MARK; // (v5.2.0) 픽업 정령 작은 그림 뺌 (사용자 결정) // (v343) 한 줄로 줄임 — 지도가 더 보이게
   if(!on) h += '<div class="card" style="text-align:center; margin-top:10px;">'+uiIc('offline')+' 온라인일 때만 도전 가능</div>';
@@ -13130,7 +13211,7 @@ function dgDetailHtml(el){
 function renderDungeonTab(){
   if(!isUnlocked('dungeon')) return lockedFeatureScreenHtml('dungeon');
   if(!dgSel || !ELEMENTS.includes(dgSel)) dgSel = ELEMENTS.find(e=>dungeonIsOpen(e)) || 'fire';
-  let h = '<div style="text-align:center; margin:2px 0 6px;"><div class="dg-title">📅 요일 던전</div></div>' + TOP_MARK;
+  let h = '<div style="text-align:center; margin:2px 0 6px;"><div class="dg-title">📅 요일 던전<button class="mh-btn" data-mh="dungeon" aria-label="설명">ⓘ</button></div></div>' + TOP_MARK;
   h += sceneCarHtml('dgCar', 'assets/bg_dungeon.webp', 1024, 1536, ELEMENTS.map(el=>({ k:el, x:DG_DOORS[el], y:520, w:108, h:284, cls:'dg-door '+(dungeonIsOpen(el)?'open':'shut'), style:'--ec:'+ELEMENT_INFO[el].color+';',
     inner:'<span class="dg-lab"><b>'+elIc(el)+' '+ELEMENT_INFO[el].name+'</b><small>'+(dungeonIsOpen(el) ? '오늘 열림' : dungeonDaysOf(el))+'</small></span>' })), dgSel, 2.9, 'dg-car');
   h += '<div class="sc-dots">'+ELEMENTS.map(el=>'<i class="'+(el===dgSel?'on':'')+'" style="--ec:'+ELEMENT_INFO[el].color+';"></i>').join('')+'</div>';
@@ -13236,7 +13317,7 @@ function rwInline(rw){ return rewardBrief(rw); }
 function renderDispatchTab(){
   if(!isUnlocked('dispatch')) return lockedFeatureScreenHtml('dispatch');
   const d = dispatchState(), board = dispatchBoard();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">'+uiIc('dispatch')+' 정령 파견</div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 돌아올 때까지 못 씀 · 조건 맞추면 보상 ×1.5</div></div>' + TOP_MARK; // (v334) 위에 고정은 제목까지만 — 예전엔 파견 칸까지 고정돼 스크롤하면 화면 절반이 어두운 고정 영역으로 덮였음
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">'+uiIc('dispatch')+' 정령 파견<button class="mh-btn" data-mh="dispatch" aria-label="설명">ⓘ</button></div><div class="sub" style="font-size:11px;">정령을 임무에 보냄 · 보낸 정령도 그대로 씀 · 조건 맞추면 보상 ×1.5</div></div>' + TOP_MARK; // (v334) 위에 고정은 제목까지만 — 예전엔 파견 칸까지 고정돼 스크롤하면 화면 절반이 어두운 고정 영역으로 덮였음
   { const n = dispatchSlots(), used = d.slots.filter(Boolean), empty = n - used.length; // (v335) 칸을 가로 한 줄씩 — 예전 3열 격자는 4칸이면 3+1로 갈라져 불편했음 · 빈 칸은 한 줄로 합침
     h += '<div class="dp-slots">'+d.slots.map((s,i)=>{ if(!s) return '';
       const left = s.end - serverNow(), done = left<=0, pct = Math.min(100, (serverNow()-s.start)/(s.end-s.start)*100);
@@ -13418,7 +13499,7 @@ function showTrialPrep(id){
 function renderTrialTab(){
   if(!isUnlocked('trial')) return lockedFeatureScreenHtml('trial');
   const n = trialClearCount();
-  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧩 시련의 전당</div><div class="sub" style="font-size:11px;">내 정령 대신 정해진 정령으로 푸는 퍼즐 · '+n+'/'+TRIALS.length+' 통과</div></div>' + TOP_MARK;
+  let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧩 시련의 전당<button class="mh-btn" data-mh="trial" aria-label="설명">ⓘ</button></div><div class="sub" style="font-size:11px;">내 정령 대신 정해진 정령으로 푸는 퍼즐 · '+n+'/'+TRIALS.length+' 통과</div></div>' + TOP_MARK;
   h += '<div class="dg-list">'+TRIALS.map((t,i)=>{ const ok = trialCleared(t.id);
     return '<button class="tr-card'+(ok?' done':'')+'" data-tr-go="'+t.id+'"><span class="tr-no">'+(i+1)+'</span><span class="dg-mid"><b>'+t.nm+'</b><small class="tr-stars">'+'★'.repeat(t.diff||3)+'<i>'+'★'.repeat(5-(t.diff||3))+'</i></small></span><em>'+(ok ? uiIc('check') : '›')+'</em></button>'; }).join('')+'</div>';
   return h;
@@ -14653,7 +14734,7 @@ function renderStageTab(){
   const sceneTheme = BATTLE_THEMES[CHAPTER_MASKS[(chapterBase(ch)-1)%MAX_CHAPTERS].theme] || 'snow';
   const hardPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(HARD_CH_BASE+1+k)), normPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(1+k));
   // (v253) 탐험 머리 — 난이도 탭 · 챕터 이름(노말·하드 같은 형식, 하드는 뱃지) · 챕터 점(눌러서 이동) · 진행 막대 · 보상
-  let html = '<div class="ex-mode"><button data-stage-mode="n" class="'+(hard?'':'on')+'">노말'+(hard && normPend ? '<span class="ex-adot"></span>' : '')+'</button><button data-stage-mode="h" class="hard'+(hard?' on':'')+(hardUnlocked()?'':' lock')+'">'+(hardUnlocked()?'🔥':uiIc('lock'))+' 하드'+(!hard && hardPend ? '<span class="ex-adot"></span>' : '')+'</button></div>';
+  let html = '<div class="ex-mode"><button data-stage-mode="n" class="'+(hard?'':'on')+'">노말'+(hard && normPend ? '<span class="ex-adot"></span>' : '')+'</button><button data-stage-mode="h" class="hard'+(hard?' on':'')+(hardUnlocked()?'':' lock')+'">'+(hardUnlocked()?'🔥':uiIc('lock'))+' 하드'+(!hard && hardPend ? '<span class="ex-adot"></span>' : '')+'</button><button class="mh-btn" data-mh="hard" aria-label="설명">ⓘ</button></div>';
   const pips = [...Array(MAX_CHAPTERS)].map((_,k)=>{ const c = lo+k, done = c<cur, open = c<=cur; return '<button class="ex-pip'+(c===ch?' on':'')+(done?' done':'')+(open?'':' lock')+'" data-ch-jump="'+c+'" aria-label="'+chapterLabel(c)+'">'+(chapterHasPending(c)?'<i></i>':'')+'</button>'; }).join('');
   html += '<div class="ex-head'+(hard?' hard':'')+'" style="--tc:'+(hard?'#ff6a7a':theme.color)+';">'
     + '<div class="ex-hrow"><button class="ex-arrow" id="chapterPrev" '+(ch<=lo?'disabled':'')+'>◀'+arrowDot(pendBefore)+'</button>'
@@ -15341,6 +15422,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
+  document.querySelectorAll('[data-fz-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.fuseSort = el.dataset.fzSort; save(); render(); }));
   document.querySelectorAll('[data-eq-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.equipSort = el.dataset.eqSort; save(); render(); }));
   const ab = document.getElementById('openAchieve'); if(ab) ab.addEventListener('click', showAchievementsModal);
   const hb = document.getElementById('collectHearthBtn'); if(hb) hb.addEventListener('click', collectHearth);
@@ -15427,8 +15509,8 @@ function attachHandlers(){
   document.querySelectorAll('[data-fz-rm]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.fzRm; if(!fuseSlots[i]) return; const k = fuseSlots[i], inDock = !!b.closest('.fz-dock');
     fzAnchor(inDock ? '[data-fz-add="'+k+'"]' : '.fz-card', ()=>{ fuseSlots[i] = null; }); }));
   { const c = document.getElementById('fzClear'); if(c) c.addEventListener('click', ()=>{ fuseSlots = [null,null,null]; render(); }); }
-  { const go = document.getElementById('fzGo'); if(go) go.addEventListener('click', fuseConfirm); } // (v303) 넣은 재료·결과를 확인 창으로 보여 준 뒤 합성
-  { const gd = document.getElementById('fzGuard'); if(gd) gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }); }
+  document.querySelectorAll('#fzGo, [data-fz-go]').forEach(go=>go.addEventListener('click', fuseConfirm)); // (v303) 넣은 재료·결과를 확인 창으로 보여 준 뒤 합성
+  document.querySelectorAll('#fzGuard, [data-fz-guard]').forEach(gd=>gd.addEventListener('click', ()=>{ fuseGuardOn = !fuseGuardOn && ticketCount('fuseGuard')>0; render(); }));
   { const tp = document.getElementById('fzDockTop'); if(tp) tp.addEventListener('click', ()=>{ const c = document.querySelector('.fz-card'); if(c) c.scrollIntoView({behavior:'smooth', block:'start'}); }); } // (v304)
   fzDockSync(true);
   { const ru = document.getElementById('fzRules'); if(ru) ru.addEventListener('click', ()=>openInfoOverlay('<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 규칙', fuseRulesHtml())); }
@@ -15600,15 +15682,17 @@ function rwLedger(){
   return L;
 }
 // (v5.0.4) 앞자리 업데이트 선물 우편 — 접속하면 한 번 우편함에 (기간 안에 들어온 사람만) · 사용자 결정: 앞자리 업데이트마다 별빛 조각 100
+// (v7.0.1) 사용자 결정: 업데이트 선물은 출시부터 7일 안에 접속한 사람만 · 게임이 넣는 우편(선물·보상 개편)은 받은 날부터 7일 지나면 사라짐
+const SYS_MAIL_DAYS = 7;
 const UPDATE_GIFTS = [
-  { id:'upd700', until: Date.UTC(2026,9,22,15), title:'7.0.0 업데이트 · 정령 마을', body:'화로 탭이 「마을」로\n· 광산 해금\n· 화로 강화 상한 증가 (30레벨)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
-  { id:'upd600', until: Date.UTC(2026,9,22,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
-  { id:'upd500', until: Date.UTC(2026,9,17,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
+  { id:'upd700', until: Date.UTC(2026,9,15,15), title:'7.0.0 업데이트 · 정령 마을', body:'화로 탭이 「마을」로\n· 광산 해금\n· 화로 강화 상한 증가 (30레벨)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
+  { id:'upd600', until: Date.UTC(2026,9,15,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
+  { id:'upd500', until: Date.UTC(2026,9,10,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
 function updateGiftMigrate(){
   const s = state; s.giftGot = isPlainObj(s.giftGot) ? s.giftGot : {};
   UPDATE_GIFTS.forEach(g=>{ if(s.giftGot[g.id] || serverNow() >= g.until) return; s.giftGot[g.id] = serverNow();
-    if(!s.sysMail.some(x=>x.id===g.id)) s.sysMail.push({ id:g.id, title:g.title, body:g.body, t:serverNow(), reward:g.reward }); });
+    if(!s.sysMail.some(x=>x.id===g.id)) s.sysMail.push({ id:g.id, title:g.title, body:g.body, t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:g.reward }); });
 }
 function rwMigrate(){ // 접속(세이브를 불러온 직후)에 한 번
   const s = state; if(Number.isInteger(s.rwVer) && s.rwVer > RW_VER) return; // 더 새 버전에서 저장한 세이브 — 그대로 둠
@@ -15621,7 +15705,7 @@ function rwMigrate(){ // 접속(세이브를 불러온 직후)에 한 번
       if(k==='essence' || k==='stone' || k==='star') rw[k] += d; else { const t = k.slice(2); rw.items[t] = (rw.items[t]||0) + d; } });
     if(any) cats.push(RW_CAT_NM[c]||c); });
   const id = 'rw'+RW_VER;
-  if(cats.length && !s.sysMail.some(x=>x.id===id)) s.sysMail.push({ id, title:'보상 개편 추가 지급', body:'아래 보상이 개편되어 늘어난 만큼 추가 지급\n· '+cats.join('\n· '), t: Date.now(), reward: rw });
+  if(cats.length && !s.sysMail.some(x=>x.id===id)) s.sysMail.push({ id, exp:serverNow()+SYS_MAIL_DAYS*86400000, title:'보상 개편 추가 지급', body:'아래 보상이 개편되어 늘어난 만큼 추가 지급\n· '+cats.join('\n· '), t: Date.now(), reward: rw });
   s.rwGot = now; s.rwVer = RW_VER;
 }
 function sanitizeState(){
@@ -15866,7 +15950,7 @@ function sanitizeState(){
     if(!buffOk || e.pendingKeep) e.pendingBuffChoice = null;
   }
   { // (v298) 각인 · 장비 부가 능력 · 초월 — 모양이 이상한 건 버림
-    const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<4).slice(0,3); if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
+    const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<SUB_Q.length).slice(0,3); /* (v7.0.1) 신화(q=4)를 지우던 것 — <4 고정이었음 */ if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
     s.engrave = cleanBox(s.engrave, k=>!!SPIRITS[k]);
     s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/.test(k));
     { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)(#\d+)?$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
@@ -15886,13 +15970,14 @@ function sanitizeState(){
     }else s.dispatch = null; }
   migrateStageRewardsV179();
   migrateBossPicksV245();
-  { const old = serverNow()-120*86400000; s.sysMail = Array.isArray(s.sysMail) ? s.sysMail.filter(x=> x && typeof x==='object' && typeof x.id==='string' && /^[A-Za-z0-9_-]{1,40}$/.test(x.id) && !(x.got && x.got < old)).slice(-20) : []; } // (v313) 게임이 직접 넣는 우편
+  { const old = serverNow()-120*86400000; s.sysMail = Array.isArray(s.sysMail) ? s.sysMail.filter(x=> x && typeof x==='object' && typeof x.id==='string' && /^[A-Za-z0-9_-]{1,40}$/.test(x.id) && !(x.got && x.got < old)).slice(-20) : []; s.sysMail.forEach(x=>{ if(!(Number.isFinite(x.exp) && x.exp>0)) x.exp = (Number.isFinite(x.t) && x.t>0 ? x.t : serverNow()) + SYS_MAIL_DAYS*86400000; }); } // (v313) 게임이 직접 넣는 우편
   try{ rwMigrate(); }catch(e){ console.error('rwMigrate', e); } // (v313) 보상 개편 추가 지급
   try{ updateGiftMigrate(); }catch(e){ console.error('updateGift', e); } // (v5.0.4) 업데이트 선물 우편
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
 
 sanitizeState();
+setTimeout(()=>{ try{ subFixNotice(); }catch(e){} }, 3500); // (v7.0.1) 사라진 신화 각인 알림
 // (v122) 앱을 껐다 켜도 하던 화면으로: 마지막 탭 → 진행 중인 보스전(결과 화면 포함) → 열어둔 탑/스테이지 준비창
 function resumeLastView(){
   if(!state.skillFight) unmountBattleScreen(); // 세이브가 바뀌어(클라우드 복원 등) 전투가 없으면 전장 화면을 걷어냄
@@ -15911,7 +15996,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 368, APP_VERSION = '7.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 369, APP_VERSION = '7.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
