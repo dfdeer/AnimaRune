@@ -2627,7 +2627,7 @@ function killUnit(sf, u){
   }
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
-var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.3; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 30% 추가 피해 (사용자 결정 — 수치는 나중에 시뮬로)
+var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.5; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 50% 추가 피해 — 계산으로 정함(최대체력 = 공격력 2.7배): 범람은 테티스와 쓰면 보통 130~150% · 반격은 포효만 약 97%, 광명 보호막까지 약 125%
 var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
 function bombExplode(sf, u, hits, mul){
@@ -10069,7 +10069,7 @@ function chapterPctReward(chapterNum, t){
   if(p===25) return { essence: Math.round(100*sc), stone: 0, items: null };
   if(p===50) return { essence: 0, stone: Math.round(10*sc), items: {summon:5} };
   if(p===75) return { essence: Math.round(200*sc), stone: Math.round(15*sc), items: null };
-  return { essence: 0, stone: Math.round(20*sc), items: isHardChapter(chapterNum) ? {legendary:1, summon:5} : {rare:1, summon:5} }; // (v253) 하드 100%는 레전더리 확정권
+  return { essence: Math.round(300*sc), stone: Math.round(20*sc), star: isHardChapter(chapterNum) ? 40 : 20, items: isHardChapter(chapterNum) ? {legendary:1, summon:5} : {rare:1, summon:5} }; // (v253) 하드 100%는 레전더리 확정권 · (v5.3.0) 100%에 정수 300×배율 · 별빛 조각 노말 20 · 하드 40
 }
 function checkChapterPctRewards(chapterNum){
   const count = chapterClearCount(chapterNum);
@@ -10080,7 +10080,7 @@ function checkChapterPctRewards(chapterNum){
       if(!state.chapterRewardsClaimed[id]){
         state.chapterRewardsClaimed[id] = true;
         const rw = chapterPctReward(chapterNum, t);
-        addPendingReward(id, uiIc('map'), chapterLabel(chapterNum)+' '+Math.round(t*100)+'% 클리어', rw.essence, rw.stone, 'stage', rw.items);
+        addPendingReward(id, uiIc('map'), chapterLabel(chapterNum)+' '+Math.round(t*100)+'% 클리어', rw.essence, rw.stone, 'stage', rw.items, rw.star);
         toast(uiIc('map')+' '+chapterLabel(chapterNum)+' '+Math.round(t*100)+'% 달성 · 보상 대기', 2800);
       }
     }
@@ -10143,10 +10143,10 @@ function expTicketMax(){ return 2 + (accountLevel()>=10?1:0); }
 function raidTicketMax(){ return 3 + (accountLevel()>=15?1:0); }
 function wbTries(){ return 3 + (accountLevel()>=20?1:0); }
 const ACCOUNT_LV_ITEMS = { 5:{rare:1, eq_rare:1}, 10:{pick_epic:1, eqpick_rare:1}, 15:{epic:1, eq_epic:1}, 20:{pick_legendary:1, eqpick_epic:1}, 25:{pick_legendary:1, eq_legendary:1}, 30:{pick_mythic:1, eqpick_legendary:1} };
-function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: ACCOUNT_LV_STAR }; // (v317) 레벨마다 별빛 조각
+function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: L%5===0 ? ACCOUNT_LV_STAR5 : ACCOUNT_LV_STAR }; // (v5.3.0) 5의 배수 레벨은 별빛 조각 50 // (v317) 레벨마다 별빛 조각
   if(ACCOUNT_LV_ITEMS[L]) r.items = ACCOUNT_LV_ITEMS[L]; return r; }
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
-const ACCOUNT_LV_STAR = 10;
+const ACCOUNT_LV_STAR = 10, ACCOUNT_LV_STAR5 = 50;
 function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.starShard = (state.starShard||0) + (r.star||0); state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
@@ -10155,11 +10155,11 @@ const PATCH_NOTES = [
     { t:'홈 화면', items:[ '친구·가이드·설정 버튼을 홈에서 뺌 — 친구는 위쪽 줄, 가이드·설정은 메뉴(☰)에서', '오른쪽 위 픽업 밑에 이벤트 배너 자리 · 배너가 늘면 오른쪽 버튼이 아래로 내려감' ]}
   ]},
   { build:357, v:'5.3.0', date:'2026-10-08', secs:[
-    { t:'보상', items:[ '챕터 보스 첫 격파에 별빛 조각 — 노말 50 · 하드 100 (이미 깬 보스는 우편으로 지급)', '일일 의뢰 정수 30~50 → 300', '패스 주간 미션 「레이드 승리 1번」 경험치 80 → 150' ]},
+    { t:'보상', items:[ '챕터 보스 첫 격파에 별빛 조각 — 노말 50 · 하드 100 (이미 깬 보스는 우편으로 지급)', '일일 의뢰 정수 30~50 → 300', '패스 주간 미션 「레이드 승리 1번」 경험치 80 → 150', '업적 보상에 별빛 조각 — 보통 10 · 큰 업적과 히든 업적 30', '계정 레벨 5·10·15… 레벨 보상 별빛 조각 10 → 50', '챕터 진행도 100% 보상에 정수(300 × 챕터 배율)와 별빛 조각 (노말 20 · 하드 40)', '요일 던전 5·10·15단계 첫 돌파에 별빛 조각 50·100·150', '시련의 전당 첫 통과에 별빛 조각 20~100', '무한의 탑 25층마다 별빛 조각 30 · 100층마다 100', '이미 받은 보상은 늘어난 만큼 우편으로 지급' ]},
     { t:'월드 보스', items:[ '최고 기록 보상 추가 — 직접 도전 한 번에 준 피해가 1만·2만·3만·5만·8만·12만·20만·30만·50만에 닿으면 한 번씩 (별빛 조각·정수·확정권)' ]},
     { t:'파견', items:[ '보낸 정령도 전투·합성·각성에 그대로 쓸 수 있음 (예전: 돌아올 때까지 못 씀) · 한 정령은 파견 한 곳에만' ]},
     { t:'출정', items:[ '상점 가격이 사이클마다 +50% (1사이클 유물 70 · 희귀 유물 110 · 회복 물약 45 기준)' ]},
-    { t:'스킬', items:[ '하백 「깊은 강」: 물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)', '하백 「범람」: 상대 전체 공격력 90%에 각자 수위의 30%만큼 추가 피해 · 쓰고 나면 수위가 비워짐', '산군 「포효」: 자기 보호막(최대체력 20%) 추가 · 이 보호막도 반격 자세처럼 산군의 다음 차례에 꺼짐 (남은 만큼만, 다른 아군이 씌운 보호막은 그대로)', '산군 반격: 공격력 70% + 그때 가진 보호막의 30% · 후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)', '금오 「발화」: 대상의 화상을 전부 터뜨려 중첩당 공격력 60·80·100% → 대상과 양옆의 화상을 각자 터뜨려 줄기 전 중첩당 50·60·70% · 터뜨린 뒤 화상은 2중첩만 줄어듦(남은 화상은 계속 탐) · 화상이 없는 대상에게는 50% · 십자 전파 삭제', '스칼렛 「연쇄 점화」: 전체 피해 60% → 130% · 이 스킬로 바로 터지는 폭탄 피해 ×2' ]},
+    { t:'스킬', items:[ '하백 「깊은 강」: 물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)', '하백 「범람」: 상대 전체 공격력 90%에 각자 수위의 30%만큼 추가 피해 · 쓰고 나면 수위가 비워짐', '산군 「포효」: 자기 보호막(최대체력 20%) 추가 · 이 보호막도 반격 자세처럼 산군의 다음 차례에 꺼짐 (남은 만큼만, 다른 아군이 씌운 보호막은 그대로)', '산군 반격: 공격력 70% + 그때 가진 보호막의 50% · 후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)', '금오 「발화」: 대상의 화상을 전부 터뜨려 중첩당 공격력 60·80·100% → 대상과 양옆의 화상을 각자 터뜨려 줄기 전 중첩당 50·60·70% · 터뜨린 뒤 화상은 2중첩만 줄어듦(남은 화상은 계속 탐) · 화상이 없는 대상에게는 50% · 십자 전파 삭제', '스칼렛 「연쇄 점화」: 전체 피해 60% → 130% · 이 스킬로 바로 터지는 폭탄 피해 ×2' ]},
     { t:'정령', items:[ '신화 정령을 파견 보낸 동안 같은 신화를 또 얻으면 2번째 정령으로 들어오던 것 — 이제 기억 조각 50개로 (파견 간 정령이 원본)' ]}
   ]},
   { build:356, v:'5.2.1', date:'2026-10-08', secs:[
@@ -10812,7 +10812,7 @@ function hidCheckPending(sf){
 // (v266) 히든 업적용 기록 — 한 번 해낸 일만 표시(되돌리지 않음)
 function hidHas(k){ return !!(state.hid && state.hid[k]); }
 function hidMark(k){ if(skillSimDepth || hidHas(k)) return; /* (v294) 버튼 미리보기(복사본 계산)에서는 기록 안 함 */ state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
-const ACHIEVEMENTS = [
+const ACHIEVEMENTS = [ // (v5.3.0) 별빛 조각은 목록 끝에서 achStarFill이 채움
   {id:'first_summon', name:'첫 소환', desc:'정령을 처음 소환하기', reward:{essence:50}, category:'general', basic:true, check:()=> (state.lifetimeSummons||0)>=1},
   {id:'summon_10', name:'정령 애호가', desc:'정령 10회 소환하기', reward:{essence:100}, category:'general', check:()=> (state.lifetimeSummons||0)>=10},
   {id:'summon_50', name:'정령 수집가', desc:'정령 50회 소환하기', reward:{stone:40}, category:'general', check:()=> (state.lifetimeSummons||0)>=50},
@@ -10878,6 +10878,8 @@ ELEMENTS.forEach(el=>{
   ACHIEVEMENTS.push({id:'dexel_'+el, name:ELEMENT_INFO[el].name+' 도감 완성', desc:'모든 '+ELEMENT_INFO[el].name+' 정령 발견 (10종)', reward:{stone:30, items:{rare:1}}, category:'general', check:()=> isElementComplete(el)});
   ACHIEVEMENTS.push({id:'eqdexel_'+el, name:ELEMENT_INFO[el].name+' 장비 도감 완성', desc:'모든 '+ELEMENT_INFO[el].name+' 장비 발견 (10종)', reward:{stone:30, items:{equip:1}}, category:'general', check:()=> equipElementComplete(el)});
 });
+// (v5.3.0) 업적 보상에 별빛 조각 — 보통 10 · 히든이거나 큰 업적(레전더리 이상 선택권 · 정수 1000+ · 강화석 200+)은 30 (보상 개편, 받은 사람은 우편으로)
+ACHIEVEMENTS.forEach(a=>{ const r = a.reward = a.reward || {}; if(r.star) return; const it = r.items || {}; const big = a.secret || it.pick_legendary || it.pick_mythic || (r.essence||0)>=1000 || (r.stone||0)>=200; r.star = big ? 30 : 10; });
 // ===================== 보상함 (모든 보상은 직접 눌러서 수령) =====================
 // (v103) 티켓 종류 — 정령 소환권(무료 1회) / 레어·에픽 정령 확정권 / 정령장비 소환권
 const TICKET_INFO = {
@@ -10913,7 +10915,7 @@ function grantItems(items){
 function itemsText(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+' '+TICKET_INFO[k].name+' ×'+items[k]).join(' · ') : ''; }
 function itemsShort(items){ return items ? Object.keys(items).map(k=>TICKET_INFO[k].icon+'×'+items[k]).join(' ') : ''; }
 function rewardBrief(rw){ return [rw.star?SHARD_IC+'+'+rw.star:'', rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.wbGems?uiIc('wbgem')+'+'+rw.wbGems:'', itemsShort(rw.items)].filter(Boolean).join(' '); }
-function rewardWords(rw){ return [rw.essence?'정수 +'+rw.essence:'', rw.stone?'강화석 +'+rw.stone:'', itemsText(rw.items)].filter(Boolean).join(' · '); }
+function rewardWords(rw){ return [rw.star?'별빛 조각 +'+rw.star:'', rw.essence?'정수 +'+rw.essence:'', rw.stone?'강화석 +'+rw.stone:'', itemsText(rw.items)].filter(Boolean).join(' · '); }
 function addPendingReward(id, icon, label, essence, stone, tab, items, star){
   if(!state.pendingRewards) state.pendingRewards = [];
   if(state.pendingRewards.some(r=>r.id===id)) return; // 중복 방지
@@ -10976,7 +10978,7 @@ function checkAchievements(){
       state.achievementsClaimed[a.id] = true;
       // tab을 'summon'으로 주면 소환 탭 아이콘에도 빨간 점이 잘못 뜨는 버그가 있었음.
       // 업적 보상은 헤더 <img class="uic" src="assets/ui/ic_medal.webp" alt=""> 버튼(hasPendingFor('achieve_') 체크)에서만 안내하면 되므로 nav 탭에는 안 걸리는 값을 사용
-      addPendingReward('achieve_'+a.id, '<img class="uic" src="assets/ui/ic_medal.webp" alt="">', a.name+' 업적', a.reward.essence, a.reward.stone, 'achieve', a.reward.items);
+      addPendingReward('achieve_'+a.id, '<img class="uic" src="assets/ui/ic_medal.webp" alt="">', a.name+' 업적', a.reward.essence, a.reward.stone, 'achieve', a.reward.items, a.reward.star);
       toast('<img class="uic" src="assets/ui/ic_medal.webp" alt=""> 업적 달성 · '+a.name, 2800);
     }
   });
@@ -11152,7 +11154,8 @@ function challengeTower(floor){
   playTowerBattleAnimation(floor, playerPowerDisplay, enemyPowerDisplay, grade, slotDetails, enemySlotAtks, enemyComp);
 }
 // (v155) 경제 구조: 스테이지=정수, 탑=강화석+층 소환권, 보스=장비권, 출정=장비·재료(강화석) — 층 보상은 정수 대신 강화석이 기본
-function towerFloorReward(f){
+function towerFloorReward(f){ const r = towerFloorRewardBase(f); if(f%25===0) r.star = f%100===0 ? 100 : 30; return r; } // (v5.3.0) 25층마다 별빛 조각 30 · 100층마다 100
+function towerFloorRewardBase(f){
   // (v245) 선택권 층: 100층마다 레전더리 · 50층마다 에픽 · 30층마다 레어 (그 층의 확정권 대신)
   if(f%100===0) return {items:{pick_legendary:1, eq_legendary:1}};  // 100, 200… (v297) + 레전더리 장비 확정권
   if(f%50===0) return {items:{pick_epic:1}};        // 50, 150…
@@ -11188,7 +11191,7 @@ function resolveTowerBattle(floor, playerPower, grade){
       reward = rw.essence || 0;
       stoneReward = rw.stone || 0;
       state.towerFloorRewardClaimed[floor] = true;
-      addPendingReward('tower_'+floor, uiIc('tower'), floor+'층 돌파', reward, stoneReward, 'tower', rw.items || null);
+      addPendingReward('tower_'+floor, uiIc('tower'), floor+'층 돌파', reward, stoneReward, 'tower', rw.items || null, rw.star||0);
       checkAchievements();
     }
   }
@@ -11766,6 +11769,7 @@ function dungeonReward(n){
   if(n===5) it.rare = 2; if(n===10) it.pick_epic = 1; if(n===15) it.pick_legendary = 1;
   if(n===7) it.eq_rare = 1; if(n===12) it.eqpick_epic = 1; if(n===15) it.eq_legendary = 1; // (v297) 장비 확정권·선택권
   it.engr = n%5===0 ? 3 : 1; // (v298) 각인석
+  if(n%5===0) rw.star = 10*n; // (v5.3.0) 5·10·15단계 첫 돌파에 별빛 조각 50·100·150
   if(n===18) it.eq_epic = 1; if(n===20){ delete it.pick_epic; it.pick_legendary = 1; it.eqpick_legendary = 1; } // (v297) 새 16~20단계
   if(n>15 && n%5===0) it.pick_epic = 1;
   if(Object.keys(it).length) rw.items = it;
@@ -11818,7 +11822,7 @@ function checkDungeonOutcome(sf){
     if(first){
       state.dungeonBest = state.dungeonBest || {}; state.dungeonBest[el] = n;
       const rw = dungeonReward(n); sf.result.reward = rw;
-      state.essence += rw.essence; state.enhanceStone = (state.enhanceStone||0) + rw.stone; grantItems(rw.items);
+      state.essence += rw.essence; state.enhanceStone = (state.enhanceStone||0) + rw.stone; state.starShard = (state.starShard||0) + (rw.star||0); grantItems(rw.items);
       checkAchievements(); save();
     }
     return true;
@@ -12583,6 +12587,8 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     allies:[{key:'water_mythic_a', idx:4},{key:'light_mythic_b', idx:3},{key:'dark_mythic_a', idx:1},{key:'fire_mythic_b', idx:0}],
     enemies:[{key:'wood_mythic_a', idx:1, atk:650, hp:1.422},{key:'water_mythic_a', idx:4, atk:650, hp:1.422},{key:'light_mythic_a', idx:3, atk:650, hp:1.422},{key:'fire_mythic_a', idx:0, atk:700, hp:1.422},{key:'dark_legendary_b', idx:5, atk:650, hp:1.422},{key:'fire_epic_b', idx:2, atk:650, hp:1.422}] }
 ];
+// (v5.3.0) 시련 첫 통과에 별빛 조각 — 정수 보상 크기에 맞춰 1500 → 20 · 2500 → 30 · 4000 → 50 · 6000 → 100
+TRIALS.forEach(t=>{ const e = (t.reward && t.reward.essence)||0; if(t.reward && !t.reward.star) t.reward.star = e>=6000 ? 100 : e>=4000 ? 50 : e>=2500 ? 30 : 20; });
 function trialDef(id){ return TRIALS.find(t=>t.id===id) || null; }
 function trialCleared(id){ return !!(state.trialClear && state.trialClear[id]); }
 function trialHintOpen(id){ return trialCleared(id) || !!(state.trialTried && state.trialTried[id]); } // (v268) 힌트는 한 번 실패하거나 통과한 뒤에 열림
@@ -12612,7 +12618,7 @@ function checkTrialOutcome(sf){
     const t = trialDef(sf.trialId), first = !trialCleared(sf.trialId);
     sf.result = { win:true, rounds: sf.round, first };
     if(first && t){ state.trialClear = state.trialClear || {}; state.trialClear[t.id] = true; const rw = t.reward; sf.result.reward = rw;
-      state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); grantItems(rw.items); checkAchievements(); save(); }
+      state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); state.starShard = (state.starShard||0) + (rw.star||0); grantItems(rw.items); checkAchievements(); save(); }
     return true;
   }
   if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round, reason:'전멸' }; trialMarkTried(sf); return true; }
@@ -13194,7 +13200,7 @@ function renderExpeditionTab(){
   if(pendingHere.length>0){
     html += '<div class="card" style="border:1px solid #ff575755; margin-bottom:8px;">';
     pendingHere.forEach(r=>{
-      html += '<div class="fuse-alert"><span><img class="uic" src="assets/ui/ic_gift.webp" alt=""> '+r.label+' · '+rewardWords({essence:r.essence, stone:r.stone, items:r.items})+'</span><button class="btn small" data-claim-reward="'+r.id+'">받기</button></div>';
+      html += '<div class="fuse-alert"><span><img class="uic" src="assets/ui/ic_gift.webp" alt=""> '+r.label+' · '+rewardWords({essence:r.essence, stone:r.stone, star:r.star||0, items:r.items})+'</span><button class="btn small" data-claim-reward="'+r.id+'">받기</button></div>';
     });
     html += '</div>';
   }
@@ -14237,7 +14243,7 @@ function showAchievementsModal(keep){
         + '<div style="flex-shrink:0; min-width:48px; text-align:center;">'+rightSide+'</div></div>';
     });
     if(achievementCategory==='general') orphanAchievePending().forEach(r=>{ // (v184) 지금은 없어진 업적의 받지 않은 보상도 받을 수 있게
-      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+r.label+'</div><div class="sub">지난 업적 보상</div><div>'+rewardPillsHtml({essence:r.essence, stone:r.stone, items:r.items})+'</div></div>'
+      html += '<div class="quest-item" style="gap:10px;"><div style="flex:1; min-width:0;"><div>'+r.label+'</div><div class="sub">지난 업적 보상</div><div>'+rewardPillsHtml({essence:r.essence, stone:r.stone, star:r.star||0, items:r.items})+'</div></div>'
         + '<div style="flex-shrink:0; min-width:48px; text-align:center;"><button class="btn small" data-claim-reward="'+r.id+'">받기</button></div></div>';
     });
     if(ACHIEVEMENTS.filter(a=>a.category===achievementCategory).length===0){
@@ -14720,7 +14726,8 @@ function migrateHardV253(){
 // 지금 보상 정의로 다시 계산한 합계(rwLedger)를 세이브에 같이 둠(rwGot, 저장할 때마다 갱신)
 // 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
 // 주의: 진행 기록의 모양(스테이지 번호 등)을 옮기는 업데이트와 RW_VER 올림을 같은 버전에 섞지 말 것 — 옮긴 만큼이 늘어난 보상으로 잡힘
-const RW_VER = 3; // (v317) 계정 레벨 보상에 별빛 조각 · (v5.3.0) 챕터 보스 첫 격파에 별빛 조각 (노말 50 · 하드 100)
+const RW_VER = 4; // (v5.3.0) 업적·계정 레벨 5의 배수·챕터 진행도 100%·요일 던전 5단계마다·시련·탑 25층마다에 별빛 조각 · 챕터 100%에 정수
+const RW_VER_OLD_NOTE = 3; // (v317) 계정 레벨 보상에 별빛 조각 · (v5.3.0) 챕터 보스 첫 격파에 별빛 조각 (노말 50 · 하드 100)
 const RW_CAT_NM = { wbrec:'월드 보스 최고 기록', stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
 const RW_V0_ADDED = { boss:/^i\.(eq_|eqpick_|engr$|mythic$)/, tower:/^i\.(eq_|eqpick_)/, dg:/^i\.(eq_|eqpick_|engr$)/, trial:/^i\.(eq_|eqpick_|engr$)/, lv:/^i\.(eq_|eqpick_)/ }; // 장부가 없던 세이브(v312 이하)의 기준 = 지금 정의 − v2.11.0·v3.0.0에서 더한 장비권·각인석
 function rwLedger(){
