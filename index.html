@@ -4847,7 +4847,7 @@ function accFresh(s){ return !(s.lifetimeSummons>0) && !Object.keys(s.stageBest|
 function accSummary(s){
   const own = Object.keys(s.owned||{}).reduce((a,k)=>a+((s.owned[k]||0)>0?1:0), 0);
   const cleared = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).length;
-  return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · '+uiIc('essence')+' '+Math.floor(s.essence||0)+' · 탑 '+(s.towerBest||0)+'층';
+  return '스테이지 '+cleared+'개 클리어 · 정령 '+own+'종 · 탑 '+(s.towerBest||0)+'층<br>'+uiIc('essence')+' '+Math.floor(s.essence||0)+' · '+uiIc('stone')+' '+Math.floor(s.enhanceStone||0)+' · '+SHARD_IC+' '+Math.floor(s.starShard||0); // (v7.1.3) 재화 더 자세히
 }
 // (v333) 서버 진행으로 덮기 전 기기 진행을 최근 3개까지 보관 — 설정 「덮어쓰기 전 진행 되살리기」 (예전엔 1개뿐이라 다음에 켤 때 또 덮이면 사라졌음)
 const accBakKey = ()=> SAVE_KEY+'_beforeCloudList'; // 함수로: SAVE_KEY가 이 줄보다 아래에서 정의됨
@@ -4882,8 +4882,9 @@ function accChooser(parsed, cloud){
     + card('accUseCloud', '☁️ 서버에 저장된 진행', tt ? '마지막 저장 '+tt : '', accSummary(parsed))
     + card('accUseLocal', '📱 이 기기의 진행', '지금 기기에 있는 것', accSummary(state))
     + '</div></div>';
-  document.getElementById('accUseCloud').addEventListener('click', ()=>{ accApply(parsed); accSetMeta(cloud.rev||0); closeModal(); render(); toast('서버 진행으로 변경'); });
-  document.getElementById('accUseLocal').addEventListener('click', async ()=>{ acc.base = cloud.rev||0; closeModal(); await accPush(true); toast('이 기기 진행을 서버에 저장'); });
+  // (v7.1.3) 고르면 한 번 더 확인 — 고르지 않은 쪽은 사라지니까 (사용자 결정) · 취소하면 고르기 창 그대로
+  document.getElementById('accUseCloud').addEventListener('click', ()=>confirmBox('☁️ 서버 진행으로', '이 기기의 진행은 사라짐<br><small>'+accSummary(state)+'</small>', '서버 진행 쓰기', ()=>{ accApply(parsed); accSetMeta(cloud.rev||0); closeModal(); render(); toast('서버 진행으로 변경'); }, {danger:true}));
+  document.getElementById('accUseLocal').addEventListener('click', ()=>confirmBox('📱 이 기기 진행으로', '서버에 저장된 진행은 사라짐<br><small>'+accSummary(parsed)+'</small>', '이 기기 진행 쓰기', async ()=>{ acc.base = cloud.rev||0; closeModal(); await accPush(true); toast('이 기기 진행을 서버에 저장'); }, {danger:true}));
 }
 async function accPush(force){ // 서버에 저장 — 다른 기기가 그사이 더 새로 저장했으면 덮어쓰지 않음
   if(!acc.on || !acc.linked || acc.kicked || acc.busy) return false;
@@ -10700,6 +10701,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:373, v:'7.1.3', date:'2026-10-08', secs:[
+    { t:'계정', items:[ '진행 선택 창에서 고르면 한 번 더 확인 — 사라지는 쪽 진행을 보여 줌', '진행 요약에 강화석 · 별빛 조각 추가' ]}
+  ]},
   { build:371, v:'7.1.2', date:'2026-10-08', secs:[
     { t:'화면', items:[ '장비 고유 효과 창의 「지금」 칸 정리 — 붙은 효과가 후보에 있으면 따로 안 보여 줌', '후보 칸 아래 「붙어 있음 · 이걸로 고르기」 글자 뺌 — 붙은 효과는 오른쪽에 「선택됨」', '고유 효과 전체 목록을 한 줄 카드로 — 이름 · 설명 왼쪽, 레전더리 · 신화 값 오른쪽' ]}
   ]},
@@ -16134,7 +16138,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 372, APP_VERSION = '7.1.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 373, APP_VERSION = '7.1.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
