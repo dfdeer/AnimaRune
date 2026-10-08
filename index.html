@@ -11720,7 +11720,8 @@ function vlCollectAll(){
   vmGive(rw); save(); sfx('claim'); toastReward(rw, uiIc('village')+' 마을 수확'); render();
 }
 // 마을 지도 — 길 위에 시설 건물이 늘어선 한 화면 (거둘 게 있으면 건물 위에 말풍선 · 말풍선을 누르면 바로 거둠)
-const VL_IMG = k=> '<img class="vl-img" src="assets/village/vl_'+k+'.webp" alt="" draggable="false">'; // 건물 그림 (hearth·mine·lodge·work·build·empty)
+const VL_IMG_V = { hearth:2, mine:2 }; // 그림을 바꾸면 숫자를 올림 — 그림은 기기 캐시를 먼저 써서, 같은 주소면 예전 그림이 계속 보임 (화로·광산 좌우 반전)
+const VL_IMG = k=> '<img class="vl-img" src="assets/village/vl_'+k+'.webp'+(VL_IMG_V[k] ? '?v='+VL_IMG_V[k] : '')+'" alt="" draggable="false">'; // 건물 그림 (hearth·mine·lodge·work·build·empty)
 function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
   return '<div class="vl-bld'+(o.lock ? ' lock' : '')+'" '+(o.lock ? '' : 'data-vl="'+o.k+'"')+' style="left:'+o.x+'%; top:'+o.y+'%;">'
     + (o.bub ? '<span class="vl-bub'+(o.bub.hot ? ' hot' : '')+'" '+(o.bub.col ? 'data-vl-col="'+o.k+'"' : '')+'>'+o.bub.ic+'</span>' : '')
