@@ -1548,9 +1548,11 @@
 /* (v6.2.2) 소환 연출 — 승급 고리 · 별자리(픽업) · 별똥별·흔들림·강림 글자(신화·성좌) · 10연 카드 뒤집기 */
 .modal-bg.summon-bg.sm-sus{background:#07070df2;} .modal-bg.summon-bg.sm-sus::before{content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 50% 42%, var(--rca) 0%, transparent 62%); opacity:0; animation:smFade .5s ease-out var(--rev) forwards;}
 .sm-sus .sm-orb{background:radial-gradient(circle at 35% 30%, #fff 0%, #c9c6e8 45%, #000000aa 100%); box-shadow:0 0 44px 12px #ffffff3a;}
-.sm-ot{position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff 0%, var(--tc) 45%, #000000aa 100%); box-shadow:0 0 44px 12px color-mix(in srgb, var(--tc) 45%, transparent); opacity:0; animation:smFade .12s ease-out var(--td) forwards;}
-.sm-tr{position:absolute; left:50%; top:210px; width:80px; height:80px; margin:-40px 0 0 -40px; border-radius:50%; border:4px solid var(--tc); box-shadow:0 0 16px var(--tc), inset 0 0 12px var(--tc); opacity:0; pointer-events:none; animation:smTier .55s ease-out var(--td) forwards;}
-@keyframes smTier{0%{opacity:1; transform:scale(.6);} 100%{opacity:0; transform:scale(3.2);}}
+.sm-ot{position:absolute; inset:0; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff 0%, var(--tc) 45%, #000000aa 100%); box-shadow:0 0 44px 12px color-mix(in srgb, var(--tc) 45%, transparent); opacity:0; animation:smOtPop .45s cubic-bezier(.2,1.6,.4,1) var(--td) forwards;}
+@keyframes smOtPop{0%{opacity:0; transform:scale(1.5); filter:brightness(2.4);} 40%{opacity:1;} 100%{opacity:1; transform:scale(1); filter:none;}} /* (v6.2.3) 단계가 오를 때 구슬이 크게 튀며 색이 바뀜 */
+.sm-tr{position:absolute; left:50%; top:210px; width:90px; height:90px; margin:-45px 0 0 -45px; border-radius:50%; border:5px solid var(--tc); box-shadow:0 0 20px var(--tc), inset 0 0 14px var(--tc); opacity:0; pointer-events:none; animation:smTier .7s ease-out var(--td) forwards;} .sm-tr.r2{border-width:2px; animation-duration:.95s; animation-delay:calc(var(--td) + .1s);}
+@keyframes smTier{0%{opacity:1; transform:scale(.6);} 100%{opacity:0; transform:scale(4);}}
+.sm-tf{position:absolute; inset:-60px; pointer-events:none; background:radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--tc) 70%, transparent) 0%, transparent 60%); opacity:0; animation:smTf .5s ease-out var(--td) forwards;} @keyframes smTf{0%{opacity:0;} 25%{opacity:.85;} 100%{opacity:.18;}}
 .sm-const{position:absolute; left:50%; top:210px; width:300px; height:300px; margin:-150px 0 0 -150px; pointer-events:none; overflow:visible; animation:smConstOut .6s ease-out var(--rev) forwards;}
 .sm-const line{stroke:#d8e6ff; stroke-width:1.6; stroke-linecap:round; stroke-dasharray:120; stroke-dashoffset:120; filter:drop-shadow(0 0 3px #9fc4ff); animation:smDraw .35s ease-out forwards;}
 .sm-const circle{fill:#fff; opacity:0; filter:drop-shadow(0 0 5px #bcd6ff); transform-box:fill-box; transform-origin:center; animation:smStarPt .4s ease-out forwards;}
@@ -8380,8 +8382,9 @@ function doPickup(n){
     const again = ()=>doPickup(n), opts = { star:true, canAgain:()=>canPickup(n), againLabel:()=>'✨ '+n+'회 더 '+SHARD_IC+' '+(PICKUP_COST*n) };
     if(n===1) showResultModal(SPIRITS[keys[0]], flags[0], again, Object.assign({ mem:memF[0] }, opts));
     else showMultiResultModal(keys, flags, again, Object.assign({ title: uiIc('pickup')+' 픽업 '+n+'회 결과', mem:memF }, opts));
-    if(refund) setTimeout(()=>toast('초월·성좌를 끝낸 신화 → 별빛 조각 +'+refund), 900);
-    if(selK && SPIRITS[selK]) setTimeout(()=>toast(memIc(selK)+' '+SPIRITS[selK].name+' 기억 조각 +'+(PICKUP_MEM_PER_PULL*n), 2200, true), refund ? 2400 : 900); // (v5.0.6) 조각 아이콘이 글자로 보이던 것
+    const shown = n===1 ? Math.round(summonRevT(spRar(SPIRITS[keys[0]]))*1000) + 900 : 4000; // (v6.2.3) 결과가 공개된 뒤에 — 환급 알림이 먼저 떠서 신화가 나온 걸 미리 알게 됐음
+    if(refund) setTimeout(()=>toast('초월·성좌를 끝낸 신화 → 별빛 조각 +'+refund), shown);
+    if(selK && SPIRITS[selK]) setTimeout(()=>toast(memIc(selK)+' '+SPIRITS[selK].name+' 기억 조각 +'+(PICKUP_MEM_PER_PULL*n), 2200, true), refund ? shown + 1500 : 900); // (v5.0.6) 조각 아이콘이 글자로 보이던 것
     render();
   };
   if(n>1 && state.settings.multiNoAsk) return go();
@@ -8906,7 +8909,7 @@ function doSlotFuse(){
   const res = x.res, isNew = x.isNew, inherited = x.inherited, awInh = x.awInh;
   if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
   else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
-  if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+(eq ? equipInfo(res).name : SPIRITS[res].name)), Math.round(Math.max(SUMMON_THEME[eq ? equipInfo(res).rarity : SPIRITS[res].rarity].rev, 1.1)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
+  if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+(eq ? equipInfo(res).name : SPIRITS[res].name)), Math.round(summonRevT(eq ? equipInfo(res).rarity : spRar(SPIRITS[res]), true)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
   render();
 }
 // ===================== (v250) 자동 합성: 등급·속성·종(장비는 부위) 필터 + 남길 수량 → 3개씩 묶어 한 번에 =====================
@@ -10406,7 +10409,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:365, v:'6.2.3', date:'2026-10-08', secs:[
-    { t:'소환 연출', items:[ '10회 소환 카드가 더 천천히 뒤집힘', '뒤집는 중에 화면을 누르면 한 번에 공개' ]}
+    { t:'소환 연출', items:[ '10회 소환 카드가 더 천천히 뒤집힘', '뒤집는 중에 화면을 누르면 한 번에 공개', '1회 소환 등급이 한 단계씩 오르는 연출을 천천히 — 단계마다 구슬이 튀며 색이 바뀌고 화면이 그 색으로 번쩍 · 효과음 추가' ]}
   ]},
   { build:364, v:'6.2.2', date:'2026-10-08', secs:[
     { t:'소환 연출', items:[ '1회 소환 — 구슬이 흰빛으로 차오르다가 등급 단계마다 고리가 터지며 색이 한 단계씩 올라감 · 배경 빛은 공개 때 켜짐', '신화·성좌 — 별똥별이 떨어지고 화면이 흔들리며 「신화 강림!」·「성좌 강림」 글자', '10회 소환 — 카드가 뒷면으로 깔린 뒤 한 장씩 뒤집힘 · 에픽 이상은 뒷면이 먼저 빛남 · 레전더리 이상 최고 카드는 뒤집힐 때 빛이 터짐 · 등급 개수는 다 뒤집은 뒤에 보임' ]},
@@ -14267,12 +14270,16 @@ const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 �
 };
 function summonVars(rarity, revOverride){ const hex = RARITY_HEX[rarity], t = SUMMON_THEME[rarity]; return '--rc:'+hex+'; --rc2:'+t.c2+'; --rca:'+hex+'66; --rcb:'+hex+'2e; --glow:'+t.glow+'px; --rev:'+(revOverride||t.rev)+'s; --flash:'+t.flash+';'; }
 function walletTicketHtml(opts){ if(opts && opts.star) return '<span>'+SHARD_IC+' '+(state.starShard||0)+'</span>'; const k = (opts && opts.ticketKey) || 'summon'; return ticketCount(k)>0 ? '<span>'+TICKET_INFO[k].icon+' '+ticketCount(k)+'</span>' : ''; }
+const SUS_LADDER = ['rare','epic','legendary','mythic','astral'], SUS_B = 0.8, SUS_S = 0.7; // (v6.2.3) 1회 공개: 첫 단계 0.8초 · 단계마다 0.7초
+function summonRevT(rar, fuse){ const n = Math.max(0, SUS_LADDER.indexOf(rar)+1); return n ? SUS_B + (n-1)*SUS_S + 0.6 : (fuse ? 1.1 : 0.7); } // 공개 시점(초) — 결과 창과 공개 뒤 알림이 같이 씀
 function showResultModal(sp, isNew, again, opts){
   window.__modalScrollReset = true;
   const custom = opts && opts.custom; // 장비 등 정령이 아닌 대상: {icon, sub, own}
   const fuse = opts && opts.fuse; // 합성 연출: 재료 3개가 중앙으로 모여든 뒤 결과 카드 공개
   const fail = !!(opts && opts.fail); // (v232) 합성 실패도 성공과 똑같이 모여드는 연출 뒤에 공개(처음부터 실패를 알 수 없게)
-  const revT = fuse ? Math.max(SUMMON_THEME[custom ? sp.rarity : spRar(sp)].rev, 1.1) : SUMMON_THEME[custom ? sp.rarity : spRar(sp)].rev;
+  // (v6.2.3) 1회 공개 시간 = 등급 단계 수에 맞춤 — 단계 사이를 0.7초씩 둬서 색이 올라가는 게 보이게 (예전엔 레전더리 3단계가 0.6초 안에 지나감, 사용자 결정)
+  const susN = Math.max(0, SUS_LADDER.indexOf(custom ? sp.rarity : spRar(sp))+1);
+  const revT = summonRevT(custom ? sp.rarity : spRar(sp), !!fuse);
   const key = sp.element+'_'+sp.rarity+'_'+sp.variant;
   const vr = custom ? sp.rarity : spRar(sp), t = SUMMON_THEME[vr], info = RARITY_INFO[vr], passive = custom ? null : passiveFor(key), memG = opts && opts.mem; // (v335) 성좌 표시 · 이미 있는 신화는 기억 조각
   const own = custom ? 0 : ownedCount(key);
@@ -14284,10 +14291,10 @@ function showResultModal(sp, isNew, again, opts){
   const stars = Array.from({length:t.stars},(_,i)=>'<span style="--i:'+i+';">★</span>').join('');
   const canAgain = again && (opts && opts.canAgain ? opts.canAgain() : canSummonOnce());
   // (v6.2.2) 승급 연출 — 구슬은 흰빛으로 차오르다가 등급 단계마다 고리가 터지며 색이 한 단계씩 올라감(레어 → 에픽 → …) · 배경 빛도 공개 때 켜짐(처음부터 등급 색이 보이던 것)
-  const LADDER = ['rare','epic','legendary','mythic','astral'], steps = LADDER.slice(0, Math.max(0, LADDER.indexOf(vr)+1));
-  const stepT = i=> (revT*(0.32 + 0.53*(steps.length>1 ? i/(steps.length-1) : 1))).toFixed(2)+'s';
+  const steps = SUS_LADDER.slice(0, susN);
+  const stepT = i=> (SUS_B + i*SUS_S).toFixed(2)+'s'; // 단계마다: 구슬 색이 바뀌며 튀고 · 고리 두 겹 · 화면이 그 색으로 번쩍 · 짧은 효과음
   const orbTiers = steps.map((r,i)=>'<i class="sm-ot" style="--tc:'+RARITY_HEX[r]+'; --td:'+stepT(i)+';"></i>').join('');
-  const tierRings = steps.map((r,i)=>'<div class="sm-tr" style="--tc:'+RARITY_HEX[r]+'; --td:'+stepT(i)+';"></div>').join('');
+  const tierRings = steps.map((r,i)=>'<div class="sm-tr" style="--tc:'+RARITY_HEX[r]+'; --td:'+stepT(i)+';"></div><div class="sm-tr r2" style="--tc:'+RARITY_HEX[r]+'; --td:'+stepT(i)+';"></div><div class="sm-tf" style="--tc:'+RARITY_HEX[r]+'; --td:'+stepT(i)+';"></div>').join('');
   const big = !fail && !fuse && (vr==='mythic' || vr==='astral');
   const mets = big ? Array.from({length:5},(_,i)=>'<i class="sm-met" style="--mx:'+(-60+i*38)+'%; --md:'+(revT*0.45 + i*0.09).toFixed(2)+'s;"></i>').join('') : '';
   const cst = (opts && opts.star && !fuse) ? (()=>{ const P = [[150,52],[226,96],[246,180],[196,250],[104,250],[54,180],[74,96]]; // (v6.2.2) 픽업: 별자리가 그려지며 소환
@@ -14323,6 +14330,7 @@ function showResultModal(sp, isNew, again, opts){
   document.getElementById('modalClose2').addEventListener('click', closeModal);
   if(again){ const ag = document.getElementById('smAgain'); if(ag) ag.addEventListener('click', ()=>{ closeModal(); again(); }); }
   sfx('summonCharge');
+  steps.forEach((r,i)=>{ sfxAt(Math.round((SUS_B + i*SUS_S)*1000), ()=>{ if(document.getElementById('smStage')) sfx('bBuff'); }); }); // (v6.2.3) 등급이 한 단계 오를 때마다
   sfxAt(Math.round(revT*1000), ()=>{ if(document.getElementById('smStage')){ if(fail){ sfx('fail'); return; } sfx(t.sfx); if(fuse) sfx('fuse'); } });
 }
 function showMultiResultModal(keys, isNewFlags, again, opts){
