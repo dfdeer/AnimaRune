@@ -325,7 +325,6 @@
   .rf-node.next .rf-orb{animation:rfPulse 1.4s ease-in-out infinite;} @keyframes rfPulse{0%,100%{filter:drop-shadow(0 0 5px #c9b8ffaa); transform:scale(1);} 50%{filter:drop-shadow(0 0 14px #e6dcff); transform:scale(1.08);}}
   .rf-node.lock .rf-orb{background-image:url(assets/ui/rf_orb_lock.webp); filter:none;} .rf-node.lock .rf-orb .uic{width:22px; height:22px; margin:0; opacity:.85;} .rf-node.lock small{opacity:.6;} .rf-node:disabled{cursor:default; opacity:.6;}
   .rf-orb{position:relative;} .rf-duo{position:absolute; top:-6px; right:-14px; font-style:normal; font-size:9px; font-weight:900; color:#fff; background:linear-gradient(90deg,#8a6cff,#ff6a9a); border:1px solid #fff8; border-radius:8px; padding:1px 5px; text-shadow:none; white-space:nowrap;} /* (v344) 연계 층 */
-  .rf-reso{margin:6px auto 0; text-align:center; font-size:11px; color:var(--sub); display:flex; align-items:center; justify-content:center; gap:3px;} .rf-reso.on{color:#ffe08a; font-weight:800;} .rf-reso .uic{width:14px; height:14px;}
   .rf-duotag{margin:6px auto 0; text-align:center; font-size:12px; font-weight:800; color:#ffd0e6; display:flex; align-items:center; justify-content:center; gap:4px;}
   .rf-node .rf-s3{gap:0;} .rf-node .rf-s3 i .star-ic{width:13px; height:13px;}
   .rf-node small{font-size:10px; font-weight:800; color:#e8e2ff; white-space:nowrap; display:flex; align-items:center; gap:2px; padding:1px 6px; border-radius:8px; background:#0009;} .rf-node small .uic{width:12px; height:12px; margin:0;}
@@ -10733,6 +10732,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:375, v:'7.3.0', date:'2026-10-08', secs:[
+    { t:'별빛 균열', items:[ '11 · 12층 연계 층 없앰 — 다른 층처럼 픽업에 맞춘 보스 기믹이 돌아가며 나옴', '공명(픽업 둘을 같이 넣으면 공격력 +15%) 없앰' ]}
+  ]},
   { build:374, v:'7.2.0', date:'2026-10-08', secs:[
     { t:'별빛 균열', items:[ '10층 세기 하드 3 보스 ×1 → ×0.46 (추천 전투력 약 34,900 → 16,100)', '11층 세기 하드 5 보스 ×1 → 하드 3 보스 ×0.72 (추천 전투력 약 428,200 → 25,100)', '12층 세기 하드 5 보스 ×1.25 → 하드 3 보스 ×1.03 (추천 전투력 약 535,300 → 35,900)' ]}
   ]},
@@ -11996,7 +11998,7 @@ function modeHelpHtml(k){
   if(k==='rift'){ const sh = [...new Set(RIFT_STAR_SHARD)];
     return sec(RIFT_NAME) + li([RIFT_FLOORS.length+'층 · 픽업 기간이 바뀔 때마다 층과 보스가 새로 짜이고 별은 처음부터', '홀수 층은 첫 번째 픽업 정령, 짝수 층은 두 번째 픽업 정령에 맞춘 보스 — 그 픽업이 유리한 속성 · 받아치기 좋은 기믹', (RIFT_TIERS.findIndex(t=>t.h)+1)+'층부터 하드 세기', '온라인일 때만 도전'])
       + sec('별') + li(['층마다 별 3개: 클리어 · '+RIFT_ROUND_GOAL+'라운드 안 처치 · 전원 생존', '처음 얻은 별마다 별빛 조각 — 1~4층 '+sh[0]+' · 5~8층 '+sh[1]+' · 9~12층 '+sh[2]])
-      + sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더', '픽업 둘을 같이 넣으면 공명 — 둘 다 공격력 +'+Math.round(RIFT_RESO*100)+'%', '한정 성좌 픽업 기간엔 '+RIFT_DUO_FROM+'·'+RIFT_FLOORS.length+'층이 연계 층 (픽업 둘이 같이 풀기 쉬운 기믹)']); }
+      + sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더']); }
   if(k==='dungeon') return sec('요일 던전') + li(['월 화염 · 화 물결 · 수 숲결 · 목 빛 · 금 그림자 · 토·일은 전부 열림 (한국 시간)', '그 속성 정령만 출전 · 적은 그 속성에 불리한 속성 (그림자 던전은 그림자 적)', DUNGEON_MAX+'단계 · 5단계마다 수호자 · 적 5마리, 6단계부터 6마리'])
       + sec('보상') + li(['단계마다 처음 돌파할 때만 — 정수 · 강화석 · 각인석', '5 · 10 · 15 · 20단계는 별빛 조각 10 · 30 · 50 · 50과 확정권 · 선택권', '이미 돌파한 단계는 연습 (보상 없음)']);
   if(k==='trial') return sec('시련의 전당') + li(['내 정령 대신 정해진 정령으로 푸는 퍼즐', '퍼즐마다 라운드 제한 · 목표는 준비 창에', '실패하면 힌트 보기가 열림', '처음 통과할 때만 보상']);
@@ -12925,13 +12927,13 @@ function riftBossStage(hard, c){ return (hard ? HARD_BASE : 0) + c*CHAPTER_LENGT
 function riftPeriod(){ return pickupPeriod(); }
 function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 · 이유
   per = per || riftPeriod();
-  { const D = f>=RIFT_DUO_FROM ? riftDuoOf(per) : null; if(D) return { pu:per.pair[0], duo:D, gim:riftDuoArt(D), gi:-1, el:D.el, why:'', hard:!!RIFT_TIERS[f-1].h }; } // (v344) 연계 층
+  { const D = RIFT_DUO_ON && f>=RIFT_DUO_FROM ? riftDuoOf(per) : null; if(D) return { pu:per.pair[0], duo:D, gim:riftDuoArt(D), gi:-1, el:D.el, why:'', hard:!!RIFT_TIERS[f-1].h }; } // (v344) 연계 층
   const pu = per.pair[(f-1)%2], fits = RIFT_FIT[pu], fit = fits[Math.floor((f-1)/2) % fits.length];
   return { pu, gim: fit.g, gi: CHAPTER_BOSS_GIMMICK.indexOf(fit.g), el: RIFT_BEATS[SPIRITS[pu].element], why: fit.why, hard: !!RIFT_TIERS[f-1].h };
 }
 // (v344) 연계 층 — 한정 성좌 픽업 기간엔 11·12층이 그 기간 짝(한정 + 짝 신화)이 같이 풀어야 쉬운 기믹 (사용자 결정) · 그 전 기간은 예전처럼 번갈아
-// 공명: 픽업 둘을 같이 넣으면 둘 다 공격력 +15% (모든 층) · 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
-const RIFT_DUO_FROM = 11, RIFT_RESO = 0.15;
+// 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
+const RIFT_DUO_ON = false, RIFT_DUO_FROM = 11; // (v7.3.0) 연계 층·공명 뺌 (사용자 결정 10/8 — 기간 규칙으로 바꿀 예정) · 연계 층 코드는 끄기만 함(진행 중이던 전투 세이브용)
 const RIFT_DUO = {
   fire_mythic_sc:  { id:'sc', name:'꺼지지 않는 화로', el:'light', art:'lavaLord',    gm:'열기 갑옷', d:'터뜨리는 공격(시한폭탄·발화) 말고는 받는 피해 −65% · 2라운드마다 열기 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 빙결·둔화되면 충전이 꺼짐' },
   fire_mythic_su:  { id:'su', name:'투지를 시험하는 자', el:'wood', art:'frostGiant', gm:'투지의 시험', d:'체력 50%가 넘는 정령의 공격은 받는 피해 −50% · 2라운드마다 충전 → 다음 라운드 시작에 아군 전체 공격력 180% · 충전 중 체력 50% 이하 정령에게 3번 맞으면 충전이 꺼짐' },
@@ -13023,8 +13025,7 @@ function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸
 function buildRiftFight(f){
   const per = riftPeriod(), P = riftPlan(f, per), els = per.pair.map(k=>SPIRITS[k].element);
   const bf = riftMakeEnemies(f, per), my = buildBossWaveFight(riftBossStage(P.hard, Math.max(0, P.gi)), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
-  const reso = per.pair.every(k=>my.myUnits.some(u=>u.key===k)); // (v344) 공명: 픽업 둘을 같이 넣음
-  my.myUnits.forEach(u=>{ const m = (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? (1+RIFT_PU_BONUS)*(reso ? 1+RIFT_RESO : 1) : 1); if(m>1) u.atk = Math.round(u.atk*m); });
+  my.myUnits.forEach(u=>{ const m = (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
   const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'] });
   sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
   return sf;
@@ -13070,7 +13071,6 @@ function showRiftPrep(f, keep){
   h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
   h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
-  { const on = per.pair.every(k=>(state.formation||[]).includes(k)); h += '<div class="rf-reso'+(on?' on':'')+'">'+stIc('link')+' 공명 — '+per.pair.map(k=>SPIRITS[k].name).join('·')+'를 같이 넣으면 둘 다 공격력 +'+Math.round(RIFT_RESO*100)+'%'+(on?' · 적용 중':'')+'</div>'; } // (v344)
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
@@ -16173,7 +16173,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 374, APP_VERSION = '7.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 375, APP_VERSION = '7.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
