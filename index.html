@@ -5132,7 +5132,7 @@ const LINE_KITS = {
         '피해는 줄기 전 중첩 기준 · 터뜨린 뒤 화상은 '+GEUMO_DROP+'중첩만 줄어듦 (남은 화상은 계속 탐)',
         '화상이 없는 대상에게는 공격력 50%'
       ].join('<br>'),
-      run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · 1중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
+      run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · GEUMO_DROP(2)중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
         if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-GEUMO_DROP); if(!u.st.burn) delete u.st.burn; } else if(i===0) C.hit(u, 0.5); }); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', icon:artIc('pv_water_a'), desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
@@ -5574,7 +5574,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
     const persisted = unitHp[key];
     if(persisted){ u.maxHp = Math.min(persisted.maxHp, u.maxHp) || u.maxHp; u.hp = Math.max(0, Math.min(persisted.hp, u.maxHp)); u.alive = u.hp>0;
       if(persisted.w){ // (v304) 보스전은 3웨이브가 한 전투 — 스킬 쿨·전투당 1회(부활 등)는 웨이브가 바뀌어도 이어짐, 전투 시작 효과(초월 보호막·강화)는 첫 웨이브에만
-        u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = !!persisted.rvG;
+        u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = !!persisted.rvG; if(persisted.tide>0) u.tide = persisted.tide; // (v5.3.0) 하백 수위도 다음 웨이브로
         if(persisted.st && typeof persisted.st==='object') u.st = JSON.parse(JSON.stringify(persisted.st)); // (v309) 버프·디버프도 그대로 이어짐(남은 라운드 포함) — 첫 웨이브의 전투 시작 효과도 남아 있던 만큼만
         else { if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0) delete u.st.empower; } } }
     myUnits.push(u);
@@ -5881,7 +5881,7 @@ function checkBossWaveOutcome(sf){
 // 웨이브 종료 시 살아있는 유닛의 체력을 로스터에 저장, 출전(피로 누적)/대기(피로 해소+20% 회복) 반영
 function persistBossWaveState(sf){
   const bf = state.bossFight; if(!bf) return;
-  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: !!u.reviveGiven, st: u.alive ? JSON.parse(JSON.stringify(u.st||{})) : {} }; }); // (v309) 버프·디버프 · (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
+  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: !!u.reviveGiven, tide: u.alive ? (u.tide||0) : 0, st: u.alive ? JSON.parse(JSON.stringify(u.st||{})) : {} }; }); // (v309) 버프·디버프 · (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
 }
 function spiritMaxHpGrid(key){ const r = spiritRune(key); return Math.max(1, Math.round(unitAtk(key)*ALLY_HP_MULT*spiritHpMult(key)*((r && r.id==='hp' && r.tier!=='boss') ? 1+runeVal(r) : 1))); } // 새 전투 체력 스케일 기준(그리드 전투 전용, 기존 spiritMaxHp와 별개)
 // (v152) 이정민님 피드백: 3웨이브짜리 보스전에서 매 웨이브 교체까지 있으면 과함 —
@@ -10812,7 +10812,7 @@ function hidCheckPending(sf){
 // (v266) 히든 업적용 기록 — 한 번 해낸 일만 표시(되돌리지 않음)
 function hidHas(k){ return !!(state.hid && state.hid[k]); }
 function hidMark(k){ if(skillSimDepth || hidHas(k)) return; /* (v294) 버튼 미리보기(복사본 계산)에서는 기록 안 함 */ state.hid = state.hid || {}; state.hid[k] = Date.now(); try{ checkAchievements(); save(); }catch(e){} }
-const ACHIEVEMENTS = [ // (v5.3.0) 별빛 조각은 목록 끝에서 achStarFill이 채움
+const ACHIEVEMENTS = [ // (v5.3.0) 별빛 조각은 속성 도감 업적까지 다 넣은 뒤 아래 forEach가 채움
   {id:'first_summon', name:'첫 소환', desc:'정령을 처음 소환하기', reward:{essence:50}, category:'general', basic:true, check:()=> (state.lifetimeSummons||0)>=1},
   {id:'summon_10', name:'정령 애호가', desc:'정령 10회 소환하기', reward:{essence:100}, category:'general', check:()=> (state.lifetimeSummons||0)>=10},
   {id:'summon_50', name:'정령 수집가', desc:'정령 50회 소환하기', reward:{stone:40}, category:'general', check:()=> (state.lifetimeSummons||0)>=50},
