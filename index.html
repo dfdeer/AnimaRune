@@ -11729,7 +11729,7 @@ const VL_IMG = k=> '<img class="vl-img" src="assets/village/vl_'+k+'.webp'+(VL_I
 function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
   return '<div class="vl-bld'+(o.lock ? ' lock' : '')+'" '+(o.lock ? '' : 'data-vl="'+o.k+'"')+' style="left:'+o.x+'%; top:'+o.y+'%;">'
     + (o.bub ? '<span class="vl-bub'+(o.bub.hot ? ' hot' : '')+'" '+(o.bub.col ? 'data-vl-col="'+o.k+'"' : '')+'>'+o.bub.ic+'</span>' : '')
-    + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span><span class="vl-st">'+o.st+'</span></div>';
+    + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span>'+(o.st ? '<span class="vl-st">'+o.st+'</span>' : '')+'</div>';
 }
 function renderVillageTab(){
   if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
@@ -11741,8 +11741,8 @@ function renderVillageTab(){
     bub: s>0 ? { ic:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', col:true, hot:s>=HEARTH_MAX() } : null });
   h += vlBld({ k:'mine', x:60, y:9, svg:'mine', sign:uiIc('pick')+' 광산 <i>B'+m.d+'</i>', st:'기력 '+m.e+'/'+vmMaxE(m),
     bub: m.cart>0 ? { ic:uiIc('cart'), col:true, hot:m.cart>=VM_CART_MAX } : (m.e>=vmMaxE(m) ? { ic:uiIc('pick'), hot:true } : null) });
-  h += vlBld({ k:'lodge', x:9, y:55, svg:'build', sign:'🔒 정령 숙소', st:'준비 중', lock:true });
-  h += vlBld({ k:'work', x:60, y:55, svg:'build', sign:'🔒 작업장', st:'준비 중', lock:true });
+  h += vlBld({ k:'lodge', x:9, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
+  h += vlBld({ k:'work', x:60, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
   h += '</div>';
   h += '<div class="card vl-all"><div><div class="ttl">모두 거두기</div><div class="vl-all-rw">'+(any ? vmRwText(all) : '<span class="sub">거둘 것 없음</span>')+'</div></div>'
     + '<button class="btn" id="vlAllBtn" '+(any ? '' : 'disabled')+'>거두기</button></div>';
