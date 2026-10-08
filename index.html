@@ -2698,7 +2698,7 @@ function dealDamage(sf, a, d, mult, opts){
       if(host.st.shield>0){ const ab = Math.min(host.st.shield, hv); host.st.shield -= ab; hv -= ab; if(host.st.shield<=0) delete host.st.shield; }
       host.tide = Math.min(host.maxHp, (host.tide||0) + hb); host.hp = Math.max(0, host.hp - hv); if(hv>0) hidHurt(sf, host, hv); (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:hb, dot:true, src:'🔗물길' }); if(host.hp<=0) killUnit(sf, host); } }
   const shieldBefore = s.shield||0;
-  if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; }
+  if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; if(s.roarSh) s.roarSh = Math.max(0, s.roarSh - ab); } // (v5.3.0) 산군 포효 보호막이 먼저 깎임
   d.hp = Math.max(0, d.hp - rest);
   if(rest>0) hidHurt(sf, d, rest); // (v270)
   if(rest > d.maxHp*0.3 && d.hp>0 && aliveUnits(sideUnits(sf, d.side)).some(x=>x.line==='water_mn')) s.memHeal = (s.memHeal||0) + Math.round(rest*0.5); // (v343) 므네모시네 흐르는 기억
@@ -2773,6 +2773,8 @@ function performAction(sf, a, act, tSide, tIdx){
   if(a.side==='me' && act!=='basic'){ const sk = kitOf(a) && kitOf(a)[act]; if(sk && sk.kind==='harm') sf.meHarmSkill = true; } // (v270) 평화주의자
   const empBefore = a.st.empower || 0; // (v269) 이번 행동 전부터 있던 강화만 이번 행동에서 소모
   const clubBefore = !!a.st.club; // (v343) 도깨비 방망이 — 자리를 바꾼 다음 공격에서 소모
+  if(a.st.counter) delete a.st.counter; // (v343) 산군 반격 자세는 다음 차례까지
+  if(a.st.roarSh){ const left = Math.min(a.st.shield||0, a.st.roarSh); if(left>0){ a.st.shield -= left; if(a.st.shield<=0) delete a.st.shield; } delete a.st.roarSh; } // (v5.3.0) 포효 보호막도 산군 다음 차례에 꺼짐 (남은 만큼만 — 다른 아군이 씌운 보호막은 그대로)
   const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
     C.hit(C.t, 1);
@@ -4836,7 +4838,7 @@ function roundStartEffects(sf){
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
     if(s.regen){ const b = u.hp, hv = healAmount(u, pctHp(u)*s.regen.v); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     if(s.memHeal){ const b = u.hp, hv = healAmount(u, s.memHeal); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
-    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link','counter'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
+    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
     if(s.linkHost){ s.linkHost.r--; if(s.linkHost.r<=0){ u.maxHp = Math.max(1, u.maxHp - (s.linkHost.boost||0)); u.hp = Math.min(u.hp, u.maxHp); delete s.linkHost; } }
     if(s.bomb){ s.bomb.r--; if(s.bomb.r<=0){ bombExplode(sf, u, hits); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
@@ -5293,8 +5295,8 @@ const LINE_KITS = {
   wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
     passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%<br>반격은 그때 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+'만큼 추가 피해 (아군이 씌운 보호막도 포함)' },
     s1:{ name:'포효', icon:artIc('sk_wood_sg_1'), cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 보호막 · 반격',
-      desc:()=>'자신에게 도발 + 보호막 (최대체력 '+pctTxt(SG_GUARD_SHIELD)+') + 반격 자세 2라운드<br>적이 산군을 때리면 언제든 바로 반격: 공격력 70% + 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+' · 적의 행동 하나에 1번<br>후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)',
-      run:C=>{ C.shield(C.a, pctHp(C.a)*SG_GUARD_SHIELD); C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1, r:2 }; }, '🐯반격 자세'); } },
+      desc:()=>'자신에게 도발 + 보호막 (최대체력 '+pctTxt(SG_GUARD_SHIELD)+') + 반격 자세 — 반격 자세와 이 보호막은 산군의 다음 차례에 꺼짐<br>적이 산군을 때리면 언제든 바로 반격: 공격력 70% + 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+' · 적의 행동 하나에 1번<br>후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)',
+      run:C=>{ const b0 = C.a.st.shield||0; C.shield(C.a, pctHp(C.a)*SG_GUARD_SHIELD); C.a.st.roarSh = (C.a.st.roarSh||0) + Math.max(0, (C.a.st.shield||0) - b0); C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1 }; }, '🐯반격 자세'); } },
     s2:{ name:'산의 일격', icon:artIc('sk_wood_sg_2'), cd:4, kind:'harm', tag:()=> '반격 횟수 비례',
       desc:()=>'대상에게 공격력 200% + 이번 전투 반격 횟수마다 +10% (최대 +100%)',
       run:C=>{ C.hit(C.t, 2.0 + Math.min(1, 0.1*(C.a.counterN||0))); } } },
@@ -6151,7 +6153,7 @@ function statusList(u){
   if(s.memHeal) o.push({i:stIc('memheal'), t:'흐르는 기억', d:'다음 라운드 시작에 '+fmtHp(s.memHeal)+' 회복', good:true});
   if(s.link) o.push({i:stIc('link'), t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
   if(s.linkHost) o.push({i:stIc('linkhost'), t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
-  if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에'+r(s.counter), good:true});
+  if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에 · 다음 차례까지', good:true});
   if(u && u.line==='water_hb' && u.tide>0) o.push({i:stIc('linkhost'), t:'수위', d:fmtHp(u.tide)+' — 범람 때 적마다 '+Math.round(HB_TIDE_MUL*100)+'%만큼 추가 피해', good:true});
   if(s.veil) o.push({i:stIc('veil'), t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
   if(s.club) o.push({i:stIc('club'), t:'방망이', d:'다음 공격 공격력 +40%', good:true});
@@ -10150,7 +10152,7 @@ const PATCH_NOTES = [
     { t:'월드 보스', items:[ '최고 기록 보상 추가 — 직접 도전 한 번에 준 피해가 1만·2만·3만·5만·8만·12만·20만·30만·50만에 닿으면 한 번씩 (별빛 조각·정수·확정권)' ]},
     { t:'파견', items:[ '보낸 정령도 전투·합성·각성에 그대로 쓸 수 있음 (예전: 돌아올 때까지 못 씀) · 한 정령은 파견 한 곳에만' ]},
     { t:'출정', items:[ '상점 가격이 사이클마다 +50% (1사이클 유물 70 · 희귀 유물 110 · 회복 물약 45 기준)' ]},
-    { t:'스킬', items:[ '하백 「깊은 강」: 물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)', '하백 「범람」: 상대 전체 공격력 90%에 각자 수위의 30%만큼 추가 피해 · 쓰고 나면 수위가 비워짐', '산군 「포효」: 자기 보호막(최대체력 20%) 추가 · 반격 자세가 다음 차례까지 → 2라운드', '산군 반격: 공격력 70% + 그때 가진 보호막의 30% · 후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)', '금오 「발화」: 대상의 화상을 전부 터뜨려 중첩당 공격력 60·80·100% → 대상과 양옆의 화상을 각자 터뜨려 줄기 전 중첩당 50·60·70% · 터뜨린 뒤 화상은 2중첩만 줄어듦(남은 화상은 계속 탐) · 화상이 없는 대상에게는 50% · 십자 전파 삭제', '스칼렛 「연쇄 점화」: 전체 피해 60% → 130% · 이 스킬로 바로 터지는 폭탄 피해 ×2' ]},
+    { t:'스킬', items:[ '하백 「깊은 강」: 물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)', '하백 「범람」: 상대 전체 공격력 90%에 각자 수위의 30%만큼 추가 피해 · 쓰고 나면 수위가 비워짐', '산군 「포효」: 자기 보호막(최대체력 20%) 추가 · 이 보호막도 반격 자세처럼 산군의 다음 차례에 꺼짐 (남은 만큼만, 다른 아군이 씌운 보호막은 그대로)', '산군 반격: 공격력 70% + 그때 가진 보호막의 30% · 후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)', '금오 「발화」: 대상의 화상을 전부 터뜨려 중첩당 공격력 60·80·100% → 대상과 양옆의 화상을 각자 터뜨려 줄기 전 중첩당 50·60·70% · 터뜨린 뒤 화상은 2중첩만 줄어듦(남은 화상은 계속 탐) · 화상이 없는 대상에게는 50% · 십자 전파 삭제', '스칼렛 「연쇄 점화」: 전체 피해 60% → 130% · 이 스킬로 바로 터지는 폭탄 피해 ×2' ]},
     { t:'정령', items:[ '신화 정령을 파견 보낸 동안 같은 신화를 또 얻으면 2번째 정령으로 들어오던 것 — 이제 기억 조각 50개로 (파견 간 정령이 원본)' ]}
   ]},
   { build:356, v:'5.2.1', date:'2026-10-08', secs:[
