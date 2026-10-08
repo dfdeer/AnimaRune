@@ -2628,14 +2628,17 @@ function killUnit(sf, u){
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
 var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.5; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 50% 추가 피해 — 계산으로 정함(최대체력 = 공격력 2.7배): 범람은 테티스와 쓰면 보통 130~150% · 반격은 포효만 약 97%, 광명 보호막까지 약 125%
-var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
+var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0;
+// (v6.0.0) 한정 성좌 짝 기술 연계 (사용자 결정): 스칼렛 열충격 · 수르트 불꽃 제물(체력 50% 이하 대상) · 므네모시네 되감기 재사용 대기 · 로키 가로채기
+var SC_SHOCK = 1.5, SU_PYRE = 0.3, SU_PYRE_LOW = 0.5, MN_CD_BACK = 1; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
 function bombExplode(sf, u, hits, mul){
   const b = u.st.bomb; if(!b) return; delete u.st.bomb;
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
-  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1), { noCrit:true, noCounter:true, detonate:true });
-  if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:'💣폭발' });
+  const shock = (u.st.freeze || u.st.slow || u.st.chill) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화(한기 포함)된 적의 폭탄
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock, { noCrit:true, noCounter:true, detonate:true });
+  if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
 }
 const STEAL_ORDER = ['shield','buff','haste','regen','guard','reflect','ward','taunt']; // 로키가 빼앗는 순서 (가장 센 것부터)
@@ -2655,6 +2658,22 @@ function stealEffect(C, from){
   }
   C.a.stealSpd = Math.min(12, (C.a.stealSpd||0) + 3);
   return true;
+}
+// (v6.0.0) 로키 가로채기: 다른 아군이 적의 이로운 효과를 지우면(악몽 포식 등) 그중 1개를 로키가 가로채 체력 비율이 가장 낮은 아군에게 · 라운드에 1번
+function lokiIntercept(sf, a, from){
+  if(!from || from.side===a.side || from.isBoss || from.isWard || from.isAdd) return null;
+  const lk = aliveUnits(sideUnits(sf, a.side)).find(u=>u.line==='dark_lk' && u!==a);
+  return (lk && lk.lkRound!==sf.round) ? lk : null;
+}
+function lokiGive(sf, lk, from, old, hits){
+  const k = STEAL_ORDER.find(x=> x!=='taunt' && (x==='shield' ? (old.shield||0)>0 : !!old[x])); if(!k) return;
+  const to = aliveUnits(sideUnits(sf, lk.side)).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0]; if(!to) return;
+  const v = old[k], st = to.st; lk.lkRound = sf.round;
+  if(k==='shield'){ st.shield = (st.shield||0) + v; st.shieldR = Math.max(st.shieldR||0, old.shieldR||2); }
+  else if(k==='ward') st.ward = (st.ward||0) + v;
+  else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
+  lk.stealSpd = Math.min(12, (lk.stealSpd||0) + 3);
+  hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🫳가로채기 · '+STEAL_NM[k] });
 }
 function swapSlots(sf, side, i1, i2){ // 같은 편 두 칸의 정령을 맞바꿈 (빈 칸이면 옮김) · 이번 라운드 행동 순서도 같이 고침
   if(i1===i2) return; const A = unitAt(sf, side, i1), B = unitAt(sf, side, i2);
@@ -2759,7 +2778,7 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','seal','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
-  C.strip = u=>{ let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); return n; };
+  C.strip = u=>{ const lk = lokiIntercept(sf, a, u), keep = lk ? JSON.parse(JSON.stringify(u.st)) : null; let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); if(lk && n) lokiGive(sf, lk, u, keep, C.hits); return n; };
   C.actNext = u=>{
     if(!u.alive) return;
     const q = sf.queue;
@@ -5256,7 +5275,7 @@ const LINE_KITS = {
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
   // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
   fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
-    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)' },
+    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
       run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
@@ -5266,9 +5285,9 @@ const LINE_KITS = {
   fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'타오르는 혼', icon:artIc('pv_fire_su'), desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
-      desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +30% (2라운드)<br>체력이 모자라면 1만 남음',
+      desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +'+pctTxt(SU_PYRE)+' (2라운드)<br>대상 체력이 50% 이하면 +'+pctTxt(SU_PYRE_LOW)+'<br>체력이 모자라면 1만 남음',
       run:C=>{ const a = C.a, cost = Math.round(a.maxHp*0.15), before = a.hp; a.hp = Math.max(1, a.hp - cost); a.rsHp = Math.max(1, (Number.isFinite(a.rsHp) ? a.rsHp : before) - cost); if(before>a.hp){ hidHurt(C.sf, a, before-a.hp); C.hits.push({ side:a.side, idx:a.idx, kind:'dmg', amount:before-a.hp, dot:true, src:'불꽃 제물' }); }
-        const give = u=>C.pos(u, st=>{ st.pyre = { v:0.3, r:2 }; }, '🕯️공격력 +30%'); give(C.t);
+        const give = u=>{ const v = u.hp/u.maxHp<=0.5 ? SU_PYRE_LOW : SU_PYRE; C.pos(u, st=>{ st.pyre = { v, r:2 }; }, '🕯️공격력 +'+Math.round(v*100)+'%'); }; give(C.t);
         if(aw5(a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>y.atk-x.atk)[0]; if(o) give(o); } } },
     s2:{ name:'종말의 불길', icon:artIc('sk_fire_su_2'), cd:4, kind:'harm', tag:()=> '잃은 체력 비례',
       desc:()=>'대상에게 공격력 150% + 자기가 잃은 체력의 30%만큼 추가 피해',
@@ -5276,10 +5295,10 @@ const LINE_KITS = {
   water_mn: { role:'되감기', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'흐르는 기억', icon:artIc('pv_water_mn'), desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
     s1:{ name:'되감기', icon:artIc('sk_water_mn_1'), cd:3, kind:'heal', allyOnly:true, tag:()=> '아군 전용',
-      desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거<br>불꽃 제물로 태운 체력은 안 돌아옴',
+      desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거 · 재사용 대기 중인 기술 하나가 '+MN_CD_BACK+'라운드 당겨짐 (스킬1 먼저)<br>불꽃 제물로 태운 체력은 안 돌아옴',
       run:C=>{ const t = C.t; if(t.side!==C.a.side) return; const to = Math.max(1, Math.min(t.maxHp, Math.round(Number.isFinite(t.rsHp) ? t.rsHp : t.hp))), d = to - t.hp;
         if(d>0) C.heal(t, d); else if(d<0){ t.hp = to; C.hits.push({ side:t.side, idx:t.idx, kind:'dmg', amount:-d, dot:true, src:'되감기' }); }
-        C.cleanse(t, 1); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } },
+        C.cleanse(t, 1); if(t!==C.a){ if(t.cd1>0) t.cd1 = Math.max(0, t.cd1-MN_CD_BACK); else if(t.cd2>0) t.cd2 = Math.max(0, t.cd2-MN_CD_BACK); } C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } }, // (v6.0.0) 재사용 대기 당기기 (자신은 바로 뒤에 대기가 새로 잡혀서 뺌)
     s2:{ name:'시간의 고리', icon:artIc('sk_water_mn_2'), cd:4, kind:'buff', allyOnly:true, tag:()=> '아군 전체 · 부활 표식',
       desc:()=>'아군 전체에 2라운드 표식: 그 사이 쓰러지면 표식 받을 때 체력의 50%로 일어남<br>아군마다 전투당 1번',
       run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*0.5)) }; }, '⏳고리'); }); } } },
@@ -5311,7 +5330,7 @@ const LINE_KITS = {
       desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
       run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2, n>0 ? { starfall:true } : null); } } },
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
-    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)' },
+    passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)<br>가로채기: 다른 아군이 적의 이로운 효과를 지우면 그중 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
       desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
       run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
@@ -5321,9 +5340,10 @@ const LINE_KITS = {
   dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'방망이', icon:artIc('pv_dark_dk'), desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
     s1:{ name:'둔갑', icon:artIc('sk_dark_dk_1'), cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
-      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
+      desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>끌려 나온 적에게 독이 있으면 양옆 적에게 독이 옮겨 붙음 (남은 라운드 그대로)<br>보스는 끌어내지 못하고 공격만',
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
-        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } }
+        if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' });
+          if(t.st.poison){ const ps = t.st.poison; C.around('row').forEach(u=>{ if(!u.st.poison || (u.st.poison.pct||0) < ps.pct) C.neg(u, st=>{ st.poison = { r:ps.r, pct:ps.pct, srcG:ps.srcG }; }, '☠독 번짐'); }); } } } // (v6.0.0) 독 든 적을 끌어내면 양옆에 독이 옮겨 붙음
         C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:0.2, r:2 }; }, '🎯노출'); if(aw5(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
     s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
       desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
