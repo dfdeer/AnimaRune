@@ -2845,11 +2845,18 @@ function killUnit(sf, u){
   if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
   const bomb = u.st.bomb || null, loop = u.st.loop || null; // (v343)
+  const burnS = u.st.burn>0 ? { n:u.st.burn, dmg:u.st.burnDmg||0, cap:u.st.burnCap||5 } : null; // (v8.1.0) 도화선 — 보스로 옮길 화상
   if(u.line==='water_hb' && u.st.linkHost && u.st.linkHost.boost){ u.maxHp = Math.max(1, u.maxHp - u.st.linkHost.boost); } // (v343) 깊은 강 해제
   u.st = {};
   if(u.isAdd){ u.hidden = true; delete u.fuse; raidOnAddDeath(sf, u); } // (v260) 용암 정령은 쓰러지면 사라짐 · (v272) 레이드 기둥·씨앗
-  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
-    if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx)){ const b = (sf.enemyUnits||[]).find(x=>x.isBoss && x.alive && !x.st.bomb); if(b){ b.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:b.side, idx:b.idx, kind:'status', text:'💣옮겨 붙음' }); } } } // (v343) 스칼렛 불씨 전이 · (v8.1.0) 도화선: 앞줄이면 보스로도
+  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
+  } // (v343) 스칼렛 불씨 전이 · (v8.1.0) 옮겨 붙을 때마다 hop +1
+  if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx) && (bomb || burnS || poisoned)){ // (v8.1.0) 균열 도화선: 앞줄 적의 화상·독·폭탄 → 보스
+    const B = (sf.enemyUnits||[]).find(x=>x.isBoss && x.alive), mv = [];
+    if(B){ if(bomb && !B.st.bomb){ B.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) }; mv.push('💣'); }
+      if(burnS){ B.st.burnCap = Math.max(B.st.burnCap||5, burnS.cap); B.st.burn = Math.min(B.st.burnCap, (B.st.burn||0) + burnS.n); B.st.burnDmg = Math.max(B.st.burnDmg||0, burnS.dmg); mv.push('🔥'); }
+      if(poisoned && !B.st.poison){ B.st.poison = Object.assign({}, poisoned); mv.push('☠️'); }
+      if(mv.length) (sf._rv = sf._rv || []).push({ side:B.side, idx:B.idx, kind:'status', text:mv.join('')+'옮겨 붙음' }); } }
   if(u.isBoss){ delete u.cast; (sf.enemyUnits||[]).forEach(x=>{ if(x.isAdd && x.alive){ x.alive = false; x.hp = 0; x.hidden = true; x.st = {}; } }); (sf.myUnits||[]).forEach(m=>{ if(m.st && m.st.jail) delete m.st.jail; }); return; } // (v260 버그수정) 보스는 정령 패시브(화염-a 부활)를 쓰지 않음 — 용암군주·겁화룡이 체력 30%로 되살아나던 문제
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
   if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed){
@@ -2876,12 +2883,13 @@ var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 
 // (v6.0.0) 한정 성좌 짝 기술 연계 (사용자 결정): 스칼렛 열충격 · 수르트 불꽃 제물(체력 50% 이하 대상) · 므네모시네 되감기 재사용 대기 · 로키 가로채기
 var SC_SHOCK = 1.5, SU_PYRE = 0.3, SU_PYRE_LOW = 0.5, MN_CD_BACK = 1; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
+const SC_HOP = 0.2, SC_HOP_MAX = 5; // (v8.1.0) 불씨 전이: 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%) — 사용자 결정
 function bombExplode(sf, u, hits, mul){
-  const b = u.st.bomb; if(!b) return; delete u.st.bomb;
+  const b = u.st.bomb; if(!b) return; delete u.st.bomb; const hop = 1 + SC_HOP*Math.min(SC_HOP_MAX, b.hop||0);
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
   const shock = (u.st.freeze || u.st.slow) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화된 적의 폭탄 · (v6.1.0) 한기는 수치·방식이 달라 따로 표시하고 뺌 (사용자 결정)
-  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock, { noCrit:true, noCounter:true, detonate:true });
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock*hop, { noCrit:true, noCounter:true, detonate:true });
   if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
 }
@@ -5584,7 +5592,7 @@ const LINE_KITS = {
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
   // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
   fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
-    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
+    passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>옮겨 붙을 때마다 그 폭탄 피해 +'+Math.round(SC_HOP*100)+'% (최대 +'+Math.round(SC_HOP*SC_HOP_MAX*100)+'%)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
       run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
@@ -6482,7 +6490,7 @@ function statusList(u){
   if(u.isBoss && u.sancWeak) o.push({i:elIc(u.sancWeak), t:'약점 '+ELEMENT_INFO[u.sancWeak].name, d:ELEMENT_INFO[u.sancWeak].name+' 공격 2배 · 나머지 절반 · 다음 약점 '+ELEMENT_INFO[u.sancNext].name, good:false}); // (v344) 성역 프리즘
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   // (v343) 한정 성좌 효과
-  if(s.bomb) o.push({i:stIc('bomb'), n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음', good:false});
+  if(s.bomb) o.push({i:stIc('bomb'), n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음'+(s.bomb.hop ? ' · '+s.bomb.hop+'번 옮겨 붙음 (피해 +'+Math.round(SC_HOP*Math.min(SC_HOP_MAX, s.bomb.hop)*100)+'%)' : ''), good:false});
   if(s.star) o.push({i:stIc('star'), n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
   if(s.exposed) o.push({i:stIc('exposed'), t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
   if(s.pyre) o.push({i:stIc('pyre'), t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
@@ -10754,7 +10762,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:378, v:'8.1.0', date:'2026-10-09', secs:[
-    { t:'별빛 균열', items:[ '10월 16일 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 — 12층이 한정 성좌 층', '스칼렛 픽업 기간 규칙 「도화선」 — 픽업 공격력 +25% · 본인 +25% 대신', '2라운드마다 보스가 앞줄 빈 칸(보스 앞 위·아래)에 보스와 같은 속성 정령을 부름 · 최대 2', '부른 정령: 체력 보스 최대체력 2% · 공격력 보스 30% · 2라운드 뒤 터짐 (아군 전체 공격력 100%)', '앞줄 적이 쓰러지면 붙어 있던 시한폭탄은 보스로 옮겨 붙음' ]}
+    { t:'별빛 균열', items:[ '10월 16일 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 — 12층이 한정 성좌 층', '스칼렛 픽업 기간 규칙 「도화선」 — 픽업 공격력 +25% · 본인 +25% 대신', '2라운드마다 보스가 앞줄 빈 칸(보스 앞 위·아래)에 보스와 같은 속성 정령을 부름 · 최대 2', '부른 정령: 체력 보스 최대체력 2% · 공격력 보스 30% · 2라운드 뒤 터짐 (아군 전체 공격력 100%)', '앞줄 적이 쓰러지면 걸려 있던 화상 · 독 · 시한폭탄이 보스로 옮겨 붙음' ]},
+    { t:'스킬', items:[ '스칼렛 「불씨 전이」: 폭탄이 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%)' ]}
   ]},
   { build:377, v:'8.0.0', date:'2026-10-09', secs:[
     { t:'탐험 난이도 3단계', items:[ '탐험 난이도가 이지 · 노말 · 하드 세 단계로 — 지도 위 탭 세 칸', '예전 노말 → 이지: 적은 그대로 · 챕터 보스는 기본 기믹만 (눈보라 · 분화 · 가시 껍질 · 결계 재생 · 심연 응시 · 심연 파동 · 그림자 파동 없음)', '새 노말: 이지 챕터 5 보스를 깨면 열림 · 챕터 보스는 기본 + 추가 기믹', '하드: 노말 챕터 5 보스를 깨면 열림 · 하드 전용 기믹 · 하드 6은 노말 6 보스도', '노말 챕터 제목에 NORMAL 표시' ]},
@@ -12971,7 +12980,7 @@ function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 
 const RIFT_DUO_ON = false, RIFT_DUO_FROM = 11; // (v7.3.0) 연계 층·공명 뺌 (사용자 결정 10/8 — 기간 규칙으로 바꿀 예정) · 연계 층 코드는 끄기만 함(진행 중이던 전투 세이브용)
 // (v7.4.0) 균열 기간 규칙 — 한정 성좌 픽업마다 모든 층에 하나 (사용자 결정: 숫자 버프 대신 싸우는 방식이 바뀌게) · 규칙이 있는 기간엔 픽업 공격력 +25%·+25% 대신 규칙만
 const RIFT_RULES = { water_mythic_hb:'flow', fire_mythic_sc:'fuse' }; // (v8.1.0) 스칼렛 「도화선」
-const RIFT_RULE_INFO = { fuse:{ nm:'도화선', ic:'🧨', d:['2라운드마다 보스가 앞줄 빈 칸에 정령을 부름 (보스와 같은 속성 · 최대 2)', '부른 정령은 2라운드 뒤 터짐 — 아군 전체 피해', '앞줄 적이 쓰러지면 붙어 있던 폭탄은 보스로 옮겨 붙음'] }, flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
+const RIFT_RULE_INFO = { fuse:{ nm:'도화선', ic:'🧨', d:['2라운드마다 보스가 앞줄 빈 칸에 정령을 부름 (보스와 같은 속성 · 최대 2)', '부른 정령은 2라운드 뒤 터짐 — 아군 전체 피해', '앞줄 적이 쓰러지면 걸려 있던 화상·독·폭탄이 보스로 옮겨 붙음'] }, flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
 const FLOW_WATER_ATK = 0.10, FLOW_SHARE = 0.10, FLOW_DR = 0.30, FLOW_FILL = 0.2, FLOW_WAVE = 0.6; // 물살 기준 = 물받이 최대체력 20% (자동 전투 측정: 50%면 10층 10라운드 동안 한 번도 안 터짐)
 function riftRuleOf(per){ per = per || riftPeriod(); return (per && per.pair && RIFT_RULES[per.pair[0]]) || null; }
 function flowHost(sf){ if(!sf || sf.riftRule!=='flow' || !sf.myUnits) return null; const my = sf.myUnits.filter(u=>u.alive && !u.inert); // 물받이: 물길 잇기 중인 하백 → 아니면 최대체력이 가장 높은 아군
