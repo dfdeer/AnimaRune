@@ -6859,8 +6859,9 @@ function battleUnitHtml(u, opts){
 }
 // (v173) 스킬 종류: 공격 · 약화(공격+해로운 효과) · 회복 · 보호 · 강화
 const DEBUFF_WORDS = ['화상','둔화','빙결','독','속박','저주','제거'];
-function skillTypeOf(sk, u){
+function skillTypeOf(sk, u, tSide){
   if(!sk) return { k:'atk', i:'🗡️', t:'공격' };
+  if(sk.dual && tSide==='me') return { k:'sup', i:'✚', t:'회복' }; // (build 392) 하백 범람은 아군에게 쓰면 회복+가속 — 예전엔 아군에게 써도 빨간 공격 색
   if(sk.kind==='heal') return { k:'sup', i:'✚', t:'회복' };
   if(sk.kind==='shield') return { k:'sup', i:'<img class="uic" src="assets/ui/ic_shield.webp" alt="">', t:'보호' };
   if(sk.kind==='buff') return { k:'sup', i:'⏫', t:'강화' };
@@ -7051,7 +7052,7 @@ function showSkillStageScreen(){
   let areaSet = null, areaK = '';
   if(curUnit && skillSel.act && skillAvailable(curUnit, skillSel.act) && skillTargetable(sf, skillSel.side, skillSel.idx)){
     areaSet = skillAreaCells(sf, curUnit, skillSel.act, skillSel.side, skillSel.idx);
-    areaK = skillTypeOf(unitSkill(curUnit, skillSel.act), curUnit).k;
+    areaK = skillTypeOf(unitSkill(curUnit, skillSel.act), curUnit, skillSel.side).k;
   }
   const cellHtml = (s, idx, size)=>{
     const u = unitAt(sf, s, idx);
@@ -7086,6 +7087,7 @@ function showSkillStageScreen(){
   html += '<div class="bs-top"><button class="bs-exit" id="skillExitBtn">← 나가기</button>'
     + '<div class="bs-title">'+titleTxt+'</div>'
     + '<div style="display:flex; gap:4px;">'
+    + (sf.mode==='trial' ? '<button id="trRuleBtn" class="bs-exit" aria-label="시련 규칙">📜 규칙</button>' : '') // (build 392) 시련 규칙 다시 보기
     + '<button id="skillSpeedBtn" class="bs-exit" style="'+(state.skillSpeed2x?'background:#ffbc5755; border-color:#ffbc57;':'')+'">'+(state.skillSpeed2x?'⏩2x':'▶1x')+'</button>'
     + '<button id="skillAutoBtn" class="bs-exit" style="'+(state.skillAuto?'background:#5cc8ff55; border-color:#5cc8ff;':'')+'">'+uiIc('auto')+''+(state.skillAuto?'ON':'OFF')+'</button>'
     + '</div></div>';
@@ -7123,11 +7125,11 @@ function showSkillStageScreen(){
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
     const tm = tU ? effTypeMult(curUnit, tU) : 1; // (v270 버그수정) 고른 대상 칸이 비어 있으면 화면이 멈추던 문제
     html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
-      + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
+      + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit, skillSel.side); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
       + '<div class="bs-tgt" id="bsTgtInfo" role="button"><img class="uic" src="assets/ui/ic_target.webp" alt=""> '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
       + '<button class="bs-info" id="skillKitBtn">ⓘ</button></div>';
     const btn = (act, label, icon)=>{
-      const sk = unitSkill(curUnit, act), kind = sk ? sk.kind : 'harm', ty = skillTypeOf(sk, curUnit);
+      const sk = unitSkill(curUnit, act), kind = sk ? sk.kind : 'harm', ty = skillTypeOf(sk, curUnit, skillSel.side);
       const ok = skillAvailable(curUnit, act);
       const cd = act==='s1' ? curUnit.cd1 : (act==='s2' ? curUnit.cd2 : 0);
       let small, warn = '', kill = '';
@@ -7217,6 +7219,7 @@ function showSkillStageScreen(){
       { danger:true, alt: retry ? { label:'다시하기', fn:()=>{ if(state.skillFight===sf) retry(); } } : null });
   };
   if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
+  if(q('trRuleBtn')) q('trRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showTrialRules(sf.trialId); });
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
   if(q('skillAutoBtn')) q('skillAutoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillAuto = !state.skillAuto; save(); showSkillStageScreen(); });
   if(q('waveNextBtn')) q('waveNextBtn').addEventListener('click', advanceBossWave);
@@ -11054,6 +11057,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:392, v:'8.7.3', date:'2026-10-09', secs:[
+    { t:'전투 화면', items:[ '하백 범람을 아군에게 쓸 때 공격(빨강) 대신 회복(초록)으로 표시' ]},
+    { t:'시련의 전당', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 시련 설명·목표·열린 힌트를 다시 볼 수 있음' ]}
+  ]},
   { build:391, v:'8.7.2', date:'2026-10-09', secs:[
     { t:'전투 화면', items:[ '전투가 시작될 때 상태 아이콘이 정령 옆으로 밀려 보이던 문제 수정', '전투 첫 행동 피해 증가(초월 특전·장비 고유 효과)를 「강화」 대신 「선제」로 표시 · 여명의 호령은 「호령」으로 표시', '금오 발화 설명 문구 수정 — 화상이 없으면 고른 대상에게만 공격력 50%' ]},
     { t:'별빛 균열', items:[ '기간 규칙 설명이 길면 상자 안에서 스크롤' ]}
@@ -14032,7 +14039,7 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
 const TRIALS_TEST = [ // 풀이 전수 확인(모든 선택을 다 따라감): 이기는 길 수/전체 · 무작위 성공률 · 자동 전투는 실패 · 규칙을 빼면 0 또는 크게 늘어남
   { id:'x1', icon:'💥', nm:'불씨 창고', diff:4, maxRounds:2, // 24/3054 · 무작위 1.35% · 폭발 없으면 0
     intro:'적이 모두 💥폭발 — 쓰러지면 붙은 칸에 큰 피해. 하나씩 쓰러뜨려서는 2라운드 안에 여섯을 못 끝냄.',
-    hint:'하나씩 쓰러뜨리지 말고 터질 자리를 만들기. 화상은 라운드가 시작될 때 들어감',
+    hint:'가운데 적을 쓰러뜨리면 양옆과 바로 뒤가 반씩 깎임. 반쯤 남은 적은 화상 한 번(라운드 시작)이나 기본 공격 한 번이면 터짐 — 1라운드에 터질 자리를 만들어 두기',
     allies:[{key:'fire_mythic_b', idx:1},{key:'fire_legendary_a', idx:4}],
     enemies:['fire_common_a','fire_rare_a','fire_common_b','fire_rare_b','fire_common_a','fire_common_b'].map((k,n)=>({key:k, idx:n, atk:300, hp:10, blast:0.5})) },
   { id:'x2', icon:'🔗', nm:'쌍둥이 별', diff:4, maxRounds:3, // 50/34193 · 무작위 2.2% · 쌍둥이 규칙 없으면 411
@@ -14119,6 +14126,12 @@ function trialGoalHtml(t){ // (v266) 들어가면 보이는 목표 — 한 줄�
   { const seen = {}; (t.enemies||[]).forEach(e=>{ const k = e.blast ? 'blast' : null; [k, e.pair ? 'pair' : null, e.undead ? 'undead' : null].forEach(r=>{ if(r && !seen[r]){ seen[r] = 1; const R = TRIAL_RULES[r]; rows.push('<div><span>'+R.i+'</span><b>'+R.t+'</b> '+R.d({ trBlast:e.blast })+'</div>'); } }); }); } // (build 390) 시험 규칙
   rows.push('<div><span>'+uiIc('dice')+'</span>치명타·확률 효과 없음 — 같은 순서로 하면 결과도 항상 같음</div>');
   return '<div class="tr-goal">'+rows.join('')+'</div>'; }
+function showTrialRules(id){ // (build 392) 전투 중 규칙 다시 보기 — 설명·목표·규칙 + 열린 힌트
+  const t = trialDef(id); if(!t) return;
+  openInfoOverlay('🧩 '+t.nm, (t.intro ? '<div class="tr-intro">'+t.intro+'</div>' : '') + trialGoalHtml(t)
+    + (t.hint ? (trialHintOpen(id) ? '<details class="tr-rhint"><summary>💡 힌트 보기</summary><div class="tr-hinttxt">'+t.hint+'</div></details>' : '<div class="sub" style="text-align:center; font-size:11px;">힌트는 한 번 실패하면 열림</div>') : '')
+    + '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">정령을 누르면 능력치·스킬 · 상태 아이콘을 누르면 효과 설명</div>');
+}
 function trialResultOverlayHtml(sf){
   const r = sf.result, t = trialDef(sf.trialId) || {nm:'시련'};
   let h = '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'">';
@@ -16729,7 +16742,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 391, APP_VERSION = '8.7.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 392, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
