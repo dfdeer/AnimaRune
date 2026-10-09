@@ -1,6 +1,7 @@
 // 레이드 승률 시뮬레이션 — 사용: (1) 저장소 루트에서 python3 -m http.server 8765 (2) npm i playwright-core (3) node raid_winrate_sim.js <포트> <판수> <보스목록> <난이도목록> [결과.json]
 // 예: node raid_winrate_sim.js 8765 4 frostTyrant,infernoDrake easy,normal,hard,extreme
 // 출력: [팀, 둘 합산 전투력, 승률%, 평균 라운드, 끝났을 때 보스 남은 체력%] — 혼자 도전 + AI 동료(4+4마리), 둘 다 자동 전투 · 30라운드에서 끊음
+// (v8.3.0) 헬·인페르노·카오스는 이 사다리(최대 신화+15각5 · 장비 없음)로 못 잼 — 신화 각2 +10 + 장비 배율 2.2(43,777) · 각5 +15 장비 2.2 부가 15% 초월 5(88,608) · 성좌 각5 +15 장비 2.2 부가 30% 초월 10(154,539) 팀을 weaponMult·armorMult·transLevel·subTotals를 덮어써서 잼
 // 추천 전투력(RAID_REC_CP)은 4판 중 3판 이상 이긴 가장 약한 팀 기준. 이 사다리는 칸이 성겨서, 표를 바꿀 땐 바꾸기 전 코드도 같은 사다리로 재서 비율로 옮길 것
 const { chromium } = require('playwright-core');
 const port=process.argv[2], N=parseInt(process.argv[3]||'4'), bosses=(process.argv[4]||'frostTyrant,infernoDrake,abyssEye,eldertree,dawnJudge').split(','), diffs=(process.argv[5]||'easy,normal,hard,extreme').split(',');
