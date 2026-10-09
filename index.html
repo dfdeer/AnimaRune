@@ -8330,7 +8330,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
-  bSk_fire:0.55, bBoom:0.155, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
+  bSk_fire:0.55, bBoom:0.195, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
@@ -8367,7 +8367,7 @@ function sfxPlay(name){
   else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
   else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
   else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
-  else if(name==='bBoom'){ sBoop(0,0.6,B,90,30,0.55); sNoise(0,0.7,0.34,B,'lowpass',650,80,0.7,0.012); sNoise(0.04,0.9,0.2,B,'lowpass',240,50,0.6,0.08); } // (build 394) 시련 폭발 — 낮고 묵직하게 (예전엔 짧고 높아서 풍선 터지는 소리 같았음)
+  else if(name==='bBoom'){ sNoise(0,0.09,0.9,B,'bandpass',1800,600,0.9,0.002); sNoise(0,0.42,0.6,B,'lowpass',3200,220,0.7,0.003); sBoop(0,0.5,B,150,48,0.28); sNoise(0.05,0.5,0.18,B,'lowpass',500,90,0.6,0.04); } // (build 395) 시련 폭발 — 앞의 파열음(펑) + 짧은 울림 (예전: 짧고 높음 → 풍선 소리 · 낮기만 함 → 둥)
   else if(name==='bSk_fire'){ sNoise(0,0.28,0.35,B,'lowpass',400,3000,1,0.05); sBoop(0.18,0.25,B,160,70,0.1); }
   else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
   else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
@@ -16779,7 +16779,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 394, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 395, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
