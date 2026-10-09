@@ -300,7 +300,8 @@
   .ex-mode button.on{background:#5b6bff33; border-color:#8a96ff; color:var(--text);} .ex-mode button.hard.on{background:linear-gradient(135deg,#6a1428,#3a1030); border-color:#ff5a6a; color:#ffd0d6; box-shadow:0 0 12px #ff3a5a55;} .ex-mode button.lock{opacity:.55;} .ex-mode .uic{width:14px; height:14px;}
   .ex-mode button.rift{flex:1.25; color:#ffe9a8; background:linear-gradient(135deg,#3a2c6e,#241b52); border-color:#c9a24a88 !important;} .ex-mode button.rift .star-ic{width:13px; height:13px; vertical-align:-2px;} /* (v317) 별빛 균열 */
   .rf-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9a24a66;} .rf-t{font-size:18px; font-weight:900; color:#ffe08a;} .rf-t .star-ic{width:20px; height:20px; vertical-align:-3px;}
-  .rf-sub{font-size:12px; color:var(--sub); margin-top:2px;} .rf-sub b{color:#ffe08a;} .rf-bless{display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; background:#0006; font-size:11px; font-weight:800;} .rf-bless .star-ic{width:12px; height:12px; vertical-align:-2px;}
+  .rf-sub{font-size:12px; color:var(--sub); margin-top:2px;} .rf-sub b{color:#ffe08a;} .rf-bless{display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; background:#0006; font-size:11px; font-weight:800;} .rf-bless .star-ic{width:12px; height:12px; vertical-align:-2px;} .rf-bless.rf-rule{display:block; text-align:left; margin:6px auto 0; border-radius:12px; padding:6px 10px; line-height:1.45; max-height:68px; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;} .rf-rulew{position:relative; margin:6px auto 0;} .rf-rulew .rf-rule{margin:0; padding-right:16px; scrollbar-width:none;} .rf-rulew .rf-rule::-webkit-scrollbar{display:none;}
+  .rf-sb{position:absolute; right:5px; top:8px; bottom:8px; width:4px; border-radius:4px; background:#ffffff1f; pointer-events:none; display:none;} .rf-sb.on{display:block;} .rf-sb b{position:absolute; left:0; right:0; border-radius:4px; background:#ffffffaa;} /* (build 391) 스크롤할 수 있다는 막대 — 휴대폰 기본 스크롤바는 안 보일 때가 많아 직접 그림 */
   .rf-list{display:flex; flex-direction:column; gap:6px; margin-top:10px; padding-bottom:12px;}
   /* (v344) 성역 */
   .sc-head{text-align:center; padding:10px 12px; border-radius:14px; background:#16123ad0; border:1px solid #c9b8ff66;} .sc-t{font-size:18px; font-weight:900; color:#e8dcff;} .sc-crest{font-size:12px; color:var(--sub); margin-top:3px;} .sc-crest b{color:#ffe08a;}
@@ -2333,7 +2334,7 @@ function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,ca
     emp:n(o.emp, .4+.5), burn:n(o.burn, 2), rheal:n(o.rheal, .05+.06), frz:n(o.frz, .15+.2), poi:n(o.poi, .04+.06), curse:n(o.curse, .25+.36), dbs:n(o.dbs, DEBUFF_MAX) }; }
 function applySubOnBuild(u, sub){ const s = cleanSub(sub); if(!s) return; u.sub = s;
   if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); }
-  if(s.emp>0) u.st.empower = Math.max(u.st.empower||0, s.emp); }
+  if(s.emp>0){ u.st.empower = Math.max(u.st.empower||0, s.emp); u.st.empSrc = 1; } }
 function subOnHit(sf, a, d){ // (v298) 초월 특전: 맞힌 적에게 걸리는 효과 (시련처럼 확률 없는 전투에선 확률 효과 안 씀)
   const s = a.sub; if(!s || !d.alive || a.side===d.side) return;
   if(s.burn){ d.st.burnCap = Math.max(d.st.burnCap||5, 5); d.st.burn = Math.min(d.st.burnCap, (d.st.burn||0)+1); d.st.burnDmg = Math.max(d.st.burnDmg||0, Math.round(a.atk*0.15)); }
@@ -3263,7 +3264,7 @@ function performAction(sf, a, act, tSide, tIdx){
     pushLog(sf, logUnitName(a.side, a)+' '+sk.name+' → '+logUnitName(tSide, C.t));
   }
   if(clubBefore && (act==='basic' || (unitSkill(a, act)||{}).kind==='harm')) delete a.st.club;
-  if(empBefore && a.st.empower===empBefore) delete a.st.empower; // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
+  if(empBefore && a.st.empower===empBefore){ delete a.st.empower; delete a.st.empSrc; } // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
   setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
@@ -5625,6 +5626,7 @@ function skillAreaCells(sf, a, act, tSide, tIdx){
   let C; skillSimDepth++; try{ C = performAction(c, unitAt(c, a.side, a.idx), act, tSide, tIdx); } catch(e){ C = {hits:[]}; } finally { Math.random = rnd; skillSimDepth--; }
   const set = new Set();
   C.hits.forEach(h=>{ if(h.side===a.side && h.idx===a.idx && !(tSide===a.side && tIdx===a.idx)) return; set.add(h.side+':'+h.idx); });
+  (c._rv||[]).concat((c.lastFx && c.lastFx.hits) || []).forEach(h=>{ if(String(h.src||h.text||'').includes('💥폭발')) set.add(h.side+':'+h.idx); }); // (build 391) 시련 폭발로 이어서 맞는 칸도 범위에
   set.add(tSide+':'+tIdx);
   return set;
 }
@@ -5637,7 +5639,7 @@ function skillPreview(sf, a, act, tSide, tIdx){
   const dmg = C.hits.filter(h=>h.kind==='dmg' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
   const heal = C.hits.filter(h=>h.kind==='heal' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
   const shield = C.hits.filter(h=>h.kind==='shield' && h.side===tSide && h.idx===tIdx).reduce((x,h)=>x+h.amount, 0);
-  const others = new Set(C.hits.filter(h=>!(h.side===tSide && h.idx===tIdx) && !(h.side===a.side && h.idx===a.idx)).map(h=>h.side+h.idx)).size;
+  const others = new Set(C.hits.concat((c._rv||[]).concat((c.lastFx && c.lastFx.hits) || []).filter(h=>String(h.src||h.text||'').includes('💥폭발'))).filter(h=>!(h.side===tSide && h.idx===tIdx) && !(h.side===a.side && h.idx===a.idx)).map(h=>h.side+h.idx)).size; // (build 391) 폭발로 맞는 적도 +N명에
   const parts = [];
   if(dmg) parts.push(dmg+' 피해');
   if(heal) parts.push('+'+heal+' 회복');
@@ -5695,7 +5697,7 @@ const LINE_KITS = {
       desc:(g,u)=>[
         '대상과 양옆 대상의 화상을 터뜨려 각자 중첩당 공격력 '+pctTxt(GEUMO_DET[g]),
         '피해는 줄기 전 중첩 기준 · 터뜨린 뒤 화상은 '+awDn(GEUMO_DROP, aw3(u)?GEUMO_DROP:0)+'중첩만 줄어듦 (남은 화상은 계속 탐)',
-        '화상이 없는 대상에게는 공격력 50%'
+        '고른 대상에게 화상이 없으면 그 대상에게 공격력 50% (양옆은 화상이 있을 때만 피해)'
       ].join('<br>'),
       run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · GEUMO_DROP(2)중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
         if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-(aw3(C.a) ? 0 : GEUMO_DROP)); if(!u.st.burn) delete u.st.burn; /* (v8.7.0) 남는 불씨 */ } else if(i===0) C.hit(u, 0.5); }); } } },
@@ -5788,7 +5790,7 @@ const LINE_KITS = {
         '대상이 즉시 다음 차례로 행동',
         g>=3?'그 행동의 공격력 +25%':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ C.actNext(C.t); if(C.g>=3) C.t.st.empower=0.25; C.hits.push({side:C.t.side, idx:C.t.idx, kind:'status', text:'📯즉시 행동'}); } } },
+      run:C=>{ C.actNext(C.t); if(C.g>=3){ C.t.st.empower = 0.25; delete C.t.st.empSrc; } C.hits.push({side:C.t.side, idx:C.t.idx, kind:'status', text:'📯즉시 행동'}); } } },
   dark_a: { role:'흡혈·처형', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'굶주림', icon:artIc('pv_dark_a'), desc:g=>'대상이 잃은 체력 1%당 피해 +'+[0,.3,.4,.5,.6][g]+'%' },
     s1:{ name:'생명 흡수', icon:artIc('sk_dark_a_1'), cd:3, kind:'harm', tag:()=> '흡혈',
@@ -6151,7 +6153,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: 
       if(persisted.w){ // (v304) 보스전은 3웨이브가 한 전투 — 스킬 쿨·전투당 1회(부활 등)는 웨이브가 바뀌어도 이어짐, 전투 시작 효과(초월 보호막·강화)는 첫 웨이브에만
         u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = persisted.rvG|0; if(persisted.uqS) Object.assign(u, persisted.uqS); /* (v8.7.0) 고유 효과 사용 기록 */ if(persisted.tide>0) u.tide = persisted.tide; // (v5.3.0) 하백 수위도 다음 웨이브로
         if(persisted.st && typeof persisted.st==='object') u.st = JSON.parse(JSON.stringify(persisted.st)); // (v309) 버프·디버프도 그대로 이어짐(남은 라운드 포함) — 첫 웨이브의 전투 시작 효과도 남아 있던 만큼만
-        else { if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0) delete u.st.empower; } } }
+        else { if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0){ delete u.st.empower; delete u.st.empSrc; } } } }
     myUnits.push(u);
   });
   let enemyUnits, gimmick = null;
@@ -6663,7 +6665,11 @@ function liftStatusBadges(ar){
   const ar0 = ar.getBoundingClientRect(); if(!ar0.width) return;
   ar.querySelectorAll('.bs-slot .bu:not(.bu-boss) > .bu-sts, .bs-slot .bu:not(.bu-boss) .bu-sts').forEach(el=>{ if(el.classList.contains('lifted')) return; const slot = el.closest('.bs-slot'), d = parseFloat(slot.style.getPropertyValue('--d'))||1, r = el.getBoundingClientRect();
     stsHome.set(el, el.parentElement); el.style.cssText = 'left:'+(r.left-ar0.left)+'px; top:'+(r.top-ar0.top)+'px; width:'+(r.width/d)+'px; transform:scale('+d+'); transform-origin:0 0;'; el.classList.add('lifted'); ar.appendChild(el); });
+  // (build 391 버그수정) 전투 시작 연출 중엔 정령이 날아 들어오는 중이라 잰 자리가 어긋나 아이콘이 옆으로 튀어 있었음 — 들어오기가 끝난 뒤(아이콘이 나타나기 전) 한 번 더 잼
+  clearTimeout(stsReliftT); stsReliftT = null;
+  if(ar.closest('.bs-intro')){ const w = skillIntroUntil - 280 - Date.now(); if(w>0) stsReliftT = setTimeout(()=>{ stsReliftT = null; const a = document.querySelector('#battleScreen .bs-arena2'); if(a) liftStatusBadges(a); }, w); }
 }
+let stsReliftT = null;
 // (v260) 챕터 보스의 결계석·용암 정령을 보스 바로 위·아래에 붙임 — 화면 비율(%)로만 두면 큰 화면에선 멀리 떨어지고 작은 화면에선 겹쳤음
 function snapBossSideUnits(ar){
   const slots = [...ar.querySelectorAll('.bs-slot')], bossSlot = slots.find(s=>s.querySelector('.bu-enemy.bu-boss'));
@@ -6699,7 +6705,8 @@ function statusList(u){
   if(s.taunt) o.push({i:'<img class="uic" src="assets/ui/ic_target.webp" alt="">', t:'도발', d:'적이 이 정령만 공격', good:true});
   if(s.guard) o.push({i:stIc('guardup'), t:'굳건함', d:'받는 피해 −'+Math.round(s.guard.v*100)+'%'+r(s.guard), good:true});
   if(s.haste) o.push({i:stIc('haste'), t:'가속', d:'속도 +'+s.haste.v+r(s.haste), good:true});
-  if(s.buff || s.empower) o.push({i:stIc('buff'), t:'강화', d:'공격력 증가'+r(s.buff), good:true});
+  if(s.buff) o.push({i:stIc('buff'), t:'강화', d:'공격력 +'+Math.round((s.buff.v||0)*100)+'%'+r(s.buff), good:true});
+  if(s.empower) o.push({i:stIc('buff'), t:s.empSrc ? '선제' : '호령', d:(s.empSrc ? '전투 첫 행동' : '다음 행동')+' 피해 +'+Math.round(s.empower*100)+'%'+(s.empSrc ? ' (초월 특전·장비 고유 효과)' : ''), good:true}); // (build 391) 예전엔 '강화 · 공격력 증가'로만 보여 왜 붙었는지 몰랐음
   if(s.regen) o.push({i:stIc('regen'), t:'재생', d:'라운드마다 체력 회복'+r(s.regen), good:true});
   if(s.reflect) o.push({i:stIc('reflect'), t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
   if(s.ward) o.push({i:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', t:'보호', d:'해로운 효과 1회 막음', good:true});
@@ -11047,6 +11054,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:391, v:'8.7.2', date:'2026-10-09', secs:[
+    { t:'전투 화면', items:[ '전투가 시작될 때 상태 아이콘이 정령 옆으로 밀려 보이던 문제 수정', '전투 첫 행동 피해 증가(초월 특전·장비 고유 효과)를 「강화」 대신 「선제」로 표시 · 여명의 호령은 「호령」으로 표시', '금오 발화 설명 문구 수정 — 화상이 없으면 고른 대상에게만 공격력 50%' ]},
+    { t:'별빛 균열', items:[ '기간 규칙 설명이 길면 상자 안에서 스크롤' ]}
+  ]},
   { build:389, v:'8.7.1', date:'2026-10-09', secs:[
     { t:'전투 화면', items:[ '상태 효과에 독 중첩 수 · 끈적한 실(속도 −5) · 기억의 조각 · 태양 사냥 표시' ]}
   ]},
@@ -13477,6 +13488,8 @@ function leaveRiftFight(){ state.skillFight = null; unmountBattleScreen(); activ
 function riftRetry(f){ if(!pickupOnline()){ toast('온라인 연결 후 도전'); leaveRiftFight(); return; } state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
 function riftFloorInfo(f){ const P = riftPlan(f); return Object.assign(P, { info: P.duo ? { name:P.duo.name, icon:'🌌', desc:'<b>'+P.duo.gm+'</b> — '+P.duo.d } : BOSS_GIMMICK_INFO[P.gim] }); }
 function riftRecCP(f){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); }
+function rfRuleBar(box){ const w = box && box.parentElement, sb = w && w.querySelector('.rf-sb'); if(!sb) return; const ch = box.clientHeight, sh = box.scrollHeight;
+  if(sh <= ch + 1){ sb.classList.remove('on'); return; } sb.classList.add('on'); const H = sb.clientHeight, th = Math.max(14, H*ch/sh), t = (H - th)*box.scrollTop/(sh - ch); sb.firstChild.style.cssText = 'top:'+t+'px; height:'+th+'px;'; }
 function showRiftPrep(f, keep){
   if(!pickupOnline()){ toast('온라인 연결 후 도전'); return; }
   if(!riftFloorOpen(f)){ toast((f-1)+'층을 먼저 돌파'); return; }
@@ -13487,7 +13500,7 @@ function showRiftPrep(f, keep){
   let h = '<h3 style="text-align:center; margin:0;">'+uiIc('rift')+' '+RIFT_NAME+' · '+f+'층</h3>';
   h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
-  { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-bless" style="display:block; text-align:left; margin:6px auto 0;"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div>'; } else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
+  { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-rulew"><div class="rf-bless rf-rule"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div><i class="rf-sb"><b></b></i></div>'; } /* (build 391) 상자 안에서 스크롤 */ else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
@@ -13497,6 +13510,7 @@ function showRiftPrep(f, keep){
   h += '<button class="btn sticky-ok" id="rfStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(); bindPrepUnitInfo(pv);
+  { const rb = document.querySelector('#modalRoot .rf-rule'); if(rb){ rb.addEventListener('scroll', ()=>rfRuleBar(rb), {passive:true}); requestAnimationFrame(()=>rfRuleBar(rb)); } } // (build 391)
   document.querySelectorAll('[data-slot]').forEach(s=>s.addEventListener('click', ()=>showSlotPicker(parseInt(s.dataset.slot), ()=>{ state.riftForm = state.formation.slice(); save(); showRiftPrep(f, true); })));
   document.getElementById('rfClear').addEventListener('click', ()=>{ state.formation = [null,null,null,null,null,null]; showRiftPrep(f, true); });
   presetUse(formCtx(RIFT_NAME+' 진형', ()=>showRiftPrep(f, true), null, ()=>{ state.riftForm = state.formation.slice(); }));
@@ -16715,7 +16729,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 390, APP_VERSION = '8.7.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 391, APP_VERSION = '8.7.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
