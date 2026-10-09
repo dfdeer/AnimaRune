@@ -93,8 +93,9 @@
   .att-r{display:flex; flex-direction:column; align-items:center; line-height:1;} .att-r .uic{width:20px; height:20px; margin:0;} .att-r small{font-size:10px; font-weight:800; color:#fff; text-shadow:0 1px 2px #000; margin-top:-1px; white-space:nowrap;}
   .att-rw.two{gap:1px;} .att-rw.two .att-r{flex-direction:row; gap:1px;} .att-rw.two .att-r .uic{width:15px; height:15px;} .att-rw.two .att-r small{font-size:9px; margin-top:0;} /* 보상 둘: 한 줄에 아이콘+숫자씩 두 줄 */
   .att-r .tk-eqp .tk-eqp-b{width:50%; height:50%; right:-2px; bottom:-2px;}
-  .att-c.got > :not(.att-ok){opacity:.45;} .att-c.got{filter:none; background:#1c1940;}
-  .att-c .att-ok{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;} .att-c .att-ok .uic{width:24px; height:24px; filter:drop-shadow(0 1px 2px #000);}
+  .att-c.got > :not(.att-ok){opacity:.6;} .att-c.got{filter:none; background:#1c1940;} /* (v8.5.2) 받은 칸도 무슨 보상이었는지 보이게 — 체크는 모서리 */
+  .att-c .att-ok{position:absolute; bottom:1px; right:1px; display:flex;} .att-c .att-ok .uic{width:15px; height:15px; filter:drop-shadow(0 1px 2px #000);}
+  .att-c{cursor:pointer;}
   .att-c.now{border:2px solid #8fe3b4; box-shadow:0 0 10px #8fe3b4aa, inset 0 0 8px #8fe3b444; animation:attNow 1.6s ease-in-out infinite;} .att-c.now .att-d{color:#c4ffdc;}
   @keyframes attNow{0%,100%{box-shadow:0 0 6px #8fe3b466, inset 0 0 6px #8fe3b433;} 50%{box-shadow:0 0 14px #8fe3b4cc, inset 0 0 10px #8fe3b466;}}
   .att-note{font-size:11px; color:var(--sub); text-align:center; margin-top:6px;}
@@ -8905,7 +8906,7 @@ function attRwHtml(rw){
 }
 function attRwName(rw){ return rewardWords(rw).replace(/<[^>]*>/g,'').replace(/"/g,''); }
 function attCellHtml(day, rw, got, now, big){
-  return '<div class="att-c'+(got?' got':'')+(now?' now':'')+(big?' big':'')+'" title="'+day+'일 · '+attRwName(rw)+'"><i class="att-d">'+(now?'오늘':day+'일')+'</i>'+attRwHtml(rw)+(got?'<span class="att-ok">'+uiIc('check')+'</span>':'')+'</div>';
+  return '<div class="att-c'+(got?' got':'')+(now?' now':'')+(big?' big':'')+'" title="'+day+'일 · '+attRwName(rw)+'" data-att-i="'+day+'일 · '+attRwName(rw)+(got?' (받음)':'')+'"><i class="att-d">'+(now?'오늘':day+'일')+'</i>'+attRwHtml(rw)+(got?'<span class="att-ok">'+uiIc('check')+'</span>':'')+'</div>';
 }
 function attBodyHtml(){
   const S = attS(), on = pickupOnline(), can = attClaimable();
@@ -8924,7 +8925,8 @@ function attBodyHtml(){
   h += '<div class="att-note">매일 0시(한국 시간) 새로 받기 · 온라인일 때만</div>';
   return h;
 }
-function attRefresh(){ const b = document.getElementById('attBody'); if(!b) return; b.innerHTML = attBodyHtml(); const g = document.getElementById('attGo'); if(g) g.addEventListener('click', attClaim); }
+function attRefresh(){ const b = document.getElementById('attBody'); if(!b) return; b.innerHTML = attBodyHtml(); const g = document.getElementById('attGo'); if(g) g.addEventListener('click', attClaim);
+  b.querySelectorAll('[data-att-i]').forEach(c=>c.addEventListener('click', ()=>toast(uiIc('gift')+' '+c.dataset.attI))); } // (v8.5.2) 칸을 누르면 보상 이름
 function showAttendModal(){
   const old = document.getElementById('attPop'); if(old) old.remove();
   const o = document.createElement('div'); o.className = 'modal-bg att-bg'; o.id = 'attPop'; o.style.zIndex = '200';
@@ -10864,6 +10866,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:384, v:'8.5.2', date:'2026-10-09', secs:[
+    { t:'출석', items:[ '받은 칸도 보상 그림 · 수량이 보임 (체크는 모서리에 작게)', '칸을 누르면 그날 보상 이름' ]}
+  ]},
   { build:383, v:'8.5.1', date:'2026-10-09', secs:[
     { t:'정령 마을', items:[ '대장간 그림 방향을 반대로', '마을 건물에 들어간 채 다른 화면으로 나갔다 오면 건물 안이 아니라 마을 지도부터 보임' ]}
   ]},
@@ -16451,7 +16456,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 383, APP_VERSION = '8.5.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 384, APP_VERSION = '8.5.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
