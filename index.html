@@ -8321,7 +8321,8 @@ function sfxAt(delayMs, fn){
 }
 // (v2.10.0) 새 소리 — 효과음은 마림바·오르골·글로켄·물방울 같은 귀여운 악기, 배경음은 같은 멜로디를 차분한 편곡(E안)으로
 // 배경음은 효과음 악기(마림바·오르골·글로켄)를 쓰지 않아서 둘이 겹쳐도 섞이지 않음
-function envG(g, t0, peak, atk, dur){ g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
+function envG(g, t0, peak, atk, dur){ g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); // (v8.9.0) 시작 전 기본값(1)이 한 샘플 새어 '틱' 하고 튀던 것 막음 (하이햇 같은 잡음에서 측정됨)
+ g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
 function sOsc(f, type, t0, dur, peak, atk, bus){ const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f; envG(g, t0, peak, atk, dur); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); return o; }
 let aBase = null; // (v2.10.2) 배경음 예약 중엔 기준 시각을 고정 — 음마다 시계를 다시 읽으면 박 간격이 들쭉날쭉했음
 const aT = off=> (aBase!==null ? aBase : audioCtx.currentTime) + (off||0);
@@ -8429,20 +8430,97 @@ function bgmMakeBus(){
   bus.connect(comp); bus.connect(conv); conv.connect(wet); wet.connect(comp); comp.connect(bgmGain);
   return (bgmBus = bus);
 }
-function bgmWarm(f, off, peak, dur, atk, bus){ const t0 = aT(off), o = sOsc(f,'sine',t0,dur,peak,atk,bus), l = audioCtx.createOscillator(), lg = audioCtx.createGain(); l.frequency.value = 5; lg.gain.value = f*0.004; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0+dur+0.05); sOsc(f*2,'sine',t0,dur*0.6,peak*0.12,atk,bus); }
-function bgmPad(freqs, off, dur, peak, bus){ const t0 = aT(off);
+// (v8.9.0) 멜로디가 음마다 바로 사그라들어(지수 감쇠) 다음 음 전에 소리가 비어 끊기는 느낌이었음 — 측정: 두 박마다 크기가 35%까지 떨어짐
+//  → 반쯤 머물렀다가 사그라들게(envSus) · 음색은 그대로
+function envSus(g, t0, peak, atk, dur, sus){ const p = Math.max(0.0002, peak); g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(p, t0+atk); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, p*sus), t0+atk+(dur-atk)*0.6); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
+function bgmWarm(f, off, peak, dur, atk, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(), l = audioCtx.createOscillator(), lg = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.value = f; envSus(g, t0, peak, atk, dur, 0.5); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05);
+  l.frequency.value = 5; lg.gain.value = f*0.004; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0+dur+0.05); sOsc(f*2,'sine',t0,dur*0.6,peak*0.12,atk,bus); }
+function bgmPad(freqs, off, dur, peak, bus, cut){ const t0 = aT(off);
   freqs.forEach(f=>[0.997,1.003].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
-    o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.value = 600; lp.Q.value = 0.3;
+    o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.value = cut||600; lp.Q.value = 0.3;
     g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0+0.18); g.gain.setValueAtTime(peak, t0+dur-0.15); g.gain.linearRampToValueAtTime(0.0001, t0+dur+0.25);
     o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.3); })); }
-function bgmNote(step, off){
-  const bus = bgmMakeBus(), m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
+function bgmNote(step, off, bus){
+  bus = bus || bgmMakeBus(); const m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
   bgmWarm(m, off, 0.065, BGM_STEP*1.7, 0.07, bus); // (v2.10.2) 다음 음과 살짝 겹치게 길게
   if(step%2===0) sOsc(b, 'sine', aT(off), BGM_STEP*2.5, 0.05, 0.08, bus);
   if(step%2===0) bgmPad(chord.map(f=>f*0.5).concat([chord[0]]), off, BGM_STEP*2, 0.015, bus);
   sOsc(chord[step%3]*2, 'triangle', aT(off+0.03), BGM_STEP*1.2, 0.009, 0.01, bus);
   if(step%8===0) sBoop(off, 0.035, bus);
   if(step%4===0) bgmWarm(m*((step%8===0)?1.5:1.25), off+0.05, 0.02, BGM_STEP*2.4, 0.12, bus);
+}
+// ===================== (v8.9.0) 화면별 배경음 =====================
+// 홈(기존 곡) · 전투 · 보스 · 마을 · 시련 — vol: 곡마다 체감 크기를 맞춘 배율(고치기 전 홈 곡 크기 기준) · 같은 합성 방식(울림·압축 공유), 곡마다 따로 음량 막(fader)을 둬서 바뀔 때 0.5초 사이에 넘김
+// 멜로디 숫자는 MIDI 음 번호(60 = 가운데 도) · 0 = 쉼 · -1 = 앞 음을 이어서 끎 · 화음은 grp 박마다 하나
+const NF = m=>440*Math.pow(2, (m-69)/12);
+function bgmHold(mel, i){ let n = 1; while(n < mel.length && mel[(i+n)%mel.length]===-1) n++; return n; }
+function bgmBrass(f, off, dur, peak, bus){ const t0 = aT(off); [0.996,1.004].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.setValueAtTime(500, t0); lp.frequency.linearRampToValueAtTime(1300, t0+0.12); lp.frequency.linearRampToValueAtTime(800, t0+dur); lp.Q.value = 0.5;
+  envSus(g, t0, peak, 0.05, dur, 0.6); o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); }); }
+function bgmBass(f, off, dur, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f; envSus(g, t0, peak, 0.06, dur, 0.55); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); } // 길게 머무는 저음 (다음 화음까지 안 비게)
+const BC = { // 화음 (MIDI)
+  Am:[57,60,64], F:[53,57,60], G:[55,59,62], E:[52,56,59], Dm:[50,53,57], C:[48,52,55], Bb:[46,50,53], A:[45,49,52], Gm:[55,58,62], Em:[52,55,59], D:[50,54,57], B:[47,51,54], Am3:[45,48,52] };
+const BGM_TRACKS = {
+  home:{ step:BGM_STEP, len:16, vol:0.72, play:(s, off, bus)=>bgmNote(s, off, bus) },
+  // 전투 — 가단조 · 빠른 8분음 베이스(근음–옥타브–5도) · 마림바 반짝임 · 킥·스네어·하이햇
+  battle:{ step:0.26, grp:4, vol:0.9,
+    prog:['Am','Am','F','G', 'Am','Am','F','E', 'F','G','Am','Am', 'Dm','E','Am','E'],
+    mel:[69,72,76,72, 74,72,71,69, 72,0,69,72, 71,74,79,74,  76,-1,76,74, 72,71,72,76, 77,76,74,72, 71,-1,68,71,
+         69,72,77,72, 71,74,79,77, 76,72,69,72, 76,-1,81,-1, 77,76,74,69, 68,71,76,74, 72,71,69,-1, 64,68,71,76],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.05, st*(n+0.8), 0.02, bus); sOsc(NF(m), 'triangle', aT(off), st*(n*0.8+0.3), 0.012, 0.01, bus); }
+      sOsc(NF(ch[0]-12+[0,12,7,12][s%4]), 'triangle', aT(off), st*0.9, 0.05, 0.01, bus);
+      if(s%T.grp===0) bgmPad(ch.map(NF), off, st*T.grp, 0.011, bus, 800);
+      if(s%2===1) sMarimba(NF(ch[(s>>1)%3]+24), off, 0.012, 0.3, bus);
+      if(s%4===0) sBoop(off, 0.045, bus, 150, 55, 0.14);
+      if(s%8===4) sNoise(off, 0.12, 0.02, bus, 'bandpass', 1800, 900, 0.7);
+      if(s%2===1) sNoise(off, 0.04, 0.006, bus, 'highpass', 7000, null, 0.5); } },
+  // 보스 — 라단조(화성 단음계) · 낮게 울리는 금관 멜로디 · 쉬지 않는 저음 맥박 · 팀파니
+  boss:{ step:0.3, grp:4, vol:0.8,
+    prog:['Dm','Dm','Bb','A', 'Dm','Dm','Gm','A', 'Bb','C','Dm','Dm', 'Gm','A','Dm','A'],
+    mel:[74,-1,-1,69, 77,-1,76,74, 77,-1,-1,74, 73,-1,76,-1,  74,-1,-1,77, 81,-1,79,77, 79,-1,70,74, 76,-1,-1,-1,
+         74,77,82,-1, 79,-1,76,-1, 77,-1,-1,69, 74,-1,-1,-1, 70,-1,74,79, 81,-1,79,76, 77,76,74,-1, 73,-1,69,-1],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.045, st*(n+0.6), 0.03, bus); bgmBrass(NF(m-12), off, st*(n+0.3), 0.012, bus); }
+      let r = ch[0]-12; if(r>45) r -= 12; if(r<36) r += 12;
+      sOsc(NF(r+[0,0,12,0][s%4]), 'triangle', aT(off), st*0.8, 0.055, 0.01, bus);
+      if(s%T.grp===0){ bgmPad(ch.map(NF), off, st*T.grp, 0.016, bus, 700); bgmBass(NF(r), off, st*T.grp+0.2, 0.04, bus); }
+      if(s%8===0) sBoop(off, 0.065, bus, 120, 45, 0.32);
+      if(s%8===6) sBoop(off, 0.04, bus, 120, 45, 0.2);
+      if(s%4===2) sNoise(off, 0.1, 0.014, bus, 'bandpass', 1500, 700, 0.8); } },
+  // 마을 — 바장조 · 오르골 멜로디 · 마림바 분산화음 · 북 없이 느긋하게
+  village:{ step:0.5, grp:4, vol:0.85,
+    prog:['F','F','C','C', 'Bb','F','C','F'],
+    mel:[69,72,77,-1, 76,-1,72,-1, 74,76,79,-1, 76,-1,-1,-1,  74,-1,77,74, 72,-1,69,72, 67,-1,76,74, 69,-1,65,-1],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); sMusicBox(NF(m), off, 0.05, st*(n+1.2), bus); bgmWarm(NF(m), off, 0.018, st*(n+0.8), 0.05, bus); }
+      sMarimba(NF(ch[[0,1,2,1][s%4]]+12), off, 0.02, 0.5, bus);
+      if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.05, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.01, bus, 600); } } },
+  // 시련 — 마단조 · 드문드문 글로켄 질문과 대답 · 시계 같은 똑딱 · 생각하는 분위기
+  trial:{ step:0.45, grp:4, vol:0.9,
+    prog:['Em','C','D','Em', 'Am3','Em','C','B'],
+    mel:[71,-1,-1,76, 79,-1,76,-1, 78,-1,74,69, 71,-1,-1,-1,  72,-1,76,81, 79,-1,-1,71, 76,-1,79,76, 75,-1,78,-1],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); sGlock(NF(m), off, 0.035, bus); bgmWarm(NF(m), off, 0.03, st*(n+0.6), 0.04, bus); }
+      sMarimba(NF(s%2 ? ch[2] : ch[0]), off, s%2 ? 0.014 : 0.024, 0.45, bus);
+      sNoise(off, 0.03, s%2 ? 0.004 : 0.007, bus, 'highpass', s%2 ? 3500 : 5000, null, 0.5);
+      if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.045, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 650); } } },
+};
+Object.keys(BGM_TRACKS).forEach(k=>{ const t = BGM_TRACKS[k]; if(!t.len) t.len = t.mel.length; });
+let bgmFaders = {}, bgmCur = 'home', bgmWantPrev = 'home';
+function bgmFader(id){ const bus = bgmMakeBus(); let f = bgmFaders[id]; if(f && f.context===audioCtx) return f; f = audioCtx.createGain(); f.gain.value = id===bgmCur ? BGM_TRACKS[id].vol : 0; f.connect(bus); return (bgmFaders[id] = f); }
+function bgmTrackNote(id, step, off){ BGM_TRACKS[id].play(step, off, bgmFader(id)); }
+function bgmFadeTo(id, v, t, dur){ const g = bgmFader(id).gain; try{ g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t+dur); }catch(e){ g.value = v; } }
+function bgmWant(){
+  const sf = state.skillFight;
+  if(document.getElementById('battleScreen') && sf){ const m = sf.mode;
+    if(m==='trial') return 'trial';
+    if(m==='boss' || m==='raid' || m==='worldboss' || m==='sanctum' || (!m && Number.isInteger(sf.stageIdx) && isBossStage(sf.stageIdx))) return 'boss';
+    return 'battle'; }
+  if(activeTab==='trial') return 'trial';
+  if(activeTab==='hearth' && typeof villageOn==='function' && villageOn()) return 'village';
+  return 'home';
 }
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
@@ -8452,10 +8530,15 @@ function startBgm(){
   bgmTimer = setInterval(()=>{
     if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
+    let want = 'home'; try{ want = bgmWant(); }catch(e){}
+    if(want!==bgmCur && want===bgmWantPrev && BGM_TRACKS[want]){ // (v8.9.0) 화면이 0.2초 넘게 그대로면 곡을 바꿈 — 앞 곡은 0.5초 동안 줄이고 새 곡은 처음부터
+      bgmFadeTo(bgmCur, 0, now, 0.5); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.3; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, bgmNextAt - 0.05, 0.3); }
+    bgmWantPrev = want;
+    const tr = BGM_TRACKS[bgmCur];
     if(!bgmNextAt || bgmNextAt < now - 3) bgmNextAt = now + 0.05;
-    while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += BGM_STEP; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
+    while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += tr.step; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
     aBase = now;
-    try{ while(bgmNextAt < now + 1.5){ bgmNote(bgmStep % BGM_MELODY.length, bgmNextAt - now); bgmStep++; bgmNextAt += BGM_STEP; } } finally { aBase = null; }
+    try{ while(bgmNextAt < now + 1.5){ bgmTrackNote(bgmCur, bgmStep % tr.len, bgmNextAt - now); bgmStep++; bgmNextAt += tr.step; } } finally { aBase = null; }
   }, 200);
 }
 document.addEventListener('click', function initAudioOnce(){
