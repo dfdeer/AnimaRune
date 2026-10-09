@@ -2844,16 +2844,16 @@ function killUnit(sf, u){
   u.hp = 0; u.alive = false;
   if(u.isWard) groggyWardBroken(sf); // (v179) 결계석 파괴 → 보스 그로기 게이지
   const poisoned = u.st.poison ? u.st.poison : null;
-  const bomb = u.st.bomb || null, loop = u.st.loop || null; // (v343)
+  const bombs = bombsOf(u), loop = u.st.loop || null; // (v343) · (v8.1.0) 폭탄 여러 개
   const burnS = u.st.burn>0 ? { n:u.st.burn, dmg:u.st.burnDmg||0, cap:u.st.burnCap||5 } : null; // (v8.1.0) 도화선 — 보스로 옮길 화상
   if(u.line==='water_hb' && u.st.linkHost && u.st.linkHost.boost){ u.maxHp = Math.max(1, u.maxHp - u.st.linkHost.boost); } // (v343) 깊은 강 해제
   u.st = {};
   if(u.isAdd){ u.hidden = true; delete u.fuse; raidOnAddDeath(sf, u); } // (v260) 용암 정령은 쓰러지면 사라짐 · (v272) 레이드 기둥·씨앗
-  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
+  if(bombs.length){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive).forEach(x=>{ let n = 0; bombs.forEach(bomb=>{ if(addBomb(x, { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) })) n++; }); if(n) (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
   } // (v343) 스칼렛 불씨 전이 · (v8.1.0) 옮겨 붙을 때마다 hop +1
-  if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx) && (bomb || burnS || poisoned)){ // (v8.1.0) 균열 도화선: 앞줄 적의 화상·독·폭탄 → 보스
+  if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx) && (bombs.length || burnS || poisoned)){ // (v8.1.0) 균열 도화선: 앞줄 적의 화상·독·폭탄 → 보스
     const B = (sf.enemyUnits||[]).find(x=>x.isBoss && x.alive), mv = [];
-    if(B){ if(bomb && !B.st.bomb){ B.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) }; mv.push('💣'); }
+    if(B){ let nb = 0; bombs.forEach(bomb=>{ if(addBomb(B, { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) })) nb++; }); if(nb) mv.push('💣');
       if(burnS){ B.st.burnCap = Math.max(B.st.burnCap||5, burnS.cap); B.st.burn = Math.min(B.st.burnCap, (B.st.burn||0) + burnS.n); B.st.burnDmg = Math.max(B.st.burnDmg||0, burnS.dmg); mv.push('🔥'); }
       if(poisoned && !B.st.poison){ B.st.poison = Object.assign({}, poisoned); mv.push('☠️'); }
       if(mv.length) (sf._rv = sf._rv || []).push({ side:B.side, idx:B.idx, kind:'status', text:mv.join('')+'옮겨 붙음' }); } }
@@ -2884,8 +2884,16 @@ var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 
 var SC_SHOCK = 1.5, SU_PYRE = 0.3, SU_PYRE_LOW = 0.5, MN_CD_BACK = 1; // (v5.3.0) 금오 발화: 대상·양옆을 줄기 전 중첩 × 배율로 터뜨리고 2중첩만 줄임 (사용자 결정) · 스칼렛 연쇄 점화 전체 배율 · 연쇄 점화로 터진 폭탄 배율 — 시뮬(하드 1 보스, 화상팀 80판): 옛 금오(전부 소모 60~100%) 승 78%·9.1R ↔ 지금 78%·8.0R · 하드 2는 화염 흡수 보스라 불 정령 비교에서 뺌
 const BOMB_MULT = 2.2; // 스칼렛 시한폭탄 (공격력 배율 · ★5 +30%)
 const SC_HOP = 0.2, SC_HOP_MAX = 5; // (v8.1.0) 불씨 전이: 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%) — 사용자 결정
-function bombExplode(sf, u, hits, mul){
-  const b = u.st.bomb; if(!b) return; delete u.st.bomb; const hop = 1 + SC_HOP*Math.min(SC_HOP_MAX, b.hop||0);
+const SC_BOMB_MAX = 5; // (v8.1.0) 폭탄은 따로따로 여러 개 붙음 (st.bomb = 배열 · 예전 세이브의 하나짜리 객체도 읽음) — 한 정령에 최대 5개
+function bombsOf(u){ const b = u && u.st && u.st.bomb; return !b ? [] : (Array.isArray(b) ? b : [b]); }
+function addBomb(u, b){ const L = bombsOf(u).slice(); if(L.length >= SC_BOMB_MAX) return false; L.push(b); u.st.bomb = L; return true; }
+function bombExplode(sf, u, hits, mul, only){ // only: 터질 폭탄만 (없으면 전부)
+  const all = bombsOf(u); if(!all.length) return; const go = only || all, rest = all.filter(x=>!go.includes(x));
+  if(rest.length) u.st.bomb = rest; else delete u.st.bomb;
+  go.forEach(b=>bombBlast(sf, u, hits, mul, b));
+}
+function bombBlast(sf, u, hits, mul, b){
+  const hop = 1 + SC_HOP*Math.min(SC_HOP_MAX, b.hop||0);
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
   const shock = (u.st.freeze || u.st.slow) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화된 적의 폭탄 · (v6.1.0) 한기는 수치·방식이 달라 따로 표시하고 뺌 (사용자 결정)
@@ -5178,7 +5186,7 @@ function roundStartEffects(sf){
     if(s.memHeal){ const b = u.hp, hv = healAmount(u, s.memHeal); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
     if(s.linkHost){ s.linkHost.r--; if(s.linkHost.r<=0){ u.maxHp = Math.max(1, u.maxHp - (s.linkHost.boost||0)); u.hp = Math.min(u.hp, u.maxHp); delete s.linkHost; } }
-    if(s.bomb){ s.bomb.r--; if(s.bomb.r<=0){ bombExplode(sf, u, hits); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄
+    if(s.bomb){ const L = bombsOf(u); L.forEach(b=>{ b.r--; }); u.st.bomb = L; const due = L.filter(b=>b.r<=0); if(due.length){ bombExplode(sf, u, hits, 1, due); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄 · (v8.1.0) 여러 개 따로
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
     if(s.taunt){ s.taunt--; if(s.taunt<=0) delete s.taunt; }
   });
@@ -5205,7 +5213,7 @@ function aiLimited(sf, a, act){ // 반환: {act,side,idx} · 'skip'(이 스킬�
   const own = aliveUnits(sideUnits(sf, a.side)), foe = foeOf(a.side), foes = aliveUnits(sideUnits(sf, foe)).filter(u=>!u.inert);
   const ratio = u=> u.hp/u.maxHp, low = list=> list.reduce((x,y)=> ratio(y) < ratio(x) ? y : x);
   const k = a.line+':'+act;
-  if(k==='fire_sc:s2') return (foes.some(u=>u.st.bomb) || foes.length>=3) ? null : 'skip';
+  if(k==='fire_sc:s2') return (foes.some(u=>bombsOf(u).length) || foes.length>=3) ? null : 'skip';
   if(k==='fire_su:s1'){ if(ratio(a) < 0.35) return 'skip'; const t = own.reduce((x,y)=> y.atk>x.atk ? y : x); return { act, side:a.side, idx:t.idx }; }
   if(k==='water_mn:s1'){ let best = null, gap = 0; own.forEach(u=>{ const g = (Number.isFinite(u.rsHp) ? u.rsHp : u.hp) - u.hp; if(g>gap){ gap = g; best = u; } }); return (best && gap >= best.maxHp*0.15) ? { act, side:a.side, idx:best.idx } : 'skip'; }
   if(k==='water_mn:s2'){ const n = own.filter(u=>!u.loopUsed && !u.st.loop).length; return (n>=2 && (sf.round>=2 || own.some(u=>ratio(u)<0.6))) ? { act, side:a.side, idx:a.idx } : 'skip'; }
@@ -5595,10 +5603,10 @@ const LINE_KITS = {
     passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>옮겨 붙을 때마다 그 폭탄 피해 +'+Math.round(SC_HOP*100)+'% (최대 +'+Math.round(SC_HOP*SC_HOP_MAX*100)+'%)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
       desc:()=>'대상에게 공격력 120% + 시한폭탄<br>폭탄은 2라운드 뒤 라운드 시작에 공격력 '+pctTxt(BOMB_MULT)+'로 터짐',
-      run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ st.bomb = { r:2, side:C.a.side, idx:C.a.idx }; }, '💣폭탄'); } },
+      run:C=>{ C.hit(C.t, 1.2); if(C.t.alive) C.neg(C.t, st=>{ const L = st.bomb ? (Array.isArray(st.bomb) ? st.bomb.slice() : [st.bomb]) : []; if(L.length < SC_BOMB_MAX) L.push({ r:2, side:C.a.side, idx:C.a.idx }); st.bomb = L; }, '💣폭탄'); } }, // (v8.1.0) 또 걸면 따로 하나 더
     s2:{ name:'연쇄 점화', icon:artIc('sk_fire_sc_2'), cd:4, kind:'harm', tag:()=> '전체 · 폭탄 즉시',
       desc:()=>'대상 편 전체에 공격력 '+pctTxt(SC_CHAIN)+'<br>폭탄이 붙은 적은 그 자리에서 바로 터짐 (이때 폭발 피해 +'+Math.round((SC_CHAIN_BOMB-1)*100)+'%)',
-      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, SC_CHAIN)); C.side(C.tSide).filter(u=>u.st.bomb).forEach(u=>bombExplode(C.sf, u, C.hits, SC_CHAIN_BOMB)); } } }, // (v5.3.0) 피해 강화 (사용자 결정)
+      run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, SC_CHAIN)); C.side(C.tSide).filter(u=>bombsOf(u).length).forEach(u=>bombExplode(C.sf, u, C.hits, SC_CHAIN_BOMB)); } } }, // (v5.3.0) 피해 강화 (사용자 결정)
   fire_su: { role:'희생', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'타오르는 혼', icon:artIc('pv_fire_su'), desc:()=>'체력 30% 이하면 받는 피해 −25%<br>쓰러지면 아군 전체 공격력 +20% (2라운드)' },
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
@@ -6490,7 +6498,7 @@ function statusList(u){
   if(u.isBoss && u.sancWeak) o.push({i:elIc(u.sancWeak), t:'약점 '+ELEMENT_INFO[u.sancWeak].name, d:ELEMENT_INFO[u.sancWeak].name+' 공격 2배 · 나머지 절반 · 다음 약점 '+ELEMENT_INFO[u.sancNext].name, good:false}); // (v344) 성역 프리즘
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   // (v343) 한정 성좌 효과
-  if(s.bomb) o.push({i:stIc('bomb'), n:s.bomb.r, t:'시한폭탄', d:s.bomb.r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음'+(s.bomb.hop ? ' · '+s.bomb.hop+'번 옮겨 붙음 (피해 +'+Math.round(SC_HOP*Math.min(SC_HOP_MAX, s.bomb.hop)*100)+'%)' : ''), good:false});
+  if(s.bomb){ const L = bombsOf(u), r = Math.min(...L.map(b=>b.r)), hp = Math.max(...L.map(b=>b.hop||0)); o.push({i:stIc('bomb'), n:r, t:'시한폭탄'+(L.length>1?' ×'+L.length:''), d:(L.length>1 ? L.length+'개 · 가장 빠른 것 ' : '')+r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음'+(hp ? ' · 가장 많이 옮겨 붙은 것 '+hp+'번 (피해 +'+Math.round(SC_HOP*Math.min(SC_HOP_MAX, hp)*100)+'%)' : ''), good:false}); }
   if(s.star) o.push({i:stIc('star'), n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
   if(s.exposed) o.push({i:stIc('exposed'), t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
   if(s.pyre) o.push({i:stIc('pyre'), t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
@@ -10763,7 +10771,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:378, v:'8.1.0', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '10월 16일 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 — 12층이 한정 성좌 층', '스칼렛 픽업 기간 규칙 「도화선」 — 픽업 공격력 +25% · 본인 +25% 대신', '2라운드마다 보스가 앞줄 빈 칸(보스 앞 위·아래)에 보스와 같은 속성 정령을 부름 · 최대 2', '부른 정령: 체력 보스 최대체력 2% · 공격력 보스 30% · 2라운드 뒤 터짐 (아군 전체 공격력 100%)', '앞줄 적이 쓰러지면 걸려 있던 화상 · 독 · 시한폭탄이 보스로 옮겨 붙음' ]},
-    { t:'스킬', items:[ '스칼렛 「불씨 전이」: 폭탄이 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%)' ]}
+    { t:'스킬', items:[ '스칼렛 「시한 낙인」: 이미 폭탄이 있는 적에게 또 걸면 따로 하나 더 붙음 (한 적에 최대 5개 · 각자 터짐)', '스칼렛 「불씨 전이」: 쓰러질 때 붙어 있던 폭탄이 전부 옮겨 붙음 · 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%)' ]}
   ]},
   { build:377, v:'8.0.0', date:'2026-10-09', secs:[
     { t:'탐험 난이도 3단계', items:[ '탐험 난이도가 이지 · 노말 · 하드 세 단계로 — 지도 위 탭 세 칸', '예전 노말 → 이지: 적은 그대로 · 챕터 보스는 기본 기믹만 (눈보라 · 분화 · 가시 껍질 · 결계 재생 · 심연 응시 · 심연 파동 · 그림자 파동 없음)', '새 노말: 이지 챕터 5 보스를 깨면 열림 · 챕터 보스는 기본 + 추가 기믹', '하드: 노말 챕터 5 보스를 깨면 열림 · 하드 전용 기믹 · 하드 6은 노말 6 보스도', '노말 챕터 제목에 NORMAL 표시' ]},
