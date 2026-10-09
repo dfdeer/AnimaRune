@@ -2179,10 +2179,10 @@ function runeCrit(u){ return ((u.rune && u.rune.id==='crit' && u.rune.tier!=='bo
 function runeDr(u){ return ((u.rune && u.rune.id==='dr' && u.rune.tier!=='boss') ? u.rune.v : 0) + ((u.sub && u.sub.dr) || 0); }
 function runeDmgMult(a, d){ if(!a.rune) return 1; if(a.rune.id==='judge' && d.hp/d.maxHp <= 0.3) return 1.3; if(a.rune.id==='hellfire' && d.st && d.st.burn>0) return 1.2; if(a.rune.id==='core' && effTypeMult(a, d)>1) return 1.2; return 1; } // (v278) 업화·심연핵의 룬
 function runeOnHit(sf, a, d, dealt){
-  if(dealt>0 && a.sub && a.sub.life && a.alive) a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.sub.life)); // (v298) 부가 능력 흡혈
+  if(dealt>0 && a.sub && a.sub.life && a.alive){ const b = a.hp; a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.sub.life)); a.drained = (a.drained||0) + (a.hp-b); } // (v298) 부가 능력 흡혈 · (v8.7.0) 흡혈량
   if(dealt>0 && a.sub) subOnHit(sf, a, d);
   if(!a.rune || dealt<=0) return;
-  if(a.rune.id==='life' && a.rune.tier!=='boss' && a.alive){ a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.rune.v)); }
+  if(a.rune.id==='life' && a.rune.tier!=='boss' && a.alive){ const b = a.hp; a.hp = Math.min(a.maxHp, a.hp + Math.round(dealt*a.rune.v)); a.drained = (a.drained||0) + (a.hp-b); }
   if(!d.alive || a.side===d.side) return;
   if(a.rune.id==='frost' && Math.random()<0.12){ d.st.freeze = true; }
   else if(a.rune.id==='inferno'){ d.st.burnCap = Math.max(d.st.burnCap||5, 5); d.st.burn = Math.min(d.st.burnCap, (d.st.burn||0)+1); d.st.burnDmg = Math.max(d.st.burnDmg||0, Math.round(a.atk*0.15)); }
@@ -2739,7 +2739,8 @@ function unitPG(u){ if(u.inert) return 0; /* (v339) 레이드 얼음 기둥·씨
 function unitS2On(u){ return u.s2on===true || u.g>=2; }
 function unitSG(u){ return Math.max(2, u.g); }
 // (v234) 각성 ★5 계열 고유 효과 — 같은 계열(일반~신화)이면 같은 효과
-const AWAKEN5 = {
+// (v8.7.0) 각성 개편 — 예전 ★5 계열 효과는 1단계(AWAKEN1) · 3단계 새 계열 효과(AWAKEN3, 계열 전체) · 5단계 고유(AWAKEN_UQ, 신화·성좌만) · 성좌 승급 강화(AWAKEN_AS) (사용자 결정 10/9)
+const AWAKEN1 = {
   fire_a:{ t:'연쇄 돌진', d:'불꽃 돌진으로 처치하면 불꽃 돌진 쿨타임 초기화' },
   fire_b:{ t:'짙은 불씨', d:'화상을 걸 때 1중첩 더' },
   water_a:{ t:'넘치는 샘', d:'치유의 물결 회복 대상 1명 더 (체력 비율이 가장 낮은 다른 아군)' },
@@ -2759,10 +2760,74 @@ const AWAKEN5 = {
   dark_lk:{ t:'두 손', d:'손버릇이 효과를 2개 빼앗음' },
   dark_dk:{ t:'홀림', d:'둔갑으로 끌어낸 적에게 속박 (다음 라운드 맨 뒤로)' }
 };
+const AWAKEN3 = {
+  fire_a:{ t:'사냥감', d:'불꽃 돌진이 체력 50% 이하 대상에게 피해 +25%' },
+  fire_b:{ t:'남는 불씨', d:'발화가 화상을 줄이지 않음' },
+  water_a:{ t:'물의 장막', d:'치유의 물결로 넘친 회복량만큼 보호막 (대상 최대체력 20%까지)' },
+  water_b:{ t:'얼음 비늘', d:'빙결된 적에게 주는 피해 +20%' },
+  wood_a:{ t:'이끼 갑옷', d:'뿌리 내리기 때 자신 최대체력 10% 회복' },
+  wood_b:{ t:'끈적한 실', d:'독 걸린 적 속도 −5' },
+  light_a:{ t:'빛의 잔향', d:'보호막이 깨지면 그 아군 최대체력 5% 회복' },
+  light_b:{ t:'천상의 사슴', d:'전투 시작 때 아군 전체 별빛 가속 (1라운드)' },
+  dark_a:{ t:'피의 갈증', d:'체력 50% 이하면 생명 흡수 흡혈량 +20%p' },
+  dark_b:{ t:'불길한 깃', d:'저주 받는 피해 +5%p' },
+  fire_sc:{ t:'짧은 심지', d:'시한폭탄이 터지면 화상 1중첩' },
+  fire_su:{ t:'끝의 불길', d:'종말의 불길 추가 피해 (잃은 체력의) 30% → 50%' },
+  water_mn:{ t:'기억의 조각', d:'되감기 대상 받는 피해 −15% (1라운드)' },
+  water_hb:{ t:'깊은 수원', d:'연결 중 라운드 시작마다 하백 최대체력 4% 회복' },
+  wood_sg:{ t:'바위 가죽', d:'반격 자세 중 받는 피해 −15%' },
+  light_as:{ t:'밝은 별', d:'표식 피해 +50%' },
+  dark_lk:{ t:'빠른 손', d:'날쌘 손 최대 속도 +12 → +18' },
+  dark_dk:{ t:'짙은 그림자', d:'둔갑으로 끌어낸 적 받는 피해 +20% → +30%' }
+};
+const AWAKEN_UQ = { // 신화(한정 성좌 포함) 각성 5단계
+  fire_a:{ t:'태양 사냥', d:'적을 처치하거나 보스 체력을 10% 깎을 때마다 공격력 +10% (최대 +50%)' },
+  fire_b:{ t:'번지는 태양', d:'화상 걸린 적이 쓰러지면 남은 중첩을 화상이 가장 적은 적에게 옮김' },
+  water_a:{ t:'바다의 품', d:'전투당 1번, 아군이 쓰러질 피해를 받으면 체력 1로 버팀' },
+  water_b:{ t:'깊은 혹한', d:'서리 화살 빙결 확률 25% → 50%' },
+  wood_a:{ t:'불괴', d:'도발 중 한 번에 받는 피해가 최대체력 25%를 넘지 않음' },
+  wood_b:{ t:'거미의 왕', d:'독이 2중첩까지 쌓임 (중첩마다 피해)' },
+  light_a:{ t:'영원한 빛', d:'빛의 축복 부활 전투당 2번' },
+  light_b:{ t:'별의 눈', d:'가속 중인 아군 치명타 확률 +15%' },
+  dark_a:{ t:'불사', d:'쓰러지면 이번 전투 흡혈량만큼 체력으로 부활 (최대체력 50%까지 · 전투당 1번)' },
+  dark_b:{ t:'흉조의 울음', d:'저주 걸린 적이 받는 회복 −50%' },
+  fire_sc:{ t:'연쇄 폭발', d:'시한폭탄이 터질 때 양옆 적에게도 그 피해의 30%' },
+  fire_su:{ t:'불씨 공양', d:'불꽃 제물로 태운 체력의 절반만큼 자신 보호막' },
+  water_mn:{ t:'영원의 고리', d:'시간의 고리로 일어나는 체력 50% → 70%' },
+  water_hb:{ t:'강의 신', d:'연결된 아군이 쓰러질 피해를 받으면 하백이 전부 대신 받고 체력 1로 버팀 (전투당 1번)' },
+  wood_sg:{ t:'산의 분노', d:'반격 공격력 70% → 100%' },
+  light_as:{ t:'별이 지는 밤', d:'별똥별을 맞은 적에게 표식 1개씩 다시 붙음' },
+  dark_lk:{ t:'신들의 장난', d:'빼앗은 효과 지속 1라운드 더 · 장난꾼의 잔치가 2개씩 빼앗음' },
+  dark_dk:{ t:'큰 방망이', d:'방망이 +40% → +70% · 자리를 바꾼 아군도 다음 공격 +40%' }
+};
+const AWAKEN_AS = { // 성좌 승급한 신화 — 고유 강화 (한정 성좌는 처음부터 성좌라 AWAKEN_UQ 하나)
+  fire_a:{ t:'태양 사냥+', d:'최대 +80% · 쌓일 때마다 분화 쿨타임 −1' },
+  fire_b:{ t:'번지는 태양+', d:'옮길 때 1중첩 더' },
+  water_a:{ t:'바다의 품+', d:'버틸 때 그 아군 최대체력 30% 회복' },
+  water_b:{ t:'얼음 깨기', d:'빙결이 풀릴 때 그 적에게 공격력 100%' },
+  wood_a:{ t:'불괴+', d:'최대체력 20% · 도발 중 받은 피해 10% 반사' },
+  wood_b:{ t:'거미의 왕+', d:'독 3중첩까지' },
+  light_a:{ t:'영원한 빛+', d:'부활 체력 50% → 70%' },
+  light_b:{ t:'별의 눈+', d:'치명타 확률 +25%' },
+  dark_a:{ t:'불사+', d:'부활 상한 최대체력 80%' },
+  dark_b:{ t:'흉조의 울음+', d:'저주 걸린 적이 주는 피해 −15%' }
+};
+function aw1(u){ return !!u && (u.aw||0)>=1; }
+function aw3(u){ return !!u && (u.aw||0)>=3; }
+function awUq(u){ return !!u && !!u.uq; } // 신화 각성 5단계 고유
+function awAs(u){ return !!u && !!u.uq && !!u.ast && !LIMITED_LINES.includes(u.line); } // 성좌 승급 강화 (한정 성좌는 해당 없음)
 function aw5(u){ return !!u && (u.aw||0)>=5; }
+function awakenFxRows(u, row){ // (v8.7.0) 정령 정보의 각성 효과 줄 — 1·3단계 · (신화) 5단계 고유 · (기본 신화) 성좌 강화
+  const L = u.line, sp = SPIRITS[u.key], my = sp && gradeOf(sp.rarity)>=4, ic = uiIc('awaken'); let h = '';
+  if(AWAKEN1[L]) h += row('각성 1단계'+(aw1(u)?'':' · 잠김'), AWAKEN1[L].t, ic, AWAKEN1[L].d, !aw1(u));
+  if(AWAKEN3[L]) h += row('각성 3단계'+(aw3(u)?'':' · 잠김'), AWAKEN3[L].t, ic, AWAKEN3[L].d, !aw3(u));
+  if(my && AWAKEN_UQ[L]) h += row('각성 5단계 고유'+(awUq(u)?'':' · 잠김'), AWAKEN_UQ[L].t, ic, AWAKEN_UQ[L].d, !awUq(u));
+  if(my && AWAKEN_AS[L] && !sp.limited) h += row('성좌 승급'+(awAs(u)?'':' · 잠김'), AWAKEN_AS[L].t, uiIc('star'), AWAKEN_AS[L].d, !awAs(u));
+  return h;
+}
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
-function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0) - ((act==='s1' && u.line==='water_mn' && aw>=5) ? 1 : 0)); } // (v343) 므네모시네 ★5 되감기 쿨 −1
+function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0) - ((act==='s1' && u.line==='water_mn' && aw>=1) ? 1 : 0)); } // (v343) 므네모시네 ★5 되감기 쿨 −1
 function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride, subOverride){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity);
   // (v225) 각성: ★1 패시브 · ★3 스킬2가 등급과 상관없이 열림 · ★5 스킬 효과 한 등급 위. 레이드·결투 상대는 보내온 값(awOverride)
@@ -2772,7 +2837,8 @@ function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride,
   const armor = Number.isFinite(armorOverride) ? armorOverride : (side==='me' ? spiritHpMult(key) : 1); // (v298) 방어구 × 각인·부가 능력 체력 × 초월
   const maxHp = Math.max(1, Math.round(atk*hpMult*armor)); // (v146) specialMult는 공격력에만 적용, 체력에는 반영 안 함
   const u = { side, idx, key, element: sp.element, line: sp.element+'_'+sp.variant, g, aw, pg: (g0>=1 || aw>=1) ? Math.max(1, g) : 0, s2on: g0>=2 || aw>=3, atk, hp: maxHp, maxHp,
-    cd1: 0, cd2: 0, alive: true, st: {}, reviveUsed: false, reviveGiven: false, specialMult: specialMult||1 }; // (v162) 스킬2 시작 쿨타임 2턴 제거 — 등급만 되면 바로 사용 가능
+    cd1: 0, cd2: 0, alive: true, st: {}, reviveUsed: false, reviveGiven: false, specialMult: specialMult||1,
+    uq: aw>=5 && g0>=4, ast: !!sp.limited || (side==='me' && !Number.isFinite(awOverride) && isAstral(key)) }; // (v8.7.0) 각성 5단계 고유(신화) · 성좌(레이드·결투는 보내온 ast) // (v162) 스킬2 시작 쿨타임 2턴 제거 — 등급만 되면 바로 사용 가능
   if(side==='me') applyRuneOnBuild(u, runeOverride!==undefined ? runeOverride : spiritRune(key)); // (v170) 룬
   else if(runeOverride) applyRuneOnBuild(u, runeOverride); // (v173) 결투: 상대 정령의 룬
   if(side==='me' && runeOverride===undefined) applySubOnBuild(u, battleSubFor(key)); // (v298) 내 정령: 각인·장비 부가 능력·초월
@@ -2860,7 +2926,7 @@ function skillTargetable(sf, side, idx){
   { const c = curActCtx(sf); if(c && c.sk){ if(c.sk.allyOnly && side!=='me') return false; if(c.sk.notSelf && side==='me' && (u===c.a || (c.sk.swap && !swapAllowed(sf, c.a, u)))) return false; } } // (v343) 아군 전용·자신 제외 스킬
   return side==='me' ? true : validEnemyTargets(sf).includes(idx);
 }
-function effSpeed(u){ const s = u.st; return speedForElementRarity(u.element, SPIRITS[u.key].rarity) + runeSpeed(u) + (s.haste?s.haste.v:0) - (s.slow?s.slow.v:0) - (s.chill||0) + (u.stealSpd||0); } // (v343) 로키 날쌘 손
+function effSpeed(u){ const s = u.st; return speedForElementRarity(u.element, SPIRITS[u.key].rarity) + runeSpeed(u) + (s.haste?s.haste.v:0) - (s.slow?s.slow.v:0) - (s.chill||0) - (s.poison && s.poison.sl ? 5 : 0) + (u.stealSpd||0); } // (v8.7.0) 끈적한 실 // (v343) 로키 날쌘 손
 function pushLog(sf, line){ sf.log = (sf.log||[]).concat(line).slice(-5); }
 function setFx(sf, fx){ sf.fxSeq = (sf.fxSeq||0) + 1; fx.id = sf.fxSeq; if(sf._rv){ fx.hits = (fx.hits||[]).concat(sf._rv); delete sf._rv; } sf.lastFx = fx; } // (v268) 부활 글자도 같이
 
@@ -2869,7 +2935,7 @@ function atkBonus(sf, a, d){
   let b = 0; const s = a.st;
   if(s.buff) b += s.buff.v;
   if(s.empower) b += s.empower;
-  if(s.pyre) b += s.pyre.v; if(s.soul) b += s.soul.v; if(s.club) b += 0.4; // (v343) 수르트 불꽃 제물·타오르는 혼 · 도깨비 방망이
+  if(s.pyre) b += s.pyre.v; if(s.soul) b += s.soul.v; if(s.club) b += s.club===2 ? 0.7 : 0.4; if(a.hunt) b += 0.1*a.hunt; // (v8.7.0) 큰 방망이 · 태양 사냥 · (v343) 수르트 불꽃 제물·타오르는 혼 · 도깨비 방망이
   if(a.line==='fire_a' && unitPG(a)>=1 && a.hp/a.maxHp<=0.5) b += [0,.15,.20,.25,.30][unitPG(a)];
   if((s.shield||0)>0){ let best = 0; aliveUnits(sideUnits(sf, a.side)).forEach(u=>{ if(u.line==='light_a' && unitPG(u)>=1) best = Math.max(best, [0,.08,.10,.12,.15][unitPG(u)]); }); b += best; }
   if(a.line==='dark_a' && unitPG(a)>=1) b += (1 - d.hp/d.maxHp)*100*[0,.003,.004,.005,.006][unitPG(a)];
@@ -2883,10 +2949,39 @@ function dmgReduction(sf, d){
   if(d.line==='fire_su' && d.hp/d.maxHp<=0.3) r += 0.25; // (v343) 수르트 타오르는 혼
   if(d.line==='wood_sg' && d.hp/d.maxHp>=0.5) r += 0.15; // (v343) 산군 산의 주인
   if(d.line==='water_hb' && d.st && d.st.linkHost) r += 0.2; // (v343) 하백 물길 잇기
+  if(d.line==='wood_sg' && aw3(d) && d.st && d.st.counter) r += 0.15; // (v8.7.0) 산군 바위 가죽
+  if(d.st && d.st.rwd) r += d.st.rwd.v; // (v8.7.0) 므네모시네 기억의 조각
   if(sf && sf.riftRule==='flow' && d.side==='me' && d===flowHost(sf)) r += FLOW_DR; // (v7.4.0) 균열 물길 — 물받이
   r += runeDr(d);
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && !f.inert && f.line==='wood_a' && f.g>=4) r += 0.2; } }
   return r;
+}
+// (v8.7.0) 각성 5단계 고유 — 쓰러질 피해를 받을 때 (현무 불괴 · 하백 강의 신 · 테티스 바다의 품) · 피해 rest를 고쳐서 돌려줌 (음수면 회복)
+function endureHook(sf, d, rest){
+  if(!(rest>0) || !d || !d.alive || d.isBoss || d.isAdd || d.isWard) return rest;
+  if(d.line==='wood_a' && awUq(d) && d.st.taunt){ const cap = Math.round(d.maxHp*(awAs(d) ? 0.2 : 0.25)); if(rest>cap) rest = cap; }
+  if(rest < d.hp) return rest;
+  const rv = sf._rv = sf._rv || [];
+  if(godHook(sf, d, rest)) return 0;
+  const th = aliveUnits(sideUnits(sf, d.side)).find(x=>x.line==='water_a' && awUq(x) && !x.seaUsed);
+  if(th){ th.seaUsed = true; const left = 1 + (awAs(th) ? Math.round(d.maxHp*0.3) : 0); rv.push({ side:d.side, idx:d.idx, kind:'status', text:'🌊바다의 품' }); pushLog(sf, '🌊 '+logUnitName(d.side, d)+' 바다의 품으로 버팀'); return d.hp - Math.min(d.maxHp, left); }
+  return rest;
+}
+function godHook(sf, d, rest){ // (v8.7.0) 하백 강의 신 — 연결된 아군이 쓰러질 피해(보호막 포함)를 받으면 하백이 전부 대신 받고 체력 1로 버팀 · 물길 나눔보다 먼저
+  if(!(rest>0) || !d || !d.alive || !d.st.link || d.line==='water_hb' || rest < d.hp + (d.st.shield||0)) return false;
+  const host = aliveUnits(sideUnits(sf, d.side)).find(x=>x!==d && x.line==='water_hb' && x.st.linkHost && awUq(x) && !x.godUsed); if(!host) return false;
+  host.godUsed = true; const hv = Math.max(0, host.hp-1); host.hp = Math.max(1, host.hp - rest); if(hv>0) hidHurt(sf, host, Math.min(hv, rest));
+  (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:rest, dot:true, src:'🌊강의 신' }); pushLog(sf, '🌊 '+logUnitName(host.side, host)+' 강의 신 — 대신 받음'); return true;
+}
+function huntGain(sf, a, n){ // (v8.7.0) 스콜 태양 사냥
+  if(!(n>0) || !a.alive) return; const mx = awAs(a) ? 8 : 5, before = a.hunt||0; a.hunt = Math.min(mx, before + n);
+  if(awAs(a)) a.cd2 = Math.max(0, (a.cd2||0) - n);
+  if(a.hunt>before) (sf._rv = sf._rv || []).push({ side:a.side, idx:a.idx, kind:'status', text:'☀️태양 사냥 +'+(a.hunt*10)+'%' });
+}
+function starDmg(sf, d){ // (v8.7.0) 아스트라이아 별의 공명 — 표식 붙은 적이 지속 피해를 받을 때 같이 들어가는 표식 피해
+  const n = d && d.st && d.st.star ? d.st.star.n : 0; if(!n) return 0;
+  const as = aliveUnits(sideUnits(sf, foeOf(d.side))).find(x=>x.line==='light_as'); if(!as) return 0;
+  return Math.round(n * as.atk * STAR_RES * (aw3(as) ? 1.5 : 1) * Math.max(0.1, 1 - dmgReduction(sf, d)));
 }
 function killUnit(sf, u){
   if(!u.alive) return; // 이미 쓰러진 유닛을 다시 처리하지 않음
@@ -2907,6 +3002,9 @@ function killUnit(sf, u){
       if(burnS){ B.st.burnCap = Math.max(B.st.burnCap||5, burnS.cap); B.st.burn = Math.min(B.st.burnCap, (B.st.burn||0) + burnS.n); B.st.burnDmg = Math.max(B.st.burnDmg||0, burnS.dmg); mv.push('🔥'); }
       if(poisoned && !B.st.poison){ B.st.poison = Object.assign({}, poisoned); mv.push('☠️'); }
       if(mv.length) (sf._rv = sf._rv || []).push({ side:B.side, idx:B.idx, kind:'status', text:mv.join('')+'옮겨 붙음' }); } }
+  if(burnS && !u.isBoss){ const gm = aliveUnits(sideUnits(sf, foeOf(u.side))).find(x=>x.line==='fire_b' && awUq(x)); // (v8.7.0) 금오 번지는 태양
+    const to = gm ? aliveUnits(sideUnits(sf, u.side)).filter(x=>x!==u && !x.inert && !x.hidden).sort((x,y)=>(x.st.burn||0)-(y.st.burn||0))[0] : null;
+    if(to){ to.st.burnCap = Math.max(to.st.burnCap||5, burnS.cap); to.st.burn = Math.min(to.st.burnCap, (to.st.burn||0) + burnS.n + (awAs(gm) ? 1 : 0)); to.st.burnDmg = Math.max(to.st.burnDmg||0, burnS.dmg); (sf._rv = sf._rv || []).push({ side:to.side, idx:to.idx, kind:'status', text:'🔥번지는 태양' }); } }
   if(u.isBoss){ delete u.cast; (sf.enemyUnits||[]).forEach(x=>{ if(x.isAdd && x.alive){ x.alive = false; x.hp = 0; x.hidden = true; x.st = {}; } }); (sf.myUnits||[]).forEach(m=>{ if(m.st && m.st.jail) delete m.st.jail; }); return; } // (v260 버그수정) 보스는 정령 패시브(화염-a 부활)를 쓰지 않음 — 용암군주·겁화룡이 체력 30%로 되살아나던 문제
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
   if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed){
@@ -2917,8 +3015,9 @@ function killUnit(sf, u){
   }
   if(loop && !u.loopUsed){ u.loopUsed = true; u.alive = true; u.hp = Math.max(1, Math.min(u.maxHp, loop.hp)); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'⏳되돌아옴', src:'시간의 고리' }); pushLog(sf, (u.dispName||SPIRITS[u.key].name)+' 시간의 고리로 일어남'); return; } // (v343) 므네모시네
   // 빛-a 신화: 같은 편 쓰러진 아군 1회 부활
-  const angel = aliveUnits(sideUnits(sf, u.side)).find(x=>x.line==='light_a' && x.g>=4 && !x.reviveGiven);
-  if(angel){ angel.reviveGiven = true; u.alive = true; u.hp = Math.round(u.maxHp*0.5); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'✨부활!', src:SPIRITS[angel.key].name+' (체력 50%)' }); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
+  const angel = aliveUnits(sideUnits(sf, u.side)).find(x=>x.line==='light_a' && x.g>=4 && (x.reviveGiven|0) < (awUq(x) ? 2 : 1)); // (v8.7.0) 광명 영원한 빛: 2번 · 성좌 70%
+  if(angel){ angel.reviveGiven = (angel.reviveGiven|0) + 1; const ap = awAs(angel) ? 0.7 : 0.5; u.alive = true; u.hp = Math.round(u.maxHp*ap); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'✨부활!', src:SPIRITS[angel.key].name+' (체력 '+Math.round(ap*100)+'%)' }); pushLog(sf, SPIRITS[angel.key].name+'이(가) '+SPIRITS[u.key].name+' 부활'); return; }
+  if(u.line==='dark_a' && awUq(u) && !u.undeadUsed && (u.drained||0)>=1){ u.undeadUsed = true; u.alive = true; u.hp = Math.max(1, Math.min(Math.round(u.maxHp*(awAs(u) ? 0.8 : 0.5)), Math.round(u.drained))); (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'🩸불사!', src:'흡혈량 '+fmtHp(u.drained) }); pushLog(sf, (u.dispName||SPIRITS[u.key].name)+' 불사로 일어남'); return; } // (v8.7.0) 불사귀 불사 — 다른 부활이 다 끝난 뒤 맨 마지막
   if(u.line==='fire_su'){ aliveUnits(sideUnits(sf, u.side)).forEach(x=>{ x.st.soul = { v:0.2, r:2 }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'🔥타오르는 혼' }); }); } // (v343) 수르트가 쓰러지면 아군 공격력 +20%
   // 숲결-b 패시브: 독 걸린 채 쓰러지면 옆 칸으로 독 전파
   const pch = poisoned ? [0,.5,.65,.8,1][poisoned.srcG] : 0;
@@ -2928,6 +3027,7 @@ function killUnit(sf, u){
   }
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
+var STAR_RES = 0.2, STAR_FALL = 0.6; // (v8.7.0) 아스트라이아: 표식 하나당 표식 피해(공격력 20%) · 별똥별(표식 하나당 공격력 60%)
 var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.5; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 50% 추가 피해 — 계산으로 정함(최대체력 = 공격력 2.7배): 범람은 테티스와 쓰면 보통 130~150% · 반격은 포효만 약 97%, 광명 보호막까지 약 125%
 var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0;
 // (v6.0.0) 한정 성좌 짝 기술 연계 (사용자 결정): 스칼렛 열충격 · 수르트 불꽃 제물(체력 50% 이하 대상) · 므네모시네 되감기 재사용 대기 · 로키 가로채기
@@ -2947,9 +3047,11 @@ function bombBlast(sf, u, hits, mul, b){
   const list = sideUnits(sf, b.side) || [], src = list.find(x=>x.idx===b.idx && x.line==='fire_sc') || list.find(x=>x.line==='fire_sc');
   if(!src || !u.alive) return;
   const shock = (u.st.freeze || u.st.slow) ? SC_SHOCK : 1; // (v6.0.0) 열충격: 빙결·둔화된 적의 폭탄 · (v6.1.0) 한기는 수치·방식이 달라 따로 표시하고 뺌 (사용자 결정)
-  const r = dealDamage(sf, src, u, BOMB_MULT*(aw5(src) ? 1.3 : 1)*(mul||1)*shock*hop, { noCrit:true, noCounter:true, detonate:true });
+  const r = dealDamage(sf, src, u, BOMB_MULT*(aw1(src) ? 1.3 : 1)*(mul||1)*shock*hop, { noCrit:true, noCounter:true, detonate:true });
   if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
+  if(aw3(src) && u.alive){ u.st.burnCap = Math.max(u.st.burnCap||5, 5); u.st.burn = Math.min(u.st.burnCap, (u.st.burn||0)+1); u.st.burnDmg = Math.max(u.st.burnDmg||0, Math.round(src.atk*0.15)); } // (v8.7.0) 짧은 심지
+  if(awUq(src)) gridNeighbors(u.idx, 'row', sideWidth(sf, u.side)).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.hidden).forEach(x=>{ const r2 = dealDamage(sf, src, x, BOMB_MULT*(aw1(src) ? 1.3 : 1)*(mul||1)*hop*0.3, { noCrit:true, noCounter:true }); if(r2) hits.push({ side:x.side, idx:x.idx, kind:'dmg', amount:r2.total, eff:effTypeMult(src, x), dot:true, src:'💥연쇄 폭발' }); }); // (v8.7.0) 연쇄 폭발
 }
 const STEAL_ORDER = ['shield','buff','haste','regen','guard','reflect','ward','taunt']; // 로키가 빼앗는 순서 (가장 센 것부터)
 const STEAL_NM = { shield:'보호막', buff:'강화', haste:'가속', regen:'재생', guard:'굳건함', reflect:'반사', ward:'보호', taunt:'도발' };
@@ -2964,9 +3066,10 @@ function stealEffect(C, from){
       if(k==='shield'){ st.shield = (st.shield||0) + v; st.shieldR = Math.max(st.shieldR||0, vR||2); }
       else if(k==='ward') st.ward = (st.ward||0) + v;
       else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
+      if(awUq(C.a)){ if(k==='shield') st.shieldR = (st.shieldR||2) + 1; else if(k==='taunt'){} else if(st[k] && typeof st[k]==='object' && Number.isFinite(st[k].r)) st[k].r += 1; } // (v8.7.0) 신들의 장난
       C.hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🎁'+STEAL_NM[k] }); }
   }
-  C.a.stealSpd = Math.min(12, (C.a.stealSpd||0) + 3);
+  C.a.stealSpd = Math.min(aw3(C.a) ? 18 : 12, (C.a.stealSpd||0) + 3); // (v8.7.0) 빠른 손
   if(C.a.line==='dark_lk' && C.a.lkRound!==C.sf.round){ C.a.lkRound = C.sf.round; stealEffect(C, from); } // (v6.1.0) 로키 자신이 빼앗을 때도 가로채기 — 같은 대상에서 1개 더 (라운드에 1번, 사용자 결정)
   return true;
 }
@@ -2983,7 +3086,7 @@ function lokiGive(sf, lk, from, old, hits){
   if(k==='shield'){ st.shield = (st.shield||0) + v; st.shieldR = Math.max(st.shieldR||0, old.shieldR||2); }
   else if(k==='ward') st.ward = (st.ward||0) + v;
   else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
-  lk.stealSpd = Math.min(12, (lk.stealSpd||0) + 3);
+  lk.stealSpd = Math.min(aw3(lk) ? 18 : 12, (lk.stealSpd||0) + 3);
   hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🫳가로채기 · '+STEAL_NM[k] });
 }
 function swapSlots(sf, side, i1, i2){ // 같은 편 두 칸의 정령을 맞바꿈 (빈 칸이면 옮김) · 이번 라운드 행동 순서도 같이 고침
@@ -3016,11 +3119,14 @@ function dealDamage(sf, a, d, mult, opts){
   if(sf.duo) v = riftDuoDmgAdjust(sf, a, d, v, opts); // (v344) 균열 연계 층
   const s = d.st;
   v *= 1 + (s.curse ? s.curse.v : 0) + (s.web ? s.web.v : 0) + (s.exposed ? s.exposed.v : 0); // (v343) 도깨비 둔갑 노출
-  if(opts.detonate && s.star && s.star.n>0){ v *= 1 + 0.4*s.star.n; delete s.star; } // (v343) 아스트라이아 별의 공명 — 터뜨리는 공격이 표식을 씀
+  if(a.line==='water_b' && aw3(a) && s.freeze) v *= 1.2; // (v8.7.0) 요르문간드 계열 얼음 비늘
+  if(a.st && a.st.curse && a.st.curse.wk) v *= 1 - a.st.curse.wk; // (v8.7.0) 칠흑조 성좌 — 저주 걸린 적이 주는 피해 −15%
   v *= Math.max(0.1, 1 - dmgReduction(sf, d));
+  if(opts.detonate) v += starDmg(sf, d); // (v8.7.0) 별의 공명 — 발화·시한폭탄도 지속 피해로 표식 피해가 같이 (표식은 안 없어짐)
   if(d.groggy) v *= GROGGY_DMG_MULT; // (v179) 그로기: 받는 피해 2배
   let critCh = BASE_CRIT + runeCrit(a);
   if(a.line==='dark_b' && unitPG(a)>=1 && s.curse) critCh += [0,.10,.15,.20,.25][unitPG(a)];
+  if(a.st && a.st.haste){ const lb = aliveUnits(sideUnits(sf, a.side)).find(x=>x.line==='light_b' && awUq(x)); if(lb) critCh += awAs(lb) ? 0.25 : 0.15; } // (v8.7.0) 백록 별의 눈
   const crit = !opts.noCrit && !sf.noRng && Math.random() < critCh; // (v266) 시련: 치명타 없음
   if(crit) v *= CRIT_MULT;
   const total = Math.max(0, Math.round(v));
@@ -3031,27 +3137,33 @@ function dealDamage(sf, a, d, mult, opts){
       if(fh.line==='water_hb') fh.tide = Math.min(fh.maxHp, (fh.tide||0) + hb); // 하백이 대신 받은 물은 수위에도
       fh.hp = Math.max(0, fh.hp - hv); if(hv>0) hidHurt(sf, fh, hv); (sf._rv = sf._rv || []).push({ side:fh.side, idx:fh.idx, kind:'dmg', amount:hb, dot:true, src:'🌊물길' });
       if(fh.hp<=0) killUnit(sf, fh); else flowFill(sf, fh, share); } }
+  if(godHook(sf, d, rest)) rest = 0; // (v8.7.0) 강의 신
   if(s.link && rest>0){ const host = aliveUnits(sideUnits(sf, d.side)).find(x=>x!==d && x.line==='water_hb' && x.st.linkHost); // (v343) 하백 물길 잇기: 40%를 대신 받음
     if(host){ const share = Math.round(rest*0.4); rest -= share; let hv = Math.round(share*Math.max(0.1, 1 - dmgReduction(sf, host))); const hb = hv;
       if(host.st.shield>0){ const ab = Math.min(host.st.shield, hv); host.st.shield -= ab; hv -= ab; if(host.st.shield<=0) delete host.st.shield; }
       host.tide = Math.min(host.maxHp, (host.tide||0) + hb); host.hp = Math.max(0, host.hp - hv); if(hv>0) hidHurt(sf, host, hv); (sf._rv = sf._rv || []).push({ side:host.side, idx:host.idx, kind:'dmg', amount:hb, dot:true, src:'🔗물길' }); if(host.hp<=0) killUnit(sf, host); else if(sf.riftRule==='flow' && host===flowHost(sf)) flowFill(sf, host, share); } }
   const shieldBefore = s.shield||0;
   if(s.shield>0){ const ab = Math.min(s.shield, rest); s.shield -= ab; rest -= ab; if(s.shield<=0) delete s.shield; if(s.roarSh) s.roarSh = Math.max(0, s.roarSh - ab); } // (v5.3.0) 산군 포효 보호막이 먼저 깎임
-  d.hp = Math.max(0, d.hp - rest);
+  rest = endureHook(sf, d, rest); // (v8.7.0)
+  d.hp = Math.max(0, Math.min(d.maxHp, d.hp - rest));
   if(rest>0) hidHurt(sf, d, rest); // (v270)
+  if(shieldBefore>0 && !(s.shield>0) && d.hp>0){ const la = aliveUnits(sideUnits(sf, d.side)).find(x=>x.line==='light_a' && aw3(x)); if(la){ const b = d.hp, hv = healAmount(d, d.maxHp*0.05); d.hp = Math.min(d.maxHp, b + hv); if(d.hp>b) (sf._rv = sf._rv || []).push({ side:d.side, idx:d.idx, kind:'heal', amount:d.hp-b, src:'✨빛의 잔향' }); } } // (v8.7.0) 광명 계열
   if(rest > d.maxHp*0.3 && d.hp>0 && aliveUnits(sideUnits(sf, d.side)).some(x=>x.line==='water_mn')) s.memHeal = (s.memHeal||0) + Math.round(rest*0.5); // (v343) 므네모시네 흐르는 기억
   if(d.cast && total>0 && a.side!==d.side) d.cast.dealt += d.cast.el ? (a.element===d.cast.el ? 1 : 0) : total; // (v260) 절대영도 저지 피해 · (v272) 용의 숨결은 물결 공격 횟수
   if(total>0 && d.isBoss && raidGazed(sf, a) && a.alive){ const rd = Math.round(total*0.25); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); } // (v272) 시선 교차: 시선 받은 편이 때리면 25% 돌려받음
   runeOnHit(sf, a, d, total);
+  if(d.line==='wood_a' && awAs(d) && s.taunt && total>0 && a.alive && a!==d && a.side!==d.side){ const rd = Math.round(total*0.1); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); } // (v8.7.0) 현무 불괴+
   if(s.reflect && total>0 && a.alive && a!==d){ const rd = Math.round(total*s.reflect.v); a.hp = Math.max(0, a.hp - rd); hidHurt(sf, a, rd); if(a.hp<=0) killUnit(sf, a); }
   const groggy = (d.isBoss && d.hp>0) ? groggyHit(sf, a, d, mult, crit, shieldBefore) : false;
   if(d.hp<=0 && d.alive && a && a!==d && a.side===d.side) hidFriendlyKill(sf, a, d); // (v266) 히든 업적: 같은 편을 쓰러뜨림
+  const died = d.hp<=0 && d.alive;
   if(d.hp<=0) killUnit(sf, d);
+  if(a && a.line==='fire_a' && awUq(a) && a.side!==d.side){ let n = died ? 1 : 0; if(d.isBoss && total>0){ a.huntDmg = (a.huntDmg||0) + total; const step = d.maxHp*0.1; while(step>0 && a.huntDmg>=step){ a.huntDmg -= step; n++; } } huntGain(sf, a, n); } // (v8.7.0) 스콜 태양 사냥
   if(d.alive && d.st.counter && !opts.noCounter && a && a.alive && a.side!==d.side && d.st.counter.seq!==(sf.actSeq||0)){ // (v343) 산군 반격 — 적 행동 하나에 1번 · (v5.3.0) 후열이 때리면 그 앞 전열(비었으면 가장 가까운 전열)에 · 남은 보호막 비례 추가 피해
     d.st.counter.seq = sf.actSeq||0; d.counterN = (d.counterN||0) + 1;
-    const ct = counterTarget(sf, a), cm = 0.7 + (d.st.shield||0)*SG_COUNTER_SH/Math.max(1, d.atk);
+    const ct = counterTarget(sf, a), cm = (awUq(d) ? 1.0 : 0.7) + (d.st.shield||0)*SG_COUNTER_SH/Math.max(1, d.atk); // (v8.7.0) 산의 분노
     const cr = dealDamage(sf, d, ct, cm, { noCrit:true, noCounter:true, counter:true });
-    if(cr){ (sf._rv = sf._rv || []).push({ side:ct.side, idx:ct.idx, kind:'dmg', amount:cr.total, eff:effTypeMult(d, ct), src:'🐯반격' }); if(aw5(d) && ct.alive && !sf.noRng && Math.random()<0.25 && !ct.isBoss) ct.st.bind = true; } }
+    if(cr){ (sf._rv = sf._rv || []).push({ side:ct.side, idx:ct.idx, kind:'dmg', amount:cr.total, eff:effTypeMult(d, ct), src:'🐯반격' }); if(aw1(d) && ct.alive && !sf.noRng && Math.random()<0.25 && !ct.isBoss) ct.st.bind = true; } }
   return { total, crit, groggy };
 }
 // (v5.3.0) 산군 반격 대상 — 전열이 때리면 그 적 · 후열이면 바로 앞 전열 · 앞이 비었으면 가장 가까운 전열 · 전열이 다 비었으면 때린 적
@@ -3065,6 +3177,7 @@ function healAmount(target, amt){
   { const sf = state.skillFight; if(sf && sf.duo && sf.duo.id==='hb' && target.side==='me' && !target.st.link && !target.st.linkHost) amt *= 0.5; } // (v344) 연계 층 탁류
   const p = target.st.poison;
   if(p) amt *= (p.srcG>=3 ? 0 : 0.5);
+  if(target.st.curse && target.st.curse.hc) amt *= 0.5; // (v8.7.0) 칠흑조 흉조의 울음
   if(amt>=1 && target.st.erode){ target.st.erode = Math.max(0, target.st.erode - SHADOW_HEAL_CLEAR); if(!target.st.erode) delete target.st.erode; } // (v317) 그림자 군주 잠식: 회복을 받으면 2중첩 사라짐
   if(amt>=1 && target.st.shJail){ delete target.st.shJail; delete target.st.freeze; } // 그림자 감옥: 회복하면 풀림
   return Math.round(amt);
@@ -3089,12 +3202,12 @@ function makeActCtx(sf, a, tSide, tIdx){
     return r;
   };
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
-  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp, hv = healAmount(u, amt); hbTide(sf, u, u.hp + hv - u.maxHp); u.hp = Math.min(u.maxHp, u.hp + hv); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); }; // (v308) 회복 글자에 출처(스킬 이름)
+  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp, hv = healAmount(u, amt); const over = u.hp + hv - u.maxHp; hbTide(sf, u, over); u.hp = Math.min(u.maxHp, u.hp + hv); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); C.healed = u.hp-before; return Math.max(0, over); }; // (v8.7.0) 넘친 양을 돌려줌 // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
   C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, text:label }); };
-  C.burn = (u, n)=>{ if(a.line==='fire_b' && aw5(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
-  C.poison = (u, pct)=>{ pct *= dbMul(a); C.neg(u, st=>{ st.poison = { r:(a.line==='wood_b' && aw5(a)) ? 4 : 3, pct, srcG:a.g }; }, '☠독'); };
+  C.burn = (u, n)=>{ if(a.line==='fire_b' && aw1(a)) n += 1; const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
+  C.poison = (u, pct)=>{ pct *= dbMul(a); C.neg(u, st=>{ const wb = a.line==='wood_b', mx = (wb && awUq(a)) ? (awAs(a) ? 3 : 2) : 1, n = st.poison ? Math.min(mx, Math.max(st.poison.n||1, 1) + 1) : 1; st.poison = { r:(wb && aw1(a)) ? 4 : 3, pct, srcG:a.g, ...(mx>1 ? { n:Math.min(mx, n) } : {}), ...((wb && aw3(a)) || (st.poison && st.poison.sl) ? { sl:1 } : {}) }; }, '☠독'); }; // (v8.7.0) 아난시 중첩 · 끈적한 실
   C.cleanse = (u, n)=>{ let k = 0; ['freeze','seal','bind','poison','burn','curse','web','slow','chill'].forEach(key=>{ if(k<n && u.st[key]){ delete u.st[key]; if(key==='burn'){ delete u.st.burnDmg; delete u.st.burnCap; } k++; } }); };
   C.strip = u=>{ const lk = lokiIntercept(sf, a, u), keep = lk ? JSON.parse(JSON.stringify(u.st)) : null; let n = 0; ['shield','haste','buff','regen','reflect','ward','taunt','empower','guard'].forEach(key=>{ if(u.st[key]){ delete u.st[key]; n++; } }); if(lk && n) lokiGive(sf, lk, u, keep, C.hits); return n; };
   C.actNext = u=>{
@@ -3256,7 +3369,7 @@ function raidCleanPicks(arr){
   const out = [];
   for(let i=0;i<4;i++){
     const p = (arr && typeof arr==='object') ? arr[i] : null;
-    out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk: Math.max(1, Math.min(1e7, p.atk)), arm: Number.isFinite(p.arm) ? Math.max(1, Math.min(10, p.arm)) : 1, rune: runeValid(p.rune) ? { id:p.rune.id, tier:p.rune.tier } : null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, sub: cleanSub(p.sub) } : null);
+    out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk: Math.max(1, Math.min(1e7, p.atk)), arm: Number.isFinite(p.arm) ? Math.max(1, Math.min(10, p.arm)) : 1, rune: runeValid(p.rune) ? { id:p.rune.id, tier:p.rune.tier } : null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, ast: !!p.ast, sub: cleanSub(p.sub) } : null);
   }
   return out;
 }
@@ -3283,7 +3396,7 @@ function raidParseBattle(json){
 // ---------- 전투 구성 ----------
 function buildRaidFight(hostPicks, guestPicks, bossId, diffId){
   const myUnits = [];
-  const add = (arr, slots, owner)=> raidCleanPicks(arr).forEach((p,i)=>{ if(p){ const u = makeBattleUnit('me', slots[i], p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null); u.owner = owner; myUnits.push(u); } });
+  const add = (arr, slots, owner)=> raidCleanPicks(arr).forEach((p,i)=>{ if(p){ const u = makeBattleUnit('me', slots[i], p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null); if(p.ast) u.ast = true; u.owner = owner; myUnits.push(u); } });
   add(hostPicks, P1_SLOTS, 'host'); add(guestPicks, P2_SLOTS, 'guest');
   const info = raidBossById(bossId) || raidWeekBoss();
   const diff = raidDiffById(diffId);
@@ -3731,8 +3844,8 @@ async function raidResume(){
 }
 
 // ---------- 시작 · 선택 ----------
-function raidMyPickPayload(){ return raidNet.myPicks.map(k=> k ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(spiritHpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) } : null); }
-function raidAiPickPayload(){ return raidAutoPicks().filter(Boolean).map(k=>({ key:k, atk:unitAtk(k), arm:spiritHpMult(k), rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) })); }
+function raidMyPickPayload(){ return raidNet.myPicks.map(k=> k ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(spiritHpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), ast: isAstral(k), sub: battleSubFor(k) } : null); }
+function raidAiPickPayload(){ return raidAutoPicks().filter(Boolean).map(k=>({ key:k, atk:unitAtk(k), arm:spiritHpMult(k), rune: spiritRune(k), aw: awakenLevel(k), ast: isAstral(k), sub: battleSubFor(k) })); }
 // (v269) 추천: 보스 속성에 강한 정령 우대로 4마리 → 돌격·탱커·흡혈처형(전열 계열)을 앞칸(0·1), 나머지는 뒷칸(2·3)
 // 예전엔 공격력 순 4마리를 칸 순서대로 넣어서 전열 계열이 후열에, 후열 계열이 전열에 서기도 했음
 function raidAutoPicks(bossId){
@@ -4182,7 +4295,7 @@ function bindFriendPanel(){
   document.querySelectorAll('[data-adm-req]').forEach(el=>el.addEventListener('click', ()=>{ el.disabled = true; friendAddByCode(el.dataset.admReq); }));
 }
 // ===================== (v173) 결투 — 친구의 결투 덱과 한 판 (보상 없음) =====================
-function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(spiritHpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), sub: battleSubFor(k) } : null); }
+function duelPayload(keys){ return (keys||[]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? { key:k, atk: Math.round(unitAtk(k)), arm: Math.round(spiritHpMult(k)*1000)/1000, rune: spiritRune(k), aw: awakenLevel(k), ast: isAstral(k), sub: battleSubFor(k) } : null); }
 // (v182) 한 번이라도 덱을 정했으면(비운 것 포함) 그대로 씀 — 예전엔 다 비우면 '아직 안 정함'으로 보고 탐험 진형을 다시 채워 넣었음.
 // 아직 한 번도 안 정했을 때(null)만 탐험 진형으로 시작
 function myDuelDeck(){ const pad = a=> a.slice(0,6).concat([null,null,null,null,null,null]).slice(0,6).map(k=> (k && SPIRITS[k] && ownedCount(k)>0) ? k : null); const d = state.duelDeck; return Array.isArray(d) ? pad(d) : pad(state.formation||[]); } // (v267) 파견 가서 없는 정령은 빈 칸으로
@@ -4192,11 +4305,11 @@ async function saveDuelDeck(keys, quiet){
   if(activeTab==='duel') render();
 }
 function buildDuelFight(myPicks, theirPicks, name){
-  const mk = (side, arr)=> raidCleanPicks6(arr).map((p,i)=> p ? makeBattleUnit(side, i, p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null) : null).filter(Boolean);
+  const mk = (side, arr)=> raidCleanPicks6(arr).map((p,i)=>{ if(!p) return null; const u = makeBattleUnit(side, i, p.key, p.atk, ALLY_HP_MULT, 1, p.arm, p.rune||null, p.aw||0, p.sub||null); if(p.ast) u.ast = true; return u; }).filter(Boolean); // (v8.7.0) 성좌
   const sf = { v:173, mode:'duel', stageIdx:0, duelName:name, round:1, phase:'acting', queue:[], queuePos:0, myUnits: mk('me', myPicks), enemyUnits: mk('enemy', theirPicks), log:['결투 시작!'], result:null, fxSeq:0, lastFx:null, actSeq:0 };
   startRoundQueue(sf); return sf;
 }
-function raidCleanPicks6(arr){ const out = []; for(let i=0;i<6;i++){ const p = (arr && typeof arr==='object') ? arr[i] : null; out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk:Math.max(1,Math.min(1e7,p.atk)), arm: Number.isFinite(p.arm)?Math.max(1,Math.min(10,p.arm)):1, rune: runeValid(p.rune)?{id:p.rune.id, tier:p.rune.tier}:null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, sub: cleanSub(p.sub) } : null); } return out; }
+function raidCleanPicks6(arr){ const out = []; for(let i=0;i<6;i++){ const p = (arr && typeof arr==='object') ? arr[i] : null; out.push(p && typeof p==='object' && typeof p.key==='string' && SPIRITS[p.key] && Number.isFinite(p.atk) ? { key:p.key, atk:Math.max(1,Math.min(1e7,p.atk)), arm: Number.isFinite(p.arm)?Math.max(1,Math.min(10,p.arm)):1, rune: runeValid(p.rune)?{id:p.rune.id, tier:p.rune.tier}:null, aw: Number.isFinite(p.aw) ? Math.max(0, Math.min(AWAKEN_MAX, Math.floor(p.aw))) : 0, ast: !!p.ast, sub: cleanSub(p.sub) } : null); } return out; }
 function duelResultOverlayHtml(sf){
   const r = sf.result;
   return '<div class="bs-result"><div class="bs-rcard '+(r.win?'win':'lose')+'"><div class="bs-ricon">'+(r.win?'<img class="uic" src="assets/ui/deco_victory.webp" alt="">':'<img class="uic" src="assets/ui/deco_defeat.webp" alt="">')+'</div><div class="bs-rtitle">'+(r.win?'결투 승리!':'결투 패배')+'</div><div class="bs-rsub">vs '+(sf.duelName||'상대')+' · '+(r.forfeit?'기권':r.rounds+'라운드')+'</div>'
@@ -5213,14 +5326,17 @@ function buildQueue(sf){
   [...sf.myUnits, ...sf.enemyUnits].forEach(u=>{ if(u.st.bind) delete u.st.bind; });
   return e.map(x=>({ side:x.side, idx:x.idx, speed:x.speed }));
 }
-function startRoundQueue(sf){ sf.queue = buildQueue(sf); sf.queuePos = 0; sf.phase = 'acting'; [...(sf.myUnits||[]), ...(sf.enemyUnits||[])].forEach(u=>{ if(u.alive) u.rsHp = u.hp; }); } // (v343) 라운드 시작 체력 — 므네모시네 되감기
+function battleStartFx(sf){ if(sf._bs) return; sf._bs = 1; // (v8.7.0) 전투 시작 효과 — 백록 계열 천상의 사슴
+  ['me','enemy'].forEach(side=>{ const lb = aliveUnits(sideUnits(sf, side)||[]).filter(x=>x.line==='light_b' && aw3(x)).sort((x,y)=>y.g-x.g)[0]; if(!lb) return; const v = [.10,.12,.15,.18,.20][lb.g];
+    aliveUnits(sideUnits(sf, side)).forEach(u=>{ if(u.inert) return; u.st.haste = { v:Math.max(15, (u.st.haste&&u.st.haste.v)||0), r:Math.max(1, (u.st.haste&&u.st.haste.r)||0) }; u.st.buff = { v:Math.max(v, (u.st.buff&&u.st.buff.v)||0), r:Math.max(1, (u.st.buff&&u.st.buff.r)||0) }; }); }); }
+function startRoundQueue(sf){ if((sf.round||1)===1) battleStartFx(sf); sf.queue = buildQueue(sf); sf.queuePos = 0; sf.phase = 'acting'; [...(sf.myUnits||[]), ...(sf.enemyUnits||[])].forEach(u=>{ if(u.alive) u.rsHp = u.hp; }); } // (v343) 라운드 시작 체력 — 므네모시네 되감기
 // 지금 차례: 'me' | 'enemy' | 'end'. 쓰러진 유닛은 건너뛰고, 빙결이면 한 번 쉬게 함
 function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
       if(u.st.freeze && u.st.dcharge && sf.duo && sf.duo.charge && sf.duo.id==='sc') sf.duo.charge.off = true; // (v344) 연계 층: 충전 중 빙결
-      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
+      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); { const jm = aliveUnits(sideUnits(sf, foeOf(u.side))).find(x=>x.line==='water_b' && awAs(x)); if(jm){ const r = dealDamage(sf, jm, u, 1.0, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(jm, u), dot:true, src:'❄️얼음 깨기' }); if(!u.alive){ sf.queuePos++; continue; } } } /* (v8.7.0) 얼음 깨기 */ if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
       if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
       if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
@@ -5249,11 +5365,14 @@ function roundStartEffects(sf){
     const s = u.st;
     let loss = 0;
     if(s.burn){ loss += s.burn * (s.burnDmg||0); }
-    if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct); }
+    if(s.poison){ loss += Math.round(pctHp(u) * s.poison.pct * (s.poison.n||1)); }
+    if(loss>0 && s.star) loss += starDmg(sf, u); // (v8.7.0) 별의 공명
+    if(loss>0){ const r2 = endureHook(sf, u, loss); if(r2<0){ u.hp = Math.min(u.maxHp, u.hp - r2); loss = 0; } else loss = r2; } // (v8.7.0) 바다의 품·강의 신
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
     if(s.regen){ const b = u.hp, hv = healAmount(u, pctHp(u)*s.regen.v); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     if(s.memHeal){ const b = u.hp, hv = healAmount(u, s.memHeal); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
-    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
+    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link','rwd'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
+    if(s.linkHost && u.line==='water_hb' && aw3(u)){ const b = u.hp, hv = healAmount(u, u.maxHp*0.04); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧깊은 수원' }); } // (v8.7.0)
     if(s.linkHost){ s.linkHost.r--; if(s.linkHost.r<=0){ u.maxHp = Math.max(1, u.maxHp - (s.linkHost.boost||0)); u.hp = Math.min(u.hp, u.maxHp); delete s.linkHost; } }
     if(s.bomb){ const L = bombsOf(u); L.forEach(b=>{ b.r--; }); u.st.bomb = L; const due = L.filter(b=>b.r<=0); if(due.length){ bombExplode(sf, u, hits, 1, due); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄 · (v8.1.0) 여러 개 따로
     if(s.poison){ s.poison.r--; if(s.poison.r<=0) delete s.poison; }
@@ -5287,7 +5406,9 @@ function aiLimited(sf, a, act){ // 반환: {act,side,idx} · 'skip'(이 스킬�
   if(k==='water_mn:s1'){ let best = null, gap = 0; own.forEach(u=>{ const g = (Number.isFinite(u.rsHp) ? u.rsHp : u.hp) - u.hp; if(g>gap){ gap = g; best = u; } }); return (best && gap >= best.maxHp*0.15) ? { act, side:a.side, idx:best.idx } : 'skip'; }
   if(k==='water_mn:s2'){ const n = own.filter(u=>!u.loopUsed && !u.st.loop).length; return (n>=2 && (sf.round>=2 || own.some(u=>ratio(u)<0.6))) ? { act, side:a.side, idx:a.idx } : 'skip'; }
   if(k==='water_hb:s1'){ const o = own.filter(u=>u!==a && !u.st.link); return o.length ? { act, side:a.side, idx:low(o).idx } : 'skip'; }
-  if(k==='light_as:s2'){ const pool = (aliveUnits(sideUnits(sf, foe)).filter(u=>u.st.taunt).length ? foes.filter(u=>u.st.taunt) : frontFirst(sideUnits(sf, foe), sideWidth(sf, foe))).filter(u=>u.st.star && u.st.star.n>=2); return pool.length ? { act, side:foe, idx:pool.reduce((x,y)=> y.st.star.n>x.st.star.n ? y : x).idx } : 'skip'; }
+  if(k==='light_as:s2'){ const L = foes.filter(u=>u.st.star && u.st.star.n>0), tot = L.reduce((x,u)=>x+u.st.star.n, 0); return tot>=3 ? { act, side:foe, idx:L[0].idx } : 'skip'; } // (v8.7.0) 표식 합이 3개 이상이면
+  if(k==='light_as:s1'){ const pool = aliveUnits(sideUnits(sf, foe)).filter(u=>u.st.taunt).length ? foes.filter(u=>u.st.taunt) : frontFirst(sideUnits(sf, foe), sideWidth(sf, foe)); const m = pool.filter(u=>u.st.star && u.st.star.n>0); return m.length ? { act, side:foe, idx:m[0].idx } : null; } // 표식 있는 적에게 또 써서 퍼뜨림
+  if(k==='water_hb:s2'){ const avg = own.reduce((x,u)=>x+ratio(u), 0)/Math.max(1, own.length); return avg<=0.6 ? { act, side:a.side, idx:a.idx } : null; } // (v8.7.0) 아군 평균 체력 60% 이하면 아군에게 범람
   if(k==='dark_dk:s1'){ if(foes.some(u=>u.st.taunt)) return null; const back = foes.filter(u=>!isFrontRow(u.idx, sideWidth(sf, foe)) && !u.isBoss); return back.length ? { act, side:foe, idx:low(back).idx } : null; }
   if(k==='dark_dk:s2'){ const o = own.filter(u=>u!==a && ratio(u)<0.4 && swapAllowed(sf, a, u)); return o.length ? { act, side:a.side, idx:low(o).idx } : 'skip'; }
   return null;
@@ -5357,7 +5478,7 @@ function defaultActFor(sf, a){
 function retargetForAct(sf, a, act){ // 고른 행동의 종류에 맞게 대상 편을 바꿈(지원기 → 아군, 공격기 → 적)
   const sk = unitSkill(a, act), harm = !sk || sk.kind==='harm';
   if(sk && sk.self){ skillSel.side = a.side; skillSel.idx = a.idx; return; } // (v192) 자기 몸에만 거는 스킬
-  if(harm && skillSel.side!=='enemy'){ const st = skillSel.sticky; skillSel.side = 'enemy'; skillSel.idx = (st!==undefined && st!==null && skillTargetable(sf,'enemy',st)) ? st : recommendEnemyTarget(sf, a); }
+  if(harm && skillSel.side!=='enemy' && !(sk && sk.dual && skillSel.side===a.side)){ /* (v8.7.0) 범람: 아군을 골라 둔 채면 그대로 */ const st = skillSel.sticky; skillSel.side = 'enemy'; skillSel.idx = (st!==undefined && st!==null && skillTargetable(sf,'enemy',st)) ? st : recommendEnemyTarget(sf, a); }
   else if(!harm && skillSel.side!==a.side){ skillSel.side = a.side; skillSel.idx = autoAllyTarget(sf, a); }
 }
 function isSupportUnit(a){ const k = kitOf(a); return k.s1.kind!=='harm' && k.s2.kind!=='harm'; }
@@ -5524,7 +5645,8 @@ const LINE_KITS = {
         '대상에게 공격력 '+pctTxt([1.5,1.7,1.9,2.2,2.5][g]),
         g>=3?'바로 뒤 칸 대상에게도 50%':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const m=C.P([1.5,1.7,1.9,2.2,2.5]); C.hit(C.t,m); if(aw5(C.a) && !C.t.alive) C.resetCd1 = true; if(C.g>=3) C.around('pierce').forEach(u=>C.hit(u,m*0.5)); } },
+      run:C=>{ const m=C.P([1.5,1.7,1.9,2.2,2.5]); C.hit(C.t, m*((aw3(C.a) && C.t.hp/C.t.maxHp<=0.5) ? 1.25 : 1)); if(aw1(C.a) && !C.t.alive) C.resetCd1 = true; // (v8.7.0) 사냥감
+         if(C.g>=3) C.around('pierce').forEach(u=>C.hit(u,m*0.5)); } },
     s2:{ name:'분화', icon:artIc('sk_fire_a_2'), cd:4, kind:'harm', tag:()=> '가로',
       desc:g=>[
         '대상에게 공격력 '+pctTxt([0,0,2.2,2.6,3.0][g]),
@@ -5550,7 +5672,7 @@ const LINE_KITS = {
         '화상이 없는 대상에게는 공격력 50%'
       ].join('<br>'),
       run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · GEUMO_DROP(2)중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
-        if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-GEUMO_DROP); if(!u.st.burn) delete u.st.burn; } else if(i===0) C.hit(u, 0.5); }); } } },
+        if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-(aw3(C.a) ? 0 : GEUMO_DROP)); if(!u.st.burn) delete u.st.burn; /* (v8.7.0) 남는 불씨 */ } else if(i===0) C.hit(u, 0.5); }); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', icon:artIc('pv_water_a'), desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:artIc('sk_water_a_1'), cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
@@ -5559,7 +5681,7 @@ const LINE_KITS = {
         g>=3?'십자 방향 대상도 절반만큼 회복':null,
         g>=3?'회복한 대상에게 2라운드 동안 재생 부여 (라운드마다 대상 최대체력 5%)':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt = u=>pctHp(C.a)*C.P(HEAL1_C) + u.maxHp*C.P(HEAL1_T); C.heal(C.t,amt(C.t)); if(aw5(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) C.heal(o,amt(o)); } if(C.g>=3){ C.around('cross').forEach(u=>C.heal(u,amt(u)*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
+      run:C=>{ const amt = u=>pctHp(C.a)*C.P(HEAL1_C) + u.maxHp*C.P(HEAL1_T), hl = (u, v)=>{ const ov = C.heal(u, v); if(aw3(C.a) && ov>0) C.shield(u, Math.min(ov, u.maxHp*0.2)); }; /* (v8.7.0) 물의 장막 — 하백 수위에도 그대로 */ hl(C.t,amt(C.t)); if(aw1(C.a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) hl(o,amt(o)); } if(C.g>=3){ C.around('cross').forEach(u=>hl(u,amt(u)*0.5)); C.pos(C.t,st=>{ st.regen={v:0.05,r:2,src:C.skNm}; },'💧재생'); } } },
     s2:{ name:'해일의 축복', icon:artIc('sk_water_a_2'), cd:4, kind:'heal', tag:g=>'전체 · 정화',
       desc:g=>[
         '대상 편 전체 회복 (시전자 최대체력 '+pctTxt(HEAL2_C[g])+' + 각자 최대체력 '+pctTxt(HEAL2_T[g])+')',
@@ -5570,7 +5692,7 @@ const LINE_KITS = {
     passive:{ name:'한기', icon:artIc('pv_water_b'), desc:g=>'공격한 대상 속도 −'+[0,5,6,8,10][g]+' (최대 3중첩)' },
     s1:{ name:'서리 화살', icon:artIc('sk_water_b_1'), cd:3, kind:'harm', tag:()=> '둔화',
       desc:g=>'대상에게 공격력 '+pctTxt([1.0,1.1,1.2,1.35,1.5][g])+' + 둔화 부여 (속도 −15, 2라운드)',
-      run:C=>{ C.hit(C.t,C.P([1.0,1.1,1.2,1.35,1.5])); C.neg(C.t,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); if(aw5(C.a) && C.t.alive && Math.random()<0.25) C.neg(C.t,st=>{ st.freeze=true; },'❄빙결'); } },
+      run:C=>{ C.hit(C.t,C.P([1.0,1.1,1.2,1.35,1.5])); C.neg(C.t,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); if(aw1(C.a) && C.t.alive && Math.random()<(awUq(C.a) ? 0.5 : 0.25)) C.neg(C.t,st=>{ st.freeze=true; },'❄빙결'); } }, // (v8.7.0) 깊은 혹한
     s2:{ name:'빙결', icon:artIc('sk_water_b_2'), cd:4, kind:'harm', tag:g=>'빙결'+(g>=4?' · 가로':(g>=3?' · 가로 둔화':'')),
       desc:g=>[
         '대상에게 공격력 150% + 빙결 부여 (다음 행동 1회 못 함)',
@@ -5588,7 +5710,7 @@ const LINE_KITS = {
         '자신에게 도발 '+(g>=3?2:1)+'라운드 (적이 자신만 공격)',
         '자신이 받는 피해 −'+pctTxt([.20,.24,.28,.32,.40][g])+' (2라운드)'
       ].join('<br>'),
-      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1+(aw5(C.a)?1:0); st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); } },
+      run:C=>{ C.pos(C.a,st=>{ st.taunt=(C.g>=3?2:1)+1+(aw1(C.a)?1:0); st.guard={v:C.P([.20,.24,.28,.32,.40]), r:2}; },'🌱도발·굳건'); if(aw3(C.a)) C.heal(C.a, C.a.maxHp*0.1); } }, // (v8.7.0) 이끼 갑옷
     s2:{ name:'가시 갑옷', icon:artIc('sk_wood_a_2'), cd:4, kind:'shield', tag:()=> '반사',
       desc:g=>'대상이 2라운드 동안 받는 피해의 '+pctTxt([0,0,.3,.4,.5][g])+'를 공격자에게 반사',
       run:C=>{ C.pos(C.t,st=>{ st.reflect={v:C.P([0,0,.3,.4,.5]),r:2}; },'🌵반사'); } } },
@@ -5620,7 +5742,7 @@ const LINE_KITS = {
         '대상에게 보호막 부여 (시전자 최대체력 '+pctTxt([.2,.24,.28,.32,.36][g])+')',
         g>=3?'양옆 대상에게도 절반만큼 보호막':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(aw5(C.a)) C.cleanse(C.t,1); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
+      run:C=>{ const amt=pctHp(C.a)*C.P([.2,.24,.28,.32,.36]); C.shield(C.t,amt); if(aw1(C.a)) C.cleanse(C.t,1); if(C.g>=3) C.around('row').forEach(u=>C.shield(u,amt*0.5)); } },
     s2:{ name:'날개의 가호', icon:artIc('sk_light_a_2'), cd:4, kind:'shield', tag:g=>'전체'+(g>=3?' · 면역':''),
       desc:g=>[
         '대상 편 전체에게 보호막 부여 (시전자 최대체력 '+pctTxt([0,0,.10,.13,.16][g])+')',
@@ -5634,7 +5756,7 @@ const LINE_KITS = {
         '대상에게 속도 +15, 공격력 +'+pctTxt([.10,.12,.15,.18,.20][g])+' 부여 (2라운드)',
         g>=4?'대상 편 전체에게 적용':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw5(C.a)?3:2; const f=u=>C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
+      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw1(C.a)?3:2; const f=u=>C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
     s2:{ name:'여명의 호령', icon:artIc('sk_light_b_2'), cd:4, kind:'buff', tag:()=> '즉시 행동',
       desc:g=>[
         '대상이 즉시 다음 차례로 행동',
@@ -5648,7 +5770,7 @@ const LINE_KITS = {
         '대상에게 공격력 '+pctTxt([1.3,1.45,1.6,1.75,1.9][g]),
         '준 피해의 40%만큼 체력 회복'
       ].join('<br>'),
-      run:C=>{ const r=C.hit(C.t,C.P([1.3,1.45,1.6,1.75,1.9])); if(r) C.heal(C.a, r.total*(aw5(C.a)?0.6:0.4)); } },
+      run:C=>{ const r=C.hit(C.t,C.P([1.3,1.45,1.6,1.75,1.9])); if(r){ C.healed = 0; C.heal(C.a, r.total*((aw1(C.a)?0.6:0.4) + ((aw3(C.a) && C.a.hp/C.a.maxHp<=0.5) ? 0.2 : 0))); C.a.drained = (C.a.drained||0) + (C.healed||0); } } }, // (v8.7.0) 피의 갈증 · 불사용 흡혈량
     s2:{ name:'처형', icon:artIc('sk_dark_a_2'), cd:4, kind:'harm', tag:()=> '처형',
       desc:g=>[
         '대상 체력이 30% 이하면 공격력 '+pctTxt([0,0,3,3.5,4][g])+', 아니면 120%',
@@ -5663,7 +5785,7 @@ const LINE_KITS = {
         '대상에게 공격력 80% + 저주 '+(g>=3?3:2)+'라운드 (받는 피해 +'+pctTxt([.15,.18,.20,.23,.25][g])+')',
         g>=4?'대상 편 전체에게 저주 부여':(g>=3?'십자 방향 대상에게도 저주 부여':null)
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const v=C.D([.15,.18,.20,.23,.25]), r=(C.g>=3?3:2)+(aw5(C.a)?1:0); const f=u=>C.neg(u,st=>{ st.curse={v,r}; },'<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); C.hit(C.t,0.8); f(C.t);
+      run:C=>{ const v=C.D([.15,.18,.20,.23,.25])+(aw3(C.a)?0.05:0), r=(C.g>=3?3:2)+(aw1(C.a)?1:0), ex = awUq(C.a) ? { hc:1, ...(awAs(C.a) ? { wk:0.15 } : {}) } : {}; const f=u=>C.neg(u,st=>{ st.curse={v,r,...ex}; }, /* (v8.7.0) 불길한 깃 · 흉조의 울음 */'<img class="uic" src="assets/ui/ic_skull.webp" alt="">저주'); C.hit(C.t,0.8); f(C.t);
         if(C.g>=4) C.side(C.tSide).filter(u=>u!==C.t).forEach(f); else if(C.g>=3) C.around('cross').forEach(f); } },
     s2:{ name:'악몽 포식', icon:artIc('sk_dark_b_2'), cd:4, kind:'harm', tag:()=> '이로운 효과 제거',
       desc:g=>[
@@ -5671,7 +5793,7 @@ const LINE_KITS = {
         '제거한 효과 수만큼 공격력 '+pctTxt([0,0,.6,.8,1.0][g])+' (없어도 최소 60%)'
       ].join('<br>'),
       run:C=>{ const n=C.strip(C.t); C.hit(C.t, n>0 ? n*C.P([0,0,.6,.8,1.0]) : 0.6); } } },
-  // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 ★5 효과는 AWAKEN5) =====
+  // ===== (v343) 한정 성좌 8종 — 처음부터 성좌라 수치는 하나 (각성 효과는 AWAKEN1·AWAKEN3·AWAKEN_UQ) =====
   fire_sc: { role:'시한폭탄', icon:ELEMENT_INFO.fire.icon,
     passive:{ name:'불씨 전이', icon:artIc('pv_fire_sc'), desc:()=>'폭탄이 붙은 적이 터지기 전에 쓰러지면 양옆 적에게 폭탄이 옮겨 붙음 (남은 라운드 그대로)<br>옮겨 붙을 때마다 그 폭탄 피해 +'+Math.round(SC_HOP*100)+'% (최대 +'+Math.round(SC_HOP*SC_HOP_MAX*100)+'%)<br>열충격: 빙결·둔화된 적의 폭탄은 터질 때 피해 +'+Math.round((SC_SHOCK-1)*100)+'%' },
     s1:{ name:'시한 낙인', icon:artIc('sk_fire_sc_1'), cd:3, kind:'harm', tag:()=> '폭탄',
@@ -5685,32 +5807,35 @@ const LINE_KITS = {
     s1:{ name:'불꽃 제물', icon:artIc('sk_fire_su_1'), cd:3, kind:'buff', tag:()=> '자기 체력 15%',
       desc:()=>'자기 체력을 최대체력 15%만큼 태워 대상 아군 공격력 +'+pctTxt(SU_PYRE)+' (2라운드)<br>대상 체력이 50% 이하면 +'+pctTxt(SU_PYRE_LOW)+'<br>체력이 모자라면 1만 남음',
       run:C=>{ const a = C.a, cost = Math.round(a.maxHp*0.15), before = a.hp; a.hp = Math.max(1, a.hp - cost); a.rsHp = Math.max(1, (Number.isFinite(a.rsHp) ? a.rsHp : before) - cost); if(before>a.hp){ hidHurt(C.sf, a, before-a.hp); C.hits.push({ side:a.side, idx:a.idx, kind:'dmg', amount:before-a.hp, dot:true, src:'불꽃 제물' }); }
+        if(awUq(a) && before>a.hp) C.shield(a, (before-a.hp)*0.5); /* (v8.7.0) 불씨 공양 */
         const give = u=>{ const v = u.hp/u.maxHp<=0.5 ? SU_PYRE_LOW : SU_PYRE; C.pos(u, st=>{ st.pyre = { v, r:2 }; }, '🕯️공격력 +'+Math.round(v*100)+'%'); }; give(C.t);
-        if(aw5(a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>y.atk-x.atk)[0]; if(o) give(o); } } },
+        if(aw1(a)){ const o = C.side(C.tSide).filter(u=>u!==C.t).sort((x,y)=>y.atk-x.atk)[0]; if(o) give(o); } } },
     s2:{ name:'종말의 불길', icon:artIc('sk_fire_su_2'), cd:4, kind:'harm', tag:()=> '잃은 체력 비례',
       desc:()=>'대상에게 공격력 150% + 자기가 잃은 체력의 30%만큼 추가 피해',
-      run:C=>{ const lost = Math.max(0, C.a.maxHp - C.a.hp); C.hit(C.t, 1.5 + lost*0.3/Math.max(1, C.a.atk)); } } },
+      run:C=>{ const lost = Math.max(0, C.a.maxHp - C.a.hp); C.hit(C.t, 1.5 + lost*(aw3(C.a) ? 0.5 : 0.3)/Math.max(1, C.a.atk)); } } }, // (v8.7.0) 끝의 불길
   water_mn: { role:'되감기', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'흐르는 기억', icon:artIc('pv_water_mn'), desc:()=>'아군이 한 번에 최대체력 30% 넘게 맞으면 다음 라운드 시작에 그 피해의 절반 회복' },
     s1:{ name:'되감기', icon:artIc('sk_water_mn_1'), cd:3, kind:'heal', allyOnly:true, tag:()=> '아군 전용',
       desc:()=>'아군 하나의 체력을 이번 라운드 시작 때 값으로 되돌림 (올라가든 내려가든)<br>해로운 효과 1개 제거 · 재사용 대기 중인 기술 하나가 '+MN_CD_BACK+'라운드 당겨짐 (스킬1 먼저)<br>불꽃 제물로 태운 체력은 안 돌아옴',
       run:C=>{ const t = C.t; if(t.side!==C.a.side) return; const to = Math.max(1, Math.min(t.maxHp, Math.round(Number.isFinite(t.rsHp) ? t.rsHp : t.hp))), d = to - t.hp;
         if(d>0) C.heal(t, d); else if(d<0){ t.hp = to; C.hits.push({ side:t.side, idx:t.idx, kind:'dmg', amount:-d, dot:true, src:'되감기' }); }
-        C.cleanse(t, 1); if(t!==C.a){ if(t.cd1>0) t.cd1 = Math.max(0, t.cd1-MN_CD_BACK); else if(t.cd2>0) t.cd2 = Math.max(0, t.cd2-MN_CD_BACK); } C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } }, // (v6.0.0) 재사용 대기 당기기 (자신은 바로 뒤에 대기가 새로 잡혀서 뺌)
+        C.cleanse(t, 1); if(aw3(C.a)) C.pos(t, st=>{ st.rwd = { v:0.15, r:2 }; }, '🛡️기억의 조각'); /* (v8.7.0) */ if(t!==C.a){ if(t.cd1>0) t.cd1 = Math.max(0, t.cd1-MN_CD_BACK); else if(t.cd2>0) t.cd2 = Math.max(0, t.cd2-MN_CD_BACK); } C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'⏪되감기' }); } }, // (v6.0.0) 재사용 대기 당기기 (자신은 바로 뒤에 대기가 새로 잡혀서 뺌)
     s2:{ name:'시간의 고리', icon:artIc('sk_water_mn_2'), cd:4, kind:'buff', allyOnly:true, tag:()=> '아군 전체 · 부활 표식',
       desc:()=>'아군 전체에 2라운드 표식: 그 사이 쓰러지면 표식 받을 때 체력의 50%로 일어남<br>아군마다 전투당 1번',
-      run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*0.5)) }; }, '⏳고리'); }); } } },
+      run:C=>{ C.side(C.a.side).forEach(u=>{ if(u.loopUsed) return; C.pos(u, st=>{ st.loop = { r:2, hp:Math.max(1, Math.round(u.hp*(awUq(C.a) ? 0.7 : 0.5))) }; }, '⏳고리'); /* (v8.7.0) 영원의 고리 */ }); } } },
   water_hb: { role:'연결', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'깊은 강', icon:artIc('pv_water_hb'), desc:()=>'연결 중이면 최대체력 +15%<br>물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)' },
     s1:{ name:'물길 잇기', icon:artIc('sk_water_hb_1'), cd:3, kind:'shield', allyOnly:true, notSelf:true, tag:()=> '연결 3R',
       desc:()=>'아군 하나와 3라운드 연결: 그 아군이 받는 피해의 40%를 하백이 대신 받음<br>연결 중 하백이 받는 피해 −20%',
       run:C=>{ const a = C.a; if(C.t.side!==a.side || C.t===a) return; const link = u=>C.pos(u, st=>{ st.link = { r:3 }; }, '🔗연결');
-        link(C.t); if(aw5(a)){ const o = C.side(a.side).filter(u=>u!==a && u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) link(o); }
+        link(C.t); if(aw1(a)){ const o = C.side(a.side).filter(u=>u!==a && u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) link(o); }
         if(!a.st.linkHost){ const b = Math.round(a.maxHp*0.15); a.maxHp += b; a.hp += b; a.st.linkHost = { r:3, boost:b }; } else a.st.linkHost.r = 3;
         C.hits.push({ side:a.side, idx:a.idx, kind:'status', text:'🌊깊은 강' }); } },
-    s2:{ name:'범람', icon:artIc('sk_water_hb_2'), cd:4, kind:'harm', tag:()=> '전체 · 수위 · 둔화',
-      desc:()=>'대상 편 전체에 공격력 90% + 각자 수위의 '+pctTxt(HB_TIDE_MUL)+'만큼 추가 피해 + 둔화 (속도 −10, 2라운드)<br>쓰고 나면 수위가 비워짐',
-      run:C=>{ const tide = C.a.tide||0, m = 0.9 + tide*HB_TIDE_MUL/Math.max(1, C.a.atk); C.a.tide = 0; C.side(C.tSide).forEach(u=>{ C.hit(u, m); if(u.alive) C.neg(u, st=>{ st.slow = { v:Math.max(10, (st.slow&&st.slow.v)||0), r:2 }; }, '🐌둔화'); }); } } },
+    s2:{ name:'범람', icon:artIc('sk_water_hb_2'), cd:4, kind:'harm', dual:true, tag:()=> '전체 · 적 피해 / 아군 회복',
+      desc:()=>'적에게: 전체에 공격력 90% + 각자 수위의 '+pctTxt(HB_TIDE_MUL)+'만큼 추가 피해 + 둔화 (속도 −10, 2라운드)<br>아군에게: 전체에 같은 양만큼 회복 + 가속 (속도 +10, 2라운드)<br>쓰고 나면 수위가 비워짐',
+      run:C=>{ const tide = C.a.tide||0, m = 0.9 + tide*HB_TIDE_MUL/Math.max(1, C.a.atk); C.a.tide = 0;
+        if(C.tSide===C.a.side){ C.side(C.a.side).forEach(u=>{ C.heal(u, C.a.atk*m); C.pos(u, st=>{ st.haste = { v:Math.max(10, (st.haste&&st.haste.v)||0), r:2 }; }, '⏩가속'); }); return; } // (v8.7.0) 아군에게 범람 (사용자 결정)
+        C.side(C.tSide).forEach(u=>{ C.hit(u, m); if(u.alive) C.neg(u, st=>{ st.slow = { v:Math.max(10, (st.slow&&st.slow.v)||0), r:2 }; }, '🐌둔화'); }); } } },
   wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
     passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%<br>반격은 그때 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+'만큼 추가 피해 (아군이 씌운 보호막도 포함)' },
     s1:{ name:'포효', icon:artIc('sk_wood_sg_1'), cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 보호막 · 반격',
@@ -5720,32 +5845,34 @@ const LINE_KITS = {
       desc:()=>'대상에게 공격력 200% + 이번 전투 반격 횟수마다 +10% (최대 +100%)',
       run:C=>{ C.hit(C.t, 2.0 + Math.min(1, 0.1*(C.a.counterN||0))); } } },
   light_as: { role:'별 표식', icon:ELEMENT_INFO.light.icon,
-    passive:{ name:'별의 공명', icon:artIc('pv_light_as'), desc:()=>'표식 붙은 적이 터뜨리는 공격(발화 · 시한폭탄)을 맞으면 표식을 전부 써서 그 피해 +표식당 40%' },
+    passive:{ name:'별의 공명', icon:artIc('pv_light_as'), desc:()=>'표식 붙은 적이 지속 피해(화상 · 독 · 시한폭탄 · 발화)를 받으면 표식 피해가 같이 들어감<br>표식 피해: 표식 하나마다 공격력 '+pctTxt(STAR_RES)+' · 표식은 안 없어짐' }, // (v8.7.0) 표식 개편 (사용자 결정)
     s1:{ name:'별자리 표식', icon:artIc('sk_light_as_1'), cd:3, kind:'harm', tag:()=> '표식',
-      desc:()=>'대상에게 공격력 140% + 별 표식 1개 (최대 3개, 3라운드)',
-      run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const n = aw5(C.a) ? 2 : 1; C.neg(C.t, st=>{ st.star = { n:Math.min(3, ((st.star&&st.star.n)||0)+n), r:3 }; }, '✴️별 표식'); } } },
-    s2:{ name:'별똥별', icon:artIc('sk_light_as_2'), cd:4, kind:'harm', tag:()=> '표식 소모',
-      desc:()=>'대상의 별 표식을 전부 써서 표식 하나마다 공격력 150%<br>표식이 없으면 공격력 120%',
-      run:C=>{ const n = (C.t.st.star && C.t.st.star.n) || 0; delete C.t.st.star; C.hit(C.t, n>0 ? n*1.5 : 1.2, n>0 ? { starfall:true } : null); } } },
+      desc:()=>'대상에게 공격력 140% + 별 표식 1개 (최대 3개, 3라운드)<br>이미 표식이 있는 적에게 쓰면 십자(앞뒤 · 양옆) 1칸에도 표식 1개씩',
+      run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const had = !!(C.t.st.star && C.t.st.star.n>0), n = aw1(C.a) ? 2 : 1, mark = (u, k)=>C.neg(u, st=>{ st.star = { n:Math.min(3, ((st.star&&st.star.n)||0)+k), r:3 }; }, '✴️별 표식');
+        mark(C.t, n); if(had) C.around('cross').forEach(u=>{ if(!u.inert) mark(u, 1); }); } } },
+    s2:{ name:'별똥별', icon:artIc('sk_light_as_2'), cd:4, kind:'harm', tag:()=> '표식 있는 적 전체',
+      desc:()=>'표식이 있는 모든 적에게 표식 하나마다 공격력 '+pctTxt(STAR_FALL)+'<br>표식은 안 없어짐',
+      run:C=>{ const L = C.side(C.tSide).filter(u=>u.st.star && u.st.star.n>0); if(!L.length){ C.hits.push({ side:C.t.side, idx:C.t.idx, kind:'status', text:'✴️표식 없음' }); return; }
+        L.forEach(u=>{ C.hit(u, u.st.star.n*STAR_FALL); if(awUq(C.a) && u.alive && u.st.star) u.st.star.n = Math.min(3, u.st.star.n+1); }); } } }, // (v8.7.0) 별이 지는 밤
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:()=>'빼앗은 효과 하나마다 속도 +3 (최대 +12)<br>가로채기: 적의 이로운 효과가 지워지거나 빼앗길 때 1개를 더 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (다른 아군이 지운 것 포함 · 라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
       desc:()=>'대상의 이로운 효과 1개를 빼앗아 체력 비율이 가장 낮은 아군에게 준 뒤 공격력 150%<br>빼앗을 게 없으면 공격력 195%<br>빼앗는 순서: 보호막 → 강화 → 가속 → 재생 → 굳건함 → 반사 → 보호 → 도발(없앰) · 보스에게선 못 빼앗음',
-      run:C=>{ let got = 0; for(let i=0; i<(aw5(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
+      run:C=>{ let got = 0; for(let i=0; i<(aw1(C.a)?2:1); i++) if(stealEffect(C, C.t)) got++; C.hit(C.t, got ? 1.5 : 1.95); } },
     s2:{ name:'장난꾼의 잔치', icon:artIc('sk_dark_lk_2'), cd:4, kind:'harm', tag:()=> '전체 · 빼앗기',
       desc:()=>'대상 편 전체에서 이로운 효과를 1개씩 빼앗아 아군에게 나눠 준 뒤 전체에 공격력 80%',
-      run:C=>{ C.side(C.tSide).forEach(u=>stealEffect(C, u)); C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
+      run:C=>{ C.side(C.tSide).forEach(u=>{ stealEffect(C, u); if(awUq(C.a)) stealEffect(C, u); }); C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } }, // (v8.7.0) 신들의 장난
   dark_dk: { role:'자리 바꾸기', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'방망이', icon:artIc('pv_dark_dk'), desc:()=>'도깨비불로 자리를 바꾼 뒤 첫 공격은 공격력 +40%' },
     s1:{ name:'둔갑', icon:artIc('sk_dark_dk_1'), cd:3, kind:'harm', anyFoe:true, tag:()=> '뒷줄도 노림',
       desc:()=>'뒷줄을 포함해 적 하나를 골라 앞줄로 끌어내고 공격력 130%<br>끌려 나온 적은 받는 피해 +20% (1라운드)<br>보스는 끌어내지 못하고 공격만',
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
         if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } } // (v6.1.0) 독 번짐 뺌 (사용자 결정)
-        C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:0.2*dbMul(C.a), r:2 }; }, '🎯노출'); if(aw5(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
+        C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:(aw3(C.a) ? 0.3 : 0.2)*dbMul(C.a), r:2 }; }, '🎯노출'); /* (v8.7.0) 짙은 그림자 */ if(aw1(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
     s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
       desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
       run:C=>{ const a = C.a, t = C.t; if(t.side!==a.side || t===a || !swapAllowed(C.sf, a, t)) return; swapSlots(C.sf, a.side, a.idx, t.idx);
-        [a, t].forEach(u=>C.pos(u, st=>{ st.veil = { v:0.3, r:2 }; }, '🔵도깨비불')); a.st.club = true; } } }
+        [a, t].forEach(u=>C.pos(u, st=>{ st.veil = { v:0.3, r:2 }; }, '🔵도깨비불')); a.st.club = awUq(a) ? 2 : true; if(awUq(a)) t.st.club = true; } } } // (v8.7.0) 큰 방망이
 };
 // (v269) 레이드 보스 전용 스킬 — 예전엔 보스가 속 정령(예: 혹한의 폭군 = 물결 레전더리 A형 '세이렌')의 스킬·특성을 그대로 써서
 // 정보창에 없는 회복(세이렌 특성 '맑은 물' · 치유 스킬)을 했음. 이제 보스마다 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
@@ -5996,7 +6123,7 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: 
     const persisted = unitHp[key];
     if(persisted){ u.maxHp = Math.min(persisted.maxHp, u.maxHp) || u.maxHp; u.hp = Math.max(0, Math.min(persisted.hp, u.maxHp)); u.alive = u.hp>0;
       if(persisted.w){ // (v304) 보스전은 3웨이브가 한 전투 — 스킬 쿨·전투당 1회(부활 등)는 웨이브가 바뀌어도 이어짐, 전투 시작 효과(초월 보호막·강화)는 첫 웨이브에만
-        u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = !!persisted.rvG; if(persisted.tide>0) u.tide = persisted.tide; // (v5.3.0) 하백 수위도 다음 웨이브로
+        u.cd1 = persisted.cd1||0; u.cd2 = persisted.cd2||0; u.reviveUsed = !!persisted.rvU; u.reviveGiven = persisted.rvG|0; if(persisted.uqS) Object.assign(u, persisted.uqS); /* (v8.7.0) 고유 효과 사용 기록 */ if(persisted.tide>0) u.tide = persisted.tide; // (v5.3.0) 하백 수위도 다음 웨이브로
         if(persisted.st && typeof persisted.st==='object') u.st = JSON.parse(JSON.stringify(persisted.st)); // (v309) 버프·디버프도 그대로 이어짐(남은 라운드 포함) — 첫 웨이브의 전투 시작 효과도 남아 있던 만큼만
         else { if(u.sub && u.sub.sh>0){ delete u.st.shield; delete u.st.shieldR; } if(u.sub && u.sub.emp>0) delete u.st.empower; } } }
     myUnits.push(u);
@@ -6304,7 +6431,7 @@ function checkBossWaveOutcome(sf){
 // 웨이브 종료 시 살아있는 유닛의 체력을 로스터에 저장, 출전(피로 누적)/대기(피로 해소+20% 회복) 반영
 function persistBossWaveState(sf){
   const bf = state.bossFight; if(!bf) return;
-  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: !!u.reviveGiven, tide: u.alive ? (u.tide||0) : 0, st: u.alive ? JSON.parse(JSON.stringify(u.st||{})) : {} }; }); // (v309) 버프·디버프 · (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
+  sf.myUnits.forEach(u=>{ bf.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp, w: (sf.wave||1)+1, cd1: u.cd1||0, cd2: u.cd2||0, rvU: !!u.reviveUsed, rvG: u.reviveGiven|0, uqS: { hunt:u.hunt||0, huntDmg:u.huntDmg||0, drained:u.drained||0, undeadUsed:!!u.undeadUsed, seaUsed:!!u.seaUsed, godUsed:!!u.godUsed }, tide: u.alive ? (u.tide||0) : 0, st: u.alive ? JSON.parse(JSON.stringify(u.st||{})) : {} }; }); // (v309) 버프·디버프 · (v152) 6마리 고정 — 체력 이월 · (v304) 스킬 쿨·부활 1회도 이월
 }
 function spiritMaxHpGrid(key){ const r = spiritRune(key); return Math.max(1, Math.round(unitAtk(key)*ALLY_HP_MULT*spiritHpMult(key)*((r && r.id==='hp' && r.tier!=='boss') ? 1+runeVal(r) : 1))); } // 새 전투 체력 스케일 기준(그리드 전투 전용, 기존 spiritMaxHp와 별개)
 // (v152) 이정민님 피드백: 3웨이브짜리 보스전에서 매 웨이브 교체까지 있으면 과함 —
@@ -6572,7 +6699,7 @@ function statusList(u){
   if(s.curse) o.push({i:stIc('curse'), t:'저주', d:'받는 피해 +'+Math.round((s.curse.v||0)*100)+'%'+r(s.curse), good:false});
   // (v343) 한정 성좌 효과
   if(s.bomb){ const L = bombsOf(u), r = Math.min(...L.map(b=>b.r)), hp = Math.max(...L.map(b=>b.hop||0)); o.push({i:stIc('bomb'), n:r, t:'시한폭탄'+(L.length>1?' ×'+L.length:''), d:(L.length>1 ? L.length+'개 · 가장 빠른 것 ' : '')+r+'라운드 뒤 라운드 시작에 터짐 · 먼저 쓰러지면 양옆으로 옮겨 붙음'+(hp ? ' · 가장 많이 옮겨 붙은 것 '+hp+'번 (피해 +'+Math.round(SC_HOP*Math.min(SC_HOP_MAX, hp)*100)+'%)' : ''), good:false}); }
-  if(s.star) o.push({i:stIc('star'), n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별·터뜨리는 공격(발화·시한폭탄)이 표식을 써서 더 아프게 들어감'+r(s.star), good:false});
+  if(s.star) o.push({i:stIc('star'), n:s.star.n, t:'별 표식 '+s.star.n+'개', d:'별똥별이 표식마다 피해 · 지속 피해(화상·독·시한폭탄·발화)를 받으면 표식 피해가 같이'+r(s.star), good:false});
   if(s.exposed) o.push({i:stIc('exposed'), t:'노출', d:'받는 피해 +'+Math.round(s.exposed.v*100)+'%'+r(s.exposed), good:false});
   if(s.pyre) o.push({i:stIc('pyre'), t:'불꽃 제물', d:'공격력 +'+Math.round(s.pyre.v*100)+'%'+r(s.pyre), good:true});
   if(s.soul) o.push({i:stIc('soul'), t:'타오르는 혼', d:'공격력 +'+Math.round(s.soul.v*100)+'%'+r(s.soul), good:true});
@@ -6733,7 +6860,7 @@ function unitDetailHtml(u, bossId){
     h += row('스킬1 · 쿨 '+cdLbl(u,'s1')+cdTxt(u.cd1), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
     h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':cdTxt(u.cd2)), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
     h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, kit.passive.icon||'✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
-    if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
+    h += awakenFxRows(u, row);
   }
   return h;
 }
@@ -6756,12 +6883,12 @@ function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit
 function showUnitKitInfo(u, rarOv){ // rarOv: 표시 등급을 정해서 보여 줄 때 (픽업 정보 = 성좌)
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
   const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div class="ttl" style="font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
-  let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[rarOv || uRar(u, sp)].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
+  let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[rarOv || uRar(u, sp)].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5 && gradeOf(sp.rarity)<4 ?' (스킬 한 등급 위)':''):'')+'</div>';
   if(u.sub && u.sub.dbs>0) h += '<div class="sub" style="text-align:center; font-size:11px; margin-bottom:4px;">정령력 보너스: 독 · 저주 · 거미줄 · 노출 수치 ×'+dbMul(u).toFixed(2)+'</div>'; // (v8.3.0) · (v8.4.0) 정령력 기준
   h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
   h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
   h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, kit.passive.icon||'✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
-  if(AWAKEN5[u.line]) h += row('각성 5단계'+(aw5(u)?'':' · 잠김'), AWAKEN5[u.line].t, uiIc('awaken'), AWAKEN5[u.line].d, !aw5(u));
+  h += awakenFxRows(u, row);
   openInfoOverlay(sp.name, h);
 }
 // (v179) 전장 배치: 각 정령의 화면 위치(%) · 크기. 전열은 가운데 쪽, 후열은 바깥쪽, 같은 줄은 위아래로 엇갈리게.
@@ -6972,7 +7099,7 @@ function showSkillStageScreen(){
       if(!ok) small = '재사용 '+cd+'R';
       else{
         const p = skillPreview(sf, curUnit, act, skillSel.side, skillSel.idx);
-        if(kind==='harm' && onAlly) warn = '<span class="warnbig">⚠ 아군에게 공격</span>';
+        if(kind==='harm' && onAlly && !(sk && sk.dual)) warn = '<span class="warnbig">⚠ 아군에게 공격</span>'; // (v8.7.0) 범람은 아군에게 회복
         else if(kind!=='harm' && !onAlly) warn = '<span class="warnbig">⚠ 적에게 사용</span>';
         if(p.kill && !onAlly) kill = '<span class="killtag"><img class="uic" src="assets/ui/ic_skull.webp" alt=""> 처치'+(p.revived?' · 부활함':'')+'</span>';
         small = p.text;
@@ -7279,7 +7406,7 @@ function showAstralModal(k){
   const sp = SPIRITS[k], have = memCount(k), aw = awakenLevel(k), ok = astralCan(k) && have>=ASTRAL_MEM && state.essence>=ASTRAL_ESSENCE;
   let h = '<button class="aw-back" id="asBack">‹ 정령 정보</button>';
   h += '<div class="as-top"><div class="av r-'+(isAstral(k)?'astral':'mythic')+' up-host" id="upHost" style="font-size:44px;">'+spArt(sp)+elIc(sp.element,'av-el')+'</div><div><b style="font-size:17px;">'+sp.name+'</b><div class="sub">'+(isAstral(k) ? '이미 성좌' : '신화 → <span class="as-name">성좌</span>')+'</div></div></div>';
-  h += '<div class="aw-cost"><div class="aw-ch">성좌가 되면</div><div class="sub" style="font-size:12px; line-height:1.6;">능력치 배율 신화 '+RARITY_INFO.mythic.mult+' → 성좌 '+RARITY_INFO.astral.mult+' (+'+Math.round((RARITY_INFO.astral.mult/RARITY_INFO.mythic.mult-1)*100)+'%)<br>이름·스킬·그림은 그대로 · 강화·각성·초월·각인·장비 모두 유지</div></div>';
+  h += '<div class="aw-cost"><div class="aw-ch">성좌가 되면</div><div class="sub" style="font-size:12px; line-height:1.6;">능력치 배율 신화 '+RARITY_INFO.mythic.mult+' → 성좌 '+RARITY_INFO.astral.mult+' (+'+Math.round((RARITY_INFO.astral.mult/RARITY_INFO.mythic.mult-1)*100)+'%)<br>이름·스킬·그림은 그대로 · 강화·각성·초월·각인·장비 모두 유지'+(AWAKEN_AS[sp.element+'_'+sp.variant] ? '<br>'+uiIc('awaken')+' 각성 5단계 고유 강화 「'+AWAKEN_AS[sp.element+'_'+sp.variant].t+'」 '+AWAKEN_AS[sp.element+'_'+sp.variant].d : '')+'</div></div>';
   if(!isAstral(k)){
     h += '<div class="aw-cost"><div class="aw-ch">필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('awaken')+' 각성</span><b class="'+(aw>=AWAKEN_MAX?'':'lack')+'">'+aw+' / '+AWAKEN_MAX+'단계</b></div>'
@@ -7699,12 +7826,13 @@ function showEnhanceModal(key, fxLabel){
 }
 // (v239) 각성 전용 화면: 단계별 효과 사다리 · 필요/보유 재료 · 각성 버튼
 function awakenStepInfo(key, lv){
-  const sp = SPIRITS[key], g0 = gradeOf(sp.rarity), kit = LINE_KITS[sp.element+'_'+sp.variant], a5 = AWAKEN5[sp.element+'_'+sp.variant] || {};
-  const perk = lv===1 ? (g0<1 ? '패시브 「'+kit.passive.name+'」 열림' : '')
+  const sp = SPIRITS[key], g0 = gradeOf(sp.rarity), L = sp.element+'_'+sp.variant, kit = LINE_KITS[L], a1 = AWAKEN1[L] || {}, a3 = AWAKEN3[L] || {}, uq = AWAKEN_UQ[L] || {};
+  const fx = a=> a.t ? '「'+a.t+'」 '+a.d : ''; // (v8.7.0) 1·3단계 계열 효과 · 신화 5단계 고유
+  const perk = lv===1 ? [g0<1 ? '패시브 「'+kit.passive.name+'」 열림' : '', fx(a1)].filter(Boolean).join('<br>')
     : lv===2 ? '스킬1 「'+kit.s1.name+'」 쿨타임 −1'
-    : lv===3 ? (g0<2 ? '스킬2 「'+kit.s2.name+'」 열림' : '')
+    : lv===3 ? [g0<2 ? '스킬2 「'+kit.s2.name+'」 열림' : '', fx(a3)].filter(Boolean).join('<br>')
     : lv===4 ? '스킬2 「'+kit.s2.name+'」 쿨타임 −1'
-    : (g0<4 ? '스킬 효과 한 등급 위<br>' : '')+'고유 「'+(a5.t||'')+'」 '+(a5.d||'');
+    : (g0<4 ? '스킬 효과 한 등급 위' : '고유 '+fx(uq));
   return perk;
 }
 function showAwakenModal(key, fxLabel){
@@ -7740,11 +7868,12 @@ function awakenRulesHtml(){ // (v260) 표 → 단계별 카드
   const A = uiIc('awaken');
   return gmSectionHtml('각성 효과', [{ic:artIc('hp_power_up'), nm:'단계마다', d:'정령력 +'+RARITY_ORDER.map(r=>RARITY_INFO[r].name+' '+Math.round(AWAKEN_RATE[r]*100)+'%').join(' · ')+' · 강화 한도 +1'}, {ic:'⚖️', nm:'다 키우면', d:'낮은 등급일수록 크게 올라 윗등급을 따라잡음 — 5단계 일반은 에픽~레전더리 사이, 레어는 레전더리~신화 사이'}])
     + gmSectionHtml('단계별 해금', [
-      {ic:A, nm:'1단계', d:'패시브'},
+      {ic:A, nm:'1단계', d:'계열 효과 하나 · 일반은 패시브도 열림'},
       {ic:A, nm:'2단계', d:'스킬1 대기 −1'},
-      {ic:A, nm:'3단계', d:'스킬2'},
+      {ic:A, nm:'3단계', d:'계열 효과 하나 더 · 일반·레어는 스킬2도 열림'},
       {ic:A, nm:'4단계', d:'스킬2 대기 −1'},
-      {ic:A, nm:'5단계', d:'스킬 한 등급 위 + 계열 효과'}])
+      {ic:A, nm:'5단계', d:'스킬 한 등급 위 · '+RARITY_INFO.mythic.name+'·성좌는 고유 패시브'},
+      {ic:uiIc('star'), nm:'성좌 승급', d:'고유 패시브가 더 세짐'}]) // (v8.7.0) 각성 개편
     + gmSectionHtml('재료', [
       {ic:artIc('hp_copies'), nm:'사본 + 정수', d:'단계마다 같은 정령 '+AWAKEN_COPIES.join('·')+'마리 (1마리는 남김)'},
       {ic:memIc(), nm:RARITY_INFO.mythic.name+'·성좌', d:'사본 대신 그 정령의 기억 조각 '+AWAKEN_COPIES.map(n=>n*MEM_PER_COPY).join('·')+'개 + 정수'},
@@ -10890,6 +11019,14 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:388, v:'8.7.0', date:'2026-10-09', secs:[
+    { t:'각성 개편', items:[ '예전 각성 5단계 계열 효과가 1단계로 (연쇄 돌진 · 짙은 불씨 · 넘치는 샘 · 혹한 · 깊은 뿌리 · 맹독 · 정화의 빛 · 긴 별빛 · 탐욕 · 깊은 저주 · 한정 성좌 8종도 같음)', '3단계에 계열 효과 하나 더 (계열 전체)', '5단계: 신화·성좌는 고유 패시브 (일반~레전더리는 지금처럼 스킬 한 등급 위)', '성좌 승급: 5단계 고유 패시브가 더 세짐', '이미 각성한 정령도 바로 적용' ]},
+    { t:'각성 3단계', items:[ '스콜 계열 「사냥감」: 불꽃 돌진이 체력 50% 이하 대상에게 피해 +25%', '금오 계열 「남는 불씨」: 발화가 화상을 줄이지 않음', '테티스 계열 「물의 장막」: 치유의 물결로 넘친 회복량만큼 보호막 (대상 최대체력 20%까지)', '요르문간드 계열 「얼음 비늘」: 빙결된 적에게 주는 피해 +20%', '현무 계열 「이끼 갑옷」: 뿌리 내리기 때 자신 최대체력 10% 회복', '아난시 계열 「끈적한 실」: 독 걸린 적 속도 −5', '광명 계열 「빛의 잔향」: 보호막이 깨지면 그 아군 최대체력 5% 회복', '백록 계열 「천상의 사슴」: 전투 시작 때 아군 전체 별빛 가속 (1라운드)', '불사귀 계열 「피의 갈증」: 체력 50% 이하면 생명 흡수 흡혈량 +20%p', '칠흑조 계열 「불길한 깃」: 저주 받는 피해 +5%p', '스칼렛 「짧은 심지」: 시한폭탄이 터지면 화상 1중첩', '수르트 「끝의 불길」: 종말의 불길 추가 피해 (잃은 체력의) 30% → 50%', '므네모시네 「기억의 조각」: 되감기 대상 받는 피해 −15% (1라운드)', '하백 「깊은 수원」: 연결 중 라운드 시작마다 하백 최대체력 4% 회복', '산군 「바위 가죽」: 반격 자세 중 받는 피해 −15%', '아스트라이아 「밝은 별」: 표식 피해 +50%', '로키 「빠른 손」: 날쌘 손 최대 속도 +12 → +18', '도깨비 「짙은 그림자」: 둔갑으로 끌어낸 적 받는 피해 +20% → +30%' ]},
+    { t:'각성 5단계 고유 (신화·성좌)', items:[ '스콜 「태양 사냥」: 적을 처치하거나 보스 체력을 10% 깎을 때마다 공격력 +10% (최대 +50%)', '금오 「번지는 태양」: 화상 걸린 적이 쓰러지면 남은 중첩을 화상이 가장 적은 적에게 옮김', '테티스 「바다의 품」: 전투당 1번, 아군이 쓰러질 피해를 받으면 체력 1로 버팀', '요르문간드 「깊은 혹한」: 서리 화살 빙결 확률 25% → 50%', '현무 「불괴」: 도발 중 한 번에 받는 피해가 최대체력 25%를 넘지 않음', '아난시 「거미의 왕」: 독이 2중첩까지 쌓임 (중첩마다 피해)', '광명 「영원한 빛」: 빛의 축복 부활 전투당 2번', '백록 「별의 눈」: 가속 중인 아군 치명타 확률 +15%', '불사귀 「불사」: 쓰러지면 이번 전투 흡혈량만큼 체력으로 부활 (최대체력 50%까지 · 전투당 1번)', '칠흑조 「흉조의 울음」: 저주 걸린 적이 받는 회복 −50%', '스칼렛 「연쇄 폭발」: 시한폭탄이 터질 때 양옆 적에게도 그 피해의 30%', '수르트 「불씨 공양」: 불꽃 제물로 태운 체력의 절반만큼 자신 보호막', '므네모시네 「영원의 고리」: 시간의 고리로 일어나는 체력 50% → 70%', '하백 「강의 신」: 연결된 아군이 쓰러질 피해를 받으면 하백이 전부 대신 받고 체력 1로 버팀 (전투당 1번)', '산군 「산의 분노」: 반격 공격력 70% → 100%', '아스트라이아 「별이 지는 밤」: 별똥별을 맞은 적에게 표식 1개씩 다시 붙음', '로키 「신들의 장난」: 빼앗은 효과 지속 1라운드 더 · 장난꾼의 잔치가 2개씩 빼앗음', '도깨비 「큰 방망이」: 방망이 +40% → +70% · 자리를 바꾼 아군도 다음 공격 +40%' ]},
+    { t:'성좌 승급 강화', items:[ '스콜 「태양 사냥+」: 최대 +80% · 쌓일 때마다 분화 쿨타임 −1', '금오 「번지는 태양+」: 옮길 때 1중첩 더', '테티스 「바다의 품+」: 버틸 때 그 아군 최대체력 30% 회복', '요르문간드 「얼음 깨기」: 빙결이 풀릴 때 그 적에게 공격력 100%', '현무 「불괴+」: 최대체력 20% · 도발 중 받은 피해 10% 반사', '아난시 「거미의 왕+」: 독 3중첩까지', '광명 「영원한 빛+」: 부활 체력 50% → 70%', '백록 「별의 눈+」: 치명타 확률 +25%', '불사귀 「불사+」: 부활 상한 최대체력 80%', '칠흑조 「흉조의 울음+」: 저주 걸린 적이 주는 피해 −15%' ]},
+    { t:'스킬 변경', items:[ '아스트라이아 「별자리 표식」: 이미 표식이 있는 적에게 쓰면 십자(앞뒤 · 양옆) 1칸에도 표식 1개씩', '아스트라이아 「별똥별」: 표식이 있는 모든 적에게 표식 하나마다 공격력 60% · 표식은 안 없어짐 (예전: 대상 표식을 다 써서 하나마다 150%)', '아스트라이아 「별의 공명」: 표식 붙은 적이 지속 피해(화상 · 독 · 시한폭탄 · 발화)를 받으면 표식 피해(표식 하나마다 공격력 20%)가 같이 · 표식은 안 없어짐 (예전: 발화·시한폭탄이 표식을 다 써서 +표식당 40%)', '하백 「범람」: 아군에게도 쓸 수 있음 — 아군 전체에 적에게 주던 피해만큼 회복(공격력 90% + 수위 30%) + 가속 (속도 +10, 2라운드)' ]},
+    { t:'화면', items:[ '정령 정보에 각성 1·3단계 · 5단계 고유 · 성좌 승급 효과 표시 · 각성 창 단계별 효과 · 가이드북 각성 설명' ]}
+  ]},
   { build:387, v:'8.6.0', date:'2026-10-09', secs:[
     { t:'고친 것', items:[ '노말·하드 특수 규칙 보너스 정수가 소수점(186.6 등)으로 들어가던 것 — 반올림해서 지급 · 이미 소수점이 섞인 정수도 정리', '일부 휴대폰(최신 크롬)에서 별빛 균열 지도 위를 밀면 화면이 안 내려가던 것' ]},
     { t:'업적', items:[ '도감·장비 도감 25·50·75% 업적을 발견 수(13·25·38종)로 — 정령이 늘어나도 목표가 그대로 · 지금 조건과 같음' ]},
@@ -13396,7 +13533,7 @@ function buildSanctumFight(id, tier){
     log:[SANCTUM_NAME+' · '+B.name+' '+tier+'단계!'], result:null, fxSeq:0, lastFx:null, sanc:{ down:{} } };
   const boss = enemies[0];
   if(id==='echo' && my.length){ // 복제: 우리 팀 최고 전투력 정령
-    const top = my.reduce((x,y)=> unitCP(y)>unitCP(x) ? y : x), c = makeBattleUnit('enemy', 1, top.key, top.atk, ALLY_HP_MULT, 1, 1, null, top.aw||0, top.sub||null);
+    const top = my.reduce((x,y)=> unitCP(y)>unitCP(x) ? y : x), c = makeBattleUnit('enemy', 1, top.key, top.atk, ALLY_HP_MULT, 1, 1, null, top.aw||0, top.sub||null); c.ast = !!top.ast;
     c.maxHp = Math.round(top.maxHp*1.5); c.hp = c.maxHp; c.mirror = true; c.dispName = '거울 '+(SPIRITS[top.key].name); enemies.unshift(c);
   }
   if(id==='prism'){ sf.sanc.weak = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]; sf.sanc.next = sanctumNextWeak(sf.sanc.weak); boss.element = RIFT_BEATS[sf.sanc.weak]; boss.sancWeak = sf.sanc.weak; boss.sancNext = sf.sanc.next; }
@@ -16496,7 +16633,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 387, APP_VERSION = '8.6.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 388, APP_VERSION = '8.7.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
