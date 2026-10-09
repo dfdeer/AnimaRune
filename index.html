@@ -781,7 +781,7 @@
   .bu-icon{position:relative; z-index:1; font-size:calc(var(--sz) * var(--k,1) * .8); line-height:1; filter:drop-shadow(0 2px 2px #0005); transform-origin:50% 100%; animation:buBreath 3s ease-in-out infinite; animation-delay:var(--bd,0s); will-change:transform;} /* (v327) 가만히 있을 때 숨 쉬듯 — 지연은 전체 시계 기준이라 다시 그려도 이어짐 */
   @keyframes buBreath{0%,100%{transform:scale(1,1);} 50%{transform:scale(1.012,1.035);}} /* (v5.2.0) scale 속성 → transform — 아이폰에서도 그림을 다시 그리지 않고 움직이게 */
   .bu-dead .bu-icon, .st-frz .bu-icon{animation:none;}
-  .bu.bu-dying .bu-icon{animation:buDie .9s ease-in .2s both; animation-delay:calc(.2s + var(--dieD, 0ms)); transform-origin:50% 50%;} /* 맞는 연출(fx-hit)보다 우선 · 맞은 뒤 쓰러짐 */ .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .7s ease-out .55s both; pointer-events:none; z-index:5;}
+  .bu.bu-dying .bu-icon{animation:buDie .9s ease-in .2s both; transform-origin:50% 50%;} /* 맞는 연출(fx-hit)보다 우선 · 맞은 뒤 쓰러짐 */ .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .7s ease-out .55s both; pointer-events:none; z-index:5;}
   @keyframes buDie{0%{transform:none; opacity:1; filter:brightness(2.2) drop-shadow(0 0 10px #fff);} 30%{transform:translateY(-12%) rotate(-10deg) scale(1.05); opacity:1; filter:brightness(1.6) drop-shadow(0 0 6px #fff);} 70%{transform:rotate(70deg) scale(.85); opacity:.6; filter:grayscale(.6);} 100%{transform:rotate(80deg) scale(.8); opacity:.35; filter:grayscale(1);}}
   @keyframes buPuff{0%{transform:scale(.4); opacity:0;} 30%{opacity:1;} 100%{transform:scale(1.6); opacity:0;}}
   .bu-shadow{position:absolute; left:50%; bottom:-4px; width:calc(var(--sz) * var(--k,1) * .95); height:calc(var(--sz) * var(--k,1) * .24); transform:translateX(-50%); border-radius:50%;
@@ -2128,8 +2128,14 @@ let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skill
 const SKILL_FLOAT_MS = 1900, SKILL_FLOAT_REVIVE_MS = 2600, SKILL_FLOAT_MAX = 3;
 let skillFloats = [];
 let skillBooms = [], skillResWaitT = null; // (build 393) 시련 폭발 그림 — 다시 그려도 이어서 보이게 (u, t0, kind 'src' 터짐 | 'hit' 맞음)
-const BOOM_STEP_MS = 520, BOOM_HIT_MS = 160, BOOM_MS = 1200; // 연쇄 한 단계 간격 · 터진 뒤 옆 칸이 맞기까지 · 그림 길이
-function boomDelay(k){ return Math.round((k||0)*BOOM_STEP_MS*skillSpeedMult()); }
+// (build 394) 쓰러지고 0.5초 뒤 터짐 → 옆 칸이 맞음(체력바도 그때 깎이고 쓰러지면 그때 쓰러짐) → 그 칸이 또 0.5초 뒤 터짐
+const BOOM_STEP_MS = 520, BOOM_HIT_MS = 110, BOOM_MS = 1200; // 쓰러진 뒤 터지기까지 · 터진 뒤 옆 칸이 맞기까지 · 그림 길이
+function boomDelay(k){ return Math.round(((k||0)+1)*BOOM_STEP_MS*skillSpeedMult()); } // k단계 폭발 시각
+function boomHitAt(k){ return boomDelay(k) + Math.round(BOOM_HIT_MS*skillSpeedMult()); } // k단계 폭발에 맞는 시각
+let skillHolds = {}; // 아직 안 맞은 폭발 — 맞기 전 체력으로 보여 줌 { 'enemy:3': [{t, pre}] }
+function boomHold(uk, t, pre){ (skillHolds[uk] = skillHolds[uk] || []).push({ t, pre }); setTimeout(()=>{ if(state.skillFight) showSkillStageScreen(); }, Math.max(0, t - Date.now()) + 15); }
+function boomView(uk, u){ const L = skillHolds[uk]; if(!L) return u; const now = Date.now(), f = L.filter(x=>x.t > now).sort((a,b)=>a.t-b.t);
+  if(!f.length){ delete skillHolds[uk]; return u; } const hp = Math.max(0, f[0].pre); return Object.assign({}, u, { hp, alive: hp>0, st: u.st || {} }); }
 let skillRenderedFx = 0;
 let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
@@ -6645,7 +6651,7 @@ function keepPanelHeight(root){ const pn = root.querySelector('.bs-panel'); if(!
   pn.style.minHeight = ''; const h = Math.ceil(pn.getBoundingClientRect().height); if(pn.querySelector('.bs-acts') && h > bsPanelH) bsPanelH = h; if(bsPanelH) pn.style.minHeight = bsPanelH+'px'; }
 function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
   const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
-  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; const bm = skillBooms.find(x=>x.u===b.dataset.u && x.kind==='src'); if(bm) b.style.setProperty('--dieD', Math.max(0, bm.t0 - Date.now())+'ms'); } }); /* (build 393) 연쇄로 터진 정령은 제 차례에 쓰러짐 */ if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
+  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; } }); if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
   eachStatusFx(root, (key, el)=>{ if(statusFxSeen.has(key)){ const t0 = statusFxSeen.get(key), t = Math.max(0, now - t0); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); next.set(key, t0); } else { const c = Math.max(0, ...fxAnims(el).map(a=>a.currentTime||0)); next.set(key, now - c); } });
   statusFxSeen = next; }
 function mountBattleScreen(){
@@ -7030,11 +7036,11 @@ function showSkillStageScreen(){
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
   if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult());
-    { const ks = (fx.hits||[]).filter(h=>h.boom!=null).map(h=>h.boom); if(ks.length){ const mx = Math.max(...ks); skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + boomDelay(mx) + (BOOM_HIT_MS + 700)*skillSpeedMult()); // (build 393) 연쇄 폭발이 다 터질 때까지 다음 차례 기다림
+    { const ks = (fx.hits||[]).filter(h=>h.boom!=null).map(h=>h.boom); if(ks.length){ const mx = Math.max(...ks); skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + boomHitAt(mx) + 900*skillSpeedMult()); // (build 393) 연쇄 폭발이 다 터질 때까지 다음 차례 기다림
       if(battleSfxOn()) [...new Set(ks)].forEach(k=>sfxAt(boomDelay(k), ()=>sfx('bBoom'))); } } if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); battleSfxFor(sf, fx); } // (v295) 부활음 · (v332) 전투 효과음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
-  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; skillBooms = []; }
+  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; skillBooms = []; skillHolds = {}; }
   { const now = Date.now(); skillFloats = skillFloats.filter(f=> now - f.t0 < f.dur); skillBooms = skillBooms.filter(b=> now - b.t0 < BOOM_MS); }
   if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
   if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
@@ -7048,7 +7054,7 @@ function showSkillStageScreen(){
     if(fx.kind==='act' && fx.actorSide===u.side && fx.actorIdx===u.idx && fx.hits.some(h=>h.kind==='dmg' && h.side!==u.side)) out.cls = u.side==='me' ? 'fx-lunge-up' : 'fx-lunge-down';
     const mine0 = fx.hits.filter(h=>h.side===u.side && h.idx===u.idx);
     const mine = mine0.filter(h=>h.bd==null && h.boom==null); // (build 393) 시련 폭발(연쇄)은 아래 boomFx로 시차를 두고 따로
-    out.booms = mine0.filter(h=>h.boom!=null).map(h=>h.boom); out.bhits = mine0.filter(h=>h.bd!=null).map(h=>({ k:h.bd, amount:h.amount }));
+    out.booms = mine0.filter(h=>h.boom!=null).map(h=>h.boom); out.bhits = mine0.filter(h=>h.bd!=null).map(h=>({ k:h.bd, amount:h.amount, pre:h.pre }));
     const dmg = mine.filter(h=>h.kind==='dmg').reduce((x,h)=>x+h.amount, 0);
     const heal = mine.filter(h=>h.kind==='heal').reduce((x,h)=>x+h.amount, 0);
     const sh = mine.filter(h=>h.kind==='shield').reduce((x,h)=>x+h.amount, 0);
@@ -7080,8 +7086,8 @@ function showSkillStageScreen(){
     const o = { size, fx: fxFor(u), cur: !!(cur && cur.side===s && cur.idx===idx), area: (areaSet && areaSet.has(s+':'+idx)) ? areaK : '' };
     { const uk = s+':'+idx, now = Date.now();
       if(o.fx && o.fx.text){ skillFloats.push({ u:uk, text:o.fx.text, cls:o.fx.textCls||'', t0:now, dur: o.fx.textCls==='revive' ? SKILL_FLOAT_REVIVE_MS : SKILL_FLOAT_MS }); o.fx = Object.assign({}, o.fx, { text:'' }); }
-      if(o.fx){ (o.fx.bhits||[]).forEach(b=>skillFloats.push({ u:uk, text:'-'+b.amount+'<small>💥폭발</small>', cls:'boom', t0:now + boomDelay(b.k) + BOOM_HIT_MS*skillSpeedMult(), dur:SKILL_FLOAT_MS }));
-        (o.fx.booms||[]).forEach(k=>skillBooms.push({ u:uk, t0:now + boomDelay(k), kind:'src' })); (o.fx.bhits||[]).forEach(b=>skillBooms.push({ u:uk, t0:now + boomDelay(b.k) + BOOM_HIT_MS*skillSpeedMult(), kind:'hit' })); }
+      if(o.fx){ (o.fx.bhits||[]).forEach(b=>{ const t = now + boomHitAt(b.k); skillFloats.push({ u:uk, text:'-'+b.amount+'<small>💥폭발</small>', cls:'boom', t0:t, dur:SKILL_FLOAT_MS }); skillBooms.push({ u:uk, t0:t, kind:'hit' }); boomHold(uk, t, b.pre); });
+        (o.fx.booms||[]).forEach(k=>skillBooms.push({ u:uk, t0:now + boomDelay(k), kind:'src' })); }
       o.booms = skillBooms.filter(b=>b.u===uk).map(b=>Object.assign({ age: now - b.t0 }, b));
       o.floats = skillFloats.filter(f=>f.u===uk).slice(-SKILL_FLOAT_MAX).map(f=>Object.assign({ age: now - f.t0 }, f)); }
     if(curUnit && u.alive){
@@ -7090,7 +7096,7 @@ function showSkillStageScreen(){
         if(o.sel){ const tm = effTypeMult(curUnit, u); o.eff = tm===1 ? 0 : tm; }
       }else o.blocked = true;
     }
-    return battleUnitHtml(u, o);
+    return battleUnitHtml(boomView(s+':'+idx, u), o);
   };
   // (v179) AFK 아레나 느낌의 옆 시점: 판을 기울이지 않고 배경(땅) 위에 정령이 서 있음. 왼쪽 내 편 · 오른쪽 적, 줄마다 지그재그로 엇갈림.
   // 격자 규칙(전열/후열·가로/관통)은 그대로, 그리는 위치만 바뀜
@@ -8324,7 +8330,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
-  bSk_fire:0.55, bBoom:0.5, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
+  bSk_fire:0.55, bBoom:0.155, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
@@ -8361,7 +8367,7 @@ function sfxPlay(name){
   else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
   else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
   else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
-  else if(name==='bBoom'){ sNoise(0,0.5,0.55,B,'lowpass',2200,180,0.8,0.005); sBoop(0,0.4,B,120,38,0.18); } // (build 393) 시련 폭발
+  else if(name==='bBoom'){ sBoop(0,0.6,B,90,30,0.55); sNoise(0,0.7,0.34,B,'lowpass',650,80,0.7,0.012); sNoise(0.04,0.9,0.2,B,'lowpass',240,50,0.6,0.08); } // (build 394) 시련 폭발 — 낮고 묵직하게 (예전엔 짧고 높아서 풍선 터지는 소리 같았음)
   else if(name==='bSk_fire'){ sNoise(0,0.28,0.35,B,'lowpass',400,3000,1,0.05); sBoop(0.18,0.25,B,160,70,0.1); }
   else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
   else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
@@ -14092,12 +14098,16 @@ const TRIAL_RULES = {
 };
 function trialUnitRules(u){ const o = []; if(u.trBlast) o.push('blast'); if(u.trPair) o.push('pair'); if(u.trUndead) o.push('undead'); return o; }
 function trialNeighbors(idx){ const w = 3, c = idx%w, o = []; if(c>0) o.push(idx-1); if(c<w-1) o.push(idx+1); o.push(idx<w ? idx+w : idx-w); return o; }
-function trialBlast(sf, u){
-  const pct = u.trBlast; if(!(pct>0)) return;
-  const k = u._bk || 0; delete u._bk; // (build 393) 연쇄 단계 — 연출이 단계마다 시차를 두고 터짐 (boom: 터진 칸 · bd: 폭발에 맞은 칸)
+function trialBlast(sf, u){ // (build 394) 가까운 칸부터 차례로 퍼지게 — 터질 정령을 줄 세워 하나씩 (예전엔 한 줄기를 끝까지 따라가서 바로 옆 칸이 맨 나중에 맞기도 했음)
+  if(!(u.trBlast>0)) return;
+  (sf._bq = sf._bq || []).push(u); if(sf._bqOn) return;
+  sf._bqOn = true; try{ while(sf._bq.length) trialBlastOne(sf, sf._bq.shift()); } finally { delete sf._bqOn; delete sf._bq; }
+}
+function trialBlastOne(sf, u){
+  const pct = u.trBlast, k = u._bk || 0; delete u._bk; // 연쇄 단계 — 연출이 단계마다 시차를 두고 터짐 (boom: 터진 칸 · bd: 폭발에 맞은 칸 · pre: 맞기 전 체력)
   sf._rv = sf._rv || []; sf._rv.push({ side:u.side, idx:u.idx, kind:'status', text:'💥폭발', boom:k }); pushLog(sf, '💥 '+logUnitName(u.side, u)+' 폭발'+(k ? ' (연쇄 '+(k+1)+')' : ''));
   trialNeighbors(u.idx).forEach(i=>{ const x = unitAt(sf, u.side, i); if(!x || !x.alive) return;
-    const v = Math.round(x.maxHp*pct); x.hp = Math.max(0, x.hp - v); hidHurt(sf, x, v); sf._rv.push({ side:x.side, idx:x.idx, kind:'dmg', amount:v, dot:true, src:'💥폭발', bd:k });
+    const v = Math.round(x.maxHp*pct), pre = x.hp; x.hp = Math.max(0, x.hp - v); hidHurt(sf, x, v); sf._rv.push({ side:x.side, idx:x.idx, kind:'dmg', amount:v, dot:true, src:'💥폭발', bd:k, pre });
     if(x.hp<=0){ if(x.trBlast) x._bk = k+1; killUnit(sf, x); } });
 }
 function trialRoundStart(sf){
@@ -16769,7 +16779,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 393, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 394, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
