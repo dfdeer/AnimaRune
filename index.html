@@ -258,7 +258,7 @@
   .ex-pip.done{background:var(--tc);} .ex-pip.on{transform:scale(1.35); box-shadow:0 0 6px var(--tc); background:#fff;} .ex-pip.lock{opacity:.3;} .ex-pip i{position:absolute; top:-4px; right:-4px; width:6px; height:6px; border-radius:50%; background:#ff5757;}
   .ex-cnt{font-size:11px; font-weight:800; color:var(--sub); white-space:nowrap; display:flex; align-items:center; gap:2px;} .ex-cnt .uic{width:12px; height:12px;}
   .ex-hfoot .ex-bar{flex:1; margin:0;} .ex-hfoot .ex-reward{margin-left:0; flex-shrink:0;}
-  .ex-hbadge{display:inline-block; margin-left:4px; padding:1px 6px; border-radius:6px; background:#ff3a5a; color:#fff; font-size:9px; letter-spacing:1px; vertical-align:1px;}
+  .ex-hbadge{display:inline-block; margin-left:4px; padding:1px 6px; border-radius:6px; background:#ff3a5a; color:#fff; font-size:9px; letter-spacing:1px; vertical-align:1px;} .ex-hbadge.n{background:#4a6bff;} /* (v8.0.0) 노말 */
   .ex-ch{font-size:10px; font-weight:900; letter-spacing:2px; color:var(--tc);}
   .ex-name{font-size:19px; font-weight:900; margin-top:1px;}
   .ex-bar{height:6px; border-radius:4px; background:#ffffff14; overflow:hidden; margin:6px 12px 3px;}
@@ -2008,16 +2008,19 @@ function stageEnemyComposition(i){
 // (v168) ×3은 너무 가팔라서 ×1.25로 완화 — +5강 단일등급 6마리 기준: 레어는 챕터1 일반 스테이지까지(보스는 에픽 필요), 에픽은 챕터2 후반, 레전더리는 챕터4 중반, 신화는 전부 클리어
 const CHAPTER_ENEMY_START = [10, 48, 187.5, 231.25, 506.25, 760]; // 노말 챕터 1~5 (챕터를 늘리면 여기 뒤에 이어 붙임)
 // (v253) 하드는 스테이지 번호를 500번대로 따로 씀 → 노말 챕터를 늘려도 번호가 안 겹침. 규칙: 하드 N ≈ 노말 N+5 수준 (하드 1 시작 800 > 노말 5 끝 722.5)
-const HARD_ENEMY_START = [1040, 1300, 1625, 2015, 2470, 3055], HARD_ENEMY_END = [1300, 1625, 2015, 2470, 3055, 3800]; // (v317) 6 = 그림자 // (v256) 빨리 못 깨게 약 30% 올림 // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
+const HARD_ENEMY_START = [1647, 1767, 1959, 2238, 3413, 7096], HARD_ENEMY_END = [1767, 1959, 2238, 3413, 7096, 11000]; // (v8.0.0) 노말 1 → 하드 6을 다시 그림 — 일반 스테이지 평균 추천: 노말 1 약 1.05만 → 하드 4 약 2.6만은 단계마다 ×1.1 · 하드 5 약 5.5만 · 하드 6 약 11만 (예전 수치는 LEGACY_HARD)
 const CHAPTER_ENEMY_END   = [34, 165, 227.5, 506.25, 722.5, 1000]; // (v317) 6 = 그림자 — 노말 5 끝과 하드 1 시작 사이
-const HARD_STAGE_MULTS = [1, 1, 1.12, 1.12, 1.12, 1.12]; // (v277) 하드 챕터별 일반 스테이지 적 세기 배율 (보스 웨이브·던전은 영향 없음)
+const HARD_STAGE_MULTS = [1.1, 1.11, 1.12, 1.12, 1.12, 1.12]; // (v8.0.0) 하드 1·2 1 → 1.1·1.11
+// (v8.0.0) 노말(새로) — 1·2는 예전 하드 1·2 그대로 · 3~6은 노말 2 → 하드 3 사이를 기하급수로 (하드 1·2도 같은 줄)
+const NORM_ENEMY_START = [1046, 1172, 1258, 1317, 1408, 1520], NORM_ENEMY_END = [1172, 1258, 1317, 1408, 1520, 1647], NORM_STAGE_MULTS = [1, 1, 1.02, 1.04, 1.06, 1.08];
+const TIER_ENEMY = { e:[CHAPTER_ENEMY_START, CHAPTER_ENEMY_END, null], n:[NORM_ENEMY_START, NORM_ENEMY_END, NORM_STAGE_MULTS], h:[HARD_ENEMY_START, HARD_ENEMY_END, HARD_STAGE_MULTS] }; // (v277) 하드 챕터별 일반 스테이지 적 세기 배율 (보스 웨이브·던전은 영향 없음)
 function enemySlotPower(i){
   const li = stageLocal(i), local = li % CHAPTER_LENGTH;
-  const chapterIdx = Math.floor(li/CHAPTER_LENGTH), S = isHardStage(i) ? HARD_ENEMY_START : CHAPTER_ENEMY_START, E = isHardStage(i) ? HARD_ENEMY_END : CHAPTER_ENEMY_END;
+  const chapterIdx = Math.floor(li/CHAPTER_LENGTH), [S, E, M] = TIER_ENEMY[stageTier(i)];
   // (v146) 챕터 10스테이지 기준으로 재조정(기존 20스테이지 곡선을 절반 길이로 축소, 시작/끝 배율은 동일하게 유지)
   const localMult = local<5 ? (1+local*0.12) : (1.6+(local-4)*0.44);
   const t = (localMult-1)/2.8; // 0(챕터 첫 스테이지) ~ 1(보스 위치)
-  return (S[chapterIdx] + (E[chapterIdx]-S[chapterIdx])*t) * (isHardStage(i) ? (HARD_STAGE_MULTS[chapterIdx]||1) : 1); // (v277) 하드 3~5 일반 스테이지는 룬을 쓴다고 보고 조금 더 세게
+  return (S[chapterIdx] + (E[chapterIdx]-S[chapterIdx])*t) * ((M && M[chapterIdx]) || 1); // (v277) 하드 3~5 일반 스테이지는 룬을 쓴다고 보고 조금 더 세게
 }
 function isBossStage(i){ return (i+1)%CHAPTER_LENGTH===0; }
 function bossChapter(i){ return (i+1)/CHAPTER_LENGTH; }
@@ -2667,6 +2670,7 @@ function fmtCP(n){ return Math.round(n).toLocaleString('ko-KR'); }
 //  일반 스테이지·출정: 상대 합산의 1배(0.9배 넘으면 승률 80% 안팎) · 요일 던전: 1.5배(한 속성만 써서 상성 손해 · 수호자)
 //  챕터 보스: 3웨이브 합산의 REC_CP_MULT.boss 배 · 레이드: 보스·난이도별 표(RAID_REC_CP — 기믹 때문에 상대 전투력과 승패가 잘 안 맞음)
 const REC_CP_MULT = { stage:1.0, expedition:1.0, dungeon:1.5, boss:1.2 };
+function bossRecAdj(i){ return i===HARD_BASE+2*CHAPTER_LENGTH-1 ? 1.58 : (i===NORM_BASE+2*CHAPTER_LENGTH-1 ? 1.22 : 1); } // (v8.0.0) 용암 군주(노말 2 · 하드 2)는 세기를 낮춘 대신 기믹(화염 흡수 · 격노 · 용암 정령)이 세서 추천을 올려 보여 줌
 function recCP(v){ return Math.max(100, Math.ceil(v/100)*100); } // 백 단위 올림
 function cpVerdictRec(my, rec){ const r = my/Math.max(1,rec); if(r>=1.2) return {t:'여유', c:'#5cd65c'}; if(r>=1) return {t:'충분', c:'#a8e063'}; if(r>=0.85) return {t:'접전', c:'#ffd557'}; return {t:'부족', c:'#ff5a5a'}; }
 function cpBarHtml(my, en, enLabel, note, rec, myLabel){
@@ -4217,7 +4221,7 @@ function homeRepSpirit(){
   if(!owned.length) return null;
   return owned.sort((a,c)=> (rarRank(c)-rarRank(a)) || (unitAtk(c)-unitAtk(a)))[0];
 }
-function homeNextStage(){ const N = CHAPTER_LENGTH*MAX_CHAPTERS; for(let i=0;i<N;i++){ if(!state.stageBest[i]) return i; } if(hardUnlocked()) for(let i=HARD_BASE;i<HARD_BASE+N;i++){ if(!state.stageBest[i]) return i; } return N-1; } // (v251) 노말을 다 깨면 하드로 이어짐
+function homeNextStage(){ for(const tr of TIERS) for(let b=1;b<=MAX_CHAPTERS;b++){ if(!tierChapterOpen(tr, b)) continue; const o = (tierChapter(tr, b)-1)*CHAPTER_LENGTH; for(let l=0;l<CHAPTER_LENGTH;l++) if(!state.stageBest[o+l] && isStageUnlockedGraph(o+l)) return o+l; } return CHAPTER_LENGTH*MAX_CHAPTERS-1; } // (v251) 노말을 다 깨면 하드로 이어짐 · (v8.0.0) 이지 → 노말 → 하드 순서
 // (v170) 홈 가운데 큰 버튼 = 지금 모드(기본 탐험). 양옆 버튼을 누르면 스르륵 넘어가며 배경이 페이드로 바뀜
 const HOME_MODES = ['raid','stage','expedition']; // 원형 순서: 탐험 기준 왼쪽 레이드 · 오른쪽 출정
 const HOME_MODE_INFO = { stage:{icon:'<img class="uic" src="assets/ui/ic_atk.webp" alt="">', img:'explore', name:'탐험'}, expedition:{icon:'🗡️', img:'expedition', name:'출정'}, raid:{icon:'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">', img:'raid', name:'레이드'} };
@@ -4863,7 +4867,7 @@ function accDetailRows(s){
   const sb = Object.keys(s.stageBest||{}).filter(k=>s.stageBest[k]).map(Number), eqs = Object.keys(s.equipOwned||{}).filter(k=>(s.equipOwned[k]||0)>0);
   const bits = v => (v&1)+((v>>1)&1)+((v>>2)&1), sum = o => Object.values(o||{}).reduce((a,v)=>a+(Number(v)||0), 0);
   return [
-    ['진행'], ['계정 레벨', accWith(s, accountLevel)], ['스테이지 (노말)', sb.filter(i=>i<HARD_BASE).length], ['스테이지 (하드)', sb.filter(i=>i>=HARD_BASE).length],
+    ['진행'], ['계정 레벨', accWith(s, accountLevel)], ['스테이지 (이지)', sb.filter(i=>stageTier(i)==='e').length], ['스테이지 (노말)', sb.filter(i=>stageTier(i)==='n').length], ['스테이지 (하드)', sb.filter(i=>stageTier(i)==='h').length],
     ['무한의 탑', s.towerBest||0], ['요일 던전 단계 합', sum(s.dungeonBest)], ['시련 통과', Object.values(s.trialClear||{}).filter(Boolean).length], ['출정 최고 단계', s.expeditionBestReach||0],
     ['균열 별', s.rift && s.rift.st ? Object.values(s.rift.st).reduce((a,v)=>a+bits(Number(v)||0), 0) : 0], ['광산 최고 층', (s.village && s.village.mine && s.village.mine.best)||0],
     ['정령'], ['가진 정령', keys.length], ['신화 · 성좌', keys.filter(k=>SPIRITS[k].rarity==='mythic').length], ['성좌', keys.filter(k=>SPIRITS[k].limited || (s.astral && s.astral[k])).length],
@@ -5760,12 +5764,13 @@ const STAGE_GRADE_SHARE = { C:0.10, B:0.12, A:0.15, S:0.23 }; // 첫 클리어 �
 function stageClearReward(i){ i = stageEff(i); return Math.round((5 + i*0.4) * 1.4); } // (v253) 하드는 노말 N+5 위치 기준
 function stageFirstReward(i){ i = stageEff(i); return Math.round((50 + i*15) * 1.6); }
 function stageGradeReward(i, tier){ return Math.round(stageFirstReward(i) * STAGE_GRADE_SHARE[tier]); }
-function bossFirstStar(i){ return isHardStage(i) ? 100 : 50; } // (v5.3.0) 챕터 보스 첫 격파 별빛 조각 (사용자 결정)
+function bossFirstStar(i){ const t = stageTier(i); return t==='h' ? 100 : (t==='n' ? 75 : 50); } // (v8.0.0) 노말 75 // (v5.3.0) 챕터 보스 첫 격파 별빛 조각 (사용자 결정)
 function bossFirstReward(i){ return Math.round(stageFirstReward(i) * 1.5); }
 // (v245) 챕터 보스 첫 격파 선택권 — 1: 레어 1 · 2: 에픽 1 · 3: 레어 3+에픽 1 · 4: 에픽 3 · 5: 레전더리 1
 const BOSS_FIRST_ITEMS = { 1:{pick_rare:1, eq_rare:1, engr:2}, 2:{pick_epic:1, eqpick_rare:1, engr:2}, 3:{pick_rare:3, pick_epic:1, eq_epic:1, engr:2}, 4:{pick_epic:3, eqpick_epic:1, engr:2}, 5:{pick_legendary:1, eq_legendary:1, engr:2}, 6:{pick_legendary:1, eqpick_epic:1, engr:3} }; // (v297) 장비 확정권·선택권 추가
 const BOSS_FIRST_ITEMS_HARD = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_legendary:1, eqpick_epic:1, engr:4}, 3:{pick_epic:2, pick_legendary:1, eq_legendary:1, engr:4}, 4:{pick_legendary:2, eqpick_legendary:1, engr:4}, 5:{pick_legendary:2, pick_epic:2, mythic:1, eq_mythic:1, engr:4}, 6:{pick_legendary:2, mythic:1, eqpick_legendary:1, engr:5} }; // (v251) 하드 1~5
-function bossFirstItems(i){ const ch = bossChapter(i), it = isHardChapter(ch) ? BOSS_FIRST_ITEMS_HARD[chapterBase(ch)] : BOSS_FIRST_ITEMS[ch]; return it ? Object.assign({}, it) : null; }
+const BOSS_FIRST_ITEMS_NORM = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_legendary:1, eqpick_epic:1, engr:4}, 3:{pick_epic:2, eq_epic:1, engr:3}, 4:{pick_legendary:1, eqpick_epic:1, engr:3}, 5:{pick_epic:2, pick_legendary:1, eq_legendary:1, engr:3}, 6:{pick_legendary:2, eqpick_legendary:1, engr:4} }; // (v8.0.0) 노말 1·2 = 예전 하드 1·2
+function bossFirstItems(i){ const ch = bossChapter(i), t = chapterTier(ch), it = (t==='h' ? BOSS_FIRST_ITEMS_HARD : t==='n' ? BOSS_FIRST_ITEMS_NORM : BOSS_FIRST_ITEMS)[chapterBase(ch)]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ i = stageEff(i); return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
   for(let r=fromRank+1; r<=toRank; r++){
@@ -5809,8 +5814,12 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 // 1~2라운드 만에 녹았음(그로기·기믹을 쓸 틈이 없음). 레이드 보스는 위 값을 그대로 씀
 // 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
 // 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
-let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4, 1.0], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23, 40]; // 챕터 1~5
-const HARD_BOSS_ATK_MULTS = [1.9, 1.2, 2.5, 3.3, 8.64, 8.64], HARD_BOSS_HP_MULTS = [16, 15, 65, 60, 357.5, 357.5]; // (v304) 하드 5 공격 3.6→8.64 · 체력 65→357.5 (최종 관문 — 사용자 결정, 근거는 docs/인수인계.md) // (v253) 하드 1~5 · (v256) 체력 약 25% 올림 · (v272) 보스 전용 스킬(v2.70)로 하드 1·3·4가 너무 어려워져 공격력 2.4→1.9(하드 3은 1.6) · (v275) 하드 1→5 순서대로 어려워지게: 하드 2 공격 2.4→1.2·체력 25→15, 하드 4 공격 1.9→2.3, 하드 5 공격 2.4→3.0·체력 35→50 (신화+10·각성·장비 사다리 시뮬 기준) · (v277) 하드 3부터 룬을 쓴다고 보고: 하드 3 공격 1.6→2.5·체력 44→65, 하드 4 공격 2.3→3.3·체력 38→60, 하드 5 공격 3.0→3.6·체력 50→65
+let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4, 1.0], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23, 40]; // 이지(예전 노말) 챕터 1~6
+const NORM_BOSS_ATK_MULTS = [2.29, 1.7, 2.69, 2.22, 3.09, 2.49], NORM_BOSS_HP_MULTS = [20, 20, 25, 28, 25, 40]; // (v8.0.0) 보스 추천: 노말 1 약 1.56만 → 하드 3 약 4.05만은 단계마다 약 ×1.13 · 하드 4 6.8만 · 하드 5 13만 · 하드 6 25.5만 (체력 배율은 예전 수준으로 두고 공격 배율로 맞춤)
+function tierBossMults(i){ const t = stageTier(i); return t==='h' ? [HARD_BOSS_ATK_MULTS, HARD_BOSS_HP_MULTS] : t==='n' ? [NORM_BOSS_ATK_MULTS, NORM_BOSS_HP_MULTS] : [CH_BOSS_ATK_MULTS, CH_BOSS_HP_MULTS]; }
+const HARD_BOSS_ATK_MULTS = [2.64, 1.61, 2.16, 2.7, 2.34, 2.15], HARD_BOSS_HP_MULTS = [45, 22, 65, 60, 60, 40]; // (v8.0.0) 하드 2 용암 군주는 체력이 길면 격노가 쌓여 급해져서 체력 22 (추천 표시는 bossRecAdj)
+// (v8.0.0) 예전(7.4.0) 하드 1~6 수치 — 별빛 균열·성역·요일 던전 세기 기준으로만 씀 (챕터 난이도를 바꿔도 이 셋은 안 바뀌게)
+const LEGACY_HARD = { end:[1300, 1625, 2015, 2470, 3055, 3800], atk:[1.9, 1.2, 2.5, 3.3, 8.64, 8.64], hp:[16, 15, 65, 60, 357.5, 357.5] };
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null,'dark']; // null=심연의 수정(매 라운드 변환)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord'];
 const BOSS_GIMMICK_INFO = {
@@ -5864,7 +5873,7 @@ const BOSS_GIMMICKS = {
            {ic:'🕳️', nm:'그림자 감옥', when:'4R마다', fresh:true, d:'잠식이 가장 많은 아군 1명을 가둠(다음 행동 못 함) — 그 정령을 회복하면 풀려남'}] }
 };
 function bossChapterIdx(stageIdx){ return Math.floor(stageLocal(stageIdx)/CHAPTER_LENGTH); } // 0~4 (하드도 같은 챕터 번호)
-function bossWaveNormalPower(stageIdx){ return (isHardStage(stageIdx) ? HARD_ENEMY_END : CHAPTER_ENEMY_END)[bossChapterIdx(stageIdx)] * 0.55; } // (v150) 보스 1·2웨이브는 그 챕터 막바지보다 약간 낮게 — 3웨이브 보스에서 진짜 승부를 봄
+function bossWaveNormalPower(stageIdx){ return TIER_ENEMY[stageTier(stageIdx)][1][bossChapterIdx(stageIdx)] * 0.55; } // (v150) 보스 1·2웨이브는 그 챕터 막바지보다 약간 낮게 — 3웨이브 보스에서 진짜 승부를 봄
 function bossGimmickFor(stageIdx){ return CHAPTER_BOSS_GIMMICK[bossChapterIdx(stageIdx)]; } // 하드는 같은 챕터의 보스
 function bossFixedElementFor(stageIdx){ return CHAPTER_BOSS_ELEMENT[bossChapterIdx(stageIdx)]; }
 function bossWaveNormalComp(stageIdx, wave){
@@ -5887,7 +5896,7 @@ function bossWardElements(stageIdx){
   return [first, second];
 }
 // 진형 배치: 5마리를 전열(0~2)·후열(3~5) 중 앞쪽부터 채움(간단화 — 세부 배치는 웨이브 전환 화면에서 조정 가능)
-function buildBossWaveFight(stageIdx, wave, active, unitHp){
+function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: (v8.0.0) 하드 번호를 예전 하드 수치(LEGACY_HARD)로 — 별빛 균열·성역은 세기가 안 바뀌게
   // (v152) 보스전은 웨이브 중간 교체를 없애고 3웨이브 내내 같은 6마리로 고정 — 피로 로직 불필요
   const myUnits = [];
   active.forEach((key, idx)=>{
@@ -5908,8 +5917,9 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp){
   }else{
     const type = bossGimmickFor(stageIdx), fixedEl = bossFixedElementFor(stageIdx);
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
-    const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), per = bossWaveNormalPower(stageIdx) * (hardB ? HARD_BOSS_ATK_MULTS : CH_BOSS_ATK_MULTS)[bci];
-    const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], (hardB ? HARD_BOSS_HP_MULTS : CH_BOSS_HP_MULTS)[bci]);
+    const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), old = !!(legacy && hardB);
+    const BM = old ? [LEGACY_HARD.atk, LEGACY_HARD.hp] : tierBossMults(stageIdx), per = (old ? LEGACY_HARD.end[bci]*0.55 : bossWaveNormalPower(stageIdx)) * BM[0][bci];
+    const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], BM[1][bci]);
     boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss); setBossKit(boss, 'cboss_'+type); // (v270) 보스 전용 스킬
     if(type==='ruinGuardian'){
       const [we1, we2] = bossWardElements(stageIdx);
@@ -5936,7 +5946,7 @@ function applyBossGimmick(sf){
   const boss = sf.enemyUnits.find(u=>u.isBoss && u.alive);
   if(!boss) return;
   applyBaseBossGimmick(sf, g, boss); // (v259) 기본 기믹 다음에 추가·하드 기믹 (동상이 방금 얼린 정령에도 걸리게)
-  applyBossExtra(sf, g, boss);
+  if(!g.easy) applyBossExtra(sf, g, boss); // (v8.0.0) 이지는 기본 기믹만
   if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss);
 }
 function shadowErode(sf, boss, add){ // 아군 전체 잠식 add중첩 → 체력 감소(보호막 무시) → 보스 회복
@@ -6229,12 +6239,12 @@ function formationRowsHtml(){ // 전열 3 · 후열 3 두 줄 + 라벨
   const row = (lbl, idxs)=> '<div class="pq-row"><span class="pq-chip">'+lbl+'</span><div class="pq-slots">'+idxs.map(k=>slotHtml(k)).join('')+'</div></div>';
   return row('전열', [0,1,2]) + row('후열', [3,4,5]);
 }
-function showBossInfo(stageIdx){ // (v260) 한눈에: 머리(그림·속성·하드) → 기믹 → 하드 전용 → 그로기 → 전투 규칙
-  const type = bossGimmickFor(stageIdx), gi = BOSS_GIMMICK_INFO[type], G = BOSS_GIMMICKS[type], hard = isHardStage(stageIdx);
+function showBossInfo(stageIdx, xp){ // (v260) 한눈에: 머리(그림·속성·하드) → 기믹 → 하드 전용 → 그로기 → 전투 규칙 · xp: 출정(이지 규칙 없음)
+  const type = bossGimmickFor(stageIdx), gi = BOSS_GIMMICK_INFO[type], G = BOSS_GIMMICKS[type], hard = isHardStage(stageIdx), easy = !xp && stageTier(stageIdx)==='e';
   openInfoOverlay(gi.name+(hard?' <span class="gm-hardt">하드</span>':''),
     gmHeadHtml(type, gi.icon, [gmElChip(bossFixedElementFor(stageIdx)), '<span class="gm-chip">3웨이브 연전</span>', '<span class="gm-chip">체력 이어짐</span>'])
     + bossSkillSectionHtml('cboss_'+type) // (v270)
-    + gmSectionHtml('기믹', G.base.concat(G.extra))
+    + gmSectionHtml('기믹', easy ? G.base : G.base.concat(G.extra)) // (v8.0.0) 이지는 기본 기믹만
     + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '')
     + groggyInfoHtml(type));
 }
@@ -6251,7 +6261,7 @@ function showBossSquadPicker(stageIdx){
     const my = teamCP(waves[0].myUnits), ens = waves.map(f=>teamCP(f.enemyUnits));
     // 체력이 이어지는 연전이라 세 웨이브를 합쳐서 비교(제곱합의 제곱근 — 시뮬레이션상 이 값 대비 0.9배 부근이 승률 50%)
     const total = Math.sqrt(ens.reduce((a,x)=>a+x*x, 0));
-    html += cpBarHtml(my, total, '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 3웨이브', '상대 웨이브별 '+ens.map(fmtCP).join(' → ')+' · 기믹 공략은 따로', recCP(total*REC_CP_MULT.boss)); }
+    html += cpBarHtml(my, total, '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 3웨이브', '상대 웨이브별 '+ens.map(fmtCP).join(' → ')+' · 기믹 공략은 따로', recCP(total*REC_CP_MULT.boss*bossRecAdj(stageIdx))); }
   html += '<button class="btn sticky-ok" id="startWaveBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 시작</button>'
     + '<button class="btn secondary" id="bossGiveUpBtn" style="margin-top:8px; opacity:.7;">← 뒤로</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide roster-modal" style="position:relative;">' + html + '</div></div>';
@@ -6289,6 +6299,7 @@ function advanceBossWave(){
   const nextWave = (state.skillFight.wave||1) + 1;
   unmountBattleScreen();
   state.skillFight = buildBossWaveFight(bf.stageIdx, nextWave, bf.roster, bf.unitHp); // (v152) 교체 화면 없이 같은 6마리로 바로 다음 웨이브
+  if(state.skillFight.gimmick && stageTier(bf.stageIdx)==='e') state.skillFight.gimmick.easy = true; // (v8.0.0) 이지 챕터 보스는 추가 기믹 없음
   skillSel.key = null; skillIntroPending = true;
   save();
   showSkillStageScreen();
@@ -6641,8 +6652,8 @@ function bossBattleInfoHtml(u){
   const sf = state.skillFight;
   if(sf && sf.mode==='raid'){ const info = raidBossById(sf.raidBossId); return info ? raidBossInfoHtml(info) : ''; }
   const g = u.gimmick || (sf && sf.gimmick), G = g && BOSS_GIMMICKS[g]; if(!G) return '';
-  const hard = sf && (((sf.mode==='boss' || sf.mode==='rift') && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3));
-  return bossSkillSectionHtml(u.line) + gmSectionHtml('기믹', G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g); // (v270) 보스 스킬 먼저
+  const hard = sf && (((sf.mode==='boss' || sf.mode==='rift') && isHardStage(sf.stageIdx)) || (sf.mode==='expedition' && state.expedition && (state.expedition.cycle||1)>=3)), easy = !!(sf && sf.gimmick && sf.gimmick.easy);
+  return bossSkillSectionHtml(u.line) + gmSectionHtml('기믹', easy ? G.base : G.base.concat(G.extra)) + (hard ? gmSectionHtml('🔥 하드 전용', G.hard, 'hard') : '') + groggyInfoHtml(g); // (v270) 보스 스킬 먼저
 }
 function bindPrepUnitInfo(pv){ // 준비창: 채워진 내 칸에 ⓘ, data-unit-info 요소(상대 아이콘 등)를 누르면 상세
   const root = document.getElementById('modalRoot'); if(!root || !pv) return;
@@ -10658,7 +10669,7 @@ function chapterPctReward(chapterNum, t){
   if(p===25) return { essence: Math.round(100*sc), stone: 0, items: null };
   if(p===50) return { essence: 0, stone: Math.round(10*sc), items: {summon:5} };
   if(p===75) return { essence: Math.round(200*sc), stone: Math.round(15*sc), items: null };
-  return { essence: Math.round(300*sc), stone: Math.round(20*sc), star: isHardChapter(chapterNum) ? 20 : 10, items: isHardChapter(chapterNum) ? {legendary:1, summon:5} : {rare:1, summon:5} }; // (v253) 하드 100%는 레전더리 확정권 · (v5.3.0) 100%에 정수 300×배율 · 별빛 조각 노말 10 · 하드 20
+  const tr = chapterTier(chapterNum); return { essence: Math.round(300*sc), stone: Math.round(20*sc), star: tr==='h' ? 20 : (tr==='n' ? 15 : 10), items: tr==='h' ? {legendary:1, summon:5} : (tr==='n' ? {epic:1, summon:5} : {rare:1, summon:5}) }; // (v8.0.0) 노말 15 · 에픽 확정권 // (v253) 하드 100%는 레전더리 확정권 · (v5.3.0) 100%에 정수 300×배율 · 별빛 조각 노말 10 · 하드 20
 }
 function checkChapterPctRewards(chapterNum){
   const count = chapterClearCount(chapterNum);
@@ -10740,6 +10751,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:377, v:'8.0.0', date:'2026-10-09', secs:[
+    { t:'탐험 난이도 3단계', items:[ '탐험 난이도가 이지 · 노말 · 하드 세 단계로 — 지도 위 탭 세 칸', '예전 노말 → 이지: 적은 그대로 · 챕터 보스는 기본 기믹만 (눈보라 · 분화 · 가시 껍질 · 결계 재생 · 심연 응시 · 심연 파동 · 그림자 파동 없음)', '새 노말: 이지 챕터 5 보스를 깨면 열림 · 챕터 보스는 기본 + 추가 기믹', '하드: 노말 챕터 5 보스를 깨면 열림 · 하드 전용 기믹 · 하드 6은 노말 6 보스도', '노말 챕터 제목에 NORMAL 표시' ]},
+    { t:'노말 · 하드 챕터 정리', items:[ '예전 하드 1·2 → 노말 1·2 (깬 기록 · 받은 보상 그대로 옮김)', '노말 1 → 하드 6 세기를 새로 정리 — 앞 챕터보다 쉬운 곳 없이 이어지게', '노말 보스 공격 배율 2.29 · 1.7 · 2.69 · 2.22 · 3.09 · 2.49 / 체력 배율 20 · 20 · 25 · 28 · 25 · 40', '하드 보스 공격 배율 2.64 · 1.61 · 2.16 · 2.7 · 2.34 · 2.15 / 체력 배율 45 · 22 · 65 · 60 · 60 · 40', '하드 5 보스 공격 8.64 → 2.34 · 체력 357.5 → 60 / 하드 6 보스 공격 8.64 → 2.15 · 체력 357.5 → 40', '일반 스테이지 적 세기 — 노말 1 시작 1,046 → 하드 6 끝 11,000', '이미 열려 있던 하드 챕터는 계속 열림' ]},
+    { t:'보상', items:[ '노말 챕터 보스 첫 격파 별빛 조각 75 (이지 50 · 하드 100)', '노말 챕터 진행도 100% — 별빛 조각 15 · 에픽 정령 확정권', '노말 3~6 · 하드 1·2 보스 첫 격파 선택권 · 장비권 · 각인석' ]}
+  ]},
   { build:376, v:'7.4.0', date:'2026-10-08', secs:[
     { t:'별빛 균열 · 기간 규칙', items:[ '한정 성좌 픽업마다 균열 모든 층에 기간 규칙 하나 — 규칙이 있는 기간엔 픽업 공격력 +25% · 본인 +25% 대신 규칙', '하백 픽업 「물길」: 물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%에 닿으면 물살 — 적 전체가 다음 라운드 맨 뒤로 + 물받이 공격력 60% 피해', '하백이 물길 잇기 중이면 물받이는 하백 · 연결된 아군 몫(40%)도 물로 모이고 하백이 대신 받은 물은 수위에도 쌓임' ]}
   ]},
@@ -11511,13 +11527,13 @@ const ACHIEVEMENTS = [ // (v5.3.0) 별빛 조각은 속성 도감 업적까지 �
   // 탐구/도전형 — 달성 전까지 이름/설명을 가려두고 보상은 두둑하게
   {id:'perfect_boss', name:'완벽한 제압', desc:'보스 하나를 S등급으로 격파하기', reward:{essence:500}, category:'stage', secret:true, check:()=> Object.entries(state.stageBest||{}).some(([k,v])=> v==='S' && isBossStage(parseInt(k)))},
   {id:'perfect_tower', name:'완벽한 한 층', desc:'무한의 탑에서 아무 층이나 S등급으로 돌파하기', reward:{stone:200}, category:'tower', secret:true, check:()=> Object.values(state.towerFloorGrades||{}).includes('S')},
-  {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 노말 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
+  {id:'perfect_chapters', name:'완벽주의자', desc:'모든 챕터의 이지 보스를 전부 S등급으로 격파하기', reward:{essence:1000}, category:'stage', secret:true, check:()=> [1,2,3,4,5].every(c=> state.stageBest[CHAPTER_LENGTH*c-1]==='S')},
   // (v266) 히든 업적 추가 — secret:true = 이름만 보이고 조건은 ??? · secret:'full' = 이름·조건 모두 ??? (조건 빡빡·보상 후함)
   {id:'tower_transcend', name:'탑의 초월자', desc:'무한의 탑 1~100층을 전부 S등급으로 돌파하기', reward:{stone:1500, items:{pick_mythic:1, pick_legendary:1}}, category:'tower', secret:true, check:()=> { const g = state.towerFloorGrades||{}; for(let f=1; f<=100; f++) if(g[f]!=='S') return false; return true; }},
   {id:'tower_mono', name:'순혈주의', desc:'한 속성 정령만으로 무한의 탑 25층 이상 돌파하기', reward:{stone:300}, category:'tower', secret:true, check:()=> hidHas('towerMono')},
   {id:'tower_solo', name:'고독한 등반가', desc:'정령 딱 1마리로 무한의 탑 30층 이상 돌파하기', reward:{stone:800, items:{pick_legendary:1}}, category:'tower', secret:'full', check:()=> hidHas('towerSolo')},
   {id:'stage_clutch', name:'간발의 차', desc:'우리 편이 1마리만 남고 그 체력도 10% 이하인 채로 스테이지 승리하기', reward:{essence:400}, category:'stage', secret:true, check:()=> hidHas('stageClutch')},
-  {id:'normal_common', name:'잡초의 반란', desc:'일반 등급 정령만으로 노말 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('normalCommon')}, // (v268)
+  {id:'normal_common', name:'잡초의 반란', desc:'일반 등급 정령만으로 이지·노말 보스 격파하기', reward:{essence:1000, items:{pick_epic:1}}, category:'stage', secret:true, check:()=> hidHas('normalCommon')}, // (v268)
   {id:'hard_lowrare5', name:'다윗과 골리앗', desc:'레어 이하 정령만으로 챕터 5 하드 보스 격파하기', reward:{essence:3000, items:{pick_legendary:2}}, category:'stage', secret:'full', check:()=> hidHas('hardLowRare5')}, // (v268)
   {id:'hard_flawless', name:'무혈 입성', desc:'하드 보스전(3웨이브 내내)에서 우리 정령이 체력을 한 번도 잃지 않고 격파하기 (보호막으로 막는 건 괜찮음)', reward:{essence:3000, items:{pick_legendary:1}}, category:'stage', secret:true, check:()=> hidHas('hardFlawless')}, // (v270)
   {id:'pacifist', name:'평화주의자', desc:'공격 스킬을 한 번도 쓰지 않고 5라운드 이상 걸린 전투에서 승리하기 (기본 공격·아군에게 쓰는 스킬은 괜찮음 · 시련 제외)', reward:{essence:1500, items:{pick_epic:1}}, category:'general', secret:true, check:()=> hidHas('pacifist')}, // (v270)
@@ -12003,7 +12019,7 @@ function renderVillageTab(){
   return h;
 }
 // (v7.1.0) 콘텐츠 설명 창 — ⓘ(data-mh) 누르면 열림 · 수치는 상수에서 그대로 가져옴
-const MODE_HELP_NM = { rift:'별빛 균열', dungeon:'요일 던전', trial:'시련의 전당', dispatch:'정령 파견', duel:'결투', pass:'시즌 패스', hard:'하드 모드' };
+const MODE_HELP_NM = { rift:'별빛 균열', dungeon:'요일 던전', trial:'시련의 전당', dispatch:'정령 파견', duel:'결투', pass:'시즌 패스', hard:'난이도' };
 function modeHelpHtml(k){
   const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
   if(k==='rift'){ const sh = [...new Set(RIFT_STAR_SHARD)];
@@ -12019,7 +12035,7 @@ function modeHelpHtml(k){
   if(k==='duel') return sec('결투') + li(['친구와 실시간 1:1 · 보상 없음', '결투 덱 6칸(전열 3 · 후열 3)으로만 싸움 — 강화 · 각성 · 장비 등은 그대로', '친구 목록에서 신청(접속 중인 친구만)하거나 방 코드 6자리로 참가', '각자 자기 차례에 직접 조작 · 상대가 끊기면 AI가 대신', '도중에 나가면 기권 — 상대 승리']);
   if(k==='pass') return sec('시즌 패스') + li(['시즌 '+PASS_SEASON_DAYS+'일 · 최대 '+PASS_MAX_LV+'레벨 ('+PASS_LV_XP+' 경험치마다 1레벨)', '일일 · 주간 미션으로 경험치 — 한 주 최대 '+PASS_WEEK_CAP+' (월요일 0시 초기화)', '레벨마다 보상 · 5레벨마다 별빛 조각 (일반 '+PASS_STAR_F+' · 프리미엄 '+PASS_STAR_P+')'])
       + sec('프리미엄') + li(['세계 룬석 '+PASS_PRICE+' 또는 고대 룬석 '+PASS_PRICE_RAID+'으로 해금 · 지난 레벨 보상도 받음', '시즌이 끝날 때 못 받은 보상은 자동 지급']);
-  if(k==='hard') return sec('하드 모드') + li(['노말 챕터 '+HARD_EFF_CH+' 보스를 깨면 열림', '같은 지도 · 보스지만 적이 훨씬 강함 (하드 N ≈ 노말 N+'+HARD_EFF_CH+' 세기)', '다음 하드 챕터는 앞 하드 챕터 보스를 깨야 열림 (하드 6부터는 같은 번호 노말 보스도)', '보스는 하드 전용 기믹이 붙음 · 첫 클리어 보상은 노말과 따로']);
+  if(k==='hard') return sec('난이도') + li(['이지 → 노말 → 하드 · 같은 지도와 보스, 뒤로 갈수록 강함', '이지: 보스 기본 기믹만', '노말: 이지 챕터 '+HARD_EFF_CH+' 보스를 깨면 열림 · 보스 추가 기믹', '하드: 노말 챕터 '+HARD_EFF_CH+' 보스를 깨면 열림 · 하드 전용 기믹', '다음 챕터는 같은 난이도 앞 챕터 보스를 깨야 열림 (챕터 6은 아래 난이도 챕터 6 보스도)', '첫 클리어 보상은 난이도마다 따로']);
   return '';
 }
 document.addEventListener('click', e=>{ const b = e.target.closest && e.target.closest('[data-mh]'); if(!b) return; e.stopPropagation(); const k = b.dataset.mh; openInfoOverlay('ⓘ '+(MODE_HELP_NM[k]||'설명'), modeHelpHtml(k)); }, true);
@@ -12784,7 +12800,7 @@ function dungeonDaysOf(el){ return DUNGEON_DAY_EL.map((e,d)=> e===el ? DAY_NAMES
 function dungeonBest(el){ return (state.dungeonBest && state.dungeonBest[el]) || 0; }
 function dungeonGuardian(n){ return n%5===0; }
 // 적 1마리 공격력: 1단계 = 노말 챕터 2 시작 수준 → 15단계 = 하드 5 끝 수준(기하 증가) · 16단계부터는 단계마다 ×1.08
-function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = HARD_ENEMY_END[HARD_EFF_CH-1]; /* (v317) 챕터 6을 더해도 던전 세기는 하드 5 기준 그대로 */ return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
+function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = LEGACY_HARD.end[HARD_EFF_CH-1]; /* (v8.0.0) 예전 하드 5 끝 그대로 */ /* (v317) 챕터 6을 더해도 던전 세기는 하드 5 기준 그대로 */ return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
 function dungeonReward(n){
   const rw = { essence: Math.round(400 + n*120), stone: Math.round(20 + n*6), items: null };
   const it = {};
@@ -12978,7 +12994,7 @@ LINE_KITS.rduo_add = { role:'수호자 부하', icon:'🛡️', passive:{ name:'
 function riftDuoOf(per){ per = per || riftPeriod(); return (per.pair && RIFT_DUO[per.pair[0]] && LIMITED_PAIR[per.pair[0]]===per.pair[1]) ? RIFT_DUO[per.pair[0]] : null; }
 function riftDuoArt(D){ return BOSS_IMG_IDS.includes('rduo_'+D.id) ? 'rduo_'+D.id : D.art; }
 function riftDuoEnemies(f, per){
-  const T = RIFT_TIERS[f-1], D = riftDuoOf(per), bf = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}), rb = bf.enemyUnits.find(u=>u.isBoss);
+  const T = RIFT_TIERS[f-1], D = riftDuoOf(per), bf = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true), rb = bf.enemyUnits.find(u=>u.isBoss);
   const hp = Math.round(rb.maxHp*T.k), atk = Math.round(rb.atk*T.k);
   const b = makeBattleUnit('enemy', 4, D.el+'_legendary_a', 1, 1); b.maxHp = hp; b.hp = hp; b.atk = atk; b.element = D.el; b.isBoss = true; b.duoId = D.id; b.artId = riftDuoArt(D);
   b.dispName = D.name; b.bossIcon = '🌌'; ensureGroggy(b); setBossKit(b, 'rduo_boss');
@@ -13039,7 +13055,7 @@ function riftSetEl(u, el){ u.element = el; if(SPIRITS[el+'_'+SPIRITS[u.key].rari
 function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸고, 세기를 그 층 기준 보스에 맞춤 (결계석·용암 정령도 같은 비율)
   if(riftPlan(f, per).duo) return riftDuoEnemies(f, per); // (v344) 연계 층
   const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
-  const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {});
+  const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}, true), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true);
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
   const gk = RIFT_GIM_K[P.gim] || 1, ka = rb.atk/b.atk*T.k*gk, kh = rb.maxHp/b.maxHp*T.k*gk;
   bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0;
@@ -13163,7 +13179,7 @@ function sanctumMakeBoss(id, key, el, atk, hpMult, kit, name, ref, B, k, idx){
   return b;
 }
 function buildSanctumFight(id, tier){
-  const B = sanctumBoss(id), k = Math.pow(SANCTUM_TIER_K, tier-1), refF = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, [], {}), ref = refF.enemyUnits.find(u=>u.isBoss);
+  const B = sanctumBoss(id), k = Math.pow(SANCTUM_TIER_K, tier-1), refF = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, [], {}, true), ref = refF.enemyUnits.find(u=>u.isBoss);
   const my = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {}).myUnits;
   let enemies;
   if(id==='twins') enemies = [ sanctumMakeBoss('castor', 'fire_legendary_a', 'fire', 0, 1, 'sboss_castor', '카스토르', ref, B, k, 3), sanctumMakeBoss('pollux', 'water_legendary_b', 'water', 0, 1, 'sboss_pollux', '폴룩스', ref, B, k, 5) ];
@@ -14795,34 +14811,60 @@ function markPillHtml(mark){
 }
 // 챕터 5개 고정 — 각 챕터는 촘촘한 덩어리(격자) 형태이고 실루엣이 전부 다름
 // (v148) 챕터 10스테이지로 축소되면서 마스크도 9칸+보스로 재설계(기존 19+1은 CHAPTER_LENGTH=20 전용이었음). 전부 연결됨을 스크립트로 검증 완료
-const MAX_CHAPTERS = 6; // 노말 챕터 수 · (v317) 6 = 그림자
-const HARD_EFF_CH = 5; // (v317) 하드 난이도·보상 기준(하드 N ≈ 노말 N+5)과 하드 해금은 챕터 5 기준 그대로 — 챕터를 늘려도 기존 하드가 바뀌거나 잠기지 않게
-// (v251) 하드 모드 — 노말 5챕터 보스를 깨면 열림. 같은 지도·보스를 쓰되 적이 훨씬 강함. 스테이지 번호 50~99(내부 챕터 6~10)
-// (v253) 하드 = 스테이지 500~ · 내부 챕터 51~ — 노말 챕터를 늘려도(6, 7…) 번호가 안 겹침
-const HARD_BASE = 500, HARD_CH_BASE = 50;
-function isHardChapter(ch){ return ch > HARD_CH_BASE; }
-function isHardStage(i){ return i >= HARD_BASE; }
-function stageLocal(i){ return isHardStage(i) ? i - HARD_BASE : i; }                 // 난이도 안에서의 번호(0~)
-function chapterBase(ch){ return isHardChapter(ch) ? ch - HARD_CH_BASE : ch; }       // 화면에 보이는 챕터 번호(1~)
-function stageEff(i){ return isHardStage(i) ? stageLocal(i) + CHAPTER_LENGTH*HARD_EFF_CH : i; } // 난이도·보상 기준 위치: 하드 N = 노말 N+5
-function chapterEff(ch){ return isHardChapter(ch) ? chapterBase(ch) + HARD_EFF_CH : ch; }
-function isValidStage(n){ return Number.isInteger(n) && ((n>=0 && n<CHAPTER_LENGTH*MAX_CHAPTERS) || (n>=HARD_BASE && n<HARD_BASE+CHAPTER_LENGTH*MAX_CHAPTERS)); }
-function hardUnlocked(){ return !!state.adminUnlockAll || !!state.stageBest[CHAPTER_LENGTH*HARD_EFF_CH-1]; } // 하드 탭이 열리는 조건 = 하드 1 조건
-// (v253) 하드 N 해금: 노말 min(N+4, 마지막 노말 챕터) 보스 + 하드 N−1 보스 — 하드 N ≈ 노말 N+5 수준이라 그 바로 전 노말까지 깨야 열림. 노말 챕터를 늘리면 자동으로 따라감
-function hardNormalReq(base){ return base<=HARD_EFF_CH ? HARD_EFF_CH : Math.min(base, MAX_CHAPTERS); } // (v317) 하드 1~5 = 노말 5 보스 · 하드 6~ = 같은 번호 노말 보스
-function hardChapterOpen(ch){ const b = chapterBase(ch); if(state.adminUnlockAll) return true; if(!state.stageBest[hardNormalReq(b)*CHAPTER_LENGTH-1]) return false; return b===1 || !!state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]; }
-function currentHardChapterNum(){ let b = 1; while(b<=MAX_CHAPTERS && state.stageBest[HARD_BASE + b*CHAPTER_LENGTH - 1]) b++; return HARD_CH_BASE + b; }
-// (v257) 잠금 안내는 보스 이름으로 — "서리거인 처치 시 해금", 하드는 "서리거인(하드) 처치 시 해금"
-function chapterBossName(ch){ const g = CHAPTER_BOSS_GIMMICK[chapterBase(ch)-1], n = g && BOSS_GIMMICK_INFO[g] ? BOSS_GIMMICK_INFO[g].name : '보스'; return n + (isHardChapter(ch) ? '(하드)' : ''); }
+const MAX_CHAPTERS = 6; // 난이도마다 챕터 수 · (v317) 6 = 그림자
+const HARD_EFF_CH = 5; // (v317) 하드 해금·던전 세기·출정 보스 종류는 챕터 5 기준 그대로
+// (v251) 하드 모드 · (v253) 하드 = 스테이지 500~ · 내부 챕터 51~
+// (v8.0.0) 난이도 3단계 (사용자 결정) — 이지(예전 노말, 스테이지 0~ · 챕터 1~) · 노말(새로, 1000~ · 101~) · 하드(500~ · 51~)
+//  예전 하드 1·2 기록은 노말 1·2로 옮김(migrateTierV800) · 하드 1·2는 새로 · 하드 3~6은 그대로
+//  노말 1·2 세기 = 예전 하드 1·2 그대로(균열 기준도 이걸 씀) · 노말 3 → 하드 3까지 완만하게
+const HARD_BASE = 500, HARD_CH_BASE = 50, NORM_BASE = 1000, NORM_CH_BASE = 100;
+const TIERS = ['e','n','h'], TIER_CH_BASE = { e:0, n:NORM_CH_BASE, h:HARD_CH_BASE }, TIER_NM = { e:'이지', n:'노말', h:'하드' };
+function stageTier(i){ return i>=NORM_BASE ? 'n' : (i>=HARD_BASE ? 'h' : 'e'); }
+function chapterTier(ch){ return ch>NORM_CH_BASE ? 'n' : (ch>HARD_CH_BASE ? 'h' : 'e'); }
+function isHardChapter(ch){ return chapterTier(ch)==='h'; }
+function isHardStage(i){ return stageTier(i)==='h'; }
+function isNormStage(i){ return stageTier(i)==='n'; }
+function stageLocal(i){ return i - TIER_CH_BASE[stageTier(i)]*CHAPTER_LENGTH; }       // 난이도 안에서의 번호(0~)
+function chapterBase(ch){ return ch - TIER_CH_BASE[chapterTier(ch)]; }                 // 화면에 보이는 챕터 번호(1~)
+function tierChapter(t, b){ return TIER_CH_BASE[t] + b; }
+function tierBossStage(t, b){ return tierChapter(t, b)*CHAPTER_LENGTH - 1; }
+function chapterBossDone(ch){ return !!state.stageBest[ch*CHAPTER_LENGTH-1]; }
+// 난이도·보상 기준 위치(이지 스테이지 번호와 같은 눈금) — 이지 0~59 · 노말 50~62 · 하드 62~110 (하드 3~6은 예전 그대로 70~109)
+const TIER_EFF = { e:[0,10,20,30,40,50,60], n:[50,52,54,56,58,60,62], h:[62,66,70,80,90,100,110] };
+function stageEff(i){ const t = stageTier(i), li = stageLocal(i), c = Math.floor(li/CHAPTER_LENGTH), E = TIER_EFF[t]; if(t==='e') return i;
+  return E[c] + (E[c+1]-E[c]) * (li%CHAPTER_LENGTH) / CHAPTER_LENGTH; }
+function chapterEff(ch){ const t = chapterTier(ch); return t==='e' ? ch : Math.floor(TIER_EFF[t][chapterBase(ch)-1]/CHAPTER_LENGTH) + 1; } // 정수(장비 소환권 수·챕터 보상 배율) — 노말 6~7 · 하드 7~11
+function isValidStage(n){ return Number.isInteger(n) && TIERS.some(t=>{ const b = TIER_CH_BASE[t]*CHAPTER_LENGTH; return n>=b && n<b+CHAPTER_LENGTH*MAX_CHAPTERS; }); }
+// 해금: 노말 N = 노말 N−1 보스 + 이지 min(max(N,5),6) 보스 · 하드 N = 하드 N−1 보스 + 노말 같은 규칙 (예전 하드 규칙 그대로)
+function tierReqBase(b){ return b<=HARD_EFF_CH ? HARD_EFF_CH : Math.min(b, MAX_CHAPTERS); }
+function hardNormalReq(b){ return tierReqBase(b); } // 예전 이름 (노말 쪽 기준 챕터 번호)
+const TIER_LOWER = { n:'e', h:'n' };
+function tierChapterOpen(t, b){
+  if(state.adminUnlockAll) return true;
+  if(t==='e') return b===1 || chapterBossDone(tierChapter('e', b-1));
+  if(t==='h' && b>=3 && b <= (state.hardLegacyOpen||0)) return true; // (v8.0.0) 예전에 열려 있던 하드 3~6은 계속 열림
+  if(!chapterBossDone(tierChapter(TIER_LOWER[t], tierReqBase(b)))) return false;
+  return b===1 || chapterBossDone(tierChapter(t, b-1));
+}
+function chapterOpen(ch){ return tierChapterOpen(chapterTier(ch), chapterBase(ch)); }
+function hardChapterOpen(ch){ return chapterOpen(ch); }
+function tierUnlocked(t){ if(t==='e' || state.adminUnlockAll) return true; for(let b=1;b<=MAX_CHAPTERS;b++) if(tierChapterOpen(t, b)) return true; return false; }
+function hardUnlocked(){ return tierUnlocked('h'); }
+function tierCurrentChapter(t){ for(let b=1;b<=MAX_CHAPTERS;b++){ const ch = tierChapter(t, b); if(tierChapterOpen(t, b) && !chapterBossDone(ch)) return ch; } return tierChapter(t, MAX_CHAPTERS+1); } // 열렸고 보스를 아직 안 깬 첫 챕터 (다 깼으면 끝+1)
+function tierLastOpen(t){ for(let b=MAX_CHAPTERS;b>=1;b--) if(tierChapterOpen(t, b)) return tierChapter(t, b); return tierChapter(t, 1); }
+function tierAllDone(t){ for(let b=1;b<=MAX_CHAPTERS;b++) if(!chapterBossDone(tierChapter(t, b))) return false; return true; }
+function currentHardChapterNum(){ return tierCurrentChapter('h'); }
+// (v257) 잠금 안내는 보스 이름으로 — "서리 거인(노말) 처치 시 해금"
+function chapterBossName(ch){ const g = CHAPTER_BOSS_GIMMICK[chapterBase(ch)-1], n = g && BOSS_GIMMICK_INFO[g] ? BOSS_GIMMICK_INFO[g].name : '보스'; return n + '('+TIER_NM[chapterTier(ch)]+')'; }
 function bossUnlockTxt(ch){ return chapterBossName(ch)+' 처치 시 해금'; }
 function chapterLockTxt(ch){ // 이 챕터가 잠겨 있을 때 무엇을 잡아야 하는지
-  if(isHardChapter(ch)){ const b = chapterBase(ch);
-    if(b>1 && !state.stageBest[HARD_BASE + (b-1)*CHAPTER_LENGTH - 1]) return bossUnlockTxt(ch-1);
-    return bossUnlockTxt(hardNormalReq(b)); }
-  return bossUnlockTxt(ch-1);
+  const t = chapterTier(ch), b = chapterBase(ch);
+  if(b>1 && !chapterBossDone(ch-1)) return bossUnlockTxt(ch-1);
+  if(t==='e') return bossUnlockTxt(ch-1);
+  return bossUnlockTxt(tierChapter(TIER_LOWER[t], tierReqBase(b)));
 }
-function chapterLabel(ch){ return '챕터 '+chapterBase(ch)+(isHardChapter(ch) ? ' 하드' : ''); }
-function stageLabel(i){ return (isHardStage(i) ? '하드 ' : '')+'스테이지 '+(stageLocal(i)+1); }
+function chapterLabel(ch){ return '챕터 '+chapterBase(ch)+' '+TIER_NM[chapterTier(ch)]; }
+function stageLabel(i){ return TIER_NM[stageTier(i)]+' 스테이지 '+(stageLocal(i)+1); }
 const CHAPTER_MASKS = [
   {theme:0, rows:['.##.','####','.##.','.#B.']}, // 설원 - 눈덩이(둥글게 뭉친 덩어리)
   {theme:1, rows:['.###.','##.##','.##.','..B.']}, // 화산 - 분화구(가운데 구멍, 갈래 1곳)
@@ -14869,10 +14911,8 @@ function isStageUnlockedGraph(stageIdx){
   const ch = Math.floor(stageIdx/CHAPTER_LENGTH)+1;
   if(chapterBase(ch)>MAX_CHAPTERS) return false;
   if(state.adminUnlockAll) return true; // (v253) 관리자 세팅: 모든 스테이지 열림
-  if(isHardChapter(ch) && !hardChapterOpen(ch)) return false;
-  const cur = isHardChapter(ch) ? currentHardChapterNum() : currentChapterNum();
-  if(ch<cur) return true; // 지난 챕터는 자유롭게 재도전 가능
-  if(ch>cur) return false;
+  if(!chapterOpen(ch)) return false;
+  if(chapterBossDone(ch)) return true; // 보스까지 깬 챕터는 자유롭게 재도전 가능
   if(state.stageBest[stageIdx]) return true; // (v184) 이미 깬 스테이지는 항상 열림(그 스테이지 보상도 언제든 받을 수 있게)
   const offset = (ch-1)*CHAPTER_LENGTH;
   const localIdx = stageIdx-offset;
@@ -14888,16 +14928,17 @@ let viewingChapter = null;
 // (v265) 탐험 전체 배경: 화면(헤더 아래~바닥)에 고정 — 스크롤해도 배경은 그대로
 function placeExBg(){ const m = document.getElementById('main'); if(!m) return; const t = Math.max(0, m.getBoundingClientRect().top)+'px'; m.querySelectorAll('.ex-bgfull, .ex-veil').forEach(el=>{ el.style.top = t; }); }
 window.addEventListener('resize', placeExBg); window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') placePuBg(); });
+function defaultViewChapter(){ // 처음 보는 챕터: 이지 → 노말 → 하드 순서로 아직 안 깬 곳
+  for(const t of TIERS){ if(!tierUnlocked(t) || tierAllDone(t)) continue; const c = tierCurrentChapter(t); if(chapterBase(c)<=MAX_CHAPTERS) return c; if(t!=='h' && tierUnlocked(TIERS[TIERS.indexOf(t)+1])) continue; return tierLastOpen(t); }
+  const last = [...TIERS].reverse().find(t=>tierUnlocked(t)) || 'e'; return tierChapter(last, MAX_CHAPTERS);
+}
 function renderStageTab(){
   // (v186) 탐험 지도 개편: 화면 폭 전체 · 지역별 풍경 배경 · 스테이지를 잇는 길 · 큰 원형 노드 · 다음 도전 위에 내 정령 · 좌우로 밀어 챕터 이동
-  const curN = currentChapterNum();
-  if(viewingChapter===null) viewingChapter = (curN > MAX_CHAPTERS && hardUnlocked()) ? Math.min(currentHardChapterNum(), HARD_CH_BASE+MAX_CHAPTERS) : Math.min(curN, MAX_CHAPTERS); // 노말을 다 깼으면 하드 진행 챕터부터
-  if(isHardChapter(viewingChapter) && !hardUnlocked()) viewingChapter = MAX_CHAPTERS;
-  const ch = viewingChapter, hard = isHardChapter(ch), lo = hard ? HARD_CH_BASE+1 : 1, hi = hard ? HARD_CH_BASE+MAX_CHAPTERS : MAX_CHAPTERS;
-  const cur = hard ? currentHardChapterNum() : curN;
+  if(viewingChapter===null || !tierUnlocked(chapterTier(viewingChapter)) || chapterBase(viewingChapter)<1 || chapterBase(viewingChapter)>MAX_CHAPTERS) viewingChapter = defaultViewChapter();
+  const ch = viewingChapter, tier = chapterTier(ch), hard = tier==='h', lo = tierChapter(tier, 1), hi = tierChapter(tier, MAX_CHAPTERS); // (v8.0.0) 이지·노말·하드
   const def = chapterDef(ch), theme = chapterTheme(ch), grid = def.grid;
   const offset = (ch-1)*CHAPTER_LENGTH;
-  const allCleared = cur > hi;
+  const allCleared = tierAllDone(tier);
   const locals = Object.keys(grid).map(Number).filter(l=>grid[l]).sort((a,b)=>a-b);
   const maxRow = Math.max(...locals.map(l=>grid[l][0])), maxCol = Math.max(...locals.map(l=>grid[l][1]));
   // 격자 좌표 → 지도 위 % 위치(가장자리 여백을 두고 고르게 펼침, 줄마다 살짝 엇갈려 자연스러운 길 모양)
@@ -14929,15 +14970,17 @@ function renderStageTab(){
   const arrowDot = has=> has ? '<span class="ex-adot"></span>' : '';
   const pendBefore = [...Array(Math.max(0,ch-lo))].some((_,k)=>chapterHasPending(lo+k)), pendAfter = [...Array(Math.max(0,hi-ch))].some((_,k)=>chapterHasPending(ch+1+k));
   const sceneTheme = BATTLE_THEMES[CHAPTER_MASKS[(chapterBase(ch)-1)%MAX_CHAPTERS].theme] || 'snow';
-  const hardPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(HARD_CH_BASE+1+k)), normPend = [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(1+k));
-  // (v253) 탐험 머리 — 난이도 탭 · 챕터 이름(노말·하드 같은 형식, 하드는 뱃지) · 챕터 점(눌러서 이동) · 진행 막대 · 보상
-  let html = '<div class="ex-mode"><button data-stage-mode="n" class="'+(hard?'':'on')+'">노말'+(hard && normPend ? '<span class="ex-adot"></span>' : '')+'</button><button data-stage-mode="h" class="hard'+(hard?' on':'')+(hardUnlocked()?'':' lock')+'">'+(hardUnlocked()?'🔥':uiIc('lock'))+' 하드'+(!hard && hardPend ? '<span class="ex-adot"></span>' : '')+'</button><button class="mh-btn" data-mh="hard" aria-label="설명">ⓘ</button></div>';
-  const pips = [...Array(MAX_CHAPTERS)].map((_,k)=>{ const c = lo+k, done = c<cur, open = c<=cur; return '<button class="ex-pip'+(c===ch?' on':'')+(done?' done':'')+(open?'':' lock')+'" data-ch-jump="'+c+'" aria-label="'+chapterLabel(c)+'">'+(chapterHasPending(c)?'<i></i>':'')+'</button>'; }).join('');
+  const tierPend = x=> [...Array(MAX_CHAPTERS)].some((_,k)=>chapterHasPending(tierChapter(x, 1+k)));
+  // (v253) 탐험 머리 — 난이도 탭 · 챕터 이름(하드는 뱃지) · 챕터 점(눌러서 이동) · 진행 막대 · 보상 · (v8.0.0) 이지·노말·하드 세 칸
+  let html = '<div class="ex-mode">'+TIERS.map(x=>{ const op = tierUnlocked(x);
+    return '<button data-stage-mode="'+x+'" class="'+(x==='h'?'hard':'')+(x===tier?' on':'')+(op?'':' lock')+'">'+(op ? (x==='h'?'🔥 ':'') : uiIc('lock')+' ')+TIER_NM[x]+(x!==tier && op && tierPend(x) ? '<span class="ex-adot"></span>' : '')+'</button>'; }).join('')
+    + '<button class="mh-btn" data-mh="hard" aria-label="설명">ⓘ</button></div>';
+  const pips = [...Array(MAX_CHAPTERS)].map((_,k)=>{ const c = lo+k, done = chapterBossDone(c), open = chapterOpen(c); return '<button class="ex-pip'+(c===ch?' on':'')+(done?' done':'')+(open?'':' lock')+'" data-ch-jump="'+c+'" aria-label="'+chapterLabel(c)+'">'+(chapterHasPending(c)?'<i></i>':'')+'</button>'; }).join('');
   html += '<div class="ex-head'+(hard?' hard':'')+'" style="--tc:'+(hard?'#ff6a7a':theme.color)+';">'
     + '<div class="ex-hrow"><button class="ex-arrow" id="chapterPrev" '+(ch<=lo?'disabled':'')+'>◀'+arrowDot(pendBefore)+'</button>'
-    + '<div class="ex-title"><div class="ex-ch">CHAPTER '+chapterBase(ch)+(hard?' <span class="ex-hbadge">HARD</span>':'')+'</div><div class="ex-name">'+theme.icon+' '+theme.name+'</div></div>'
+    + '<div class="ex-title"><div class="ex-ch">CHAPTER '+chapterBase(ch)+(hard?' <span class="ex-hbadge">HARD</span>':(tier==='n'?' <span class="ex-hbadge n">NORMAL</span>':''))+'</div><div class="ex-name">'+theme.icon+' '+theme.name+'</div></div>'
     + '<button class="ex-arrow" id="chapterNext" '+(ch>=hi?'disabled':'')+'>▶'+arrowDot(pendAfter)+'</button></div>'
-    + '<div class="ex-hfoot"><span class="ex-pips">'+pips+'</span><span class="ex-cnt">'+(ch>cur?uiIc('lock'):(ch<cur?uiIc('check'):''))+' '+clearCount+'/'+CHAPTER_LENGTH+'</span><div class="ex-bar"><i style="width:'+pct+'%;"></i></div>'
+    + '<div class="ex-hfoot"><span class="ex-pips">'+pips+'</span><span class="ex-cnt">'+(!chapterOpen(ch)?uiIc('lock'):(chapterBossDone(ch)?uiIc('check'):''))+' '+clearCount+'/'+CHAPTER_LENGTH+'</span><div class="ex-bar"><i style="width:'+pct+'%;"></i></div>'
     + '<button class="ex-reward" data-chapter-reward-btn="'+ch+'">'+uiIc('gift')+' 보상'+(hasPendingFor('ch'+ch+'_pct')?'<span class="ex-rdot"></span>':'')+'</button></div>'
     + '</div>' + TOP_MARK;
   // (v265) 지도 풍경을 탐험 화면 전체 배경으로 — 상자 안에 가두지 않고, 버튼·챕터 카드는 그 위에 반투명 판으로
@@ -14946,9 +14989,9 @@ function renderStageTab(){
     + '<svg class="ex-paths" viewBox="0 0 100 100" preserveAspectRatio="none">'+paths+'</svg>'
     + nodes
     + '</div>'
-    + ((hard ? !hardChapterOpen(ch) : ch>cur) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : ''); // (v265) 잠금 가림막도 화면 전체로(지도 상자 기준 X)
+    + (!chapterOpen(ch) && !state.adminUnlockAll ? '<div class="ex-veil">'+uiIc('lock')+' '+chapterLockTxt(ch)+'</div>' : ''); // (v265) 잠금 가림막도 화면 전체로(지도 상자 기준 X)
   html += '<div class="ex-legend" style="--tc:'+(hard?'#ff6a7a':theme.color)+';"><span><i class="lg clear"></i>클리어</span><span><i class="lg open"></i>도전 가능</span><span><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><span><span class="spdone"><img class="uic" src="assets/ui/ic_special.webp" alt=""></span> 특수 달성</span><span><img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스</span></div>';
-  if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : '노말 전부 클리어 · <b style="color:#ff8a8a;">🔥 하드 열림</b>')+'</div>';
+  if(allCleared) html += '<div class="card" style="text-align:center; font-weight:700; margin-top:8px;"><img class="uic" src="assets/ui/ic_trophy.webp" alt=""> '+(hard ? '하드 전부 클리어! 추가 챕터 준비 중' : TIER_NM[tier]+' 전부 클리어')+'</div>';
   return html;
 }
 
@@ -15668,7 +15711,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-xp-buy]').forEach(b=>b.addEventListener('click', ()=>expShopBuy(b.dataset.xpBuy==='heal' ? 'heal' : parseInt(b.dataset.xpBuy))));
   { const x = document.getElementById('xpLeaveShop'); if(x) x.addEventListener('click', ()=>{ const run = state.expedition; if(run && run.currentRoom && run.currentRoom.type==='shop') advanceExpeditionAfterRoom(run); }); }
   { const x = document.getElementById('xpTreasure'); if(x) x.addEventListener('click', expTreasureTake); }
-  { const x = document.getElementById('xpBossInfo'); if(x) x.addEventListener('click', ()=>{ const n = currentExpeditionNode(); if(n && n.gimmick){ const gi = CHAPTER_BOSS_GIMMICK.indexOf(n.gimmick); showBossInfo((((state.expedition.cycle||1)>=3)?HARD_BASE:0) + gi*CHAPTER_LENGTH + CHAPTER_LENGTH-1); } }); }
+  { const x = document.getElementById('xpBossInfo'); if(x) x.addEventListener('click', ()=>{ const n = currentExpeditionNode(); if(n && n.gimmick){ const gi = CHAPTER_BOSS_GIMMICK.indexOf(n.gimmick); showBossInfo((((state.expedition.cycle||1)>=3)?HARD_BASE:0) + gi*CHAPTER_LENGTH + CHAPTER_LENGTH-1, true); } }); }
   document.querySelectorAll('[data-expedition-room-choice]').forEach(btn=>{
     btn.addEventListener('click', ()=>pickExpeditionRoom(parseInt(btn.dataset.expeditionRoomChoice)));
   });
@@ -15727,16 +15770,16 @@ function attachHandlers(){
   });
   document.querySelectorAll('[data-rift-open]').forEach(b=>b.addEventListener('click', ()=>{ if(xpLockBlock()) return; activeTab = 'rift'; render(); save(); })); // (v317) 별빛 균열
   document.querySelectorAll('[data-sanctum-open]').forEach(b=>b.addEventListener('click', ()=>{ if(xpLockBlock()) return; activeTab = 'sanctum'; render(); save(); })); // (v344) 성역 (홈 오른쪽 · 균열 아래)
-  document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드
-    const toHard = b.dataset.stageMode==='h';
-    if(toHard && !hardUnlocked()){ toast(uiIc('lock')+' 하드 모드: '+bossUnlockTxt(hardNormalReq(1))); return; }
-    viewingChapter = (toHard ? HARD_CH_BASE : 0) + chapterBase(viewingChapter||1); // (v256) 보던 챕터 번호 그대로 (잠겨 있으면 지도에 안내)
-    if(toHard && !hardChapterOpen(viewingChapter)){ let c = viewingChapter; while(c > HARD_CH_BASE+1 && !hardChapterOpen(c)) c--; viewingChapter = c; } // (v327) 아직 안 열린 하드 챕터면 열린 마지막 하드 챕터로
+  document.querySelectorAll('[data-stage-mode]').forEach(b=>b.addEventListener('click', ()=>{ // (v251) 노말 ↔ 하드 · (v8.0.0) 이지·노말·하드
+    const to = b.dataset.stageMode; if(!TIER_CH_BASE.hasOwnProperty(to)) return;
+    if(!tierUnlocked(to)){ toast(uiIc('lock')+' '+TIER_NM[to]+': '+chapterLockTxt(tierChapter(to, 1))); return; }
+    viewingChapter = tierChapter(to, chapterBase(viewingChapter||1)); // (v256) 보던 챕터 번호 그대로
+    if(!chapterOpen(viewingChapter)){ const c = tierCurrentChapter(to); viewingChapter = chapterBase(c)<=MAX_CHAPTERS ? c : tierLastOpen(to); } // 안 열린 챕터면 진행 중인 챕터로
     render();
   }));
   document.querySelectorAll('[data-ch-jump]').forEach(b=>b.addEventListener('click', ()=>{ viewingChapter = parseInt(b.dataset.chJump); render(); }));
   const chPrev = document.getElementById('chapterPrev');
-  if(chPrev) chPrev.addEventListener('click', ()=>{ viewingChapter = Math.max(1, viewingChapter-1); render(); });
+  if(chPrev) chPrev.addEventListener('click', ()=>{ viewingChapter = Math.max(tierChapter(chapterTier(viewingChapter), 1), viewingChapter-1); render(); });
   const chNext = document.getElementById('chapterNext');
   if(chNext) chNext.addEventListener('click', ()=>{ viewingChapter = viewingChapter+1; render(); });
   const exMap = document.getElementById('exMap'); // (v186) 지도를 좌우로 밀어 챕터 이동
@@ -15851,6 +15894,27 @@ function migrateHardV253(){
   if(s.openView && typeof s.openView==='object' && s.openView.t==='stage') s.openView.idx = mv(s.openView.idx);
   s.hardV253 = true;
 }
+// (v8.0.0) 난이도 3단계 — 예전 노말(0~)은 이름만 이지 · 예전 하드 1·2(500~519 · 챕터 51·52)는 노말 1·2(1000~1019 · 101·102)로 옮김 · 하드 3~6(520~)은 그대로
+//  예전에 열려 있던 하드 챕터(3 이상)는 hardLegacyOpen으로 계속 열어 둠 (새 하드 1·2를 안 깨도)
+function migrateTierV800(){
+  const s = state; if(s.tierV800) return;
+  const sb = s.stageBest || {}, done = i=> !!sb[i];
+  let legacy = 0;
+  for(let b=1;b<=MAX_CHAPTERS;b++){ const o = HARD_BASE + (b-1)*CHAPTER_LENGTH, any = [...Array(CHAPTER_LENGTH)].some((_,l)=>done(o+l));
+    if(any || (done(tierReqBase(b)*CHAPTER_LENGTH-1) && (b===1 || done(HARD_BASE + (b-1)*CHAPTER_LENGTH - 1)))) legacy = b; }
+  if(legacy>=3) s.hardLegacyOpen = legacy;
+  const D = NORM_BASE - HARD_BASE, mv = n=> (Number.isInteger(n) && n>=HARD_BASE && n<HARD_BASE+2*CHAPTER_LENGTH) ? n+D : n, mc = c=> (c===HARD_CH_BASE+1 || c===HARD_CH_BASE+2) ? c - HARD_CH_BASE + NORM_CH_BASE : c;
+  ['stageBest','specialStageBonusClaimed','stageFormations','bossReclear'].forEach(key=>{ const o = s[key]; if(!o || typeof o!=='object') return;
+    Object.keys(o).forEach(k=>{ const n = Number(k), m = mv(n); if(m!==n){ o[String(m)] = o[k]; delete o[k]; } }); });
+  if(Array.isArray(s.pendingRewards)) s.pendingRewards.forEach(r=>{ if(!r || typeof r.id!=='string') return;
+    r.id = r.id.replace(/^(stage|boss)_(\d+)_/, (m,a,b)=> a+'_'+mv(Number(b))+'_').replace(/^ch(\d+)_pct/, (m,c)=> 'ch'+mc(+c)+'_pct');
+    if(typeof r.label==='string') r.label = r.label.replace(/챕터 ([12]) 하드/, (m,b)=> '챕터 '+b+' 노말').replace(/^하드 스테이지/, '노말 스테이지'); });
+  if(s.chapterRewardsClaimed && typeof s.chapterRewardsClaimed==='object') Object.keys(s.chapterRewardsClaimed).forEach(k=>{ const m = /^ch(\d+)_(pct\d+)$/.exec(k); if(m && mc(+m[1])!==+m[1]){ s.chapterRewardsClaimed['ch'+mc(+m[1])+'_'+m[2]] = s.chapterRewardsClaimed[k]; delete s.chapterRewardsClaimed[k]; } });
+  if(s.skillFight && typeof s.skillFight==='object' && (!s.skillFight.mode || s.skillFight.mode==='boss')) s.skillFight.stageIdx = mv(s.skillFight.stageIdx); // 탐험 전투만 (균열은 하드 번호를 그대로 씀)
+  if(s.bossFight && typeof s.bossFight==='object') s.bossFight.stageIdx = mv(s.bossFight.stageIdx);
+  if(s.openView && typeof s.openView==='object' && s.openView.t==='stage') s.openView.idx = mv(s.openView.idx);
+  s.tierV800 = true;
+}
 // (v313) 보상 장부 — 한 번만 받는 보상(스테이지·보스 첫 격파와 등급 · 챕터 진행도 · 탑 층 · 요일 던전 · 시련 · 계정 레벨 · 업적)을
 // 지금 보상 정의로 다시 계산한 합계(rwLedger)를 세이브에 같이 둠(rwGot, 저장할 때마다 갱신)
 // 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
@@ -15882,6 +15946,7 @@ function rwLedger(){
 // (v7.0.1) 사용자 결정: 업데이트 선물은 출시부터 7일 안에 접속한 사람만 · 게임이 넣는 우편(선물·보상 개편)은 받은 날부터 7일 지나면 사라짐
 const SYS_MAIL_DAYS = 7;
 const UPDATE_GIFTS = [
+  { id:'upd800', until: Date.UTC(2026,9,16,15), title:'8.0.0 업데이트 · 난이도 개편', body:'탐험 난이도가 이지 · 노말 · 하드 세 단계로\n· 예전 노말은 이지로 (보스 추가 기믹 없음)\n· 예전 하드 1·2는 노말 1·2로 · 노말 3~6 새로\n· 하드 1·2 새로 · 하드 3~6 그대로\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd700', until: Date.UTC(2026,9,15,15), title:'7.0.0 업데이트 · 정령 마을', body:'화로 탭이 「마을」로\n· 광산 해금\n· 화로 강화 상한 증가 (30레벨)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd600', until: Date.UTC(2026,9,15,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,10,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
@@ -15909,6 +15974,8 @@ function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   migrateHardV253();
   migrateBossReworkV263();
+  migrateTierV800();
+  if(!Number.isInteger(s.hardLegacyOpen) || s.hardLegacyOpen<3 || s.hardLegacyOpen>MAX_CHAPTERS) delete s.hardLegacyOpen; // (v8.0.0)
   if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
   if(!isPlainObj(s.trialTried)) s.trialTried = {}; // (v268) 시련 힌트 열림
   if(!isPlainObj(s.lvClaimed)) s.lvClaimed = {}; if(!fin(s.lvSeen)) s.lvSeen = 0; // (v269) 계정 레벨 보상
@@ -16198,7 +16265,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 376, APP_VERSION = '7.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 377, APP_VERSION = '8.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
