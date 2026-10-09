@@ -8511,6 +8511,126 @@ const BGM_TRACKS = {
       sNoise(off, 0.03, s%2 ? 0.004 : 0.007, bus, 'highpass', s%2 ? 3500 : 5000, null, 0.5);
       if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.045, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 650); } } },
 };
+// ===================== (v8.10.0) 지형·출정·균열 곡 · 보스 곡 긴박하게 =====================
+// 탐험(챕터 보스 포함)은 배경과 같은 지형 곡(battleThemeOf: snow·volcano·forest·desert·cave·shadow) · 출정은 초원 행진 · 균열은 균열 곡 · 보스 곡은 레이드·월드 보스·성역만 (사용자 결정)
+// 지형 곡은 전투 곡 선율·화음을 그대로 두고 음계·박자·악기만 바꿈 (새 악기를 마구 넣은 시안은 사용자가 별로라고 함 — 기존 악기 위주 유지)
+// bgmKsBuf·bgmPluck: 줄을 튕기는 소리(카플러스-스트롱) · bgmStrings: 현악 합주 · bgmBrass3: 금관 3겹 — 보스 곡에만 씀
+{
+const B = BGM_TRACKS.battle;
+// 설원 — 같은 선율·화음, 느리게 · 글로켄+오르골 · 북 거의 없이 · 높은 반짝임
+BGM_TRACKS.snow = { step:0.34, grp:4, vol:0.78, prog:B.prog, mel:B.mel, len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sGlock(NF(m), off, 0.038, bus); sMusicBox(NF(m+12), off+0.01, 0.012, 0.7, bus); bgmWarm(NF(m), off, 0.026, st*(n+0.8), 0.05, bus, 0.5); }
+    if(s%2===0) bgmBass(NF(ch[0]-12), off, st*2.2, 0.035, bus);
+    if(s%T.grp===0) bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 1100);
+    sMusicBox(NF(ch[[0,1,2,1][s%4]]+24), off, 0.012, st*1.5, bus);
+    if(s%8===0) sBoop(off, 0.02, bus, 120, 60, 0.2);
+    if(s%2===1) sNoise(off, 0.09, 0.004, bus, 'highpass', 9000, null, 0.4, 0.02); } };
+// 화산 — 2음 낮게 · 빠르게 · 무거운 북(두 박마다) · 낮은 금관 겹침
+BGM_TRACKS.volcano = { step:0.25, grp:4, vol:0.86, prog:B.prog, mel:B.mel, len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]].map(x=>x-2), m = T.mel[s]>0 ? T.mel[s]-2 : T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.042, st*(n+0.6), 0.02, bus, 0.5); bgmBrass(NF(m-12), off, st*(n+0.4), 0.014, bus); }
+    sOsc(NF(ch[0]-24+[0,12,0,12][s%4]), 'triangle', aT(off), st*0.85, 0.055, 0.01, bus);
+    if(s%T.grp===0){ bgmPad(ch.map(x=>NF(x-12)), off, st*T.grp, 0.016, bus, 650); }
+    if(s%2===0) sBoop(off, s%8===0 ? 0.07 : 0.045, bus, 110, 40, 0.22);
+    if(s%4===2) sNoise(off, 0.14, 0.022, bus, 'bandpass', 1300, 600, 0.8);
+    if(s%16===14) sNoise(off, 0.5, 0.012, bus, 'lowpass', 900, 200, 0.6, 0.05); } };
+// 사막 — 이국 음계(라 프리지안 도미넌트: 시→시♭, 도→도♯, 솔♯→솔) · 뜯는 소리 선율 · 손북(둥·탁)
+const PD = m=>{ const pc = ((m%12)+12)%12; return pc===11 ? m-1 : pc===0 ? m+1 : pc===8 ? m-1 : m; };
+const CHM = { Am:[57,61,64], F:[58,62,65], G:[55,58,62], E:[57,61,64], Dm:[50,53,57] }; // 라장조 · 시♭ · 솔단조 · 라장조 · 레단조
+BGM_TRACKS.desert = { step:0.28, grp:4, vol:1.3, prog:B.prog, mel:B.mel.map(m=>m>0 ? PD(m) : m), len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = CHM[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sMarimba(NF(m), off, 0.04, st*(n+0.5), bus); sOsc(NF(m), 'triangle', aT(off), st*(n*0.7+0.3), 0.014, 0.008, bus); bgmWarm(NF(m+12), off+0.02, 0.008, st*(n+0.4), 0.03, bus, 0.4); }
+    if(s%2===0) sOsc(NF(ch[0]-12), 'triangle', aT(off), st*1.6, 0.045, 0.01, bus);
+    if(s%T.grp===0) bgmPad([ch[0]-12, ch[0]-5].map(NF), off, st*T.grp, 0.014, bus, 700);
+    const d = s%8; if(d===0 || d===3) sBoop(off, 0.05, bus, 170, 80, 0.16); else if(d===2 || d===5 || d===6) sNoise(off, 0.06, 0.016, bus, 'bandpass', 2600, 1800, 1.2);
+    if(s%2===1) sNoise(off, 0.05, 0.005, bus, 'highpass', 6500, null, 0.5); } };
+}
+
+{
+const B = BGM_TRACKS.battle, BB = BGM_TRACKS.boss, pc = m=>((m%12)+12)%12;
+// 숲 — 밝은 도리안(파 → 파♯) · 마림바 선율 · 따뜻한 사인 겹침 · 가벼운 셰이커
+const FCH = { Am:[57,60,64], F:[50,54,57], G:[55,59,62], E:[52,55,59], Dm:[50,54,57] };
+BGM_TRACKS.forest = { step:0.27, grp:4, vol:0.93, prog:B.prog, mel:B.mel.map(m=>m>0 && pc(m)===5 ? m+1 : m), len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = FCH[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sMarimba(NF(m), off, 0.04, st*(n+0.6), bus); bgmWarm(NF(m), off, 0.03, st*(n+0.8), 0.03, bus, 0.5); }
+    sMarimba(NF(ch[[0,2,1,2][s%4]]+12), off, 0.014, 0.4, bus);
+    if(s%2===0) sOsc(NF(ch[0]-12), 'triangle', aT(off), st*1.6, 0.045, 0.01, bus);
+    if(s%T.grp===0) bgmPad(ch.map(NF), off, st*T.grp, 0.01, bus, 900);
+    sNoise(off, 0.05, s%2 ? 0.004 : 0.006, bus, 'highpass', 6500, null, 0.5);
+    if(s%8===0) sBoop(off, 0.03, bus, 140, 60, 0.14); } };
+// 동굴 — 느리게 · 오르골 선율 · 낮은 패드 · 물방울 같은 높은 음 · 드문 낮은 북
+BGM_TRACKS.cave = { step:0.4, grp:4, vol:0.76, prog:B.prog, mel:B.mel, len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sMusicBox(NF(m), off, 0.04, st*(n+1), bus); bgmWarm(NF(m-12), off, 0.02, st*(n+0.8), 0.06, bus, 0.5); }
+    if(s%7===3) sSlide(NF(ch[1]+36), NF(ch[1]+29), off+st*0.4, 0.09, 0.014, bus);
+    if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.6, 0.045, bus); bgmPad(ch.map(x=>NF(x-12)), off, st*T.grp, 0.014, bus, 550); }
+    if(s%16===0) sBoop(off, 0.035, bus, 90, 40, 0.4); } };
+// 그림자 — 프리지안(시 → 시♭) · 낮은 글로켄 · 어두운 패드 · 심장 박동
+const SCH = { Am:[57,60,64], F:[53,57,60], G:[55,58,62], E:[58,62,65], Dm:[50,53,57] };
+BGM_TRACKS.shadow = { step:0.3, grp:4, vol:0.88, prog:B.prog, mel:B.mel.map(m=>m>0 && pc(m)===11 ? m-1 : m), len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = SCH[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sGlock(NF(m), off, 0.026, bus); bgmWarm(NF(m-12), off, 0.035, st*(n+0.7), 0.04, bus, 0.5); }
+    sOsc(NF(ch[0]-24+[0,0,12,0][s%4]), 'triangle', aT(off), st*0.8, 0.045, 0.01, bus);
+    if(s%T.grp===0) bgmPad(ch.map(x=>NF(x-12)), off, st*T.grp, 0.016, bus, 600);
+    if(s%8===0) sBoop(off, 0.06, bus, 80, 38, 0.2); if(s%8===1) sBoop(off+st*0.1, 0.04, bus, 80, 38, 0.18); } };
+// 균열 — 보스 곡 선율·화음 · 글로켄 선율 · 빠른 오르골 분산화음 · 낮은 금관 · 가벼운 맥박
+BGM_TRACKS.rift = { step:0.3, grp:4, vol:0.71, prog:BB.prog, mel:BB.mel, len:BB.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); sGlock(NF(m), off, 0.03, bus); bgmWarm(NF(m), off, 0.03, st*(n+0.6), 0.03, bus, 0.5); bgmBrass(NF(m-12), off, st*(n+0.3), 0.01, bus); }
+    [0,1].forEach(h=>sMusicBox(NF(ch[(s*2+h)%3]+24), off+h*st/2, 0.01, 0.4, bus));
+    let r = ch[0]-12; if(r>45) r -= 12; if(r<36) r += 12;
+    if(s%T.grp===0){ bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 900); bgmBass(NF(r), off, st*T.grp+0.3, 0.045, bus); }
+    if(s%4===0) sBoop(off, 0.04, bus, 120, 50, 0.2);
+    if(s%2===1) sNoise(off, 0.06, 0.004, bus, 'highpass', 8000, null, 0.4); } };
+}
+
+{
+const KS = {};
+function bgmKsBuf(f, dur, soft){ const sr = audioCtx.sampleRate, key = Math.round(f*10)+':'+dur+':'+soft; const c = KS[key]; if(c && c.ctx===audioCtx) return c.buf;
+  const len = Math.floor(sr*dur), buf = audioCtx.createBuffer(1, len, sr), d = buf.getChannelData(0), N = Math.max(2, Math.round(sr/f)), ring = new Float32Array(N); let seed = 987654 + N;
+  for(let i=0;i<N;i++){ seed = (seed*16807)%2147483647; ring[i] = (seed/2147483647)*2-1; }
+  for(let p=0;p<soft;p++) for(let i=1;i<N;i++) ring[i] = 0.5*(ring[i]+ring[i-1]);
+  let mx = 0; for(let i=0;i<N;i++) mx = Math.max(mx, Math.abs(ring[i])); for(let i=0;i<N;i++) ring[i] /= (mx||1);
+  let p = 0; for(let i=0;i<len;i++){ const a = ring[p]; d[i] = a; ring[p] = 0.4985*(a + ring[(p+1)%N]); p = (p+1)%N; }
+  KS[key] = { ctx:audioCtx, buf }; return buf; };
+function bgmPluck(f, off, peak, dur, bus, soft, cut){ const t0 = aT(off), s = audioCtx.createBufferSource(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  s.buffer = bgmKsBuf(f, Math.min(3, dur+0.6), soft==null ? 1 : soft); lp.type='lowpass'; lp.frequency.value = cut||3500; g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0+0.004); g.gain.setTargetAtTime(0.0001, t0+dur, 0.18);
+  s.connect(lp); lp.connect(g); g.connect(bus); s.start(t0); s.stop(t0+dur+1); };
+function bgmStrings(freqs, off, dur, peak, bus, cut){ const t0 = aT(off); freqs.forEach(f=>[-0.007,0,0.007].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain(), l = audioCtx.createOscillator(), lg = audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.value = f*(1+dt); l.frequency.value = 4.3+dt*60; lg.gain.value = f*0.003; l.connect(lg); lg.connect(o.frequency); lp.type='lowpass'; lp.frequency.value = cut||1400; lp.Q.value = 0.4;
+  g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0+Math.min(0.35, dur*0.4)); g.gain.setValueAtTime(peak, t0+Math.max(0.36, dur-0.1)); g.gain.linearRampToValueAtTime(0.0001, t0+dur+0.45);
+  o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); l.start(t0); o.stop(t0+dur+0.5); l.stop(t0+dur+0.5); })); };
+function bgmBrass3(f, off, dur, peak, bus){ const t0 = aT(off); [-0.005,0,0.005].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.value = f*(1+dt); lp.type='lowpass'; lp.frequency.setValueAtTime(400, t0); lp.frequency.linearRampToValueAtTime(1800, t0+0.09); lp.frequency.linearRampToValueAtTime(1000, t0+dur); lp.Q.value = 0.7;
+  envSus(g, t0, peak, 0.04, dur, 0.65); o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); }); };
+// 보스(긴박하게, 레이드·월드 보스·성역) — 같은 선율·화음을 빠르게 · 한 박에 한 번 튕기는 저음 현 · 엇박 금관 화음 · 백비트 스네어 · 하이햇 · 팀파니
+{ const BB = BGM_TRACKS.boss;
+  Object.assign(BB, { step:0.25, vol:1.5, play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    let r = ch[0]-12; if(r>45) r -= 12; if(r<36) r += 12;
+    if(m>0){ const n = bgmHold(T.mel, s); bgmBrass3(NF(m), off, st*(n+0.2), 0.011, bus); bgmBrass3(NF(m-12), off, st*(n+0.2), 0.008, bus); }
+    bgmPluck(NF(r+[0,0,12,0][s%4]), off, 0.045, st*0.85, bus, 3, 1000); // 디리디리(한 박에 두 번) 거슬림 → 한 박에 한 번 · 작고 둥글게 (사용자 결정)
+    if(s%8===0 || s%8===3) ch.forEach(x=>bgmBrass3(NF(x), off, st*0.7, 0.0045, bus));
+    if(s%T.grp===0) bgmStrings(ch.map(x=>NF(x+12)), off, st*T.grp, 0.004, bus, 2200);
+    if(s%2===0) sBoop(off, 0.06, bus, 130, 45, 0.16);
+    if(s%8===4) { sNoise(off, 0.16, 0.03, bus, 'bandpass', 1800, 900, 0.7); sNoise(off, 0.08, 0.01, bus, 'highpass', 4000, null, 0.5); }
+    sNoise(off, 0.035, s%2 ? 0.004 : 0.007, bus, 'highpass', 7500, null, 0.5);
+    if(s%16===0){ sBoop(off, 0.07, bus, 100, 40, 0.4); }
+    if(s%32===28) [0,1,2,3,4,5,6,7].forEach(i=>sNoise(off+i*st/2, 0.08, 0.008+i*0.002, bus, 'bandpass', 1500, 800, 0.7)); } }); }
+}
+{
+// 출정(초원 행진) — 전투 곡 선율을 가장조로(도·파·솔 → 도♯·파♯·솔♯) · 행진 스네어 · 마림바 · 따뜻한 사인 · 가벼운 금관
+const B = BGM_TRACKS.battle, pc = m=>((m%12)+12)%12, MJ = m=>{ const c = pc(m); return (c===0 || c===5 || c===7) ? m+1 : m; };
+const ECH = { Am:[57,61,64], F:[50,54,57], G:[52,56,59], E:[52,56,59], Dm:[50,54,57] }; // 가장조 · 라장조 · 마장조
+BGM_TRACKS.expedition = { step:0.27, grp:4, vol:0.92, prog:B.prog, mel:B.mel.map(m=>m>0 ? MJ(m) : m), len:B.mel.length,
+  play(s, off, bus){ const T = this, st = T.step, ch = ECH[T.prog[(s/T.grp)|0]], m = T.mel[s];
+    if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.045, st*(n+0.7), 0.02, bus, 0.5); sMarimba(NF(m+12), off, 0.012, 0.3, bus); if(n>=2) bgmBrass(NF(m-12), off, st*(n+0.2), 0.008, bus); }
+    sOsc(NF(ch[0]-12+[0,7,12,7][s%4]), 'triangle', aT(off), st*0.85, 0.045, 0.01, bus);
+    if(s%T.grp===0) bgmPad(ch.map(NF), off, st*T.grp, 0.01, bus, 900);
+    if(s%2===1) sMarimba(NF(ch[(s>>1)%3]+12), off, 0.012, 0.3, bus);
+    if(s%4===0) sBoop(off, 0.04, bus, 140, 55, 0.14);
+    const d = s%8; if(d===2 || d===6) sNoise(off, 0.1, 0.018, bus, 'bandpass', 2000, 1000, 0.7); else if(d===7) { sNoise(off, 0.05, 0.01, bus, 'bandpass', 2200, 1400, 0.7); sNoise(off+st/2, 0.05, 0.012, bus, 'bandpass', 2200, 1400, 0.7); } } };
+}
 Object.keys(BGM_TRACKS).forEach(k=>{ const t = BGM_TRACKS[k]; if(!t.len) t.len = t.mel.length; });
 let bgmFaders = {}, bgmCur = 'home', bgmSyncT = null;
 function bgmFader(id){ const bus = bgmMakeBus(); let f = bgmFaders[id]; if(f && f.context===audioCtx) return f; f = audioCtx.createGain(); f.gain.value = id===bgmCur ? BGM_TRACKS[id].vol : 0; f.connect(bus); return (bgmFaders[id] = f); }
@@ -8520,7 +8640,10 @@ function bgmWant(){
   const sf = state.skillFight;
   if(document.getElementById('battleScreen') && sf){ const m = sf.mode;
     if(m==='trial') return 'trial';
-    if(m==='boss' || m==='raid' || m==='worldboss' || m==='sanctum' || (!m && Number.isInteger(sf.stageIdx) && isBossStage(sf.stageIdx))) return 'boss';
+    if(m==='raid' || m==='worldboss' || m==='sanctum') return 'boss';
+    if(m==='rift') return 'rift';
+    if(m==='expedition') return 'expedition';
+    if(!m || m==='boss'){ const th = battleThemeOf(sf); if(BGM_TRACKS[th]) return th; } // (v8.10.0) 탐험·챕터 보스는 배경과 같은 지형 곡
     return 'battle'; }
   if(activeTab==='trial') return 'trial';
   if(activeTab==='hearth' && typeof villageOn==='function' && villageOn()) return 'village';
@@ -11241,6 +11364,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:408, v:'8.10.0', date:'2026-10-09', secs:[
+    { t:'배경음', items:[ '탐험 챕터마다 지형에 맞는 전투 곡 — 설원 · 화산 · 숲 · 사막 · 동굴 · 그림자 (챕터 보스도 같은 곡)', '출정 · 별빛 균열 전용 곡 추가', '보스 곡을 더 긴박하게 바꾸고 레이드 · 월드 보스 · 성역에서만 나옴' ]}
+  ]},
   { build:407, v:'8.9.2', date:'2026-10-09', secs:[ // 8.9.1~8.9.2 자잘한 수정을 하나로 (사용자 결정)
     { t:'별빛 균열', items:[ '층별 추천 전투력이 실제 세기와 다르게 보이던 것 수정 — 결계석이 나오는 층은 너무 높게, 용암 군주 층은 너무 낮게 보였음 (예: 11층 30,800 → 25,100 · 12층 10,800 → 35,900)' ]},
     { t:'배경음', items:[ '홈 배경음을 원래 곡으로 되돌림', '화면을 옮기면 배경음이 바로 바뀜 (예전엔 0.6초쯤 늦게 바뀜)' ]},
@@ -17001,7 +17127,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 407, APP_VERSION = '8.9.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 408, APP_VERSION = '8.10.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
