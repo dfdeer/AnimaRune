@@ -5791,6 +5791,7 @@ const BOSS_FIRST_ITEMS_NORM = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_lege
 function bossFirstItems(i){ const ch = bossChapter(i), t = chapterTier(ch), it = (t==='h' ? BOSS_FIRST_ITEMS_HARD : t==='n' ? BOSS_FIRST_ITEMS_NORM : BOSS_FIRST_ITEMS)[chapterBase(ch)]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ i = stageEff(i); return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
+  fromRank = Math.max(fromRank, stagePaidRank(i)); // (v8.2.0) 노말로 옮긴 예전 하드 기록 — 이미 받은 등급까지는 다시 안 줌
   for(let r=fromRank+1; r<=toRank; r++){
     const tier = STAGE_GRADE_ORDER[r-1];
     if(isBossStage(i)){ const ch = bossChapter(i); addPendingReward('stage_'+i+'_bossclear_'+tier, '<img class="uic" src="assets/ui/ic_shield.webp" alt="">', chapterLabel(ch)+' 보스 '+tier+'등급', 0, 0, 'stage', {equip: chapterEff(ch)}); }
@@ -5811,7 +5812,7 @@ function resolveSkillStageBattle(i, rounds, specialMet){
   const baseReward = stageClearReward(i);
   state.essence += baseReward;
   let improved = false, reward = 0;
-  if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', stageLabel(i)+' 첫 클리어', reward, 0, 'stage'); }
+  if(!already && !stagePaidRank(i)){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', stageLabel(i)+' 첫 클리어', reward, 0, 'stage'); }
   if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
   if(specialMet) grantSpecialStageBonus(i); else if(isSpecialStage(i) && !state.specialStageBonusClaimed[i]) setTimeout(()=>toast('<img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수 규칙 조건을 충족하고 깨야 보너스'), 900); // (v223) 조건 충족 클리어만 · (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음 · (v216 버그수정) 클리어 기록(stageBest)을 남긴 뒤에 불러야 함 — 앞에서 부르면 첫 클리어 땐 '아직 안 깸'으로 보고 지나쳤음
   state.dailyStats.stagesCleared += 1; passBump('stage');
@@ -6193,7 +6194,7 @@ function resolveBossWaveVictory(sf){
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
-  if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', chapterLabel(chapterNum)+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx), bossFirstStar(stageIdx));
+  if(!already && !stagePaidRank(stageIdx)) addPendingReward('stage_'+stageIdx+'_first', '🎉', chapterLabel(chapterNum)+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx), bossFirstStar(stageIdx));
   let rework = false;
   if(already && bossReclearPending(stageIdx)){ // (v263) 기믹 개편 뒤 다시 잡음 → 첫 격파 보상 한 번 더
     delete state.bossReclear[stageIdx]; rework = true;
@@ -10769,6 +10770,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:379, v:'8.2.0', date:'2026-10-09', secs:[
+    { t:'탐험 난이도', items:[ '예전 하드 3~6 진행을 노말 3~6으로 옮김 — 하드 3~6은 노말 6 → 하드 1 → 하드 2 순서로 열림', '옮긴 자리의 깬 기록 · 등급은 그대로', '예전 하드 3~6에서 받은 첫 클리어 · 등급 보상은 하드를 다시 깰 때 또 주지 않음' ]}
+  ]},
   { build:378, v:'8.1.0', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '10월 16일 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 — 12층이 한정 성좌 층', '스칼렛 픽업 기간 규칙 「도화선」 — 픽업 공격력 +25% · 본인 +25% 대신', '2라운드마다 보스가 앞줄 빈 칸(보스 앞 위·아래)에 보스와 같은 속성 정령을 부름 · 최대 2', '부른 정령: 체력 보스 최대체력 2% · 공격력 보스 30% · 2라운드 뒤 터짐 (아군 전체 공격력 100%)', '앞줄 적이 쓰러지면 걸려 있던 화상 · 독 · 시한폭탄이 보스로 옮겨 붙음' ]},
     { t:'스킬', items:[ '스칼렛 「시한 낙인」: 이미 폭탄이 있는 적에게 또 걸면 따로 하나 더 붙음 (한 적에 최대 5개 · 각자 터짐)', '스칼렛 「불씨 전이」: 쓰러질 때 붙어 있던 폭탄이 전부 옮겨 붙음 · 옮겨 붙을 때마다 그 폭탄 피해 +20% (최대 5번 · +100%)' ]}
@@ -14886,7 +14890,6 @@ const TIER_LOWER = { n:'e', h:'n' };
 function tierChapterOpen(t, b){
   if(state.adminUnlockAll) return true;
   if(t==='e') return b===1 || chapterBossDone(tierChapter('e', b-1));
-  if(t==='h' && b>=3 && b <= (state.hardLegacyOpen||0)) return true; // (v8.0.0) 예전에 열려 있던 하드 3~6은 계속 열림
   if(!chapterBossDone(tierChapter(TIER_LOWER[t], tierReqBase(b)))) return false;
   return b===1 || chapterBossDone(tierChapter(t, b-1));
 }
@@ -15940,6 +15943,24 @@ function migrateHardV253(){
 }
 // (v8.0.0) 난이도 3단계 — 예전 노말(0~)은 이름만 이지 · 예전 하드 1·2(500~519 · 챕터 51·52)는 노말 1·2(1000~1019 · 101·102)로 옮김 · 하드 3~6(520~)은 그대로
 //  예전에 열려 있던 하드 챕터(3 이상)는 hardLegacyOpen으로 계속 열어 둠 (새 하드 1·2를 안 깨도)
+// (v8.2.0) 사용자 결정: 예전 하드 3~6 진행은 노말 3~6으로 옮기고 하드 3~6은 새 길(노말 6 → 하드 1 → 하드 2 → …)로만 열림
+//  8.0.0에서 열어 둔 hardLegacyOpen을 없앰 · 깬 기록(stageBest)·편성은 노말 같은 자리로 · 예전에 받은 하드 첫 클리어·등급 보상은 hardPaid에 남겨 다시 깰 때 또 안 줌
+function stagePaidRank(i){ const g = state.hardPaid && state.hardPaid[i]; return ({C:1,B:2,A:3,S:4})[g] || 0; }
+function migrateTierV820(){
+  const s = state; if(s.tierV820) return; s.tierV820 = true;
+  const lg = s.hardLegacyOpen||0; delete s.hardLegacyOpen;
+  if(!isPlainObj(s.stageBest)) s.stageBest = {};
+  if(lg<3 || tierChapterOpen('h', 3)) return; // 새 길로 하드 3을 이미 연 사람은 그대로
+  const lo = HARD_BASE + 2*CHAPTER_LENGTH, hi = HARD_BASE + MAX_CHAPTERS*CHAPTER_LENGTH, D = NORM_BASE - HARD_BASE, rank = {C:1,B:2,A:3,S:4};
+  const mv = n=> (Number.isInteger(n) && n>=lo && n<hi) ? n+D : n;
+  const sb = s.stageBest; s.hardPaid = isPlainObj(s.hardPaid) ? s.hardPaid : {};
+  Object.keys(sb).forEach(k=>{ const n = Number(k), m = mv(n); if(m===n || !sb[k]) return;
+    s.hardPaid[n] = sb[k]; if(!sb[m] || (rank[sb[k]]||0) > (rank[sb[m]]||0)) sb[m] = sb[k]; delete sb[k]; });
+  const fm = s.stageFormations; if(fm && typeof fm==='object') Object.keys(fm).forEach(k=>{ const n = Number(k), m = mv(n); if(m!==n && !fm[m]) fm[m] = fm[k]; });
+  if(s.skillFight && typeof s.skillFight==='object' && (!s.skillFight.mode || s.skillFight.mode==='boss')) s.skillFight.stageIdx = mv(s.skillFight.stageIdx);
+  if(s.bossFight && typeof s.bossFight==='object') s.bossFight.stageIdx = mv(s.bossFight.stageIdx);
+  if(s.openView && typeof s.openView==='object' && s.openView.t==='stage') s.openView.idx = mv(s.openView.idx);
+}
 function migrateTierV800(){
   const s = state; if(s.tierV800) return;
   const sb = s.stageBest || {}, done = i=> !!sb[i];
@@ -16018,8 +16039,9 @@ function sanitizeState(){
   const s = state, fin = v => typeof v==='number' && isFinite(v);
   migrateHardV253();
   migrateBossReworkV263();
-  migrateTierV800();
+  migrateTierV800(); migrateTierV820();
   if(!Number.isInteger(s.hardLegacyOpen) || s.hardLegacyOpen<3 || s.hardLegacyOpen>MAX_CHAPTERS) delete s.hardLegacyOpen; // (v8.0.0)
+  { const P = {}; if(isPlainObj(s.hardPaid)) Object.keys(s.hardPaid).forEach(k=>{ const n = Number(k); if(isHardStage(n) && ['C','B','A','S'].includes(s.hardPaid[k])) P[n] = s.hardPaid[k]; }); if(Object.keys(P).length) s.hardPaid = P; else delete s.hardPaid; } // (v8.2.0)
   if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
   if(!isPlainObj(s.trialTried)) s.trialTried = {}; // (v268) 시련 힌트 열림
   if(!isPlainObj(s.lvClaimed)) s.lvClaimed = {}; if(!fin(s.lvSeen)) s.lvSeen = 0; // (v269) 계정 레벨 보상
@@ -16309,7 +16331,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 378, APP_VERSION = '8.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 379, APP_VERSION = '8.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
