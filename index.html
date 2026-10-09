@@ -3111,7 +3111,7 @@ function stealEffect(C, from){
   if(!from || !from.alive || from.isBoss || from.isWard || from.isAdd || from.side===C.a.side) return false; // 보스 기믹·물체는 못 빼앗음
   const k = STEAL_ORDER.find(x=> x==='shield' ? (from.st.shield||0)>0 : !!from.st[x]); if(!k) return false;
   const v = from.st[k], vR = from.st.shieldR; delete from.st[k]; if(k==='shield') delete from.st.shieldR;
-  C.hits.push({ side:from.side, idx:from.idx, kind:'status', neg:true, text:'🫳'+STEAL_NM[k]+' 빼앗김' });
+  C.hits.push({ side:from.side, idx:from.idx, kind:'status', neg:true, text:'✋'+STEAL_NM[k]+' 빼앗김' });
   if(k!=='taunt'){ // 도발은 빼앗아 없애기만
     const to = C.side(C.a.side).sort((x,y)=>x.hp/x.maxHp - y.hp/y.maxHp)[0];
     if(to){ const st = to.st;
@@ -3139,7 +3139,7 @@ function lokiGive(sf, lk, from, old, hits){
   else if(k==='ward') st.ward = (st.ward||0) + v;
   else if(!st[k] || (st[k].v||0) <= (v.v||0)) st[k] = JSON.parse(JSON.stringify(v));
   lk.stealSpd = Math.min(aw3(lk) ? 18 : 12, (lk.stealSpd||0) + 3);
-  hits.push({ side:to.side, idx:to.idx, kind:'status', text:'🫳가로채기 · '+STEAL_NM[k] });
+  hits.push({ side:to.side, idx:to.idx, kind:'status', text:'✋가로채기 · '+STEAL_NM[k] });
 }
 function swapSlots(sf, side, i1, i2){ // 같은 편 두 칸의 정령을 맞바꿈 (빈 칸이면 옮김) · 이번 라운드 행동 순서도 같이 고침
   if(i1===i2) return; const A = unitAt(sf, side, i1), B = unitAt(sf, side, i2);
@@ -6130,7 +6130,7 @@ const BOSS_GIMMICKS = {
            {ic:'🍄', nm:'포자', when:'매 R', d:'무작위 아군 2명 독 (R마다 대상 최대체력 6%, 3R)'},
            {ic:'🌵', nm:'가시 덩굴', when:'항상', fresh:true, d:'보스를 때리면 준 피해 15%를 돌려받음 · 이로운 효과 제거로 벗기면 2라운드 뒤 다시 자람'}] },
   ruinGuardian: {
-    base: [{ic:'🪨', nm:'결계석', when:'항상', d:'결계석 2개가 살아 있으면 보스 무적 — 결계석부터 파괴'}],
+    base: [{ic:'⛰️', nm:'결계석', when:'항상', d:'결계석 2개가 살아 있으면 보스 무적 — 결계석부터 파괴'}],
     extra:[{ic:'🗿', nm:'결계 재생', when:'한 번', d:'결계석이 모두 깨지면 4라운드 뒤 하나 다시 생김'}],
     hard: [{ic:'💠', nm:'결계 공명', when:'항상', d:'결계석 체력 2배 · 결계석이 살아 있으면 매 R 보스 최대체력 2% 회복'},
            {ic:'👁️', nm:'석화의 눈', when:'2R마다', d:'체력이 가장 높은 아군 석화 (한 번 행동 불가)'},
@@ -7052,7 +7052,10 @@ function showSkillStageScreen(){
   if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; skillBooms = []; skillHolds = {}; }
   { const now = Date.now(); skillFloats = skillFloats.filter(f=> now - f.t0 < f.dur); skillBooms = skillBooms.filter(b=> now - b.t0 < BOOM_MS); }
   if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
-  if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
+  // (v8.8.3) 연쇄 폭발이 아직 터지는 중이면 승패음·승리 동작·결과 창을 모두 마지막 폭발(쓰러지는 연출 포함)이 끝난 뒤로 — 예전엔 결과 창만 미뤄서 적이 쓰러지기 전에 승리음과 환호가 먼저 나왔음
+  const resWait = (sf.result && sf.mode==='trial' && ((fx && (fx.hits||[]).some(h=>h.boom!=null || h.bd!=null)) || skillBooms.length)) ? skillFxBusyUntil - Date.now() : 0;
+  const resShown = !!sf.result && !(resWait > 0);
+  if(resShown && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
     const k = skillFightSeq+':'+(sf.mode||'stage')+':'+sf.stageIdx+':'+(sf.wave||0)+':'+sf.round+':'+(sf.actSeq||0)+':'+!!sf.result.win;
     if(k!==skillResSfxKey){ skillResSfxKey = k; sfx(sf.result.win ? 'win' : (sf.mode==='worldboss' ? 'claim' : 'lose')); }
   }
@@ -7147,7 +7150,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-special"><span class="sp-badge"><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수</span><b>'+pr.name+'</b><span class="sp-mine">'+(best>1.0001 ? '우리 팀 최대 ×'+(Math.round(best*100)/100) : (worst<0.9999 ? '우리 팀 ×'+(Math.round(worst*100)/100)+' 있음' : '보너스 없음'))+'</span></div>'; } // (v185) 규칙 이름 + 우리 팀이 받는 배율
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
-  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+(sf.result && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
+  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+(resShown && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
     + '<div class="bs-logtop"><div class="bs-log">'+logText((sf.log||[]).slice(-1)[0]||'', !!sf.mirrored)+'</div></div>'
     + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
@@ -7161,7 +7164,7 @@ function showSkillStageScreen(){
   if(sf.mode==='raid') html += raidSurrenderBannerHtml(sf);
   html += '<div class="bs-panel">';
   if(sf.result){
-    html += '<div class="bs-wait">전투 종료</div>';
+    html += '<div class="bs-wait">'+(resShown ? '전투 종료' : '💥 연쇄 폭발…')+'</div>';
   }else if(curUnit){
     const sp = SPIRITS[curUnit.key], kit = kitOf(curUnit);
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
@@ -7200,7 +7203,7 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  const boomWait = (sf.result && sf.mode==='trial' && skillBooms.length) ? skillFxBusyUntil - Date.now() : 0; // (build 393) 연쇄 폭발이 끝난 뒤에 결과 창
+  const boomWait = resWait; // (build 393) 연쇄 폭발이 끝난 뒤에 결과 창
   if(boomWait > 0){ clearTimeout(skillResWaitT); skillResWaitT = setTimeout(()=>{ skillResWaitT = null; if(state.skillFight && state.skillFight.result) showSkillStageScreen(); }, boomWait + 30); }
   if(sf.result && !(boomWait > 0)) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='sanctum' ? sanctumResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
@@ -11129,6 +11132,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:404, v:'8.8.3', date:'2026-10-09', secs:[
+    { t:'시련의 전당', items:[ '퍼즐 시련 — 연쇄 폭발로 이길 때 적이 다 쓰러진 뒤에 승리 효과음·결과 창이 나옴 (예전엔 쓰러지기 전에 나옴)', '「망자의 덩굴」 등 일부 기기에서 안 보이던 아이콘을 바꿈' ]},
     { t:'앱 설치 안내', items:[ '브라우저로 접속하면 앱 설치(홈 화면에 추가) 안내 창 — 기기마다 맞는 방법으로 안내', '「다시 보지 않기」를 누르면 그 기기에서는 더 안 뜸 · ☰ → 설정에서 다시 켤 수 있음' ]},
     { t:'픽업 소환', items:[ '결과 화면에 성좌 승급을 따로 표시 (짝 신화가 나와 성좌로 오를 때)', '이번 소환으로 받은 기억 조각 합계를 결과 화면에 표시 (고른 정령 조각 + 중복 조각)' ]}
   ]},
@@ -13607,7 +13611,7 @@ const SANCTUM_REF_STAGE = ()=> HARD_BASE + 4*CHAPTER_LENGTH + CHAPTER_LENGTH-1; 
 const SANCTUM_BOSSES = [
   { id:'janus',  name:'야누스',   sub:'두 얼굴의 수호자', el:'light', icon:'🎭', hp:1.0, atk:1.0, gi:'gm_sc_phase', gm:'얼굴 바뀜', d:'체력이 절반 아래로 내려간 다음 라운드에 그림자 얼굴로 바뀜 — 속성 그림자 · 스킬 2개가 바뀌고 공격력 +20% · 걸린 해로운 효과를 전부 털어 냄' },
   { id:'twins',  name:'카스토르·폴룩스', sub:'쌍둥이 수호자', el:'fire', icon:'♊', hp:0.6, atk:0.75, gi:'gm_sc_twins', gm:'쌍둥이 부활', d:'보스 둘 · 한쪽이 쓰러지면 남은 쪽 공격력 +40%, 2라운드 뒤 쓰러진 쪽을 체력 50%로 되살림 — 둘을 비슷하게 깎아 함께 쓰러뜨리기' },
-  { id:'echo',   name:'에코',     sub:'거울의 수호자', el:'light', icon:'🪞', hp:0.9, atk:0.9, gi:'gm_sc_mirror', gm:'복제', d:'전투 시작에 우리 팀에서 전투력이 가장 높은 정령을 복제해 앞줄에 세움 (체력 1.5배) · 복제가 살아 있으면 보스 받는 피해 −40%' },
+  { id:'echo',   name:'에코',     sub:'거울의 수호자', el:'light', icon:'💠', hp:0.9, atk:0.9, gi:'gm_sc_mirror', gm:'복제', d:'전투 시작에 우리 팀에서 전투력이 가장 높은 정령을 복제해 앞줄에 세움 (체력 1.5배) · 복제가 살아 있으면 보스 받는 피해 −40%' },
   { id:'atlas',  name:'아틀라스', sub:'무너지는 하늘', el:'wood', icon:'⛰️', hp:1.1, atk:1.0, gi:'gm_sc_collapse', gm:'붕괴 표식', d:'2라운드마다 공격력이 가장 높은 아군에 붕괴 표식 → 다음 라운드 시작에 최대체력 60% 피해 · 표식 받은 정령이 그 전에 보스를 때리면 표식이 보스에게 넘어가 보스가 최대체력 8% 피해' },
   { id:'prism',  name:'프리즘',   sub:'일곱 빛', el:'light', icon:'🔺', hp:1.0, atk:0.95, gi:'gm_sc_prism', gm:'약점 순환', d:'라운드마다 약점 속성이 바뀜 (다음 약점 미리 표시) — 약점 속성 공격은 2배, 나머지는 절반' },
   { id:'legion', name:'레기온',   sub:'군단의 왕', el:'dark', icon:'💀', hp:0.9, atk:0.9, gi:'gm_sc_legion', gm:'군단', d:'라운드마다 졸개 2마리를 불러냄 (최대 4) · 졸개가 2마리 이상이면 보스 받는 피해 −50% · 졸개는 3라운드 뒤 자폭 (아군 전체 피해)' }
@@ -13622,8 +13626,8 @@ const SANCTUM_KITS = {
   sboss_pollux: { s1:{ name:'물살 창', icon:'💧', cd:3, kind:'harm', desc:()=>'대상에게 공격력 170% · 둔화 (속도 −15, 2R)', run:C=>{ C.hit(C.t, 1.7); C.neg(C.t, st=>{ st.slow = {v:15, r:2}; }, '🐌둔화'); } },
                   s2:{ name:'조류', icon:'🌊', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 70% · 쌍둥이에게 보호막 (쌍둥이 최대체력 10%)', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.7)); C.side(C.a.side).filter(u=>u.isBoss).forEach(u=>C.shield(u, u.maxHp*0.1)); } } },
   sboss_echo:   { s1:{ name:'반사광', icon:'✨', cd:3, kind:'harm', desc:()=>'대상에게 공격력 180%', run:C=>{ C.hit(C.t, 1.8); } },
-                  s2:{ name:'거울 파편', icon:'🪞', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%', run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
-  sboss_atlas:  { s1:{ name:'대지 강타', icon:'🪨', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%', run:C=>{ C.hit(C.t, 2.0); } },
+                  s2:{ name:'거울 파편', icon:'💠', cd:4, kind:'harm', desc:()=>'대상 편 무작위 3명에게 공격력 90%', run:C=>{ PICK_N(C, C.side(C.tSide), 3).forEach(u=>C.hit(u, 0.9)); } } },
+  sboss_atlas:  { s1:{ name:'대지 강타', icon:'⛰️', cd:3, kind:'harm', desc:()=>'대상에게 공격력 200%', run:C=>{ C.hit(C.t, 2.0); } },
                   s2:{ name:'지진', icon:'🌋', cd:4, kind:'harm', desc:()=>'대상 편 앞줄 전체에 공격력 120%', run:C=>{ FRONT_OF(C, C.tSide).forEach(u=>C.hit(u, 1.2)); } } },
   sboss_prism:  { s1:{ name:'분광', icon:'🔺', cd:3, kind:'harm', desc:()=>'대상에게 공격력 190%', run:C=>{ C.hit(C.t, 1.9); } },
                   s2:{ name:'무지개 폭발', icon:'🌈', cd:4, kind:'harm', desc:()=>'대상 편 전체에 공격력 80%', run:C=>{ C.side(C.tSide).forEach(u=>C.hit(u, 0.8)); } } },
@@ -14150,7 +14154,7 @@ const PUZZLE_TRIALS = [ // (build 396) 퍼즐 시련 10개 — 풀이 전수 확
     hint:'껍질만 미리 벗겨 두기 — 기본 공격 한 번에 한 겹. 마지막엔 쌍둥이 둘을 한 번에 때릴 수 있는 자리로',
     allies:[{key:'wood_legendary_b', idx:1},{key:'fire_legendary_a', idx:4}],
     enemies:[{key:'light_rare_b', idx:0, atk:300, hp:2, armor:2, pair:'a'},{key:'dark_rare_b', idx:1, atk:300, hp:2},{key:'light_rare_b', idx:2, atk:300, hp:2, armor:2, pair:'a'},{key:'dark_common_b', idx:4, atk:300, hp:2}] },
-  { id:'x9', icon:'🪦', nm:'망자의 덩굴', diff:5, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, maxRounds:3, noDeath:true, // 96/51568 · 역류 없으면 4 · 분열 없으면 13540
+  { id:'x9', icon:'🥀', nm:'망자의 덩굴', diff:5, reward:{essence:4000, stone:150, items:{pick_legendary:1, eq_legendary:1, engr:5}}, maxRounds:3, noDeath:true, // 96/51568 · 역류 없으면 4 · 분열 없으면 13540
     intro:'💀회복을 받으면 다치는 망자가 🌱분열까지 함. 갈라진 새끼도 망자.',
     hint:'테티스의 치유는 십자 방향도 함께 회복 — 망자에겐 범위 공격. 갈라진 새끼도 망자라 회복으로 쓰러짐',
     allies:[{key:'fire_legendary_a', idx:1},{key:'water_mythic_a', idx:4}],
