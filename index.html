@@ -8256,8 +8256,15 @@ function save(){
 let audioCtx = null, bgmGain = null, sfxGain = null;
 let bgmTimer = null, bgmStep = 0;
 // 16스텝 A-B 두 구절 + 베이스 라인(옥타브 아래)로 좀 더 풍성하게
-const BGM_MELODY = [392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523];
-const BGM_BASS    = [196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262];
+// (v8.9.0) 7.7초마다 같은 마디가 되풀이돼 곡이 끝나고 다시 시작하는 게 느껴졌음 → 원래 16박(A) · 변주(A') · 새 구절(B) · 원래(A) 64박(약 31초)으로 늘림 · 음색은 그대로
+const BGM_MELODY = [392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523,
+                    392,440,523,659, 587,523,440,392, 349,392,440,523, 587,523,440,392,
+                    440,523,587,494, 659,587,523,440, 440,523,587,659, 784,659,587,523,
+                    392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523];
+const BGM_BASS    = [196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262,
+                    196,196,262,196, 262,196,220,220, 175,175,175,175, 220,220,196,196,
+                    175,175,196,196, 165,165,220,220, 175,175,196,196, 262,262,196,196,
+                    196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262];
 function resumeAudio(){ try{ const p = audioCtx.resume(); if(p && p.catch) p.catch(()=>{}); }catch(e){} }
 function ensureAudioCtx(){
   if(audioCtx && audioCtx.state==='closed'){ audioCtx = null; bgmGain = null; sfxGain = null; } // 닫힌 컨텍스트는 다시 만듦
@@ -8321,7 +8328,8 @@ function sfxAt(delayMs, fn){
 }
 // (v2.10.0) 새 소리 — 효과음은 마림바·오르골·글로켄·물방울 같은 귀여운 악기, 배경음은 같은 멜로디를 차분한 편곡(E안)으로
 // 배경음은 효과음 악기(마림바·오르골·글로켄)를 쓰지 않아서 둘이 겹쳐도 섞이지 않음
-function envG(g, t0, peak, atk, dur){ g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
+function envG(g, t0, peak, atk, dur){ g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); // (v8.9.0) 시작 전 기본값(1)이 한 샘플 새어 '틱' 하고 튀던 것 막음 (하이햇 같은 잡음에서 측정됨)
+ g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t0+atk); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
 function sOsc(f, type, t0, dur, peak, atk, bus){ const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = f; envG(g, t0, peak, atk, dur); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); return o; }
 let aBase = null; // (v2.10.2) 배경음 예약 중엔 기준 시각을 고정 — 음마다 시계를 다시 읽으면 박 간격이 들쭉날쭉했음
 const aT = off=> (aBase!==null ? aBase : audioCtx.currentTime) + (off||0);
@@ -8418,7 +8426,7 @@ function battleSfxFor(sf, fx){
 }
 // 배경음 (E안: 차분한 편곡) — 멜로디 사인(천천히 스며듦) · 길게 이어지는 베이스 · 낮고 어두운 화음 패드 · 한 박에 한 번 작은 삼각파 · 여덟 박에 한 번 은은한 킥 · 2.8초 울림
 const BGM_STEP = 0.48;
-const BGM_CH = { C:[262,330,392], Am:[220,262,330], F:[175,220,262], G:[196,247,294] }, BGM_PROG = ['C','C','C','Am','F','F','Am','G'];
+const BGM_CH = { C:[262,330,392], Am:[220,262,330], F:[175,220,262], G:[196,247,294], Em:[165,196,247] }, BGM_PROG = ['C','C','C','Am','F','F','Am','G', 'C','C','C','Am','F','F','Am','G', 'F','G','Em','Am','F','G','C','C', 'C','C','C','Am','F','F','Am','G'];
 let bgmBus = null, bgmNextAt = 0;
 function bgmMakeBus(){
   if(bgmBus && bgmBus.context===audioCtx) return bgmBus;
@@ -8429,20 +8437,101 @@ function bgmMakeBus(){
   bus.connect(comp); bus.connect(conv); conv.connect(wet); wet.connect(comp); comp.connect(bgmGain);
   return (bgmBus = bus);
 }
-function bgmWarm(f, off, peak, dur, atk, bus){ const t0 = aT(off), o = sOsc(f,'sine',t0,dur,peak,atk,bus), l = audioCtx.createOscillator(), lg = audioCtx.createGain(); l.frequency.value = 5; lg.gain.value = f*0.004; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0+dur+0.05); sOsc(f*2,'sine',t0,dur*0.6,peak*0.12,atk,bus); }
-function bgmPad(freqs, off, dur, peak, bus){ const t0 = aT(off);
+// (v8.9.0) 새 곡용 — 반쯤 머물렀다가 사그라드는 음 모양 (홈 곡은 원래 모양 그대로: 머물게 하면 분위기가 달라짐 · 사용자 결정)
+function envSus(g, t0, peak, atk, dur, sus){ const p = Math.max(0.0002, peak); g.gain.value = 0.0001; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(p, t0+atk); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, p*sus), t0+atk+(dur-atk)*0.6); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur); }
+function bgmWarm(f, off, peak, dur, atk, bus, sus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(), l = audioCtx.createOscillator(), lg = audioCtx.createGain();
+  o.type = 'sine'; o.frequency.value = f; if(sus) envSus(g, t0, peak, atk, dur, sus); else envG(g, t0, peak, atk, dur); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05);
+  l.frequency.value = 5; lg.gain.value = f*0.004; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0+dur+0.05); sOsc(f*2,'sine',t0,dur*0.6,peak*0.12,atk,bus); }
+function bgmPad(freqs, off, dur, peak, bus, cut){ const t0 = aT(off);
   freqs.forEach(f=>[0.997,1.003].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
-    o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.value = 600; lp.Q.value = 0.3;
+    o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.value = cut||600; lp.Q.value = 0.3;
     g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0+0.18); g.gain.setValueAtTime(peak, t0+dur-0.15); g.gain.linearRampToValueAtTime(0.0001, t0+dur+0.25);
     o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.3); })); }
-function bgmNote(step, off){
-  const bus = bgmMakeBus(), m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
+function bgmNote(step, off, bus){
+  bus = bus || bgmMakeBus(); const m = BGM_MELODY[step], b = BGM_BASS[step], chord = BGM_CH[BGM_PROG[step>>1]];
   bgmWarm(m, off, 0.065, BGM_STEP*1.7, 0.07, bus); // (v2.10.2) 다음 음과 살짝 겹치게 길게
   if(step%2===0) sOsc(b, 'sine', aT(off), BGM_STEP*2.5, 0.05, 0.08, bus);
   if(step%2===0) bgmPad(chord.map(f=>f*0.5).concat([chord[0]]), off, BGM_STEP*2, 0.015, bus);
   sOsc(chord[step%3]*2, 'triangle', aT(off+0.03), BGM_STEP*1.2, 0.009, 0.01, bus);
   if(step%8===0) sBoop(off, 0.035, bus);
   if(step%4===0) bgmWarm(m*((step%8===0)?1.5:1.25), off+0.05, 0.02, BGM_STEP*2.4, 0.12, bus);
+}
+// ===================== (v8.9.0) 화면별 배경음 =====================
+// 홈(기존 곡) · 전투 · 보스 · 마을 · 시련 — vol: 곡마다 체감 크기를 맞춘 배율(고치기 전 홈 곡 크기 기준) · 같은 합성 방식(울림·압축 공유), 곡마다 따로 음량 막(fader)을 둬서 바뀔 때 0.5초 사이에 넘김
+// 곡마다 A(앞 구절) 뒤에 B(새 구절)를 붙여 한 바퀴를 25~32초로 — 짧게 되풀이되면 끝나고 다시 시작하는 게 느껴짐 · 마지막 화음은 첫 화음으로 이끄는 딸림화음
+// 멜로디 숫자는 MIDI 음 번호(60 = 가운데 도) · 0 = 쉼 · -1 = 앞 음을 이어서 끎 · 화음은 grp 박마다 하나
+const NF = m=>440*Math.pow(2, (m-69)/12);
+function bgmHold(mel, i){ let n = 1; while(n < mel.length && mel[(i+n)%mel.length]===-1) n++; return n; }
+function bgmBrass(f, off, dur, peak, bus){ const t0 = aT(off); [0.996,1.004].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  o.type='sawtooth'; o.frequency.value = f*dt; lp.type='lowpass'; lp.frequency.setValueAtTime(500, t0); lp.frequency.linearRampToValueAtTime(1300, t0+0.12); lp.frequency.linearRampToValueAtTime(800, t0+dur); lp.Q.value = 0.5;
+  envSus(g, t0, peak, 0.05, dur, 0.6); o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); }); }
+function bgmBass(f, off, dur, peak, bus){ const t0 = aT(off), o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = 'sine'; o.frequency.value = f; envSus(g, t0, peak, 0.06, dur, 0.55); o.connect(g); g.connect(bus); o.start(t0); o.stop(t0+dur+0.05); } // 길게 머무는 저음 (다음 화음까지 안 비게)
+const BC = { // 화음 (MIDI)
+  Am:[57,60,64], F:[53,57,60], G:[55,59,62], E:[52,56,59], Dm:[50,53,57], C:[48,52,55], Bb:[46,50,53], A:[45,49,52], Gm:[55,58,62], Em:[52,55,59], D:[50,54,57], B:[47,51,54], Am3:[45,48,52] };
+const BGM_TRACKS = {
+  home:{ step:BGM_STEP, len:BGM_MELODY.length, vol:1, play:(s, off, bus)=>bgmNote(s, off, bus) },
+  // 전투 — 가단조 · 빠른 8분음 베이스(근음–옥타브–5도) · 마림바 반짝임 · 킥·스네어·하이햇
+  battle:{ step:0.26, grp:4, vol:0.78,
+    prog:['Am','Am','F','G', 'Am','Am','F','E', 'F','G','Am','Am', 'Dm','E','Am','E', 'Dm','Dm','Am','Am', 'F','G','E','E'],
+    mel:[69,72,76,72, 74,72,71,69, 72,0,69,72, 71,74,79,74,  76,-1,76,74, 72,71,72,76, 77,76,74,72, 71,-1,68,71,
+         69,72,77,72, 71,74,79,77, 76,72,69,72, 76,-1,81,-1, 77,76,74,69, 68,71,76,74, 72,71,69,-1, 64,68,71,76,
+         74,-1,-1,77, 76,-1,74,-1, 72,-1,-1,76, 81,-1,-1,-1, 77,-1,76,-1, 74,-1,79,-1, 80,-1,-1,-1, 76,74,71,68],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.05, st*(n+0.8), 0.02, bus, 0.5); sOsc(NF(m), 'triangle', aT(off), st*(n*0.8+0.3), 0.012, 0.01, bus); }
+      sOsc(NF(ch[0]-12+[0,12,7,12][s%4]), 'triangle', aT(off), st*0.9, 0.05, 0.01, bus);
+      if(s%T.grp===0) bgmPad(ch.map(NF), off, st*T.grp, 0.011, bus, 800);
+      if(s%2===1) sMarimba(NF(ch[(s>>1)%3]+24), off, 0.012, 0.3, bus);
+      if(s%4===0) sBoop(off, 0.045, bus, 150, 55, 0.14);
+      if(s%8===4) sNoise(off, 0.12, 0.02, bus, 'bandpass', 1800, 900, 0.7);
+      if(s%2===1) sNoise(off, 0.04, 0.006, bus, 'highpass', 7000, null, 0.5); } },
+  // 보스 — 라단조(화성 단음계) · 낮게 울리는 금관 멜로디 · 쉬지 않는 저음 맥박 · 팀파니
+  boss:{ step:0.3, grp:4, vol:0.7,
+    prog:['Dm','Dm','Bb','A', 'Dm','Dm','Gm','A', 'Bb','C','Dm','Dm', 'Gm','A','Dm','A', 'Gm','Gm','Dm','Dm', 'Bb','A','Dm','A'],
+    mel:[74,-1,-1,69, 77,-1,76,74, 77,-1,-1,74, 73,-1,76,-1,  74,-1,-1,77, 81,-1,79,77, 79,-1,70,74, 76,-1,-1,-1,
+         74,77,82,-1, 79,-1,76,-1, 77,-1,-1,69, 74,-1,-1,-1, 70,-1,74,79, 81,-1,79,76, 77,76,74,-1, 73,-1,69,-1,
+         70,-1,-1,-1, 74,-1,70,-1, 69,-1,-1,74, 77,-1,-1,-1, 82,-1,81,77, 76,-1,73,-1, 74,-1,77,81, 81,-1,76,73],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); bgmWarm(NF(m), off, 0.045, st*(n+0.6), 0.03, bus, 0.5); bgmBrass(NF(m-12), off, st*(n+0.3), 0.012, bus); }
+      let r = ch[0]-12; if(r>45) r -= 12; if(r<36) r += 12;
+      sOsc(NF(r+[0,0,12,0][s%4]), 'triangle', aT(off), st*0.8, 0.055, 0.01, bus);
+      if(s%T.grp===0){ bgmPad(ch.map(NF), off, st*T.grp, 0.016, bus, 700); bgmBass(NF(r), off, st*T.grp+0.2, 0.04, bus); }
+      if(s%8===0) sBoop(off, 0.065, bus, 120, 45, 0.32);
+      if(s%8===6) sBoop(off, 0.04, bus, 120, 45, 0.2);
+      if(s%4===2) sNoise(off, 0.1, 0.014, bus, 'bandpass', 1500, 700, 0.8); } },
+  // 마을 — 바장조 · 오르골 멜로디 · 마림바 분산화음 · 북 없이 느긋하게
+  village:{ step:0.5, grp:4, vol:0.74,
+    prog:['F','F','C','C', 'Bb','F','C','F', 'Dm','Am','Bb','F', 'Dm','Am','Bb','C'],
+    mel:[69,72,77,-1, 76,-1,72,-1, 74,76,79,-1, 76,-1,-1,-1,  74,-1,77,74, 72,-1,69,72, 67,-1,76,74, 69,-1,65,-1,
+         74,-1,77,-1, 76,-1,72,-1, 74,72,70,-1, 69,-1,-1,-1,  69,74,77,-1, 76,-1,81,-1, 79,-1,77,74, 72,-1,67,-1],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); sMusicBox(NF(m), off, 0.05, st*(n+1.2), bus); bgmWarm(NF(m), off, 0.018, st*(n+0.8), 0.05, bus, 0.5); }
+      sMarimba(NF(ch[[0,1,2,1][s%4]]+12), off, 0.02, 0.5, bus);
+      if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.05, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.01, bus, 600); } } },
+  // 시련 — 마단조 · 드문드문 글로켄 질문과 대답 · 시계 같은 똑딱 · 생각하는 분위기
+  trial:{ step:0.45, grp:4, vol:0.78,
+    prog:['Em','C','D','Em', 'Am3','Em','C','B', 'Am3','D','G','Em', 'Am3','C','B','B'],
+    mel:[71,-1,-1,76, 79,-1,76,-1, 78,-1,74,69, 71,-1,-1,-1,  72,-1,76,81, 79,-1,-1,71, 76,-1,79,76, 75,-1,78,-1,
+         72,-1,-1,76, 78,-1,74,-1, 79,-1,83,-1, 76,-1,-1,-1,  81,-1,79,76, 79,-1,-1,72, 75,-1,78,-1, 78,-1,75,-1],
+    play(s, off, bus){ const T = this, st = T.step, ch = BC[T.prog[(s/T.grp)|0]], m = T.mel[s];
+      if(m>0){ const n = bgmHold(T.mel, s); sGlock(NF(m), off, 0.035, bus); bgmWarm(NF(m), off, 0.03, st*(n+0.6), 0.04, bus, 0.5); }
+      sMarimba(NF(s%2 ? ch[2] : ch[0]), off, s%2 ? 0.014 : 0.024, 0.45, bus);
+      sNoise(off, 0.03, s%2 ? 0.004 : 0.007, bus, 'highpass', s%2 ? 3500 : 5000, null, 0.5);
+      if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.045, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 650); } } },
+};
+Object.keys(BGM_TRACKS).forEach(k=>{ const t = BGM_TRACKS[k]; if(!t.len) t.len = t.mel.length; });
+let bgmFaders = {}, bgmCur = 'home', bgmWantPrev = 'home';
+function bgmFader(id){ const bus = bgmMakeBus(); let f = bgmFaders[id]; if(f && f.context===audioCtx) return f; f = audioCtx.createGain(); f.gain.value = id===bgmCur ? BGM_TRACKS[id].vol : 0; f.connect(bus); return (bgmFaders[id] = f); }
+function bgmTrackNote(id, step, off){ BGM_TRACKS[id].play(step, off, bgmFader(id)); }
+function bgmFadeTo(id, v, t, dur){ const g = bgmFader(id).gain; try{ g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t+dur); }catch(e){ g.value = v; } }
+function bgmWant(){
+  const sf = state.skillFight;
+  if(document.getElementById('battleScreen') && sf){ const m = sf.mode;
+    if(m==='trial') return 'trial';
+    if(m==='boss' || m==='raid' || m==='worldboss' || m==='sanctum' || (!m && Number.isInteger(sf.stageIdx) && isBossStage(sf.stageIdx))) return 'boss';
+    return 'battle'; }
+  if(activeTab==='trial') return 'trial';
+  if(activeTab==='hearth' && typeof villageOn==='function' && villageOn()) return 'village';
+  return 'home';
 }
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
@@ -8452,10 +8541,15 @@ function startBgm(){
   bgmTimer = setInterval(()=>{
     if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
+    let want = 'home'; try{ want = bgmWant(); }catch(e){}
+    if(want!==bgmCur && want===bgmWantPrev && BGM_TRACKS[want]){ // (v8.9.0) 화면이 0.2초 넘게 그대로면 곡을 바꿈 — 앞 곡은 0.5초 동안 줄이고 새 곡은 처음부터
+      bgmFadeTo(bgmCur, 0, now, 0.5); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.3; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, bgmNextAt - 0.05, 0.3); }
+    bgmWantPrev = want;
+    const tr = BGM_TRACKS[bgmCur];
     if(!bgmNextAt || bgmNextAt < now - 3) bgmNextAt = now + 0.05;
-    while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += BGM_STEP; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
+    while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += tr.step; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
     aBase = now;
-    try{ while(bgmNextAt < now + 1.5){ bgmNote(bgmStep % BGM_MELODY.length, bgmNextAt - now); bgmStep++; bgmNextAt += BGM_STEP; } } finally { aBase = null; }
+    try{ while(bgmNextAt < now + 1.5){ bgmTrackNote(bgmCur, bgmStep % tr.len, bgmNextAt - now); bgmStep++; bgmNextAt += tr.step; } } finally { aBase = null; }
   }, 200);
 }
 document.addEventListener('click', function initAudioOnce(){
@@ -11131,6 +11225,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:405, v:'8.9.0', date:'2026-10-09', secs:[
+    { t:'배경음', items:[ '화면마다 다른 배경음 — 전투 · 보스(챕터 보스·레이드·월드 보스) · 정령 마을 · 시련의 전당 곡 추가', '화면을 옮기면 곡이 자연스럽게 바뀜', '홈 배경음을 길게 늘려 같은 마디가 되풀이되는 느낌을 줄임 (음색은 그대로)', '일부 효과음이 시작할 때 튀던 소리 수정' ]}
+  ]},
   { build:404, v:'8.8.3', date:'2026-10-09', secs:[
     { t:'시련의 전당', items:[ '퍼즐 시련 — 연쇄 폭발로 이길 때 적이 다 쓰러진 뒤에 승리 효과음·결과 창이 나옴 (예전엔 쓰러지기 전에 나옴)', '「망자의 덩굴」 등 일부 기기에서 안 보이던 아이콘을 바꿈' ]},
     { t:'앱 설치 안내', items:[ '브라우저로 접속하면 앱 설치(홈 화면에 추가) 안내 창 — 기기마다 맞는 방법으로 안내', '「다시 보지 않기」를 누르면 그 기기에서는 더 안 뜸 · ☰ → 설정에서 다시 켤 수 있음' ]},
@@ -16877,7 +16974,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 404, APP_VERSION = '8.8.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 405, APP_VERSION = '8.9.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
