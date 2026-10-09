@@ -2848,7 +2848,8 @@ function killUnit(sf, u){
   if(u.line==='water_hb' && u.st.linkHost && u.st.linkHost.boost){ u.maxHp = Math.max(1, u.maxHp - u.st.linkHost.boost); } // (v343) 깊은 강 해제
   u.st = {};
   if(u.isAdd){ u.hidden = true; delete u.fuse; raidOnAddDeath(sf, u); } // (v260) 용암 정령은 쓰러지면 사라짐 · (v272) 레이드 기둥·씨앗
-  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); }); } // (v343) 스칼렛 불씨 전이
+  if(bomb){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.st.bomb).forEach(x=>{ x.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
+    if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx)){ const b = (sf.enemyUnits||[]).find(x=>x.isBoss && x.alive && !x.st.bomb); if(b){ b.st.bomb = { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx }; (sf._rv = sf._rv || []).push({ side:b.side, idx:b.idx, kind:'status', text:'💣옮겨 붙음' }); } } } // (v343) 스칼렛 불씨 전이 · (v8.1.0) 도화선: 앞줄이면 보스로도
   if(u.isBoss){ delete u.cast; (sf.enemyUnits||[]).forEach(x=>{ if(x.isAdd && x.alive){ x.alive = false; x.hp = 0; x.hidden = true; x.st = {}; } }); (sf.myUnits||[]).forEach(m=>{ if(m.st && m.st.jail) delete m.st.jail; }); return; } // (v260 버그수정) 보스는 정령 패시브(화염-a 부활)를 쓰지 않음 — 용암군주·겁화룡이 체력 30%로 되살아나던 문제
   // 화염-a 레전더리↑: 자기 부활(신화는 부활하며 폭발)
   if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed){
@@ -5153,6 +5154,7 @@ function roundStartEffects(sf){
   if(sf.mode==='raid') applyRaidGimmicks(sf);
   if(sf.mode==='sanctum') applySanctumGimmick(sf); // (v344) 성역
   if(sf.duo) applyRiftDuo(sf); // (v344) 균열 연계 층
+  if(sf.riftRule==='fuse') fuseRound(sf); // (v8.1.0) 균열 도화선
   runeRoundStart(sf);
   const hits = [];
   const all = [...sf.myUnits, ...sf.enemyUnits];
@@ -10751,6 +10753,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:378, v:'8.1.0', date:'2026-10-09', secs:[
+    { t:'별빛 균열', items:[ '10월 16일 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 — 12층이 한정 성좌 층', '스칼렛 픽업 기간 규칙 「도화선」 — 픽업 공격력 +25% · 본인 +25% 대신', '2라운드마다 보스가 앞줄 빈 칸(보스 앞 위·아래)에 보스와 같은 속성 정령을 부름 · 최대 2', '부른 정령: 체력 보스 최대체력 2% · 공격력 보스 30% · 2라운드 뒤 터짐 (아군 전체 공격력 100%)', '앞줄 적이 쓰러지면 붙어 있던 시한폭탄은 보스로 옮겨 붙음' ]}
+  ]},
   { build:377, v:'8.0.0', date:'2026-10-09', secs:[
     { t:'탐험 난이도 3단계', items:[ '탐험 난이도가 이지 · 노말 · 하드 세 단계로 — 지도 위 탭 세 칸', '예전 노말 → 이지: 적은 그대로 · 챕터 보스는 기본 기믹만 (눈보라 · 분화 · 가시 껍질 · 결계 재생 · 심연 응시 · 심연 파동 · 그림자 파동 없음)', '새 노말: 이지 챕터 5 보스를 깨면 열림 · 챕터 보스는 기본 + 추가 기믹', '하드: 노말 챕터 5 보스를 깨면 열림 · 하드 전용 기믹 · 하드 6은 노말 6 보스도', '노말 챕터 제목에 NORMAL 표시' ]},
     { t:'노말 · 하드 챕터 정리', items:[ '예전 하드 1·2 → 노말 1·2 (깬 기록 · 받은 보상 그대로 옮김)', '노말 1 → 하드 6 세기를 새로 정리 — 앞 챕터보다 쉬운 곳 없이 이어지게', '노말 보스 공격 배율 2.29 · 1.7 · 2.69 · 2.22 · 3.09 · 2.49 / 체력 배율 20 · 20 · 25 · 28 · 25 · 40', '하드 보스 공격 배율 2.64 · 1.61 · 2.16 · 2.7 · 2.34 · 2.15 / 체력 배율 45 · 22 · 65 · 60 · 60 · 40', '하드 5 보스 공격 8.64 → 2.34 · 체력 357.5 → 60 / 하드 6 보스 공격 8.64 → 2.15 · 체력 357.5 → 40', '일반 스테이지 적 세기 — 노말 1 시작 1,046 → 하드 6 끝 11,000', '이미 열려 있던 하드 챕터는 계속 열림' ]},
@@ -12023,7 +12028,7 @@ const MODE_HELP_NM = { rift:'별빛 균열', dungeon:'요일 던전', trial:'시
 function modeHelpHtml(k){
   const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
   if(k==='rift'){ const sh = [...new Set(RIFT_STAR_SHARD)];
-    return sec(RIFT_NAME) + li([RIFT_FLOORS.length+'층 · 픽업 기간이 바뀔 때마다 층과 보스가 새로 짜이고 별은 처음부터', '홀수 층은 첫 번째 픽업 정령, 짝수 층은 두 번째 픽업 정령에 맞춘 보스 — 그 픽업이 유리한 속성 · 받아치기 좋은 기믹', (RIFT_TIERS.findIndex(t=>t.h)+1)+'층부터 하드 세기', '온라인일 때만 도전'])
+    return sec(RIFT_NAME) + li([RIFT_FLOORS.length+'층 · 픽업 기간이 바뀔 때마다 층과 보스가 새로 짜이고 별은 처음부터', (riftPuSlot(2, riftPeriod())===0 ? '짝수 층은 첫 번째 픽업(한정 성좌), 홀수 층은 두 번째 픽업' : '홀수 층은 첫 번째 픽업, 짝수 층은 두 번째 픽업')+' 정령에 맞춘 보스 — 그 픽업이 유리한 속성 · 받아치기 좋은 기믹', (RIFT_TIERS.findIndex(t=>t.h)+1)+'층부터 하드 세기', '온라인일 때만 도전'])
       + sec('별') + li(['층마다 별 3개: 클리어 · '+RIFT_ROUND_GOAL+'라운드 안 처치 · 전원 생존', '처음 얻은 별마다 별빛 조각 — 1~4층 '+sh[0]+' · 5~8층 '+sh[1]+' · 9~12층 '+sh[2]])
       + (riftRuleOf() ? sec(RIFT_RULE_INFO[riftRuleOf()].ic+' 기간 규칙 「'+RIFT_RULE_INFO[riftRuleOf()].nm+'」') + li(RIFT_RULE_INFO[riftRuleOf()].d) // (v7.4.0)
         : sec('픽업 보너스') + li(['픽업 속성 정령 공격력 +'+Math.round(RIFT_BLESS*100)+'% · 픽업 정령 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더'])); }
@@ -12915,7 +12920,7 @@ function showDungeonPrep(el, n, keep){
 }
 // ===================== (v317) 별빛 균열 — 탐험 추가 콘텐츠 · 반달(픽업과 같은 기간)마다 초기화 · 12층 · 층마다 별 3개 · 별마다 별빛 조각 =====================
 // (v317) 균열은 그 기간 픽업 신화 둘을 위한 무대 — 픽업이 바뀌면 층 구성도 새로 짜이고 별도 초기화 (사용자 결정)
-// 홀수 층은 첫 번째 픽업, 짝수 층은 두 번째 픽업에 맞춤: 보스 속성 = 그 픽업이 유리한 속성 · 기믹 = 그 픽업 스킬·패시브가 받아치기 좋은 것(RIFT_FIT)
+// (v8.1.0~) 짝수 층은 첫 번째 픽업(한정 성좌), 홀수 층은 두 번째 픽업에 맞춤 (그 전 기간은 반대 · riftPuSlot): 보스 속성 = 그 픽업이 유리한 속성 · 기믹 = 그 픽업 스킬·패시브가 받아치기 좋은 것(RIFT_FIT)
 // 세기는 층마다 고정(RIFT_TIERS: 하드 여부 h · 기준 보스 ref · 배율 k) — 9층 = 하드 1 · 10층 = 하드 3 · 11층 = 하드 5 · 12층 = 하드 5 ×1.25 (사용자 결정)
 const RIFT_NAME = '별빛 균열';
 const RIFT_TIERS = [
@@ -12953,23 +12958,44 @@ const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나�
 const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
 function riftBossStage(hard, c){ return (hard ? HARD_BASE : 0) + c*CHAPTER_LENGTH + CHAPTER_LENGTH-1; }
 function riftPeriod(){ return pickupPeriod(); }
+const RIFT_SWAP_FROM = PICKUP_P0 + 1; // (v8.1.0) 이 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 (사용자 결정 — 12층이 한정 성좌 층)
+function riftPuSlot(f, per){ return (per && per.idx >= RIFT_SWAP_FROM) ? f%2 : (f-1)%2; }
 function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 · 이유
   per = per || riftPeriod();
   { const D = RIFT_DUO_ON && f>=RIFT_DUO_FROM ? riftDuoOf(per) : null; if(D) return { pu:per.pair[0], duo:D, gim:riftDuoArt(D), gi:-1, el:D.el, why:'', hard:!!RIFT_TIERS[f-1].h }; } // (v344) 연계 층
-  const pu = per.pair[(f-1)%2], fits = RIFT_FIT[pu], fit = fits[Math.floor((f-1)/2) % fits.length];
+  const pu = per.pair[riftPuSlot(f, per)], fits = RIFT_FIT[pu], fit = fits[Math.floor((f-1)/2) % fits.length];
   return { pu, gim: fit.g, gi: CHAPTER_BOSS_GIMMICK.indexOf(fit.g), el: RIFT_BEATS[SPIRITS[pu].element], why: fit.why, hard: !!RIFT_TIERS[f-1].h };
 }
 // (v344) 연계 층 — 한정 성좌 픽업 기간엔 11·12층이 그 기간 짝(한정 + 짝 신화)이 같이 풀어야 쉬운 기믹 (사용자 결정) · 그 전 기간은 예전처럼 번갈아
 // 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
 const RIFT_DUO_ON = false, RIFT_DUO_FROM = 11; // (v7.3.0) 연계 층·공명 뺌 (사용자 결정 10/8 — 기간 규칙으로 바꿀 예정) · 연계 층 코드는 끄기만 함(진행 중이던 전투 세이브용)
 // (v7.4.0) 균열 기간 규칙 — 한정 성좌 픽업마다 모든 층에 하나 (사용자 결정: 숫자 버프 대신 싸우는 방식이 바뀌게) · 규칙이 있는 기간엔 픽업 공격력 +25%·+25% 대신 규칙만
-const RIFT_RULES = { water_mythic_hb:'flow' };
-const RIFT_RULE_INFO = { flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
+const RIFT_RULES = { water_mythic_hb:'flow', fire_mythic_sc:'fuse' }; // (v8.1.0) 스칼렛 「도화선」
+const RIFT_RULE_INFO = { fuse:{ nm:'도화선', ic:'🧨', d:['2라운드마다 보스가 앞줄 빈 칸에 정령을 부름 (보스와 같은 속성 · 최대 2)', '부른 정령은 2라운드 뒤 터짐 — 아군 전체 피해', '앞줄 적이 쓰러지면 붙어 있던 폭탄은 보스로 옮겨 붙음'] }, flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
 const FLOW_WATER_ATK = 0.10, FLOW_SHARE = 0.10, FLOW_DR = 0.30, FLOW_FILL = 0.2, FLOW_WAVE = 0.6; // 물살 기준 = 물받이 최대체력 20% (자동 전투 측정: 50%면 10층 10라운드 동안 한 번도 안 터짐)
 function riftRuleOf(per){ per = per || riftPeriod(); return (per && per.pair && RIFT_RULES[per.pair[0]]) || null; }
 function flowHost(sf){ if(!sf || sf.riftRule!=='flow' || !sf.myUnits) return null; const my = sf.myUnits.filter(u=>u.alive && !u.inert); // 물받이: 물길 잇기 중인 하백 → 아니면 최대체력이 가장 높은 아군
   return my.find(u=>u.line==='water_hb' && u.st.linkHost) || my.reduce((b,u)=> !b || u.maxHp>b.maxHp ? u : b, null); }
 function flowFill(sf, host, amt){ if(!(amt>0) || !host || !host.alive) return; sf.flow = sf.flow || { g:0 }; sf.flow.g += amt; if(sf.flow.g >= host.maxHp*FLOW_FILL) flowWave(sf, host); }
+// (v8.1.0) 균열 기간 규칙 「도화선」 (스칼렛 · 사용자 결정 2026-10-09) — 보스가 앞줄에 터지는 정령을 부름 · 앞줄 적이 쓰러지면 폭탄은 보스로
+const FUSE = { every:2, max:2, timer:2, hp:0.02, atk:0.3, boom:1.0 }; // 몇 라운드마다 · 최대 수 · 터지기까지 · 체력(보스 최대체력 대비) · 공격력(보스 대비) · 터질 때 배율
+const FUSE_NM = { fire:'불씨 정령', wood:'새싹 정령', water:'물방울 정령', light:'빛망울 정령', dark:'어둠 정령' };
+function fuseSummon(sf){
+  const boss = (sf.enemyUnits||[]).find(u=>u.isBoss && u.alive); if(!boss) return;
+  sf.enemyUnits = sf.enemyUnits.filter(u=>!(u.fuseAdd && !u.alive)); // 쓰러진 정령 자리 비움
+  let n = aliveUnits(sf.enemyUnits).filter(u=>u.fuseAdd).length, made = 0;
+  const el = sf.riftEl || boss.element;
+  for(const pos of [1,0]){ if(n>=FUSE.max) break; if(sf.enemyUnits.some(u=>u.idx===pos)) continue; // 보스전 화면은 보스 앞 위·아래 두 칸(0·1)만 따로 그림
+    const a = makeBattleUnit('enemy', pos, el+'_epic_a', 1, 1); a.atk = Math.max(1, Math.round(boss.atk*FUSE.atk)); a.maxHp = Math.max(1, Math.round(boss.maxHp*FUSE.hp)); a.hp = a.maxHp;
+    a.isAdd = true; a.fuseAdd = true; a.fuse = FUSE.timer; a.dispName = FUSE_NM[el] || '정령'; sf.enemyUnits.push(a); n++; made++; }
+  if(made) pushLog(sf, '🧨 <b>도화선</b> — '+(FUSE_NM[el]||'정령')+' '+made+'마리 · '+FUSE.timer+'라운드 뒤 터짐');
+}
+function fuseRound(sf){ // 라운드 시작: 타이머 → 터짐 → 부르기
+  sf.enemyUnits.filter(u=>u.fuseAdd && u.alive).forEach(a=>{ a.fuse = (a.fuse||1) - 1; if(a.fuse>0) return;
+    aliveUnits(sf.myUnits).forEach(m=>dealDamage(sf, a, m, FUSE.boom, { noCrit:true, noCounter:true }));
+    a.alive = false; a.hp = 0; a.hidden = true; a.st = {}; delete a.fuse; pushLog(sf, '💥 '+a.dispName+' 터짐!'); });
+  if((sf.round-1) % FUSE.every === 0) fuseSummon(sf);
+}
 function flowWave(sf, host){ // 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해 (큰 피해는 하백 범람에서)
   sf.flow.g = 0; sf.flow.n = (sf.flow.n||0) + 1; if(sf.log) sf.log.push('🌊 물살 — 적 전체가 다음 라운드 맨 뒤로');
   aliveUnits(sf.enemyUnits).forEach(e=>{ if(e.inert) return; e.st.bind = true; const r = dealDamage(sf, host, e, FLOW_WAVE, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:e.side, idx:e.idx, kind:'dmg', amount:r.total, src:'🌊물살' }); });
@@ -13067,7 +13093,8 @@ function buildRiftFight(f){
   const bf = riftMakeEnemies(f, per), my = buildBossWaveFight(riftBossStage(P.hard, Math.max(0, P.gi)), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
   const rule = riftRuleOf(per); // (v7.4.0) 기간 규칙이 있으면 픽업 공격력 버프 대신 규칙
   my.myUnits.forEach(u=>{ const m = rule ? (rule==='flow' && u.element==='water' ? 1+FLOW_WATER_ATK : 1) : (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
-  const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, riftRule: rule, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'].concat(rule ? [RIFT_RULE_INFO[rule].ic+' 기간 규칙 「'+RIFT_RULE_INFO[rule].nm+'」'] : []) });
+  const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, riftRule: rule, riftEl: P.el, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'].concat(rule ? [RIFT_RULE_INFO[rule].ic+' 기간 규칙 「'+RIFT_RULE_INFO[rule].nm+'」'] : []) });
+  if(rule==='fuse') fuseSummon(sf); // (v8.1.0) 도화선 — 1라운드에도 부름
   sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
   return sf;
 }
@@ -16265,7 +16292,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 377, APP_VERSION = '8.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 378, APP_VERSION = '8.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
