@@ -5875,7 +5875,7 @@ const LINE_KITS = {
     s2:{ name:'별똥별', icon:artIc('sk_light_as_2'), cd:4, kind:'harm', tag:()=> '표식 있는 적 전체',
       desc:()=>'표식이 있는 모든 적에게 표식 하나마다 공격력 '+pctTxt(STAR_FALL)+'<br>표식은 안 없어짐',
       run:C=>{ const L = C.side(C.tSide).filter(u=>u.st.star && u.st.star.n>0); if(!L.length){ C.hits.push({ side:C.t.side, idx:C.t.idx, kind:'status', text:'✴️표식 없음' }); return; }
-        L.forEach(u=>{ C.hit(u, u.st.star.n*STAR_FALL); if(awUq(C.a) && u.alive && u.st.star) u.st.star.n = Math.min(3, u.st.star.n+1); }); } } }, // (v8.7.0) 별이 지는 밤
+        L.forEach(u=>{ C.hit(u, u.st.star.n*STAR_FALL, { starfall:true }); if(awUq(C.a) && u.alive && u.st.star) u.st.star.n = Math.min(3, u.st.star.n+1); }); } } }, // (v8.7.0) 별이 지는 밤
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:(g,u)=>'빼앗은 효과 하나마다 속도 +3 (최대 +'+awUp(12, aw3(u)?6:0)+')<br>가로채기: 적의 이로운 효과가 지워지거나 빼앗길 때 1개를 더 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (다른 아군이 지운 것 포함 · 라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
@@ -6699,7 +6699,9 @@ function statusList(u){
   if(s.reflect) o.push({i:stIc('reflect'), t:'반사', d:'받은 피해 일부 되돌림'+r(s.reflect), good:true});
   if(s.ward) o.push({i:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">', t:'보호', d:'해로운 효과 1회 막음', good:true});
   if(s.burn) o.push({i:stIc('burn'), n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
-  if(s.poison) o.push({i:stIc('poison'), t:'독', d:'라운드마다 자신 최대체력 비례 피해 · 치유 감소'+r(s.poison), good:false});
+  if(s.poison) o.push({i:stIc('poison'), n:(s.poison.n>1 ? s.poison.n : 0), t:'독'+(s.poison.n>1 ? ' '+s.poison.n+'중첩' : ''), d:'라운드마다 자신 최대체력 비례 피해'+(s.poison.n>1 ? ' (중첩마다)' : '')+' · 치유 감소'+(s.poison.sl ? ' · 속도 −5' : '')+r(s.poison), good:false}); // (v8.7.0) 아난시 중첩·끈적한 실
+  if(s.rwd) o.push({i:stIc('guardup'), t:'기억의 조각', d:'받는 피해 −'+Math.round(s.rwd.v*100)+'%'+r(s.rwd), good:true}); // (v8.7.0)
+  if(u.hunt>0) o.push({i:stIc('buff'), n:u.hunt, t:'태양 사냥 +'+(u.hunt*10)+'%', d:'공격력 +'+(u.hunt*10)+'% (전투 끝까지)', good:true}); // (v8.7.0) 스콜
   if(s.freeze) o.push({i:stIc('freeze'), t:'빙결', d:'다음 행동 1회 못 함', good:false});
   if(s.slow) o.push({i:stIc('slow'), t:'둔화', d:'속도 −'+s.slow.v+r(s.slow), good:false});
   if(s.chill) o.push({i:'<img class="uic" src="assets/ui/gm_chill.webp" alt="" draggable="false">', t:'한기', d:'속도 −'+s.chill+' (때릴 때마다 쌓임 · 풀 때까지)', good:false}); // (v6.1.0) 둔화(정해진 값·2라운드)와 달라 얼음 결정으로 따로
@@ -6734,7 +6736,7 @@ function statusList(u){
   if(u && u.line==='water_hb' && u.tide>0) o.push({i:stIc('linkhost'), t:'수위', d:fmtHp(u.tide)+' — 범람 때 적마다 '+Math.round(HB_TIDE_MUL*100)+'%만큼 추가 피해', good:true});
   if(s.veil) o.push({i:stIc('veil'), t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
   if(s.club) o.push({i:stIc('club'), t:'방망이', d:'다음 공격 공격력 +40%', good:true});
-  const left = { '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0, '별 표식':0, '노출':s.exposed&&s.exposed.r, '불꽃 제물':s.pyre&&s.pyre.r, '타오르는 혼':s.soul&&s.soul.r, '시간의 고리':s.loop&&s.loop.r, '물길 연결':s.link&&s.link.r, '물길 잇기':s.linkHost&&s.linkHost.r, '도깨비불':s.veil&&s.veil.r };
+  const left = { '기억의 조각':s.rwd&&s.rwd.r, '보호막':s.shieldR, '굳건함':s.guard&&s.guard.r, '가속':s.haste&&s.haste.r, '강화':s.buff&&s.buff.r, '재생':s.regen&&s.regen.r, '반사':s.reflect&&s.reflect.r, '독':s.poison&&s.poison.r, '둔화':s.slow&&s.slow.r, '속박':s.web&&s.web.r, '봉인':s.seal&&s.seal.r, '저주':s.curse&&s.curse.r, '도발':(typeof s.taunt==='number')?s.taunt:0, '별 표식':0, '노출':s.exposed&&s.exposed.r, '불꽃 제물':s.pyre&&s.pyre.r, '타오르는 혼':s.soul&&s.soul.r, '시간의 고리':s.loop&&s.loop.r, '물길 연결':s.link&&s.link.r, '물길 잇기':s.linkHost&&s.linkHost.r, '도깨비불':s.veil&&s.veil.r };
   o.forEach(x=>{ const v = left[x.t]; if(v>0 && v<99) x.left = v; });
   return o;
 }
@@ -11039,6 +11041,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:389, v:'8.7.1', date:'2026-10-09', secs:[
+    { t:'전투 화면', items:[ '상태 효과에 독 중첩 수 · 끈적한 실(속도 −5) · 기억의 조각 · 태양 사냥 표시' ]}
+  ]},
   { build:388, v:'8.7.0', date:'2026-10-09', secs:[
     { t:'각성 개편', items:[ '예전 각성 5단계 계열 효과가 1단계로 (연쇄 돌진 · 짙은 불씨 · 넘치는 샘 · 혹한 · 깊은 뿌리 · 맹독 · 정화의 빛 · 긴 별빛 · 탐욕 · 깊은 저주 · 한정 성좌 8종도 같음)', '3단계에 계열 효과 하나 더 (계열 전체)', '5단계: 신화·성좌는 고유 패시브 (일반~레전더리는 지금처럼 스킬 한 등급 위)', '성좌 승급: 5단계 고유 패시브가 더 세짐', '이미 각성한 정령도 바로 적용' ]},
     { t:'각성 3단계', items:[ '스콜 계열 「사냥감」: 불꽃 돌진이 체력 50% 이하 대상에게 피해 +25%', '금오 계열 「남는 불씨」: 발화가 화상을 줄이지 않음', '테티스 계열 「물의 장막」: 치유의 물결로 넘친 회복량만큼 보호막 (대상 최대체력 20%까지)', '요르문간드 계열 「얼음 비늘」: 빙결된 적에게 주는 피해 +20%', '현무 계열 「이끼 갑옷」: 뿌리 내리기 때 자신 최대체력 10% 회복', '아난시 계열 「끈적한 실」: 독 걸린 적 속도 −5', '광명 계열 「빛의 잔향」: 보호막이 깨지면 그 아군 최대체력 5% 회복', '백록 계열 「천상의 사슴」: 전투 시작 때 아군 전체 별빛 가속 (1라운드)', '불사귀 계열 「피의 갈증」: 체력 50% 이하면 생명 흡수 흡혈량 +20%p', '칠흑조 계열 「불길한 깃」: 저주 받는 피해 +5%p', '스칼렛 「짧은 심지」: 시한폭탄이 터지면 화상 1중첩', '수르트 「끝의 불길」: 종말의 불길 추가 피해 (잃은 체력의) 30% → 50%', '므네모시네 「기억의 조각」: 되감기 대상 받는 피해 −15% (1라운드)', '하백 「깊은 수원」: 연결 중 라운드 시작마다 하백 최대체력 4% 회복', '산군 「바위 가죽」: 반격 자세 중 받는 피해 −15%', '아스트라이아 「밝은 별」: 표식 피해 +50%', '로키 「빠른 손」: 날쌘 손 최대 속도 +12 → +18', '도깨비 「짙은 그림자」: 둔갑으로 끌어낸 적 받는 피해 +20% → +30%' ]},
@@ -16653,7 +16658,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 388, APP_VERSION = '8.7.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 389, APP_VERSION = '8.7.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
