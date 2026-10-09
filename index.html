@@ -781,7 +781,7 @@
   .bu-icon{position:relative; z-index:1; font-size:calc(var(--sz) * var(--k,1) * .8); line-height:1; filter:drop-shadow(0 2px 2px #0005); transform-origin:50% 100%; animation:buBreath 3s ease-in-out infinite; animation-delay:var(--bd,0s); will-change:transform;} /* (v327) 가만히 있을 때 숨 쉬듯 — 지연은 전체 시계 기준이라 다시 그려도 이어짐 */
   @keyframes buBreath{0%,100%{transform:scale(1,1);} 50%{transform:scale(1.012,1.035);}} /* (v5.2.0) scale 속성 → transform — 아이폰에서도 그림을 다시 그리지 않고 움직이게 */
   .bu-dead .bu-icon, .st-frz .bu-icon{animation:none;}
-  .bu.bu-dying .bu-icon{animation:buDie .9s ease-in .2s both; transform-origin:50% 50%;} /* 맞는 연출(fx-hit)보다 우선 · 맞은 뒤 쓰러짐 */ .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .7s ease-out .55s both; pointer-events:none; z-index:5;}
+  .bu.bu-dying .bu-icon{animation:buDie .9s ease-in .2s both; animation-delay:calc(.2s + var(--dieD, 0ms)); transform-origin:50% 50%;} /* 맞는 연출(fx-hit)보다 우선 · 맞은 뒤 쓰러짐 */ .bu-dying .bu-body::after{content:''; position:absolute; left:15%; right:15%; bottom:5%; height:40%; border-radius:50%; background:radial-gradient(circle, #ffffffcc, #c8c0ff66 45%, transparent 70%); animation:buPuff .7s ease-out .55s both; pointer-events:none; z-index:5;}
   @keyframes buDie{0%{transform:none; opacity:1; filter:brightness(2.2) drop-shadow(0 0 10px #fff);} 30%{transform:translateY(-12%) rotate(-10deg) scale(1.05); opacity:1; filter:brightness(1.6) drop-shadow(0 0 6px #fff);} 70%{transform:rotate(70deg) scale(.85); opacity:.6; filter:grayscale(.6);} 100%{transform:rotate(80deg) scale(.8); opacity:.35; filter:grayscale(1);}}
   @keyframes buPuff{0%{transform:scale(.4); opacity:0;} 30%{opacity:1;} 100%{transform:scale(1.6); opacity:0;}}
   .bu-shadow{position:absolute; left:50%; bottom:-4px; width:calc(var(--sz) * var(--k,1) * .95); height:calc(var(--sz) * var(--k,1) * .24); transform:translateX(-50%); border-radius:50%;
@@ -833,6 +833,18 @@
   .bu-float{position:absolute; left:50%; top:-10px; z-index:6; font-size:17px; font-weight:900; color:#e54e4e; white-space:nowrap; pointer-events:none;
     text-shadow:0 1px 0 #fff,0 0 4px #fff,0 0 4px #fff; animation:fxFloat 1.1s ease-out .15s both;}
   .bu-float.crit{font-size:21px; color:#ff9d57;}
+  .bu-float.boom{font-size:19px; color:#ff7a1f;} /* (build 393) 시련 폭발 피해 */
+  .fx-boom{position:absolute; left:50%; top:calc(var(--sz,72px) * .42); width:0; height:0; z-index:7; pointer-events:none;}
+  .fx-boom i, .fx-boom b{position:absolute; left:0; top:0; border-radius:50%; transform:translate(-50%,-50%) scale(0); animation:boomRing .7s ease-out both; animation-delay:inherit;}
+  .fx-boom i:nth-child(1){width:calc(var(--sz,72px) * 1.5); height:calc(var(--sz,72px) * 1.5); background:radial-gradient(circle, #fff6c8 0%, #ffb53a 35%, #ff5a1f 60%, #ff3a1f00 72%);}
+  .fx-boom i:nth-child(2){width:calc(var(--sz,72px) * 1.9); height:calc(var(--sz,72px) * 1.9); border:4px solid #ffcf5a; animation-name:boomWave; animation-duration:.8s;}
+  .fx-boom i:nth-child(3){width:calc(var(--sz,72px) * .9); height:calc(var(--sz,72px) * .9); background:#fff; animation-name:boomFlash; animation-duration:.35s;}
+  .fx-boom b{width:auto; height:auto; border-radius:0; font-size:calc(var(--sz,72px) * .55); line-height:1; animation-name:boomEmoji; animation-duration:.9s;}
+  .fx-boom.hit i:nth-child(1){width:calc(var(--sz,72px) * .8); height:calc(var(--sz,72px) * .8);} .fx-boom.hit i:nth-child(2), .fx-boom.hit b{display:none;}
+  @keyframes boomRing{0%{transform:translate(-50%,-50%) scale(.1); opacity:1;} 60%{opacity:.9;} 100%{transform:translate(-50%,-50%) scale(1); opacity:0;}}
+  @keyframes boomWave{0%{transform:translate(-50%,-50%) scale(.2); opacity:1;} 100%{transform:translate(-50%,-50%) scale(1.15); opacity:0;}}
+  @keyframes boomFlash{0%{transform:translate(-50%,-50%) scale(.3); opacity:.95;} 100%{transform:translate(-50%,-50%) scale(1.2); opacity:0;}}
+  @keyframes boomEmoji{0%{transform:translate(-50%,-50%) scale(.2) rotate(-20deg); opacity:0;} 25%{transform:translate(-50%,-60%) scale(1.25) rotate(8deg); opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(0); opacity:0;}}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
   .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v295) 부활 */
@@ -2115,6 +2127,9 @@ let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skill
 // (v295) 피해·회복 숫자는 따로 기억해서 화면을 다시 그려도 이어서 보이게 — 예전엔 다음 행동·라운드 넘김·대기 타이머로 다시 그리면 뜨다 말고 사라졌음
 const SKILL_FLOAT_MS = 1900, SKILL_FLOAT_REVIVE_MS = 2600, SKILL_FLOAT_MAX = 3;
 let skillFloats = [];
+let skillBooms = [], skillResWaitT = null; // (build 393) 시련 폭발 그림 — 다시 그려도 이어서 보이게 (u, t0, kind 'src' 터짐 | 'hit' 맞음)
+const BOOM_STEP_MS = 520, BOOM_HIT_MS = 160, BOOM_MS = 1200; // 연쇄 한 단계 간격 · 터진 뒤 옆 칸이 맞기까지 · 그림 길이
+function boomDelay(k){ return Math.round((k||0)*BOOM_STEP_MS*skillSpeedMult()); }
 let skillRenderedFx = 0;
 let skillSimDepth = 0; // (v294) 복사본으로 미리 계산하는 중 — 이때는 히든 업적·보스전 기록을 건드리지 않음
 let skillFxBusyUntil = 0, skillBusyTimer = null; // (v174) 연출 중에는 다음 차례로 안 넘어가고 입력도 막음
@@ -6630,7 +6645,7 @@ function keepPanelHeight(root){ const pn = root.querySelector('.bs-panel'); if(!
   pn.style.minHeight = ''; const h = Math.ceil(pn.getBoundingClientRect().height); if(pn.querySelector('.bs-acts') && h > bsPanelH) bsPanelH = h; if(bsPanelH) pn.style.minHeight = bsPanelH+'px'; }
 function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 처음 보인 시각부터 흐른 시간으로 맞춤 · 새로 걸린 효과만 등장 연출부터
   const now = document.timeline ? document.timeline.currentTime : performance.now(), next = new Map();
-  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; } }); if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
+  if(prevDeadUnits){ let nd = 0; root.querySelectorAll('.bu.bu-dead[data-u]').forEach(b=>{ if(!prevDeadUnits.has(b.dataset.u)){ b.classList.add('bu-dying'); nd++; const bm = skillBooms.find(x=>x.u===b.dataset.u && x.kind==='src'); if(bm) b.style.setProperty('--dieD', Math.max(0, bm.t0 - Date.now())+'ms'); } }); /* (build 393) 연쇄로 터진 정령은 제 차례에 쓰러짐 */ if(nd && battleSfxOn()) sfxAt(Math.round(380*skillSpeedMult()), ()=>sfx('bFall')); } // (v327) 방금 쓰러진 정령만 쓰러지는 연출 · (v332) 쓰러지는 소리
   eachStatusFx(root, (key, el)=>{ if(statusFxSeen.has(key)){ const t0 = statusFxSeen.get(key), t = Math.max(0, now - t0); fxAnims(el).forEach(a=>{ try{ a.currentTime = t; }catch(e){} }); next.set(key, t0); } else { const c = Math.max(0, ...fxAnims(el).map(a=>a.currentTime||0)); next.set(key, now - c); } });
   statusFxSeen = next; }
 function mountBattleScreen(){
@@ -6848,6 +6863,7 @@ function battleUnitHtml(u, opts){
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+stTintHtml(u)+'</div>'
     + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + ((u.st.slow || u.st.chill) && !u.st.freeze ? SLOW_ART : '') + (u.st.burn>0 ? BURN_ART : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i><i></i><i></i><i></i></div>' : '') + ((u.st.bind || u.st.web) ? '<div class="fx-web">'+WEB_ART+'</div>' : '') + (u.st.curse ? CURSE_ART : '') + (u.st.seal ? (u.st.curse ? SEAL_ART.replace('fx-seal','fx-seal r') : SEAL_ART) : '') + (u.st.jail ? JAIL_ART : '') + (raidGazed(state.skillFight, u) ? GAZE_ART : '') + buffFxHtml(u.st) : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
+    + (opts.booms||[]).map(b=>'<div class="fx-boom '+b.kind+'" style="animation-delay:'+(-b.age)+'ms;"><i></i><i></i><i></i><b>💥</b></div>').join('') // (build 393) 시련 폭발
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
@@ -7013,11 +7029,13 @@ function showSkillStageScreen(){
   const curUnit = (side==='me' && !raidWaiting) ? unitAt(sf, 'me', cur.idx) : null;
   if(curUnit) ensureSkillSelection(sf, curUnit);
   const fx = (sf.lastFx && sf.lastFx.id !== skillRenderedFx) ? sf.lastFx : null;
-  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult()); if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); battleSfxFor(sf, fx); } // (v295) 부활음 · (v332) 전투 효과음
+  if(fx){ skillRenderedFx = fx.id; skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + SKILL_FX_WAIT_MS*skillSpeedMult());
+    { const ks = (fx.hits||[]).filter(h=>h.boom!=null).map(h=>h.boom); if(ks.length){ const mx = Math.max(...ks); skillFxBusyUntil = Math.max(skillFxBusyUntil, Date.now() + boomDelay(mx) + (BOOM_HIT_MS + 700)*skillSpeedMult()); // (build 393) 연쇄 폭발이 다 터질 때까지 다음 차례 기다림
+      if(battleSfxOn()) [...new Set(ks)].forEach(k=>sfxAt(boomDelay(k), ()=>sfx('bBoom'))); } } if((fx.hits||[]).some(h=>h.rv)) sfxAt(250, ()=>sfx('enhance')); battleSfxFor(sf, fx); } // (v295) 부활음 · (v332) 전투 효과음
   const fxBusy = Date.now() < skillFxBusyUntil;
   const intro = skillIntroPending; skillIntroPending = false;
-  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; }
-  { const now = Date.now(); skillFloats = skillFloats.filter(f=> now - f.t0 < f.dur); }
+  if(intro){ skillIntroUntil = Date.now() + 1300; skillFightSeq++; skillFloats = []; skillBooms = []; }
+  { const now = Date.now(); skillFloats = skillFloats.filter(f=> now - f.t0 < f.dur); skillBooms = skillBooms.filter(b=> now - b.t0 < BOOM_MS); }
   if(intro && !sf.result) sfx('battleStart'); // (v294) 모든 전투(스테이지·보스·레이드·결투·출정·던전·시련·월드보스) 시작음
   if(sf.result && !sf.result.waveClear){ // (v294) 승리·패배음 — 예전엔 탑에서만 났음 · 같은 결과 화면을 다시 그릴 때는 한 번만
     const k = skillFightSeq+':'+(sf.mode||'stage')+':'+sf.stageIdx+':'+(sf.wave||0)+':'+sf.round+':'+(sf.actSeq||0)+':'+!!sf.result.win;
@@ -7028,7 +7046,9 @@ function showSkillStageScreen(){
     if(!fx || !fx.hits) return null;
     const out = { cls:'', text:'', textCls:'' };
     if(fx.kind==='act' && fx.actorSide===u.side && fx.actorIdx===u.idx && fx.hits.some(h=>h.kind==='dmg' && h.side!==u.side)) out.cls = u.side==='me' ? 'fx-lunge-up' : 'fx-lunge-down';
-    const mine = fx.hits.filter(h=>h.side===u.side && h.idx===u.idx);
+    const mine0 = fx.hits.filter(h=>h.side===u.side && h.idx===u.idx);
+    const mine = mine0.filter(h=>h.bd==null && h.boom==null); // (build 393) 시련 폭발(연쇄)은 아래 boomFx로 시차를 두고 따로
+    out.booms = mine0.filter(h=>h.boom!=null).map(h=>h.boom); out.bhits = mine0.filter(h=>h.bd!=null).map(h=>({ k:h.bd, amount:h.amount }));
     const dmg = mine.filter(h=>h.kind==='dmg').reduce((x,h)=>x+h.amount, 0);
     const heal = mine.filter(h=>h.kind==='heal').reduce((x,h)=>x+h.amount, 0);
     const sh = mine.filter(h=>h.kind==='shield').reduce((x,h)=>x+h.amount, 0);
@@ -7047,7 +7067,7 @@ function showSkillStageScreen(){
     // (v268) 피해·회복과 함께 걸린 상태 효과(화상·빙결·저주 등)도 숫자 아래에 — 예전엔 숫자만 보여서 무엇이 걸렸는지 몰랐음
     const extra = mine.filter(h=>h.kind==='status' && h!==(!(dmg || (d0 && d0.amount===0)) && !heal && !sh ? stat : null)).map(h=>h.text);
     if(extra.length && out.text) out.text += '<em class="fx-st">'+[...new Set(extra)].slice(0,3).join(' ')+'</em>';
-    return (out.cls || out.text) ? out : null;
+    return (out.cls || out.text || out.booms.length || out.bhits.length) ? out : null;
   };
   let areaSet = null, areaK = '';
   if(curUnit && skillSel.act && skillAvailable(curUnit, skillSel.act) && skillTargetable(sf, skillSel.side, skillSel.idx)){
@@ -7060,6 +7080,9 @@ function showSkillStageScreen(){
     const o = { size, fx: fxFor(u), cur: !!(cur && cur.side===s && cur.idx===idx), area: (areaSet && areaSet.has(s+':'+idx)) ? areaK : '' };
     { const uk = s+':'+idx, now = Date.now();
       if(o.fx && o.fx.text){ skillFloats.push({ u:uk, text:o.fx.text, cls:o.fx.textCls||'', t0:now, dur: o.fx.textCls==='revive' ? SKILL_FLOAT_REVIVE_MS : SKILL_FLOAT_MS }); o.fx = Object.assign({}, o.fx, { text:'' }); }
+      if(o.fx){ (o.fx.bhits||[]).forEach(b=>skillFloats.push({ u:uk, text:'-'+b.amount+'<small>💥폭발</small>', cls:'boom', t0:now + boomDelay(b.k) + BOOM_HIT_MS*skillSpeedMult(), dur:SKILL_FLOAT_MS }));
+        (o.fx.booms||[]).forEach(k=>skillBooms.push({ u:uk, t0:now + boomDelay(k), kind:'src' })); (o.fx.bhits||[]).forEach(b=>skillBooms.push({ u:uk, t0:now + boomDelay(b.k) + BOOM_HIT_MS*skillSpeedMult(), kind:'hit' })); }
+      o.booms = skillBooms.filter(b=>b.u===uk).map(b=>Object.assign({ age: now - b.t0 }, b));
       o.floats = skillFloats.filter(f=>f.u===uk).slice(-SKILL_FLOAT_MAX).map(f=>Object.assign({ age: now - f.t0 }, f)); }
     if(curUnit && u.alive){
       if(skillTargetable(sf, s, idx)){
@@ -7158,7 +7181,9 @@ function showSkillStageScreen(){
     html += '<div class="bs-wait">라운드 '+(sf.round+1)+' 준비 중…</div>';
   }
   html += '</div>';
-  if(sf.result) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='sanctum' ? sanctumResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
+  const boomWait = (sf.result && sf.mode==='trial' && skillBooms.length) ? skillFxBusyUntil - Date.now() : 0; // (build 393) 연쇄 폭발이 끝난 뒤에 결과 창
+  if(boomWait > 0){ clearTimeout(skillResWaitT); skillResWaitT = setTimeout(()=>{ skillResWaitT = null; if(state.skillFight && state.skillFight.result) showSkillStageScreen(); }, boomWait + 30); }
+  if(sf.result && !(boomWait > 0)) html += (sf.result.waveClear ? bossWaveClearOverlayHtml(sf) : (sf.mode==='expedition' ? expeditionResultOverlayHtml(sf) : sf.mode==='dungeon' ? dungeonResultOverlayHtml(sf) : sf.mode==='rift' ? riftResultOverlayHtml(sf) : sf.mode==='sanctum' ? sanctumResultOverlayHtml(sf) : sf.mode==='trial' ? trialResultOverlayHtml(sf) : sf.mode==='worldboss' ? wbResultOverlayHtml(sf) : (sf.mode==='raid' ? raidResultOverlayHtml(sf) : (sf.mode==='duel' ? duelResultOverlayHtml(sf) : skillResultOverlayHtml(sf)))));
   root.className = intro ? 'bs-intro' : '';
   captureStatusFx(root);
   setHtmlKeepImgs(root, html);
@@ -8299,7 +8324,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
-  bSk_fire:0.55, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
+  bSk_fire:0.55, bBoom:0.5, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
 function sfxBusFor(name){ const g = SFX_GAIN[name]; if(!g || g===1) return sfxGain; let n = sfxNameNode[name]; if(!n || n.context!==audioCtx){ n = audioCtx.createGain(); n.gain.value = g; n.connect(sfxGain); sfxNameNode[name] = n; } return n; }
@@ -8336,6 +8361,7 @@ function sfxPlay(name){
   else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
   else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
   else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
+  else if(name==='bBoom'){ sNoise(0,0.5,0.55,B,'lowpass',2200,180,0.8,0.005); sBoop(0,0.4,B,120,38,0.18); } // (build 393) 시련 폭발
   else if(name==='bSk_fire'){ sNoise(0,0.28,0.35,B,'lowpass',400,3000,1,0.05); sBoop(0.18,0.25,B,160,70,0.1); }
   else if(name==='bSk_water'){ sSlide(300,800,0,0.06,0.2,B); sSlide(450,1100,0.07,0.06,0.18,B); sSlide(350,950,0.14,0.07,0.16,B); }
   else if(name==='bSk_wood'){ sNoise(0,0.2,0.2,B,'bandpass',1200,2400,2,0.03); sWood(520,0.14,0.35,B); }
@@ -14068,10 +14094,11 @@ function trialUnitRules(u){ const o = []; if(u.trBlast) o.push('blast'); if(u.tr
 function trialNeighbors(idx){ const w = 3, c = idx%w, o = []; if(c>0) o.push(idx-1); if(c<w-1) o.push(idx+1); o.push(idx<w ? idx+w : idx-w); return o; }
 function trialBlast(sf, u){
   const pct = u.trBlast; if(!(pct>0)) return;
-  sf._rv = sf._rv || []; sf._rv.push({ side:u.side, idx:u.idx, kind:'status', text:'💥폭발' }); pushLog(sf, '💥 '+logUnitName(u.side, u)+' 폭발');
+  const k = u._bk || 0; delete u._bk; // (build 393) 연쇄 단계 — 연출이 단계마다 시차를 두고 터짐 (boom: 터진 칸 · bd: 폭발에 맞은 칸)
+  sf._rv = sf._rv || []; sf._rv.push({ side:u.side, idx:u.idx, kind:'status', text:'💥폭발', boom:k }); pushLog(sf, '💥 '+logUnitName(u.side, u)+' 폭발'+(k ? ' (연쇄 '+(k+1)+')' : ''));
   trialNeighbors(u.idx).forEach(i=>{ const x = unitAt(sf, u.side, i); if(!x || !x.alive) return;
-    const v = Math.round(x.maxHp*pct); x.hp = Math.max(0, x.hp - v); hidHurt(sf, x, v); sf._rv.push({ side:x.side, idx:x.idx, kind:'dmg', amount:v, dot:true, src:'💥폭발' });
-    if(x.hp<=0) killUnit(sf, x); });
+    const v = Math.round(x.maxHp*pct); x.hp = Math.max(0, x.hp - v); hidHurt(sf, x, v); sf._rv.push({ side:x.side, idx:x.idx, kind:'dmg', amount:v, dot:true, src:'💥폭발', bd:k });
+    if(x.hp<=0){ if(x.trBlast) x._bk = k+1; killUnit(sf, x); } });
 }
 function trialRoundStart(sf){
   const g = {}; (sf.enemyUnits||[]).concat(sf.myUnits||[]).forEach(u=>{ if(u.trPair) (g[u.side+u.trPair] = g[u.side+u.trPair] || []).push(u); });
@@ -16742,7 +16769,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 392, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 393, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
