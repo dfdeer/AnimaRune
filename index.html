@@ -11364,6 +11364,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:409, v:'8.11.0', date:'2026-10-09', secs:[
+    { t:'별빛 균열', items:[ '용암 군주가 나오는 층 세기 상향 — 체력·공격력 배율 ×0.3 → ×1 (예: 이번 기간 4층 · 12층)', '추천 전투력을 실제로 나오는 적 능력치 기준으로 되돌림 (11층 25,100 → 30,800 · 3층 2,400 → 2,900 · 7층 6,400 → 7,800)' ]}
+  ]},
   { build:408, v:'8.10.0', date:'2026-10-09', secs:[
     { t:'배경음', items:[ '탐험 챕터마다 지형에 맞는 전투 곡 — 설원 · 화산 · 숲 · 사막 · 동굴 · 그림자 (챕터 보스도 같은 곡)', '출정 · 별빛 균열 전용 곡 추가', '보스 곡을 더 긴박하게 바꾸고 레이드 · 월드 보스 · 성역에서만 나옴' ]}
   ]},
@@ -13639,7 +13642,7 @@ const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 �
   dark_mythic_dk:  [{g:'ruinGuardian', why:'결계석 뒤에 숨은 적을 앞으로 끌어냄'}, {g:'lavaLord', why:'뒤쪽 용암 정령을 끌어내 자폭 전에 처리'}]
 };
 const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
-const RIFT_GIM_K = { lavaLord: 0.3 }; // (v317) 시뮬: 같은 세기로 맞추면 용암군주만 훨씬 어려움(화상 장판·용암 정령·격노) — 다른 보스와 비슷하게 낮춤
+const RIFT_GIM_K = {}; // (v317) 용암군주 0.3으로 낮췄던 것 → (v8.11.0) 1배로 되돌림 (사용자 결정: 깎지 않음 — 균열에선 보스가 픽업이 이기는 속성이라 화염 흡수를 거의 안 받아서 너무 쉬웠음)
 const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
 const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
 const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
@@ -13814,13 +13817,7 @@ function riftResultOverlayHtml(sf){
 function leaveRiftFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'rift'; save(); render(); }
 function riftRetry(f){ if(!pickupOnline()){ toast('온라인 연결 후 도전'); leaveRiftFight(); return; } state.skillFight = buildRiftFight(f); skillSel.key = null; skillIntroPending = true; save(); showSkillStageScreen(); }
 function riftFloorInfo(f){ const P = riftPlan(f); return Object.assign(P, { info: P.duo ? { name:P.duo.name, icon:'🌌', desc:'<b>'+P.duo.gm+'</b> — '+P.duo.d } : BOSS_GIMMICK_INFO[P.gim] }); }
-// (v8.9.2) 추천 전투력은 그 층이 맞춘 기준 보스(RIFT_TIERS ref × k) 세기로 — 예전엔 실제로 나오는 적을 그대로 더해서
-//  결계석 두 개가 같이 나오는 층(3·7·11층)은 부풀고, 기믹이 세서 능력치를 깎은 용암 군주 층(4·12층, RIFT_GIM_K 0.3)은 너무 낮게 보였음 (11층 3만 → 12층 1만)
-function riftRecCP(f){
-  if(riftPlan(f).duo){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); }
-  const T = RIFT_TIERS[f-1], si = riftBossStage(T.ref[0]==='h', T.ref[1]), ref = buildBossWaveFight(si, BOSS_WAVE_COUNT, [], {}, true);
-  return recCP(teamCP(ref.enemyUnits.filter(u=>u.isBoss)) * T.k * (REC_CP_MULT.boss || 1) * bossRecAdj(si));
-}
+function riftRecCP(f){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); } // (v8.11.0) 실제 적 능력치 합으로 되돌림 (사용자 결정 — v8.9.2의 기준 보스 계산은 뺌)
 function rfRuleBar(box){ const w = box && box.parentElement, sb = w && w.querySelector('.rf-sb'); if(!sb) return; const ch = box.clientHeight, sh = box.scrollHeight;
   if(sh <= ch + 1){ sb.classList.remove('on'); return; } sb.classList.add('on'); const H = sb.clientHeight, th = Math.max(14, H*ch/sh), t = (H - th)*box.scrollTop/(sh - ch); sb.firstChild.style.cssText = 'top:'+t+'px; height:'+th+'px;'; }
 function showRiftPrep(f, keep){
@@ -17127,7 +17124,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 408, APP_VERSION = '8.10.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 409, APP_VERSION = '8.11.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
