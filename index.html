@@ -525,7 +525,7 @@
   .mem-ic img{position:absolute !important; inset:auto !important; left:14% !important; top:14% !important; width:72% !important; height:72% !important; max-width:none !important; margin:0 !important; object-fit:cover; clip-path:polygon(50% 4.77%, 97.55% 39.32%, 79.39% 95.22%, 20.61% 95.22%, 2.45% 39.32%);} /* (v7.0.0) 어디서든 틀 안에 — 다른 곳의 img 크기 규칙에 안 끌려가게 */
   .mem-ic:not(:has(img))::after{content:'✦'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.62em; color:#fff3c4; text-shadow:0 0 4px #ffd166;}
   .mt-mem{font-size:10px; color:#e8d4ff; margin-top:2px; white-space:nowrap;}
-  .mt-mem.ast{color:#7affc8; font-weight:900; text-shadow:0 0 6px #7affc8aa;} .mem-kind{color:#7affc8; text-shadow:0 0 8px #7affc8aa; font-size:1.15em;} .mem-kind.up{color:#ffe27a; text-shadow:0 0 8px #ffd557aa;} /* (build 400) 성좌 중복·승급 */
+  .mt-mem.ast{color:#7affc8; font-weight:900; text-shadow:0 0 6px #7affc8aa; line-height:1.25;} .mt-mem i{display:block; font-style:normal; font-size:9.5px;} /* (build 401) 두 줄 — 한 줄이면 칸 밖으로 삐져나갔음 */ .mem-kind{color:#7affc8; text-shadow:0 0 8px #7affc8aa; font-size:1.15em;} .mem-kind.up{color:#ffe27a; text-shadow:0 0 8px #ffd557aa;} /* (build 400) 성좌 중복·승급 */
   .sm-memsum, .mt-memsum{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px 8px; margin:8px auto 0; padding:6px 10px; border-radius:12px; background:#ffffff12; border:1px solid #c9a6ff55; font-size:12px; color:#e8d4ff; max-width:320px;}
   .sm-memsum > span, .mt-memsum > span{flex-basis:100%; text-align:center; font-size:11px; color:var(--sub);} .sm-memsum b, .mt-memsum b{display:inline-flex; align-items:center; gap:3px; white-space:nowrap;}
   .mt-wait .mt-memsum{display:none;}
@@ -11103,6 +11103,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:401, v:'8.8.2', date:'2026-10-09', secs:[
+    { t:'픽업 소환', items:[ '10회 결과 카드의 성좌 중복·승급 글자가 칸 밖으로 삐져나가던 문제 수정' ]}
+  ]},
   { build:400, v:'8.8.1', date:'2026-10-09', secs:[
     { t:'픽업 소환', items:[ '결과 화면에 성좌 중복·성좌 승급을 따로 표시', '이번 소환으로 받은 기억 조각 합계를 결과 화면에 표시 (고른 정령 조각 + 중복 조각)' ]}
   ]},
@@ -15718,7 +15721,7 @@ function showMultiResultModal(keys, isNewFlags, again, opts){
       + '<div class="st">'+'★'.repeat(t.stars)+'</div>'
       + '<div class="nm">'+sp.name+'</div>'
       + '<div class="rl" style="background:'+hex+';">'+RARITY_INFO[sp.rarity].name+'</div>'
-      + (memF[idx] ? '<div class="mt-mem'+((opts.memKind||[])[idx]==='dup' || (opts.memKind||[])[idx]==='up' ? ' ast' : '')+'">'+((opts.memKind||[])[idx]==='up' ? '✦승급 ' : (opts.memKind||[])[idx]==='dup' ? '✦중복 ' : '')+memIc(key)+'+'+memF[idx]+'</div>' : '')
+      + (memF[idx] ? '<div class="mt-mem'+((opts.memKind||[])[idx]==='dup' || (opts.memKind||[])[idx]==='up' ? ' ast' : '')+'">'+((opts.memKind||[])[idx]==='up' ? '<i>✦ 성좌 승급</i>' : (opts.memKind||[])[idx]==='dup' ? '<i>✦ 성좌 중복</i>' : '')+memIc(key)+'+'+memF[idx]+'</div>' : '')
       + '</div></div>';
   });
   grid += '</div>';
@@ -16856,7 +16859,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 400, APP_VERSION = '8.8.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 401, APP_VERSION = '8.8.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
