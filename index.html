@@ -7133,6 +7133,7 @@ function showSkillStageScreen(){
     + '<div class="bs-title">'+titleTxt+'</div>'
     + '<div style="display:flex; gap:4px;">'
     + (sf.mode==='trial' ? '<button id="trRuleBtn" class="bs-exit" aria-label="시련 규칙">📜 규칙</button>' : '') // (build 392) 시련 규칙 다시 보기
+    + (sf.mode==='rift' ? '<button id="rfRuleBtn" class="bs-exit" aria-label="균열 규칙">📜 규칙</button>' : '') // (v8.11.1) 균열 보스 기믹·기간 규칙 다시 보기
     + '<button id="skillSpeedBtn" class="bs-exit" style="'+(state.skillSpeed2x?'background:#ffbc5755; border-color:#ffbc57;':'')+'">'+(state.skillSpeed2x?'⏩2x':'▶1x')+'</button>'
     + '<button id="skillAutoBtn" class="bs-exit" style="'+(state.skillAuto?'background:#5cc8ff55; border-color:#5cc8ff;':'')+'">'+uiIc('auto')+''+(state.skillAuto?'ON':'OFF')+'</button>'
     + '</div></div>';
@@ -7267,6 +7268,7 @@ function showSkillStageScreen(){
   };
   if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
   if(q('trRuleBtn')) q('trRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showTrialRules(sf.trialId); });
+  if(q('rfRuleBtn')) q('rfRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showRiftRules(sf); });
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
   if(q('skillAutoBtn')) q('skillAutoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillAuto = !state.skillAuto; save(); showSkillStageScreen(); });
   if(q('waveNextBtn')) q('waveNextBtn').addEventListener('click', advanceBossWave);
@@ -11364,6 +11366,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:410, v:'8.11.1', date:'2026-10-09', secs:[
+    { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]}
+  ]},
   { build:409, v:'8.11.0', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '용암 군주가 나오는 층 세기 상향 — 체력·공격력 배율 ×0.3 → ×1 (예: 이번 기간 4층 · 12층)', '추천 전투력을 실제로 나오는 적 능력치 기준으로 되돌림 (11층 25,100 → 30,800 · 3층 2,400 → 2,900 · 7층 6,400 → 7,800)' ]}
   ]},
@@ -13800,6 +13805,15 @@ function checkRiftOutcome(sf){
   }
   if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds: sf.round }; return true; }
   return false;
+}
+function showRiftRules(sf){ // (v8.11.1) 전투 중 균열 규칙 다시 보기 — 보스 기믹 · 기간 규칙(없으면 픽업 축복) · 별 조건
+  const f = sf.riftF, fi = riftFloorInfo(f), per = riftPeriod(), rule = sf.riftRule, R = rule && RIFT_RULE_INFO[rule];
+  let h = '<div class="rf-boss2">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
+  h += R ? '<div class="rf-bless rf-rule" style="display:block; text-align:left; margin:8px 0 0; max-height:none; overflow:visible;"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div>'
+    : '<div class="rf-bless" style="display:block; text-align:center; margin:8px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
+  h += '<div style="margin-top:8px;">'+riftStarRowHtml(riftState().st[f]||0, 0)+'</div>';
+  h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">정령을 누르면 능력치·스킬 · 상태 아이콘을 누르면 효과 설명</div>';
+  openInfoOverlay(uiIc('rift')+' '+RIFT_NAME+' · '+f+'층', h);
 }
 function riftStarRowHtml(bits, add){ const s = (b, t)=>'<span class="rf-st'+(bits&b?' on':'')+(add&b?' new':'')+'">'+STAR_IC+'<small>'+t+'</small></span>';
   return '<div class="rf-stars">'+s(1,'클리어')+s(2,RIFT_ROUND_GOAL+'라운드 안')+s(4,'전원 생존')+'</div>'; }
@@ -17124,7 +17138,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 409, APP_VERSION = '8.11.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 410, APP_VERSION = '8.11.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
