@@ -8864,7 +8864,7 @@ function showEquipDismantleModal(key){
   const range = document.getElementById('dismantleRange');
   range.addEventListener('input', ()=>{ const n = parseInt(range.value); document.getElementById('dismantleN').textContent = n; document.getElementById('dismantleGain').textContent = per*n; });
   document.getElementById('dismantleCancel').addEventListener('click', ()=>showEquipDetailModal(key));
-  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else { const o = ownedEquipItems().find(x=>eqType(x)===eqType(key)); if(o) showEquipDetailModal(o); else closeModal(); } });
+  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else { const o = ownedEquipItems().find(x=>eqType(x)===eqType(key)); if(o) showEquipDetailModal(o); else eqDetailLeave(); } });
 }
 function equipElementComplete(el){ return EQUIP_SLOTS.every(sl=>RARITY_ORDER.every(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)])); }
 function equipElementCount(el){ return EQUIP_SLOTS.reduce((n,sl)=>n+RARITY_ORDER.filter(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)]).length,0); }
@@ -9961,11 +9961,22 @@ const FZ_LP_SEL = '.fz-pick[data-fz-add], .fz-slot.on[data-fz-rm], .fz-ds.on[dat
 document.addEventListener('pointerdown', e=>{ const el = e.target && e.target.closest && e.target.closest(FZ_LP_SEL); if(!el) return;
   const k = el.dataset.fzAdd || fuseSlots[+el.dataset.fzRm], eq = fuseMode==='equip'; if(!k || (eq ? !equipInfo(k) : !SPIRITS[k])) return;
   clearTimeout(fzLp.t); fzLp.fired = false; fzLp.x = e.clientX; fzLp.y = e.clientY;
-  fzLp.t = setTimeout(()=>{ fzLp.t = null; fzLp.fired = true; if(eq) showEquipDetailModal(k); else { manageReturnFn = null; showManageModal(k); } }, 500); });
+  fzLp.t = setTimeout(()=>{ fzLp.t = null; fzLp.fired = true; if(eq) openEquipDetail(k); else { manageReturnFn = null; showManageModal(k); } }, 500); });
 document.addEventListener('pointermove', e=>{ if(fzLp.t && (Math.abs(e.clientX-fzLp.x) > 10 || Math.abs(e.clientY-fzLp.y) > 10)){ clearTimeout(fzLp.t); fzLp.t = null; } });
 ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev, ()=>{ if(fzLp.t){ clearTimeout(fzLp.t); fzLp.t = null; } }));
 document.addEventListener('click', e=>{ if(fzLp.fired){ fzLp.fired = false; if(e.target && e.target.closest && e.target.closest('[data-fz-add], [data-fz-rm]')){ e.stopPropagation(); e.preventDefault(); } } }, true);
 document.addEventListener('contextmenu', e=>{ if(e.target && e.target.closest && e.target.closest(FZ_LP_SEL)) e.preventDefault(); });
+// (v8.9.1) 정령 정보의 장착 장비 · 장비 고르기 창의 장비를 꾹 누르면 장비 정보 — 닫으면 원래 창으로
+let eqLp = { t:null, fired:false, x:0, y:0 };
+document.addEventListener('pointerdown', e=>{ const el = e.target && e.target.closest && e.target.closest('[data-eq-lp]'); if(!el) return;
+  const k = el.dataset.eqLp, sp = el.dataset.eqSp, sl = el.dataset.eqSlot; if(!k || !equipInfo(k) || !SPIRITS[sp]) return;
+  clearTimeout(eqLp.t); eqLp.fired = false; eqLp.x = e.clientX; eqLp.y = e.clientY;
+  eqLp.t = setTimeout(()=>{ eqLp.t = null; eqLp.fired = true; if(equipOwnedCount(k)<=0) return; openEquipDetail(k, sl ? ()=>showEquipPicker(sp, sl) : ()=>showManageModal(sp)); }, 500); });
+document.addEventListener('pointermove', e=>{ if(eqLp.t && (Math.abs(e.clientX-eqLp.x) > 10 || Math.abs(e.clientY-eqLp.y) > 10)){ clearTimeout(eqLp.t); eqLp.t = null; } });
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev, ()=>{ if(eqLp.t){ clearTimeout(eqLp.t); eqLp.t = null; } }));
+document.addEventListener('pointerdown', ()=>{ eqLp.fired = false; }, true); // 새로 누르면 풀림
+document.addEventListener('click', e=>{ if(eqLp.fired){ eqLp.fired = false; e.stopPropagation(); e.preventDefault(); } }, true); // 꾹 누른 손을 뗄 때의 클릭은 새로 뜬 장비 정보 창의 버튼에 닿지 않게 통째로 버림
+document.addEventListener('contextmenu', e=>{ if(e.target && e.target.closest && e.target.closest('[data-eq-lp]')) e.preventDefault(); });
 const formCtx = (nm, reopen, allow, onSet)=>({ nm, get:()=> Array.from({length:6}, (_,i)=> state.formation[i] || null), set:keys=>{ state.formation = keys.slice(0, GRID_SLOTS); cleanupFormation(); if(onSet) onSet(); }, reopen, allow });
 // ===================== (v297) 시즌 패스 =====================
 // 일반(무료)·프리미엄 두 줄이 같은 패스 레벨로 나란히 진행. 프리미엄은 세계 룬석으로 해금 — 언제 사도 지난 레벨 보상까지 받음
@@ -10534,11 +10545,15 @@ function equipInventoryHtml(){
   }else h += '<div class="grid5">'+owned.sort(byR).map(equipSpeciesTile).join('')+'</div>';
   return h;
 }
+// (v8.9.1) 정령 정보·장비 고르기 창에서 꾹 눌러 연 장비 정보는 닫으면 그 창으로 돌아감 — 강화·부가 능력 등 안쪽 창을 오가도 유지
+let eqDetailBack = null;
+function openEquipDetail(key, back){ eqDetailBack = back || null; showEquipDetailModal(key); }
+function eqDetailLeave(){ const b = eqDetailBack; eqDetailBack = null; if(b) b(); else closeModal(); }
 function showEquipDetailModal(key){
   const i = equipInfo(key), info = RARITY_INFO[i.rarity], n = equipTypeCount(eqType(key)), used = ownedEquipItems().filter(x=>eqType(x)===eqType(key) && equipUsedCount(x)>0).length;
-  if(n<=0){ closeModal(); return; }
+  if(n<=0){ eqDetailLeave(); return; }
   const users = Object.keys(state.equipped||{}).filter(sp=>ownedCount(sp)>0 && EQUIP_SLOTS.some(sl=>state.equipped[sp][sl]===key));
-  let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
+  let html = (eqDetailBack ? '<button class="aw-back" id="eqDetBack">‹ 돌아가기</button>' : '')+'<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
     + '<h3>'+i.name+' '+eqEnhTag(key)+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
@@ -10556,12 +10571,13 @@ function showEquipDetailModal(key){
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?uiIc('unlock')+' 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+html+'</div></div>';
-  bindModalClose();
+  bindModalClose(eqDetailLeave);
+  { const bb = document.getElementById('eqDetBack'); if(bb) bb.addEventListener('click', eqDetailLeave); }
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
   { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
   { const so = document.getElementById('eqSubOpen'); if(so && (EQ_SUB_LINES[i.rarity]||0)) so.addEventListener('click', ()=>showSubModal('eq', key, ()=>showEquipDetailModal(key))); }
   { const to = document.getElementById('eqTraitOpen'); if(to) to.addEventListener('click', ()=>showEqTraitModal(key, ()=>showEquipDetailModal(key))); }
-  const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>openFuseTab('equip', key));
+  const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>{ eqDetailBack = null; openFuseTab('equip', key); });
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
   document.querySelectorAll('[data-unequip]').forEach(b=>b.addEventListener('click', ()=>{ unequipItem(b.dataset.unequip, i.slot); showEquipDetailModal(key); }));
 }
@@ -10592,11 +10608,11 @@ function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
   const items = ownedEquipItems().filter(k=>equipInfo(k).slot===slot).sort((a,b)=>equipEffect(b,spKey)-equipEffect(a,spKey));
   const bestKey = items.find(k=>equipFreeCount(k)>0 || k===cur);
-  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가</div>';
+  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가 · 꾹 누르면 장비 정보</div>';
   if(!items.length) html += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 '+si.name+' 없음 — 소환 탭 › 정령장비 소환</div>';
   html += items.map(k=>{
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
-    return '<div '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
+    return '<div data-eq-lp="'+k+'" data-eq-sp="'+spKey+'" data-eq-slot="'+slot+'" '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
       + '<div style="font-size:22px;">'+i.img+'</div>'
       + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
       + '<div style="text-align:right;"><b style="color:#ffd557;">+'+eqPct(equipEffect(k,spKey))+'%</b>'
@@ -10614,13 +10630,13 @@ function equipSlotsHtml(spKey){
   EQUIP_SLOTS.forEach(slot=>{
     const k = equippedKey(spKey, slot), si = EQUIP_SLOT_INFO[slot];
     const any = ownedEquipItems().some(x=>equipInfo(x).slot===slot);
-    h += '<div data-equip-slot="'+slot+'" style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
+    h += '<div data-equip-slot="'+slot+'" '+(k ? 'data-eq-lp="'+k+'" data-eq-sp="'+spKey+'"' : '')+' style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
       + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
-  return h + '</div>';
+  return h + '</div>' + (EQUIP_SLOTS.some(sl=>equippedKey(spKey, sl)) ? '<div class="sub" style="font-size:10px; text-align:center; margin-top:4px; opacity:.75;">장비를 꾹 누르면 장비 정보 (강화·부가 능력·잠금)</div>' : '');
 }
 function summonRateTableHtml(mode){
   const cur = mode==='equip' ? equipSummonLevel() : summonLevel();
@@ -11233,7 +11249,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:406, v:'8.9.1', date:'2026-10-09', secs:[
-    { t:'배경음', items:[ '화면을 옮기면 배경음이 바로 바뀜 (예전엔 0.6초쯤 늦게 바뀜)' ]}
+    { t:'배경음', items:[ '화면을 옮기면 배경음이 바로 바뀜 (예전엔 0.6초쯤 늦게 바뀜)' ]},
+    { t:'정령 정보', items:[ '장착한 장비나 장비 고르기 창의 장비를 꾹 누르면 장비 정보 창 (강화·부가 능력·잠금 등) — 닫으면 원래 창으로' ]}
   ]},
   { build:405, v:'8.9.0', date:'2026-10-09', secs:[
     { t:'배경음', items:[ '화면마다 다른 배경음 — 전투 · 보스(챕터 보스·레이드·월드 보스) · 정령 마을 · 시련의 전당 곡 추가', '화면을 옮기면 곡이 자연스럽게 바뀜', '홈 배경음을 길게 늘려 같은 마디가 되풀이되는 느낌을 줄임 (음색은 그대로)', '일부 효과음이 시작할 때 튀던 소리 수정' ]}
@@ -16346,7 +16363,7 @@ function attachHandlers(){
   const eqDb = document.getElementById('equipDexBtn'); if(eqDb) eqDb.addEventListener('click', showEquipDexModal);
   const eqAb = document.getElementById('autoEquipBtn'); if(eqAb) eqAb.addEventListener('click', ()=>{ autoEquipAll(); toast('🔧 추천 장착 완료'); render(); });
   { const ua = document.getElementById('unequipAllBtn'); if(ua) ua.addEventListener('click', ()=>{ const n = unequipAllCount(); if(!n) return; confirmBox('장비 전체 해제', '장착한 장비 <b>'+n+'개</b>를 모두 해제<br><small>잠근 정령이 낀 장비 · 잠근 장비는 그대로</small>', '해제', ()=>{ const m = unequipAll(); toast(uiIc('clear')+' 장비 '+m+'개 해제'); render(); }); }); } // (v6.2.1)
-  document.querySelectorAll('[data-equip-key]').forEach(el=>el.addEventListener('click', ()=>showEquipDetailModal(el.dataset.equipKey)));
+  document.querySelectorAll('[data-equip-key]').forEach(el=>el.addEventListener('click', ()=>openEquipDetail(el.dataset.equipKey)));
   const ms = document.getElementById('multiSummonBtn'); if(ms) ms.addEventListener('click', doMultiSummon);
   document.querySelectorAll('[data-multi-skip]').forEach(c=>c.addEventListener('change', ()=>{ state.settings.multiNoAsk = c.checked; save(); }));
   const dex = document.getElementById('openDex'); if(dex) dex.addEventListener('click', showDexModal);
@@ -16355,7 +16372,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-sp-sub]').forEach(el=>el.addEventListener('click', ()=>{ spiritsSub = el.dataset.spSub; render(); document.getElementById('main').scrollTop = 0; }));
   const ets = document.getElementById('equipToSpirits'); if(ets) ets.addEventListener('click', ()=>{ spiritsSub = 'equip'; activeTab = 'spirits'; render(); });
   { const st = document.getElementById('spiritsToTab'); if(st) st.addEventListener('click', ()=>{ spiritsSub = 'spirits'; activeTab = 'spirits'; render(); }); }
-  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
+  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) openEquipDetail(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
   document.querySelectorAll('[data-fz-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.fuseSort = el.dataset.fzSort; save(); render(); }));
