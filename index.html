@@ -3047,6 +3047,7 @@ function killUnit(sf, u){
     const nb = gridNeighbors(u.idx, 'row').map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive);
     if(nb.length){ const t = nb[sf.noRng ? 0 : Math.floor(Math.random()*nb.length)]; if(!t.st.ward) t.st.poison = {r:3, pct:poisoned.pct, srcG:poisoned.srcG}; else t.st.ward--; }
   }
+  if(u.trBlast) trialBlast(sf, u); // (build 390) 시련 시험 규칙 — 쓰러지면 터짐 (부활했으면 여기까지 안 옴)
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
 var STAR_RES = 0.2, STAR_FALL = 0.6; // (v8.7.0) 아스트라이아: 표식 하나당 표식 피해(공격력 20%) · 별똥별(표식 하나당 공격력 60%)
@@ -3224,7 +3225,7 @@ function makeActCtx(sf, a, tSide, tIdx){
     return r;
   };
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
-  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; const before = u.hp, hv = healAmount(u, amt); const over = u.hp + hv - u.maxHp; hbTide(sf, u, over); u.hp = Math.min(u.maxHp, u.hp + hv); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); C.healed = u.hp-before; return Math.max(0, over); }; // (v8.7.0) 넘친 양을 돌려줌 // (v308) 회복 글자에 출처(스킬 이름)
+  C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; if(u.trUndead){ trialUndeadHurt(sf, u, amt, C.skNm||'회복', C.hits); C.healed = 0; return 0; } /* (build 390) 시련 역류: 회복 → 피해 */ const before = u.hp, hv = healAmount(u, amt); const over = u.hp + hv - u.maxHp; hbTide(sf, u, over); u.hp = Math.min(u.maxHp, u.hp + hv); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); C.healed = u.hp-before; return Math.max(0, over); }; // (v8.7.0) 넘친 양을 돌려줌 // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
   C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, text:label }); };
@@ -5371,6 +5372,7 @@ function settleQueue(sf){
 // 최대체력 % 효과의 기준 체력 (월드 보스는 체력이 거대해서 별도 기준 사용)
 const pctHp = u=>u.pctHp || u.maxHp;
 function roundStartEffects(sf){
+  if(sf.mode==='trial') trialRoundStart(sf); // (build 390) 시련 시험 규칙 — 쌍둥이
   sf.myUnits.concat(sf.enemyUnits).forEach(u=>{ if(u.alive && u.st.shield>0){ u.st.shieldR = (u.st.shieldR||2) - 1; if(u.st.shieldR<=0){ u.st.shield = 0; delete u.st.shieldR; } } }); // (v173) 보호막 지속시간
   groggyRoundStart(sf); // (v179) 그로기 해제·게이지 회복(기믹보다 먼저)
   if(sf.mode==='boss' || ((sf.mode==='expedition' || sf.mode==='worldboss' || sf.mode==='rift') && sf.gimmick)) applyBossGimmick(sf); // (v266) 출정·월드 보스도 기믹
@@ -5391,7 +5393,8 @@ function roundStartEffects(sf){
     if(loss>0 && s.star) loss += starDmg(sf, u); // (v8.7.0) 별의 공명
     if(loss>0){ const r2 = endureHook(sf, u, loss); if(r2<0){ u.hp = Math.min(u.maxHp, u.hp - r2); loss = 0; } else loss = r2; } // (v8.7.0) 바다의 품·강의 신
     if(loss>0){ u.hp = Math.max(0, u.hp - loss); hidHurt(sf, u, loss); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:loss, dot:true, src:[s.burn?'🔥화상':'', s.poison?'☠️독':''].filter(Boolean).join(' ') }); if(u.hp<=0){ killUnit(sf, u); return; } } // (v268) 무엇 때문에 깎였는지
-    if(s.regen){ const b = u.hp, hv = healAmount(u, pctHp(u)*s.regen.v); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
+    if(s.regen && u.trUndead){ if(trialUndeadHurt(sf, u, pctHp(u)*s.regen.v, '💧'+(s.regen.src||'재생'), hits)) return; } // (build 390) 역류: 재생도 피해
+    else if(s.regen){ const b = u.hp, hv = healAmount(u, pctHp(u)*s.regen.v); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     if(s.memHeal){ const b = u.hp, hv = healAmount(u, s.memHeal); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
     ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link','rwd'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
     if(s.linkHost && u.line==='water_hb' && aw3(u)){ const b = u.hp, hv = healAmount(u, u.maxHp*0.04); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧깊은 수원' }); } // (v8.7.0)
@@ -5405,6 +5408,7 @@ function roundStartEffects(sf){
     list.forEach(p=>{
       if(p.line==='water_a' && unitPG(p)>=1 && list.length){
         const low = aliveUnits(sideUnits(sf, side)).reduce((x,y)=> y.hp/y.maxHp < x.hp/x.maxHp ? y : x);
+        if(low.trUndead){ trialUndeadHurt(sf, low, pctHp(low)*[0,.03,.04,.05,.06][unitPG(p)], SPIRITS[p.key].name+' 맑은 물', hits); return; } // (build 390) 역류
         const b = low.hp, hv = healAmount(low, pctHp(low)*[0,.03,.04,.05,.06][unitPG(p)]); hbTide(sf, low, b + hv - low.maxHp); low.hp = Math.min(low.maxHp, b + hv);
         if(low.hp>b){ const nm = SPIRITS[p.key].name+' 맑은 물'; hits.push({ side, idx:low.idx, kind:'heal', amount:low.hp-b, src:nm }); pushLog(sf, '💧 '+nm+' → '+(low.dispName||SPIRITS[low.key].name)+' +'+(low.hp-b)); } // (v268) 패시브 회복 — 출처가 안 보여서 스스로 회복하는 것처럼 보였음
       }
@@ -6687,6 +6691,7 @@ function effLabel(tm){ return tm>1 ? '▲유리' : (tm<1 ? '▼불리' : ''); }
 function stIc(k){ return '<img class="uic" src="assets/ui/st/st_'+k+'.webp" alt="" draggable="false">'; } // (v317) 상태 효과 아이콘 그림
 function statusList(u){
   const s = u.st, o = [], r = x=> (x && x.r) ? ' · '+x.r+'R 남음' : '';
+  if(typeof trialUnitRules==='function') trialUnitRules(u).forEach(k=>{ const R = TRIAL_RULES[k]; o.push({ i:R.i, t:R.t, d:R.d(u), good:false }); }); // (build 390) 시련 시험 규칙은 늘 맨 앞
   if(u.isBoss && u.groggy) o.push({i:'<img class="uic" src="assets/ui/ic_groggy.webp" alt="">', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
   if(s.jail) o.push({i:stIc('jail'), t:'갇힘', d:'얼음 기둥을 깨면 풀려남 · 갇힌 동안 행동 불가', good:false}); // (v272)
   if(raidGazed(state.skillFight, u)) o.push({i:stIc('gaze'), t:'시선', d:'보스를 때리면 준 피해 25%를 돌려받음 · 대신 회복·보호막 1.5배 · 그로기 게이지를 못 깎음', good:false});
@@ -6876,6 +6881,7 @@ function unitDetailHtml(u, bossId){
   h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
   if(live){ const sts = statusList(u); if(sts.length) h += '<div class="ud-sts" data-udsts="'+udStsReg(u)+'">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>'; }
+  { const tr = trialUnitRules(u); if(tr.length) h += '<div class="tr-goal">'+tr.map(k=>{ const R = TRIAL_RULES[k]; return '<div><span>'+R.i+'</span><b>'+R.t+'</b> '+R.d(u)+'</div>'; }).join('')+'</div>'; } // (build 390) 시련 시험 규칙
   if(u.side==='me' && !isBoss) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">정령력 '+fmtDmg(unitPower(u.key))+(enhanceLevel(u.key)?' · 강화 +'+enhanceLevel(u.key):'')+'</div>';
   if(u.specialMult && Math.abs(u.specialMult-1)>0.001) h += '<div class="sub" style="text-align:center; font-size:11px; color:'+(u.specialMult>1?'#9fe8c0':'#ffb0a0')+';"><img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수 규칙 ×'+(Math.round(u.specialMult*100)/100)+'</div>';
   if(!isBoss){
@@ -7122,7 +7128,7 @@ function showSkillStageScreen(){
       else{
         const p = skillPreview(sf, curUnit, act, skillSel.side, skillSel.idx);
         if(kind==='harm' && onAlly && !(sk && sk.dual)) warn = '<span class="warnbig">⚠ 아군에게 공격</span>'; // (v8.7.0) 범람은 아군에게 회복
-        else if(kind!=='harm' && !onAlly) warn = '<span class="warnbig">⚠ 적에게 사용</span>';
+        else if(kind!=='harm' && !onAlly && !(tU && tU.trUndead)) warn = '<span class="warnbig">⚠ 적에게 사용</span>'; // (build 390) 역류 망자에겐 회복이 공격
         if(p.kill && !onAlly) kill = '<span class="killtag"><img class="uic" src="assets/ui/ic_skull.webp" alt=""> 처치'+(p.revived?' · 부활함':'')+'</span>';
         small = p.text;
         if(p.gg && (p.gg.d || p.gg.groggy || p.gg.lock)){ const n = Math.round(Math.abs(p.gg.d)*10)/10; // (v8.5.4) 그로기 게이지 변화
@@ -14008,14 +14014,62 @@ const TRIALS = [ // (v266) 수치는 모의 실험으로 맞춤 — 무작위로
     enemies:[{key:'wood_mythic_a', idx:1, atk:650, hp:1.422},{key:'water_mythic_a', idx:4, atk:650, hp:1.422},{key:'light_mythic_a', idx:3, atk:650, hp:1.422},{key:'fire_mythic_a', idx:0, atk:700, hp:1.422},{key:'dark_legendary_b', idx:5, atk:650, hp:1.422},{key:'fire_epic_b', idx:2, atk:650, hp:1.422}] }
 ];
 // (v5.3.0) 시련 첫 통과에 별빛 조각 — 정수 보상 크기에 맞춰 1500 → 10 · 2500 → 15 · 4000 → 25 · 6000 → 50
+// (build 390) 시험 시련 — 관리자에게만 보임 · 보상 없음 · 규칙(폭발·쌍둥이·역류)은 trialBlast·trialRoundStart·trialUndeadHurt
+const TRIALS_TEST = [ // 풀이 전수 확인(모든 선택을 다 따라감): 이기는 길 수/전체 · 무작위 성공률 · 자동 전투는 실패 · 규칙을 빼면 0 또는 크게 늘어남
+  { id:'x1', icon:'💥', nm:'불씨 창고', diff:4, maxRounds:2, // 24/3054 · 무작위 1.35% · 폭발 없으면 0
+    intro:'적이 모두 💥폭발 — 쓰러지면 붙은 칸에 큰 피해. 하나씩 쓰러뜨려서는 2라운드 안에 여섯을 못 끝냄.',
+    hint:'하나씩 쓰러뜨리지 말고 터질 자리를 만들기. 화상은 라운드가 시작될 때 들어감',
+    allies:[{key:'fire_mythic_b', idx:1},{key:'fire_legendary_a', idx:4}],
+    enemies:['fire_common_a','fire_rare_a','fire_common_b','fire_rare_b','fire_common_a','fire_common_b'].map((k,n)=>({key:k, idx:n, atk:300, hp:10, blast:0.5})) },
+  { id:'x2', icon:'🔗', nm:'쌍둥이 별', diff:4, maxRounds:3, // 50/34193 · 무작위 2.2% · 쌍둥이 규칙 없으면 411
+    intro:'양 끝의 🔗쌍둥이는 같은 라운드에 함께 쓰러뜨려야 함. 하나만 쓰러지면 라운드가 끝날 때 체력 가득 다시 일어남.',
+    hint:'쌍둥이 둘을 한 번에 때릴 수 있는 자리가 있음',
+    allies:[{key:'fire_legendary_a', idx:1},{key:'dark_legendary_b', idx:4}],
+    enemies:[{key:'light_rare_b', idx:0, atk:400, hp:6, pair:'a'},{key:'dark_rare_b', idx:1, atk:400, hp:3},{key:'light_rare_b', idx:2, atk:400, hp:6, pair:'a'},{key:'dark_epic_b', idx:4, atk:400, hp:3}] },
+  { id:'x3', icon:'💀', nm:'역류의 묘지', diff:4, maxRounds:3, noDeath:true, // 384/218347 · 무작위 0.95% · 역류 없으면 0
+    intro:'💀망자는 회복을 받으면 그만큼 피해를 입음. 때리기만 해서는 3라운드 안에 못 끝냄.',
+    hint:'회복 스킬도 적에게 쓸 수 있음. 해일의 축복은 고른 대상의 편 전체에 들어감',
+    allies:[{key:'fire_legendary_a', idx:1},{key:'water_mythic_a', idx:4}],
+    enemies:[{key:'dark_epic_b', idx:0, atk:800, hp:7, undead:1},{key:'wood_epic_b', idx:1, atk:800, hp:7, undead:1},{key:'dark_epic_b', idx:2, atk:800, hp:7, undead:1}] }
+];
 TRIALS.forEach(t=>{ const e = (t.reward && t.reward.essence)||0; if(t.reward && !t.reward.star) t.reward.star = e>=6000 ? 50 : e>=4000 ? 25 : e>=2500 ? 15 : 10; });
-function trialDef(id){ return TRIALS.find(t=>t.id===id) || null; }
+function trialDef(id){ return TRIALS.find(t=>t.id===id) || TRIALS_TEST.find(t=>t.id===id) || null; }
+// ---------- (build 390) 시련 시험 규칙 — 관리자만 보이는 시험 시련(TRIALS_TEST)에서 씀 ----------
+// 💥 폭발(blast): 쓰러지면 붙은 칸(양옆·앞뒤) 같은 편에게 그 대상 최대 체력 × 비율 피해 (보호막 무시) — 이어서 쓰러지면 또 터짐
+// 🔗 쌍둥이(pair): 같은 표시끼리 짝 · 라운드가 끝날 때 짝이 살아 있으면 쓰러진 쪽이 체력 가득 일어남
+// 💀 역류(undead): 회복을 받으면 그만큼 피해 (스킬 회복·재생·맑은 물)
+const TRIAL_RULES = {
+  blast:  { i:'💥', t:'폭발', d:u=>'쓰러지면 붙은 칸(양옆·앞뒤) 적에게 그 적 최대 체력 '+Math.round((u.trBlast||0)*100)+'% 피해 · 보호막 무시 · 이어서 쓰러지면 또 터짐' },
+  pair:   { i:'🔗', t:'쌍둥이', d:()=>'짝과 같은 라운드에 쓰러지지 않으면, 라운드가 끝날 때 체력 가득 다시 일어남' },
+  undead: { i:'💀', t:'역류', d:()=>'회복을 받으면 그만큼 피해 (회복 스킬은 적에게도 쓸 수 있음)' }
+};
+function trialUnitRules(u){ const o = []; if(u.trBlast) o.push('blast'); if(u.trPair) o.push('pair'); if(u.trUndead) o.push('undead'); return o; }
+function trialNeighbors(idx){ const w = 3, c = idx%w, o = []; if(c>0) o.push(idx-1); if(c<w-1) o.push(idx+1); o.push(idx<w ? idx+w : idx-w); return o; }
+function trialBlast(sf, u){
+  const pct = u.trBlast; if(!(pct>0)) return;
+  sf._rv = sf._rv || []; sf._rv.push({ side:u.side, idx:u.idx, kind:'status', text:'💥폭발' }); pushLog(sf, '💥 '+logUnitName(u.side, u)+' 폭발');
+  trialNeighbors(u.idx).forEach(i=>{ const x = unitAt(sf, u.side, i); if(!x || !x.alive) return;
+    const v = Math.round(x.maxHp*pct); x.hp = Math.max(0, x.hp - v); hidHurt(sf, x, v); sf._rv.push({ side:x.side, idx:x.idx, kind:'dmg', amount:v, dot:true, src:'💥폭발' });
+    if(x.hp<=0) killUnit(sf, x); });
+}
+function trialRoundStart(sf){
+  const g = {}; (sf.enemyUnits||[]).concat(sf.myUnits||[]).forEach(u=>{ if(u.trPair) (g[u.side+u.trPair] = g[u.side+u.trPair] || []).push(u); });
+  Object.keys(g).forEach(k=>{ const L = g[k]; if(L.every(u=>u.alive) || !L.some(u=>u.alive)) return;
+    L.filter(u=>!u.alive).forEach(u=>{ u.alive = true; u.hidden = false; u.hp = u.maxHp; u.st = {};
+      (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'status', rv:true, text:'🔗다시 일어남', src:'쌍둥이 (체력 가득)' }); pushLog(sf, '🔗 '+logUnitName(u.side, u)+' 다시 일어남'); }); });
+}
+function trialUndeadHurt(sf, u, amt, src, hits){ // 반환: 쓰러졌는지
+  const v = Math.round(amt); if(!(v>0) || !u.alive) return false;
+  u.hp = Math.max(0, u.hp - v); hidHurt(sf, u, v); hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:v, dot:true, src:'💀역류'+(src ? ' · '+src : '') });
+  if(u.hp<=0){ killUnit(sf, u); return true; } return false;
+}
 function trialCleared(id){ return !!(state.trialClear && state.trialClear[id]); }
 function trialHintOpen(id){ return trialCleared(id) || !!(state.trialTried && state.trialTried[id]); } // (v268) 힌트는 한 번 실패하거나 통과한 뒤에 열림
 function trialClearCount(){ return TRIALS.filter(t=>trialCleared(t.id)).length; }
 function buildTrialFight(t){
   const myUnits = t.allies.map(a=>makeBattleUnit('me', a.idx, a.key, a.atk||1000, ALLY_HP_MULT, 1, 1, null, a.aw||0));
-  const enemyUnits = t.enemies.map(e=>{ const u = makeBattleUnit('enemy', e.idx, e.key, e.atk, e.hp, 1, 1, null, e.aw||0); if(e.nm) u.dispName = e.nm; return u; });
+  const enemyUnits = t.enemies.map(e=>{ const u = makeBattleUnit('enemy', e.idx, e.key, e.atk, e.hp, 1, 1, null, e.aw||0); if(e.nm) u.dispName = e.nm;
+    if(e.blast) u.trBlast = e.blast; if(e.pair) u.trPair = e.pair; if(e.undead) u.trUndead = 1; return u; }); // (build 390) 시험 규칙
   // (v339) 같은 정령이 둘 이상이면 이름 뒤에 A·B — 설명·전투·기록에서 누구인지 구분되게 (칸 번호 순서)
   { const cnt = {}; enemyUnits.forEach(u=>{ cnt[u.key] = (cnt[u.key]||0)+1; });
     const seen = {}; enemyUnits.slice().sort((x,y)=>x.idx-y.idx).forEach(u=>{ if(cnt[u.key]>1 && !u.dispName){ seen[u.key] = (seen[u.key]||0)+1; u.dispName = SPIRITS[u.key].name+' '+'ABCDEF'[seen[u.key]-1]; } }); }
@@ -14037,7 +14091,7 @@ function checkTrialOutcome(sf){
   if(!aliveUnits(sf.enemyUnits).length){
     const t = trialDef(sf.trialId), first = !trialCleared(sf.trialId);
     sf.result = { win:true, rounds: sf.round, first };
-    if(first && t){ state.trialClear = state.trialClear || {}; state.trialClear[t.id] = true; const rw = t.reward; sf.result.reward = rw;
+    if(first && t){ state.trialClear = state.trialClear || {}; state.trialClear[t.id] = true; const rw = t.reward || {}; if(t.reward) sf.result.reward = rw; // (build 390) 시험 시련은 보상 없음
       state.essence += rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (rw.stone||0); state.starShard = (state.starShard||0) + (rw.star||0); grantItems(rw.items); checkAchievements(); save(); }
     return true;
   }
@@ -14048,6 +14102,7 @@ function trialMarkTried(sf){ if(!sf.trialId || (state.trialTried && state.trialT
 function trialGoalHtml(t){ // (v266) 들어가면 보이는 목표 — 한 줄씩
   const rows = ['<div><span>🎯</span><b>'+(t.maxRounds ? t.maxRounds+'라운드 안에 적을 모두 쓰러뜨리기' : '적을 모두 쓰러뜨리기')+'</b></div>'];
   if(t.noDeath) rows.push('<div><span>🛡️</span><b>우리 편이 쓰러진 채로 남으면 실패</b></div>'); // (v268) 부활로 다시 일어나면 괜찮음 — 가시 너머·얼어붙은 시간·빛의 장벽 해법이 부활을 씀
+  { const seen = {}; (t.enemies||[]).forEach(e=>{ const k = e.blast ? 'blast' : null; [k, e.pair ? 'pair' : null, e.undead ? 'undead' : null].forEach(r=>{ if(r && !seen[r]){ seen[r] = 1; const R = TRIAL_RULES[r]; rows.push('<div><span>'+R.i+'</span><b>'+R.t+'</b> '+R.d({ trBlast:e.blast })+'</div>'); } }); }); } // (build 390) 시험 규칙
   rows.push('<div><span>'+uiIc('dice')+'</span>치명타·확률 효과 없음 — 같은 순서로 하면 결과도 항상 같음</div>');
   return '<div class="tr-goal">'+rows.join('')+'</div>'; }
 function trialResultOverlayHtml(sf){
@@ -14072,7 +14127,7 @@ function showTrialPrep(id){
   h += '<div class="tr-lbl">적</div><div class="dg-foes">'+icons(pv.enemyUnits)+'</div>';
   h += '<div class="sub" style="text-align:center; font-size:11px;">그림을 누르면 능력치·스킬 확인</div>';
   h += '<div class="tr-hint" id="trHint">'+(!t.hint ? '' : trialHintOpen(id) ? '<button class="btn secondary small" id="trHintBtn">💡 힌트 보기</button>' : '<button class="btn secondary small" disabled style="opacity:.5;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> 힌트 · 한 번 실패하면 열림</button>')+'</div>';
-  h += '<div class="dg-rw">'+(trialCleared(id) ? '이미 통과 · 보상 없음' : uiIc('party_pop')+' 첫 통과 보상 '+rewardPillsHtml(t.reward))+'</div>';
+  h += '<div class="dg-rw">'+(!t.reward ? '🛠️ 시험 중 · 관리자만 보임 · 보상 없음' : trialCleared(id) ? '이미 통과 · 보상 없음' : uiIc('party_pop')+' 첫 통과 보상 '+rewardPillsHtml(t.reward))+'</div>';
   h += '<button class="btn sticky-ok" id="trStart" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 도전</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg wide" id="modalBg"><div class="modal wide" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(); bindPrepUnitInfo(pv);
@@ -14085,6 +14140,8 @@ function renderTrialTab(){
   let h = '<div style="text-align:center; margin:2px 0 8px;"><div class="dg-title">🧩 시련의 전당<button class="mh-btn" data-mh="trial" aria-label="설명">ⓘ</button></div><div class="sub" style="font-size:11px;">내 정령 대신 정해진 정령으로 푸는 퍼즐 · '+n+'/'+TRIALS.length+' 통과</div></div>' + TOP_MARK;
   h += '<div class="dg-list">'+TRIALS.map((t,i)=>{ const ok = trialCleared(t.id);
     return '<button class="tr-card'+(ok?' done':'')+'" data-tr-go="'+t.id+'"><span class="tr-no">'+(i+1)+'</span><span class="dg-mid"><b>'+t.nm+'</b><small class="tr-stars">'+'★'.repeat(t.diff||3)+'<i>'+'★'.repeat(5-(t.diff||3))+'</i></small></span><em>'+(ok ? uiIc('check') : '›')+'</em></button>'; }).join('')+'</div>';
+  if(isAdmin() && TRIALS_TEST.length) h += '<div class="tr-lbl" style="margin-top:14px;">🛠️ 시험 중 · 관리자만 보임</div><div class="dg-list">'+TRIALS_TEST.map(t=>{ const ok = trialCleared(t.id); // (build 390)
+    return '<button class="tr-card'+(ok?' done':'')+'" data-tr-go="'+t.id+'"><span class="tr-no">'+(t.icon||'🧪')+'</span><span class="dg-mid"><b>'+t.nm+'</b><small class="tr-stars">'+'★'.repeat(t.diff||3)+'<i>'+'★'.repeat(5-(t.diff||3))+'</i></small></span><em>'+(ok ? uiIc('check') : '›')+'</em></button>'; }).join('')+'</div>';
   return h;
 }
 function bindTrialTab(){ document.querySelectorAll('[data-tr-go]').forEach(b=>b.addEventListener('click', ()=>showTrialPrep(b.dataset.trGo))); }
@@ -14097,7 +14154,7 @@ function trialMyOptions(sf, a){
     const sk = act==='basic' ? null : unitSkill(a, act), kind = sk ? sk.kind : 'harm';
     if(sk && sk.self){ out.push([act,'me',a.idx]); return; }
     if(kind==='harm') validEnemyTargets(sf).forEach(i=>out.push([act,'enemy',i]));
-    else aliveUnits(sf.myUnits).forEach(u=>out.push([act,'me',u.idx]));
+    else { aliveUnits(sf.myUnits).forEach(u=>out.push([act,'me',u.idx])); if(!sk.allyOnly) validEnemyTargets(sf).forEach(i=>out.push([act,'enemy',i])); } // (build 390) 회복 스킬도 적에게 쓸 수 있음 (역류)
   });
   return out;
 }
@@ -16658,7 +16715,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 389, APP_VERSION = '8.7.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 390, APP_VERSION = '8.7.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
