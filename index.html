@@ -2008,11 +2008,11 @@ function stageEnemyComposition(i){
 // (v168) ×3은 너무 가팔라서 ×1.25로 완화 — +5강 단일등급 6마리 기준: 레어는 챕터1 일반 스테이지까지(보스는 에픽 필요), 에픽은 챕터2 후반, 레전더리는 챕터4 중반, 신화는 전부 클리어
 const CHAPTER_ENEMY_START = [10, 48, 187.5, 231.25, 506.25, 760]; // 노말 챕터 1~5 (챕터를 늘리면 여기 뒤에 이어 붙임)
 // (v253) 하드는 스테이지 번호를 500번대로 따로 씀 → 노말 챕터를 늘려도 번호가 안 겹침. 규칙: 하드 N ≈ 노말 N+5 수준 (하드 1 시작 800 > 노말 5 끝 722.5)
-const HARD_ENEMY_START = [1838, 1895, 1625, 2015, 2470, 3055], HARD_ENEMY_END = [1895, 1954, 2015, 2470, 3055, 3800]; // (v8.0.0) 하드 1·2 새로 (예전 1040→1300 · 1300→1625는 노말 1·2로) // (v317) 6 = 그림자 // (v256) 빨리 못 깨게 약 30% 올림 // (v173) 1챕터는 설렁설렁(에픽 없이 +3강 레어로 보스까지), 2챕터부터 조여지고 3챕터부터 더 빡세게
+const HARD_ENEMY_START = [1647, 1767, 1959, 2238, 3413, 7096], HARD_ENEMY_END = [1767, 1959, 2238, 3413, 7096, 11000]; // (v8.0.0) 노말 1 → 하드 6을 다시 그림 — 일반 스테이지 평균 추천: 노말 1 약 1.05만 → 하드 4 약 2.6만은 단계마다 ×1.1 · 하드 5 약 5.5만 · 하드 6 약 11만 (예전 수치는 LEGACY_HARD)
 const CHAPTER_ENEMY_END   = [34, 165, 227.5, 506.25, 722.5, 1000]; // (v317) 6 = 그림자 — 노말 5 끝과 하드 1 시작 사이
 const HARD_STAGE_MULTS = [1.1, 1.11, 1.12, 1.12, 1.12, 1.12]; // (v8.0.0) 하드 1·2 1 → 1.1·1.11
 // (v8.0.0) 노말(새로) — 1·2는 예전 하드 1·2 그대로 · 3~6은 노말 2 → 하드 3 사이를 기하급수로 (하드 1·2도 같은 줄)
-const NORM_ENEMY_START = [1040, 1300, 1625, 1676, 1728, 1782], NORM_ENEMY_END = [1300, 1625, 1676, 1728, 1782, 1838], NORM_STAGE_MULTS = [1, 1, 1.02, 1.04, 1.06, 1.08];
+const NORM_ENEMY_START = [1046, 1172, 1258, 1317, 1408, 1520], NORM_ENEMY_END = [1172, 1258, 1317, 1408, 1520, 1647], NORM_STAGE_MULTS = [1, 1, 1.02, 1.04, 1.06, 1.08];
 const TIER_ENEMY = { e:[CHAPTER_ENEMY_START, CHAPTER_ENEMY_END, null], n:[NORM_ENEMY_START, NORM_ENEMY_END, NORM_STAGE_MULTS], h:[HARD_ENEMY_START, HARD_ENEMY_END, HARD_STAGE_MULTS] }; // (v277) 하드 챕터별 일반 스테이지 적 세기 배율 (보스 웨이브·던전은 영향 없음)
 function enemySlotPower(i){
   const li = stageLocal(i), local = li % CHAPTER_LENGTH;
@@ -2670,7 +2670,7 @@ function fmtCP(n){ return Math.round(n).toLocaleString('ko-KR'); }
 //  일반 스테이지·출정: 상대 합산의 1배(0.9배 넘으면 승률 80% 안팎) · 요일 던전: 1.5배(한 속성만 써서 상성 손해 · 수호자)
 //  챕터 보스: 3웨이브 합산의 REC_CP_MULT.boss 배 · 레이드: 보스·난이도별 표(RAID_REC_CP — 기믹 때문에 상대 전투력과 승패가 잘 안 맞음)
 const REC_CP_MULT = { stage:1.0, expedition:1.0, dungeon:1.5, boss:1.2 };
-function bossRecAdj(i){ return i===HARD_BASE+2*CHAPTER_LENGTH-1 ? 1.58 : 1; } // (v8.0.0) 하드 2 용암 군주는 체력을 낮춘 대신 기믹(격노·용암 정령)이 세서 추천을 올려 보여 줌 (노말 6 → 하드 3 사이 값)
+function bossRecAdj(i){ return i===HARD_BASE+2*CHAPTER_LENGTH-1 ? 1.58 : (i===NORM_BASE+2*CHAPTER_LENGTH-1 ? 1.22 : 1); } // (v8.0.0) 용암 군주(노말 2 · 하드 2)는 세기를 낮춘 대신 기믹(화염 흡수 · 격노 · 용암 정령)이 세서 추천을 올려 보여 줌
 function recCP(v){ return Math.max(100, Math.ceil(v/100)*100); } // 백 단위 올림
 function cpVerdictRec(my, rec){ const r = my/Math.max(1,rec); if(r>=1.2) return {t:'여유', c:'#5cd65c'}; if(r>=1) return {t:'충분', c:'#a8e063'}; if(r>=0.85) return {t:'접전', c:'#ffd557'}; return {t:'부족', c:'#ff5a5a'}; }
 function cpBarHtml(my, en, enLabel, note, rec, myLabel){
@@ -5815,9 +5815,11 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 // 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
 // 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
 let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4, 1.0], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23, 40]; // 이지(예전 노말) 챕터 1~6
-const NORM_BOSS_ATK_MULTS = [1.9, 1.2, 1.33, 1.48, 1.64, 1.83], NORM_BOSS_HP_MULTS = [16, 15, 26.6, 19.6, 45.5, 49]; // (v8.0.0) 노말 1·2 = 예전 하드 1·2 그대로 · 3~6은 추천 전투력이 노말 2 → 하드 3까지 단계마다 약 ×1.14가 되게
+const NORM_BOSS_ATK_MULTS = [2.29, 1.7, 2.69, 2.22, 3.09, 2.49], NORM_BOSS_HP_MULTS = [20, 20, 25, 28, 25, 40]; // (v8.0.0) 보스 추천: 노말 1 약 1.56만 → 하드 3 약 4.05만은 단계마다 약 ×1.13 · 하드 4 6.8만 · 하드 5 13만 · 하드 6 25.5만 (체력 배율은 예전 수준으로 두고 공격 배율로 맞춤)
 function tierBossMults(i){ const t = stageTier(i); return t==='h' ? [HARD_BOSS_ATK_MULTS, HARD_BOSS_HP_MULTS] : t==='n' ? [NORM_BOSS_ATK_MULTS, NORM_BOSS_HP_MULTS] : [CH_BOSS_ATK_MULTS, CH_BOSS_HP_MULTS]; }
-const HARD_BOSS_ATK_MULTS = [2.03, 1.6, 2.5, 3.3, 8.64, 8.64], HARD_BOSS_HP_MULTS = [59.2, 22, 65, 60, 357.5, 357.5]; // (v8.0.0) 하드 2는 체력이 길면 격노가 쌓여 급격히 어려워져 낮게 // (v8.0.0) 하드 1·2 새로 (예전 1.9·16 / 1.2·15는 노말 1·2로) // (v304) 하드 5 공격 3.6→8.64 · 체력 65→357.5 (최종 관문 — 사용자 결정, 근거는 docs/인수인계.md) // (v253) 하드 1~5 · (v256) 체력 약 25% 올림 · (v272) 보스 전용 스킬(v2.70)로 하드 1·3·4가 너무 어려워져 공격력 2.4→1.9(하드 3은 1.6) · (v275) 하드 1→5 순서대로 어려워지게: 하드 2 공격 2.4→1.2·체력 25→15, 하드 4 공격 1.9→2.3, 하드 5 공격 2.4→3.0·체력 35→50 (신화+10·각성·장비 사다리 시뮬 기준) · (v277) 하드 3부터 룬을 쓴다고 보고: 하드 3 공격 1.6→2.5·체력 44→65, 하드 4 공격 2.3→3.3·체력 38→60, 하드 5 공격 3.0→3.6·체력 50→65
+const HARD_BOSS_ATK_MULTS = [2.64, 1.61, 2.16, 2.7, 2.34, 2.15], HARD_BOSS_HP_MULTS = [45, 22, 65, 60, 60, 40]; // (v8.0.0) 하드 2 용암 군주는 체력이 길면 격노가 쌓여 급해져서 체력 22 (추천 표시는 bossRecAdj)
+// (v8.0.0) 예전(7.4.0) 하드 1~6 수치 — 별빛 균열·성역·요일 던전 세기 기준으로만 씀 (챕터 난이도를 바꿔도 이 셋은 안 바뀌게)
+const LEGACY_HARD = { end:[1300, 1625, 2015, 2470, 3055, 3800], atk:[1.9, 1.2, 2.5, 3.3, 8.64, 8.64], hp:[16, 15, 65, 60, 357.5, 357.5] };
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null,'dark']; // null=심연의 수정(매 라운드 변환)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord'];
 const BOSS_GIMMICK_INFO = {
@@ -5894,7 +5896,7 @@ function bossWardElements(stageIdx){
   return [first, second];
 }
 // 진형 배치: 5마리를 전열(0~2)·후열(3~5) 중 앞쪽부터 채움(간단화 — 세부 배치는 웨이브 전환 화면에서 조정 가능)
-function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: (v8.0.0) 하드 1·2를 예전 수치로 (별빛 균열 — 세기가 안 바뀌게)
+function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: (v8.0.0) 하드 번호를 예전 하드 수치(LEGACY_HARD)로 — 별빛 균열·성역은 세기가 안 바뀌게
   // (v152) 보스전은 웨이브 중간 교체를 없애고 3웨이브 내내 같은 6마리로 고정 — 피로 로직 불필요
   const myUnits = [];
   active.forEach((key, idx)=>{
@@ -5915,8 +5917,8 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: 
   }else{
     const type = bossGimmickFor(stageIdx), fixedEl = bossFixedElementFor(stageIdx);
     const bossEl = fixedEl || ELEMENTS[Math.floor(seededRand(stageIdx*171.3+1)*ELEMENTS.length)];
-    const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), numIdx = (legacy && hardB && bci<2) ? stageIdx - HARD_BASE + NORM_BASE : stageIdx; // 예전 하드 1·2 수치 = 노말 1·2
-    const BM = tierBossMults(numIdx), per = bossWaveNormalPower(numIdx) * BM[0][bci];
+    const bci = bossChapterIdx(stageIdx), hardB = isHardStage(stageIdx), old = !!(legacy && hardB);
+    const BM = old ? [LEGACY_HARD.atk, LEGACY_HARD.hp] : tierBossMults(stageIdx), per = (old ? LEGACY_HARD.end[bci]*0.55 : bossWaveNormalPower(stageIdx)) * BM[0][bci];
     const boss = makeBattleUnit('enemy', 4, bossEl+'_legendary_a', per*ELEMENT_ATK_MULT[bossEl], BM[1][bci]);
     boss.isBoss = true; boss.gimmick = type; boss.dispName = BOSS_GIMMICK_INFO[type].name; boss.bossIcon = BOSS_GIMMICK_INFO[type].icon; ensureGroggy(boss); setBossKit(boss, 'cboss_'+type); // (v270) 보스 전용 스킬
     if(type==='ruinGuardian'){
@@ -10751,7 +10753,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:377, v:'8.0.0', date:'2026-10-09', secs:[
     { t:'탐험 난이도 3단계', items:[ '탐험 난이도가 이지 · 노말 · 하드 세 단계로 — 지도 위 탭 세 칸', '예전 노말 → 이지: 적은 그대로 · 챕터 보스는 기본 기믹만 (눈보라 · 분화 · 가시 껍질 · 결계 재생 · 심연 응시 · 심연 파동 · 그림자 파동 없음)', '새 노말: 이지 챕터 5 보스를 깨면 열림 · 챕터 보스는 기본 + 추가 기믹', '하드: 노말 챕터 5 보스를 깨면 열림 · 하드 전용 기믹 · 하드 6은 노말 6 보스도', '노말 챕터 제목에 NORMAL 표시' ]},
-    { t:'노말 · 하드 챕터 정리', items:[ '예전 하드 1·2 → 노말 1·2 (깬 기록 · 받은 보상 그대로 옮김 · 보스는 하드 기믹 없이)', '노말 3~6 새로 — 보스 공격 배율 1.33 · 1.48 · 1.64 · 1.83 / 체력 배율 26.6 · 19.6 · 45.5 · 49', '하드 1·2 새로 — 서리 거인 공격 2.03 · 체력 59.2 / 용암 군주 공격 1.6 · 체력 22', '하드 3~6 그대로 · 이미 열려 있던 하드 챕터는 계속 열림' ]},
+    { t:'노말 · 하드 챕터 정리', items:[ '예전 하드 1·2 → 노말 1·2 (깬 기록 · 받은 보상 그대로 옮김)', '노말 1 → 하드 6 세기를 새로 정리 — 앞 챕터보다 쉬운 곳 없이 이어지게', '노말 보스 공격 배율 2.29 · 1.7 · 2.69 · 2.22 · 3.09 · 2.49 / 체력 배율 20 · 20 · 25 · 28 · 25 · 40', '하드 보스 공격 배율 2.64 · 1.61 · 2.16 · 2.7 · 2.34 · 2.15 / 체력 배율 45 · 22 · 65 · 60 · 60 · 40', '하드 5 보스 공격 8.64 → 2.34 · 체력 357.5 → 60 / 하드 6 보스 공격 8.64 → 2.15 · 체력 357.5 → 40', '일반 스테이지 적 세기 — 노말 1 시작 1,046 → 하드 6 끝 11,000', '이미 열려 있던 하드 챕터는 계속 열림' ]},
     { t:'보상', items:[ '노말 챕터 보스 첫 격파 별빛 조각 75 (이지 50 · 하드 100)', '노말 챕터 진행도 100% — 별빛 조각 15 · 에픽 정령 확정권', '노말 3~6 · 하드 1·2 보스 첫 격파 선택권 · 장비권 · 각인석' ]}
   ]},
   { build:376, v:'7.4.0', date:'2026-10-08', secs:[
@@ -12798,7 +12800,7 @@ function dungeonDaysOf(el){ return DUNGEON_DAY_EL.map((e,d)=> e===el ? DAY_NAMES
 function dungeonBest(el){ return (state.dungeonBest && state.dungeonBest[el]) || 0; }
 function dungeonGuardian(n){ return n%5===0; }
 // 적 1마리 공격력: 1단계 = 노말 챕터 2 시작 수준 → 15단계 = 하드 5 끝 수준(기하 증가) · 16단계부터는 단계마다 ×1.08
-function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = HARD_ENEMY_END[HARD_EFF_CH-1]; /* (v317) 챕터 6을 더해도 던전 세기는 하드 5 기준 그대로 */ return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
+function dungeonPower(n){ const a = CHAPTER_ENEMY_START[1], b = LEGACY_HARD.end[HARD_EFF_CH-1]; /* (v8.0.0) 예전 하드 5 끝 그대로 */ /* (v317) 챕터 6을 더해도 던전 세기는 하드 5 기준 그대로 */ return n<=15 ? a*Math.pow(b/a, (n-1)/14) : b*Math.pow(1.08, n-15); }
 function dungeonReward(n){
   const rw = { essence: Math.round(400 + n*120), stone: Math.round(20 + n*6), items: null };
   const it = {};
@@ -13177,7 +13179,7 @@ function sanctumMakeBoss(id, key, el, atk, hpMult, kit, name, ref, B, k, idx){
   return b;
 }
 function buildSanctumFight(id, tier){
-  const B = sanctumBoss(id), k = Math.pow(SANCTUM_TIER_K, tier-1), refF = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, [], {}), ref = refF.enemyUnits.find(u=>u.isBoss);
+  const B = sanctumBoss(id), k = Math.pow(SANCTUM_TIER_K, tier-1), refF = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, [], {}, true), ref = refF.enemyUnits.find(u=>u.isBoss);
   const my = buildBossWaveFight(SANCTUM_REF_STAGE(), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {}).myUnits;
   let enemies;
   if(id==='twins') enemies = [ sanctumMakeBoss('castor', 'fire_legendary_a', 'fire', 0, 1, 'sboss_castor', '카스토르', ref, B, k, 3), sanctumMakeBoss('pollux', 'water_legendary_b', 'water', 0, 1, 'sboss_pollux', '폴룩스', ref, B, k, 5) ];
