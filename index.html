@@ -846,6 +846,7 @@
   @keyframes bsWipe{0%{opacity:1} 100%{opacity:0; visibility:hidden}}
   .bs-intro .bu-mine{animation:bsInUp .65s ease-out .15s both;}
   .bs-intro .bu-enemy{animation:bsInDown .65s ease-out .15s both;}
+  .gg-pv{display:inline-flex; align-items:center; gap:1px; margin-left:4px; padding:0 4px; border-radius:6px; background:#ffcf4a26; color:#ffd98a; font-size:.92em; font-weight:800; white-space:nowrap;} .gg-pv .uic{width:12px; height:12px;} .gg-pv.up{background:#ff5a5a26; color:#ff9a9a;}
   .bs-intro .bu-sts{animation:bsStIn .3s ease-out 1.1s both;} @keyframes bsStIn{from{opacity:0;} to{opacity:1;}} /* (v8.5.3) 상태 표시(물받이 등)는 정령이 다 들어오고 전투가 시작된 뒤에 */
   @keyframes bsInUp{from{opacity:0; transform:translateX(-60px)} to{opacity:1; transform:none}} /* (v179) 옆 시점: 내 편은 왼쪽에서 */
   @keyframes bsInDown{from{opacity:0; transform:translateX(60px)} to{opacity:1; transform:none}}
@@ -5499,7 +5500,11 @@ function skillPreview(sf, a, act, tSide, tIdx){
   const rvHit = h=> h && h.rv && h.side===tSide && h.idx===tIdx;
   const revived = !!(t0 && t0.alive && t1 && t1.alive && ((t1.reviveUsed && !t0.reviveUsed) || C.hits.some(rvHit) || (c._rv||[]).some(rvHit) || ((c.lastFx && c.lastFx.hits) || []).some(rvHit)));
   const kill = !!(t0 && t0.alive && t1 && !t1.alive) || revived;
-  return { text: parts.join(' · ') || '효과 없음', kill, revived, dmg };
+  // (v8.5.4) 보스 그로기 게이지가 이 행동으로 얼마나 깎이는지 (치명타 없이 · 잠김이면 lock)
+  let gg = null; { const b0 = sf.enemyUnits.find(u=>u.isBoss && u.alive), b1 = b0 && unitAt(c, b0.side, b0.idx);
+    if(b0 && b1 && !b0.groggy && groggyRuleOf(sf, b0) && typeof b0.gauge==='number' && a.side==='me'){ const d = b0.gauge - (typeof b1.gauge==='number' ? b1.gauge : b0.gauge);
+      gg = { d, groggy: !!b1.groggy, lock: !d && !!groggyLockReason(sf, b0) && C.hits.some(h=>h.kind==='dmg' && h.side===b0.side && h.idx===b0.idx) }; } }
+  return { text: parts.join(' · ') || '효과 없음', kill, revived, dmg, gg };
 }
 // ===================== (v145) 진화 라인별 스킬·패시브 =====================
 // 라인 = 속성+계통(a/b). 등급 g: 0 일반 · 1 레어 · 2 에픽 · 3 레전더리 · 4 신화
@@ -6970,6 +6975,8 @@ function showSkillStageScreen(){
         else if(kind!=='harm' && !onAlly) warn = '<span class="warnbig">⚠ 적에게 사용</span>';
         if(p.kill && !onAlly) kill = '<span class="killtag"><img class="uic" src="assets/ui/ic_skull.webp" alt=""> 처치'+(p.revived?' · 부활함':'')+'</span>';
         small = p.text;
+        if(p.gg && (p.gg.d || p.gg.groggy || p.gg.lock)){ const n = Math.round(Math.abs(p.gg.d)*10)/10; // (v8.5.4) 그로기 게이지 변화
+          small += '<span class="gg-pv'+(p.gg.d<0?' up':'')+'"><img class="uic" src="assets/ui/ic_groggy.webp" alt="">'+(p.gg.groggy ? '그로기!' : p.gg.lock ? '잠김' : (p.gg.d>0?'−':'+')+n)+'</span>'; }
       }
       const armed = skillSel.act===act && ok, ready = armed && !!skillSel.armed;
       if(!armed) warn = ''; // (v215) 경고는 고른 스킬에만 — 안 고른 지원기는 누르면 대상이 아군으로 바뀌어서 '적에게 사용' 경고가 틀린 말이었고, 빨간 테두리가 고른 스킬보다 더 눈에 띄었음
@@ -10867,6 +10874,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:386, v:'8.5.4', date:'2026-10-09', secs:[
+    { t:'전투 화면', items:[ '보스전 스킬 버튼에 그로기 게이지가 얼마나 깎이는지 표시 (치명타 제외 · 그로기가 걸리면 「그로기!」 · 잠긴 동안 「잠김」 · 오히려 채우면 +)' ]}
+  ]},
   { build:385, v:'8.5.3', date:'2026-10-09', secs:[
     { t:'전투 화면', items:[ '전투 시작 연출 동안 상태 표시(균열 물받이 등)가 엉뚱한 자리에 먼저 뜨던 것 — 정령이 다 들어온 뒤에 보임' ]}
   ]},
@@ -16460,7 +16470,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 385, APP_VERSION = '8.5.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 386, APP_VERSION = '8.5.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
