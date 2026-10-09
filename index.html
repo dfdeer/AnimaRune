@@ -636,7 +636,8 @@
   .rd-row.lock{opacity:.5; background:#1d1b48; border-color:#ffffff14;} .rd-rart{flex:0 0 64px; height:64px; display:grid; place-items:center; font-size:34px;} .rd-rart .rd-bimg{width:64px; height:64px; object-fit:contain;} .rd-rart .uic{width:30px; height:30px;}
   .rd-rinfo{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;} .rd-rinfo b{font-size:15px;} .rd-rinfo small{font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .xp-rwinfo{display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffd5570f; border:1px solid #ffd55733; font-size:12px;} .xp-rwinfo span{width:100%; font-weight:900; color:#ffd557;} .xp-rwinfo small{width:100%; color:var(--sub); font-size:11px;}
-  .xp-alert{position:fixed; left:50%; top:40%; transform:translate(-50%,-50%); z-index:400; min-width:230px; padding:18px 22px; border-radius:18px; text-align:center; background:linear-gradient(180deg,#5a1f2a,#2a0f18); border:2px solid #ff6b6b; box-shadow:0 0 30px #ff4b4b88, 0 8px 24px #000a; animation:xpAl 2.6s ease forwards;} .xp-alert b{display:block; font-size:24px; color:#fff;} .xp-alert span{display:block; margin-top:6px; font-size:14px; font-weight:800; color:#ffb3b3;}
+  .xp-alert{position:fixed; left:50%; top:40%; transform:translate(-50%,-50%); z-index:400; min-width:230px; padding:18px 22px; border-radius:18px; text-align:center; background:linear-gradient(180deg,#5a1f2a,#2a0f18); border:2px solid #ff6b6b; box-shadow:0 0 30px #ff4b4b88, 0 8px 24px #000a; animation:xpAl 2.6s ease forwards;} .xp-alert b{display:block; font-size:24px; color:#fff;} .xp-alert span{display:block; margin-top:6px; font-size:14px; font-weight:800; color:#ffb3b3;} .xp-alert .uic{width:26px; height:26px; vertical-align:-5px;}
+  .xp-alert.good{background:linear-gradient(180deg,#4a3a12,#231a08); border-color:#ffd557; box-shadow:0 0 30px #ffd55777, 0 8px 24px #000a;} .xp-alert.good span{color:#ffe9a8;}
   @keyframes xpAl{0%{opacity:0; transform:translate(-50%,-50%) scale(.7);} 10%{opacity:1; transform:translate(-50%,-50%) scale(1.06);} 18%{transform:translate(-50%,-50%) scale(1);} 85%{opacity:1;} 100%{opacity:0;}}
   .fz-pick.worn{opacity:.75;} .fz-pick.worn .fz-pct{color:#7ad0ff;}
   .fz-rep{display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffffff0c; font-size:12px;} .fz-rep input{flex:1; accent-color:#ffd557;} .fz-rep b{min-width:36px; text-align:right;}
@@ -2315,9 +2316,9 @@ function battleSubFor(k){ const t = subTotals(k), o = { spd:t.spd, crit:t.crit, 
   const tr = eqTraitSubFor(k); Object.keys(tr).forEach(x=>{ o[x] = (o[x]||0) + tr[x]; }); // (v328) 장비 고유 효과
   o.dbs = debuffBonusOf(k); // (v8.3.0) 약화 효과량
   return o; }
-// (v8.3.0) 디버퍼 성장 반영 — 강화 1단계마다 +2% · 초월 1단계마다 +2% (최대 +50%) · 독 · 저주 · 거미줄 받는 피해 · 노출 수치에 곱함
-const DEBUFF_ENH = 0.02, DEBUFF_TRANS = 0.02, DEBUFF_MAX = 0.5;
-function debuffBonusOf(k){ return Math.min(DEBUFF_MAX, enhanceLevel(k)*DEBUFF_ENH + transLevel(k)*DEBUFF_TRANS); }
+// (v8.3.0) 디버퍼 성장 반영 · (v8.4.0) 사용자 결정: 강화·초월 대신 정령력 기준 — 정령력이 420(신화 +0)을 넘는 만큼 12마다 +1% (최대 +50%) · 독 · 저주 · 거미줄 받는 피해 · 노출 수치에 곱함
+const DEBUFF_POW0 = 420, DEBUFF_POW_STEP = 1200, DEBUFF_MAX = 0.5;
+function debuffBonusOf(k){ return Math.max(0, Math.min(DEBUFF_MAX, (unitPower(k) - DEBUFF_POW0) / DEBUFF_POW_STEP)); }
 function dbMul(u){ return 1 + ((u && u.sub && u.sub.dbs) || 0); }
 function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,cap)=> Number.isFinite(v) ? Math.max(0, Math.min(cap, v)) : 0;
   const top = s=> SUB_STATS[s].v[SUB_STATS[s].v.length-1]*SUB_LINES_TOP;
@@ -5852,7 +5853,6 @@ const BOSS_FIRST_ITEMS_NORM = { 1:{pick_epic:2, eq_epic:1, engr:4}, 2:{pick_lege
 function bossFirstItems(i){ const ch = bossChapter(i), t = chapterTier(ch), it = (t==='h' ? BOSS_FIRST_ITEMS_HARD : t==='n' ? BOSS_FIRST_ITEMS_NORM : BOSS_FIRST_ITEMS)[chapterBase(ch)]; return it ? Object.assign({}, it) : null; }
 function bossClearReward(i){ i = stageEff(i); return Math.round(20 + i*1.2); }
 function addStageGradeRewards(i, fromRank, toRank){ // fromRank 초과 ~ toRank 이하 등급의 보상을 수령 대기로
-  fromRank = Math.max(fromRank, stagePaidRank(i)); // (v8.2.0) 노말로 옮긴 예전 하드 기록 — 이미 받은 등급까지는 다시 안 줌
   for(let r=fromRank+1; r<=toRank; r++){
     const tier = STAGE_GRADE_ORDER[r-1];
     if(isBossStage(i)){ const ch = bossChapter(i); addPendingReward('stage_'+i+'_bossclear_'+tier, '<img class="uic" src="assets/ui/ic_shield.webp" alt="">', chapterLabel(ch)+' 보스 '+tier+'등급', 0, 0, 'stage', {equip: chapterEff(ch)}); }
@@ -5873,7 +5873,7 @@ function resolveSkillStageBattle(i, rounds, specialMet){
   const baseReward = stageClearReward(i);
   state.essence += baseReward;
   let improved = false, reward = 0;
-  if(!already && !stagePaidRank(i)){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', stageLabel(i)+' 첫 클리어', reward, 0, 'stage'); }
+  if(!already){ reward = stageFirstReward(i); addPendingReward('stage_'+i+'_first', '🎉', stageLabel(i)+' 첫 클리어', reward, 0, 'stage'); }
   if(!already || gradeRank[grade] > gradeRank[already]){ improved = true; addStageGradeRewards(i, already ? gradeRank[already] : 0, gradeRank[grade]); state.stageBest[i] = grade; }
   if(specialMet) grantSpecialStageBonus(i); else if(isSpecialStage(i) && !state.specialStageBonusClaimed[i]) setTimeout(()=>toast('<img class="uic" src="assets/ui/ic_special.webp" alt=""> 특수 규칙 조건을 충족하고 깨야 보너스'), 900); // (v223) 조건 충족 클리어만 · (v185) 첫 클리어 안에만 있어서, 이 보너스가 빠져 있던 버전에서 깬 특수 스테이지는 다시 깨도 영영 안 열렸음 · (v216 버그수정) 클리어 기록(stageBest)을 남긴 뒤에 불러야 함 — 앞에서 부르면 첫 클리어 땐 '아직 안 깸'으로 보고 지나쳤음
   state.dailyStats.stagesCleared += 1; passBump('stage');
@@ -6255,7 +6255,7 @@ function resolveBossWaveVictory(sf){
   const baseReward = bossClearReward(stageIdx);
   state.essence += baseReward;
   let improved = false, equipCount = 0;
-  if(!already && !stagePaidRank(stageIdx)) addPendingReward('stage_'+stageIdx+'_first', '🎉', chapterLabel(chapterNum)+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx), bossFirstStar(stageIdx));
+  if(!already) addPendingReward('stage_'+stageIdx+'_first', '🎉', chapterLabel(chapterNum)+' 보스 첫 격파', bossFirstReward(stageIdx), 0, 'stage', bossFirstItems(stageIdx), bossFirstStar(stageIdx));
   let rework = false;
   if(already && bossReclearPending(stageIdx)){ // (v263) 기믹 개편 뒤 다시 잡음 → 첫 격파 보상 한 번 더
     delete state.bossReclear[stageIdx]; rework = true;
@@ -6746,7 +6746,7 @@ function showUnitKitInfo(u, rarOv){ // rarOv: 표시 등급을 정해서 보여 
   const kit = kitOf(u), sp = SPIRITS[u.key], g = u.g;
   const row = (label, name, icon, desc, locked)=> '<div style="padding:8px 0; border-bottom:1px solid #ffffff12;'+(locked?' opacity:.4;':'')+'"><div class="ttl" style="font-size:13px;">'+icon+' '+name+' <span class="sub" style="font-size:11px;">'+label+'</span></div><div class="sub" style="font-size:12px; margin-top:2px;">'+desc+'</div></div>';
   let h = '<div class="sub" style="text-align:center; margin-bottom:6px;">'+ELEMENT_INFO[sp.element].icon+' '+RARITY_INFO[rarOv || uRar(u, sp)].name+' · '+kit.role+(u.aw?' · 각성 ★'+u.aw+(u.aw>=5?' (스킬 한 등급 위)':''):'')+'</div>';
-  if(u.sub && u.sub.dbs>0) h += '<div class="sub" style="text-align:center; font-size:11px; margin-bottom:4px;">강화 · 초월: 독 · 저주 · 거미줄 · 노출 수치 ×'+dbMul(u).toFixed(2)+'</div>'; // (v8.3.0)
+  if(u.sub && u.sub.dbs>0) h += '<div class="sub" style="text-align:center; font-size:11px; margin-bottom:4px;">정령력 보너스: 독 · 저주 · 거미줄 · 노출 수치 ×'+dbMul(u).toFixed(2)+'</div>'; // (v8.3.0) · (v8.4.0) 정령력 기준
   h += row('스킬1 · 쿨 '+cdLbl(u,'s1'), kit.s1.name, kit.s1.icon, kit.s1.desc(g), false);
   h += row('스킬2 · 쿨 '+cdLbl(u,'s2')+(!unitS2On(u)?' · 에픽 또는 각성 3단계':''), kit.s2.name, kit.s2.icon, kit.s2.desc(unitSG(u)), !unitS2On(u));
   h += row('패시브'+(unitPG(u)<1?' · 레어 또는 각성 1단계':''), kit.passive.name, kit.passive.icon||'✦', kit.passive.desc(Math.max(1,unitPG(u))), unitPG(u)<1);
@@ -8282,10 +8282,12 @@ function toastReward(rw, title, ms){
   const parts = [rw.essence?'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">+'+rw.essence:'', rw.stone?'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">+'+rw.stone:'', rw.gems?uiIc('runestone')+'+'+rw.gems:'', rw.wbGems?uiIc('wbgem')+'+'+rw.wbGems:'', rw.shards?'<img class="uic" src="assets/ui/ic_shard.webp" alt="파편">+'+rw.shards:'', rw.upStones?uiIc('upstone')+'+'+rw.upStones:'', rw.star?SHARD_IC+'+'+rw.star:'', itemsShort(rw.items), rw.runes?Object.keys(rw.runes).map(k=>{ const r = mailRuneInfo(k); return r ? r.ic+'×'+rw.runes[k] : ''; }).join(' '):''].filter(Boolean);
   toast('<span class="tt">'+(title||'보상 획득')+'</span><span class="tnr">'+parts.map(p=>'<span class="tn">'+p+'</span>').join('')+'</span>', ms||3200, true);
 }
-// (v8.3.0) 출정 함정처럼 놓치면 안 되는 알림 — 화면 가운데 크게 (알림 기록에도 남음)
-function xpAlert(title, sub){
+// (v8.3.0) 출정 함정처럼 놓치면 안 되는 알림 — 화면 가운데 크게 (알림 기록에도 남음) · (v8.4.0) good: 유물·버프·보상 등 좋은 일은 금색 (사용자 결정: 출정 알림 전부 크게)
+// title·sub는 게임 안 문구만 넘김 (그림 태그 포함 가능)
+function xpAlert(title, sub, good){
   toast(title+' · '+sub, 3000);
-  const el = document.createElement('div'); el.className = 'xp-alert'; el.innerHTML = '<b></b><span></span>'; el.querySelector('b').textContent = title; el.querySelector('span').textContent = sub;
+  document.querySelectorAll('.xp-alert').forEach(e=>e.remove());
+  const el = document.createElement('div'); el.className = 'xp-alert'+(good?' good':''); el.innerHTML = '<b>'+title+'</b><span>'+sub+'</span>';
   el.addEventListener('click', ()=>el.remove()); document.body.appendChild(el); setTimeout(()=>el.remove(), 2600);
 }
 function toast(msg, ms, html){
@@ -10858,6 +10860,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:381, v:'8.4.0', date:'2026-10-09', secs:[
+    { t:'스킬', items:[ '약화 효과 성장을 강화 · 초월 기준에서 정령력 기준으로 — 정령력 420을 넘는 만큼 12마다 +1% (최대 +50%)', '적용: 독 피해 · 저주 · 거미줄 받는 피해 증가 · 노출' ]},
+    { t:'탐험 난이도', items:[ '노말로 옮겨진 예전 하드 3~6 — 하드 3~6을 다시 깨면 첫 클리어 · 등급 · 챕터 진행도 보상을 다시 받음' ]},
+    { t:'출정', items:[ '유물 · 버프 획득, 제단 · 상자 · 샘 · 카드, 휴식 · 단련 · 회복약, 불사조 깃털도 화면 가운데에 크게 알림' ]}
+  ]},
   { build:380, v:'8.3.0', date:'2026-10-09', secs:[
     { t:'레이드', items:[ '새 난이도 헬 · 인페르노 · 카오스 (추천 전투력 43,800 · 88,700 · 154,600)', '헬: 강화석 600 · 고대 룬석 16 · 장비 70% (레전더리 25%) · 주간 첫 승리 에픽 정령 확정권 2 · 에픽 장비 선택권 · 각인석 6', '인페르노: 강화석 800 · 고대 룬석 20 · 장비 80% (레전더리 35%) · 주간 첫 승리 레전더리 정령 확정권 · 레전더리 장비 확정권 · 각인석 8', '카오스: 강화석 1,000 · 고대 룬석 25 · 장비 90% (레전더리 50%) · 주간 첫 승리 레전더리 정령 선택권 · 레전더리 장비 선택권 · 각인석 10', '소탕 — 이긴 적 있는 보스 · 난이도는 입장권 1장으로 승리 보상을 바로 받음' ]},
     { t:'스킬', items:[ '약화 효과가 강화 · 초월에 따라 커짐 — 강화 1단계마다 +2% · 초월 1단계마다 +2% (최대 +50%)', '적용: 독 피해 · 저주 · 거미줄 받는 피해 증가 · 노출', '스킬 보기 창에 지금 배율 표시' ]},
@@ -12672,7 +12679,7 @@ function persistExpeditionWaveState(sf){
   sf.myUnits.forEach(u=>{ run.unitHp[u.key] = { hp: u.hp, maxHp: u.maxHp }; });
   if(expHasRelic(run,'phoenix') && sf.result && sf.result.win && sf.myUnits.some(u=>u.hp<=0)){ // (v266) 불사조 깃털: 이긴 전투에서 쓰러진 정령 복귀(한 번)
     sf.myUnits.forEach(u=>{ if(u.hp<=0) run.unitHp[u.key] = { hp: Math.round(u.maxHp*0.3), maxHp: u.maxHp }; });
-    run.relics = run.relics.filter(id=>id!=='phoenix'); toast('🐦‍🔥 불사조 깃털 — 쓰러진 정령 복귀');
+    run.relics = run.relics.filter(id=>id!=='phoenix'); xpAlert('🐦‍🔥 불사조 깃털', '쓰러진 정령 복귀', true);
   }
   run.roster.forEach(key=>{
     if(!key) return;
@@ -12776,29 +12783,29 @@ function pickExpeditionBuffChoices(kind){ // (v266) 능력치 버프 + 유물 �
 function chooseExpeditionBuff(buffId){
   const run = state.expedition;
   if(!run || !run.pendingBuffChoice) return;
-  if(String(buffId).indexOf('r:')===0){ const id = buffId.slice(2); if(EXP_RELICS.some(r=>r.id===id) && !expHasRelic(run, id)) run.relics = (run.relics||[]).concat(id); if(run.relics.length>=8) hidMark('relic8'); } // (v266) 유물
+  if(String(buffId).indexOf('r:')===0){ const id = buffId.slice(2); if(EXP_RELICS.some(r=>r.id===id) && !expHasRelic(run, id)){ run.relics = (run.relics||[]).concat(id); const r = EXP_RELICS.find(x=>x.id===id); xpAlert(r.ic+' 유물 획득', r.nm+' — '+r.d, true); } if(run.relics.length>=8) hidMark('relic8'); } // (v266) 유물
   const buff = EXPEDITION_BUFFS.find(b=>b.id===buffId);
-  if(buff) buff.apply(run);
+  if(buff){ buff.apply(run); xpAlert(buff.icon+' 버프', buff.label, true); }
   run.pendingBuffChoice = null;
   save();
   render();
 }
 const EXPEDITION_EVENTS = [
   {id:'shrine', text:'고대 제단을 발견했다. 정수 30을 바치면 이번 런 한정 공격력이 오를 것 같다.',
-    optA:{label:'정수 30 바치기', apply:function(){ if(state.essence>=30){ state.essence-=30; state.expedition.powerMult*=1.15; toast('제단이 응답했다 (공격력 +15%)'); } else toast('정수 부족'); }},
+    optA:{label:'정수 30 바치기', apply:function(){ if(state.essence>=30){ state.essence-=30; state.expedition.powerMult*=1.15; xpAlert('🗿 제단이 응답했다', '공격력 +15% (이번 출정 동안)', true); } else toast('정수 부족'); }},
     optB:{label:'그냥 지나간다', apply:function(){ toast('조용히 지나갔다'); }}},
   {id:'chest', text:'낡은 상자를 발견했다. 열어보면 뭐가 나올지 모른다.',
-    optA:{label:'상자 열기', apply:function(){ const r=Math.random(); if(r<0.5){ state.essence+=60; toastReward({essence:60}, uiIc('box')+' 상자'); } else if(r<0.85){ state.enhanceStone=(state.enhanceStone||0)+15; toastReward({stone:15}, uiIc('box')+' 상자'); } else { state.expedition.powerMult*=0.9; xpAlert('💥 함정!', '공격력 −10% (이번 출정 동안)'); } }},
+    optA:{label:'상자 열기', apply:function(){ const r=Math.random(); if(r<0.5){ state.essence+=60; xpAlert(uiIc('box')+' 상자', uiIc('essence')+' 정수 +60', true); } else if(r<0.85){ state.enhanceStone=(state.enhanceStone||0)+15; xpAlert(uiIc('box')+' 상자', uiIc('stone')+' 강화석 +15', true); } else { state.expedition.powerMult*=0.9; xpAlert('💥 함정!', '공격력 −10% (이번 출정 동안)'); } }},
     optB:{label:'그냥 지나간다', apply:function(){ toast('상자를 두고 지나갔다'); }}},
   {id:'spring', text:'신비한 샘을 발견했다. 몸을 담그면 원기가 회복될 것 같다.',
-    optA:{label:'샘에 몸 담그기', apply:function(){ state.expedition.rewardMult*=1.15; toast('완주 보상 +15%'); }},
+    optA:{label:'샘에 몸 담그기', apply:function(){ state.expedition.rewardMult*=1.15; xpAlert('⛲ 샘', '완주 보상 +15%', true); }},
     optB:{label:'그냥 지나간다', apply:function(){ toast('조용히 지나갔다'); }}}
 ];
 // '?' 방은 고를 때는 정체를 몰랐다가 들어가는 순간(resolveMysteryRoom) 이벤트 또는 카드 퍼즐 중 하나로 확정됨
 const PUZZLE_CARD_OUTCOMES = [
-  {icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">', label:'정수 +80', apply:function(){ state.essence+=80; toastReward({essence:80}, '🎴 카드'); }},
-  {icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">', label:'강화석 +20', apply:function(){ state.enhanceStone=(state.enhanceStone||0)+20; toastReward({stone:20}, '🎴 카드'); }},
-  {icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', label:'장비 소환권 +1', apply:function(){ grantItems({equip:1}); toast(uiIc('tk_equip')+' 장비 소환권 +1'); }},
+  {icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="정수">', label:'정수 +80', apply:function(){ state.essence+=80; xpAlert('🎴 카드', uiIc('essence')+' 정수 +80', true); }},
+  {icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">', label:'강화석 +20', apply:function(){ state.enhanceStone=(state.enhanceStone||0)+20; xpAlert('🎴 카드', uiIc('stone')+' 강화석 +20', true); }},
+  {icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', label:'장비 소환권 +1', apply:function(){ grantItems({equip:1}); xpAlert('🎴 카드', uiIc('tk_equip')+' 장비 소환권 +1', true); }},
   {icon:'💥', label:'함정', apply:function(){ state.expedition.powerMult*=0.85; xpAlert('💥 함정 카드!', '공격력 −15% (이번 출정 동안)'); }}
 ];
 function resolveMysteryRoom(room){
@@ -14291,20 +14298,20 @@ function expBossEnemies(run, node, P){
 }
 function expRestChoose(kind){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='rest') return;
-  if(kind==='heal'){ run.roster.forEach(k=>{ const c = run.unitHp[k] || {hp:spiritMaxHpGrid(k), maxHp:spiritMaxHpGrid(k)}; c.hp = Math.min(c.maxHp, Math.max(c.hp, 0) + Math.round(c.maxHp*0.35)); run.unitHp[k] = c; run.consecutive[k] = 0; }); toast('🔥 휴식 — 출정대 체력 35% 회복 · 피로 초기화'); }
-  else { run.powerMult *= 1.08; toast('🔥 단련 — 공격력 +8%'); }
+  if(kind==='heal'){ run.roster.forEach(k=>{ const c = run.unitHp[k] || {hp:spiritMaxHpGrid(k), maxHp:spiritMaxHpGrid(k)}; c.hp = Math.min(c.maxHp, Math.max(c.hp, 0) + Math.round(c.maxHp*0.35)); run.unitHp[k] = c; run.consecutive[k] = 0; }); xpAlert('💚 휴식', '출정대 체력 35% 회복 · 피로 초기화', true); }
+  else { run.powerMult *= 1.08; xpAlert('⚔️ 단련', '공격력 +8% (이번 출정 동안)', true); }
   advanceExpeditionAfterRoom(run);
 }
 function expShopBuy(i){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='shop') return;
-  if(i==='heal'){ if(room.heal) return; const hp = room.healPrice || 45; if((run.gold||0) < hp){ toast('금화 부족'); return; } run.gold -= hp; room.heal = true; run.roster.forEach(k=>{ const c = run.unitHp[k]; if(c) c.hp = Math.min(c.maxHp, Math.max(c.hp,0) + Math.round(c.maxHp*0.5)); }); toast('🧪 출정대 체력 50% 회복'); }
-  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; if(!expHasRelic(run, it.id)) run.relics = (run.relics||[]).concat(it.id); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===it.id); toast(r.ic+' '+r.nm+' 획득'); }
+  if(i==='heal'){ if(room.heal) return; const hp = room.healPrice || 45; if((run.gold||0) < hp){ toast('금화 부족'); return; } run.gold -= hp; room.heal = true; run.roster.forEach(k=>{ const c = run.unitHp[k]; if(c) c.hp = Math.min(c.maxHp, Math.max(c.hp,0) + Math.round(c.maxHp*0.5)); }); xpAlert('🧪 회복약', '출정대 체력 50% 회복', true); }
+  else { const it = room.stock[i]; if(!it || it.sold) return; if((run.gold||0) < it.price){ toast('금화 부족'); return; } run.gold -= it.price; it.sold = true; if(!expHasRelic(run, it.id)) run.relics = (run.relics||[]).concat(it.id); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===it.id); xpAlert(r.ic+' 유물 획득', r.nm+' — '+r.d, true); }
   save(); render();
 }
 function expTreasureTake(){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='treasure') return;
   if(!room.relic){ const pool = EXP_RELICS.filter(r=>!expHasRelic(run, r.id)); room.relic = pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null; }
-  if(room.relic && !expHasRelic(run, room.relic)){ run.relics = (run.relics||[]).concat(room.relic); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===room.relic); toast(r.ic+' 보물 — '+r.nm+' 획득'); }
+  if(room.relic && !expHasRelic(run, room.relic)){ run.relics = (run.relics||[]).concat(room.relic); if(run.relics.length>=8) hidMark('relic8'); const r = EXP_RELICS.find(x=>x.id===room.relic); xpAlert(r.ic+' 보물 · 유물 획득', r.nm+' — '+r.d, true); }
   expGold(run, 30);
   advanceExpeditionAfterRoom(run);
 }
@@ -16042,8 +16049,8 @@ function migrateHardV253(){
 // (v8.0.0) 난이도 3단계 — 예전 노말(0~)은 이름만 이지 · 예전 하드 1·2(500~519 · 챕터 51·52)는 노말 1·2(1000~1019 · 101·102)로 옮김 · 하드 3~6(520~)은 그대로
 //  예전에 열려 있던 하드 챕터(3 이상)는 hardLegacyOpen으로 계속 열어 둠 (새 하드 1·2를 안 깨도)
 // (v8.2.0) 사용자 결정: 예전 하드 3~6 진행은 노말 3~6으로 옮기고 하드 3~6은 새 길(노말 6 → 하드 1 → 하드 2 → …)로만 열림
-//  8.0.0에서 열어 둔 hardLegacyOpen을 없앰 · 깬 기록(stageBest)·편성은 노말 같은 자리로 · 예전에 받은 하드 첫 클리어·등급 보상은 hardPaid에 남겨 다시 깰 때 또 안 줌
-function stagePaidRank(i){ const g = state.hardPaid && state.hardPaid[i]; return ({C:1,B:2,A:3,S:4})[g] || 0; }
+//  8.0.0에서 열어 둔 hardLegacyOpen을 없앰 · 깬 기록(stageBest)·편성은 노말 같은 자리로 · (v8.4.0) 사용자 결정: 하드를 다시 깨면 첫 클리어·등급 보상을 또 줌 (8.2.0의 hardPaid는 없앰)
+function hardChClaimsReset(s){ const c = s.chapterRewardsClaimed; if(!c || typeof c!=='object') return; Object.keys(c).forEach(k=>{ const m = /^ch(\d+)_pct\d+$/.exec(k); if(m && +m[1]>=HARD_CH_BASE+3 && +m[1]<=HARD_CH_BASE+MAX_CHAPTERS) delete c[k]; }); } // (v8.4.0) 하드 3~6 진행도 보상도 다시 받게
 function migrateTierV820(){
   const s = state; if(s.tierV820) return; s.tierV820 = true;
   const lg = s.hardLegacyOpen||0; delete s.hardLegacyOpen;
@@ -16051,9 +16058,10 @@ function migrateTierV820(){
   if(lg<3 || tierChapterOpen('h', 3)) return; // 새 길로 하드 3을 이미 연 사람은 그대로
   const lo = HARD_BASE + 2*CHAPTER_LENGTH, hi = HARD_BASE + MAX_CHAPTERS*CHAPTER_LENGTH, D = NORM_BASE - HARD_BASE, rank = {C:1,B:2,A:3,S:4};
   const mv = n=> (Number.isInteger(n) && n>=lo && n<hi) ? n+D : n;
-  const sb = s.stageBest; s.hardPaid = isPlainObj(s.hardPaid) ? s.hardPaid : {};
+  const sb = s.stageBest;
   Object.keys(sb).forEach(k=>{ const n = Number(k), m = mv(n); if(m===n || !sb[k]) return;
-    s.hardPaid[n] = sb[k]; if(!sb[m] || (rank[sb[k]]||0) > (rank[sb[m]]||0)) sb[m] = sb[k]; delete sb[k]; });
+    if(!sb[m] || (rank[sb[k]]||0) > (rank[sb[m]]||0)) sb[m] = sb[k]; delete sb[k]; });
+  hardChClaimsReset(s);
   const fm = s.stageFormations; if(fm && typeof fm==='object') Object.keys(fm).forEach(k=>{ const n = Number(k), m = mv(n); if(m!==n && !fm[m]) fm[m] = fm[k]; });
   if(s.skillFight && typeof s.skillFight==='object' && (!s.skillFight.mode || s.skillFight.mode==='boss')) s.skillFight.stageIdx = mv(s.skillFight.stageIdx);
   if(s.bossFight && typeof s.bossFight==='object') s.bossFight.stageIdx = mv(s.bossFight.stageIdx);
@@ -16139,7 +16147,8 @@ function sanitizeState(){
   migrateBossReworkV263();
   migrateTierV800(); migrateTierV820();
   if(!Number.isInteger(s.hardLegacyOpen) || s.hardLegacyOpen<3 || s.hardLegacyOpen>MAX_CHAPTERS) delete s.hardLegacyOpen; // (v8.0.0)
-  { const P = {}; if(isPlainObj(s.hardPaid)) Object.keys(s.hardPaid).forEach(k=>{ const n = Number(k); if(isHardStage(n) && ['C','B','A','S'].includes(s.hardPaid[k])) P[n] = s.hardPaid[k]; }); if(Object.keys(P).length) s.hardPaid = P; else delete s.hardPaid; } // (v8.2.0)
+  if(isPlainObj(s.hardPaid) && Object.keys(s.hardPaid).length) hardChClaimsReset(s); // (v8.4.0) 8.2.0에서 옮겨진 세이브 — 하드 3~6 진행도 보상도 다시
+  delete s.hardPaid; // (v8.2.0에 잠깐 있던 것 — v8.4.0에서 없앰)
   if(!isPlainObj(s.hid)) s.hid = {}; // (v266) 히든 업적 기록
   if(!isPlainObj(s.trialTried)) s.trialTried = {}; // (v268) 시련 힌트 열림
   if(!isPlainObj(s.lvClaimed)) s.lvClaimed = {}; if(!fin(s.lvSeen)) s.lvSeen = 0; // (v269) 계정 레벨 보상
@@ -16430,7 +16439,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 380, APP_VERSION = '8.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 381, APP_VERSION = '8.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
