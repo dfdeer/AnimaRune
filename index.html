@@ -6666,7 +6666,7 @@ function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 �
 function mountBattleScreen(){
   let el = document.getElementById('battleScreen');
   if(!el){ el = document.createElement('div'); el.id = 'battleScreen'; document.getElementById('app').appendChild(el); }
-  document.body.classList.add('in-battle'); updateScrollLock();
+  document.body.classList.add('in-battle'); updateScrollLock(); bgmSoon();
   return el;
 }
 function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(--k) 계산
@@ -6714,7 +6714,7 @@ function snapBossSideUnits(ar){
     if(Math.abs(d) > 0.5) s.style.top = (s.offsetTop + d)+'px';
   });
 }
-function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
+function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); bgmSoon(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
 function upcomingOrder(sf, n){
   const out = [];
   for(let p=sf.queuePos; p<sf.queue.length && out.length<n; p++){ const e = sf.queue[p], u = unitAt(sf, e.side, e.idx); if(u && u.alive) out.push({e, u, next:false}); }
@@ -7032,7 +7032,7 @@ function battleSceneHtml(theme){
   return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
 function showSkillStageScreen(){
-  const sf = state.skillFight; if(!sf) return;
+  const sf = state.skillFight; if(!sf) return; bgmSoon();
   if(hidPendingFF) hidCheckPending(sf); // (v266) 레이드 파티원 쪽 히든 업적
   if(document.getElementById('modalRoot').innerHTML) closeModal();
   const firstMount = !document.getElementById('battleScreen');
@@ -8256,15 +8256,8 @@ function save(){
 let audioCtx = null, bgmGain = null, sfxGain = null;
 let bgmTimer = null, bgmStep = 0;
 // 16스텝 A-B 두 구절 + 베이스 라인(옥타브 아래)로 좀 더 풍성하게
-// (v8.9.0) 7.7초마다 같은 마디가 되풀이돼 곡이 끝나고 다시 시작하는 게 느껴졌음 → 원래 16박(A) · 변주(A') · 새 구절(B) · 원래(A) 64박(약 31초)으로 늘림 · 음색은 그대로
-const BGM_MELODY = [392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523,
-                    392,440,523,659, 587,523,440,392, 349,392,440,523, 587,523,440,392,
-                    440,523,587,494, 659,587,523,440, 440,523,587,659, 784,659,587,523,
-                    392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523];
-const BGM_BASS    = [196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262,
-                    196,196,262,196, 262,196,220,220, 175,175,175,175, 220,220,196,196,
-                    175,175,196,196, 165,165,220,220, 175,175,196,196, 262,262,196,196,
-                    196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262];
+const BGM_MELODY = [392,440,523,440, 523,587,523,440, 349,392,440,392, 440,523,587,523];
+const BGM_BASS    = [196,196,262,196, 262,196,262,220, 175,175,220,175, 220,262,294,262];
 function resumeAudio(){ try{ const p = audioCtx.resume(); if(p && p.catch) p.catch(()=>{}); }catch(e){} }
 function ensureAudioCtx(){
   if(audioCtx && audioCtx.state==='closed'){ audioCtx = null; bgmGain = null; sfxGain = null; } // 닫힌 컨텍스트는 다시 만듦
@@ -8426,7 +8419,7 @@ function battleSfxFor(sf, fx){
 }
 // 배경음 (E안: 차분한 편곡) — 멜로디 사인(천천히 스며듦) · 길게 이어지는 베이스 · 낮고 어두운 화음 패드 · 한 박에 한 번 작은 삼각파 · 여덟 박에 한 번 은은한 킥 · 2.8초 울림
 const BGM_STEP = 0.48;
-const BGM_CH = { C:[262,330,392], Am:[220,262,330], F:[175,220,262], G:[196,247,294], Em:[165,196,247] }, BGM_PROG = ['C','C','C','Am','F','F','Am','G', 'C','C','C','Am','F','F','Am','G', 'F','G','Em','Am','F','G','C','C', 'C','C','C','Am','F','F','Am','G'];
+const BGM_CH = { C:[262,330,392], Am:[220,262,330], F:[175,220,262], G:[196,247,294] }, BGM_PROG = ['C','C','C','Am','F','F','Am','G'];
 let bgmBus = null, bgmNextAt = 0;
 function bgmMakeBus(){
   if(bgmBus && bgmBus.context===audioCtx) return bgmBus;
@@ -8519,7 +8512,7 @@ const BGM_TRACKS = {
       if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.045, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 650); } } },
 };
 Object.keys(BGM_TRACKS).forEach(k=>{ const t = BGM_TRACKS[k]; if(!t.len) t.len = t.mel.length; });
-let bgmFaders = {}, bgmCur = 'home', bgmWantPrev = 'home';
+let bgmFaders = {}, bgmCur = 'home', bgmSyncT = null;
 function bgmFader(id){ const bus = bgmMakeBus(); let f = bgmFaders[id]; if(f && f.context===audioCtx) return f; f = audioCtx.createGain(); f.gain.value = id===bgmCur ? BGM_TRACKS[id].vol : 0; f.connect(bus); return (bgmFaders[id] = f); }
 function bgmTrackNote(id, step, off){ BGM_TRACKS[id].play(step, off, bgmFader(id)); }
 function bgmFadeTo(id, v, t, dur){ const g = bgmFader(id).gain; try{ g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t+dur); }catch(e){ g.value = v; } }
@@ -8533,6 +8526,16 @@ function bgmWant(){
   if(activeTab==='hearth' && typeof villageOn==='function' && villageOn()) return 'village';
   return 'home';
 }
+// (v8.9.1) 곡 바꾸기 — 예전엔 0.2초마다 확인 + 같은 화면 두 번 확인 + 0.3초 뒤 시작이라 최대 1초쯤 늦었음
+//  → 화면을 그릴 때(render·전투 화면 열고 닫기) 바로 확인 · 앞 곡은 0.25초 동안 줄이고 새 곡은 0.06초 뒤 시작
+function bgmSwitch(now){
+  let want = 'home'; try{ want = bgmWant(); }catch(e){}
+  if(want===bgmCur || !BGM_TRACKS[want]) return false;
+  bgmFadeTo(bgmCur, 0, now, 0.25); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.06; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, now + 0.04, 0.12);
+  aBase = now; try{ const tr = BGM_TRACKS[bgmCur]; while(bgmNextAt < now + 1.5){ bgmTrackNote(bgmCur, bgmStep % tr.len, bgmNextAt - now); bgmStep++; bgmNextAt += tr.step; } } finally { aBase = null; }
+  return true;
+}
+function bgmSoon(){ if(bgmSyncT || !bgmTimer) return; bgmSyncT = setTimeout(()=>{ bgmSyncT = null; try{ if(audioCtx && audioCtx.state==='running' && !document.hidden && state.settings.bgmVolume>0) bgmSwitch(audioCtx.currentTime); }catch(e){} }, 0); }
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
   bgmNextAt = 0;
@@ -8541,10 +8544,7 @@ function startBgm(){
   bgmTimer = setInterval(()=>{
     if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
-    let want = 'home'; try{ want = bgmWant(); }catch(e){}
-    if(want!==bgmCur && want===bgmWantPrev && BGM_TRACKS[want]){ // (v8.9.0) 화면이 0.2초 넘게 그대로면 곡을 바꿈 — 앞 곡은 0.5초 동안 줄이고 새 곡은 처음부터
-      bgmFadeTo(bgmCur, 0, now, 0.5); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.3; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, bgmNextAt - 0.05, 0.3); }
-    bgmWantPrev = want;
+    bgmSwitch(now);
     const tr = BGM_TRACKS[bgmCur];
     if(!bgmNextAt || bgmNextAt < now - 3) bgmNextAt = now + 0.05;
     while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += tr.step; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
@@ -8857,7 +8857,7 @@ function showEquipDismantleModal(key){
   const range = document.getElementById('dismantleRange');
   range.addEventListener('input', ()=>{ const n = parseInt(range.value); document.getElementById('dismantleN').textContent = n; document.getElementById('dismantleGain').textContent = per*n; });
   document.getElementById('dismantleCancel').addEventListener('click', ()=>showEquipDetailModal(key));
-  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else { const o = ownedEquipItems().find(x=>eqType(x)===eqType(key)); if(o) showEquipDetailModal(o); else closeModal(); } });
+  document.getElementById('dismantleOk').addEventListener('click', ()=>{ doEquipDismantle(key, parseInt(range.value)); if(equipOwnedCount(key)>0) showEquipDetailModal(key); else { const o = ownedEquipItems().find(x=>eqType(x)===eqType(key)); if(o) showEquipDetailModal(o); else eqDetailLeave(); } });
 }
 function equipElementComplete(el){ return EQUIP_SLOTS.every(sl=>RARITY_ORDER.every(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)])); }
 function equipElementCount(el){ return EQUIP_SLOTS.reduce((n,sl)=>n+RARITY_ORDER.filter(r=>state.equipSeen && state.equipSeen[equipKey(sl,el,r)]).length,0); }
@@ -9954,11 +9954,22 @@ const FZ_LP_SEL = '.fz-pick[data-fz-add], .fz-slot.on[data-fz-rm], .fz-ds.on[dat
 document.addEventListener('pointerdown', e=>{ const el = e.target && e.target.closest && e.target.closest(FZ_LP_SEL); if(!el) return;
   const k = el.dataset.fzAdd || fuseSlots[+el.dataset.fzRm], eq = fuseMode==='equip'; if(!k || (eq ? !equipInfo(k) : !SPIRITS[k])) return;
   clearTimeout(fzLp.t); fzLp.fired = false; fzLp.x = e.clientX; fzLp.y = e.clientY;
-  fzLp.t = setTimeout(()=>{ fzLp.t = null; fzLp.fired = true; if(eq) showEquipDetailModal(k); else { manageReturnFn = null; showManageModal(k); } }, 500); });
+  fzLp.t = setTimeout(()=>{ fzLp.t = null; fzLp.fired = true; if(eq) openEquipDetail(k); else { manageReturnFn = null; showManageModal(k); } }, 500); });
 document.addEventListener('pointermove', e=>{ if(fzLp.t && (Math.abs(e.clientX-fzLp.x) > 10 || Math.abs(e.clientY-fzLp.y) > 10)){ clearTimeout(fzLp.t); fzLp.t = null; } });
 ['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev, ()=>{ if(fzLp.t){ clearTimeout(fzLp.t); fzLp.t = null; } }));
 document.addEventListener('click', e=>{ if(fzLp.fired){ fzLp.fired = false; if(e.target && e.target.closest && e.target.closest('[data-fz-add], [data-fz-rm]')){ e.stopPropagation(); e.preventDefault(); } } }, true);
 document.addEventListener('contextmenu', e=>{ if(e.target && e.target.closest && e.target.closest(FZ_LP_SEL)) e.preventDefault(); });
+// (v8.9.1) 정령 정보의 장착 장비 · 장비 고르기 창의 장비를 꾹 누르면 장비 정보 — 닫으면 원래 창으로
+let eqLp = { t:null, fired:false, x:0, y:0 };
+document.addEventListener('pointerdown', e=>{ const el = e.target && e.target.closest && e.target.closest('[data-eq-lp]'); if(!el) return;
+  const k = el.dataset.eqLp, sp = el.dataset.eqSp, sl = el.dataset.eqSlot; if(!k || !equipInfo(k) || !SPIRITS[sp]) return;
+  clearTimeout(eqLp.t); eqLp.fired = false; eqLp.x = e.clientX; eqLp.y = e.clientY;
+  eqLp.t = setTimeout(()=>{ eqLp.t = null; eqLp.fired = true; if(equipOwnedCount(k)<=0) return; openEquipDetail(k, sl ? ()=>showEquipPicker(sp, sl) : ()=>showManageModal(sp)); }, 500); });
+document.addEventListener('pointermove', e=>{ if(eqLp.t && (Math.abs(e.clientX-eqLp.x) > 10 || Math.abs(e.clientY-eqLp.y) > 10)){ clearTimeout(eqLp.t); eqLp.t = null; } });
+['pointerup','pointercancel'].forEach(ev=>document.addEventListener(ev, ()=>{ if(eqLp.t){ clearTimeout(eqLp.t); eqLp.t = null; } }));
+document.addEventListener('pointerdown', ()=>{ eqLp.fired = false; }, true); // 새로 누르면 풀림
+document.addEventListener('click', e=>{ if(eqLp.fired){ eqLp.fired = false; e.stopPropagation(); e.preventDefault(); } }, true); // 꾹 누른 손을 뗄 때의 클릭은 새로 뜬 장비 정보 창의 버튼에 닿지 않게 통째로 버림
+document.addEventListener('contextmenu', e=>{ if(e.target && e.target.closest && e.target.closest('[data-eq-lp]')) e.preventDefault(); });
 const formCtx = (nm, reopen, allow, onSet)=>({ nm, get:()=> Array.from({length:6}, (_,i)=> state.formation[i] || null), set:keys=>{ state.formation = keys.slice(0, GRID_SLOTS); cleanupFormation(); if(onSet) onSet(); }, reopen, allow });
 // ===================== (v297) 시즌 패스 =====================
 // 일반(무료)·프리미엄 두 줄이 같은 패스 레벨로 나란히 진행. 프리미엄은 세계 룬석으로 해금 — 언제 사도 지난 레벨 보상까지 받음
@@ -10299,7 +10310,7 @@ function xpRunOn(){ return !!state.expedition; }
 let xpLockToastAt = 0;
 function xpLockBlock(){ if(!xpRunOn()) return false; if(Date.now()-xpLockToastAt > 1500){ xpLockToastAt = Date.now(); toast('🗡️ 출정 중 — 포기하거나 끝내야 나갈 수 있음'); } return true; }
 function render(){
-  dbgRenders++; dbgLastRender = Date.now();
+  dbgRenders++; dbgLastRender = Date.now(); bgmSoon(); // (v8.9.1) 화면이 바뀌면 배경음도 바로
   if(xpRunOn() && activeTab!=='expedition' && !state.skillFight) activeTab = 'expedition'; // (v315) 어느 길로 바뀌어도 출정 화면으로
   document.body.classList.toggle('xp-lock', xpRunOn());
   checkDailyRollover();
@@ -10527,11 +10538,15 @@ function equipInventoryHtml(){
   }else h += '<div class="grid5">'+owned.sort(byR).map(equipSpeciesTile).join('')+'</div>';
   return h;
 }
+// (v8.9.1) 정령 정보·장비 고르기 창에서 꾹 눌러 연 장비 정보는 닫으면 그 창으로 돌아감 — 강화·부가 능력 등 안쪽 창을 오가도 유지
+let eqDetailBack = null;
+function openEquipDetail(key, back){ eqDetailBack = back || null; showEquipDetailModal(key); }
+function eqDetailLeave(){ const b = eqDetailBack; eqDetailBack = null; if(b) b(); else closeModal(); }
 function showEquipDetailModal(key){
   const i = equipInfo(key), info = RARITY_INFO[i.rarity], n = equipTypeCount(eqType(key)), used = ownedEquipItems().filter(x=>eqType(x)===eqType(key) && equipUsedCount(x)>0).length;
-  if(n<=0){ closeModal(); return; }
+  if(n<=0){ eqDetailLeave(); return; }
   const users = Object.keys(state.equipped||{}).filter(sp=>ownedCount(sp)>0 && EQUIP_SLOTS.some(sl=>state.equipped[sp][sl]===key));
-  let html = '<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
+  let html = (eqDetailBack ? '<button class="aw-back" id="eqDetBack">‹ 돌아가기</button>' : '')+'<div style="text-align:center;"><div style="font-size:44px;">'+i.img+'</div>'
     + '<h3>'+i.name+' '+eqEnhTag(key)+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
@@ -10549,12 +10564,13 @@ function showEquipDetailModal(key){
   html += '<button class="btn secondary" id="eqLockBtn" style="margin-top:8px;">'+(isEqLocked(key)?uiIc('unlock')+' 잠금 풀기':'<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠그기 (합성·분해 재료로 안 씀)')+'</button>';
   html += '<button class="btn secondary" id="equipDismantleBtn" style="margin-top:8px;" '+(equipFreeCount(key)>0 && !isEqLocked(key)?'':'disabled')+'><img class="uic" src="assets/ui/ic_recycle.webp" alt=""> 분해하기'+(isEqLocked(key)?' (<img class="uic" src="assets/ui/ic_lock.webp" alt=""> 잠금 중)':'')+'</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+html+'</div></div>';
-  bindModalClose();
+  bindModalClose(eqDetailLeave);
+  { const bb = document.getElementById('eqDetBack'); if(bb) bb.addEventListener('click', eqDetailLeave); }
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
   { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
   { const so = document.getElementById('eqSubOpen'); if(so && (EQ_SUB_LINES[i.rarity]||0)) so.addEventListener('click', ()=>showSubModal('eq', key, ()=>showEquipDetailModal(key))); }
   { const to = document.getElementById('eqTraitOpen'); if(to) to.addEventListener('click', ()=>showEqTraitModal(key, ()=>showEquipDetailModal(key))); }
-  const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>openFuseTab('equip', key));
+  const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>{ eqDetailBack = null; openFuseTab('equip', key); });
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
   document.querySelectorAll('[data-unequip]').forEach(b=>b.addEventListener('click', ()=>{ unequipItem(b.dataset.unequip, i.slot); showEquipDetailModal(key); }));
 }
@@ -10585,11 +10601,11 @@ function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
   const items = ownedEquipItems().filter(k=>equipInfo(k).slot===slot).sort((a,b)=>equipEffect(b,spKey)-equipEffect(a,spKey));
   const bestKey = items.find(k=>equipFreeCount(k)>0 || k===cur);
-  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가</div>';
+  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가 · 꾹 누르면 장비 정보</div>';
   if(!items.length) html += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 '+si.name+' 없음 — 소환 탭 › 정령장비 소환</div>';
   html += items.map(k=>{
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
-    return '<div '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
+    return '<div data-eq-lp="'+k+'" data-eq-sp="'+spKey+'" data-eq-slot="'+slot+'" '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
       + '<div style="font-size:22px;">'+i.img+'</div>'
       + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
       + '<div style="text-align:right;"><b style="color:#ffd557;">+'+eqPct(equipEffect(k,spKey))+'%</b>'
@@ -10607,13 +10623,13 @@ function equipSlotsHtml(spKey){
   EQUIP_SLOTS.forEach(slot=>{
     const k = equippedKey(spKey, slot), si = EQUIP_SLOT_INFO[slot];
     const any = ownedEquipItems().some(x=>equipInfo(x).slot===slot);
-    h += '<div data-equip-slot="'+slot+'" style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
+    h += '<div data-equip-slot="'+slot+'" '+(k ? 'data-eq-lp="'+k+'" data-eq-sp="'+spKey+'"' : '')+' style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
       + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
-  return h + '</div>';
+  return h + '</div>' + (EQUIP_SLOTS.some(sl=>equippedKey(spKey, sl)) ? '<div class="sub" style="font-size:10px; text-align:center; margin-top:4px; opacity:.75;">장비를 꾹 누르면 장비 정보 (강화·부가 능력·잠금)</div>' : '');
 }
 function summonRateTableHtml(mode){
   const cur = mode==='equip' ? equipSummonLevel() : summonLevel();
@@ -11225,6 +11241,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:406, v:'8.9.1', date:'2026-10-09', secs:[
+    { t:'배경음', items:[ '홈 배경음을 원래 곡으로 되돌림', '화면을 옮기면 배경음이 바로 바뀜 (예전엔 0.6초쯤 늦게 바뀜)' ]},
+    { t:'정령 정보', items:[ '장착한 장비나 장비 고르기 창의 장비를 꾹 누르면 장비 정보 창 (강화·부가 능력·잠금 등) — 닫으면 원래 창으로' ]}
+  ]},
   { build:405, v:'8.9.0', date:'2026-10-09', secs:[
     { t:'배경음', items:[ '화면마다 다른 배경음 — 전투 · 보스(챕터 보스·레이드·월드 보스) · 정령 마을 · 시련의 전당 곡 추가', '화면을 옮기면 곡이 자연스럽게 바뀜', '홈 배경음을 길게 늘려 같은 마디가 되풀이되는 느낌을 줄임 (음색은 그대로)', '일부 효과음이 시작할 때 튀던 소리 수정' ]}
   ]},
@@ -16336,7 +16356,7 @@ function attachHandlers(){
   const eqDb = document.getElementById('equipDexBtn'); if(eqDb) eqDb.addEventListener('click', showEquipDexModal);
   const eqAb = document.getElementById('autoEquipBtn'); if(eqAb) eqAb.addEventListener('click', ()=>{ autoEquipAll(); toast('🔧 추천 장착 완료'); render(); });
   { const ua = document.getElementById('unequipAllBtn'); if(ua) ua.addEventListener('click', ()=>{ const n = unequipAllCount(); if(!n) return; confirmBox('장비 전체 해제', '장착한 장비 <b>'+n+'개</b>를 모두 해제<br><small>잠근 정령이 낀 장비 · 잠근 장비는 그대로</small>', '해제', ()=>{ const m = unequipAll(); toast(uiIc('clear')+' 장비 '+m+'개 해제'); render(); }); }); } // (v6.2.1)
-  document.querySelectorAll('[data-equip-key]').forEach(el=>el.addEventListener('click', ()=>showEquipDetailModal(el.dataset.equipKey)));
+  document.querySelectorAll('[data-equip-key]').forEach(el=>el.addEventListener('click', ()=>openEquipDetail(el.dataset.equipKey)));
   const ms = document.getElementById('multiSummonBtn'); if(ms) ms.addEventListener('click', doMultiSummon);
   document.querySelectorAll('[data-multi-skip]').forEach(c=>c.addEventListener('change', ()=>{ state.settings.multiNoAsk = c.checked; save(); }));
   const dex = document.getElementById('openDex'); if(dex) dex.addEventListener('click', showDexModal);
@@ -16345,7 +16365,7 @@ function attachHandlers(){
   document.querySelectorAll('[data-sp-sub]').forEach(el=>el.addEventListener('click', ()=>{ spiritsSub = el.dataset.spSub; render(); document.getElementById('main').scrollTop = 0; }));
   const ets = document.getElementById('equipToSpirits'); if(ets) ets.addEventListener('click', ()=>{ spiritsSub = 'equip'; activeTab = 'spirits'; render(); });
   { const st = document.getElementById('spiritsToTab'); if(st) st.addEventListener('click', ()=>{ spiritsSub = 'spirits'; activeTab = 'spirits'; render(); }); }
-  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) showEquipDetailModal(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
+  document.querySelectorAll('[data-recent-equip]').forEach(el=>el.addEventListener('click', ()=>{ const k0 = el.dataset.recentEquip, k = equipOwnedCount(k0)>0 ? k0 : ownedEquipItems().find(x=>eqType(x)===eqType(k0)); if(k) openEquipDetail(k); else toast(equipInfo(k).name+' — 지금은 없음 (분해·합성)'); }));
   const ste = document.getElementById('spToEquipSummon'); if(ste) ste.addEventListener('click', ()=>{ summonPage = 1; activeTab = 'summon'; render(); });
   document.querySelectorAll('[data-sp-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.spiritSort = el.dataset.spSort; save(); render(); }));
   document.querySelectorAll('[data-fz-sort]').forEach(el=>el.addEventListener('click', ()=>{ state.fuseSort = el.dataset.fzSort; save(); render(); }));
@@ -16974,7 +16994,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 405, APP_VERSION = '8.9.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 406, APP_VERSION = '8.9.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
