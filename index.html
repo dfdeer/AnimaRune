@@ -10673,23 +10673,46 @@ function installStepsHtml(kind){
   if(kind==='android') return st(['오른쪽 위 <b>⋮</b> 누르기', '<b>홈 화면에 추가</b> 또는 <b>앱 설치</b> → <b>설치</b>', '홈 화면의 <b>아니마룬</b> 아이콘으로 열기']);
   return st(['주소창 오른쪽의 <b>설치</b> 아이콘(모니터에 화살표) 누르기 — 없으면 <b>⋮</b> 메뉴 → <b>앱 설치</b>(크롬) 또는 <b>⋯</b> → 앱 → <b>이 사이트를 앱으로 설치</b>(엣지)', '바탕화면·시작 메뉴의 <b>아니마룬</b>으로 열기']);
 }
-function showInstallModal(back){
+// (v8.8.3) 브라우저로 접속하면 설치 권장 창을 자동으로 — 「다시 보지 않기」는 이 기기(브라우저)에만 저장 · 설정에서 다시 켬
+const INST_ASK_KEY = 'animarune_instNoAsk';
+function instNoAsk(){ try{ return localStorage.getItem(INST_ASK_KEY)==='1'; }catch(_){ return false; } }
+function setInstNoAsk(v){ try{ if(v) localStorage.setItem(INST_ASK_KEY, '1'); else localStorage.removeItem(INST_ASK_KEY); }catch(_){} }
+let instAutoDone = false; // 접속(페이지 열기)마다 한 번
+function instAutoTry(){
+  try{
+    if(instAutoDone) return;
+    if(isStandaloneApp() || instNoAsk()){ instAutoDone = true; return; }
+    if(typeof state==='undefined' || !state) return;
+    if(activeTab!=='home' || document.getElementById('splash') || document.getElementById('battleScreen')) return;
+    if([...document.querySelectorAll('.modal-bg')].some(m=>getComputedStyle(m).display!=='none')) return;
+    { const mr = document.getElementById('modalRoot'); if(mr && mr.children.length) return; }
+    { const hm = document.getElementById('headerMenu'); if(hm && hm.style.display==='block') return; }
+    if(!updCheckDone && performance.now() < 10000) return; // 업데이트 확인이 끝날 때까지(최대 10초)
+    if(updLatest > APP_BUILD && !updSnoozed && !updPatchOnly()) return; // 업데이트 알림 창이 먼저
+    instAutoDone = true; showInstallModal(null, true);
+  }catch(e){}
+}
+setInterval(instAutoTry, 1500);
+function showInstallModal(back, auto){
   back = back || closeModal;
   const kind = installKind();
-  let h = '<h3>📲 홈 화면에 추가</h3><div class="sub" style="line-height:1.5;">앱처럼 전체 화면으로 열리고, 휴대폰 알림도 받을 수 있음</div>';
+  let h = '<h3>📲 '+(auto ? '앱으로 설치하고 즐기기' : '홈 화면에 추가')+'</h3><div class="sub" style="line-height:1.5;">'+(auto ? '지금은 브라우저로 열려 있음 — ' : '')+'앱처럼 전체 화면으로 열리고, 휴대폰 알림도 받을 수 있음</div>';
   if(isStandaloneApp()) h += '<div class="inst-ok">✅ 지금 홈 화면 앱으로 열려 있음</div>';
   else{
     if(installEvt) h += '<button class="btn" id="instGo" style="margin-top:12px;">📲 바로 설치</button><div class="sub" style="font-size:11px; margin-top:6px;">창이 안 뜨면 아래 순서대로</div>';
     h += installStepsHtml(kind);
     if(kind==='ios') h += '<div class="inst-warn">'+uiIc('warn')+' 아이폰은 홈 화면 앱과 Safari의 저장 공간이 따로라서 <b>진행이 이어지지 않음</b> — 먼저 설정 → 계정에서 <b>구글 연동</b>을 해 두고, 홈 화면 앱에서 같은 구글로 로그인하기 (또는 세이브 내보내기 → 불러오기)</div>'+(acc.linked ? '<div class="sub" style="font-size:11px; margin-top:6px;">✅ 구글 연동됨 — 홈 화면 앱에서 같은 구글로 로그인하면 그대로 이어짐</div>' : '<button class="btn secondary small" id="instAcc" style="margin-top:8px;">⚙️ 설정에서 구글 연동하기</button>');
   }
+  if(auto && !isStandaloneApp()) h += '<div style="display:flex; gap:6px; margin-top:14px;"><button class="btn secondary" id="instNever" style="flex:1; margin:0;">다시 보지 않기</button><button class="btn" id="instLater" style="flex:1; margin:0;">닫기</button></div><div class="sub" style="font-size:11px; margin-top:8px; text-align:center;">☰ → 설정 → 📲 홈 화면에 추가에서 언제든 다시 볼 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:left;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(back);
   { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', showSettingsModal); }
+  { const n = document.getElementById('instNever'); if(n) n.addEventListener('click', ()=>{ setInstNoAsk(true); closeModal(); toast('설치 안내 끔 · 설정에서 다시 켤 수 있음'); }); }
+  { const l = document.getElementById('instLater'); if(l) l.addEventListener('click', ()=>closeModal()); }
   const g = document.getElementById('instGo'); if(g) g.addEventListener('click', async ()=>{
     const e = installEvt; if(!e) return; installEvt = null;
     try{ e.prompt(); const r = await e.userChoice; if(r && r.outcome==='accepted') toast('📲 설치 중'); }catch(_){}
-    showInstallModal(back);
+    showInstallModal(back, auto);
   });
 }
 function showSettingsModal(){
@@ -10708,6 +10731,7 @@ function showSettingsModal(){
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">⚔️ 전투 효과음 <small style="opacity:.7;">(타격·스킬·회복 등)</small></span><input type="checkbox" id="battleSfxChk" '+(s.battleSfx!==false?'checked':'')+'></label>';
   html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
   if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
+  if(!isStandaloneApp()) html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">📲 접속할 때 설치 안내 띄우기</span><input type="checkbox" id="instAskChk" '+(instNoAsk()?'':'checked')+' style="width:20px; height:20px;"></label>'; // (v8.8.3) 이 기기에만
   if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">'+uiIc('push')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
   html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">'+uiIc('sound')+' 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
   html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">'+uiIc('export')+' 세이브 내보내기</button>';
@@ -10733,6 +10757,7 @@ function showSettingsModal(){
   document.getElementById('battleSfxChk').addEventListener('change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
   { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
   { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
+  { const ic = document.getElementById('instAskChk'); if(ic) ic.addEventListener('change', e=>setInstNoAsk(!e.target.checked)); }
   document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
   bindAccountBox();
   document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
@@ -11103,7 +11128,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:402, v:'8.8.2', date:'2026-10-09', secs:[
+  { build:404, v:'8.8.3', date:'2026-10-09', secs:[
+    { t:'앱 설치 안내', items:[ '브라우저로 접속하면 앱 설치(홈 화면에 추가) 안내 창 — 기기마다 맞는 방법으로 안내', '「다시 보지 않기」를 누르면 그 기기에서는 더 안 뜸 · ☰ → 설정에서 다시 켤 수 있음' ]},
     { t:'픽업 소환', items:[ '결과 화면에 성좌 승급을 따로 표시 (짝 신화가 나와 성좌로 오를 때)', '이번 소환으로 받은 기억 조각 합계를 결과 화면에 표시 (고른 정령 조각 + 중복 조각)' ]}
   ]},
   { build:399, v:'8.8.0', date:'2026-10-09', secs:[
@@ -16847,7 +16873,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 403, APP_VERSION = '8.8.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 404, APP_VERSION = '8.8.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
