@@ -7031,10 +7031,11 @@ function battleSceneHtml(theme){
   if(BATTLE_BG_IMAGES[theme]) return '<div class="bs-scene bs-img" style="background-image:url('+BATTLE_BG_IMAGES[theme]+');'+(fit ? ' background-size:'+fit.size+'% auto; background-position:50% '+fit.y+'%;'+(fit.flip?' transform:scaleX(-1);':'') : '')+'"></div><div class="bs-parts"></div>';
   return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
+var bsKeepModal = false; // (v8.11.1) 전투 중 설정 창이 열려 있음 — closeModal()로 닫으면 풀림
 function showSkillStageScreen(){
   const sf = state.skillFight; if(!sf) return; bgmSoon();
   if(hidPendingFF) hidCheckPending(sf); // (v266) 레이드 파티원 쪽 히든 업적
-  if(document.getElementById('modalRoot').innerHTML) closeModal();
+  if(document.getElementById('modalRoot').innerHTML && !bsKeepModal) closeModal(); // (v8.11.1) 전투 중 ⚙️로 연 설정 창(과 그 안쪽 창)은 다시 그려도 안 닫음
   const firstMount = !document.getElementById('battleScreen');
   const root = mountBattleScreen();
   if(firstMount) window.scrollTo(0, 0);
@@ -7134,6 +7135,7 @@ function showSkillStageScreen(){
     + '<div style="display:flex; gap:4px;">'
     + (sf.mode==='trial' ? '<button id="trRuleBtn" class="bs-exit" aria-label="시련 규칙">📜 규칙</button>' : '') // (build 392) 시련 규칙 다시 보기
     + (sf.mode==='rift' ? '<button id="rfRuleBtn" class="bs-exit" aria-label="균열 규칙">📜 규칙</button>' : '') // (v8.11.1) 균열 보스 기믹·기간 규칙 다시 보기
+    + '<button id="bsSetBtn" class="bs-exit" aria-label="설정">'+uiIc('settings')+'</button>' // (v8.11.1) 전투 중에도 설정(소리 등)
     + '<button id="skillSpeedBtn" class="bs-exit" style="'+(state.skillSpeed2x?'background:#ffbc5755; border-color:#ffbc57;':'')+'">'+(state.skillSpeed2x?'⏩2x':'▶1x')+'</button>'
     + '<button id="skillAutoBtn" class="bs-exit" style="'+(state.skillAuto?'background:#5cc8ff55; border-color:#5cc8ff;':'')+'">'+uiIc('auto')+''+(state.skillAuto?'ON':'OFF')+'</button>'
     + '</div></div>';
@@ -7269,6 +7271,7 @@ function showSkillStageScreen(){
   if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
   if(q('trRuleBtn')) q('trRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showTrialRules(sf.trialId); });
   if(q('rfRuleBtn')) q('rfRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showRiftRules(sf); });
+  if(q('bsSetBtn')) q('bsSetBtn').addEventListener('click', e=>{ e.stopPropagation(); bsKeepModal = true; showSettingsModal(); });
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
   if(q('skillAutoBtn')) q('skillAutoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillAuto = !state.skillAuto; save(); showSkillStageScreen(); });
   if(q('waveNextBtn')) q('waveNextBtn').addEventListener('click', advanceBossWave);
@@ -11367,7 +11370,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:410, v:'8.11.1', date:'2026-10-09', secs:[
-    { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]}
+    { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]},
+    { t:'전투', items:[ '전투 중에도 위쪽 ⚙️ 버튼으로 설정(소리 크기 등)을 열 수 있음' ]}
   ]},
   { build:409, v:'8.11.0', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '용암 군주가 나오는 층 세기 상향 — 체력·공격력 배율 ×0.3 → ×1 (예: 이번 기간 4층 · 12층)', '추천 전투력을 실제로 나오는 적 능력치 기준으로 되돌림 (11층 25,100 → 30,800 · 3층 2,400 → 2,900 · 7층 6,400 → 7,800)' ]}
@@ -15893,7 +15897,7 @@ function installModalScrollKeeper(){
     if(old && oldKey) modalScrollStack.push({ key: oldKey, top: oldTop });                                                                  // 하위 창으로 이동
   }});
 }
-function closeModal(){ manageReturnFn = null; document.getElementById('modalRoot').innerHTML=''; if(state.openView){ state.openView = null; save(); } }
+function closeModal(){ bsKeepModal = false; manageReturnFn = null; document.getElementById('modalRoot').innerHTML=''; if(state.openView){ state.openView = null; save(); } }
 // (v122) 준비창을 열어둔 채 앱이 꺼져도 다시 켜면 그 창이 열리도록 기록
 function setOpenView(v){ if(JSON.stringify(state.openView||null)!==JSON.stringify(v)){ state.openView = v; save(); } }
 const SUMMON_THEME = { // 등급별 연출 강도: rev=구슬이 차오르는 시간(초), stars=별 개수, rays=광선 층 수, particles=입자 수, glow=카드 발광 크기, flash=폭발 섬광 세기
