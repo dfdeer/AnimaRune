@@ -641,7 +641,8 @@
   @keyframes xpAl{0%{opacity:0; transform:translate(-50%,-50%) scale(.7);} 10%{opacity:1; transform:translate(-50%,-50%) scale(1.06);} 18%{transform:translate(-50%,-50%) scale(1);} 85%{opacity:1;} 100%{opacity:0;}}
   .fz-pick.worn{opacity:.75;} .fz-pick.worn .fz-pct{color:#7ad0ff;}
   .fz-rep{display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; border-radius:10px; background:#ffffff0c; font-size:12px;} .fz-rep input{flex:1; accent-color:#ffd557;} .fz-rep b{min-width:36px; text-align:right;}
-  .sx-row{display:flex; align-items:center; gap:8px; padding:8px; margin-top:6px; border-radius:12px; background:#ffffff0a;} .sx-ic{font-size:22px; width:30px; text-align:center;} .sx-ic .uic{width:28px; height:28px;} .sx-tx{flex:1; display:flex; flex-direction:column;} .sx-tx small{color:var(--sub); font-size:11px;} .sx-row .btn{width:auto; margin:0; padding:6px 10px; white-space:nowrap;}
+  .fg-hero{display:flex; align-items:center; gap:12px;} .fg-hero .vl-img{width:84px; height:auto; flex-shrink:0;} .fg-hero .sub{font-size:12px; line-height:1.5; margin-top:4px;}
+  .sx-row{display:flex; align-items:center; gap:8px; padding:9px 10px; margin-top:6px; border-radius:12px; background:#16123acc; border:1px solid #ffffff1f;} .sx-ic{font-size:22px; width:30px; text-align:center;} .sx-ic .uic{width:28px; height:28px;} .sx-tx{flex:1; display:flex; flex-direction:column;} .sx-tx small{color:var(--sub); font-size:11px;} .sx-row .btn{width:auto; margin:0; padding:6px 10px; white-space:nowrap;}
   .rd-pips{display:flex; flex-wrap:wrap; gap:3px;} .rd-pips i{font-style:normal; font-size:9px; font-weight:900; padding:1px 5px; border-radius:6px; background:#ffffff0c; color:#ffffff55;} .rd-pips i.on{background:color-mix(in srgb, var(--dc) 30%, transparent); color:var(--dc);}
   .rd-card{padding:12px; border-radius:16px; background:linear-gradient(160deg,#2a1c3a,#16141e); border:1px solid #c9a8ff44;}
   .rd-hero{display:flex; align-items:center; gap:10px;} .rd-ico{font-size:40px; line-height:1;} .rd-name{font-size:17px; font-weight:900;}
@@ -1820,7 +1821,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <div id="essenceInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> 정수: 소환 · 정령 강화 · 화로 업그레이드에 쓰는 재화</div>
       </div>
       <div class="essence" id="stoneInfoBtn" style="cursor:pointer; position:relative;"><img class="uic" src="assets/ui/ic_stone.webp" alt="" draggable="false"><span id="stoneVal">0</span>
-        <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 정령 강화 · 화로 업그레이드에 쓰는 재화<button class="btn small" id="stoneExBtn" style="margin:6px 0 0; padding:5px 0; font-size:11px;">강화석 교환소</button></div>
+        <div id="stoneInfoPopup" style="display:none; position:absolute; top:130%; right:0; background:var(--panel2); border:1px solid #5b6bff; border-radius:8px; padding:8px 10px; font-size:11px; font-weight:400; color:var(--text); width:160px; text-align:left; line-height:1.4; z-index:50; box-shadow:0 4px 14px #00000066;"><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> 강화석: 정령 강화 · 화로 업그레이드에 쓰는 재화</div>
       </div>
       <button id="headerBellBtn" style="display:none; background:none; border:none; color:var(--text); font-size:19px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="놓친 알림"><img class="uic" src="assets/ui/ic_bell.webp" alt="" draggable="false"><span id="headerBellN" class="bell-n"></span></button>
       <button id="headerFriendBtn" style="background:none; border:none; color:var(--text); font-size:20px; padding:2px 4px; cursor:pointer; line-height:1; position:relative;" aria-label="친구"><img class="uic" src="assets/ui/ic_friends.webp" alt="" draggable="false"><span id="friendDot" style="display:none; position:absolute; top:0; right:0; width:7px; height:7px; border-radius:50%; background:#ff5757;"></span></button>
@@ -2594,20 +2595,21 @@ function stoneExBought(id){ const b = state.stoneEx; return (isPlainObj(b) && b.
 function stoneExBuy(id){
   const it = STONE_EX.find(x=>x.id===id); if(!it) return;
   if((state.enhanceStone||0) < it.price){ toast('강화석 부족'); return; }
-  if(stoneExBought(id) >= it.limit){ toast('이번 주 교환 한도 도달'); return; }
+  if(stoneExBought(id) >= it.limit){ toast('이번 주 한도 도달'); return; }
   state.enhanceStone -= it.price;
   if(!isPlainObj(state.stoneEx) || state.stoneEx.week!==raidWeekKey() || !isPlainObj(state.stoneEx.n)) state.stoneEx = { week: raidWeekKey(), n:{} };
   state.stoneEx.n[id] = (state.stoneEx.n[id]||0) + 1;
   if(id==='essence') state.essence += 1000; else grantItems({ [id]: 1 });
-  save(); sfx('claim'); toast(it.icon+' '+it.name+' 교환'); document.getElementById('essenceVal').textContent = headerNum(state.essence); document.getElementById('stoneVal').textContent = headerNum(state.enhanceStone||0); showStoneExchange();
+  save(); sfx('claim'); toast(it.icon+' '+it.name+' 제작'); render();
 }
-function showStoneExchange(){
-  const rows = STONE_EX.map(it=>{ const left = it.limit - stoneExBought(it.id), can = left>0 && (state.enhanceStone||0)>=it.price;
+// (v8.5.0) 사용자 결정: 강화석 교환소(상단 팝업)를 정령 마을 「대장간」으로 옮김 — 마을 지도의 작업장 자리
+function renderForgeView(){
+  const st = state.enhanceStone||0;
+  let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>대장간</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="forge">ⓘ 설명</button></div>';
+  h += '<div class="card fg-hero">'+VL_IMG('work')+'<div><div class="ttl">강화석으로 만들기</div><div class="sub">보유 <img class="uic" src="assets/ui/ic_stone.webp" alt=""> <b style="color:var(--text);">'+st.toLocaleString()+'</b><br>한도는 월요일 0시 초기화</div></div></div>';
+  h += STONE_EX.map(it=>{ const left = it.limit - stoneExBought(it.id), can = left>0 && st>=it.price;
     return '<div class="sx-row"><span class="sx-ic">'+it.icon+'</span><span class="sx-tx"><b>'+it.name+'</b><small>이번 주 '+left+' / '+it.limit+'</small></span><button class="btn small'+(can?' gold':'')+'" data-sx="'+it.id+'" '+(can?'':'disabled')+'><img class="uic" src="assets/ui/ic_stone.webp" alt="">'+it.price+'</button></div>'; }).join('');
-  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="sxClose">x</button><h3 style="text-align:center; margin-top:0;">강화석 교환소</h3><div class="sub" style="text-align:center; margin-bottom:8px;">보유 <img class="uic" src="assets/ui/ic_stone.webp" alt=""> <b style="color:var(--text);">'+(state.enhanceStone||0).toLocaleString()+'</b> · 한도는 월요일 0시 초기화</div>'+rows+'</div></div>';
-  const bg = document.getElementById('modalBg'); bg.addEventListener('click', e=>{ if(e.target===bg) closeModal(); });
-  document.getElementById('sxClose').addEventListener('click', closeModal);
-  bg.querySelectorAll('[data-sx]').forEach(b=>b.addEventListener('click', ()=>stoneExBuy(b.dataset.sx)));
+  return h;
 }
 function raidShopBought(id){ const b = state.raidShopBuys; return (b && b.week===raidWeekKey() && b.n && b.n[id]) || 0; }
 // (v296) 상점은 레이드 밖이라 보스를 고르지 않음 → 고대 룬은 보스 5종 중 무작위 (예전: 레이드 화면에서 고른 보스)
@@ -10860,6 +10862,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:382, v:'8.5.0', date:'2026-10-09', secs:[
+    { t:'정령 마을 · 대장간', items:[ '마을에 「대장간」 열림 (작업장 자리) — 상단 강화석 팝업의 교환소는 없앰', '강화석으로 장비 소환권 100 (주 10) · 각인석 80 (주 10) · 정수 1,000 200 (주 20) · 에픽 장비 확정권 800 (주 1)', '한도는 월요일 0시 초기화 (8.3.0 교환소에서 쓴 횟수 그대로)' ]}
+  ]},
   { build:381, v:'8.4.0', date:'2026-10-09', secs:[
     { t:'스킬', items:[ '약화 효과 성장을 강화 · 초월 기준에서 정령력 기준으로 — 정령력 420을 넘는 만큼 12마다 +1% (최대 +50%)', '적용: 독 피해 · 저주 · 거미줄 받는 피해 증가 · 노출' ]},
     { t:'탐험 난이도', items:[ '노말로 옮겨진 예전 하드 3~6 — 하드 3~6을 다시 깨면 첫 클리어 · 등급 · 챕터 진행도 보상을 다시 받음' ]},
@@ -12133,6 +12138,7 @@ function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
 function renderVillageTab(){
   if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="hearth">ⓘ 설명</button><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
+  if(villageView==='forge') return renderForgeView(); // (v8.5.0)
   const m = vmState(), s = hearthSparks(), all = vlAllRw(), any = s>0 || m.cart>0, hLv = Object.keys(HEARTH_UPGRADES).reduce((a,k)=>a+hearthUpgradeLevel(k), 0);
   let h = '<div class="vl-title"><b>정령 마을</b><button class="btn small secondary vl-help" data-vl-help="map">ⓘ 설명</button></div>';
   h += '<div class="vl-town">';
@@ -12141,7 +12147,7 @@ function renderVillageTab(){
   h += vlBld({ k:'mine', x:60, y:9, svg:'mine', sign:uiIc('pick')+' 광산 <i>B'+m.d+'</i>', st:'기력 '+m.e+'/'+vmMaxE(m),
     bub: m.cart>0 ? { ic:uiIc('cart'), col:true, hot:m.cart>=VM_CART_MAX } : (m.e>=vmMaxE(m) ? { ic:uiIc('pick'), hot:true } : null) });
   h += vlBld({ k:'lodge', x:9, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
-  h += vlBld({ k:'work', x:60, y:55, svg:'build', sign:'🔒 준비 중', st:'', lock:true });
+  h += vlBld({ k:'forge', x:60, y:55, svg:'work', sign:'⚒️ 대장간', st:'강화석 '+headerNum(state.enhanceStone||0) }); // (v8.5.0) 작업장 자리
   h += '</div>';
   h += '<div class="card vl-all"><div><div class="ttl">모두 거두기</div><div class="vl-all-rw">'+(any ? vmRwText(all) : '<span class="sub">거둘 것 없음</span>')+'</div></div>'
     + '<button class="btn" id="vlAllBtn" '+(any ? '' : 'disabled')+'>거두기</button></div>';
@@ -12172,6 +12178,7 @@ document.addEventListener('click', e=>{ const b = e.target.closest && e.target.c
 function vlHelpHtml(k){
   const sec = t=>'<div class="so-sec">'+t+'</div>', li = a=>'<ul class="vl-hl">'+a.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
   const ES = '<img class="uic" src="assets/ui/ic_essence.webp" alt="">', ST = '<img class="uic" src="assets/ui/ic_stone.webp" alt="">';
+  if(k==='forge') return sec('대장간') + li(['남는 강화석으로 다른 재화를 만듦', STONE_EX.map(it=>it.name+' '+ST+it.price+' (주 '+it.limit+')').join(' · '), '한도는 월요일 0시(한국 시간)에 초기화']);
   if(k==='map') return sec('정령 마을') + li(['건물을 누르면 그 시설로 들어감', '거둘 게 있으면 건물 위에 말풍선 — 말풍선을 누르면 바로 거둠', '「모두 거두기」로 화로 불씨와 광산 수레를 한 번에']);
   if(k==='hearth'){ const l = hearthUpgradeLevel('speed');
     return sec('불씨') + li(['시간이 지나면 불씨가 하나씩 쌓임 (게임을 꺼 둬도 쌓임)', '지금 '+(Math.round(hearthMinAt(l)*10)/10)+'분마다 1개 · 최대 '+HEARTH_MAX()+'개 — 가득 차면 더 안 쌓임', '불씨 1개 = '+ES+HEARTH_ESSENCE_PER_SPARK()+' + '+ST+HEARTH_STONE_PER_SPARK()])
@@ -12235,7 +12242,8 @@ function vmFit(){ // 광산 화면은 스크롤 없이 — 판 크기를 화면 
 }
 function villageHandlers(){
   if(activeTab!=='hearth' || !villageOn()) return;
-  document.querySelectorAll('[data-vl-help]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.vlHelp; openInfoOverlay('ⓘ '+(k==='map'?'정령 마을':k==='hearth'?'화로':'광산'), vlHelpHtml(k)); }));
+  document.querySelectorAll('[data-vl-help]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.vlHelp; openInfoOverlay('ⓘ '+(k==='map'?'정령 마을':k==='hearth'?'화로':k==='forge'?'대장간':'광산'), vlHelpHtml(k)); }));
+  document.querySelectorAll('[data-sx]').forEach(b=>b.addEventListener('click', ()=>stoneExBuy(b.dataset.sx))); // (v8.5.0) 대장간
   document.querySelectorAll('[data-vl-col]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); if(b.dataset.vlCol==='hearth') collectHearth(); else vmCollectCart(); }));
   document.querySelectorAll('[data-vl]').forEach(b=>b.addEventListener('click', ()=>{ villageView = b.dataset.vl; sfx('click'); render(); document.getElementById('main').scrollTop = 0; }));
   const ab = document.getElementById('vlAllBtn'); if(ab) ab.addEventListener('click', vlCollectAll);
@@ -15971,7 +15979,6 @@ document.getElementById('stoneInfoBtn').addEventListener('click', (e)=>{
   document.getElementById('stoneInfoPopup').style.display = 'none';
   p.style.display = wasOpen ? 'none' : 'block';
 });
-document.getElementById('stoneExBtn').addEventListener('click', e=>{ e.stopPropagation(); document.getElementById('stoneInfoPopup').style.display = 'none'; showStoneExchange(); }); // (v8.3.0)
 document.addEventListener('click', ()=>{
   document.getElementById('essenceInfoPopup').style.display = 'none';
   document.getElementById('stoneInfoPopup').style.display = 'none';
@@ -16439,7 +16446,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 381, APP_VERSION = '8.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 382, APP_VERSION = '8.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
