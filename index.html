@@ -1100,6 +1100,8 @@
   .bu-spm.up{background:#ffd557; color:#2a1a00;} .bu-spm.down{background:#ff6a6a; color:#2a0000;}
   .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:11px; font-weight:900; padding:2px 9px; border-radius:8px; color:#fff; border:1.5px solid #fff; box-shadow:0 1px 4px #000a; text-shadow:0 1px 2px #0009;} /* (v294) 밝은 배경(설원 등)에서도 보이게 흰 테두리·그림자 */
   .bs-teamtag.me{left:8px; background:#3a5fcc;} .bs-teamtag.en{right:8px; background:#c0313c;}
+  .bs-roundtag{position:absolute; bottom:4px; left:50%; transform:translateX(-50%); z-index:4; font-size:12px; font-weight:900; padding:2px 12px; border-radius:8px; white-space:nowrap; color:#ffe7a0; background:#000000a6; border:1.5px solid #ffe7a0aa; box-shadow:0 1px 4px #000a;} /* (build 398) 라운드 표시 */
+  .bs-roundtag.last{color:#fff; background:#c0313ccc; border-color:#fff;} /* 제한이 있는 전투의 마지막 라운드 */
 
   /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
   .bs-arena2{position:relative; z-index:2; flex:1; min-height:0;}
@@ -7106,16 +7108,20 @@ function showSkillStageScreen(){
   const lay = battleLayout(sf);
 
   let html = intro ? '<div class="bs-wipe"></div>' : '';
-  const titleTxt = sf.mode==='boss' ? '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 웨이브 '+sf.wave+'/'+BOSS_WAVE_COUNT+' · R'+sf.round
-    : sf.mode==='expedition' ? '🗡️ 출정 · R'+sf.round
-    : sf.mode==='worldboss' ? uiIc('worldboss')+' 월드 보스 · R'+Math.min(sf.round, WB_ROUNDS)+'/'+WB_ROUNDS
-    : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')+' · R'+sf.round+((trialDef(sf.trialId)||{}).maxRounds ? '/'+trialDef(sf.trialId).maxRounds : '')
-    : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계 · R'+sf.round
-    : sf.mode==='rift' ? uiIc('rift')+' '+RIFT_NAME+' '+sf.riftF+'층 · R'+sf.round
-    : sf.mode==='sanctum' ? uiIc('sanctum')+' '+(sanctumBoss(sf.scId)||{}).name+' '+sf.scTier+'단계 · R'+sf.round
+  // (build 398) 라운드는 제목에서 빼고 전장 아래 가운데에 — 제목 옆 버튼 때문에 '…'로 잘려 안 보였음
+  const titleTxt = sf.mode==='boss' ? '<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 웨이브 '+sf.wave+'/'+BOSS_WAVE_COUNT
+    : sf.mode==='expedition' ? '🗡️ 출정'
+    : sf.mode==='worldboss' ? uiIc('worldboss')+' 월드 보스'
+    : sf.mode==='trial' ? '🧩 '+((trialDef(sf.trialId)||{}).nm||'시련')
+    : sf.mode==='dungeon' ? ELEMENT_INFO[sf.dungeonEl].icon+' '+ELEMENT_INFO[sf.dungeonEl].name+' 던전 '+sf.dungeonN+'단계'
+    : sf.mode==='rift' ? uiIc('rift')+' '+RIFT_NAME+' '+sf.riftF+'층'
+    : sf.mode==='sanctum' ? uiIc('sanctum')+' '+(sanctumBoss(sf.scId)||{}).name+' '+sf.scTier+'단계'
     : sf.mode==='duel' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 결투 · vs '+(sf.duelName||'상대')
-    : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')+' · R'+sf.round
-    : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx)+' · R'+sf.round;
+    : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')
+    : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx);
+  const rdMax = sf.mode==='worldboss' ? WB_ROUNDS : sf.mode==='trial' ? ((trialDef(sf.trialId)||{}).maxRounds||0) : 0;
+  const rdNow = rdMax ? Math.min(sf.round, rdMax) : sf.round;
+  const roundTag = '<span class="bs-roundtag'+(rdMax && sf.round>=rdMax ? ' last' : '')+'">라운드 '+rdNow+(rdMax ? ' / '+rdMax : '')+'</span>';
   html += '<div class="bs-top"><button class="bs-exit" id="skillExitBtn">← 나가기</button>'
     + '<div class="bs-title">'+titleTxt+'</div>'
     + '<div style="display:flex; gap:4px;">'
@@ -7143,7 +7149,7 @@ function showSkillStageScreen(){
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
     // (v266) 보스 칸은 맨 뒤 — 큰 그림의 투명 여백이 옆 칸 이름·체력 글자를 덮었음
     + lay.slots.map(p=>{ const su = unitAt(sf, p.side, p.idx); return '<div class="bs-slot" style="left:'+p.x+'%; top:'+p.y+'%; z-index:'+(su && su.isBoss ? 5 : 10+Math.round(p.y))+'; --d:'+p.d.toFixed(3)+';">'+cellHtml(p.side, p.idx, p.size)+'</div>'; }).join('')
-    + '</div><span class="bs-teamtag me">아군</span><span class="bs-teamtag en">적</span>'
+    + '</div><span class="bs-teamtag me">아군</span>'+roundTag+'<span class="bs-teamtag en">적</span>'
     + (intro ? '<div class="bs-banner"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 개시'+(sf.special ? '<small class="bs-bsp"><img class="uic" src="assets/ui/ic_special.webp" alt=""> '+specialRuleParts(sf.special).name+'</small>' : '')+'</span></div>' : '')
     + (fx && fx.kind==='round' ? '<div class="bs-banner"><span>ROUND '+fx.round+'</span></div>' : '')
     + '</div>';
@@ -11092,6 +11098,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:398, v:'8.7.4', date:'2026-10-09', secs:[
+    { t:'전투 화면', items:[ '라운드 표시를 위쪽 제목에서 전장 아래 가운데로 옮김 — 제목이 길면 잘려서 안 보이던 문제 · 라운드 제한이 있는 전투는 마지막 라운드에 빨갛게' ]}
+  ]},
   { build:392, v:'8.7.3', date:'2026-10-09', secs:[
     { t:'전투 화면', items:[ '하백 범람을 아군에게 쓸 때 공격(빨강) 대신 회복(초록)으로 표시' ]},
     { t:'시련의 전당', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 시련 설명·목표·열린 힌트를 다시 볼 수 있음' ]}
@@ -16832,7 +16841,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 397, APP_VERSION = '8.7.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 398, APP_VERSION = '8.7.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
