@@ -6666,7 +6666,7 @@ function syncStatusFx(root){ // 다시 그린 뒤: 전에도 있던 효과는 �
 function mountBattleScreen(){
   let el = document.getElementById('battleScreen');
   if(!el){ el = document.createElement('div'); el.id = 'battleScreen'; document.getElementById('app').appendChild(el); }
-  document.body.classList.add('in-battle'); updateScrollLock();
+  document.body.classList.add('in-battle'); updateScrollLock(); bgmSoon();
   return el;
 }
 function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(--k) 계산
@@ -6714,7 +6714,7 @@ function snapBossSideUnits(ar){
     if(Math.abs(d) > 0.5) s.style.top = (s.offsetTop + d)+'px';
   });
 }
-function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
+function unmountBattleScreen(){ const el = document.getElementById('battleScreen'); if(el) el.remove(); bgmSoon(); document.body.classList.remove('in-battle'); updateScrollLock(); if(updLatest) setTimeout(()=>showUpdatePopup(), 900); } // (v265) 전투 중 미뤄 둔 업데이트 알림
 function upcomingOrder(sf, n){
   const out = [];
   for(let p=sf.queuePos; p<sf.queue.length && out.length<n; p++){ const e = sf.queue[p], u = unitAt(sf, e.side, e.idx); if(u && u.alive) out.push({e, u, next:false}); }
@@ -7032,7 +7032,7 @@ function battleSceneHtml(theme){
   return '<div class="bs-scene"><i class="sc-sky"></i><i class="sc-far"></i><i class="sc-mid"></i><i class="sc-ground"></i><i class="sc-deco"></i></div><div class="bs-parts"></div>';
 }
 function showSkillStageScreen(){
-  const sf = state.skillFight; if(!sf) return;
+  const sf = state.skillFight; if(!sf) return; bgmSoon();
   if(hidPendingFF) hidCheckPending(sf); // (v266) 레이드 파티원 쪽 히든 업적
   if(document.getElementById('modalRoot').innerHTML) closeModal();
   const firstMount = !document.getElementById('battleScreen');
@@ -8519,7 +8519,7 @@ const BGM_TRACKS = {
       if(s%T.grp===0){ bgmBass(NF(ch[0]-12), off, st*T.grp+0.8, 0.045, bus); bgmPad(ch.map(NF), off, st*T.grp, 0.012, bus, 650); } } },
 };
 Object.keys(BGM_TRACKS).forEach(k=>{ const t = BGM_TRACKS[k]; if(!t.len) t.len = t.mel.length; });
-let bgmFaders = {}, bgmCur = 'home', bgmWantPrev = 'home';
+let bgmFaders = {}, bgmCur = 'home', bgmSyncT = null;
 function bgmFader(id){ const bus = bgmMakeBus(); let f = bgmFaders[id]; if(f && f.context===audioCtx) return f; f = audioCtx.createGain(); f.gain.value = id===bgmCur ? BGM_TRACKS[id].vol : 0; f.connect(bus); return (bgmFaders[id] = f); }
 function bgmTrackNote(id, step, off){ BGM_TRACKS[id].play(step, off, bgmFader(id)); }
 function bgmFadeTo(id, v, t, dur){ const g = bgmFader(id).gain; try{ g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t+dur); }catch(e){ g.value = v; } }
@@ -8533,6 +8533,16 @@ function bgmWant(){
   if(activeTab==='hearth' && typeof villageOn==='function' && villageOn()) return 'village';
   return 'home';
 }
+// (v8.9.1) 곡 바꾸기 — 예전엔 0.2초마다 확인 + 같은 화면 두 번 확인 + 0.3초 뒤 시작이라 최대 1초쯤 늦었음
+//  → 화면을 그릴 때(render·전투 화면 열고 닫기) 바로 확인 · 앞 곡은 0.25초 동안 줄이고 새 곡은 0.06초 뒤 시작
+function bgmSwitch(now){
+  let want = 'home'; try{ want = bgmWant(); }catch(e){}
+  if(want===bgmCur || !BGM_TRACKS[want]) return false;
+  bgmFadeTo(bgmCur, 0, now, 0.25); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.06; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, now + 0.04, 0.12);
+  aBase = now; try{ const tr = BGM_TRACKS[bgmCur]; while(bgmNextAt < now + 1.5){ bgmTrackNote(bgmCur, bgmStep % tr.len, bgmNextAt - now); bgmStep++; bgmNextAt += tr.step; } } finally { aBase = null; }
+  return true;
+}
+function bgmSoon(){ if(bgmSyncT || !bgmTimer) return; bgmSyncT = setTimeout(()=>{ bgmSyncT = null; try{ if(audioCtx && audioCtx.state==='running' && !document.hidden && state.settings.bgmVolume>0) bgmSwitch(audioCtx.currentTime); }catch(e){} }, 0); }
 function startBgm(){
   if(bgmTimer || !ensureAudioCtx()) return;
   bgmNextAt = 0;
@@ -8541,10 +8551,7 @@ function startBgm(){
   bgmTimer = setInterval(()=>{
     if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
-    let want = 'home'; try{ want = bgmWant(); }catch(e){}
-    if(want!==bgmCur && want===bgmWantPrev && BGM_TRACKS[want]){ // (v8.9.0) 화면이 0.2초 넘게 그대로면 곡을 바꿈 — 앞 곡은 0.5초 동안 줄이고 새 곡은 처음부터
-      bgmFadeTo(bgmCur, 0, now, 0.5); bgmCur = want; bgmStep = 0; bgmNextAt = now + 0.3; bgmFader(want); bgmFadeTo(want, BGM_TRACKS[want].vol, bgmNextAt - 0.05, 0.3); }
-    bgmWantPrev = want;
+    bgmSwitch(now);
     const tr = BGM_TRACKS[bgmCur];
     if(!bgmNextAt || bgmNextAt < now - 3) bgmNextAt = now + 0.05;
     while(bgmNextAt < now - 0.02){ bgmStep++; bgmNextAt += tr.step; } // 늦은 박은 건너뜀(한꺼번에 터지지 않게)
@@ -10299,7 +10306,7 @@ function xpRunOn(){ return !!state.expedition; }
 let xpLockToastAt = 0;
 function xpLockBlock(){ if(!xpRunOn()) return false; if(Date.now()-xpLockToastAt > 1500){ xpLockToastAt = Date.now(); toast('🗡️ 출정 중 — 포기하거나 끝내야 나갈 수 있음'); } return true; }
 function render(){
-  dbgRenders++; dbgLastRender = Date.now();
+  dbgRenders++; dbgLastRender = Date.now(); bgmSoon(); // (v8.9.1) 화면이 바뀌면 배경음도 바로
   if(xpRunOn() && activeTab!=='expedition' && !state.skillFight) activeTab = 'expedition'; // (v315) 어느 길로 바뀌어도 출정 화면으로
   document.body.classList.toggle('xp-lock', xpRunOn());
   checkDailyRollover();
@@ -11225,6 +11232,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:406, v:'8.9.1', date:'2026-10-09', secs:[
+    { t:'배경음', items:[ '화면을 옮기면 배경음이 바로 바뀜 (예전엔 0.6초쯤 늦게 바뀜)' ]}
+  ]},
   { build:405, v:'8.9.0', date:'2026-10-09', secs:[
     { t:'배경음', items:[ '화면마다 다른 배경음 — 전투 · 보스(챕터 보스·레이드·월드 보스) · 정령 마을 · 시련의 전당 곡 추가', '화면을 옮기면 곡이 자연스럽게 바뀜', '홈 배경음을 길게 늘려 같은 마디가 되풀이되는 느낌을 줄임 (음색은 그대로)', '일부 효과음이 시작할 때 튀던 소리 수정' ]}
   ]},
@@ -16974,7 +16984,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 405, APP_VERSION = '8.9.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 406, APP_VERSION = '8.9.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
