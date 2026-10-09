@@ -11103,11 +11103,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:401, v:'8.8.2', date:'2026-10-09', secs:[
-    { t:'픽업 소환', items:[ '10회 결과 카드의 성좌 중복·승급 글자가 칸 밖으로 삐져나가던 문제 수정' ]}
-  ]},
-  { build:400, v:'8.8.1', date:'2026-10-09', secs:[
-    { t:'픽업 소환', items:[ '결과 화면에 성좌 중복·성좌 승급을 따로 표시', '이번 소환으로 받은 기억 조각 합계를 결과 화면에 표시 (고른 정령 조각 + 중복 조각)' ]}
+  { build:402, v:'8.8.2', date:'2026-10-09', secs:[
+    { t:'픽업 소환', items:[ '결과 화면에 성좌 승급을 따로 표시 (짝 신화가 나와 성좌로 오를 때)', '이번 소환으로 받은 기억 조각 합계를 결과 화면에 표시 (고른 정령 조각 + 중복 조각)' ]}
   ]},
   { build:399, v:'8.8.0', date:'2026-10-09', secs:[
     { t:'시련의 전당 — 퍼즐 시련', items:[ '시련의 전당에 「퍼즐 시련」 탭 추가 — 특별한 규칙을 풀어내는 시련 10개 · 처음 통과할 때 보상', '🧊 껍질: 직접 공격은 한 번에 한 겹만 깨고 피해 없음 (범위 공격은 맞은 적마다 한 겹) · 화상·독·폭발은 껍질 무시', '💥 폭발: 쓰러지면 붙은 칸(양옆·앞뒤) 적에게 그 적 최대 체력 50% 피해 · 그 피해로 쓰러지면 또 터짐 (연쇄)', '🔗 쌍둥이: 짝과 같은 라운드에 쓰러지지 않으면 라운드가 끝날 때 체력 가득 다시 일어남', '💀 역류: 회복을 받으면 그만큼 피해 — 회복 스킬을 적에게 쓸 수 있음', '🌱 분열: 쓰러지면 붙은 빈 칸마다 체력 절반짜리 새끼로 갈라짐 (새끼는 안 갈라짐)', '폭발이 이어질 때 칸마다 차례로 터지는 연출·효과음 추가' ]}
@@ -15630,7 +15627,7 @@ function walletTicketHtml(opts){ if(opts && opts.star) return '<span>'+SHARD_IC+
 const SUS_LADDER = ['rare','epic','legendary','mythic','astral'], SUS_B = 1.0, SUS_S = 1.5; // (v6.2.4) 1회 공개: 첫 단계 1초 · 단계마다 1.5초 (사용자 결정) · 누르면 바로 공개(sm-skip)
 function summonRevT(rar, fuse){ const n = Math.max(0, SUS_LADDER.indexOf(rar)+1); return n ? SUS_B + (n-1)*SUS_S + 0.6 : (fuse ? 1.1 : 0.7); } // 공개 시점(초) — 결과 창과 공개 뒤 알림이 같이 씀
 // (build 400) 픽업 결과 — 성좌 중복·승급을 눈에 띄게 + 이번에 받은 기억 조각 합계
-function memKindHtml(kind){ return kind==='up' ? '<b class="mem-kind up">✦ 성좌로 승급!</b> · ' : kind==='dup' ? '<b class="mem-kind">✦ 성좌 중복</b> → ' : '이미 있음 → '; }
+function memKindHtml(kind){ return kind==='up' ? '<b class="mem-kind up">✦ 성좌로 승급!</b> · ' : '이미 있음 → '; } // (build 402) 성좌 중복 글자는 뺌 (사용자 결정)
 function memSumHtml(opts, cls){ const L = (opts && opts.memSum) || []; if(!L.length) return ''; return '<div class="'+cls+'"><span>이번에 받은 기억 조각</span>'+L.map(x=>'<b>'+memIc(x.k)+' '+SPIRITS[x.k].name+' +'+x.n+'</b>').join('')+'</div>'; }
 function showResultModal(sp, isNew, again, opts){
   window.__modalScrollReset = true;
@@ -15721,7 +15718,7 @@ function showMultiResultModal(keys, isNewFlags, again, opts){
       + '<div class="st">'+'★'.repeat(t.stars)+'</div>'
       + '<div class="nm">'+sp.name+'</div>'
       + '<div class="rl" style="background:'+hex+';">'+RARITY_INFO[sp.rarity].name+'</div>'
-      + (memF[idx] ? '<div class="mt-mem'+((opts.memKind||[])[idx]==='dup' || (opts.memKind||[])[idx]==='up' ? ' ast' : '')+'">'+((opts.memKind||[])[idx]==='up' ? '<i>✦ 성좌 승급</i>' : (opts.memKind||[])[idx]==='dup' ? '<i>✦ 성좌 중복</i>' : '')+memIc(key)+'+'+memF[idx]+'</div>' : '')
+      + (memF[idx] ? '<div class="mt-mem'+((opts.memKind||[])[idx]==='up' ? ' ast' : '')+'">'+((opts.memKind||[])[idx]==='up' ? '<i>✦ 성좌 승급</i>' : '')+memIc(key)+'+'+memF[idx]+'</div>' : '') // (build 402) 성좌 중복 글자는 뺌 (사용자 결정) · 승급만
       + '</div></div>';
   });
   grid += '</div>';
@@ -16859,7 +16856,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 401, APP_VERSION = '8.8.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 402, APP_VERSION = '8.8.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
