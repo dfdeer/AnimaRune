@@ -401,6 +401,14 @@
   .fr-row .btn.small{width:auto; padding:7px 12px; flex-shrink:0;}
   .fr-dot{flex-shrink:0; width:10px; height:10px; border-radius:50%; background:#4a4a58; margin:0 4px;}
   .fr-dot.on{background:#5cd65c; box-shadow:0 0 8px #5cd65c;}
+  .set-list{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+  .set-row{display:flex; align-items:center; gap:10px; width:100%; padding:13px 14px; border-radius:14px; border:1px solid #ffffff1a; background:#ffffff0d; color:inherit; font:inherit; text-align:left; cursor:pointer;}
+  .set-row:active{background:#ffffff1f;} .set-row .sr-ic{width:24px; text-align:center; font-size:18px;} .set-row .sr-ic .uic{width:22px; height:22px;}
+  .set-row .sr-nm{font-weight:800; font-size:15px;} .set-row .sr-sub{flex:1; text-align:right; font-size:11px; opacity:.65;} .set-row .sr-go{font-size:20px; opacity:.5; margin-left:2px;}
+  .set-tog{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; text-align:left; font-size:13px;} .set-tog small{opacity:.65; font-size:11px;} .set-tog input{width:20px; height:20px; flex:none;}
+  .set-sl{margin-top:14px; text-align:left;} .set-sl .sub{margin-bottom:4px;} .set-sl b{float:right; opacity:.8;} .set-sl input{width:100%;}
+  .set-top{display:flex; align-items:center; gap:8px; margin:-2px 28px 8px 0;} .set-top .btn{width:auto; margin:0; padding:6px 10px;} .set-top h3{margin:0; flex:1; text-align:left;}
+  .set-modal .acc-box{margin-top:4px;} .set-modal .acc-h{display:none;} /* (v8.12.0) 설정 갈래 — 계정 화면은 위 제목과 겹치는 「👤 계정」 줄 숨김 */
   .acc-box{margin-top:10px; padding:10px 12px; border-radius:14px; background:#ffffff0d; text-align:left;} .acc-h{font-weight:800; margin-bottom:4px;}
   .acc-dt{width:100%; border-collapse:collapse; font-size:12px;} .acc-dt th{font-size:11px; color:var(--sub); font-weight:700; padding:2px 4px;} .acc-dt td{padding:3px 4px; border-bottom:1px solid #ffffff10; text-align:right; white-space:nowrap;} .acc-dt td:first-child{text-align:left; color:var(--sub); white-space:normal;} .acc-dt tr.sec td{text-align:left; color:#ffe38a; font-weight:800; padding-top:8px; border-bottom:1px solid #ffe38a44;} .acc-dt td.more{color:#5cd65c; font-weight:800;} /* (v7.1.3) 진행 비교 */
   .acc-pick{display:flex; flex-direction:column; gap:2px; width:100%; text-align:left; padding:10px 12px; margin-top:8px; border-radius:14px; background:#27235a; border:2px solid #3d3a5a; color:var(--text);} .acc-pick b{font-size:15px;} .acc-pick small{color:var(--sub); font-size:11px;} .acc-pick span{font-size:12px;}
@@ -5276,7 +5284,7 @@ async function accLinkGoogle(){
   acc.linked = true; acc.email = r.email; acc.uid = r.uid;
   accSetMeta(0); await accPush(true); await accClaimSession(); accWatchSession(); friendMarkGoogle();
   toast('구글 계정 연동 완료 — 다른 기기에서도 이어서 가능', 3500);
-  if(document.getElementById('accBox')) showSettingsModal();
+  if(document.getElementById('accBox')) showSettingsModal('account');
 }
 function accountBoxHtml(){
   let h = '<div id="accBox" class="acc-box"><div class="acc-h">👤 계정</div>';
@@ -10897,7 +10905,7 @@ function showPushModal(){
   h += '<div style="margin-top:14px; text-align:left;'+(on?'':' opacity:.45; pointer-events:none;')+'">'+PUSH_KINDS.map(([k,nm])=>'<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sub">'+nm+'</span><input type="checkbox" data-push-kind="'+k+'" '+(off[k]?'':'checked')+'></label>').join('')+'</div>';
   h += '<div class="sub" style="font-size:11px; margin-top:10px; line-height:1.5;">이 기기에만 적용 · 화로·파견·일일 알림은 최대 10분 늦게 올 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
-  bindModalClose(showSettingsModal);
+  bindModalClose(()=>showSettingsModal('notify'));
   { const ib = document.getElementById('pushInstBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showPushModal)); }
   document.getElementById('pushToggle').addEventListener('click', async e=>{
     const b = e.currentTarget; b.disabled = true; b.textContent = '…';
@@ -10966,7 +10974,7 @@ function showInstallModal(back, auto){
   if(auto && !isStandaloneApp()) h += '<div style="display:flex; gap:6px; margin-top:14px;"><button class="btn secondary" id="instNever" style="flex:1; margin:0;">다시 보지 않기</button><button class="btn" id="instLater" style="flex:1; margin:0;">닫기</button></div><div class="sub" style="font-size:11px; margin-top:8px; text-align:center;">☰ → 설정 → 📲 홈 화면에 추가에서 언제든 다시 볼 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:left;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(back);
-  { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', showSettingsModal); }
+  { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', ()=>showSettingsModal('account')); }
   { const n = document.getElementById('instNever'); if(n) n.addEventListener('click', ()=>{ setInstNoAsk(true); closeModal(); toast('설치 안내 끔 · 설정에서 다시 켤 수 있음'); }); }
   { const l = document.getElementById('instLater'); if(l) l.addEventListener('click', ()=>closeModal()); }
   const g = document.getElementById('instGo'); if(g) g.addEventListener('click', async ()=>{
@@ -10975,56 +10983,62 @@ function showInstallModal(back, auto){
     showInstallModal(back, auto);
   });
 }
-function showSettingsModal(){
+// (v8.12.0) 설정을 갈래별로 나눔 — 첫 화면은 소리·계정·세이브·알림 메뉴만 · 누르면 그 갈래 화면(‹ 설정으로 돌아감) (사용자 결정: 한 창에 다 몰려 있어 버튼이 너무 많고 스크롤되는지도 몰랐음)
+function showSettingsModal(page){
   const s = state.settings;
-  let html = '<h3>⚙️ 설정</h3>';
-  html += accountBoxHtml();
-  html += '<div style="margin-top:16px; text-align:left;">';
-  html += '<div class="sub" style="margin-bottom:4px;">'+uiIc('music')+' 배경음악 볼륨</div>';
-  html += '<input type="range" id="bgmVolumeSlider" min="0" max="100" value="'+Math.round(s.bgmVolume*100)+'" style="width:100%;">';
-  html += '</div>';
-  html += '<div style="margin-top:16px; text-align:left;">';
-  html += '<div class="sub" style="margin-bottom:4px;">'+uiIc('sound')+' 효과음 볼륨</div>';
-  html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
-  html += '</div>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">🔇 다른 창 볼 때 소리 끄기 <small style="opacity:.7;">(알탭 등)</small></span><input type="checkbox" id="muteBlurChk" '+(s.muteBlur!==false?'checked':'')+'></label>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">⚔️ 전투 효과음 <small style="opacity:.7;">(타격·스킬·회복 등)</small></span><input type="checkbox" id="battleSfxChk" '+(s.battleSfx!==false?'checked':'')+'></label>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
-  if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
-  if(!isStandaloneApp()) html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">📲 접속할 때 설치 안내 띄우기</span><input type="checkbox" id="instAskChk" '+(instNoAsk()?'':'checked')+' style="width:20px; height:20px;"></label>'; // (v8.8.3) 이 기기에만
-  if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">'+uiIc('push')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
-  html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">'+uiIc('sound')+' 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
-  html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">'+uiIc('export')+' 세이브 내보내기</button>';
-  html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
-  if(DONATE_URL) html += '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:12px;">💝 개발 응원하기</button>';
-  html += '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
-  html += '<div style="text-align:center; margin-top:14px;"><a href="terms.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">이용약관</a> <span class="sub" style="font-size:12px;">·</span> <a href="privacy.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">개인정보 처리방침</a></div>'; // (v8.12.0)
+  const row = (id, ic, nm, sub)=>'<button class="set-row" data-setpg="'+id+'"><span class="sr-ic">'+ic+'</span><span class="sr-nm">'+nm+'</span><span class="sr-sub">'+sub+'</span><span class="sr-go">›</span></button>';
+  const tog = (id, nm, note, on)=>'<label class="set-tog"><span>'+nm+(note?' <small>'+note+'</small>':'')+'</span><input type="checkbox" id="'+id+'" '+(on?'checked':'')+'></label>';
+  const slider = (id, ic, nm, v)=>'<div class="set-sl"><div class="sub">'+ic+' '+nm+' <b id="'+id+'Val">'+Math.round(v*100)+'</b></div><input type="range" id="'+id+'" min="0" max="100" value="'+Math.round(v*100)+'"></div>';
+  const TITLE = { sound:uiIc('sound')+' 소리', account:'👤 계정', save:uiIc('export')+' 세이브', notify:uiIc('push')+' 알림 · 설치' };
+  let html;
+  if(!page){
+    html = '<h3>⚙️ 설정</h3><div class="set-list">'
+      + row('sound', uiIc('sound'), '소리', '배경음 '+Math.round(s.bgmVolume*100)+' · 효과음 '+Math.round(s.sfxVolume*100))
+      + row('account', '👤', '계정', acc.linked ? '구글 연동됨' : '연동 안 됨')
+      + row('save', uiIc('export'), '세이브', '내보내기 · 불러오기 · 초기화')
+      + ((pushReady || s.push || !isStandaloneApp()) ? row('notify', uiIc('push'), '알림 · 설치', s.push ? '알림 켜짐' : (!isStandaloneApp() ? '홈 화면에 추가' : '알림 꺼짐')) : '')
+      + '</div>'
+      + tog('spendAskChk', '💰 재화 쓸 때 확인창', '', s.spendAsk!==false)
+      + (DONATE_URL ? '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:14px;">💝 개발 응원하기</button>' : '')
+      + '<div style="text-align:center; margin-top:14px;"><a href="terms.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">이용약관</a> <span class="sub" style="font-size:12px;">·</span> <a href="privacy.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">개인정보 처리방침</a></div>';
+  } else {
+    html = '<div class="set-top"><button class="btn secondary small" id="setBack">‹ 설정</button><h3>'+TITLE[page]+'</h3></div>';
+    if(page==='sound') html += slider('bgmVolumeSlider', uiIc('music'), '배경음악', s.bgmVolume) + slider('sfxVolumeSlider', uiIc('sound'), '효과음', s.sfxVolume)
+      + tog('battleSfxChk', '⚔️ 전투 효과음', '타격·스킬·회복 등', s.battleSfx!==false)
+      + tog('muteBlurChk', '🔇 다른 창 볼 때 소리 끄기', '알탭 등', s.muteBlur!==false)
+      + '<button class="btn secondary" id="audioReviveBtn" style="margin-top:16px;">'+uiIc('sound')+' 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button><div class="sub" style="font-size:11px; margin-top:4px; text-align:center;">소리가 안 나올 때 눌러 봐</div>';
+    else if(page==='account') html += accountBoxHtml();
+    else if(page==='save') html += '<button class="btn secondary" id="openExportFromSettings">'+uiIc('export')+' 세이브 내보내기</button>'
+      + '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>'
+      + '<div class="sub" style="font-size:11px; margin-top:6px; text-align:center;">세이브 글자를 복사해 두면 다른 기기·브라우저로 옮길 수 있음</div>'
+      + '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
+    else if(page==='notify'){
+      if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn">'+uiIc('push')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
+      if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:10px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>' // (v312)
+        + tog('instAskChk', '📲 접속할 때 설치 안내 띄우기', '', !instNoAsk()); // (v8.8.3) 이 기기에만
+    }
+  }
   document.getElementById('modalRoot').innerHTML =
-    '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
+    '<div class="modal-bg" id="modalBg"><div class="modal set-modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
   bindModalClose();
-  document.getElementById('bgmVolumeSlider').addEventListener('input', (e)=>{
-    state.settings.bgmVolume = (+e.target.value)/100;
-    if(bgmGain) bgmGain.gain.value = state.settings.bgmVolume;
-    save();
-  });
-  document.getElementById('sfxVolumeSlider').addEventListener('input', (e)=>{
-    state.settings.sfxVolume = (+e.target.value)/100;
-    if(sfxGain) sfxGain.gain.value = state.settings.sfxVolume;
-    save();
-  });
-  document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
-  document.getElementById('muteBlurChk').addEventListener('change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
-  document.getElementById('battleSfxChk').addEventListener('change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
-  { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
-  { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
-  { const ic = document.getElementById('instAskChk'); if(ic) ic.addEventListener('change', e=>setInstNoAsk(!e.target.checked)); }
-  document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
-  bindAccountBox();
-  document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
-  document.getElementById('openImportFromSettings').addEventListener('click', showImportModal);
-  document.getElementById('openResetFromSettings').addEventListener('click', showResetConfirmModal);
-  { const d = document.getElementById('openDonateFromSettings'); if(d) d.addEventListener('click', showDonateInfo); }
+  const on = (id, ev, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener(ev, fn); };
+  document.querySelectorAll('[data-setpg]').forEach(b=>b.addEventListener('click', ()=>showSettingsModal(b.dataset.setpg)));
+  on('setBack', 'click', ()=>showSettingsModal());
+  on('bgmVolumeSlider', 'input', e=>{ state.settings.bgmVolume = (+e.target.value)/100; if(bgmGain) bgmGain.gain.value = state.settings.bgmVolume; const v = document.getElementById('bgmVolumeSliderVal'); if(v) v.textContent = e.target.value; save(); });
+  on('sfxVolumeSlider', 'input', e=>{ state.settings.sfxVolume = (+e.target.value)/100; if(sfxGain) sfxGain.gain.value = state.settings.sfxVolume; const v = document.getElementById('sfxVolumeSliderVal'); if(v) v.textContent = e.target.value; save(); });
+  on('spendAskChk', 'change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
+  on('muteBlurChk', 'change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
+  on('battleSfxChk', 'change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
+  on('pushOpenBtn', 'click', showPushModal);
+  on('installOpenBtn', 'click', ()=>showInstallModal(()=>showSettingsModal('notify')));
+  on('instAskChk', 'change', e=>setInstNoAsk(!e.target.checked));
+  on('audioReviveBtn', 'click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
+  if(page==='account') bindAccountBox();
+  on('openExportFromSettings', 'click', showExportModal);
+  on('openImportFromSettings', 'click', showImportModal);
+  on('openResetFromSettings', 'click', showResetConfirmModal);
+  on('openDonateFromSettings', 'click', showDonateInfo);
 }
 // (v284) 개발 응원(후원) — 보상 없는 응원만 받음. 계좌번호가 드러나는 링크는 넣지 않기
 // 이 창만 존댓말 (보는 사람에게 부탁하는 글이라)
@@ -11109,7 +11123,7 @@ function showExportModal(){
   html += '<button class="btn secondary" id="downloadExportBtn" style="margin-top:8px; width:100%;">'+uiIc('backup')+' 파일로 저장</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
-  bindModalClose();
+  bindModalClose(()=>showSettingsModal('save'));
   document.getElementById('exportText').value = code;
   document.getElementById('copyExportBtn').addEventListener('click', ()=>{
     const ta = document.getElementById('exportText');
@@ -11140,7 +11154,7 @@ function showImportModal(){
   html += '<button class="btn" id="applyImportBtn" style="margin-top:8px; width:100%;">불러오기 적용</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
-  bindModalClose();
+  bindModalClose(()=>showSettingsModal('save'));
   document.getElementById('pasteImportBtn').addEventListener('click', async ()=>{
     try{
       if(!(navigator.clipboard && navigator.clipboard.readText)) throw new Error('unsupported');
@@ -11191,8 +11205,8 @@ function showResetConfirmModal(){
     + '<button class="btn secondary" id="cancelReset" style="margin-top:14px;">취소</button>'
     + '<button class="btn" id="confirmReset" style="margin-top:8px; background:linear-gradient(135deg,#ff5a5a,#d64949);">초기화하기</button>'
     + '</div></div>';
-  bindModalClose();
-  document.getElementById('cancelReset').addEventListener('click', closeModal);
+  bindModalClose(()=>showSettingsModal('save'));
+  document.getElementById('cancelReset').addEventListener('click', ()=>showSettingsModal('save'));
   document.getElementById('confirmReset').addEventListener('click', ()=>{
     localStorage.removeItem(SAVE_KEY);
     state = defaultState();
@@ -11391,7 +11405,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:411, v:'8.12.0', date:'2026-10-10', secs:[
     { t:'별빛 균열', items:[ '6층부터 보스 세기를 모두 하드 1 보스 기준으로 통일 (체력·공격력 배율 따로)', '6~9층: 체력 ×1.3 · 1.5 · 1.7 · 1.9 / 공격력 ×1.1 · 1.2 · 1.3 · 1.4 (6층이 5층보다 약하던 것)', '10~12층: 체력 ×3.6 · 5.6 · 8 / 공격력 ×1.5 · 1.7 · 1.95 (예전: 하드 3 보스 ×0.46 · 0.72 · 1.03 = 체력 약 ×3.8 · 6 · 8.5 / 공격력 약 ×0.94 · 1.47 · 2.1)' ]},
-    { t:'기타', items:[ '다른 창을 보거나 게임을 내려 두면 소리 엔진을 멈춤 — 켜 둔 채로 다른 크롬 창이 버벅이던 것 줄임', '설정 맨 아래에 이용약관 · 개인정보 처리방침', '카톡·SNS에 게임 주소를 보내면 미리보기 그림이 뜸' ]}
+    { t:'기타', items:[ '다른 창을 보거나 게임을 내려 두면 소리 엔진을 멈춤 — 켜 둔 채로 다른 크롬 창이 버벅이던 것 줄임', '설정 맨 아래에 이용약관 · 개인정보 처리방침', '카톡·SNS에 게임 주소를 보내면 미리보기 그림이 뜸', '설정을 소리 · 계정 · 세이브 · 알림 갈래로 나눔 — 첫 화면은 메뉴만, 누르면 그 갈래 화면' ]}
   ]},
   { build:410, v:'8.11.1', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]},
