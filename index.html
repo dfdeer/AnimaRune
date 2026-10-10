@@ -557,7 +557,7 @@
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:3px; font-size:10px; line-height:12px; background:#0b0a22; padding:0 5px; border-radius:8px; z-index:2;}
   .species-tile .passive-badge{position:absolute; top:1px; left:4px; font-size:11px; line-height:13px; z-index:2;}
-  .species-tile .sp-updot{position:absolute; top:-5px; right:-5px; width:10px; height:10px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel); z-index:3;} .seg-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#ff5757; margin-left:3px; align-self:flex-start; flex-shrink:0;} /* (v8.12.4) 강화·각성 가능 */
+  .species-tile.grow .count{right:17px;} .species-tile .sp-updot{position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel); z-index:3;} .seg-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#ff5757; margin-left:3px; align-self:flex-start; flex-shrink:0;} /* (v8.12.4) 강화·각성 가능 */
   .species-tile.undiscovered{opacity:0.35;}
 /* (v99) 보스 출전 명단 선택 — 등급은 테두리·배경색, 유리는 아이콘 위 배지, 선택은 흰 링+체크 */
 .roster-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 7px; padding-top:4px;}
@@ -10576,10 +10576,12 @@ function tile(key, cp){ // 정령 탭 보유 목록·출정 대기 목록 — �
     return '<div class="species-tile undiscovered"><div class="icon">❔</div><div class="name">???</div></div>';
   }
   const passive = passiveFor(key);
-  return '<div class="species-tile'+(owned<=0 && away>0 ? ' away' : '')+'" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
+  const grow = cp && spCanGrow(key); // (v8.12.4) 정령 탭: 강화·각성·성좌 승급 가능하면 칸 오른쪽 위에 빨간 점 (칸 밖은 content-visibility로 잘려서 안쪽에)
+  return '<div class="species-tile'+(owned<=0 && away>0 ? ' away' : '')+(grow ? ' grow' : '')+'" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
+    + (grow ? '<i class="sp-updot"></i>' : '')
     + (owned>0 ? (memSpirit(key) && owned<=1 ? '' : '<div class="count">x'+owned+'</div>') : (away>0 ? '<div class="count" style="color:#57d3ff;">'+uiIc('dispatch')+'</div>' : ''))
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+(cp && spCanGrow(key) ? '<i class="sp-updot"></i>' : '')+'</div>' // (v8.12.4) 정령 탭: 강화·각성·성좌 승급 가능하면 그림 모서리에 빨간 점 (칸 밖은 content-visibility로 잘림)
+    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
     + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
     + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
     + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+enhShowHtml(key)+' '+awakenStars(key)+'</div>' : '')
@@ -17231,7 +17233,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 416, APP_VERSION = '8.12.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 417, APP_VERSION = '8.12.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
