@@ -10,6 +10,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="아니마룬">
 <meta name="format-detection" content="telephone=no">
+<meta name="description" content="신화 속 정령을 모아 키우는 수집형 턴제 RPG · 설치 없이 브라우저에서 바로">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="아니마룬">
+<meta property="og:title" content="아니마룬">
+<meta property="og:description" content="신화 속 정령을 모아 키우는 수집형 턴제 RPG · 설치 없이 브라우저에서 바로">
+<meta property="og:url" content="https://dfdeer.github.io/AnimaRune/">
+<meta property="og:image" content="https://dfdeer.github.io/AnimaRune/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image"><!-- (v8.12.0) 카톡·SNS에 주소를 보내면 뜨는 미리보기 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -390,6 +401,14 @@
   .fr-row .btn.small{width:auto; padding:7px 12px; flex-shrink:0;}
   .fr-dot{flex-shrink:0; width:10px; height:10px; border-radius:50%; background:#4a4a58; margin:0 4px;}
   .fr-dot.on{background:#5cd65c; box-shadow:0 0 8px #5cd65c;}
+  .set-list{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+  .set-row{display:flex; align-items:center; gap:10px; width:100%; padding:13px 14px; border-radius:14px; border:1px solid #ffffff1a; background:#ffffff0d; color:inherit; font:inherit; text-align:left; cursor:pointer;}
+  .set-row:active{background:#ffffff1f;} .set-row .sr-ic{width:24px; text-align:center; font-size:18px;} .set-row .sr-ic .uic{width:22px; height:22px;}
+  .set-row .sr-nm{font-weight:800; font-size:15px;} .set-row .sr-sub{flex:1; text-align:right; font-size:11px; opacity:.65;} .set-row .sr-go{font-size:20px; opacity:.5; margin-left:2px;}
+  .set-tog{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; text-align:left; font-size:13px;} .set-tog small{opacity:.65; font-size:11px;} .set-tog input{width:20px; height:20px; flex:none;}
+  .set-sl{margin-top:14px; text-align:left;} .set-sl .sub{margin-bottom:4px;} .set-sl b{float:right; opacity:.8;} .set-sl input{width:100%;}
+  .set-top{display:flex; align-items:center; gap:8px; margin:-2px 28px 8px 0;} .set-top .btn{width:auto; margin:0; padding:6px 10px;} .set-top h3{margin:0; flex:1; text-align:left;}
+  .set-modal .acc-box{margin-top:4px;} .set-modal .acc-h{display:none;} /* (v8.12.0) 설정 갈래 — 계정 화면은 위 제목과 겹치는 「👤 계정」 줄 숨김 */
   .acc-box{margin-top:10px; padding:10px 12px; border-radius:14px; background:#ffffff0d; text-align:left;} .acc-h{font-weight:800; margin-bottom:4px;}
   .acc-dt{width:100%; border-collapse:collapse; font-size:12px;} .acc-dt th{font-size:11px; color:var(--sub); font-weight:700; padding:2px 4px;} .acc-dt td{padding:3px 4px; border-bottom:1px solid #ffffff10; text-align:right; white-space:nowrap;} .acc-dt td:first-child{text-align:left; color:var(--sub); white-space:normal;} .acc-dt tr.sec td{text-align:left; color:#ffe38a; font-weight:800; padding-top:8px; border-bottom:1px solid #ffe38a44;} .acc-dt td.more{color:#5cd65c; font-weight:800;} /* (v7.1.3) 진행 비교 */
   .acc-pick{display:flex; flex-direction:column; gap:2px; width:100%; text-align:left; padding:10px 12px; margin-top:8px; border-radius:14px; background:#27235a; border:2px solid #3d3a5a; color:var(--text);} .acc-pick b{font-size:15px;} .acc-pick small{color:var(--sub); font-size:11px;} .acc-pick span{font-size:12px;}
@@ -2751,7 +2770,7 @@ function fmtCP(n){ return Math.round(n).toLocaleString('ko-KR'); }
 //  일반 스테이지·출정: 상대 합산의 1배(0.9배 넘으면 승률 80% 안팎) · 요일 던전: 1.5배(한 속성만 써서 상성 손해 · 수호자)
 //  챕터 보스: 3웨이브 합산의 REC_CP_MULT.boss 배 · 레이드: 보스·난이도별 표(RAID_REC_CP — 기믹 때문에 상대 전투력과 승패가 잘 안 맞음)
 const REC_CP_MULT = { stage:1.0, expedition:1.0, dungeon:1.5, boss:1.2 };
-function bossRecAdj(i){ return i===HARD_BASE+2*CHAPTER_LENGTH-1 ? 1.58 : (i===NORM_BASE+2*CHAPTER_LENGTH-1 ? 1.22 : 1); } // (v8.0.0) 용암 군주(노말 2 · 하드 2)는 세기를 낮춘 대신 기믹(화염 흡수 · 격노 · 용암 정령)이 세서 추천을 올려 보여 줌
+function bossRecAdj(i){ return 1; } // (v8.12.0) 용암 군주(노말 2 · 하드 2) 추천을 올려 보여 주던 것(×1.22 · ×1.58) 없앰 — 능력치를 다른 챕터와 같은 흐름으로 되돌림
 function recCP(v){ return Math.max(100, Math.ceil(v/100)*100); } // 백 단위 올림
 function cpVerdictRec(my, rec){ const r = my/Math.max(1,rec); if(r>=1.2) return {t:'여유', c:'#5cd65c'}; if(r>=1) return {t:'충분', c:'#a8e063'}; if(r>=0.85) return {t:'접전', c:'#ffd557'}; return {t:'부족', c:'#ff5a5a'}; }
 function cpBarHtml(my, en, enLabel, note, rec, myLabel){
@@ -5265,7 +5284,7 @@ async function accLinkGoogle(){
   acc.linked = true; acc.email = r.email; acc.uid = r.uid;
   accSetMeta(0); await accPush(true); await accClaimSession(); accWatchSession(); friendMarkGoogle();
   toast('구글 계정 연동 완료 — 다른 기기에서도 이어서 가능', 3500);
-  if(document.getElementById('accBox')) showSettingsModal();
+  if(document.getElementById('accBox')) showSettingsModal('account');
 }
 function accountBoxHtml(){
   let h = '<div id="accBox" class="acc-box"><div class="acc-h">👤 계정</div>';
@@ -6093,12 +6112,13 @@ const BOSS_POWER_MULT = 1.6; // 챕터 마지막 일반 스테이지 대비 보�
 // 자동 전투 시뮬레이션으로 맞춤: 그 챕터를 막 깬 팀은 보스전 11~17라운드(자동으로는 지기도 함),
 // 한 단계 강한 팀은 5~8라운드(1챕터 에픽1+레어5 기준 2R → 약 5R). 보스가 오래 버텨야 그로기·약점 속성을 쓸 틈이 생김
 let CH_BOSS_ATK_MULTS = [1.8, 1.8, 2.4, 2.4, 2.4, 1.0], CH_BOSS_HP_MULTS = [12, 15, 25, 28, 23, 40]; // 이지(예전 노말) 챕터 1~6
-const NORM_BOSS_ATK_MULTS = [2.29, 1.7, 2.69, 2.22, 3.09, 2.49], NORM_BOSS_HP_MULTS = [20, 20, 25, 28, 25, 40]; // (v8.0.0) 보스 추천: 노말 1 약 1.56만 → 하드 3 약 4.05만은 단계마다 약 ×1.13 · 하드 4 6.8만 · 하드 5 13만 · 하드 6 25.5만 (체력 배율은 예전 수준으로 두고 공격 배율로 맞춤)
+const NORM_BOSS_ATK_MULTS = [2.29, 2.49, 2.69, 2.22, 3.09, 2.49], NORM_BOSS_HP_MULTS = [20, 22.5, 25, 28, 25, 40]; // (v8.12.0) 노말 2 용암 군주 공격력 1.7 → 2.49 · 체력 20 → 22.5 (앞뒤 챕터 사이) // (v8.0.0) 보스 추천: 노말 1 약 1.56만 → 하드 3 약 4.05만은 단계마다 약 ×1.13 · 하드 4 6.8만 · 하드 5 13만 · 하드 6 25.5만 (체력 배율은 예전 수준으로 두고 공격 배율로 맞춤)
 function tierBossMults(i){ const t = stageTier(i); return t==='h' ? [HARD_BOSS_ATK_MULTS, HARD_BOSS_HP_MULTS] : t==='n' ? [NORM_BOSS_ATK_MULTS, NORM_BOSS_HP_MULTS] : [CH_BOSS_ATK_MULTS, CH_BOSS_HP_MULTS]; }
-const HARD_BOSS_ATK_MULTS = [2.64, 1.61, 2.16, 2.7, 2.34, 2.15], HARD_BOSS_HP_MULTS = [45, 22, 65, 60, 60, 40]; // (v8.0.0) 하드 2 용암 군주는 체력이 길면 격노가 쌓여 급해져서 체력 22 (추천 표시는 bossRecAdj)
+const HARD_BOSS_ATK_MULTS = [2.64, 2.4, 2.16, 2.7, 2.34, 2.15], HARD_BOSS_HP_MULTS = [45, 55, 65, 60, 60, 40]; // (v8.12.0) 하드 2 용암 군주 공격력 1.61 → 2.4 · 체력 22 → 55 (앞뒤 챕터 사이 — 용암 군주만 깎던 것 없앰, 대신 격노 LAVA_RAGE를 낮춤 · 사용자 결정) // (v8.0.0) 하드 2 용암 군주는 체력이 길면 격노가 쌓여 급해져서 체력 22 (추천 표시는 bossRecAdj)
 // (v8.0.0) 예전(7.4.0) 하드 1~6 수치 — 별빛 균열·성역·요일 던전 세기 기준으로만 씀 (챕터 난이도를 바꿔도 이 셋은 안 바뀌게)
-const LEGACY_HARD = { end:[1300, 1625, 2015, 2470, 3055, 3800], atk:[1.9, 1.2, 2.5, 3.3, 8.64, 8.64], hp:[16, 15, 65, 60, 357.5, 357.5] };
+const LEGACY_HARD = { end:[1300, 1625, 2015, 2470, 3055, 3800], atk:[1.9, 2.2, 2.5, 3.3, 8.64, 8.64], hp:[16, 15, 65, 60, 357.5, 357.5] };
 const CHAPTER_BOSS_ELEMENT = ['water','fire','wood','light',null,'dark']; // null=심연의 수정(매 라운드 변환)
+const LAVA_RAGE = 0.15; // (v8.12.0) 용암 군주(하드) 격노 — 4라운드마다 공격력 +25% → +15% (누적)
 const CHAPTER_BOSS_GIMMICK = ['frostGiant','lavaLord','ancientTree','ruinGuardian','abyssCrystal','shadowLord'];
 const BOSS_GIMMICK_INFO = {
   frostGiant:  {name:'서리거인', icon:'🧊', desc:'얼음 갑옷 — 받는 피해 절반 · 3라운드마다 가장 빠른 아군 빙결'},
@@ -6122,7 +6142,7 @@ const BOSS_GIMMICKS = {
     base: [{ic:'🔥', nm:'화염 흡수', when:'항상', d:'화염 공격은 피해 대신 보스 회복'},
            {ic:'🌋', nm:'화상 장판', when:'매 R', d:'아군 전체 화상 1중첩'}],
     extra:[{ic:'🌋', nm:'분화', when:'3R마다', d:'아군 전체 공격력 70% 피해'}],
-    hard: [{ic:'😡', nm:'격노', when:'4R마다', d:'공격력 +25% (누적)'},
+    hard: [{ic:'😡', nm:'격노', when:'4R마다', d:'공격력 +'+Math.round(LAVA_RAGE*100)+'% (누적)'},
            {ic:'💣', nm:'용암 정령', when:'3R마다', fresh:true, d:'용암 정령 2마리 소환 — 앞을 막아 보스를 못 때림 · 2라운드 안에 못 잡으면 자폭 (아군 전체 공격력 50% 피해)'}] },
   ancientTree: {
     base: [{ic:'🌿', nm:'덩굴', when:'2R마다', d:'후열 아군 1명을 전열로 끌어냄'},
@@ -6286,7 +6306,7 @@ function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보
     allies().forEach(u=>{ if(u.st.freeze) u.st.curse = { v: Math.max(0.5, (u.st.curse && u.st.curse.v)||0), r: 2 }; }); // 동상 — 라운드 시작 때 1 줄어서 이번 라운드 동안 유지
   }
   else if(g.type==='lavaLord'){
-    if(r%4===0){ boss.atk = Math.round(boss.atk*1.25); pushLog(sf, '😡 '+nm('격노')+'! 공격력 상승'); }
+    if(r%4===0){ boss.atk = Math.round(boss.atk*(1+LAVA_RAGE)); pushLog(sf, '😡 '+nm('격노')+'! 공격력 상승'); }
     sf.enemyUnits.filter(u=>u.isAdd && u.alive).forEach(a=>{ // 용암 정령 자폭 타이머
       a.fuse = (a.fuse||1) - 1;
       if(a.fuse<=0){ allies().forEach(u=>dealDamage(sf, boss, u, 0.5, {noCrit:true})); killUnit(sf, a); pushLog(sf, '💥 용암 정령 자폭!'); }
@@ -8676,7 +8696,8 @@ function startBgm(){
   // (v2.10.2) 예전엔 0.25초 앞까지만 예약해서, 화면을 그리느라 폰이 잠깐 바쁘면 음이 비고 박자를 처음부터 다시 맞춰 끊김이 들렸음
   //  → 1.5초 앞까지 미리 예약 · 조금 늦었으면 놓친 박만 건너뛰고 같은 박자 줄에 이어 붙임(3초 넘게 멈췄을 때만 새로 시작)
   bgmTimer = setInterval(()=>{
-    if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
+    if((document.hidden || blurMuted) && audioCtx && audioCtx.state==='running' && Date.now()-blurAt > 400){ try{ const p = audioCtx.suspend(); if(p && p.catch) p.catch(()=>{}); }catch(e){} } // (v8.12.0) 안 보거나 다른 창을 볼 땐 소리 엔진을 멈춤 — 소리만 0으로 하고 계속 합성(잔향 포함)하던 것 때문에 같이 켜 둔 크롬 창까지 버벅였음 · 돌아오면 applyBlurMute·reviveAudio가 다시 켬
+    if(state.settings.bgmVolume<=0 || document.hidden || blurMuted || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
     bgmSwitch(now);
     const tr = BGM_TRACKS[bgmCur];
@@ -8700,8 +8721,8 @@ function reviveAudio(){ if(audioCtx && audioCtx.state!=='running') ensureAudioCt
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) reviveAudio(); });
 window.addEventListener('pageshow', reviveAudio);
 // (v324) 다른 창으로 넘어가면(알탭 등) 소리 끔 — 설정 「다른 창 볼 때 소리 끄기」 · 돌아오면 원래 볼륨으로
-let blurMuted = false;
-function applyBlurMute(){ const m = state.settings && state.settings.muteBlur!==false && !document.hasFocus(); blurMuted = m; if(!audioCtx) return; const t = audioCtx.currentTime;
+let blurMuted = false, blurAt = 0;
+function applyBlurMute(){ const m = state.settings && state.settings.muteBlur!==false && !document.hasFocus(); blurMuted = m; blurAt = Date.now(); if(!audioCtx) return; if(!m && audioCtx.state!=='running' && document.hasFocus()) resumeAudio(); const t = audioCtx.currentTime;
   [[bgmGain, state.settings.bgmVolume], [sfxGain, state.settings.sfxVolume]].forEach(([g,v])=>{ if(!g) return; try{ g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(m ? 0 : v, t, 0.05); }catch(e){ g.gain.value = m ? 0 : v; } }); }
 window.addEventListener('blur', applyBlurMute); window.addEventListener('focus', applyBlurMute);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkDailyRollover(); });
@@ -10884,7 +10905,7 @@ function showPushModal(){
   h += '<div style="margin-top:14px; text-align:left;'+(on?'':' opacity:.45; pointer-events:none;')+'">'+PUSH_KINDS.map(([k,nm])=>'<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid #ffffff10;"><span class="sub">'+nm+'</span><input type="checkbox" data-push-kind="'+k+'" '+(off[k]?'':'checked')+'></label>').join('')+'</div>';
   h += '<div class="sub" style="font-size:11px; margin-top:10px; line-height:1.5;">이 기기에만 적용 · 화로·파견·일일 알림은 최대 10분 늦게 올 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
-  bindModalClose(showSettingsModal);
+  bindModalClose(()=>showSettingsModal('notify'));
   { const ib = document.getElementById('pushInstBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showPushModal)); }
   document.getElementById('pushToggle').addEventListener('click', async e=>{
     const b = e.currentTarget; b.disabled = true; b.textContent = '…';
@@ -10953,7 +10974,7 @@ function showInstallModal(back, auto){
   if(auto && !isStandaloneApp()) h += '<div style="display:flex; gap:6px; margin-top:14px;"><button class="btn secondary" id="instNever" style="flex:1; margin:0;">다시 보지 않기</button><button class="btn" id="instLater" style="flex:1; margin:0;">닫기</button></div><div class="sub" style="font-size:11px; margin-top:8px; text-align:center;">☰ → 설정 → 📲 홈 화면에 추가에서 언제든 다시 볼 수 있음</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:left;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose(back);
-  { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', showSettingsModal); }
+  { const a = document.getElementById('instAcc'); if(a) a.addEventListener('click', ()=>showSettingsModal('account')); }
   { const n = document.getElementById('instNever'); if(n) n.addEventListener('click', ()=>{ setInstNoAsk(true); closeModal(); toast('설치 안내 끔 · 설정에서 다시 켤 수 있음'); }); }
   { const l = document.getElementById('instLater'); if(l) l.addEventListener('click', ()=>closeModal()); }
   const g = document.getElementById('instGo'); if(g) g.addEventListener('click', async ()=>{
@@ -10962,55 +10983,62 @@ function showInstallModal(back, auto){
     showInstallModal(back, auto);
   });
 }
-function showSettingsModal(){
+// (v8.12.0) 설정을 갈래별로 나눔 — 첫 화면은 소리·계정·세이브·알림 메뉴만 · 누르면 그 갈래 화면(‹ 설정으로 돌아감) (사용자 결정: 한 창에 다 몰려 있어 버튼이 너무 많고 스크롤되는지도 몰랐음)
+function showSettingsModal(page){
   const s = state.settings;
-  let html = '<h3>⚙️ 설정</h3>';
-  html += accountBoxHtml();
-  html += '<div style="margin-top:16px; text-align:left;">';
-  html += '<div class="sub" style="margin-bottom:4px;">'+uiIc('music')+' 배경음악 볼륨</div>';
-  html += '<input type="range" id="bgmVolumeSlider" min="0" max="100" value="'+Math.round(s.bgmVolume*100)+'" style="width:100%;">';
-  html += '</div>';
-  html += '<div style="margin-top:16px; text-align:left;">';
-  html += '<div class="sub" style="margin-bottom:4px;">'+uiIc('sound')+' 효과음 볼륨</div>';
-  html += '<input type="range" id="sfxVolumeSlider" min="0" max="100" value="'+Math.round(s.sfxVolume*100)+'" style="width:100%;">';
-  html += '</div>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">🔇 다른 창 볼 때 소리 끄기 <small style="opacity:.7;">(알탭 등)</small></span><input type="checkbox" id="muteBlurChk" '+(s.muteBlur!==false?'checked':'')+'></label>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">⚔️ 전투 효과음 <small style="opacity:.7;">(타격·스킬·회복 등)</small></span><input type="checkbox" id="battleSfxChk" '+(s.battleSfx!==false?'checked':'')+'></label>';
-  html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; text-align:left;"><span class="sub">💰 재화 쓸 때 확인창</span><input type="checkbox" id="spendAskChk" '+(s.spendAsk!==false?'checked':'')+' style="width:20px; height:20px;"></label>';
-  if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:16px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>'; // (v312)
-  if(!isStandaloneApp()) html += '<label style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:10px; text-align:left;"><span class="sub">📲 접속할 때 설치 안내 띄우기</span><input type="checkbox" id="instAskChk" '+(instNoAsk()?'':'checked')+' style="width:20px; height:20px;"></label>'; // (v8.8.3) 이 기기에만
-  if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn" style="margin-top:16px;">'+uiIc('push')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
-  html += '<button class="btn secondary" id="audioReviveBtn" style="margin-top:18px;">'+uiIc('sound')+' 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button>';
-  html += '<button class="btn secondary" id="openExportFromSettings" style="margin-top:12px;">'+uiIc('export')+' 세이브 내보내기</button>';
-  html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
-  if(DONATE_URL) html += '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:12px;">💝 개발 응원하기</button>';
-  html += '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
+  const row = (id, ic, nm, sub)=>'<button class="set-row" data-setpg="'+id+'"><span class="sr-ic">'+ic+'</span><span class="sr-nm">'+nm+'</span><span class="sr-sub">'+sub+'</span><span class="sr-go">›</span></button>';
+  const tog = (id, nm, note, on)=>'<label class="set-tog"><span>'+nm+(note?' <small>'+note+'</small>':'')+'</span><input type="checkbox" id="'+id+'" '+(on?'checked':'')+'></label>';
+  const slider = (id, ic, nm, v)=>'<div class="set-sl"><div class="sub">'+ic+' '+nm+' <b id="'+id+'Val">'+Math.round(v*100)+'</b></div><input type="range" id="'+id+'" min="0" max="100" value="'+Math.round(v*100)+'"></div>';
+  const TITLE = { sound:uiIc('sound')+' 소리', account:'👤 계정', save:uiIc('export')+' 세이브', notify:uiIc('push')+' 알림 · 설치' };
+  let html;
+  if(!page){
+    html = '<h3>⚙️ 설정</h3><div class="set-list">'
+      + row('sound', uiIc('sound'), '소리', '배경음 '+Math.round(s.bgmVolume*100)+' · 효과음 '+Math.round(s.sfxVolume*100))
+      + row('account', '👤', '계정', acc.linked ? '구글 연동됨' : '연동 안 됨')
+      + row('save', uiIc('export'), '세이브', '내보내기 · 불러오기 · 초기화')
+      + ((pushReady || s.push || !isStandaloneApp()) ? row('notify', uiIc('push'), '알림 · 설치', s.push ? '알림 켜짐' : (!isStandaloneApp() ? '홈 화면에 추가' : '알림 꺼짐')) : '')
+      + '</div>'
+      + tog('spendAskChk', '💰 재화 쓸 때 확인창', '', s.spendAsk!==false)
+      + (DONATE_URL ? '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:14px;">💝 개발 응원하기</button>' : '')
+      + '<div style="text-align:center; margin-top:14px;"><a href="terms.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">이용약관</a> <span class="sub" style="font-size:12px;">·</span> <a href="privacy.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">개인정보 처리방침</a></div>';
+  } else {
+    html = '<div class="set-top"><button class="btn secondary small" id="setBack">‹ 설정</button><h3>'+TITLE[page]+'</h3></div>';
+    if(page==='sound') html += slider('bgmVolumeSlider', uiIc('music'), '배경음악', s.bgmVolume) + slider('sfxVolumeSlider', uiIc('sound'), '효과음', s.sfxVolume)
+      + tog('battleSfxChk', '⚔️ 전투 효과음', '타격·스킬·회복 등', s.battleSfx!==false)
+      + tog('muteBlurChk', '🔇 다른 창 볼 때 소리 끄기', '알탭 등', s.muteBlur!==false)
+      + '<button class="btn secondary" id="audioReviveBtn" style="margin-top:16px;">'+uiIc('sound')+' 소리 다시 연결 <span class="sub" id="audioStateTxt">('+(audioCtx?audioCtx.state:'대기')+')</span></button><div class="sub" style="font-size:11px; margin-top:4px; text-align:center;">소리가 안 나올 때 눌러 봐</div>';
+    else if(page==='account') html += accountBoxHtml();
+    else if(page==='save') html += '<button class="btn secondary" id="openExportFromSettings">'+uiIc('export')+' 세이브 내보내기</button>'
+      + '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>'
+      + '<div class="sub" style="font-size:11px; margin-top:6px; text-align:center;">세이브 글자를 복사해 두면 다른 기기·브라우저로 옮길 수 있음</div>'
+      + '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
+    else if(page==='notify'){
+      if(pushReady || s.push) html += '<button class="btn secondary" id="pushOpenBtn">'+uiIc('push')+' 휴대폰 알림 <span class="sub">('+(s.push?'켜짐':'꺼짐')+')</span></button>'; // (v310)
+      if(!isStandaloneApp()) html += '<button class="btn secondary" id="installOpenBtn" style="margin-top:10px;">📲 홈 화면에 추가 <span class="sub">('+(installKind()==='ios' ? '아이폰은 직접 추가 · 순서 보기' : '앱처럼 쓰기')+')</span></button>' // (v312)
+        + tog('instAskChk', '📲 접속할 때 설치 안내 띄우기', '', !instNoAsk()); // (v8.8.3) 이 기기에만
+    }
+  }
   document.getElementById('modalRoot').innerHTML =
-    '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
+    '<div class="modal-bg" id="modalBg"><div class="modal set-modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
   bindModalClose();
-  document.getElementById('bgmVolumeSlider').addEventListener('input', (e)=>{
-    state.settings.bgmVolume = (+e.target.value)/100;
-    if(bgmGain) bgmGain.gain.value = state.settings.bgmVolume;
-    save();
-  });
-  document.getElementById('sfxVolumeSlider').addEventListener('input', (e)=>{
-    state.settings.sfxVolume = (+e.target.value)/100;
-    if(sfxGain) sfxGain.gain.value = state.settings.sfxVolume;
-    save();
-  });
-  document.getElementById('spendAskChk').addEventListener('change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
-  document.getElementById('muteBlurChk').addEventListener('change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
-  document.getElementById('battleSfxChk').addEventListener('change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
-  { const pb = document.getElementById('pushOpenBtn'); if(pb) pb.addEventListener('click', showPushModal); }
-  { const ib = document.getElementById('installOpenBtn'); if(ib) ib.addEventListener('click', ()=>showInstallModal(showSettingsModal)); }
-  { const ic = document.getElementById('instAskChk'); if(ic) ic.addEventListener('change', e=>setInstNoAsk(!e.target.checked)); }
-  document.getElementById('audioReviveBtn').addEventListener('click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
-  bindAccountBox();
-  document.getElementById('openExportFromSettings').addEventListener('click', showExportModal);
-  document.getElementById('openImportFromSettings').addEventListener('click', showImportModal);
-  document.getElementById('openResetFromSettings').addEventListener('click', showResetConfirmModal);
-  { const d = document.getElementById('openDonateFromSettings'); if(d) d.addEventListener('click', showDonateInfo); }
+  const on = (id, ev, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener(ev, fn); };
+  document.querySelectorAll('[data-setpg]').forEach(b=>b.addEventListener('click', ()=>showSettingsModal(b.dataset.setpg)));
+  on('setBack', 'click', ()=>showSettingsModal());
+  on('bgmVolumeSlider', 'input', e=>{ state.settings.bgmVolume = (+e.target.value)/100; if(bgmGain) bgmGain.gain.value = state.settings.bgmVolume; const v = document.getElementById('bgmVolumeSliderVal'); if(v) v.textContent = e.target.value; save(); });
+  on('sfxVolumeSlider', 'input', e=>{ state.settings.sfxVolume = (+e.target.value)/100; if(sfxGain) sfxGain.gain.value = state.settings.sfxVolume; const v = document.getElementById('sfxVolumeSliderVal'); if(v) v.textContent = e.target.value; save(); });
+  on('spendAskChk', 'change', e=>{ state.settings.spendAsk = !!e.target.checked; save(); });
+  on('muteBlurChk', 'change', e=>{ state.settings.muteBlur = !!e.target.checked; save(); applyBlurMute(); });
+  on('battleSfxChk', 'change', e=>{ state.settings.battleSfx = !!e.target.checked; save(); });
+  on('pushOpenBtn', 'click', showPushModal);
+  on('installOpenBtn', 'click', ()=>showInstallModal(()=>showSettingsModal('notify')));
+  on('instAskChk', 'change', e=>setInstNoAsk(!e.target.checked));
+  on('audioReviveBtn', 'click', ()=>{ ensureAudioCtx(); setTimeout(()=>{ sfx('claim'); const t = document.getElementById('audioStateTxt'); if(t) t.textContent = '('+(audioCtx?audioCtx.state:'없음')+')'; }, 250); });
+  if(page==='account') bindAccountBox();
+  on('openExportFromSettings', 'click', showExportModal);
+  on('openImportFromSettings', 'click', showImportModal);
+  on('openResetFromSettings', 'click', showResetConfirmModal);
+  on('openDonateFromSettings', 'click', showDonateInfo);
 }
 // (v284) 개발 응원(후원) — 보상 없는 응원만 받음. 계좌번호가 드러나는 링크는 넣지 않기
 // 이 창만 존댓말 (보는 사람에게 부탁하는 글이라)
@@ -11095,7 +11123,7 @@ function showExportModal(){
   html += '<button class="btn secondary" id="downloadExportBtn" style="margin-top:8px; width:100%;">'+uiIc('backup')+' 파일로 저장</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
-  bindModalClose();
+  bindModalClose(()=>showSettingsModal('save'));
   document.getElementById('exportText').value = code;
   document.getElementById('copyExportBtn').addEventListener('click', ()=>{
     const ta = document.getElementById('exportText');
@@ -11126,7 +11154,7 @@ function showImportModal(){
   html += '<button class="btn" id="applyImportBtn" style="margin-top:8px; width:100%;">불러오기 적용</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
-  bindModalClose();
+  bindModalClose(()=>showSettingsModal('save'));
   document.getElementById('pasteImportBtn').addEventListener('click', async ()=>{
     try{
       if(!(navigator.clipboard && navigator.clipboard.readText)) throw new Error('unsupported');
@@ -11177,8 +11205,8 @@ function showResetConfirmModal(){
     + '<button class="btn secondary" id="cancelReset" style="margin-top:14px;">취소</button>'
     + '<button class="btn" id="confirmReset" style="margin-top:8px; background:linear-gradient(135deg,#ff5a5a,#d64949);">초기화하기</button>'
     + '</div></div>';
-  bindModalClose();
-  document.getElementById('cancelReset').addEventListener('click', closeModal);
+  bindModalClose(()=>showSettingsModal('save'));
+  document.getElementById('cancelReset').addEventListener('click', ()=>showSettingsModal('save'));
   document.getElementById('confirmReset').addEventListener('click', ()=>{
     localStorage.removeItem(SAVE_KEY);
     state = defaultState();
@@ -11375,6 +11403,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:411, v:'8.12.0', date:'2026-10-10', secs:[
+    { t:'별빛 균열', items:[ '6층부터 보스 세기를 모두 하드 1 보스 기준으로 통일 (체력·공격력 배율 따로)', '6~9층: 체력 ×1.3 · 1.5 · 1.7 · 1.9 / 공격력 ×1.1 · 1.2 · 1.3 · 1.4 (6층이 5층보다 약하던 것)', '10~12층: 체력 ×3.6 · 5.6 · 8 / 공격력 ×1.5 · 1.7 · 1.95 (예전: 하드 3 보스 ×0.46 · 0.72 · 1.03 = 체력 약 ×3.8 · 6 · 8.5 / 공격력 약 ×0.94 · 1.47 · 2.1)' ]},
+    { t:'챕터 보스', items:[ '용암군주(노말 2): 공격력 ×1.7 → ×2.49 · 체력 ×20 → ×22.5', '용암군주(하드 2): 공격력 ×1.61 → ×2.4 · 체력 ×22 → ×55', '용암군주(하드) 격노: 4라운드마다 공격력 +25% → +15% (누적)', '용암군주만 올려 보여 주던 추천 전투력 보정 없앰 (노말 2 ×1.22 · 하드 2 ×1.58)' ]},
+    { t:'기타', items:[ '다른 창을 보거나 게임을 내려 두면 소리 엔진을 멈춤 — 켜 둔 채로 다른 크롬 창이 버벅이던 것 줄임', '설정 맨 아래에 이용약관 · 개인정보 처리방침', '카톡·SNS에 게임 주소를 보내면 미리보기 그림이 뜸', '설정을 소리 · 계정 · 세이브 · 알림 갈래로 나눔 — 첫 화면은 메뉴만, 누르면 그 갈래 화면' ]}
+  ]},
   { build:410, v:'8.11.1', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]},
     { t:'전투', items:[ '전투 중에도 위쪽 ⚙️ 버튼으로 설정(소리 크기 등)을 열 수 있음', '상태 효과(화상 등)가 여럿에게 걸리면 폰에서 점점 버벅이고 터치가 늦게 먹던 것 줄임' ]},
@@ -13627,13 +13660,14 @@ function showDungeonPrep(el, n, keep){
 // ===================== (v317) 별빛 균열 — 탐험 추가 콘텐츠 · 반달(픽업과 같은 기간)마다 초기화 · 12층 · 층마다 별 3개 · 별마다 별빛 조각 =====================
 // (v317) 균열은 그 기간 픽업 신화 둘을 위한 무대 — 픽업이 바뀌면 층 구성도 새로 짜이고 별도 초기화 (사용자 결정)
 // (v8.1.0~) 짝수 층은 첫 번째 픽업(한정 성좌), 홀수 층은 두 번째 픽업에 맞춤 (그 전 기간은 반대 · riftPuSlot): 보스 속성 = 그 픽업이 유리한 속성 · 기믹 = 그 픽업 스킬·패시브가 받아치기 좋은 것(RIFT_FIT)
-// 세기는 층마다 고정(RIFT_TIERS: 하드 여부 h · 기준 보스 ref · 배율 k) — 9층 = 하드 1 · 10층 = 하드 3 · 11층 = 하드 5 · 12층 = 하드 5 ×1.25 (사용자 결정)
+// 세기는 층마다 고정(RIFT_TIERS: 하드 여부 h · 기준 보스 ref · 체력 배율 hp · 공격력 배율 atk) — 1~5층 = 노말 1~5 보스 그대로 · 6층부터는 전부 하드 1 보스 기준
+// (v8.12.0) 예전엔 10층부터 기준을 하드 3 보스(체력이 하드 1의 약 8배)로 바꾸면서 배율을 0.46으로 낮춰 헷갈렸음 → 기준 하나로 통일하고 체력·공격력 배율을 따로 (사용자 결정: 6·10·11·12층에서 한 번씩 훅 오르게)
 const RIFT_NAME = '별빛 균열';
 const RIFT_TIERS = [
-  {h:0, ref:['n',0], k:1},   {h:0, ref:['n',1], k:1},   {h:0, ref:['n',2], k:1},    {h:0, ref:['n',3], k:1},
-  {h:0, ref:['n',4], k:1},   {h:1, ref:['h',0], k:0.6}, {h:1, ref:['h',0], k:0.75}, {h:1, ref:['h',0], k:0.9},
-  {h:1, ref:['h',0], k:1},   {h:1, ref:['h',2], k:0.46}, {h:1, ref:['h',2], k:0.72}, {h:1, ref:['h',2], k:1.03}
-]; // (v7.2.0) 10~12층 하향 (사용자 결정: 신화 이상 · 2각성 10강 · 신화 장비 10강 속성 일치 · 희귀 룬 팀 = 전투력 약 3.6만이 12층 추천과 비슷하게) — 예전 11·12층은 하드 5(심연의 수정, 기믹으로 깨는 보스) 기준이라 추천 43만·54만이었음
+  {h:0, ref:['n',0], hp:1, atk:1},     {h:0, ref:['n',1], hp:1, atk:1},     {h:0, ref:['n',2], hp:1, atk:1},     {h:0, ref:['n',3], hp:1, atk:1},
+  {h:0, ref:['n',4], hp:1, atk:1},     {h:1, ref:['h',0], hp:1.3, atk:1.1}, {h:1, ref:['h',0], hp:1.5, atk:1.2}, {h:1, ref:['h',0], hp:1.7, atk:1.3},
+  {h:1, ref:['h',0], hp:1.9, atk:1.4}, {h:1, ref:['h',0], hp:3.6, atk:1.5}, {h:1, ref:['h',0], hp:5.6, atk:1.7}, {h:1, ref:['h',0], hp:8, atk:1.95}
+];
 const RIFT_FLOORS = RIFT_TIERS; // 층 수
 // 픽업 신화별로 잘 받아치는 기믹 (앞에 있을수록 자주) · why = 준비 창에 보이는 한 줄
 const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 넣었을 때 레전더리 대신보다 더 잘 깨는 기믹 순 (화면엔 안 보임 · 사용자 결정)
@@ -13658,7 +13692,6 @@ const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 �
   dark_mythic_dk:  [{g:'ruinGuardian', why:'결계석 뒤에 숨은 적을 앞으로 끌어냄'}, {g:'lavaLord', why:'뒤쪽 용암 정령을 끌어내 자폭 전에 처리'}]
 };
 const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
-const RIFT_GIM_K = {}; // (v317) 용암군주 0.3으로 낮췄던 것 → (v8.11.0) 1배로 되돌림 (사용자 결정: 깎지 않음 — 균열에선 보스가 픽업이 이기는 속성이라 화염 흡수를 거의 안 받아서 너무 쉬웠음)
 const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
 const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
 const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
@@ -13727,7 +13760,7 @@ function riftDuoOf(per){ per = per || riftPeriod(); return (per.pair && RIFT_DUO
 function riftDuoArt(D){ return BOSS_IMG_IDS.includes('rduo_'+D.id) ? 'rduo_'+D.id : D.art; }
 function riftDuoEnemies(f, per){
   const T = RIFT_TIERS[f-1], D = riftDuoOf(per), bf = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true), rb = bf.enemyUnits.find(u=>u.isBoss);
-  const hp = Math.round(rb.maxHp*T.k), atk = Math.round(rb.atk*T.k);
+  const hp = Math.round(rb.maxHp*T.hp), atk = Math.round(rb.atk*T.atk);
   const b = makeBattleUnit('enemy', 4, D.el+'_legendary_a', 1, 1); b.maxHp = hp; b.hp = hp; b.atk = atk; b.element = D.el; b.isBoss = true; b.duoId = D.id; b.artId = riftDuoArt(D);
   b.dispName = D.name; b.bossIcon = '🌌'; ensureGroggy(b); setBossKit(b, 'rduo_boss');
   const add = (idx, name, hk, ak, key)=>{ const a = makeBattleUnit('enemy', idx, key, 1, 1); a.maxHp = Math.max(1, Math.round(hp*hk)); a.hp = a.maxHp; a.atk = Math.max(1, Math.round(atk*ak)); a.isAdd = true; a.dispName = name; setBossKit(a, 'rduo_add'); return a; };
@@ -13789,7 +13822,7 @@ function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸
   const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
   const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}, true), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true);
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
-  const gk = RIFT_GIM_K[P.gim] || 1, ka = rb.atk/b.atk*T.k*gk, kh = rb.maxHp/b.maxHp*T.k*gk;
+  const ka = rb.atk/b.atk*T.atk, kh = rb.maxHp/b.maxHp*T.hp; // (v8.12.0) 기믹별 배율(RIFT_GIM_K, 예전 용암 군주만 0.3) 아예 없앰 — 모든 보스가 층 배율 그대로 (사용자 결정)
   bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0;
     if(P.gim!=='abyssCrystal' && u.isBoss) riftSetEl(u, P.el); }); // 결계석은 원래대로 서로 다른 속성
   return bf;
@@ -17150,7 +17183,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 410, APP_VERSION = '8.11.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 411, APP_VERSION = '8.12.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
