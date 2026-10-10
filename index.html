@@ -557,6 +557,7 @@
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:3px; font-size:10px; line-height:12px; background:#0b0a22; padding:0 5px; border-radius:8px; z-index:2;}
   .species-tile .passive-badge{position:absolute; top:1px; left:4px; font-size:11px; line-height:13px; z-index:2;}
+  .species-tile .sp-updot{position:absolute; top:-5px; right:-5px; width:10px; height:10px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel); z-index:3;} .seg-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#ff5757; margin-left:3px; align-self:flex-start; flex-shrink:0;} /* (v8.12.4) 강화·각성 가능 */
   .species-tile.undiscovered{opacity:0.35;}
 /* (v99) 보스 출전 명단 선택 — 등급은 테두리·배경색, 유리는 아이콘 위 배지, 선택은 흰 링+체크 */
 .roster-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 7px; padding-top:4px;}
@@ -1898,7 +1899,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   <main id="main"></main>
   <nav>
     <button data-tab="summon"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="navdot" data-navdot="summon"></span></span>소환</button>
-    <button data-tab="spirits"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_spirits.webp" alt="" draggable="false"></span>정령</button>
+    <button data-tab="spirits"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_spirits.webp" alt="" draggable="false"><span class="navdot" data-navdot="spirits"></span></span>정령</button>
     <button data-tab="hearth"><span class="ico" style="position:relative;"><img class="uic" src="assets/ui/ic_hearth.webp" alt="" draggable="false"></span>화로</button>
   </nav>
 </div>
@@ -7569,6 +7570,15 @@ function showAstralModal(k){
   const g = document.getElementById('asGo'); if(g) g.addEventListener('click', ()=>spendAsk(sp.name+' 성좌 승급', {essence:ASTRAL_ESSENCE, mem:ASTRAL_MEM, memKey:k}, ()=>{ if(doAstral(k)){ render(); showAstralModal(k); const uh = document.getElementById('upHost'); if(uh){ uh.classList.add('pop'); upgradeFx(uh, '성좌!', 'awk', true); } toast('✦ '+sp.name+' 성좌 승급'); } }));
 }
 function memHowHtml(){ return '<div class="sub" style="font-size:11px; line-height:1.6; margin-top:8px; text-align:left;">'+memIc(null)+' <b>기억 조각</b> — 신화는 한 마리만 가짐 · 같은 신화가 또 나오면 조각 '+MEM_PER_COPY+'개 · 픽업 소환은 1회마다 고른 정령 조각 1개 · 각성·초월·성좌 승급 재료</div>'; }
+// (v8.12.4) 사용자 결정: 강화·각성(성좌 승급 포함) 가능한 정령은 정령 탭에 빨간 점
+function spCanGrow(k){
+  if(!SPIRITS[k] || ownedCount(k)<=0) return false;
+  const ess = state.essence||0;
+  if(enhanceLevel(k) < maxEnhanceFor(k)){ const c = enhanceCost(k); if(ess>=c.essence && (state.enhanceStone||0)>=c.stone) return true; }
+  const a = awakenCost(k); if(a && copyHave(k, a) && ess>=a.essence) return true;
+  return astralCan(k) && memCount(k)>=ASTRAL_MEM && ess>=ASTRAL_ESSENCE;
+}
+function anySpCanGrow(){ return Object.keys(state.owned||{}).some(spCanGrow); }
 function doAwaken(key, quiet){
   const c = awakenCost(key); if(!c) return;
   if(!copyHave(key, c)){ toast(c.mem ? '기억 조각 부족 ('+c.mem+' 필요)' : '같은 정령이 '+c.copies+'마리 더 필요'); return; }
@@ -10523,6 +10533,7 @@ function render(){
     if(b.dataset.requires) b.classList.toggle('locked', !isUnlocked(b.dataset.requires));
   });
   document.querySelectorAll('[data-navdot]').forEach(el=>{
+    if(el.dataset.navdot==='spirits'){ el.style.display = anySpCanGrow() ? 'block' : 'none'; return; } // (v8.12.4) 강화·각성 가능한 정령이 있으면
     el.style.display = (el.dataset.navdot==='home' ? (pendingRewardCount('tower')+pendingRewardCount('expedition')+pendingRewardCount('stage')) : pendingRewardCount(el.dataset.navdot))>0 ? 'block' : 'none';
   });
   { const oldSc = document.getElementById('towerScroll'); if(oldSc) towerScrollTop = oldSc.scrollTop; if(activeTab!=='tower') towerScrollTop = null; }
@@ -10568,7 +10579,7 @@ function tile(key, cp){ // 정령 탭 보유 목록·출정 대기 목록 — �
   return '<div class="species-tile'+(owned<=0 && away>0 ? ' away' : '')+'" '+(owned>0?('data-manage="'+key+'"'):'')+'>'
     + (owned>0 ? (memSpirit(key) && owned<=1 ? '' : '<div class="count">x'+owned+'</div>') : (away>0 ? '<div class="count" style="color:#57d3ff;">'+uiIc('dispatch')+'</div>' : ''))
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
-    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
+    + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+(cp && spCanGrow(key) ? '<i class="sp-updot"></i>' : '')+'</div>' // (v8.12.4) 정령 탭: 강화·각성·성좌 승급 가능하면 그림 모서리에 빨간 점 (칸 밖은 content-visibility로 잘림)
     + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
     + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
     + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+enhShowHtml(key)+' '+awakenStars(key)+'</div>' : '')
@@ -10834,7 +10845,7 @@ function summonRateTableHtml(mode){
 }
 let spiritsSub = 'spirits'; // (v181) 정령 탭 안의 하위 탭: 정령 · 장비 · 룬
 function renderSpiritsTab(){
-  let html = '<div class="seg">'+[['spirits',uiIc('box')+' 정령'],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
+  let html = '<div class="seg">'+[['spirits',uiIc('box')+' 정령'+(anySpCanGrow() ? '<span class="seg-dot"></span>' : '')],['equip','<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비'+(isEquipUnlocked()?'':' <img class="uic" src="assets/ui/ic_lock.webp" alt="">')],['runes','🔮 룬'],['fuse','<img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성']].map(([k,t])=>'<button data-sp-sub="'+k+'" class="'+(spiritsSub===k?'on':'')+'">'+t+'</button>').join('')+'</div>' + TOP_MARK;
   if(spiritsSub==='equip'){
     if(!isEquipUnlocked()) return html + '<div class="card" style="text-align:center; opacity:.7; padding:24px 12px;"><div style="font-size:44px; filter:grayscale(1);"><img class="uic" src="assets/ui/ic_shield.webp" alt=""></div><div class="ttl" style="margin-top:6px;">정령장비</div><div style="margin-top:10px;"><img class="uic" src="assets/ui/ic_lock.webp" alt=""> '+bossUnlockTxt(1)+'</div></div>';
     return html + equipInventoryHtml() + '<button class="btn secondary" id="spToEquipSummon" style="margin-top:12px;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 장비 소환하러 가기 ›</button>';
@@ -11435,7 +11446,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:415, v:'8.12.3', date:'2026-10-10', secs:[
+  { build:416, v:'8.12.4', date:'2026-10-10', secs:[
+    { t:'정령 탭', items:[ '강화·각성·성좌 승급을 할 수 있는 정령에 빨간 점 (정령 탭 버튼에도)' ]},
     { t:'정령 배치', items:[ '다른 칸에 있는 정령을 고르면 두 정령이 서로 자리를 바꿈 (예전: 원래 칸이 비었음)' ]},
     { t:'정령 마을', items:[ '대장간을 누르는 동안 그림 방향이 반대로 뒤집히던 것', '대장간에서 제작을 누르면 확인 창 — 막대로 개수를 정하고 총 가격·얻는 양·남는 강화석 표시', '대장간·레이드 상점에서 각인석·장비권을 사면 알림에 그림 대신 글자가 깨져 보이던 것' ]}
   ]},
@@ -17219,7 +17231,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 415, APP_VERSION = '8.12.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 416, APP_VERSION = '8.12.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
