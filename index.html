@@ -8677,7 +8677,8 @@ function startBgm(){
   // (v2.10.2) 예전엔 0.25초 앞까지만 예약해서, 화면을 그리느라 폰이 잠깐 바쁘면 음이 비고 박자를 처음부터 다시 맞춰 끊김이 들렸음
   //  → 1.5초 앞까지 미리 예약 · 조금 늦었으면 놓친 박만 건너뛰고 같은 박자 줄에 이어 붙임(3초 넘게 멈췄을 때만 새로 시작)
   bgmTimer = setInterval(()=>{
-    if(state.settings.bgmVolume<=0 || document.hidden || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
+    if((document.hidden || blurMuted) && audioCtx && audioCtx.state==='running' && Date.now()-blurAt > 400){ try{ const p = audioCtx.suspend(); if(p && p.catch) p.catch(()=>{}); }catch(e){} } // (v8.12.0) 안 보거나 다른 창을 볼 땐 소리 엔진을 멈춤 — 소리만 0으로 하고 계속 합성(잔향 포함)하던 것 때문에 같이 켜 둔 크롬 창까지 버벅였음 · 돌아오면 applyBlurMute·reviveAudio가 다시 켬
+    if(state.settings.bgmVolume<=0 || document.hidden || blurMuted || !audioCtx || audioCtx.state!=='running'){ bgmNextAt = 0; return; } // 멈춘 동안 음이 쌓였다가 한꺼번에 터지는 것 방지
     const now = audioCtx.currentTime;
     bgmSwitch(now);
     const tr = BGM_TRACKS[bgmCur];
@@ -8701,8 +8702,8 @@ function reviveAudio(){ if(audioCtx && audioCtx.state!=='running') ensureAudioCt
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) reviveAudio(); });
 window.addEventListener('pageshow', reviveAudio);
 // (v324) 다른 창으로 넘어가면(알탭 등) 소리 끔 — 설정 「다른 창 볼 때 소리 끄기」 · 돌아오면 원래 볼륨으로
-let blurMuted = false;
-function applyBlurMute(){ const m = state.settings && state.settings.muteBlur!==false && !document.hasFocus(); blurMuted = m; if(!audioCtx) return; const t = audioCtx.currentTime;
+let blurMuted = false, blurAt = 0;
+function applyBlurMute(){ const m = state.settings && state.settings.muteBlur!==false && !document.hasFocus(); blurMuted = m; blurAt = Date.now(); if(!audioCtx) return; if(!m && audioCtx.state!=='running' && document.hasFocus()) resumeAudio(); const t = audioCtx.currentTime;
   [[bgmGain, state.settings.bgmVolume], [sfxGain, state.settings.sfxVolume]].forEach(([g,v])=>{ if(!g) return; try{ g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(m ? 0 : v, t, 0.05); }catch(e){ g.gain.value = m ? 0 : v; } }); }
 window.addEventListener('blur', applyBlurMute); window.addEventListener('focus', applyBlurMute);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkDailyRollover(); });
@@ -10986,6 +10987,7 @@ function showSettingsModal(){
   html += '<button class="btn secondary" id="openImportFromSettings" style="margin-top:8px;">📥 세이브 불러오기</button>';
   if(DONATE_URL) html += '<button class="btn secondary" id="openDonateFromSettings" style="margin-top:12px;">💝 개발 응원하기</button>';
   html += '<button class="btn secondary" id="openResetFromSettings" style="margin-top:22px; opacity:0.8;">🔄 게임 초기화</button>';
+  html += '<div style="text-align:center; margin-top:14px;"><a href="privacy.html" target="_blank" rel="noopener" class="sub" style="font-size:12px; color:inherit;">개인정보 처리방침</a></div>'; // (v8.12.0)
   document.getElementById('modalRoot').innerHTML =
     '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;">'
     + '<button class="close-x" id="modalClose">x</button>' + html + '</div></div>';
@@ -11377,7 +11379,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:411, v:'8.12.0', date:'2026-10-10', secs:[
-    { t:'별빛 균열', items:[ '6층부터 보스 세기를 모두 하드 1 보스 기준으로 통일 (체력·공격력 배율 따로)', '6~9층: 체력 ×1.3 · 1.5 · 1.7 · 1.9 / 공격력 ×1.1 · 1.2 · 1.3 · 1.4 (6층이 5층보다 약하던 것)', '10~12층: 체력 ×3.6 · 5.6 · 8 / 공격력 ×1.5 · 1.7 · 1.95 (예전: 하드 3 보스 ×0.46 · 0.72 · 1.03 = 체력 약 ×3.8 · 6 · 8.5 / 공격력 약 ×0.94 · 1.47 · 2.1)' ]}
+    { t:'별빛 균열', items:[ '6층부터 보스 세기를 모두 하드 1 보스 기준으로 통일 (체력·공격력 배율 따로)', '6~9층: 체력 ×1.3 · 1.5 · 1.7 · 1.9 / 공격력 ×1.1 · 1.2 · 1.3 · 1.4 (6층이 5층보다 약하던 것)', '10~12층: 체력 ×3.6 · 5.6 · 8 / 공격력 ×1.5 · 1.7 · 1.95 (예전: 하드 3 보스 ×0.46 · 0.72 · 1.03 = 체력 약 ×3.8 · 6 · 8.5 / 공격력 약 ×0.94 · 1.47 · 2.1)' ]},
+    { t:'기타', items:[ '다른 창을 보거나 게임을 내려 두면 소리 엔진을 멈춤 — 켜 둔 채로 다른 크롬 창이 버벅이던 것 줄임', '설정 맨 아래에 개인정보 처리방침' ]}
   ]},
   { build:410, v:'8.11.1', date:'2026-10-09', secs:[
     { t:'별빛 균열', items:[ '전투 중 위쪽 「📜 규칙」 버튼으로 보스 기믹 · 기간 규칙 · 별 조건을 다시 볼 수 있음' ]},
