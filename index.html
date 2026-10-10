@@ -557,7 +557,7 @@
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:3px; font-size:10px; line-height:12px; background:#0b0a22; padding:0 5px; border-radius:8px; z-index:2;}
   .species-tile .passive-badge{position:absolute; top:1px; left:4px; font-size:11px; line-height:13px; z-index:2;}
-  .species-tile.grow .count{right:17px;} .species-tile .sp-updot{position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel); z-index:3;} .seg-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#ff5757; margin-left:3px; align-self:flex-start; flex-shrink:0;} /* (v8.12.4) 강화·각성 가능 */
+  .species-tile.grow .count{right:17px;} .aw-row{position:relative;} .aw-row .aw-dot{position:absolute; top:5px; right:6px; width:9px; height:9px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);} .species-tile .sp-updot{position:absolute; top:4px; right:4px; width:10px; height:10px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel); z-index:3;} .seg-dot{display:inline-block; width:7px; height:7px; border-radius:50%; background:#ff5757; margin-left:3px; align-self:flex-start; flex-shrink:0;} /* (v8.12.4) 강화·각성 가능 */
   .species-tile.undiscovered{opacity:0.35;}
 /* (v99) 보스 출전 명단 선택 — 등급은 테두리·배경색, 유리는 아이콘 위 배지, 선택은 흰 링+체크 */
 .roster-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px 7px; padding-top:4px;}
@@ -7576,6 +7576,7 @@ function spCanGrow(k){
   const ess = state.essence||0;
   if(enhanceLevel(k) < maxEnhanceFor(k)){ const c = enhanceCost(k); if(ess>=c.essence && (state.enhanceStone||0)>=c.stone) return true; }
   const a = awakenCost(k); if(a && copyHave(k, a) && ess>=a.essence) return true;
+  if((transOpen(k) || (transLevel(k)>0 && enhanceLevel(k)>=maxEnhanceFor(k))) && transLevel(k)<TRANS_MAX){ const t = transCost(k); if(copyHave(k, t) && ess>=t.essence) return true; } // 초월 (정령 창의 초월 줄과 같은 조건)
   return astralCan(k) && memCount(k)>=ASTRAL_MEM && ess>=ASTRAL_ESSENCE;
 }
 function anySpCanGrow(){ return Object.keys(state.owned||{}).some(spCanGrow); }
@@ -16202,12 +16203,12 @@ function showManageModal(key){
   html += equipSlotsHtml(key);
   const trRow = transOpen(key) || (transLevel(key)>0 && maxed); // (v310) 강화를 다 하면 강화 줄이 초월 줄로 바뀜
   if(trRow){ const tl = transLevel(key), canT = tl<TRANS_MAX && copyHave(key, transCost(key)) && state.essence>=transCost(key).essence;
-    html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 <span class="tr-num">+'+(lvl+tl)+'</span></b><span class="sub">/ '+(lvl+TRANS_MAX)+(tl ? ' · 공·체 +'+Math.round(tl*TRANS_STEP*100)+'%' : ' · 강화 다음 단계')+'</span><span class="aw-go'+(canT?' on':'')+'">'+(tl>=TRANS_MAX ? '최대' : (canT?'초월 가능 ':'')+'자세히')+' ›</span></button>'; }
-  else html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span></button>'; // (v239) 강화는 전용 화면에서
+    html += '<button class="aw-row tr-row" id="transOpenBtn">🌟<b>초월 <span class="tr-num">+'+(lvl+tl)+'</span></b><span class="sub">/ '+(lvl+TRANS_MAX)+(tl ? ' · 공·체 +'+Math.round(tl*TRANS_STEP*100)+'%' : ' · 강화 다음 단계')+'</span><span class="aw-go'+(canT?' on':'')+'">'+(tl>=TRANS_MAX ? '최대' : (canT?'초월 가능 ':'')+'자세히')+' ›</span>'+(canT && tl<TRANS_MAX ? '<i class="aw-dot"></i>' : '')+'</button>'; }
+  else html += '<button class="aw-row enh-row" id="enhOpenBtn">⬆️<b>강화 +'+lvl+'</b><span class="sub">/ '+maxLvl+' · 정령력 +'+Math.round(lvl*5)+'%</span><span class="aw-go'+(canEnhance?' on':'')+'">'+(maxed ? '최대' : (canEnhance?'강화 가능 ':'')+'자세히')+' ›</span>'+(canEnhance && !maxed ? '<i class="aw-dot"></i>' : '')+'</button>'; // (v239) 강화는 전용 화면에서 · (v8.12.4) 할 수 있으면 줄 오른쪽 위 빨간 점
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && copyHave(key, ac) && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
-    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>';
+    html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span>'+(can ? '<i class="aw-dot"></i>' : '')+'</button>';
     if(memSpirit(key)){ const as = isAstral(key), canA = astralCan(key) && memCount(key)>=ASTRAL_MEM && state.essence>=ASTRAL_ESSENCE; // (v335) 성좌 승급 · 기억 조각
-      html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 조각 '+ASTRAL_MEM : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span></button>'; } }
+      html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 조각 '+ASTRAL_MEM : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span>'+(canA ? '<i class="aw-dot"></i>' : '')+'</button>'; } }
   { // (v298) 각인 · 초월
     const e = engrState(key), ok = awakenLevel(key)>=AWAKEN_MAX, tl = transLevel(key);
     html += '<button class="aw-row eg-row" id="engrOpenBtn">'+uiIc('engrave')+'<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
@@ -17233,7 +17234,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 417, APP_VERSION = '8.12.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 418, APP_VERSION = '8.12.4'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
