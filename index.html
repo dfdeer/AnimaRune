@@ -13662,7 +13662,6 @@ const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 �
   dark_mythic_dk:  [{g:'ruinGuardian', why:'결계석 뒤에 숨은 적을 앞으로 끌어냄'}, {g:'lavaLord', why:'뒤쪽 용암 정령을 끌어내 자폭 전에 처리'}]
 };
 const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
-const RIFT_GIM_K = {}; // (v317) 용암군주 0.3으로 낮췄던 것 → (v8.11.0) 1배로 되돌림 (사용자 결정: 깎지 않음 — 균열에선 보스가 픽업이 이기는 속성이라 화염 흡수를 거의 안 받아서 너무 쉬웠음)
 const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
 const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
 const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
@@ -13793,7 +13792,7 @@ function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸
   const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
   const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}, true), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true);
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
-  const gk = RIFT_GIM_K[P.gim] || 1, ka = rb.atk/b.atk*T.atk*gk, kh = rb.maxHp/b.maxHp*T.hp*gk;
+  const ka = rb.atk/b.atk*T.atk, kh = rb.maxHp/b.maxHp*T.hp; // (v8.12.0) 기믹별 배율(RIFT_GIM_K, 예전 용암 군주만 0.3) 아예 없앰 — 모든 보스가 층 배율 그대로 (사용자 결정)
   bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0;
     if(P.gim!=='abyssCrystal' && u.isBoss) riftSetEl(u, P.el); }); // 결계석은 원래대로 서로 다른 속성
   return bf;
