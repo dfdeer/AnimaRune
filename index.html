@@ -2647,15 +2647,44 @@ const STONE_EX = [
   { id:'eq_epic', icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', price:800, limit:1 }
 ];
 function stoneExBought(id){ const b = state.stoneEx; return (isPlainObj(b) && b.week===raidWeekKey() && isPlainObj(b.n) && b.n[id]) || 0; }
-function stoneExBuy(id){
+function stoneExBuy(id, n){
   const it = STONE_EX.find(x=>x.id===id); if(!it) return;
-  if((state.enhanceStone||0) < it.price){ toast('강화석 부족'); return; }
-  if(stoneExBought(id) >= it.limit){ toast('이번 주 한도 도달'); return; }
-  state.enhanceStone -= it.price;
+  n = Math.max(1, Math.floor(n||1));
+  if((state.enhanceStone||0) < it.price*n){ toast('강화석 부족'); return; }
+  if(stoneExBought(id) + n > it.limit){ toast('이번 주 한도 도달'); return; }
+  state.enhanceStone -= it.price*n;
   if(!isPlainObj(state.stoneEx) || state.stoneEx.week!==raidWeekKey() || !isPlainObj(state.stoneEx.n)) state.stoneEx = { week: raidWeekKey(), n:{} };
-  state.stoneEx.n[id] = (state.stoneEx.n[id]||0) + 1;
-  if(id==='essence') state.essence += 1000; else grantItems({ [id]: 1 });
-  save(); sfx('claim'); toast(it.icon+' '+it.name+' 제작'); render();
+  state.stoneEx.n[id] = (state.stoneEx.n[id]||0) + n;
+  if(id==='essence') state.essence += 1000*n; else grantItems({ [id]: n });
+  save(); sfx('claim'); toast(it.icon+' '+it.name+(n>1 ? ' ×'+n : '')+' 제작'); render();
+}
+// (v8.12.1) 사용자 결정: 대장간 구매 확인창 — 막대로 개수 정하고 총 가격 표시
+function showStoneExModal(id){
+  const it = STONE_EX.find(x=>x.id===id); if(!it) return;
+  const st = state.enhanceStone||0, max = Math.min(it.limit - stoneExBought(id), Math.floor(st/it.price));
+  if(max<=0){ toast(st<it.price ? '강화석 부족' : '이번 주 한도 도달'); return; }
+  const ST = '<img class="uic" src="assets/ui/ic_stone.webp" alt="강화석">';
+  document.getElementById('modalRoot').innerHTML =
+    '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; text-align:center;">'
+    + '<button class="close-x" id="modalClose">x</button>'
+    + '<div style="font-size:40px;">'+it.icon+'</div>'
+    + '<h3>'+it.name+' 제작</h3>'
+    + '<div class="sub">1개당 '+ST+' '+it.price.toLocaleString()+' · 이번 주 남은 '+(it.limit - stoneExBought(id))+'개 · 보유 '+ST+' '+st.toLocaleString()+'</div>'
+    + '<div class="ttl" style="font-size:22px; margin:14px 0 4px;"><span id="sxN">1</span>개 → '+ST+' <span id="sxCost">'+it.price.toLocaleString()+'</span></div>'
+    + (max>1 ? '<input type="range" id="sxRange" min="1" max="'+max+'" value="1" step="1" style="width:100%; accent-color:#9a6bff; margin:8px 0;">'
+      + '<div style="display:flex; justify-content:space-between; font-size:11px; color:var(--sub);"><span>1</span><span>'+max+'</span></div>' : '')
+    + '<div class="sub" style="margin-top:6px;">제작 뒤 남는 강화석 '+ST+' <span id="sxLeft">'+(st-it.price).toLocaleString()+'</span></div>'
+    + '<button class="btn gold" id="sxOk" style="margin-top:14px;">제작하기</button>'
+    + '<button class="btn secondary" id="sxCancel" style="margin-top:8px;">취소</button>'
+    + '</div></div>';
+  bindModalClose();
+  const range = document.getElementById('sxRange'), cnt = ()=> range ? parseInt(range.value) : 1;
+  if(range) range.addEventListener('input', ()=>{ const n = cnt();
+    document.getElementById('sxN').textContent = n;
+    document.getElementById('sxCost').textContent = (it.price*n).toLocaleString();
+    document.getElementById('sxLeft').textContent = (st - it.price*n).toLocaleString(); });
+  document.getElementById('sxCancel').addEventListener('click', closeModal);
+  document.getElementById('sxOk').addEventListener('click', ()=>{ const n = cnt(); closeModal(); stoneExBuy(id, n); });
 }
 // (v8.5.0) 사용자 결정: 강화석 교환소(상단 팝업)를 정령 마을 「대장간」으로 옮김 — 마을 지도의 작업장 자리
 function renderForgeView(){
@@ -11405,7 +11434,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:413, v:'8.12.1', date:'2026-10-10', secs:[
     { t:'정령 배치', items:[ '다른 칸에 있는 정령을 고르면 두 정령이 서로 자리를 바꿈 (예전: 원래 칸이 비었음)' ]},
-    { t:'정령 마을', items:[ '대장간을 누르는 동안 그림 방향이 반대로 뒤집히던 것' ]}
+    { t:'정령 마을', items:[ '대장간을 누르는 동안 그림 방향이 반대로 뒤집히던 것', '대장간에서 제작을 누르면 확인 창 — 막대로 개수를 정하고 총 가격·남는 강화석 표시' ]}
   ]},
   { build:411, v:'8.12.0', date:'2026-10-10', secs:[
     { t:'별빛 균열', items:[ '6층부터 보스 세기를 모두 하드 1 보스 기준으로 통일 (체력·공격력 배율 따로)', '6~9층: 체력 ×1.3 · 1.5 · 1.7 · 1.9 / 공격력 ×1.1 · 1.2 · 1.3 · 1.4 (6층이 5층보다 약하던 것)', '10~12층: 체력 ×3.6 · 5.6 · 8 / 공격력 ×1.5 · 1.7 · 1.95 (예전: 하드 3 보스 ×0.46 · 0.72 · 1.03 = 체력 약 ×3.8 · 6 · 8.5 / 공격력 약 ×0.94 · 1.47 · 2.1)' ]},
@@ -12854,7 +12883,7 @@ function vmFit(){ // 광산 화면은 스크롤 없이 — 판 크기를 화면 
 function villageHandlers(){
   if(activeTab!=='hearth' || !villageOn()) return;
   document.querySelectorAll('[data-vl-help]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.vlHelp; openInfoOverlay('ⓘ '+(k==='map'?'정령 마을':k==='hearth'?'화로':k==='forge'?'대장간':'광산'), vlHelpHtml(k)); }));
-  document.querySelectorAll('[data-sx]').forEach(b=>b.addEventListener('click', ()=>stoneExBuy(b.dataset.sx))); // (v8.5.0) 대장간
+  document.querySelectorAll('[data-sx]').forEach(b=>b.addEventListener('click', ()=>showStoneExModal(b.dataset.sx))); // (v8.5.0) 대장간
   document.querySelectorAll('[data-vl-col]').forEach(b=>b.addEventListener('click', e=>{ e.stopPropagation(); if(b.dataset.vlCol==='hearth') collectHearth(); else vmCollectCart(); }));
   document.querySelectorAll('[data-vl]').forEach(b=>b.addEventListener('click', ()=>{ villageView = b.dataset.vl; sfx('click'); render(); document.getElementById('main').scrollTop = 0; }));
   const ab = document.getElementById('vlAllBtn'); if(ab) ab.addEventListener('click', vlCollectAll);
