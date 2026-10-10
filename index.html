@@ -9201,8 +9201,7 @@ function doPickup(n){
     for(let i=0;i<n;i++){ const key = pickupRoll(pk); keys.push(key);
       if(SPIRITS[key].rarity==='mythic' && transLevel(key)>=TRANS_MAX && isAstral(key)){ refund += PICKUP_DUP_REFUND; flags.push(false); memF.push(0); memK.push(''); continue; } // 초월·성좌까지 끝낸 신화는 별빛 조각으로 환급
       const wasAst = isAstral(key), g = gainSpirit(key); flags.push(g.isNew); memF.push(g.mem);
-      if(per.pair.includes(key) && !isAstral(key)){ state.astral = state.astral || {}; state.astral[key] = 1; }
-      memK.push(!g.mem ? '' : (per.pair.includes(key) && !wasAst) ? 'up' : wasAst ? 'dup' : 'mdup'); if(g.mem) sum[key] = (sum[key]||0) + g.mem; } // (v345) 픽업 짝 신화도 성좌로 나옴 (사용자 결정) — 이미 가진 신화면 그 정령이 성좌로 오름
+      memK.push(!g.mem ? '' : wasAst ? 'dup' : 'mdup'); if(g.mem) sum[key] = (sum[key]||0) + g.mem; } // (v8.13.0) 사용자 결정: 짝 신화는 신화로 나옴 — 성좌는 각성 5단계 뒤 승급으로 (예전 v345: 픽업에서 뽑으면 바로 성좌) · 이미 성좌가 된 건 그대로
     keys.forEach(pushRecentSummon); state.starShard += refund;
     if(selK && SPIRITS[selK]){ memAdd(selK, PICKUP_MEM_PER_PULL*n); sum[selK] = (sum[selK]||0) + PICKUP_MEM_PER_PULL*n; } // (v343) 고른 정령 기억 조각
     const memSum = Object.keys(sum).map(k=>({ k, n:sum[k] }));
@@ -9250,16 +9249,16 @@ function renderPickupTab(){
   h += '<div class="pu-page">';
   h += '<div class="pu-leftrow"><span class="pu-left">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 남음' : '📡 오프라인')+'</span></div>';
   h += '<div class="pu-stage" style="--ec:'+ELEMENT_INFO[el].color+';"><button class="pu-nav l" data-pu="-1" aria-label="이전">‹</button>'
-    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar astral">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'<button class="pu-info" id="puInfo" aria-label="스킬 정보">i</button></div><div class="pu-sub">'+'<b class="as-name"><i>성좌</i></b><span class="pu-subt">'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</span>'+'</div></div>'
+    + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar'+(sp.limited?' astral':'')+'">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'<button class="pu-info" id="puInfo" aria-label="스킬 정보">i</button></div><div class="pu-sub">'+(sp.limited ? '<b class="as-name"><i>성좌</i></b>' : '<b style="color:'+RARITY_INFO.mythic.color+';">신화</b>')+'<span class="pu-subt">'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</span>'+'</div></div>'
     + '<button class="pu-nav r" data-pu="1" aria-label="다음">›</button></div>';
   h += '<div class="pu-pick">'+per.pair.map((x,i)=>'<button class="pu-th'+(i===pickupView?' on':'')+'" data-puv="'+i+'" style="--ec:'+ELEMENT_INFO[SPIRITS[x].element].color+';">'+spArt(SPIRITS[x])+'<b>'+SPIRITS[x].name+'</b></button>').join('')+'</div>';
   h += '<div class="pu-sel">160회 안에 <b>'+sp.name+'</b> 확정 · 넘겨서 고르기</div>';
-  h += '<div class="pu-pity"><div class="pu-pt"><span>성좌 확정까지</span><b>'+(PICKUP_PITY-pk.pity)+'회</b></div><div class="pu-barw"><div class="pu-bar"><i style="width:'+(pk.pity/PICKUP_PITY*100)+'%"></i></div><img class="pu-gem'+(PICKUP_PITY-pk.pity<=10?' near':'')+'" src="assets/ui/deco_pity_gem.webp" alt="" draggable="false"></div>'
-    + '<div class="pu-note">'+(pk.guar ? '✅ 다음 성좌는 <b>'+sp.name+'</b> 확정 (80회 안)' : '다른 성좌가 나오면, 다음 80회 안에 고른 성좌 확정')+'</div></div>';
+  h += '<div class="pu-pity"><div class="pu-pt"><span>픽업 확정까지</span><b>'+(PICKUP_PITY-pk.pity)+'회</b></div><div class="pu-barw"><div class="pu-bar"><i style="width:'+(pk.pity/PICKUP_PITY*100)+'%"></i></div><img class="pu-gem'+(PICKUP_PITY-pk.pity<=10?' near':'')+'" src="assets/ui/deco_pity_gem.webp" alt="" draggable="false"></div>'
+    + '<div class="pu-note">'+(pk.guar ? '✅ 다음 픽업은 <b>'+sp.name+'</b> 확정 (80회 안)' : '다른 픽업 정령이 나오면, 다음 80회 안에 고른 정령 확정')+'</div></div>';
   if(!on) h += '<div class="pu-off">📡 픽업 소환은 온라인일 때만 가능</div>';
   h += '<div class="pu-btns"><button class="btn" id="puOne" '+(canPickup(1)?'':'disabled')+'>1회 '+SHARD_IC+' '+PICKUP_COST+'</button><button class="btn gold" id="puTen" '+(canPickup(10)?'':'disabled')+'>10회 '+SHARD_IC+' '+PICKUP_COST*10+'</button></div>';
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>';
-  h += '<div class="pu-rate">성좌 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 성좌) · 신화 '+PICKUP_RATES[1].w+'% · 레전더리 '+PICKUP_RATES[2].w+'% · 에픽 '+PICKUP_RATES[3].w+'% · 레어 '+PICKUP_RATES[4].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월을 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
+  h += '<div class="pu-rate">픽업 정령 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 정령) · 그 밖의 신화 '+PICKUP_RATES[1].w+'% · 레전더리 '+PICKUP_RATES[2].w+'% · 에픽 '+PICKUP_RATES[3].w+'% · 레어 '+PICKUP_RATES[4].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월·성좌를 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴 · 짝 정령은 신화로 나옴 (각성 5단계 뒤 성좌 승급)' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
   h += '</div>';
   return h;
 }
@@ -9272,7 +9271,7 @@ function bindPickupTab(){
     st.addEventListener('touchend', e=>{ if(sx===null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if(Math.abs(dx) > 40) flip(dx<0 ? 1 : -1); }); }
   const a = document.getElementById('puOne'), b = document.getElementById('puTen');
   if(a) a.addEventListener('click', ()=>doPickup(1)); if(b) b.addEventListener('click', ()=>doPickup(10));
-  { const pi = document.getElementById('puInfo'); if(pi) pi.addEventListener('click', ()=>{ const k = pickupPeriod().pair[pickupView]; if(SPIRITS[k]) showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT), 'astral'); }); } // (v6.2.1) 픽업 정령 스킬 정보 — 픽업에선 성좌로 나오니 성좌로 표시
+  { const pi = document.getElementById('puInfo'); if(pi) pi.addEventListener('click', ()=>{ const k = pickupPeriod().pair[pickupView]; if(SPIRITS[k]) showUnitKitInfo(makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT), isAstral(k) ? 'astral' : 'mythic'); }); } // (v6.2.1) 픽업 정령 스킬 정보 · (v8.13.0) 짝 신화는 신화로 나오니 신화로 (이미 성좌로 올린 정령은 성좌)
   requestAnimationFrame(puFit);
 }
 // (v339) 픽업 화면은 스크롤 없이 한 화면에 — 넘치는 만큼 정령 그림을 줄임 (최소 120px)
@@ -11435,6 +11434,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:421, v:'8.13.0', date:'2026-10-10', secs:[
+    { t:'픽업', items:[ '짝 정령(기존 신화)은 신화로 나옴 — 성좌는 각성 5단계 뒤 성좌 승급으로 (예전: 픽업에서 뽑으면 바로 성좌)', '이미 성좌가 된 짝 정령은 그대로', '한정 성좌는 지금처럼 성좌로 나옴', '천장·확률 안내 문구를 「픽업 정령」 기준으로' ]}
+  ]},
   { build:420, v:'8.12.5', date:'2026-10-10', secs:[
     { t:'정령 배치', items:[ '다른 칸에 있는 정령을 고르면 두 정령이 서로 자리를 바꿈 (예전: 원래 칸이 비었음)' ]},
     { t:'정령 마을', items:[ '대장간을 누르는 동안 그림 방향이 반대로 뒤집히던 것', '대장간에서 제작을 누르면 확인 창 — 막대로 개수를 정하고 총 가격·얻는 양·남는 강화석 표시', '대장간·레이드 상점에서 각인석·장비권을 사면 알림에 그림 대신 글자가 깨져 보이던 것' ]},
@@ -17220,7 +17222,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 420, APP_VERSION = '8.12.5'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 421, APP_VERSION = '8.13.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
