@@ -1306,6 +1306,7 @@
   .dp-cancel{margin-top:4px; padding:2px 10px; border-radius:8px; border:1px solid #ffffff2a; background:#ffffff10; color:var(--sub); font-size:11px; cursor:pointer;}
   .fr-lv{position:absolute; left:-4px; bottom:-4px; min-width:18px; padding:0 4px; border-radius:8px; background:#ffcf4a; color:#3b2500; font-size:10px; font-weight:900; line-height:15px; text-align:center; box-shadow:0 1px 3px #0008;} /* (v296) 친구 레벨 */
   .tw-acts{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; margin:8px 0 4px;} .tw-acts > *{white-space:nowrap; flex-shrink:0;} .tw-acts > .sub{flex-basis:100%; text-align:center;} .tw-acts .btn{flex:1 1 0; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:12px;}
+  .rj-spin{width:34px; height:34px; margin:16px auto 8px; border-radius:50%; border:4px solid #ffffff22; border-top-color:#b58cff; animation:rjSpin .8s linear infinite;} @keyframes rjSpin{to{transform:rotate(360deg);}}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
@@ -2930,7 +2931,8 @@ function awLinesHtml(u, slot){ // 잠긴 줄은 흐리게 (신화가 아니면 5
   if(!u || !SPIRITS[u.key]) return ''; const sp = SPIRITS[u.key], my = gradeOf(sp.rarity)>=4, TAG = {a1:'각성 1', a3:'각성 3', uq:'각성 5', as:'성좌'};
   return (AW_LINES[u.line]||[]).filter(x=>x[0]===slot && ((x[1]!=='uq' && x[1]!=='as') || my) && !(x[1]==='as' && sp.limited)).map(x=>{
     const on = x[1]==='a1' ? aw1(u) : x[1]==='a3' ? aw3(u) : x[1]==='uq' ? awUq(u) : awAs(u), t = typeof x[2]==='function' ? x[2](u) : x[2];
-    return '<div class="aw-ln'+(on?'':' off')+'"><i>'+TAG[x[1]]+'</i> '+t+'</div>'; }).join('');
+    const nm = x[1]==='uq' && x[0]==='p' && AWAKEN_UQ[u.line] && AWAKEN_UQ[u.line].t ? '<b class="aw-nm">「'+AWAKEN_UQ[u.line].t+'」</b> ' : ''; // (v8.14.1) 각성 5단계 효과 이름(예: 태양 사냥)을 같이 — 성좌 줄이 그 이름을 쓰는데 뜻이 안 보였음
+    return '<div class="aw-ln'+(on?'':' off')+'"><i>'+TAG[x[1]]+'</i> '+nm+t+'</div>'; }).join('');
 }
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
@@ -3892,15 +3894,17 @@ async function raidJoinRoom(input){
       if(lease.acquired) break;
       await new Promise(r=>setTimeout(r, 400));
     }
-    if(!lease || !lease.acquired){ toast('다른 사람이 입장 중 — 잠시 후 다시 시도'); return; }
     const snap = await ref.get();
     const d = snap.exists ? raidCleanDoc(snap.data()) : null;
+    if(raidNet.joinAbort) return 'cancel'; // (v8.14.1) 입장 중 창에서 취소
+    if((!lease || !lease.acquired) && !(d && !d.guest && d.status==='lobby')){ toast('다른 사람이 입장 중 — 잠시 후 다시 시도'); return; } // (v8.14.1) 빈 방이면 잠금이 남아 있어도 들어감 (방장이 만들 때 잡은 잠금)
     if(!d || d.status==='closed' || d.status==='done'){ toast('없는 방'); return; }
     if(d.host===raidNet.uid){ await raidAttach(code, 'host'); return; }
     if(d.guest && d.guest!==raidNet.uid){ toast('방이 꽉 참 (2/2)'); return; }
     if(d.status!=='lobby' && d.guest!==raidNet.uid){ toast('이미 시작된 방'); return; }
     if(d.kind==='duel' && !duelPayload(myDuelDeck()).some(Boolean)){ toast('먼저 결투 덱을 정하기 (친구 창)'); return; }
     if(d.kind!=='duel' && d.guest!==raidNet.uid){ const bi = RAID_BOSSES.findIndex(x=>x.id===d.bossId); if(bi>0 && !raidBossUnlocked(bi)){ toast('아직 안 연 보스 ('+RAID_BOSSES[bi].name+') — '+RAID_BOSSES[bi-1].name+'부터 잡기'); return 'locked'; } } // (v270) 안 연 레이드 보스엔 입장 불가
+    if(raidNet.joinAbort) return 'cancel';
     if(d.guest!==raidNet.uid) await ref.update(Object.assign({ guest: raidNet.uid, ready: { [raidNet.uid]: false } }, d.kind==='duel' ? { duelPicks: { [raidNet.uid]: duelPayload(myDuelDeck()) } } : {}));
     await raidAttach(code, 'guest');
   }catch(e){ raidNetError(e); }
@@ -4281,9 +4285,20 @@ async function friendAcceptInvite(from){
   try{ await raidNet.db.doc('invites/'+raidNet.uid+'/'+from).delete(); }catch(e){}
   if(duelPicking) duelPickAbort(); // (v5.2.0) 덱 고르는 중에 수락하면 고르기를 끝내야 대기실 창이 뜸
   closeModal(); activeTab = iv.kind==='duel' ? 'duel' : 'raid'; render(); // (v300) 결투 신청을 받으면 결투 탭으로 (예전엔 레이드 창으로 넘어갔음)
+  raidNet.joinAbort = false; showRaidJoiningModal(iv); // (v8.14.1) 들어가는 동안 「입장 중…」 창 + 취소
   const r = await raidJoinRoom(iv.code);
+  if(document.getElementById('raidJoining')) closeModal();
+  if(r==='cancel' || raidNet.joinAbort){ raidNet.joinAbort = false; if(raidNet.code===iv.code) raidLeaveLobby(); return; }
   if(raidNet.code===iv.code && raidNet.doc && raidNet.doc.status==='lobby' && !document.getElementById('raidModal')) showRaidLobbyModal(); // (v5.2.0) 들어갔으면 대기실 창을 확실히 띄움
   if(r==='locked' && typeof iv.code==='string') try{ await raidNet.db.doc('invites/'+from+'/'+raidNet.uid).set({ kind:'decline', why:'locked', code: iv.code, name: friendNet.name, t: serverNow() }); }catch(e){} // (v270) 방장에게 '아직 안 연 보스'라고 알림
+}
+function showRaidJoiningModal(iv){ // (v8.14.1) 초대 수락 후 방에 들어가는 동안
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" id="raidJoining" style="position:relative; text-align:center; max-width:340px;">'
+    + '<h3>'+(iv.kind==='duel' ? '⚔️ 결투' : uiIc('raid')+' 레이드')+' 방</h3>'
+    + '<div class="sub">'+String(iv.name||'친구').replace(/[<>&]/g,'')+'의 방 · 코드 '+String(iv.code||'').replace(/[^A-Z0-9]/gi,'')+'</div>'
+    + '<div class="rj-spin"></div><div style="font-weight:800;">입장 중…</div>'
+    + '<button class="btn secondary" id="rjCancel" style="margin-top:14px;">취소</button></div></div>';
+  document.getElementById('rjCancel').addEventListener('click', ()=>{ raidNet.joinAbort = true; closeModal(); toast('입장 취소'); });
 }
 async function friendDismissInvite(from){
   const iv = friendNet.invites[from];
@@ -5120,7 +5135,7 @@ function makeFirebaseNet(fb){
       acquire: async ({holder, ttlMs})=>{
         const lr = fb.ref(fb.rtdb, 'locks/'+lockKey(path));
         const res = await fb.runTransaction(lr, cur=>{
-          const now = Date.now();
+          const now = (typeof serverNow==='function') ? serverNow() : Date.now(); // (v8.14.1) 폰 시계 대신 서버 시각 — 방장 폰 시계가 빠르면 초대받은 친구가 「다른 사람이 입장 중」으로 막혔음
           if(cur && cur.exp > now && cur.holder !== holder) return; // 다른 사람이 잡고 있음 → 중단
           return { holder, exp: now + (ttlMs||30000) };
         });
@@ -6806,6 +6821,9 @@ function statusList(u){
   if(s.burn) o.push({i:stIc('burn'), n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
   if(s.poison) o.push({i:stIc('poison'), n:(s.poison.n>1 ? s.poison.n : 0), t:'독'+(s.poison.n>1 ? ' '+s.poison.n+'중첩' : ''), d:'라운드마다 자신 최대체력 비례 피해'+(s.poison.n>1 ? ' (중첩마다)' : '')+' · 치유 감소'+(s.poison.sl ? ' · 속도 −5' : '')+r(s.poison), good:false}); // (v8.7.0) 아난시 중첩·끈적한 실
   if(s.rwd) o.push({i:stIc('guardup'), t:'기억의 조각', d:'받는 피해 −'+Math.round(s.rwd.v*100)+'%'+r(s.rwd), good:true}); // (v8.7.0)
+  if(u.line==='fire_a' && u.g>=3 && !u.reviveUsed && u.alive) o.push({i:stIc('regen'), t:'투지 (부활 대기)', d:'쓰러지면 체력 30%로 1번 부활'+(u.g>=4 ? ' · 부활할 때 적 전체에 공격력 80%' : '')+' · 쓰면 사라짐', good:true}); // (v8.14.1) 부활이 남아 있는지 보이게 (사용자 결정)
+  if(u.line==='light_a' && u.g>=4 && u.alive){ const n = (awUq(u) ? 2 : 1) - (u.reviveGiven|0); if(n>0) o.push({i:stIc('regen'), n:n>1?n:0, t:'아군 부활 '+n+'번', d:'쓰러진 아군을 체력 '+(awAs(u) ? 70 : 50)+'%로 부활 · 남은 '+n+'번', good:true}); }
+  if(u.line==='dark_a' && awUq(u) && !u.undeadUsed && u.alive) o.push({i:stIc('regen'), t:'불사 (부활 대기)', d:'흡수한 체력이 있으면 쓰러질 때 그만큼(최대 '+(awAs(u) ? 80 : 50)+'%) 1번 부활 · 쓰면 사라짐', good:true});
   if(u.rage>0) o.push({i:stIc('buff'), n:u.rage, t:'격노 '+u.rage+'중첩', d:'공격력 +'+Math.round((Math.pow(1+LAVA_RAGE, u.rage)-1)*100)+'% (4라운드마다 +'+Math.round(LAVA_RAGE*100)+'%씩 곱으로 쌓임 · 전투 끝까지)', good:true}); // (v8.14.1) 용암 군주 격노 — 예전엔 공격력만 올라 효과 칸에 안 보였음
   if(u.hunt>0) o.push({i:stIc('buff'), n:u.hunt, t:'태양 사냥 +'+(u.hunt*10)+'%', d:'공격력 +'+(u.hunt*10)+'% (전투 끝까지)', good:true}); // (v8.7.0) 스콜
   if(s.freeze) o.push({i:stIc('freeze'), t:'빙결', d:'다음 행동 1회 못 함', good:false});
@@ -6882,7 +6900,7 @@ const GAZE_ART = '<div class="fx-gaze"><svg viewBox="-24 -12 48 24" aria-hidden=
 // (v316) 저주 — 발밑에 보라 마법진이 돌고 왼쪽 위에 해골이 떠다님 (+ 몸을 보라로 덮음)
 const CURSE_CIRCLE = '<div class="fx-cc"><svg viewBox="-50 -50 100 100" preserveAspectRatio="none" aria-hidden="true"><g transform="scale(1 .36)"><circle r="46" fill="#7a2cdc" fill-opacity=".38"/><g class="rg" fill="none" stroke="#a24dff" stroke-width="3.6"><circle r="44"/><circle r="36" stroke-dasharray="6 4"/><path d="M0-36L21.2 29.1-34.2-11.1H34.2L-21.2 29.1Z" stroke-width="2.2"/></g><g class="rg2" fill="#e4c6ff"><circle cx="0" cy="-40" r="2.6"/><circle cx="40" cy="0" r="2.6"/><circle cx="0" cy="40" r="2.6"/><circle cx="-40" cy="0" r="2.6"/></g></g></svg></div>';
 const CURSE_SKULL = '<div class="fx-csk"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C8.5 3 4 8 4 14.5c0 4 2 6.6 4.6 7.9V27c0 1 .8 1.8 1.8 1.8h11.2c1 0 1.8-.8 1.8-1.8v-4.6C26 21.1 28 18.5 28 14.5 28 8 23.5 3 16 3Z" fill="#3a1460" stroke="#c48aff" stroke-width="1.6"/><g class="eye" fill="#e9b8ff"><ellipse cx="11" cy="15" rx="3.2" ry="3.6"/><ellipse cx="21" cy="15" rx="3.2" ry="3.6"/></g><path d="M14.6 21.5L16 19l1.4 2.5Z" fill="#c48aff"/><path d="M12 25.5v3M16 25.5v3M20 25.5v3" stroke="#c48aff" stroke-width="1.3"/></svg></div>';
-function buffFxHtml(st){ /* (v327) 이로운 효과 몸 연출 */ return (st.shield>0 ? '<div class="fx-shd"></div>' : '') + (st.taunt ? '<div class="fx-tnt"><i></i><i></i></div>' : '') + (st.haste ? '<div class="fx-hst"><i></i><i></i><i></i></div>' : '') + ((st.buff || st.empower) ? '<div class="fx-buf"><i></i><i></i><i></i></div>' : '') + (st.regen ? '<div class="fx-rgn"><i></i><i></i><i></i></div>' : ''); }
+function buffFxHtml(st){ /* (v327) 이로운 효과 몸 연출 */ return (st.shield>0 ? '<div class="fx-shd"></div>' : '') + (st.taunt ? '<div class="fx-tnt"><i></i><i></i></div>' : '') + (st.haste && !(st.haste.r>=99) ? '<div class="fx-hst"><i></i><i></i><i></i></div>' : '') + ((st.buff || st.empower) ? '<div class="fx-buf"><i></i><i></i><i></i></div>' : '') + (st.regen && !(st.regen.r>=99) ? '<div class="fx-rgn"><i></i><i></i><i></i></div>' : ''); } // (v8.14.1) 출정 유물처럼 전투 끝까지 가는 가속·재생(r 99)은 몸 연출 없이 효과 칸 아이콘만 — 유물이 쌓인 7회차쯤 연출이 5배로 늘어 렉이 걸렸음
 const CURSE_ART = '<div class="fx-curse"></div>'+CURSE_CIRCLE+CURSE_SKULL;
 // (v314) 속박 — 거미줄
 const WEB_ART = '<svg viewBox="-50 -50 100 100" aria-hidden="true"><g fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round">'
@@ -11442,6 +11460,12 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:423, v:'8.15.0', date:'2026-10-15', secs:[
+    { t:'레이드', items:[ '초대를 받아 들어갈 때 「다른 사람이 입장 중」으로 막히던 것 (폰 시계 차이)', '초대를 수락하면 「입장 중…」 창 · 취소 버튼', '레이드 상점에서 룬석을 쓰면 레이드 화면 숫자도 바로 바뀜' ]},
+    { t:'전투', items:[ '하백이 쓰러지면 「물길 연결」도 끊김 (효과는 없는데 표시가 남던 것)', '용암군주(하드) 격노가 효과 칸에 중첩으로 보임', '부활이 남은 정령은 효과 칸에 「부활 대기」 표시 · 쓰면 사라짐 (스콜 투지 · 불사귀 불사 · 광명은 남은 아군 부활 횟수)', '각성 5단계 효과 줄에 효과 이름 (예: 스콜 「태양 사냥」)' ]},
+    { t:'출정', items:[ '회차가 오를수록 렉이 걸리던 것 — 유물로 전투 끝까지 붙는 가속·재생은 몸 연출 없이 효과 칸 아이콘만' ]},
+    { t:'화면', items:[ '홈 탐험 카드가 지나간 챕터의 안 깬 갈래 스테이지에 멈춰 있던 것', '장비 목록 「장착 1」 글자 → 그림 모서리 장착 표시', '장비 확정권·선택권 그림의 방패가 늘어나 보이던 것', '픽업 여러 회 결과 칸 높이가 기억 조각 줄 때문에 아래로 길어지던 것', '합성하면 스크롤이 아래에 머물던 것 → 합성판으로', '무한의 탑 준비창 버튼 글자가 두 줄로 내려가던 것', '꾹 눌러 정보를 열 때 글자가 선택되던 것' ]}
+  ]},
   { build:422, v:'8.14.0', date:'2026-10-10', secs:[
     { t:'픽업', items:[ '8.13.0의 짝 정령 변경을 취소 — 짝 정령은 다시 픽업에서 뽑으면 성좌로 나옴 (가진 신화면 성좌로 오름)' ]}
   ]},
@@ -17233,7 +17257,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 422, APP_VERSION = '8.14.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 423, APP_VERSION = '8.15.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
