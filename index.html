@@ -9623,8 +9623,8 @@ function attAutoTry(){
   }catch(e){}
 }
 setInterval(attAutoTry, 2000);
-function homePickupBtnHtml(){ const per = pickupPeriod(), sp = SPIRITS[per.pair[0]], sp2 = SPIRITS[per.pair[1]];
-  return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+(per.wait ? '다음 '+pickupOpenText(per).replace(/^.*일 /,'') : uiIc('time')+' '+pickupLeftShort(per.left))+'</small></span></button>'; }
+function homePickupBtnHtml(){ const per = pickupPeriod(), sp = SPIRITS[per.pair[0]], sp2 = SPIRITS[per.pair[1]]; if(per.wait) return ''; // (v9.1.1) 픽업 사이에는 배너를 숨김
+  return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+uiIc('time')+' '+pickupLeftShort(per.left)+'</small></span></button>'; }
 // (v297) 장비 확정권 — 그 등급 장비 1개 (부위·속성 무작위)
 function doEquipSureTicket(tk){ const r = TICKET_INFO[tk] && TICKET_INFO[tk].eqSure; if(!r) return; if(ticketCount(tk)<=0){ toast(TICKET_INFO[tk].name+' 없음'); return; }
   spendAsk(TICKET_INFO[tk].name, {tk, n:1}, ()=>doEquipSureTicketNow(tk)); }
@@ -10663,6 +10663,7 @@ function xpLockBlock(){ if(!xpRunOn()) return false; if(Date.now()-xpLockToastAt
 function render(){
   dbgRenders++; dbgLastRender = Date.now(); bgmSoon(); // (v8.9.1) 화면이 바뀌면 배경음도 바로
   if(xpRunOn() && activeTab!=='expedition' && !state.skillFight) activeTab = 'expedition'; // (v315) 어느 길로 바뀌어도 출정 화면으로
+  if(activeTab==='pickup' && pickupPeriod().wait) activeTab = 'home'; // (v9.1.1) 픽업이 끝나고 다음 픽업 전엔 픽업 화면을 숨김 (사용자 결정 10/16)
   document.body.classList.toggle('xp-lock', xpRunOn());
   checkDailyRollover();
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
@@ -11601,6 +11602,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:439, v:'9.1.1', date:'2026-10-16', secs:[
+    { t:'픽업', items:[ '픽업이 끝나고 다음 픽업이 열리기 전에는 홈의 픽업 배너를 숨김' ]},
     { t:'광산', items:[ '별빛 광맥 칸이 처음 드러날 때 빈칸으로 보이던 것 수정 (다른 칸을 캐야 보였음)' ]}
   ]},
   { build:438, v:'9.1.0', date:'2026-10-16', secs:[
