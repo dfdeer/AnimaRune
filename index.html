@@ -140,9 +140,46 @@
   .bg-full{grid-column:1 / 7; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 8px; border-radius:10px; border:1px dashed #ffcf4a66; background:#1a1640; font-size:11px; color:var(--sub); cursor:pointer;}
   .bg-full .bg-fr{display:inline-flex; align-items:center; gap:2px; color:#ffe38a; font-weight:800;} .bg-full .uic{width:16px; height:16px; margin:0;} .bg-full b{color:#ffcf4a;} .bg-full.on{border:1px solid #ffcf4a; background:#3a2a10;}
   .bg-tk{display:flex; align-items:center; gap:10px; margin:8px 2px 6px;}
-  .bg-ball{flex:none; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; color:#3a1d4e; background:radial-gradient(circle at 35% 30%,#fff,#ffd1ec 45%,#ff9ad5); box-shadow:0 2px 8px #0008, inset 0 -3px 6px #c05a9a88;}
-  .bg-ball.spin{animation:bgSpin .18s linear infinite;} @keyframes bgSpin{0%{transform:rotate(-12deg) scale(.95);} 50%{transform:rotate(12deg) scale(1.02);} 100%{transform:rotate(-12deg) scale(.95);}}
-  .bg-ball.hit{animation:bgHit .35s ease-out; box-shadow:0 0 16px #ffcf4a, inset 0 -3px 6px #c05a9a88;} @keyframes bgHit{0%{transform:scale(1.4);} 100%{transform:scale(1);}}
+  .bg-ball{--bc:#6b5fa8; flex:none; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 34% 26%, #fffc 0 7%, #fff0 30%), var(--bc); box-shadow:inset -5px -7px 12px #0007, 0 3px 8px #0008;} /* (v9.4.0) 번호 공 — 색은 번호대별 (bingoBallCol) */
+  .bg-ball b{width:24px; height:24px; border-radius:50%; background:#fff; color:#1d1636; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center;}
+  .bg-odds{margin-left:auto; text-align:right; font-size:11px; line-height:16px; color:var(--sub);} .bg-odds b{color:#fff; font-size:13px;} .bg-odds b.p{color:#ffd1ec;}
+  .bg-board{position:relative;}
+  .bg-ov{position:absolute; inset:0; z-index:5; border-radius:inherit; background:radial-gradient(circle at 50% 42%, #2c2066f5, #0b0820f8 72%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; cursor:pointer; overflow:hidden; animation:bgOvIn .2s ease-out;}
+  @keyframes bgOvIn{from{opacity:0;} to{opacity:1;}}
+  .bg-ov.fly{opacity:0; transition:opacity .22s ease-in; pointer-events:none;} .bg-ov.out{opacity:0; transition:opacity .25s; pointer-events:none;}
+  .bg-bw{position:relative; width:136px; height:136px; display:flex; align-items:center; justify-content:center;}
+  .bg-rays{position:absolute; inset:-120px; border-radius:50%; background:repeating-conic-gradient(#ffcf4a40 0 9deg, #ffcf4a00 9deg 24deg); -webkit-mask:radial-gradient(circle, #000 18%, transparent 68%); mask:radial-gradient(circle, #000 18%, transparent 68%); opacity:0; transition:opacity .25s; animation:bgRays 6s linear infinite;}
+  @keyframes bgRays{to{transform:rotate(360deg);}}
+  .bg-ov.hit .bg-rays,.bg-ov.gold .bg-rays{opacity:1;}
+  .bg-ov.hit .bg-bw::after{content:''; position:absolute; inset:0; border-radius:50%; border:4px solid #ffcf4a; animation:bgRing .7s ease-out forwards; pointer-events:none;}
+  @keyframes bgRing{from{transform:scale(.8); opacity:1;} to{transform:scale(2.4); opacity:0;}}
+  .bg-bb{--bc:#6b5fa8; position:relative; width:136px; height:136px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 34% 26%, #fffd 0 7%, #fff0 30%), var(--bc); box-shadow:inset -14px -18px 28px #0007, 0 14px 30px #000a;}
+  .bg-bb b{width:70px; height:70px; border-radius:50%; background:#fff; color:#1d1636; font-size:36px; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 -4px 8px #0002;}
+  .bg-bb.spin{animation:bgRoll .24s linear infinite;}
+  @keyframes bgRoll{0%{transform:translateY(0) rotate(-16deg);} 25%{transform:translateY(-8px) rotate(0);} 50%{transform:translateY(0) rotate(16deg);} 75%{transform:translateY(-8px) rotate(0);} 100%{transform:translateY(0) rotate(-16deg);}}
+  .bg-bb.land{animation:bgLand .5s cubic-bezier(.2,1.8,.4,1);} @keyframes bgLand{from{transform:scale(.7);} to{transform:scale(1);}}
+  .bg-ov.hit .bg-bb{box-shadow:inset -14px -18px 28px #0007, 0 0 34px var(--bc), 0 0 70px #ffcf4a99;}
+  .bg-bb.miss{filter:grayscale(1) brightness(.55); animation:bgShake .45s ease-in-out;}
+  @keyframes bgShake{0%,100%{transform:translateX(0);} 20%{transform:translateX(-12px) rotate(-7deg);} 40%{transform:translateX(10px) rotate(6deg);} 60%{transform:translateX(-6px) rotate(-3deg);} 80%{transform:translateX(4px);}}
+  .bg-bb.gone{opacity:0;}
+  .bg-ov-t{min-height:26px; font-size:20px; font-weight:900; color:#fff;} .bg-ov.gold .bg-ov-t{color:#ffcf4a;}
+  .bg-ov-t.hit{color:#ffcf4a; text-shadow:0 0 12px #ffcf4a99; animation:bgPop .45s cubic-bezier(.2,1.8,.4,1);} @keyframes bgPop{from{transform:scale(.4);} to{transform:scale(1);}}
+  .bg-ov-t.miss{font-size:14px; color:#9aa0b8;}
+  .bg-ov-s{position:absolute; bottom:12px; font-size:11px; color:#ffffff55;}
+  .bg-kwang{position:absolute; top:40%; left:50%; padding:0 18px; border:5px solid #ff6b6b; border-radius:14px; font-size:60px; line-height:76px; font-weight:900; color:#ff6b6b; background:#1a0f2acc; text-shadow:0 2px 0 #0008; pointer-events:none; animation:bgKwang 1.15s ease-out forwards;}
+  @keyframes bgKwang{0%{transform:translate(-50%,-50%) rotate(-14deg) scale(2.6); opacity:0;} 16%{transform:translate(-50%,-50%) rotate(-14deg) scale(.88); opacity:1;} 26%{transform:translate(-50%,-50%) rotate(-14deg) scale(1);} 72%{opacity:1;} 100%{transform:translate(-50%,-50%) rotate(-14deg) scale(1); opacity:0;}}
+  .bg-orb{--bc:#ffcf4a; position:fixed; left:0; top:0; z-index:9999; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; color:#fff; text-shadow:0 0 6px #000c; pointer-events:none; background:radial-gradient(circle, #fff 0 22%, var(--bc) 46%, #fff0 72%); box-shadow:0 0 26px var(--bc), 0 0 54px var(--bc);}
+  .bg-trail{--bc:#ffcf4a; position:fixed; z-index:9998; width:14px; height:14px; border-radius:50%; pointer-events:none; background:radial-gradient(circle, #fff 0 25%, var(--bc) 55%, #fff0 75%); animation:bgTrail .5s ease-out forwards;} @keyframes bgTrail{to{transform:scale(.15); opacity:0;}}
+  .bg-c.new{animation:bgCellHit .8s ease-out;} @keyframes bgCellHit{0%{background:#fff; box-shadow:0 0 0 0 #ffcf4a, 0 0 30px #ffcf4a;} 35%{background:#ff9ad5;} 100%{box-shadow:0 0 0 16px #ffcf4a00, 0 0 0 #ffcf4a00;}}
+  .bg-c.lflash{animation:bgLflash .5s ease-out var(--d) both;} .bg-ln.lnew{animation:bgLflash .6s ease-out .75s both;}
+  @keyframes bgLflash{0%{transform:scale(1);} 40%{transform:scale(1.14); box-shadow:0 0 18px #ffcf4a; border-color:#ffcf4a;} 100%{transform:scale(1);}}
+  .bg-bingo{position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; pointer-events:none;}
+  .bg-bingo b{font-size:46px; font-weight:900; color:#ffcf4a; white-space:nowrap; text-shadow:0 3px 0 #7a3b00, 0 0 18px #ff9ad5, 0 0 40px #ffcf4a; animation:bgBingo 1.5s ease-out .35s both;}
+  @keyframes bgBingo{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 20%{transform:scale(1.18) rotate(-4deg); opacity:1;} 30%{transform:scale(1) rotate(-4deg);} 80%{opacity:1;} 100%{transform:scale(1.04) rotate(-4deg); opacity:0;}}
+  .bg-dr{display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:5px; padding:8px; background:#0e0b2280; border:1px solid #ff9ad544; border-radius:12px;}
+  .bg-db{aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#ffffff55; border:1px dashed #ffffff30;}
+  .bg-db.hit{border:none; color:#fff; text-shadow:0 1px 2px #000a; background:radial-gradient(circle at 34% 26%, #fffb 0 8%, #fff0 32%), var(--bc); box-shadow:inset -3px -4px 6px #0006;}
+  .bg-db.miss{border:1px solid #ffffff1a; background:#ffffff0d; color:#ffffff38; text-decoration:line-through;}
   .bg-tkn{display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--sub);} .bg-tkn span{display:flex; align-items:center; gap:4px;} .bg-tkn b{color:#fff; font-size:14px;} .bg-tkn .g b{color:#ffcf4a;} .bg-tkn .uic{width:16px; height:16px; margin:0;} .bg-tkn .g .uic{filter:sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1);}
   .bg-btns{display:flex; gap:6px;} .bg-btns .btn{flex:1; margin:0;} .bg-btns .bg-gbtn{border-color:#ffcf4a; color:#ffe38a;}
   .bg-mis{display:flex; flex-direction:column; gap:4px; max-height:56vh; overflow-y:auto;}
@@ -9485,12 +9522,13 @@ setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !
 // (v5.3.1) 홈 이벤트 배너 — 기간 한정 이벤트(빙고·출석 등)가 열리면 여기서 배너를 돌려줌 · 픽업 배너와 같은 모양(.home-pu)으로 픽업 밑에 쌓임 · 없으면 빈 칸
 function homeEventBannersHtml(){ return bingoBannerHtml(); } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
 // ===================== (v9.4.0) 빙고 이벤트 — 번호 뽑기 =====================
-// 미션(BINGO_MISSIONS)을 채우면 티켓 · 티켓 1장 = 판에 남은 번호 중 무작위 1칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶 (사용자 결정 10/16)
-// 판 = 1~25 번호를 무작위로 배치(사람마다 다름) (사용자 결정 10/16 — 1~100이면 꽝이 너무 많음) · 칸마다 보상이 다름(BINGO_CELL_RW) · 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — ↘ 대각선은 줄로 안 셈 (사용자 결정 10/16)
-// 미션 25개 = 티켓 20 + 황금 티켓 5 → 미션을 다 하면 판이 꼭 다 참 · 기간 = pickupPeriod()의 번호(서버 시각) · 기간 안에 한 것만 셈
-// 끝난 뒤 쓰지 않은 티켓은 자동으로 뽑아 우편으로 (bingoSettle)
+// 미션(BINGO_MISSIONS)을 채우면 티켓 2장(심화 미션은 황금 티켓 2장) · 티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 → 판에 있으면 그 칸을 엶, 없으면 꽝 (사용자 결정 10/16: 꽝은 보상 없이 꽝만)
+// 황금 티켓 = 원하는 칸을 골라 엶(그 번호도 뽑은 것으로) · 판 = 1~50 중 무작위 25개(사람마다 다름) · 칸마다 보상이 다름(BINGO_CELL_RW)
+// 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — ↘ 대각선은 줄로 안 셈 (사용자 결정 10/16)
+// 티켓 = 일반 40 + 황금 10 → 미션을 다 하면 판이 꼭 다 참 (2만 판 시뮬: 일반 40 + 황금 10이면 완성 100% · 일반만 쓰면 첫 줄 중앙값 30장)
+// 기간 = pickupPeriod()의 번호(서버 시각) · 기간 안에 한 것만 셈 · 끝난 뒤 쓰지 않은 티켓은 대신 뽑아 우편으로 (bingoSettle)
 const BINGO = { id:'bg2', idx: PICKUP_P0+1, name:'정령 빙고' };
-const BINGO_N = 5, BINGO_ALL = (1<<25) - 1;
+const BINGO_N = 5, BINGO_ALL = (1<<25) - 1, BINGO_POOL = 50, BINGO_TK = 2; // 번호 1~50 · 미션 하나에 티켓 2장
 const BINGO_MISSIONS = [ // k = 세는 행동 (bingoBump) · g = 황금 티켓
   {k:'summon', n:50, nm:'정령 소환', u:'회', ic:'summon'}, {k:'stage', n:30, nm:'스테이지 클리어', u:'회', ic:'explore'}, {k:'enh', n:30, nm:'강화', u:'회', ic:'upstone'}, {k:'dispatch', n:10, nm:'파견 완료', u:'회', ic:'dispatch'}, {k:'quest', n:30, nm:'일일 의뢰', u:'개', ic:'quest'},
   {k:'fuse', n:20, nm:'합성', u:'회', ic:'fuse'}, {k:'dungeon', n:10, nm:'요일 던전 승리', u:'회', ic:'mode'}, {k:'eqsum', n:30, nm:'장비 소환', u:'회', ic:'tk_equip'}, {k:'wb', n:3, nm:'월드 보스 도전', u:'회', ic:'worldboss'}, {k:'mine', n:200, nm:'곡괭이질', u:'번', ic:'pick'},
@@ -9517,15 +9555,16 @@ function bingoActive(){ return pickupPeriod().idx===BINGO.idx; }
 function bingoVisible(){ return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
 function bingoOpenMs(){ const late = PICKUP_LATE[BINGO.idx]; if(late) return late; const i = BINGO.idx, ym = Math.floor(i/2); return Date.UTC(Math.floor(ym/12), ym%12, i%2 ? 16 : 1) - 9*3600000; } // 빙고가 열리는 시각
 function bingoOpenText(){ return pickupOpenText({ end: bingoOpenMs() }); } // 예: 10월 16일 10시
-function bingoNums(){ const a = Array.from({length:25}, (_,i)=>i+1); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
-function bingoS(){ let b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id){ b = state.bingo = { id:BINGO.id, c:{}, nums:null, op:0, lg:0, full:false, un:0, ug:0, mailed:false }; }
-  if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums(); return b; }
+function bingoNums(){ const a = Array.from({length:BINGO_POOL}, (_,i)=>i+1); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a.slice(0, 25); }
+function bingoS(){ let b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id){ b = state.bingo = { id:BINGO.id, c:{}, nums:null, dr:[], op:0, lg:0, full:false, un:0, ug:0, mailed:false }; }
+  if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums(); if(!Array.isArray(b.dr)) b.dr = []; return b; }
 function bingoBump(k, n){ try{ if(!bingoActive()) return; const b = bingoS(); b.c[k] = Math.min(1e6, (b.c[k]||0) + (n||1)); }catch(e){} }
 function bingoMCnt(b, m){ return Math.min(m.n, b.c[m.k]||0); }
 function bingoMDone(b, m){ return bingoMCnt(b, m) >= m.n; }
-function bingoTk(b){ let n = 0, g = 0; BINGO_MISSIONS.forEach(m=>{ if(bingoMDone(b, m)){ if(m.g) g++; else n++; } }); return { n: Math.max(0, n - (b.un||0)), g: Math.max(0, g - (b.ug||0)) }; } // 남은 티켓 = 채운 미션 − 쓴 것
+function bingoTk(b){ let n = 0, g = 0; BINGO_MISSIONS.forEach(m=>{ if(bingoMDone(b, m)){ if(m.g) g += BINGO_TK; else n += BINGO_TK; } }); return { n: Math.max(0, n - (b.un||0)), g: Math.max(0, g - (b.ug||0)) }; } // 남은 티켓 = 채운 미션 × 2 − 쓴 것
 function bingoOpened(b, i){ return !!(b.op & (1<<i)); }
 function bingoLeft(b){ const a = []; for(let i=0;i<25;i++) if(!bingoOpened(b, i)) a.push(i); return a; }
+function bingoPool(b){ const d = new Set(b.dr||[]), a = []; for(let n=1;n<=BINGO_POOL;n++) if(!d.has(n)) a.push(n); return a; } // 아직 안 나온 번호
 function bingoLineOn(b, l){ return !!(b.lg & (1<<l)); }
 function bingoLnShown(b, l){ return bingoLineOn(b, l) && !BINGO_LINES[l].includes(bingoHide); } // 뽑기 연출 중엔 그 칸이 든 줄을 아직 안 보여 줌
 function bingoRwAdd(a, rw){ ['essence','stone','gems','shards','upStones','star'].forEach(k=>{ if(rw[k]) a[k] = (a[k]||0) + rw[k]; });
@@ -9537,6 +9576,13 @@ function bingoOpen(b, i){ // 칸 i를 엶 → 받을 보상(칸 + 새로 맞춘 
   BINGO_LINES.forEach((L,l)=>{ if(!bingoLineOn(b, l) && L.every(j=>bingoOpened(b, j))){ b.lg |= (1<<l); lines.push(l); bingoRwAdd(rw, BINGO_LINE_RW[l]); } });
   let full = false; if(!b.full && (b.op & BINGO_ALL)===BINGO_ALL){ b.full = full = true; bingoRwAdd(rw, BINGO_FULL_RW); }
   return { rw, lines, full };
+}
+function bingoUse(b, gold, pick){ // 티켓 1장 쓰기 (확인은 부르는 쪽) → { num, i(-1 = 꽝), r }
+  let num, i;
+  if(gold){ i = pick; num = b.nums[i]; b.ug = (b.ug||0) + 1; }
+  else { const pool = bingoPool(b); num = pool[Math.floor(Math.random()*pool.length)]; i = b.nums.indexOf(num); b.un = (b.un||0) + 1; }
+  if(!b.dr.includes(num)) b.dr.push(num);
+  return { num, i, r: i>=0 && !bingoOpened(b, i) ? bingoOpen(b, i) : null };
 }
 function bingoHasDot(){ if(!bingoActive()) return false; const b = bingoS(), t = bingoTk(b); return (t.n + t.g) > 0 && bingoLeft(b).length > 0; }
 // 보상 그림 목록 — 아이템·재화를 먼저, 별빛 조각은 맨 뒤
@@ -9552,40 +9598,92 @@ function bingoRwList(rw){ const L = [], img = f=>'<img class="uic" src="assets/u
 function bingoNum(x){ return x.x ? '×'+x.n : (x.n >= 1000 ? (x.n/1000)+'천' : String(x.n)); }
 function bingoTip(rw){ return bingoRwList(rw).map(x=>x.nm+' '+(x.x ? '×'+x.n : x.n.toLocaleString())).join(' · '); }
 function bingoLineName(l){ return l<5 ? '가로 '+(l+1)+'줄' : l<10 ? '세로 '+(l-4)+'줄' : '대각선'; }
-let bingoTab = 'board', bingoGoldMode = false, bingoBusy = false, bingoHide = -1, bingoNew = -1, bingoLast = 0; // bingoLast = 마지막으로 뽑은 번호 (공에 보임)
+const BINGO_BALL_COL = ['#f2b51d','#3b82f6','#ef4444','#a855f7','#22c55e']; // 번호 공 색 — 1~10 · 11~20 · 21~30 · 31~40 · 41~50 (회색은 꽝이라 안 씀)
+function bingoBallCol(n){ return BINGO_BALL_COL[Math.min(4, Math.floor((n-1)/10))]; }
+let bingoTab = 'board', bingoGoldMode = false, bingoBusy = false, bingoHide = -1, bingoNew = -1, bingoNewLines = [], bingoLast = 0, bingoAnim = null; // bingoLast = 마지막으로 뽑은 번호
+// ---- 뽑기 연출: 공이 굴러 번호가 바뀌다 멈춤 → 꽝이면 「꽝」 도장 후 사라짐 · 당첨이면 번호가 빛 구슬이 되어 칸으로 날아가 칸을 켬 · 화면을 누르면 건너뜀
 function bingoDraw(gold, pick){
   if(bingoBusy) return;
   if(!bingoActive()){ toast('이벤트 기간이 아님'); return; }
   const b = bingoS(), t = bingoTk(b), left = bingoLeft(b);
   if(!left.length){ toast('판을 다 채움'); return; }
   if(gold ? t.g<1 : t.n<1){ toast(gold ? '황금 티켓 없음' : '티켓 없음 — 미션을 채우면 받음'); return; }
-  const i = gold ? pick : left[Math.floor(Math.random()*left.length)];
-  if(!left.includes(i)) return;
-  if(gold) b.ug = (b.ug||0) + 1; else b.un = (b.un||0) + 1;
-  const r = bingoOpen(b, i); bingoGive(r.rw); save(); // 먼저 저장 — 연출 중에 창을 닫아도 보상은 그대로
-  bingoGoldMode = false; bingoBusy = true; bingoHide = i; bingoNew = -1; bingoRefresh(); sfx(gold ? 'claim' : 'summonCharge');
-  const ball = document.getElementById('bgBall'), num = b.nums[i], spin = gold ? 0 : 14;
-  if(ball){ ball.classList.remove('hit'); ball.classList.add('spin'); }
-  let k = 0; const tick = ()=>{
-    const el = document.getElementById('bgBall');
-    if(k < spin){ if(el) el.textContent = String(1 + Math.floor(Math.random()*25)); k++; setTimeout(tick, 40 + k*6); return; }
-    if(el){ el.textContent = String(num); el.classList.remove('spin'); el.classList.add('hit'); }
-    setTimeout(()=>{ bingoBusy = false; bingoHide = -1; bingoNew = i; bingoLast = num; bingoRefresh(); bingoNew = -1;
-      sfx(r.lines.length || r.full ? 'win' : 'claim');
-      toastReward(r.rw, uiIc('dice')+' '+num+'번'+(r.full ? ' · 빙고 완성!' : r.lines.length ? ' · '+r.lines.length+'줄 빙고!' : ''));
-      if(activeTab==='home' && !document.getElementById('battleScreen')) render(); }, 260);
-  };
-  tick();
+  if(gold && !left.includes(pick)) return;
+  if(!gold && !bingoPool(b).length) return;
+  const u = bingoUse(b, gold, pick); if(u.r) bingoGive(u.r.rw); save(); // 먼저 저장 — 연출 중에 창을 닫아도 결과는 그대로
+  bingoGoldMode = false; bingoBusy = true; bingoHide = u.i; bingoRefresh();
+  bingoPlay(b, u, gold);
 }
-function bingoSettle(){ // 기간이 끝난 뒤 — 쓰지 않은 티켓을 대신 뽑아 우편으로 한 번
+function bingoPlay(b, u, gold){
+  const modal = document.querySelector('#bingoPop .bg-modal');
+  const A = bingoAnim = { timers:[], done:false, u };
+  const later = (fn, ms)=>{ A.timers.push(setTimeout(()=>{ if(!A.done) fn(); }, ms)); };
+  const ov = document.createElement('div'); ov.className = 'bg-ov'+(gold?' gold':''); A.ov = ov;
+  ov.innerHTML = '<div class="bg-bw"><div class="bg-rays"></div><div class="bg-bb spin" id="bgBB"><b>?</b></div></div><div class="bg-ov-t">'+(gold ? '황금 티켓' : '두근두근…')+'</div><div class="bg-ov-s">누르면 건너뛰기</div>';
+  if(modal) modal.appendChild(ov);
+  const ball = ov.querySelector('#bgBB'), txt = ov.querySelector('.bg-ov-t');
+  const show = n=>{ ball.style.setProperty('--bc', bingoBallCol(n)); ball.querySelector('b').textContent = n; };
+  function finish(){ // 끝 — 판을 결과대로 다시 그림 (건너뛰기도 여기로)
+    if(A.done) return; A.done = true; A.timers.forEach(clearTimeout); document.querySelectorAll('.bg-orb,.bg-trail').forEach(e=>e.remove());
+    bingoBusy = false; bingoHide = -1; bingoLast = u.num; bingoAnim = null;
+    bingoNew = u.r ? u.i : -1; bingoNewLines = u.r ? u.r.lines : []; bingoRefresh(); bingoNew = -1; bingoNewLines = [];
+    if(ov.isConnected){ ov.classList.add('out'); setTimeout(()=>ov.remove(), 260); }
+    if(u.r){ sfx(u.r.lines.length || u.r.full ? 'win' : 'claim'); bingoBingoFx(u.r);
+      toastReward(u.r.rw, uiIc('dice')+' '+u.num+'번 당첨'+(u.r.full ? ' · 빙고 완성!' : u.r.lines.length ? ' · '+u.r.lines.length+'줄 빙고!' : '')); }
+    if(activeTab==='home' && !document.getElementById('battleScreen')) render();
+  }
+  ov.addEventListener('click', finish);
+  // 1) 굴리기 — 안 나온 번호 사이를 돌다가 점점 느려짐 (황금 티켓은 짧게)
+  const pool = bingoPool(b).concat([u.num]); let k = 0, gap = 40; const steps = gold ? 5 : 15; // 약 1.5초 동안 점점 느려짐
+  const roll = ()=>{ if(A.done) return;
+    if(k < steps){ show(pool[Math.floor(Math.random()*pool.length)]); if(k%2===0 || gap>110) sfx('click'); k++; gap = Math.min(260, gap*1.12); later(roll, gap); return; }
+    // 2) 멈춤
+    show(u.num); ball.classList.remove('spin'); ball.classList.add('land');
+    if(!u.r){ // 꽝 — 회색으로 바뀌고 흔들린 뒤 「꽝」 도장 → 사라짐
+      ball.classList.add('miss'); txt.textContent = u.num+'번 · 판에 없음'; txt.className = 'bg-ov-t miss'; sfx('fail');
+      const st = document.createElement('div'); st.className = 'bg-kwang'; st.textContent = '꽝'; ov.appendChild(st);
+      later(finish, 1150); return; }
+    // 당첨 — 빛이 퍼지고 번호가 빛 구슬로 날아감
+    ov.classList.add('hit'); txt.textContent = u.num+'번 당첨!'; txt.className = 'bg-ov-t hit'; sfx('summonCharge');
+    later(()=>bingoFly(ball, u, A, finish), 620);
+  };
+  roll();
+}
+function bingoFly(ball, u, A, finish){ // 빛 구슬이 곡선을 그리며 칸으로 날아감 (꼬리 빛가루를 흘림)
+  const cell = document.querySelector('#bingoBody .bg-c[data-bg-c="'+u.i+'"]');
+  if(!cell || !ball.isConnected){ finish(); return; }
+  const a = ball.getBoundingClientRect(), c = cell.getBoundingClientRect();
+  const x0 = a.left + a.width/2, y0 = a.top + a.height/2, x1 = c.left + c.width/2, y1 = c.top + c.height/2;
+  const cx = (x0 + x1)/2 + (x1 >= x0 ? -1 : 1) * 90, cy = Math.min(y0, y1) - 80; // 곡선 꺾는 점 — 옆으로 휘며 위로 솟았다 내려감
+  const col = bingoBallCol(u.num), orb = document.createElement('div'); orb.className = 'bg-orb'; orb.style.setProperty('--bc', col); orb.textContent = u.num; document.body.appendChild(orb);
+  ball.classList.add('gone'); A.ov.classList.add('fly');
+  const dur = 560, t0 = performance.now(); let lastTrail = 0;
+  const step = now=>{ if(A.done){ orb.remove(); return; }
+    const p = Math.min(1, (now - t0)/dur), e = p<0.5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2)/2, q = 1 - e;
+    const x = q*q*x0 + 2*q*e*cx + e*e*x1, y = q*q*y0 + 2*q*e*cy + e*e*y1, s = 1 - 0.55*e;
+    orb.style.transform = 'translate('+(x-30)+'px,'+(y-30)+'px) scale('+s+')';
+    if(now - lastTrail > 16){ lastTrail = now; const tr = document.createElement('div'); tr.className = 'bg-trail'; tr.style.setProperty('--bc', col);
+      tr.style.left = (x - 7 + (Math.random()*10-5))+'px'; tr.style.top = (y - 7 + (Math.random()*10-5))+'px'; document.body.appendChild(tr); setTimeout(()=>tr.remove(), 520); }
+    if(p < 1) requestAnimationFrame(step); else { orb.remove(); finish(); } };
+  requestAnimationFrame(step);
+}
+function bingoBingoFx(r){ // 줄을 맞추면 판 위에 「빙고!」
+  if(!r.lines.length && !r.full) return;
+  const bd = document.querySelector('#bingoBody .bg-board'); if(!bd) return;
+  const el = document.createElement('div'); el.className = 'bg-bingo'; el.innerHTML = '<b>'+(r.full ? '빙고 완성!' : (r.lines.length>1 ? r.lines.length+'줄 ' : '')+'빙고!')+'</b>';
+  bd.appendChild(el); setTimeout(()=>el.remove(), 1500);
+}
+function bingoSettle(){ // 기간이 끝난 뒤 — 쓰지 않은 티켓을 대신 뽑아 우편으로 한 번 (황금 티켓은 무작위 칸)
   const b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id || b.mailed || pickupPeriod().idx <= BINGO.idx) return;
-  b.mailed = true; if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums();
-  const acc = {}, t = bingoTk(b); let n = 0, left = bingoLeft(b);
-  while(left.length && (t.n + t.g) > 0){ const i = left[Math.floor(Math.random()*left.length)]; if(t.g>0){ t.g--; b.ug = (b.ug||0) + 1; } else { t.n--; b.un = (b.un||0) + 1; } bingoRwAdd(acc, bingoOpen(b, i).rw); n++; left = bingoLeft(b); }
-  if(!n) return;
+  b.mailed = true; if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums(); if(!Array.isArray(b.dr)) b.dr = [];
+  const acc = {}, t = bingoTk(b); let n = 0, hit = 0;
+  while(bingoLeft(b).length && (t.g > 0 || (t.n > 0 && bingoPool(b).length))){
+    const left = bingoLeft(b), gold = t.g > 0; if(gold) t.g--; else t.n--;
+    const u = bingoUse(b, gold, left[Math.floor(Math.random()*left.length)]); n++; if(u.r){ hit++; bingoRwAdd(acc, u.r.rw); } }
+  if(!hit) return;
   state.sysMail = Array.isArray(state.sysMail) ? state.sysMail : [];
   const id = 'bingo_'+BINGO.id;
-  if(!state.sysMail.some(x=>x.id===id)) state.sysMail.push({ id, title:BINGO.name+' 남은 티켓', body:'이벤트 기간에 받고 쓰지 않은 티켓 '+n+'장을 대신 뽑은 보상', t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:acc });
+  if(!state.sysMail.some(x=>x.id===id)) state.sysMail.push({ id, title:BINGO.name+' 남은 티켓', body:'이벤트 기간에 받고 쓰지 않은 티켓 '+n+'장을 대신 뽑은 보상 (당첨 '+hit+'칸)', t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:acc });
 }
 function bingoBannerHtml(){
   if(!bingoVisible()) return '';
@@ -9595,54 +9693,68 @@ function bingoBannerHtml(){
 }
 function showBingoModal(){
   const old = document.getElementById('bingoPop'); if(old) old.remove();
+  if(bingoAnim){ bingoAnim.done = true; bingoAnim.timers.forEach(clearTimeout); bingoAnim = null; } bingoBusy = false; bingoHide = -1;
   bingoTab = 'board'; bingoGoldMode = false; bingoLast = 0;
   const o = document.createElement('div'); o.className = 'modal-bg'; o.id = 'bingoPop'; o.style.zIndex = '200';
   o.innerHTML = '<div class="modal bg-modal" style="position:relative;"><button class="close-x" id="bingoClose">x</button><h3 style="text-align:center; margin-top:0;">'+uiIc('dice')+' '+BINGO.name+'</h3><div id="bingoBody"></div></div>';
   document.body.appendChild(o);
-  o.addEventListener('click', ev=>{ if(ev.target===o) o.remove(); });
-  o.querySelector('#bingoClose').addEventListener('click', ()=>o.remove());
+  const close = ()=>{ if(bingoAnim){ bingoAnim.done = true; bingoAnim.timers.forEach(clearTimeout); bingoAnim = null; document.querySelectorAll('.bg-orb,.bg-trail').forEach(e=>e.remove()); } bingoBusy = false; bingoHide = -1; o.remove();
+    if(activeTab==='home' && !document.getElementById('battleScreen')) render(); }; // 연출 중에 닫아도 결과는 이미 저장됨
+  o.addEventListener('click', ev=>{ if(ev.target===o) close(); });
+  o.querySelector('#bingoClose').addEventListener('click', close);
   bingoRefresh();
 }
 function bingoLineHtml(b, l, mark){ // 줄 보상 칸 — 위(세로줄)·오른쪽(가로줄)·모서리(대각선)
   const rw = BINGO_LINE_RW[l], L = bingoRwList(rw), main = L[0], on = bingoLnShown(b, l), cnt = BINGO_LINES[l].filter(i=>bingoOpened(b, i) && i!==bingoHide).length;
   const near = !on && cnt===BINGO_N-1; // 한 칸만 남음
-  return '<div class="bg-ln'+(on?' on':'')+(near?' near':'')+'" data-rtip="'+bingoLineName(l)+' · '+bingoTip(rw)+'"><span class="bg-mk">'+mark+'</span>'+main.ic+'<small>'+bingoNum(main)+'</small>'+(rw.star ? '<span class="bg-st">'+SHARD_IC+rw.star+'</span>' : '')+(on?'<span class="bg-ok"><i></i></span>':'')+'</div>';
+  return '<div class="bg-ln'+(on?' on':'')+(near?' near':'')+(bingoNewLines.includes(l)?' lnew':'')+'" data-rtip="'+bingoLineName(l)+' · '+bingoTip(rw)+'"><span class="bg-mk">'+mark+'</span>'+main.ic+'<small>'+bingoNum(main)+'</small>'+(rw.star ? '<span class="bg-st">'+SHARD_IC+rw.star+'</span>' : '')+(on?'<span class="bg-ok"><i></i></span>':'')+'</div>';
 }
 function bingoBoardHtml(b){
   const t = bingoTk(b), left = bingoLeft(b).filter(i=>i!==bingoHide), on = bingoActive(), pick = bingoGoldMode && on && left.length>0 && t.g>0;
+  const newCells = new Map(); bingoNewLines.forEach(l=>BINGO_LINES[l].forEach((i,k)=>{ if(!newCells.has(i)) newCells.set(i, k); })); // 새로 맞춘 줄 — 칸마다 차례로 번쩍
   let h = '<div class="bg-board">';
   for(let c=0;c<BINGO_N;c++) h += bingoLineHtml(b, 5+c, '▼');
   h += bingoLineHtml(b, 10, '↙');
   for(let r=0;r<BINGO_N;r++){
     for(let c=0;c<BINGO_N;c++){ const i = r*BINGO_N+c, op = bingoOpened(b, i) && i!==bingoHide, L = bingoRwList(BINGO_CELL_RW[i]), main = L[0], big = i===12 || i===0 || i===4 || i===20 || i===24;
       const ln = op && BINGO_LINES.some((Ls,l)=>bingoLnShown(b, l) && Ls.includes(i));
-      h += '<div class="bg-c'+(op?' op':'')+(big?' big':'')+(ln?' ln':'')+(pick && !op ? ' pick' : '')+(i===bingoNew?' new':'')+'" data-bg-c="'+i+'"'+(pick ? '' : ' data-rtip="'+b.nums[i]+'번 · '+bingoTip(BINGO_CELL_RW[i])+'"')+'>'
+      h += '<div class="bg-c'+(op?' op':'')+(big?' big':'')+(ln?' ln':'')+(pick && !op ? ' pick' : '')+(i===bingoNew?' new':'')+(newCells.has(i)?' lflash':'')+'" data-bg-c="'+i+'"'+(newCells.has(i)?' style="--d:'+(newCells.get(i)*70+380)+'ms"':'')+(pick ? '' : ' data-rtip="'+b.nums[i]+'번 · '+bingoTip(BINGO_CELL_RW[i])+'"')+'>'
         + '<span class="bg-no">'+b.nums[i]+'</span><span class="bg-cr">'+main.ic+'<small>'+bingoNum(main)+'</small></span>'+(op?'<span class="bg-ok"><i>'+b.nums[i]+'</i></span>':'')+'</div>'; }
     h += bingoLineHtml(b, r, '◀');
   }
   const fullRw = bingoRwList(BINGO_FULL_RW), fullOn = b.full && bingoHide<0; // 판 완성 보상 — 판 아래 한 줄
   h += '<div class="bg-full'+(fullOn?' on':'')+'" data-rtip="빙고 완성 · '+bingoTip(BINGO_FULL_RW)+'"><span>25칸 모두</span>'+fullRw.map(x=>'<span class="bg-fr">'+x.ic+'<small>'+bingoNum(x)+'</small></span>').join('')+(fullOn?'<b>완성!</b>':'')+'</div></div>';
-  h += '<div class="bg-tk"><div class="bg-ball" id="bgBall">'+(bingoBusy || !bingoLast ? '?' : bingoLast)+'</div>'
-    + '<div class="bg-tkn"><span>'+uiIc('ticket')+' 티켓 <b>'+t.n+'</b></span><span class="g">'+uiIc('ticket')+' 황금 티켓 <b>'+t.g+'</b></span></div></div>';
+  const pool = bingoPool(b), inPool = b.nums.filter((n,i)=>!bingoOpened(b, i) && !(b.dr||[]).includes(n)).length;
+  h += '<div class="bg-tk"><div class="bg-ball"'+(bingoLast ? ' style="--bc:'+bingoBallCol(bingoLast)+'"' : '')+'><b>'+(bingoLast || '?')+'</b></div>'
+    + '<div class="bg-tkn"><span>'+uiIc('ticket')+' 티켓 <b>'+t.n+'</b></span><span class="g">'+uiIc('ticket')+' 황금 티켓 <b>'+t.g+'</b></span></div>'
+    + '<div class="bg-odds">남은 번호 <b>'+pool.length+'</b><br>그중 판에 <b class="p">'+inPool+'</b></div></div>';
   if(!on) h += '<button class="btn" disabled>'+bingoOpenText()+'부터</button>';
   else if(!left.length && !bingoBusy) h += '<button class="btn" disabled>판을 다 채움</button>';
   else h += '<div class="bg-btns"><button class="btn gold" id="bgDraw"'+(t.n<1 || bingoBusy ? ' disabled' : '')+'>'+uiIc('dice')+' 뽑기</button>'
     + '<button class="btn'+(pick?' secondary':' bg-gbtn')+'" id="bgGold"'+((t.g<1 && !pick) || bingoBusy ? ' disabled' : '')+'>'+(pick ? '취소' : '황금 티켓')+'</button></div>';
-  h += '<div class="att-note">'+(pick ? '열 칸을 고르기' : '티켓 = 남은 번호 중 무작위 1칸 · 황금 티켓 = 원하는 칸<br>칸·줄을 누르면 보상 · 끝나면 남은 티켓은 대신 뽑아 우편으로')+'</div>';
+  h += '<div class="att-note">'+(pick ? '열 칸을 고르기' : '티켓 = 1~50 뽑기 (판에 없으면 꽝) · 황금 = 원하는 칸<br>칸·줄을 누르면 보상 · 끝나면 남은 티켓은 대신 뽑아 우편으로')+'</div>';
   return h;
+}
+function bingoDrawnHtml(b){ // 뽑은 번호 — 1~50 공판 (당첨 = 색 공 · 꽝 = 회색 · 안 나옴 = 빈 테두리)
+  const d = new Set(b.dr||[]), mine = new Set(b.nums); let hit = 0, miss = 0;
+  let h = '<div class="bg-dr">';
+  for(let n=1;n<=BINGO_POOL;n++){ const got = d.has(n), on = mine.has(n); if(got){ if(on) hit++; else miss++; }
+    h += '<span class="bg-db'+(got ? (on ? ' hit' : ' miss') : '')+'"'+(got && on ? ' style="--bc:'+bingoBallCol(n)+'"' : '')+'>'+n+'</span>'; }
+  return h + '</div><div class="att-note">당첨 <b style="color:#ffd1ec;">'+hit+'</b> · 꽝 <b>'+miss+'</b> · 남은 번호 <b>'+(BINGO_POOL - d.size)+'</b></div>';
 }
 function bingoMisHtml(b){
   let h = '<div class="bg-mis">';
   BINGO_MISSIONS.forEach(m=>{ const n = bingoMCnt(b, m), done = n >= m.n;
     h += '<div class="bg-m'+(done?' done':'')+'">'+uiIc(m.ic)+'<span class="bg-mn">'+m.nm+' '+m.n+m.u+'<span class="bg-mb"><i style="width:'+Math.round(n/m.n*100)+'%"></i></span></span>'
-      + '<span class="bg-mp">'+(done ? '완료' : n+'/'+m.n)+'</span><span class="bg-mt'+(m.g?' g':'')+'">'+uiIc('ticket')+(m.g?'황금':'')+' 1</span></div>'; });
+      + '<span class="bg-mp">'+(done ? '완료' : n+'/'+m.n)+'</span><span class="bg-mt'+(m.g?' g':'')+'">'+uiIc('ticket')+(m.g?'황금':'')+' '+BINGO_TK+'</span></div>'; });
   return h + '</div><div class="att-note">이벤트 기간에 한 것만 셈 · 채우면 티켓이 바로 들어옴</div>';
 }
 function bingoBodyHtml(){
   const on = bingoActive(), b = bingoS(), lines = BINGO_LINES.filter((L,l)=>bingoLnShown(b, l)).length, md = BINGO_MISSIONS.filter(m=>bingoMDone(b, m)).length;
   let h = '<div class="bg-top"><b>'+lines+' / '+BINGO_LINES.length+'줄'+(b.full && bingoHide<0?' · 완성!':'')+'</b><span>'+(on ? uiIc('time')+' '+pickupLeftText(pickupPeriod().left)+' 남음' : bingoOpenText()+' 시작')+'</span></div>';
-  h += '<div class="bg-tabs"><button data-bg-tab="board"'+(bingoTab==='board'?' class="on"':'')+'>빙고판'+(bingoHasDot()?'<span class="home-dot"></span>':'')+'</button><button data-bg-tab="mis"'+(bingoTab==='mis'?' class="on"':'')+'>미션 '+md+'/'+BINGO_MISSIONS.length+'</button></div>';
-  return h + (bingoTab==='mis' ? bingoMisHtml(b) : bingoBoardHtml(b));
+  const tab = (id, label)=>'<button data-bg-tab="'+id+'"'+(bingoTab===id?' class="on"':'')+'>'+label+'</button>';
+  h += '<div class="bg-tabs">'+tab('board', '빙고판'+(bingoHasDot()?'<span class="home-dot"></span>':''))+tab('drawn', '뽑은 번호 '+(b.dr||[]).length)+tab('mis', '미션 '+md+'/'+BINGO_MISSIONS.length)+'</div>';
+  return h + (bingoTab==='mis' ? bingoMisHtml(b) : bingoTab==='drawn' ? bingoDrawnHtml(b) : bingoBoardHtml(b));
 }
 function bingoRefresh(){ const bd = document.getElementById('bingoBody'); if(!bd) return; bd.innerHTML = bingoBodyHtml();
   bd.querySelectorAll('[data-bg-tab]').forEach(el=>el.addEventListener('click', ()=>{ if(bingoBusy) return; bingoTab = el.dataset.bgTab; bingoGoldMode = false; bingoRefresh(); }));
@@ -11720,7 +11832,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:443, v:'9.4.0', date:'2026-10-16', secs:[
-    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 — 미션 25개 (티켓 20장 · 황금 티켓 5장)', '빙고판 = 1~25 번호를 무작위로 배치 (사람마다 다름)', '티켓 1장 = 남은 번호 중 하나를 뽑아 그 칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
+    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 2장 — 미션 25개 (티켓 40장 · 황금 티켓 10장)', '빙고판 = 1~50 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 — 판에 있으면 그 칸이 열리고, 없으면 꽝', '황금 티켓 = 원하는 칸을 골라 엶', '미션을 모두 채우면 판을 끝까지 채울 수 있음', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '「뽑은 번호」 탭에서 나온 번호 확인 · 한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
     { t:'별빛 균열 · 기간 규칙 「낮과 밤」', items:['1·2라운드는 낮, 3·4라운드는 밤 — 2라운드마다 바뀜', '☀️ 낮: 아군의 직접 공격 피해 +20%', '🌙 밤: 빛나지 않는 적은 어둠에 숨어 받는 피해 −50% · 빛나는 적은 받는 지속 피해(화상 · 독 · 표식 피해) +100%', '빛나는 적: 빛 속성 아군의 공격에 맞은 적 (다음 라운드까지)', '규칙이 있는 기간이라 픽업 공격력 보너스(+25% · +25%)는 없음']},
@@ -17869,8 +17981,9 @@ function sanitizeState(){
   { const b = s.bingo; // (v8.0.0) 빙고 — 모양이 이상하면 버림 · (v9.4.0) 번호판 · 연 칸·줄 비트는 범위 안으로
     if(!isPlainObj(b) || typeof b.id!=='string' || !isPlainObj(b.c)) delete s.bingo;
     else { const c = {}; Object.keys(b.c).forEach(k=>{ const v = b.c[k]; if(/^[a-z]{1,12}$/.test(k) && Number.isFinite(v) && v>0) c[k] = Math.min(1e6, Math.floor(v)); });
-      const nums = Array.isArray(b.nums) && b.nums.length===25 && b.nums.every(v=>Number.isInteger(v) && v>=1 && v<=25) && new Set(b.nums).size===25 ? b.nums.slice() : null, cnt = v=>Number.isInteger(v) && v>0 ? Math.min(BINGO_MISSIONS.length, v) : 0;
-      s.bingo = { id:String(b.id).slice(0,12), c, nums, op: Number.isInteger(b.op) ? b.op & BINGO_ALL : 0, lg: Number.isInteger(b.lg) ? b.lg & ((1<<BINGO_LINES.length)-1) : 0, full: b.full===true, un: cnt(b.un), ug: cnt(b.ug), mailed: b.mailed===true };
+      const nums = Array.isArray(b.nums) && b.nums.length===25 && b.nums.every(v=>Number.isInteger(v) && v>=1 && v<=BINGO_POOL) && new Set(b.nums).size===25 ? b.nums.slice() : null, cnt = v=>Number.isInteger(v) && v>0 ? Math.min(BINGO_MISSIONS.length*BINGO_TK, v) : 0;
+      const dr = nums && Array.isArray(b.dr) ? [...new Set(b.dr.filter(v=>Number.isInteger(v) && v>=1 && v<=BINGO_POOL))] : [];
+      s.bingo = { id:String(b.id).slice(0,12), c, nums, dr, op: Number.isInteger(b.op) ? b.op & BINGO_ALL : 0, lg: Number.isInteger(b.lg) ? b.lg & ((1<<BINGO_LINES.length)-1) : 0, full: b.full===true, un: cnt(b.un), ug: cnt(b.ug), mailed: b.mailed===true };
       try{ bingoSettle(); }catch(e){ console.error('bingoSettle', e); } } }
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
 }
