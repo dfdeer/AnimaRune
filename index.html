@@ -137,7 +137,7 @@
   .bg-ln.near{border:2px solid #ffcf4a; background:linear-gradient(160deg,#5a3f12,#1a1640); animation:attNow 1.6s ease-in-out infinite;}
   .bg-ln.on{background:#3a2a10; border:1px solid #ffcf4a;} .bg-ln.on > :not(.bg-ok){opacity:.35;}
   .bg-ln .bg-ok{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;} .bg-ln .bg-ok i{width:30px; height:30px; border-radius:50%; border:3px solid #ffcf4a; background:#ffcf4a33;}
-  .bg-full{grid-column:1 / 6; display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 8px; border-radius:10px; border:1px dashed #ffcf4a66; background:#1a1640; font-size:11px; color:var(--sub); cursor:pointer;}
+  .bg-full{grid-column:1 / 7; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 8px; border-radius:10px; border:1px dashed #ffcf4a66; background:#1a1640; font-size:11px; color:var(--sub); cursor:pointer;}
   .bg-full .bg-fr{display:inline-flex; align-items:center; gap:2px; color:#ffe38a; font-weight:800;} .bg-full .uic{width:16px; height:16px; margin:0;} .bg-full b{color:#ffcf4a;} .bg-full.on{border:1px solid #ffcf4a; background:#3a2a10;}
   .bg-tk{display:flex; align-items:center; gap:10px; margin:8px 2px 6px;}
   .bg-ball{flex:none; width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:900; color:#3a1d4e; background:radial-gradient(circle at 35% 30%,#fff,#ffd1ec 45%,#ff9ad5); box-shadow:0 2px 8px #0008, inset 0 -3px 6px #c05a9a88;}
@@ -9486,7 +9486,7 @@ setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !
 function homeEventBannersHtml(){ return bingoBannerHtml(); } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
 // ===================== (v9.4.0) 빙고 이벤트 — 번호 뽑기 =====================
 // 미션(BINGO_MISSIONS)을 채우면 티켓 · 티켓 1장 = 판에 남은 번호 중 무작위 1칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶 (사용자 결정 10/16)
-// 판 = 1~100 중 무작위 25개(사람마다 다름) · 칸마다 보상이 다름(BINGO_CELL_RW) · 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선은 오른쪽 위(↙)·아래(↘) 모서리
+// 판 = 1~100 중 무작위 25개(사람마다 다름) · 칸마다 보상이 다름(BINGO_CELL_RW) · 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — ↘ 대각선은 줄로 안 셈 (사용자 결정 10/16)
 // 미션 25개 = 티켓 20 + 황금 티켓 5 → 미션을 다 하면 판이 꼭 다 참 · 기간 = pickupPeriod()의 번호(서버 시각) · 기간 안에 한 것만 셈
 // 끝난 뒤 쓰지 않은 티켓은 자동으로 뽑아 우편으로 (bingoSettle)
 const BINGO = { id:'bg2', idx: PICKUP_P0+1, name:'정령 빙고' };
@@ -9506,11 +9506,11 @@ const BINGO_CELL_RW = [ // 칸 보상 — 가로로 5칸씩 · 가운데·네 �
   {star:50}, {gems:20}, {essence:3000}, {stone:300}, {items:{fuseGuard:2}}
 ];
 const BINGO_LINES = (()=>{ const L = [], N = BINGO_N; for(let r=0;r<N;r++) L.push(Array.from({length:N}, (_,c)=>r*N+c)); for(let c=0;c<N;c++) L.push(Array.from({length:N}, (_,r)=>r*N+c));
-  L.push(Array.from({length:N}, (_,i)=>i*N+i)); L.push(Array.from({length:N}, (_,i)=>i*N+N-1-i)); return L; })(); // 가로 5 · 세로 5 · 대각선 ↘ · ↙
-const BINGO_LINE_RW = [ // 줄 보상 — BINGO_LINES 순서 (가로 1~5 · 세로 1~5 · ↘ · ↙)
+  L.push(Array.from({length:N}, (_,i)=>i*N+N-1-i)); return L; })(); // 가로 5 · 세로 5 · 대각선 ↙ (11줄)
+const BINGO_LINE_RW = [ // 줄 보상 — BINGO_LINES 순서 (가로 1~5 · 세로 1~5 · ↙)
   {star:30, items:{epic:1}}, {star:30, gems:30}, {star:30, items:{eq_epic:1}}, {star:30, items:{engr:10}}, {star:30, essence:5000},
   {star:30, items:{equip:10}}, {star:30, stone:500}, {star:30, items:{rare:5}}, {star:30, upStones:2}, {star:30, shards:100},
-  {star:50, items:{pick_epic:1}}, {star:50, items:{eqpick_epic:1}}
+  {star:50, items:{eqpick_epic:1}}
 ];
 const BINGO_FULL_RW = { star:300, items:{ pick_legendary:1 } };
 function bingoActive(){ return pickupPeriod().idx===BINGO.idx; }
@@ -9551,7 +9551,7 @@ function bingoRwList(rw){ const L = [], img = f=>'<img class="uic" src="assets/u
   return L; }
 function bingoNum(x){ return x.x ? '×'+x.n : (x.n >= 1000 ? (x.n/1000)+'천' : String(x.n)); }
 function bingoTip(rw){ return bingoRwList(rw).map(x=>x.nm+' '+(x.x ? '×'+x.n : x.n.toLocaleString())).join(' · '); }
-function bingoLineName(l){ return l<5 ? '가로 '+(l+1)+'줄' : l<10 ? '세로 '+(l-4)+'줄' : '대각선 '+(l===10 ? '↘' : '↙'); }
+function bingoLineName(l){ return l<5 ? '가로 '+(l+1)+'줄' : l<10 ? '세로 '+(l-4)+'줄' : '대각선'; }
 let bingoTab = 'board', bingoGoldMode = false, bingoBusy = false, bingoHide = -1, bingoNew = -1, bingoLast = 0; // bingoLast = 마지막으로 뽑은 번호 (공에 보임)
 function bingoDraw(gold, pick){
   if(bingoBusy) return;
@@ -9612,7 +9612,7 @@ function bingoBoardHtml(b){
   const t = bingoTk(b), left = bingoLeft(b).filter(i=>i!==bingoHide), on = bingoActive(), pick = bingoGoldMode && on && left.length>0 && t.g>0;
   let h = '<div class="bg-board">';
   for(let c=0;c<BINGO_N;c++) h += bingoLineHtml(b, 5+c, '▼');
-  h += bingoLineHtml(b, 11, '↙');
+  h += bingoLineHtml(b, 10, '↙');
   for(let r=0;r<BINGO_N;r++){
     for(let c=0;c<BINGO_N;c++){ const i = r*BINGO_N+c, op = bingoOpened(b, i) && i!==bingoHide, L = bingoRwList(BINGO_CELL_RW[i]), main = L[0], big = i===12 || i===0 || i===4 || i===20 || i===24;
       const ln = op && BINGO_LINES.some((Ls,l)=>bingoLnShown(b, l) && Ls.includes(i));
@@ -9620,8 +9620,8 @@ function bingoBoardHtml(b){
         + '<span class="bg-no">'+b.nums[i]+'</span><span class="bg-cr">'+main.ic+'<small>'+bingoNum(main)+'</small></span>'+(op?'<span class="bg-ok"><i>'+b.nums[i]+'</i></span>':'')+'</div>'; }
     h += bingoLineHtml(b, r, '◀');
   }
-  const fullRw = bingoRwList(BINGO_FULL_RW), fullOn = b.full && bingoHide<0; // 판 완성 보상 — ↘ 대각선 왼쪽 빈 자리
-  h += '<div class="bg-full'+(fullOn?' on':'')+'" data-rtip="빙고 완성 · '+bingoTip(BINGO_FULL_RW)+'"><span>25칸 모두</span>'+fullRw.map(x=>'<span class="bg-fr">'+x.ic+'<small>'+bingoNum(x)+'</small></span>').join('')+(fullOn?'<b>완성!</b>':'')+'</div>'+bingoLineHtml(b, 10, '↘')+'</div>';
+  const fullRw = bingoRwList(BINGO_FULL_RW), fullOn = b.full && bingoHide<0; // 판 완성 보상 — 판 아래 한 줄
+  h += '<div class="bg-full'+(fullOn?' on':'')+'" data-rtip="빙고 완성 · '+bingoTip(BINGO_FULL_RW)+'"><span>25칸 모두</span>'+fullRw.map(x=>'<span class="bg-fr">'+x.ic+'<small>'+bingoNum(x)+'</small></span>').join('')+(fullOn?'<b>완성!</b>':'')+'</div></div>';
   h += '<div class="bg-tk"><div class="bg-ball" id="bgBall">'+(bingoBusy || !bingoLast ? '?' : bingoLast)+'</div>'
     + '<div class="bg-tkn"><span>'+uiIc('ticket')+' 티켓 <b>'+t.n+'</b></span><span class="g">'+uiIc('ticket')+' 황금 티켓 <b>'+t.g+'</b></span></div></div>';
   if(!on) h += '<button class="btn" disabled>'+bingoOpenText()+'부터</button>';
@@ -11720,7 +11720,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:443, v:'9.4.0', date:'2026-10-16', secs:[
-    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 — 미션 25개 (티켓 20장 · 황금 티켓 5장)', '빙고판 = 1~100 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 남은 번호 중 하나를 뽑아 그 칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선은 오른쪽 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
+    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 — 미션 25개 (티켓 20장 · 황금 티켓 5장)', '빙고판 = 1~100 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 남은 번호 중 하나를 뽑아 그 칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
     { t:'별빛 균열 · 기간 규칙 「낮과 밤」', items:['1·2라운드는 낮, 3·4라운드는 밤 — 2라운드마다 바뀜', '☀️ 낮: 아군의 직접 공격 피해 +20%', '🌙 밤: 빛나지 않는 적은 어둠에 숨어 받는 피해 −50% · 빛나는 적은 받는 지속 피해(화상 · 독 · 표식 피해) +100%', '빛나는 적: 빛 속성 아군의 공격에 맞은 적 (다음 라운드까지)', '규칙이 있는 기간이라 픽업 공격력 보너스(+25% · +25%)는 없음']},
