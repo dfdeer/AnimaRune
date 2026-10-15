@@ -11612,6 +11612,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:443, v:'9.3.1', date:'2026-10-16', secs:[
+    { t:'우편', items:[ '받지 않은 9.0.0 업데이트 우편 정리 (9.3.0 우편으로 바뀜)' ]}
+  ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
     { t:'별빛 균열 · 기간 규칙 「낮과 밤」', items:['1·2라운드는 낮, 3·4라운드는 밤 — 2라운드마다 바뀜', '☀️ 낮: 아군의 직접 공격 피해 +20%', '🌙 밤: 빛나지 않는 적은 어둠에 숨어 받는 피해 −50% · 빛나는 적은 받는 지속 피해(화상 · 독 · 표식 피해) +100%', '빛나는 적: 빛 속성 아군의 공격에 맞은 적 (다음 라운드까지)', '규칙이 있는 기간이라 픽업 공격력 보너스(+25% · +25%)는 없음']},
@@ -17463,8 +17466,10 @@ const UPDATE_GIFTS = [
   { id:'upd600', until: Date.UTC(2026,9,15,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,10,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
+const GIFT_WITHDRAWN = ['upd900']; // (v9.3.1) 거둔 업데이트 선물 — 아직 안 받은 우편은 우편함에서 지움 (사용자 결정 10/16)
 function updateGiftMigrate(){
   const s = state; s.giftGot = isPlainObj(s.giftGot) ? s.giftGot : {};
+  if(Array.isArray(s.sysMail)) s.sysMail = s.sysMail.filter(x=> !(x && GIFT_WITHDRAWN.includes(x.id) && !x.got));
   UPDATE_GIFTS.forEach(g=>{ if(s.giftGot[g.id] || serverNow() >= g.until) return; s.giftGot[g.id] = serverNow();
     if(!s.sysMail.some(x=>x.id===g.id)) s.sysMail.push({ id:g.id, title:g.title, body:g.body, t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:g.reward }); });
 }
@@ -17785,7 +17790,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 442, APP_VERSION = '9.3.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 443, APP_VERSION = '9.3.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
