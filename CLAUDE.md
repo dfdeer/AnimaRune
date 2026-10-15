@@ -50,3 +50,4 @@
   - 저장소 루트에서 `python3 -m http.server 8765`로 서버를 띄워.
   - Playwright(`playwright-core`, `executablePath: '/opt/pw-browsers/chromium'`)로 페이지 에러가 0건인지 확인해.
 - 보스 밸런스: 챕터 보스는 `tools/boss_winrate_sim.js`, 레이드는 `tools/raid_winrate_sim.js`를 써. 사용법은 파일 맨 위에 적혀 있어.
+- **시뮬은 신화 장비 풀강 기준 (사용자 결정 10/15 — 이제 유저들이 신화 장비를 찍기 시작함):** 정령마다 같은 속성 신화 무기·방어구 +10. 두 시뮬 도구는 기본으로 이렇게 돌고(`simGear`), 장비 없이 보려면 `GEAR=0`. 새로 짜는 시뮬·테스트도 같은 기준으로.
