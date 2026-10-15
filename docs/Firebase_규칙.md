@@ -178,6 +178,11 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
       "pub": { ".read": "auth != null" },
       "url": { ".read": "auth != null" }
     },
+    // (v9.2.0) 점검 — { on, msg, t } · 모두 읽기, 관리자만 쓰기 (켜면 관리자 빼고 게임이 닫힘)
+    "maint": {
+      ".read": true,
+      ".write": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'"
+    },
     // 문의함 — 관리자는 전체 읽기, 문의한 사람은 자기 것만
     "inquiries": {
       ".read": "auth != null && auth.uid === '8V7bN7HfeIRGHCsGu8aeAcJlUBq2'",
@@ -249,6 +254,7 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
 ```
 
 ## 최근 바뀐 것
+- **v9.2.0** 점검: `maint` (모두 읽기 · 관리자만 쓰기) — 이걸 게시해야 점검 기능이 작동
 - **v3.3.1** 휴대폰 알림: `push/<uid>`(subs·pref) · `pushDue/<uid>` · `pushCfg/pub`·`url` (v3.3.0의 `push/<uid>/due`는 없어짐)
 - **v3.2.1** 문의 완료 표시: `inquiries/<uid>/<id>/dt` 추가
 - **v3.0.1** 문의 이어 쓰기: `inquiries/<uid>/<id>/msgs`, `ut` 추가 — 이걸 게시해야 문의를 여러 번 주고받을 수 있음
