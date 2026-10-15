@@ -6822,8 +6822,10 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
 // (b427) 맨 바깥 열 정령의 체력·쉴드 줄이 전장 밖으로 잘리지 않게 안쪽으로 밀어 넣음
 function keepHpInside(ar){
   const ab = ar.getBoundingClientRect(); if(!ab.width) return;
-  ar.querySelectorAll('.bs-slot .bu:not(.bu-boss) .bu-hpnum').forEach(el=>{ el.style.transform = ''; const r = el.getBoundingClientRect(), d = parseFloat(el.closest('.bs-slot').style.getPropertyValue('--d'))||1;
-    const dx = r.left < ab.left+2 ? ab.left+2 - r.left : (r.right > ab.right-2 ? ab.right-2 - r.right : 0);
+  ar.querySelectorAll('.bs-slot .bu:not(.bu-boss) .bu-hpnum').forEach(el=>{ el.style.transform = ''; const slot = el.closest('.bs-slot'), sr = slot.getBoundingClientRect(), w = el.getBoundingClientRect().width, d = parseFloat(slot.style.getPropertyValue('--d'))||1;
+    // (b430 버그수정) 정령이 날아 들어오는 시작 연출 중에 재면 화면 밖이라 체력 숫자가 옆으로 크게 밀린 채 남았음 → 움직이지 않는 칸(slot) 가운데 기준으로 계산
+    const cx = (sr.left + sr.right)/2, l = cx - w/2, r = cx + w/2;
+    const dx = l < ab.left+2 ? ab.left+2 - l : (r > ab.right-2 ? ab.right-2 - r : 0);
     if(dx) el.style.transform = 'translateX('+(dx/d)+'px)'; });
 }
 // (v5.2.0) 칸은 아래 정령이 앞(겹칠 때 가까운 쪽)이라, 위 정령의 상태 아이콘 줄이 아래 정령 그림에 가려졌음 → 자리만 재서 전장 맨 위 층으로 옮김
@@ -11546,7 +11548,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:429, v:'8.16.2', date:'2026-10-15', secs:[
+  { build:430, v:'8.16.3', date:'2026-10-15', secs:[
     { t:'전투', items:[ '적을 쓰러뜨려도 내 파티가 같이 전멸하면 패배 (결투는 그대로)', '챕터 보스 3웨이브는 라운드를 이어서 셈 (화면 표시 · 기믹 주기는 웨이브마다 그대로)', '고른 적의 이름 · 체력 · 효과를 위쪽 줄에 표시 — 누르면 자세히' ]},
     { t:'밸런스', items:[ '현무 계열: 무기 효과의 절반만큼 체력도 오름', '월드 보스 한 주 체력 150만 → 450만 (10월 19일 보스부터)', '성좌 승급에 기억 조각이 필요 없음 (각성 5단계 + 정수 20,000)' ]},
     { t:'레이드', items:[ '보스·난이도마다 첫 클리어 별빛 조각 (이지 20 · 노말 30 · 하드 50 · 익스트림 80 · 헬 120 · 인페르노 160 · 카오스 200) — 이미 깬 난이도는 우편으로', '레이드 보스·월드 보스 화면을 큰 배너로 · 기믹은 「상세 정보」에서' ]},
@@ -17359,7 +17361,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 429, APP_VERSION = '8.16.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 430, APP_VERSION = '8.16.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
