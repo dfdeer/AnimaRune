@@ -3613,7 +3613,7 @@ function raidDmgAdjust(sf, a, d, v){
 }
 function checkRaidOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){ sf.result = { win:true, rounds:sf.round }; raidMarkClear(sf); raidGrantReward(sf); return true; }
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */ sf.result = { win:true, rounds:sf.round }; raidMarkClear(sf); raidGrantReward(sf); return true; }
   if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, rounds:sf.round }; raidGrantReward(sf); return true; }
   return false;
 }
@@ -5435,7 +5435,7 @@ function checkSkillStageOutcome0(sf){
   if(sf.mode==='raid') return checkRaidOutcome(sf);
   if(sf.mode==='duel'){ if(sf.result) return true; if(!aliveUnits(sf.enemyUnits).length){ sf.result = {win:true, rounds:sf.round}; return true; } if(!aliveUnits(sf.myUnits).length){ sf.result = {win:false, rounds:sf.round}; return true; } return false; }
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     const prevBest = state.stageBest[sf.stageIdx] || null;
     sf.result = { win:true, rounds: sf.round, prevBest };
     sf.result.info = resolveSkillStageBattle(sf.stageIdx, sf.round, !!sf.specialMet);
@@ -6512,6 +6512,9 @@ function groggyRoundStart(sf){
     else if(r.regen) b.gauge = Math.min(GROGGY_MAX, b.gauge + r.regen);
   });
 }
+function shownRound(sf){ // (v8.16.0) 사용자 결정: 챕터 보스 3웨이브는 화면 라운드를 이어서 셈 (기믹 주기용 sf.round는 웨이브마다 그대로) — 등급도 누적 라운드 기준
+  const bf = state.bossFight; if(!sf || sf.mode!=='boss' || !bf) return sf ? sf.round : 0;
+  const prev = (bf.totalRounds||0) - (sf.result && sf.result.win ? sf.round : 0); return prev + sf.round; }
 function bossWaveGrade(rounds){ if(rounds<=18) return 'S'; if(rounds<=24) return 'A'; if(rounds<=30) return 'B'; return 'C'; }
 function resolveBossWaveVictory(sf){
   const bf = state.bossFight, stageIdx = sf.stageIdx, totalRounds = bf.totalRounds||sf.round;
@@ -6549,15 +6552,16 @@ function resolveBossWaveVictory(sf){
 }
 function checkBossWaveOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     sf.result = { win:true, wave: sf.wave, rounds: sf.round, waveClear: sf.wave < BOSS_WAVE_COUNT };
     const bf = state.bossFight;
     bf.totalRounds = (bf.totalRounds||0) + sf.round;
     persistBossWaveState(sf); // (v152 버그수정) 웨이브 클리어마다 체력 이월 — 이전엔 최종 웨이브에서만 호출돼서 중간 웨이브 체력이 안 이어지던 버그
+    sf.result.totalRounds = bf.totalRounds; // (v8.16.0) 결과 화면에 누적 라운드
     if(!sf.result.waveClear) sf.result.info = resolveBossWaveVictory(sf);
     return true;
   }
-  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, wave: sf.wave, rounds: sf.round }; return true; }
+  if(!aliveUnits(sf.myUnits).length){ sf.result = { win:false, wave: sf.wave, rounds: sf.round, totalRounds: (state.bossFight ? (state.bossFight.totalRounds||0) : 0) + sf.round }; return true; }
   return false;
 }
 // 웨이브 종료 시 살아있는 유닛의 체력을 로스터에 저장, 출전(피로 누적)/대기(피로 해소+20% 회복) 반영
@@ -7210,7 +7214,7 @@ function showSkillStageScreen(){
     : sf.mode==='raid' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> '+((raidBossById(sf.raidBossId)||{}).name||'레이드')
     : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx);
   const rdMax = sf.mode==='worldboss' ? WB_ROUNDS : sf.mode==='trial' ? ((trialDef(sf.trialId)||{}).maxRounds||0) : 0;
-  const rdNow = rdMax ? Math.min(sf.round, rdMax) : sf.round;
+  const rdNow = rdMax ? Math.min(sf.round, rdMax) : shownRound(sf);
   const roundTag = '<span class="bs-roundtag'+(rdMax && sf.round>=rdMax ? ' last' : '')+'">라운드 '+rdNow+(rdMax ? ' / '+rdMax : '')+'</span>';
   html += '<div class="bs-top"><button class="bs-exit" id="skillExitBtn">← 나가기</button>'
     + '<div class="bs-title">'+titleTxt+'</div>'
@@ -7432,7 +7436,7 @@ function showSkillStageScreen(){
 }
 function bossWaveClearOverlayHtml(sf){
   return '<div class="bs-result"><div class="bs-rcard win"><div class="bs-ricon"><img class="uic" src="assets/ui/ic_check.webp" alt=""></div><div class="bs-rtitle">웨이브 '+sf.wave+' 클리어!</div>'
-    + '<div class="bs-rsub">'+sf.round+'라운드 · 다음은 웨이브 '+(sf.wave+1)+'/'+BOSS_WAVE_COUNT+(sf.wave+1===BOSS_WAVE_COUNT?' (보스)':'')+'</div>'
+    + '<div class="bs-rsub">'+sf.round+'라운드 (누적 '+shownRound(sf)+') · 다음은 웨이브 '+(sf.wave+1)+'/'+BOSS_WAVE_COUNT+(sf.wave+1===BOSS_WAVE_COUNT?' (보스)':'')+'</div>'
     + '<div class="bs-rbtns"><button class="btn" id="waveNextBtn">▶ 다음 웨이브 준비</button></div></div></div>';
 }
 function expeditionResultOverlayHtml(sf){
@@ -7453,7 +7457,7 @@ function skillResultOverlayHtml(sf){
   if(r.win){
     const info = r.info || {}, grade = info.grade || skillGradeForRounds(r.rounds);
     h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_victory.webp" alt=""></div><div class="bs-rtitle">승리!</div><div class="bs-rgrade g'+grade+'">'+grade+'</div>'
-      + '<div class="bs-rsub">'+r.rounds+'라운드'+(info.improved && r.prevBest ? ' · '+r.prevBest+' → '+grade : '')+'</div>'
+      + '<div class="bs-rsub">'+(r.totalRounds||r.rounds)+'라운드'+(info.improved && r.prevBest ? ' · '+r.prevBest+' → '+grade : '')+'</div>'
       + '<div class="bs-rrew"><div>🔁 기본 클리어 보상 <img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+(info.baseReward||0)+'</div></div>'
       + resultRewardBtnHtml(sf.stageIdx); // (v180) 받을 보상은 목록 대신 카드 모서리 <img class="uic" src="assets/ui/ic_gift.webp" alt=""> 버튼 하나로(누르면 보상 창)
   }else{
@@ -7545,8 +7549,8 @@ function awakenCost(key){ const lv = awakenLevel(key); if(lv>=AWAKEN_MAX) return
 function awakenSpare(key){ return Math.max(0, ownedCount(key) - 1); } // 1마리는 남겨야 함
 // ===================== (v335) 성좌 · 기억 조각 =====================
 // 신화(한정 성좌 포함)는 같은 정령을 1마리만 가짐 — 또 나오면 기억 조각 50개. 신화의 각성·초월·성좌 승급 재료는 같은 정령 대신 기억 조각
-// 성좌: 신화 위 등급 · 기존 신화는 각성 5단계 + 조각 150 + 정수로 승급(키·이름·기술 그대로, state.astral) · 한정 정령(SPIRITS[k].limited)은 처음부터 성좌
-const MEM_PER_COPY = 50, ASTRAL_MEM = 150, ASTRAL_ESSENCE = 20000;
+// 성좌: 신화 위 등급 · 기존 신화는 각성 5단계 + 정수로 승급 (v8.16.0 조각 조건 뺌)(키·이름·기술 그대로, state.astral) · 한정 정령(SPIRITS[k].limited)은 처음부터 성좌
+const MEM_PER_COPY = 50, ASTRAL_MEM = 0, ASTRAL_ESSENCE = 20000; // (v8.16.0) 사용자 결정: 성좌 승급에 기억 조각을 안 씀 (각성 5단계에 이미 조각 450개) — 예전 150
 function memSpirit(k){ return !!(SPIRITS[k] && SPIRITS[k].rarity==='mythic'); }
 function memCount(k){ return (state.mem && state.mem[k]) || 0; }
 function memAdd(k, n){ if(!n) return; state.mem = state.mem || {}; state.mem[k] = Math.max(0, (state.mem[k]||0) + n); if(!state.mem[k]) delete state.mem[k]; }
@@ -7569,9 +7573,9 @@ function copyLabel(k){ return memSpirit(k) ? memIc(k)+' 기억 조각' : spArt(S
 function astralCan(k){ return memSpirit(k) && !isAstral(k) && awakenLevel(k)>=AWAKEN_MAX && ownedCount(k)>=1; }
 function doAstral(k){
   if(!astralCan(k)) return false;
-  if(memCount(k)<ASTRAL_MEM){ toast('기억 조각 부족 ('+ASTRAL_MEM+' 필요)'); return false; }
+  if(ASTRAL_MEM>0 && memCount(k)<ASTRAL_MEM){ toast('기억 조각 부족 ('+ASTRAL_MEM+' 필요)'); return false; }
   if(state.essence<ASTRAL_ESSENCE){ toast('정수 부족 ('+ASTRAL_ESSENCE+' 필요)'); return false; }
-  memAdd(k, -ASTRAL_MEM); state.essence -= ASTRAL_ESSENCE; state.astral = state.astral || {}; state.astral[k] = 1;
+  if(ASTRAL_MEM>0) memAdd(k, -ASTRAL_MEM); state.essence -= ASTRAL_ESSENCE; state.astral = state.astral || {}; state.astral[k] = 1;
   checkAchievements(); save(); sfx('summonLegend'); return true;
 }
 function showAstralModal(k){
@@ -7582,7 +7586,7 @@ function showAstralModal(k){
   if(!isAstral(k)){
     h += '<div class="aw-cost"><div class="aw-ch">필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('awaken')+' 각성</span><b class="'+(aw>=AWAKEN_MAX?'':'lack')+'">'+aw+' / '+AWAKEN_MAX+'단계</b></div>'
-      + '<div class="aw-cr"><span>'+memIc(k)+' 기억 조각</span><b class="'+(have>=ASTRAL_MEM?'':'lack')+'">'+have+' / '+ASTRAL_MEM+'</b></div>'
+      + (ASTRAL_MEM>0 ? '<div class="aw-cr"><span>'+memIc(k)+' 기억 조각</span><b class="'+(have>=ASTRAL_MEM?'':'lack')+'">'+have+' / '+ASTRAL_MEM+'</b></div>' : '')
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(state.essence>=ASTRAL_ESSENCE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ASTRAL_ESSENCE+'</b></div></div>';
     h += '<button class="btn gold sticky-ok" id="asGo" '+(ok?'':'disabled')+'>✦ 성좌로 승급</button>';
   }
@@ -7590,9 +7594,9 @@ function showAstralModal(k){
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('asBack').addEventListener('click', ()=>showManageModal(k));
-  const g = document.getElementById('asGo'); if(g) g.addEventListener('click', ()=>spendAsk(sp.name+' 성좌 승급', {essence:ASTRAL_ESSENCE, mem:ASTRAL_MEM, memKey:k}, ()=>{ if(doAstral(k)){ render(); showAstralModal(k); const uh = document.getElementById('upHost'); if(uh){ uh.classList.add('pop'); upgradeFx(uh, '성좌!', 'awk', true); } toast('✦ '+sp.name+' 성좌 승급'); } }));
+  const g = document.getElementById('asGo'); if(g) g.addEventListener('click', ()=>spendAsk(sp.name+' 성좌 승급', ASTRAL_MEM>0 ? {essence:ASTRAL_ESSENCE, mem:ASTRAL_MEM, memKey:k} : {essence:ASTRAL_ESSENCE}, ()=>{ if(doAstral(k)){ render(); showAstralModal(k); const uh = document.getElementById('upHost'); if(uh){ uh.classList.add('pop'); upgradeFx(uh, '성좌!', 'awk', true); } toast('✦ '+sp.name+' 성좌 승급'); } }));
 }
-function memHowHtml(){ return '<div class="sub" style="font-size:11px; line-height:1.6; margin-top:8px; text-align:left;">'+memIc(null)+' <b>기억 조각</b> — 신화는 한 마리만 가짐 · 같은 신화가 또 나오면 조각 '+MEM_PER_COPY+'개 · 픽업 소환은 1회마다 고른 정령 조각 1개 · 각성·초월·성좌 승급 재료</div>'; }
+function memHowHtml(){ return '<div class="sub" style="font-size:11px; line-height:1.6; margin-top:8px; text-align:left;">'+memIc(null)+' <b>기억 조각</b> — 신화는 한 마리만 가짐 · 같은 신화가 또 나오면 조각 '+MEM_PER_COPY+'개 · 픽업 소환은 1회마다 고른 정령 조각 1개 · 각성·초월 재료</div>'; }
 function doAwaken(key, quiet){
   const c = awakenCost(key); if(!c) return;
   if(!copyHave(key, c)){ toast(c.mem ? '기억 조각 부족 ('+c.mem+' 필요)' : '같은 정령이 '+c.copies+'마리 더 필요'); return; }
@@ -12427,7 +12431,7 @@ function bagSections(){
   const pass = [ C('raidTk','레이드 입장권',uiIc('ticket'),raidTicketCount(),'레이드 도전 (시간마다 충전)','raid',1), C('expTk','출정권',BAG_IMG('ic_tk_exp'),isUnlocked('expedition') ? expTicketCount() : 0,'출정 시작 (시간마다 충전)','expedition',1) ];
   const tk = Object.keys(TICKET_INFO).filter(k=>ticketCount(k)>0).map(k=>{ const b = bagTicketInfo(k); return C('tk:'+k, TICKET_INFO[k].name, TICKET_INFO[k].icon, ticketCount(k), b.d, b.go); });
   const isEq = x=> /^(equip|eq_|eqpick_)/.test(x.k.slice(3));
-  const mem = Object.keys(state.mem||{}).filter(k=>SPIRITS[k] && memCount(k)>0).map(k=>C('mem:'+k, SPIRITS[k].name+' 기억 조각', memIc(k), memCount(k), '같은 정령 각성 · 성좌 승급 ('+ASTRAL_MEM+'개)', 'mem:'+k));
+  const mem = Object.keys(state.mem||{}).filter(k=>SPIRITS[k] && memCount(k)>0).map(k=>C('mem:'+k, SPIRITS[k].name+' 기억 조각', memIc(k), memCount(k), '같은 정령 각성 · 초월', 'mem:'+k));
   return [ {t:'재화', L:cur.filter(x=>x.keep || x.n>0)}, {t:'입장권', L:pass}, {t:'정령 소환권 · 확정권 · 선택권', L:tk.filter(x=>!isEq(x) && !/fuseGuard|engr/.test(x.k))},
     {t:'장비 소환권 · 확정권 · 선택권', L:tk.filter(isEq)}, {t:'강화 재료', L:tk.filter(x=>/fuseGuard|engr/.test(x.k))}, {t:'기억 조각', L:mem} ].filter(g=>g.L.length);
 }
@@ -13387,7 +13391,7 @@ function persistExpeditionWaveState(sf){
 }
 function checkExpeditionOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     sf.result = { win:true, rounds: sf.round };
     persistExpeditionWaveState(sf);
     const node = currentExpeditionNode();
@@ -13676,7 +13680,7 @@ function dungeonRecCP(el, n){ // (v266) 추천 전투력 — 적 배치는 단�
 }
 function checkDungeonOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     const el = sf.dungeonEl, n = sf.dungeonN, first = n > dungeonBest(el);
     sf.result = { win:true, rounds: sf.round, first }; bingoBump('dungeon'); if(!first) save(); // (v8.0.0)
     if(first){
@@ -13916,7 +13920,7 @@ function buildRiftFight(f){
 }
 function checkRiftOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     const f = sf.riftF, rs = riftState(), live = sf.riftP===rs.p;
     const bits = 1 | (sf.round<=RIFT_ROUND_GOAL ? 2 : 0) | (sf.myUnits.every(u=>u.alive) ? 4 : 0);
     const old = live ? (rs.st[f]||0) : 0, add = live ? bits & ~old : 0, n = (add&1?1:0)+(add&2?1:0)+(add&4?1:0);
@@ -14094,7 +14098,7 @@ function sanctumDmgAdjust(sf, a, d, v){
 }
 function checkSanctumOutcome(sf){
   if(sf.result) return true;
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     const st = sanctumState(), id = sf.scId, t = sf.scTier, first = t > sanctumBest(id), rw = first ? sanctumReward(t) : null;
     if(first){ st.best[id] = t; state.essence += rw.essence; state.enhanceStone = (state.enhanceStone||0) + rw.stone; state.starShard = (state.starShard||0) + rw.shard; save(); }
     sf.result = { win:true, rounds:sf.round, first, rw };
@@ -14620,7 +14624,7 @@ function checkTrialOutcome(sf){
   if(sf.result) return true;
   const fail = trialRuleFail(sf);
   if(fail){ sf.result = { win:false, rounds: sf.round, reason: fail }; trialMarkTried(sf); return true; }
-  if(!aliveUnits(sf.enemyUnits).length){
+  if(!aliveUnits(sf.enemyUnits).length && aliveUnits(sf.myUnits).length){ /* (v8.16.0) 같이 전멸하면 패배 (사용자 결정) */
     const t = trialDef(sf.trialId), first = !trialCleared(sf.trialId);
     sf.result = { win:true, rounds: sf.round, first };
     if(first && t){ state.trialClear = state.trialClear || {}; state.trialClear[t.id] = true; const rw = t.reward || {}; if(t.reward) sf.result.reward = rw; // (build 390) 시험 시련은 보상 없음
@@ -16234,7 +16238,7 @@ function showManageModal(key){
   { const ac = awakenCost(key), lv = awakenLevel(key), can = !!ac && copyHave(key, ac) && state.essence>=ac.essence; // (v239) 각성은 전용 화면에서
     html += '<button class="aw-row" id="awOpenBtn">'+uiIc('awaken')+'<b>각성 '+lv+'단계</b><span class="sub">'+(lv?'정령력 +'+Math.round(lv*awakenRate(key)*100)+'%':(ac?'아직 안 함':''))+'</span><span class="aw-go'+(can?' on':'')+'">'+(ac ? (can?'각성 가능 ':'')+'자세히' : '최대')+' ›</span></button>';
     if(memSpirit(key)){ const as = isAstral(key), canA = astralCan(key) && memCount(key)>=ASTRAL_MEM && state.essence>=ASTRAL_ESSENCE; // (v335) 성좌 승급 · 기억 조각
-      html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 조각 '+ASTRAL_MEM : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span></button>'; } }
+      html += '<button class="aw-row as-row" id="astralOpenBtn">✦<b>'+(as ? '성좌' : '성좌 승급')+'</b><span class="sub">'+memIc(key)+' 기억 조각 '+memCount(key)+(as ? '' : ' · '+(lv>=AWAKEN_MAX ? '각성 끝 · 정수 '+ASTRAL_ESSENCE.toLocaleString() : '각성 5단계 뒤'))+'</span><span class="aw-go'+(canA?' on':'')+'">'+(canA?'승급 가능 ':'')+'자세히 ›</span></button>'; } }
   { // (v298) 각인 · 초월
     const e = engrState(key), ok = awakenLevel(key)>=AWAKEN_MAX, tl = transLevel(key);
     html += '<button class="aw-row eg-row" id="engrOpenBtn">'+uiIc('engrave')+'<b>각인</b><span class="sub">'+(e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : '아직 안 함 · 첫 각인 무료')+'</span><span class="aw-go'+(e && e.lines.length ? '' : ' on')+'">자세히 ›</span></button>';
