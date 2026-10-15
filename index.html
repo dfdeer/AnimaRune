@@ -4830,7 +4830,7 @@ function renderHomeTab(){
   h += '<div class="home-top"><div class="home-prof" data-home="profile" role="button" tabindex="0"><span class="home-ava">'+(sp?spArt(sp):'🔮')+'</span><div><b id="homeProfName">'+name.replace(/[<>&]/g,'')+'</b><div class="sub" style="font-size:11px;">'+uiIc('level')+' Lv.'+accountLevel()+'</div></div>'+(accountLvClaimable().length?'<span class="home-dot"></span>':'')+'</div></div>'; // (v271) 레벨 보상이 있으면 이름표에 빨간 점
   h += '<div class="home-side left"><button class="home-ic" data-home="attend">'+uiIc('gift')+'<small>출석</small>'+(attHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="challenge"><img class="uic" src="assets/ui/ic_trophy.webp" alt="" draggable="false"><small>도전</small>'+(pendingRewardCount('tower')>0?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="quest"><img class="uic" src="assets/ui/ic_quest.webp" alt="" draggable="false"><small>의뢰</small>'+(activeQuests().some(q=>!state.questsClaimed[q.id] && q.check())?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="pass"><img class="uic" src="assets/ui/ic_pass_home.webp" alt="" draggable="false"><small>패스</small>'+(passHasDot()?'<span class="home-dot"></span>':'')+'</button><button class="home-ic" data-home="achieve"><img class="uic" src="assets/ui/ic_achieve.webp" alt="" draggable="false"><small>업적</small>'+(hasPendingFor('achieve_')?'<span class="home-dot"></span>':'')+'</button></div>'; // (v5.3.1) 가이드는 메뉴(☰)에 있어 홈에선 뺌
   // (v5.3.1) 오른쪽 위 배너 줄(픽업 + 이벤트) 밑에 오른쪽 버튼 — 배너가 늘면 버튼이 알아서 밑으로
-  h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="bag"><img class="uic" src="assets/ui/ic_bag.webp" alt="" draggable="false"><small>가방</small></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
+  h += '<div class="home-rcol"><div class="home-banners">'+homePickupBtnHtml()+homeEventBannersHtml()+'</div><div class="home-side right">'+(riftUnlocked() && !pickupPeriod().wait ? '<button class="home-ic rf" data-rift-open="1">'+uiIc('rift')+'<small>균열</small></button>' : '')+(sanctumVisible() ? '<button class="home-ic sc" data-sanctum-open="1">'+uiIc('sanctum')+'<small>성역</small></button>' : '')+'<button class="home-ic" data-home="duel"><img class="uic" src="assets/ui/ic_duel.webp" alt="" draggable="false"><small>결투</small><span class="home-dot" id="homeDuelDot" style="display:none;"></span></button><button class="home-ic" data-home="bag"><img class="uic" src="assets/ui/ic_bag.webp" alt="" draggable="false"><small>가방</small></button><button class="home-ic" data-home="dispatch"><span class="home-emo-ic">'+uiIc('dispatch')+'</span><small>파견</small>'+(dispatchReadyCount()>0?'<span class="home-dot"></span>':'')+'</button></div></div>'; // (v5.3.1) 친구는 위쪽 줄, 설정은 메뉴(☰)에 있어 홈에선 뺌
   h += '<div class="home-hero" data-home="hero">'
     + (sp ? '<div class="home-emo">'+spArt(sp, 'hero')+'</div><div class="home-name">'+sp.name+'</div><div class="home-rar" style="color:'+RARITY_INFO[spRar(sp)].color+';">'+RARITY_INFO[spRar(sp)].name+' · '+ELEMENT_INFO[sp.element].name+'</div>'
           : '<div class="home-emo home-empty"><img class="spimg hero" src="assets/ui/ic_summon.webp" alt="" draggable="false"></div><div class="home-name">첫 정령 소환하기</div><div class="home-cta">눌러서 소환하러 가기 ›</div>') // (v209) 정령이 없을 땐 소환 구슬 그림 — 누르면 소환 화면
@@ -10906,7 +10906,7 @@ function xpLockBlock(){ if(!xpRunOn()) return false; if(Date.now()-xpLockToastAt
 function render(){
   dbgRenders++; dbgLastRender = Date.now(); bgmSoon(); // (v8.9.1) 화면이 바뀌면 배경음도 바로
   if(xpRunOn() && activeTab!=='expedition' && !state.skillFight) activeTab = 'expedition'; // (v315) 어느 길로 바뀌어도 출정 화면으로
-  if(activeTab==='pickup' && pickupPeriod().wait) activeTab = 'home'; // (v9.1.1) 픽업이 끝나고 다음 픽업 전엔 픽업 화면을 숨김 (사용자 결정 10/16)
+  if((activeTab==='pickup' || (activeTab==='rift' && !state.skillFight)) && pickupPeriod().wait) activeTab = 'home'; // (v9.1.1) 픽업이 끝나고 다음 픽업 전엔 픽업 화면을 숨김 · (v9.4.3) 균열도 (사용자 결정 10/16)
   document.body.classList.toggle('xp-lock', xpRunOn());
   checkDailyRollover();
   state.lastTab = activeTab; // (v122) 마지막으로 본 탭을 기억
@@ -11844,7 +11844,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:445, v:'9.4.2', date:'2026-10-16', secs:[
+  { build:446, v:'9.4.3', date:'2026-10-16', secs:[
+    { t:'픽업 · 균열', items:[ '픽업이 끝나고 다음 픽업이 열리기 전에는 균열 입구도 숨김 (10월 16일은 10시에 열림)' ]},
     { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 2장 — 미션 25개 (티켓 40장 · 황금 티켓 10장)', '빙고판 = 1~50 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 — 판에 있으면 그 칸이 열리고, 없으면 꽝', '황금 티켓 = 원하는 칸을 골라 엶', '미션을 모두 채우면 판을 끝까지 채울 수 있음', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '「뽑은 번호」 탭에서 나온 번호 확인 · 한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
@@ -18023,7 +18024,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 445, APP_VERSION = '9.4.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 446, APP_VERSION = '9.4.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
