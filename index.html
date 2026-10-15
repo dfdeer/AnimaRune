@@ -1307,6 +1307,9 @@
   .fr-lv{position:absolute; left:-4px; bottom:-4px; min-width:18px; padding:0 4px; border-radius:8px; background:#ffcf4a; color:#3b2500; font-size:10px; font-weight:900; line-height:15px; text-align:center; box-shadow:0 1px 3px #0008;} /* (v296) 친구 레벨 */
   .tw-acts{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; margin:8px 0 4px;} .tw-acts > *{white-space:nowrap; flex-shrink:0;} .tw-acts > .sub{flex-basis:100%; text-align:center;} .tw-acts .btn{flex:1 1 0; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:12px;}
   .rj-spin{width:34px; height:34px; margin:16px auto 8px; border-radius:50%; border:4px solid #ffffff22; border-top-color:#b58cff; animation:rjSpin .8s linear infinite;} @keyframes rjSpin{to{transform:rotate(360deg);}}
+  .mg-fav{position:absolute; top:10px; left:12px; z-index:3; width:36px; height:36px; border-radius:50%; border:1.5px solid #ffffff33; background:#0006; color:#cfc8ff; font-size:20px; line-height:1; cursor:pointer;} .mg-fav.on{color:#ffd557; border-color:#ffd55799; text-shadow:0 0 8px #ffd557aa;} .sp-fav{color:#ffd557; margin-right:1px;} .sp-favh{font-weight:800; margin:10px 0 6px;} .sp-favh span{color:var(--sub); font-weight:400; margin-left:4px;}
+  .ud-plus{display:block; font-style:normal; font-size:11px; font-weight:800; color:#6fe39a;} .ud-plusn{text-align:center; font-size:10px; margin-top:3px;}
+  .sub-stop{display:flex; align-items:center; gap:6px; justify-content:center; margin-top:8px; font-size:12px;} .sub-stop span{white-space:nowrap; color:var(--sub);} .sub-stop select{min-width:0; flex:1; max-width:120px; padding:4px; border-radius:8px; background:#1b1838; color:var(--text); border:1px solid #ffffff33; font-size:12px;} .sub-held{background:linear-gradient(135deg,#3fd98a,#1f9e63) !important; color:#fff;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
@@ -2404,11 +2407,13 @@ function subRoll(kind, k){
   const box = kind==='eq' ? (state.eqSub = state.eqSub || {}) : (state.engrave = state.engrave || {});
   const e = box[k], first = !e || !e.lines.length;
   if(first){ box[k] = { lines: Array.from({length:max}, subRollLine), lock: Array(max).fill(false) }; }
-  else { e.lines = e.lines.map((l,i)=> e.lock[i] ? l : subRollLine()); }
+  else { e.lines = e.lines.map((l,i)=> e.lock[i] ? l : subRollLine()); if(e.lines.some((l,i)=>!e.lock[i] && subStopHit(l))) subHold = kind+'|'+k; } // (v8.16.0) 자동 멈춤
   state.lifetimeEngraves = (state.lifetimeEngraves||0) + 1; bingoBump('sub'); // (v8.0.0)
   save(); sfx('enhance');
 }
-let subFixPick = null;
+let subFixPick = null, subHold = null; // subHold: 자동 멈춤에 걸린 창(kind|key) — 확인을 눌러야 다시 굴림
+function subStopCfg(){ const c = state.settings.subStop; return (c && typeof c==='object') ? { q: Number.isFinite(c.q) ? c.q : -1, s: SUB_STATS[c.s] ? c.s : '' } : { q:-1, s:'' }; } // (v8.16.0) 사용자 요청: 리롤 자동 멈춤 — q 이상 품질(그리고 능력 s)이 나오면 멈춤
+function subStopHit(l){ const c = subStopCfg(); return c.q>=0 && l && l.q>=c.q && (!c.s || l.s===c.s); }
 function showSubModal(kind, k, back){
   const isEq = kind==='eq', max = subLinesMax(kind, k), e = isEq ? eqSubState(k) : engrState(k), have = ticketCount('engr');
   const nm = isEq ? equipInfo(k).name : SPIRITS[k].name, art = isEq ? equipInfo(k).img : spArt(SPIRITS[k]);
@@ -2426,7 +2431,10 @@ function showSubModal(kind, k, back){
     const locked = e.lock.filter(Boolean).length, canLock = max > 1, cost = subRerollCost(e);
     h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, e.lock[i], i, canLock)).join('')+'</div>';
     if(canLock) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">🔒 잠근 줄은 그대로 · 최대 '+Math.min(ENGR_LOCK_MAX, max-1)+'줄 · 잠글 때마다 비용 +2</div>';
-    h += '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>'+uiIc('dice')+' 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button>';
+    const held = subHold===kind+'|'+k, sc = subStopCfg();
+    h += '<div class="sub-stop"><span>⏸ 자동 멈춤</span><select id="subStopQ"><option value="-1">끔</option>'+SUB_Q.map((q,i)=>i>=2 ? '<option value="'+i+'" '+(sc.q===i?'selected':'')+'>'+q.nm+' 이상</option>' : '').join('')+'</select><select id="subStopS" '+(sc.q<0?'disabled':'')+'><option value="">아무 능력</option>'+Object.keys(SUB_STATS).map(st=>'<option value="'+st+'" '+(sc.s===st?'selected':'')+'>'+SUB_STATS[st].nm+'</option>').join('')+'</select></div>';
+    h += held ? '<button class="btn sub-held" id="subHoldOk" style="margin-top:10px;">✋ 원하는 줄이 나옴 — 확인하면 다시 굴릴 수 있음</button>'
+      : '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>'+uiIc('dice')+' 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button>';
     h += '<label class="sub-skip"><input type="checkbox" id="subSkip" '+(state.settings.subNoAsk?'checked':'')+'> 바로 굴리기</label>'; // (v305)
   }
   h += '<button class="btn secondary small" id="subOdds" style="margin-top:8px;">📊 확률표 · 능력 목록</button>'; // (v327)
@@ -2443,6 +2451,8 @@ function showSubModal(kind, k, back){
   document.querySelectorAll('[data-sub-lock]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.subLock, e2 = isEq ? eqSubState(k) : engrState(k); if(!e2) return;
     if(!e2.lock[i] && e2.lock.filter(Boolean).length >= Math.min(ENGR_LOCK_MAX, max-1)){ toast('더 잠글 수 없음'); return; } e2.lock[i] = !e2.lock[i]; save(); re(); }));
   { const sk = document.getElementById('subSkip'); if(sk) sk.addEventListener('change', ()=>{ state.settings.subNoAsk = sk.checked; save(); }); }
+  { const qs = document.getElementById('subStopQ'), ss = document.getElementById('subStopS'); const upd = ()=>{ state.settings.subStop = { q: +qs.value, s: ss.value }; save(); re(); }; if(qs) qs.addEventListener('change', upd); if(ss) ss.addEventListener('change', upd); }
+  { const ok = document.getElementById('subHoldOk'); if(ok) ok.addEventListener('click', ()=>{ subHold = null; re(); }); }
   const go = document.getElementById('subGo'); if(go) go.addEventListener('click', ()=>{ const e2 = isEq ? eqSubState(k) : engrState(k);
     if(!e2 || !e2.lines.length){ subRoll(kind, k); render(); re(); return; }
     const cost = subRerollCost(e2); if(ticketCount('engr') < cost){ toast('각인석 부족'); return; }
@@ -6992,6 +7002,14 @@ function skillTypeOf(sk, u, tSide){
 let udStsUnits = [];
 function udStsReg(u){ if(udStsUnits.length > 40) udStsUnits = []; udStsUnits.push(u); return udStsUnits.length-1; }
 document.addEventListener('click', e=>{ const t = e.target && e.target.closest ? e.target.closest('[data-udsts]') : null; if(!t) return; const u = udStsUnits[+t.dataset.udsts]; if(u){ e.stopPropagation(); showStatusInfo(u); } });
+function gearBonusOf(u){ // (v8.16.0) 내 정령: 공격력·체력·속도 중 장비·각인·룬·초월이 더한 몫 (레이드 동료 정령은 그 사람 장비라 계산 안 함)
+  const k = u && u.key; if(!k || !SPIRITS[k] || u.side!=='me' || u.isBoss || u.isWard || u.isAdd || !(ownedCount(k)>0)) return null;
+  const sf = state.skillFight; if(sf && sf.mode==='raid') return null;
+  const rn = u.rune && u.rune.tier!=='boss' ? u.rune : null;
+  const am = weaponMult(k) * (1 + subTotals(k).atk) * transMult(k) * (rn && rn.id==='atk' ? 1+rn.v : 1);
+  const hm = spiritHpMult(k) * (rn && rn.id==='hp' ? 1+rn.v : 1);
+  return { atk: u.atk - u.atk/am, hp: u.maxHp - u.maxHp/hm, spd: runeSpeed(u) };
+}
 function unitDetailHtml(u, bossId){
   if(u.addKind){ // (v272) 레이드 얼음 기둥·씨앗 — 정령이 아니라 기믹 대상
     const sts = statusList(u);
@@ -7005,7 +7023,9 @@ function unitDetailHtml(u, bossId){
   let h = '<div class="ud-top"><div class="ud-art av r-'+uRar(u, sp)+'">'+(isBoss ? bossImg(bossId || unitBossId(u), 'ud-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : spArt(sp)+elIc(sp.element,'av-el')))+'</div>'
     + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[uRar(u, sp)].name+(isBoss?' · 보스':(u.isWard?' · 결계석 (기본 공격만)':(u.isAdd?' · 소환수 (기본 공격만 · 2라운드 뒤 자폭)':' · '+kit.role)))+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
-  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk))+stat('체력', live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+stat('속도', effSpeed(u))+stat('전투력', fmtCP(unitCP(u)))+'</div>';
+  const gb = gearBonusOf(u), plus = v=> v>=1 ? '<em class="ud-plus">+'+v+'</em>' : ''; // (v8.16.0) 장비·각인·룬·초월로 늘어난 몫 (사용자 요청)
+  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk)+(gb ? plus(Math.round(gb.atk)) : ''))+stat('체력', (live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+(gb ? plus(Math.round(gb.hp)) : ''))+stat('속도', effSpeed(u)+(gb ? plus(Math.round(gb.spd)) : ''))+stat('전투력', fmtCP(unitCP(u)))+'</div>'
+    + (gb && (gb.atk>=1 || gb.hp>=1 || gb.spd>=1) ? '<div class="sub ud-plusn">초록 숫자 = 장비·각인·룬·초월로 늘어난 몫</div>' : '');
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
   if(live){ const sts = statusList(u); if(sts.length) h += '<div class="ud-sts" data-udsts="'+udStsReg(u)+'">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>'; }
   { const tr = trialUnitRules(u); if(tr.length) h += '<div class="tr-goal">'+tr.map(k=>{ const R = TRIAL_RULES[k]; return '<div><span>'+R.i+'</span><div><b>'+R.t+'</b> '+R.d(u)+'</div></div>'; }).join('')+'</div>'; } // (build 390) 시련 시험 규칙
@@ -9671,6 +9691,8 @@ const FUSE_OUT = { same:0.85, sib:0.10, other:0.05 }, EQ_FUSE_OUT = { same:0.90,
 const FUSE_INHERIT_DIV = 3; // (v266) 강화 계승: 재료 3개 강화의 합 ÷ 3 (= 평균, 버림) — 셋 다 +10이면 +10
 let fuseMode = 'spirit', fuseSlots = [null, null, null];
 function isSpLocked(k){ return !!(state.lockedSpirits && state.lockedSpirits[k]); }
+function isSpFav(k){ return !!(state.favSpirits && state.favSpirits[k]); } // (v8.16.0) 정령 즐겨찾기 (사용자 요청)
+function toggleSpFav(k){ state.favSpirits = state.favSpirits || {}; if(state.favSpirits[k]) delete state.favSpirits[k]; else state.favSpirits[k] = 1; save(); }
 function isEqLocked(k){ return !!(state.lockedEquip && state.lockedEquip[k]); }
 function fuseSlotRarity(){ const k = fuseSlots.find(Boolean); return k ? (fuseMode==='equip' ? equipInfo(k).rarity : SPIRITS[k].rarity) : null; }
 function fuseInSlots(k){ return fuseSlots.filter(x=>x===k).length; }
@@ -10600,7 +10622,7 @@ function tile(key, cp){ // 정령 탭 보유 목록·출정 대기 목록 — �
     + (owned>0 ? (memSpirit(key) && owned<=1 ? '' : '<div class="count">x'+owned+'</div>') : (away>0 ? '<div class="count" style="color:#57d3ff;">'+uiIc('dispatch')+'</div>' : ''))
     + (passive? '<div class="passive-badge" title="'+passive.name+'">'+passive.icon+'</div>':'')
     + '<div class="icon av r-'+spRar(sp)+'">'+spArt(sp)+elIc(sp.element,'av-el')+'</div>'
-    + '<div class="name">'+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
+    + '<div class="name">'+(isSpFav(key)?'<b class="sp-fav">★</b>':'')+(owned>0 && isSpLocked(key)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+sp.name+'</div>'
     + (owned<=0 && away>0 ? '<div class="rarity-tag" style="background:#57d3ff22; color:#57d3ff">파견 중</div>' : '<div class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>')
     + ((owned>0 || away>0) && (enhanceLevel(key)>0 || awakenLevel(key)>0) ? '<div class="sub" style="margin-top:2px;">'+enhShowHtml(key)+' '+awakenStars(key)+'</div>' : '')
     + (cp && owned>0 ? '<div class="sp-cp"><img class="uic" src="assets/ui/ic_atk.webp" alt="">'+fmtCP(spiritCP(key))+'</div>' : '')
@@ -10889,6 +10911,7 @@ function renderSpiritsTab(){
     if(sb==='rarity') keys.sort((a,b)=> rarRank(b)-rarRank(a) || ELEMENTS.indexOf(SPIRITS[a].element)-ELEMENTS.indexOf(SPIRITS[b].element));
     else if(sb==='cp') keys.sort((a,b)=> spiritCP(b)-spiritCP(a));
     let anyOwned = keys.length>0;
+    { const fav = keys.filter(isSpFav); if(fav.length) html += '<div class="sub sp-favh">⭐ 즐겨찾기 <span>'+fav.length+'</span></div><div class="grid5 sp4">'+fav.map(k=>tile(k, true)).join('')+'</div><div class="sub sp-favh">전체</div>'; } // (v8.16.0) 즐겨찾기 묶음 — 맨 위에 따로
     if(sb==='element' || sb==='role'){
       const groups = sb==='element' ? ELEMENTS.map(el=>({t:ELEMENT_INFO[el].icon+' '+ELEMENT_INFO[el].name, ks:keys.filter(k=>SPIRITS[k].element===el)}))
         : [{t:'🗡️ 전열형 (돌격·탱커·흡혈처형)', ks:keys.filter(fr)}, {t:'<img class="uic" src="assets/ui/ic_target.webp" alt=""> 후열형 (치유·빙결·화상·독·보호막·가속·저주)', ks:keys.filter(k=>!fr(k))}];
@@ -16224,6 +16247,7 @@ function showManageModal(key){
   const cost = enhanceCost(key);
   const canEnhance = !maxed && state.essence>=cost.essence && (state.enhanceStone||0)>=cost.stone;
   let html = '<div style="text-align:center;">';
+  html += '<button class="mg-fav'+(isSpFav(key)?' on':'')+'" id="spFavBtn" aria-label="즐겨찾기">'+(isSpFav(key)?'★':'☆')+'</button>'; // (v8.16.0) 즐겨찾기
   html += '<div class="mg-hero" style="font-size:44px;">'+spArt(sp)+'</div>'; // (v343) 정령 그림이 둥실 떠 있음
   html += '<h3>'+sp.name+' <span class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+(sp.variant==='a'||sp.variant==='b' ? ' <span class="rarity-tag" style="background:#ffffff14; color:var(--sub);">'+sp.variant.toUpperCase()+'형</span>' : '')+awakenStars(key)+'</h3>'; // (v8.3.0) A/B형
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
@@ -16265,6 +16289,7 @@ function showManageModal(key){
   { const eg = document.getElementById('engrOpenBtn'); if(eg) eg.addEventListener('click', ()=>showSubModal('sp', key, ()=>showManageModal(key))); }
   { const tr = document.getElementById('transOpenBtn'); if(tr) tr.addEventListener('click', ()=>showTransModal(key)); }
   { const ab = document.getElementById('astralOpenBtn'); if(ab) ab.addEventListener('click', ()=>showAstralModal(key)); }
+  { const fv = document.getElementById('spFavBtn'); if(fv) fv.addEventListener('click', ()=>{ toggleSpFav(key); toast(isSpFav(key) ? '★ 즐겨찾기에 추가' : '즐겨찾기에서 뺌'); render(); showManageModal(key); }); }
   const lkBtn = document.getElementById('spLockBtn');
   if(lkBtn) lkBtn.addEventListener('click', ()=>{ if(!state.lockedSpirits) state.lockedSpirits = {}; if(state.lockedSpirits[key]) delete state.lockedSpirits[key]; else { state.lockedSpirits[key] = true; toast('🔒 잠금 · 합성·분해 재료에서 제외'); } save(); render(); showManageModal(key); });
   const tfBtn = document.getElementById('toFuseBtn');
