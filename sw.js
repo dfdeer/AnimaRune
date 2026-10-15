@@ -9,8 +9,23 @@ const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png',
 self.addEventListener('install', e=>{
   e.waitUntil(caches.open(CACHE).then(c=>Promise.all(FILES.map(f=>c.add(f).catch(()=>{})))).then(()=>self.skipWaiting()));
 });
+// (v9.2.0) 앞자리가 바뀐 새 서비스 워커가 켜지면, 열려 있는 옛 버전 화면을 새로 불러옴 — 옛 버전 코드엔 강제 업데이트가 없어서 (사용자 결정 10/16)
+// 지난 앞자리는 META 캐시에 적어 둠 · 화면에 버전을 물어보고(ar-ver?) 대답이 없거나(옛 코드) 더 낮으면 새로 불러옴
+const META = 'animarune-meta', BUILD = +CACHE.replace(/\D/g, '');
+function askBuild(c){ return new Promise(res=>{ const ch = new MessageChannel(), t = setTimeout(()=>res(0), 3000); ch.port1.onmessage = ev=>{ clearTimeout(t); res(+(ev.data && ev.data.build) || 0); }; try{ c.postMessage({ t:'ar-ver?' }, [ch.port2]); }catch(_){ clearTimeout(t); res(0); } }); }
+async function reloadOldClients(){
+  const list = await self.clients.matchAll({ type:'window', includeUncontrolled:true });
+  await Promise.all(list.map(c=> askBuild(c).then(b=>{ if(b < BUILD && c.navigate) return c.navigate(c.url).catch(()=>{}); })));
+}
 self.addEventListener('activate', e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+  e.waitUntil((async ()=>{
+    const keys = await caches.keys(), hadOld = keys.some(k=>k!==CACHE && k!==META && k.indexOf('animarune-v')===0);
+    await Promise.all(keys.filter(k=>k!==CACHE && k!==META).map(k=>caches.delete(k)));
+    await self.clients.claim();
+    const major = APP_VERSION.split('.')[0], meta = await caches.open(META), r = await meta.match('./__major'), prev = r ? await r.text() : '';
+    await meta.put('./__major', new Response(major));
+    if(hadOld && prev!==major) await reloadOldClients();
+  })());
 });
 // (v227) 그림·소리 등 assets/ 는 캐시 우선(캐시 이름을 올릴 때마다 새로 받음) — 모바일에서 한꺼번에 요청하다 실패해도 캐시로 바로 뜸
 // 페이지(HTML)·코드는 네트워크 우선. 실패했을 때 index.html 로 대신하는 건 화면 이동 요청일 때만(예전엔 그림 요청에도 HTML을 돌려줘서 그림이 깨져 보였음)

@@ -17866,6 +17866,7 @@ async function checkAppUpdate(){
   updCheckedAt = Date.now();
   const latest = await latestBuild(); updCheckDone = true; if(!latest || latest <= APP_BUILD) return;
   if(latest > updLatest){ updLatest = latest; updSnoozed = false; } // 더 새 버전이 또 나오면 다시 알림
+  try{ if(navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.update().catch(()=>{}); }).catch(()=>{}); }catch(e){} // (v9.2.0) 새 서비스 워커를 바로 받아 둠
   updMarkMenu(); showUpdatePopup();
 }
 setTimeout(checkAppUpdate, 1500);
@@ -17945,6 +17946,7 @@ if(!IS_IOS){
 <script>
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  navigator.serviceWorker.addEventListener('message', e=>{ if(e.data && e.data.t==='ar-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({ build: APP_BUILD }); }); // (v9.2.0) 서비스 워커가 버전을 물으면 대답 — 대답 못 하는 옛 화면만 새로 불러옴
 }
 </script>
 </body>
