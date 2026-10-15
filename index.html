@@ -6803,12 +6803,12 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
   const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
   if(!W || !H) return;
-  const T0 = 40, PAD = rs < 0.22 ? 0 : 9; // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
+  const T0 = 40, STS = 8, PAD = rs < 0.22 ? 0 : 9; // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
   let kw = W*0.21/72, kh = (H*rs - T0 - PAD)/(sz*1.25); // 후열~전열 간격(22%)에 한 칸이 들어가도록 · (v212) 그림 높이(아이콘의 1.2배+여백)까지 계산해서 같은 열 위아래 정령이 겹치지 않게 · (v214) 범위 테두리끼리도 안 닿게 여유 6px(레이드는 8마리라 정령이 너무 작아지지 않게 예전 그대로)
   let k = Math.max(0.45, Math.min(1.5, kw, kh));
   // (v220) 좁은 화면에선 글자 칸(이름표·체력)도 같은 비율로 줄임(최소 72%) — 예전엔 그림만 줄고 글자는 고정 크기라 320px 레이드에서 겹쳤음
-  const ts = Math.max(0.72, Math.min(1, k));
-  if(ts < 1){ kh = (H*rs - T0*ts - PAD)/(sz*1.25); k = Math.max(0.45, Math.min(1.5, kw, kh)); }
+  const ts = Math.max(0.72, Math.min(1, k)); // 글자 배율은 배지 여유 넣기 전 기준 — 글자까지 작아지지 않게
+  kh = (H*rs - (T0+STS)*ts - PAD)/(sz*1.25); k = Math.max(0.45, Math.min(1.5, kw, kh)); // (b429) 그림을 살짝 줄여 아래 상태 배지가 아래 칸 정령에 안 닿게 (사용자 요청 — 이름표 간격 줄이기와 같이)
   const ks = k.toFixed(3), tss = ts.toFixed(3);
   if(bs.style.getPropertyValue('--k')!==ks) bs.style.setProperty('--k', ks);
   if(bs.style.getPropertyValue('--ts')!==tss) bs.style.setProperty('--ts', tss);
