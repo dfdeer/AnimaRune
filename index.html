@@ -17787,7 +17787,7 @@ function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
 { const v = document.getElementById('hmVer'); if(v) v.textContent = verTxt(APP_BUILD); }
 async function latestBuild(){
   try{ const t = await (await fetch('sw.js?t='+Date.now(), {cache:'no-store'})).text(); const m = t.match(/animarune-v(\d+)/); if(!m) return null;
-    const vm = t.match(/APP_VERSION\s*=\s*'([\d.]+)'/); if(vm) buildVer[+m[1]] = vm[1]; return +m[1]; }catch(e){ return null; }
+    const vm = t.match(/APP_VERSION\s*=\s*'([\d.]+)'/); if(vm) buildVer[+m[1]] = vm[1]; const mb = t.match(/MIN_BUILD\s*=\s*(\d+)/); updMin = mb ? +mb[1] : 0; return +m[1]; }catch(e){ return null; }
 }
 async function appUpdateNow(){
   toast('최신 버전 확인 중…');
@@ -17806,7 +17806,8 @@ var updLatest = 0, updSnoozed = false, updCheckedAt = 0, updCheckDone = false; /
 function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
 // (v2.10.2) 끝자리만 바뀐 자잘한 업데이트(소리·문구 등)는 알림 창을 띄우지 않고 메뉴와 업데이트 버튼에 빨간 점만 — 가운데·앞자리가 바뀌면(큰 버그·수치 조정·새 콘텐츠) 지금처럼 알림 창
 function verParts(v){ const p = String(v||'').split('.').map(x=>parseInt(x,10)); if(p.length===2 && String(v).split('.')[1].length===2) return [p[0], Math.floor(p[1]/10), p[1]%10]; return [p[0]||0, p[1]||0, p[2]||0]; } // 예전 '2.93' = 2.9.3
-function updMajor(){ const nv = buildVer[updLatest]; return !!nv && updLatest > APP_BUILD && verParts(nv)[0] > verParts(APP_VERSION)[0]; } // (v9.2.0) 앞자리가 바뀐 업데이트 — 업데이트 전엔 게임 못 함 (사용자 결정 10/15)
+var updMin = 0; // (v9.3.0) sw.js의 MIN_BUILD — 이보다 낮으면 앞자리가 그대로여도 강제 업데이트
+function updMajor(){ const nv = buildVer[updLatest]; return updLatest > APP_BUILD && ((!!nv && verParts(nv)[0] > verParts(APP_VERSION)[0]) || updMin > APP_BUILD); } // (v9.2.0) 앞자리가 바뀐 업데이트 — 업데이트 전엔 게임 못 함 (사용자 결정 10/15)
 function updPatchOnly(){ const nv = buildVer[updLatest]; if(!nv) return false; const a = verParts(APP_VERSION), c = verParts(nv); return a[0]===c[0] && a[1]===c[1]; }
 function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b><span class="upd-dot"></span>'; } if(typeof mailBadgeUpdate==='function') mailBadgeUpdate(); }
 function updBar(text){
