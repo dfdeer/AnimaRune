@@ -1478,7 +1478,7 @@
   .vm-c.t1,.vm-c.t2,.vm-c.t3,.vm-c.t4,.vm-c.t5,.vm-c.t6{background-color:transparent; background-position:center; background-size:112%; background-repeat:no-repeat; box-shadow:none;} .vm-c.t1{background-image:url(assets/village/vm_dirt.webp);} .vm-c.t2{background-image:url(assets/village/vm_rock.webp);} /* 칸 그림 */ 
   .vm-c.t3{background-image:url(assets/village/vm_ess.webp); filter:drop-shadow(0 0 4px #8c7dffaa);}
   .vm-c.t4{background-image:url(assets/village/vm_stone.webp); filter:drop-shadow(0 0 4px #57d3ff99);}
-  .vm-c.t5{background-image:url(assets/village/vm_star.webp); animation:vmGlint 1.6s ease-in-out infinite;}
+  .vm-c.t5{background-image:url(assets/village/vm_star.webp);} .vm-c.t5::before{content:''; position:absolute; inset:8%; border-radius:50%; background:radial-gradient(circle,#fff7 0,#fff0 70%); opacity:0; animation:vmGlint 1.6s ease-in-out infinite; pointer-events:none;} /* (v8.18.2) 반짝임은 칸 위에 덧댄 빛으로 — 칸 자체 filter를 움직이면 처음 드러날 때 그림이 안 그려지고 빈칸으로 남는 기기가 있었음 */
   .vm-c.t6{background-image:url(assets/village/vm_stair.webp);} .vm-st{font-size:20px; color:#ffd557; text-shadow:0 0 6px #ffd557;}
   .vm-c.dark{background:radial-gradient(circle at 30% 30%,#ffffff10 0 3px,transparent 4px),radial-gradient(circle at 70% 65%,#00000040 0 4px,transparent 5px),linear-gradient(160deg,#4a3a2e,#33271f); box-shadow:inset 0 2px 0 #ffffff12, inset 0 -3px 0 #0004; opacity:.7; cursor:default;} .vm-c.dug{background:#0b0806; box-shadow:inset 0 4px 8px #000; border-radius:6px; cursor:default;}
   .vm-c.cr1::after, .vm-c.cr2::after{content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:linear-gradient(35deg,transparent 46%,#0009 47% 50%,transparent 51%),linear-gradient(-50deg,transparent 56%,#0008 57% 59%,transparent 60%);}
@@ -1489,9 +1489,9 @@
   @keyframes vmHit{0%{transform:translate(0,0)} 30%{transform:translate(-2px,1px) scale(.94)} 60%{transform:translate(2px,-1px)} 100%{transform:none}}
   @keyframes vmBurst{from{opacity:1; transform:scale(.8)} to{opacity:0; transform:scale(1.35)}}
   @keyframes vmFloat{0%{opacity:0; transform:translate(-50%,6px)} 15%{opacity:1} 100%{opacity:0; transform:translate(-50%,-26px)}}
-  @keyframes vmGlint{0%,100%{filter:brightness(1)} 50%{filter:brightness(1.25)}}
+  @keyframes vmGlint{0%,100%{opacity:0} 50%{opacity:1}}
   .vm-cart{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:var(--vmcm,10px); padding:10px 12px; border-radius:14px; background:#16123acc; border:1px solid #ffffff1a;}
-  .vm-legend{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:8px; font-size:11px; color:var(--sub);} .vm-legend span{display:flex; align-items:center; gap:4px;} .vm-legend .vm-c{width:12px; height:12px; border-radius:3px; cursor:default; animation:none;}
+  .vm-legend{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:8px; font-size:11px; color:var(--sub);} .vm-legend span{display:flex; align-items:center; gap:4px;} .vm-legend .vm-c{width:12px; height:12px; border-radius:3px; cursor:default; animation:none;} .vm-legend .vm-c::before{display:none;}
   /* (v6.3.0) 가방 */
   .bag-modal{max-width:420px;} .bag-sec{margin:12px 0 6px; font-size:12px; font-weight:800; color:var(--sub);}
   .bag-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px;}
@@ -11600,6 +11600,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:439, v:'9.1.1', date:'2026-10-16', secs:[
+    { t:'광산', items:[ '별빛 광맥 칸이 처음 드러날 때 빈칸으로 보이던 것 수정 (다른 칸을 캐야 보였음)' ]}
+  ]},
   { build:438, v:'9.1.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 픽업은 오전 10시(한국 시간)에 시작 — 0시 ~ 10시는 픽업 소환 닫힘', '별빛 균열 새 판 · 빙고 이벤트도 10시부터 (그 전엔 닫힘)' ]}
   ]},
@@ -12926,6 +12929,11 @@ function vmUpgrade(k){
 }
 function vmRwText(rw){ return [rw.essence ? '<img class="uic" src="assets/ui/ic_essence.webp" alt="">+'+rw.essence : '', rw.stone ? '<img class="uic" src="assets/ui/ic_stone.webp" alt="">+'+rw.stone : '', rw.star ? SHARD_IC+'+'+rw.star : ''].filter(Boolean).join(' '); }
 function vmCellIc(t){ return ''; } // 칸 그림(vm_*.webp)에 광석·계단이 그려져 있음
+let vmImgPre = null;
+function vmPreload(){ // (v8.18.2) 칸 그림을 미리 받아 둠 — 어두운 칸이 처음 별빛 광맥으로 드러날 때 그림이 아직 없어서 빈칸으로 보이던 것
+  if(vmImgPre) return;
+  vmImgPre = ['dirt','rock','ess','stone','star','stair'].map(n=>{ const im = new Image(); im.src = 'assets/village/vm_'+n+'.webp'; return im; });
+}
 function vmMineHtml(){
   const m = vmState(), max = vmMaxE(m);
   let h = '<div class="vm-bar"><div><b>B'+m.d+'층</b> <span class="sub">최고 B'+m.best+'</span></div>'
@@ -12986,6 +12994,7 @@ function renderVillageTab(){
   if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="hearth">ⓘ 설명</button><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
   if(villageView==='forge') return renderForgeView(); // (v8.5.0)
+  vmPreload(); // 광산에 들어가기 전에 칸 그림을 받아 둠
   const m = vmState(), s = hearthSparks(), all = vlAllRw(), any = s>0 || m.cart>0, hLv = Object.keys(HEARTH_UPGRADES).reduce((a,k)=>a+hearthUpgradeLevel(k), 0);
   let h = '<div class="vl-title"><b>정령 마을</b><button class="btn small secondary vl-help" data-vl-help="map">ⓘ 설명</button></div>';
   h += '<div class="vl-town">';
@@ -13037,6 +13046,7 @@ function vlHelpHtml(k){
     + sec('강화') + li(['곡괭이: 기력 최대치 레벨마다 +4', '광맥 정제: 캐는 정수·강화석·별빛 조각 레벨마다 +10% (수레 포함)']);
 }
 function renderMineView(){
+  vmPreload();
   let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>광산</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="mine">ⓘ 설명</button><button class="btn small" id="vmUpBtn">'+uiIc('pick')+' 강화</button></div>';
   h += '<div id="vmWrap">'+vmMineHtml()+'</div>';
   return h;
@@ -17741,7 +17751,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 438, APP_VERSION = '9.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 439, APP_VERSION = '9.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
