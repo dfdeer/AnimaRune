@@ -7430,7 +7430,7 @@ function showSkillStageScreen(){
   const leave = ()=>{
     const i = sf.stageIdx;
     if(sf.mode==='boss'){ endBossWaveRun(false); render(); openStagePrep(i); return; }
-    if(sf.mode==='expedition'){ state.skillFight=null; unmountBattleScreen(); save(); render(); return; }
+    if(sf.mode==='expedition'){ const xr = !sf.result && state.expedition; if(xr) endExpeditionRun(xr.currentIndex); /* (v8.17.2) 전투 중에 나가면 출정이 끝남 (사용자 결정 10/15 — 지면 끝나는 것과 같음) */ state.skillFight=null; unmountBattleScreen(); save(); render(); if(xr) xpAlert(uiIc('surrender')+' 출정 끝', '전투에서 나가 출정이 끝남', false); return; }
     if(sf.mode==='dungeon'){ leaveDungeonFight(); return; }
     if(sf.mode==='rift'){ leaveRiftFight(); return; }
     if(sf.mode==='sanctum'){ leaveSanctumFight(); return; }
@@ -7461,7 +7461,7 @@ function showSkillStageScreen(){
     if(sf.result) return leave();
     const net = (sf.mode==='raid' || sf.mode==='duel') && raidIsNet();
     const msg = sf.mode==='boss' ? '보스전이 여기서 끝남 · 웨이브 진행이 사라짐'
-      : sf.mode==='expedition' ? '지도로 돌아감 · 이 전투는 처음부터 다시'
+      : sf.mode==='expedition' ? xpLeaveWarnHtml()
       : sf.mode==='worldboss' ? '지금까지 준 피해만 기록 · 오늘 도전 횟수는 이미 씀'
       : sf.mode==='duel' ? (net ? '기권 — 상대 승리' : '결투가 끝남')
       : sf.mode==='raid' ? (net ? ((raidPartnerGone() || !raidNet.roomH) ? '레이드를 해산함' : '팀원에게 포기를 제안함 · 둘 다 동의하면 끝남') : '레이드가 끝남')
@@ -7473,7 +7473,7 @@ function showSkillStageScreen(){
       : sf.mode==='rift' ? ()=>riftRetry(sf.riftF)
       : sf.mode==='sanctum' ? ()=>sanctumRetry(sf.scId, sf.scTier)
       : !sf.mode ? restartSkillStageFight : null;
-    confirmBox('전투 나가기', msg, (sf.mode==='duel' && net) ? '기권' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; },
+    confirmBox(sf.mode==='expedition' ? '⚠️ 출정 포기' : '전투 나가기', msg, (sf.mode==='duel' && net) ? '기권' : sf.mode==='expedition' ? '출정 끝내기' : '나가기', ()=>{ if(net) raidNet.exitArmed = true; if(state.skillFight===sf) leave(); if(net) raidNet.exitArmed = false; },
       { danger:true, alt: retry ? { label:'다시하기', fn:()=>{ if(state.skillFight===sf) retry(); } } : null });
   };
   if(q('skillExitBtn')) q('skillExitBtn').addEventListener('click', leaveAsk);
@@ -11596,6 +11596,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:435, v:'8.18.0', date:'2026-10-15', secs:[
+    { t:'출정', items:[ '전투 중에 나가면 출정이 끝남 — 지는 것과 같음 (쌓인 완주 보상을 잃고 이번 사이클 진행 보상만 받음) · 예전엔 지도로 돌아가 같은 전투를 다시 할 수 있었음', '나가기 전 경고창에 잃는 완주 보상 · 모은 유물 수 표시 · 출전 배치 창에도 경고' ]}
+  ]},
   { build:434, v:'8.17.3', date:'2026-10-15', secs:[
     { t:'출정 · 유물', items:[ '유물 15개 → 43개 · 등급(일반 · 희귀 · 전설) · 계열마다 6~8종', '유물 계열 5개 — 같은 계열 2개 · 4개면 세트 효과', '🔥 업화: 적이 받는 화상 · 독 피해 +25% / 전투 시작 때 적 전체 화상 2중첩 · 화상 · 독 피해 +25% 더', '🛡️ 수호: 전투 시작 때 아군 전체 보호막 (최대체력 12%) / 보호막 +30% · 보호막이 있는 아군 받는 피해 −20%', '💚 생명: 아군이 받는 회복 +20% / 준 피해의 6% 회복 · 라운드 시작마다 체력이 가장 낮은 아군 6% 회복', '🌪️ 질풍: 아군 속도 +6 / 속도 +6 더 · 1라운드 아군 공격력 +40%', '⚔️ 광기: 치명타 확률 +10%p / 치명타 피해 +25% · 적을 쓰러뜨릴 때마다 그 정령 공격력 +10% (최대 5번)', '같은 유물을 또 얻으면 레벨 +1 · 유물마다 최고 레벨 다름 (최대 Lv 5) · 얻을 때 · 유물 창 · 상점에 「Lv 지금/최고」 표시 — 유물을 다 모으면 보상 칸이 비던 것', '휴식에 「연마」 (유물 하나 레벨 +1) · 상점 유물 3개 · 등급별 값 · 유물 연마 판매', '지도 칸 옆 문양 = 이기면 나오는 유물 계열 · 보물 상자도 계열이 미리 보임', '새 유물: 용암 씨앗 (화상 걸린 적이 쓰러지면 양옆 적에게 화상) · 제비 깃 (라운드 시작에 확률로 가장 빠른 아군 스킬 대기 −1) · 속박 사슬 (전투 첫 공격에 확률로 속박)' ]},
     { t:'출정 · 화면', items:[ '지도만 스크롤 — 위쪽 사이클 · 계열 막대는 고정', '아래 버튼 줄 밑에 틈이 생겨 지도가 비치던 것', '지도 칸을 누르면 아래에 칸 정보 (보상 · 유물 계열 · 금화) · 「이동」이나 한 번 더 누르면 들어감 · 지나온 칸 · 앞으로 갈 칸도 정보 보기', '갈 수 있는 길은 금색 점선 · 지나온 칸은 ✓ · 칸 종류마다 색', '위쪽에 단계 진행 막대 · 유물 계열 5칸 (모은 개수 · 세트 발동 표시) — 누르면 그 계열 유물 전부와 세트 효과', '유물 창 — 가진 유물 그림 + 오른쪽 계열 버튼 · 누르면 아래에 효과 · 다음 레벨 수치 · 계열은 세트 효과와 그 계열 유물 (없는 건 흐리게)', '출정 전투 중에도 위쪽 🔮 버튼으로 유물 창' ]},
@@ -13470,7 +13473,7 @@ function showExpeditionSquadPicker(){
     return rosterPickTileHtml(key, false, '<div class="exp-hp"><i style="width:'+pct+'%;"></i></div><div class="pw">'+(dead?'<img class="uic" src="assets/ui/ic_skull.webp" alt=""> 쓰러짐':fmtHp(Math.max(0,hpInfo.hp))+'/'+fmtHp(hpInfo.maxHp))+'</div>').replace('data-exp-pick=', (dead?'style-dead ':'')+'data-exp-res=');
   };
   let html = '<h3 style="text-align:center; margin-bottom:4px;">'+(isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스 전투':'<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투')+' 출전 배치</h3>'
-    + '<div class="sub" style="text-align:center; margin-bottom:8px;">8마리 중 6마리를 슬롯에 배치(탭해서 교체) · 대기 2마리는 피로 해소 + 체력 20% 회복 · 2전투 연속 출전부터 공격력 −5%씩(최대 −15%)</div>';
+    + '<div class="sub" style="text-align:center; margin-bottom:8px;">8마리 중 6마리를 슬롯에 배치(탭해서 교체) · 대기 2마리는 피로 해소 + 체력 20% 회복 · 2전투 연속 출전부터 공격력 −5%씩(최대 −15%)<br><b style="color:#ff8a8a;">⚠️ 전투 중에 나가면 출정이 끝남</b></div>';
   const expSlot = idx=>{ const key = state.formation[idx]; let h = slotHtml(idx);
     if(key){ const fm = expFatigueMult((run.consecutive[key]||0)+1); if(fm<1) h = h.replace(/(<div class="icon av[^>]*>[\s\S]*?)(<\/div>)/, '$1<span class="xp-fat">🔻'+Math.round((1-fm)*100)+'%</span>$2'); } // (v5.2.1) 그림 틀 오른쪽 아래 모서리 // (v5.2.0) 피로는 칸 모서리 작은 표 — 줄로 넣으면 칸이 넘쳐 그림 위가 잘렸음
     return h; };
@@ -15586,6 +15589,12 @@ function xpSyncActionModal(){
   document.getElementById('xpActClose').addEventListener('click', close);
   document.getElementById('xpActBg').addEventListener('click', e=>{ if(e.target.id==='xpActBg') close(); });
 }
+// (v8.17.2) 출정 전투 중 나가기 경고 — 나가면 출정이 끝남 (쌓인 완주 보상·유물·출정권 모두 잃음)
+function xpLeaveWarnHtml(){ const run = state.expedition; if(!run) return '출정이 끝남';
+  const pot = run.pot || {}, m = expeditionKeepMult(run), st = Math.round((pot.stone||0)*m), eq = Math.round((pot.equip||0)*m), part = Math.round((run.currentIndex||0)*25*(run.rewardMult||1));
+  return '<b style="color:#ff8a8a;">나가면 이번 출정이 여기서 끝남 (지는 것과 같음)</b><br>'
+    + ((st || eq) ? '쌓인 완주 보상 '+uiIc('stone')+' '+st+' · '+uiIc('tk_equip')+' '+eq+' 전부 잃음<br>' : '')
+    + '모은 유물 '+(run.relics||[]).length+'개 · 출정권도 돌려받지 못함'+(part ? '<br><small>이번 사이클 진행 보상 '+uiIc('essence')+' '+part+'만 받음</small>' : ''); }
 function xpShowPot(){ const run = state.expedition; if(!run) return; const pot = run.pot || {}, m = expeditionKeepMult(run);
   openInfoOverlay(uiIc('box')+' 쌓인 완주 보상', '<div class="xp-info"><div><span>강화석</span><b><img class="uic" src="assets/ui/ic_stone.webp" alt=""> '+Math.round((pot.stone||0)*m)+'</b></div><div><span>장비</span><b><img class="uic" src="assets/ui/ic_tk_equip.webp" alt="장비 소환권"> '+Math.round((pot.equip||0)*m)+'</b></div>'
     + '<div><span>킵</span><b>'+(run.keeps||0)+'회 · 수령 배율 ×'+m.toFixed(2)+'</b></div><div><span>공격력</span><b>×'+run.powerMult.toFixed(2)+'</b></div><div><span>완주 보상 보너스</span><b>×'+run.rewardMult.toFixed(2)+'</b></div></div>'
@@ -17722,7 +17731,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 434, APP_VERSION = '8.17.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 435, APP_VERSION = '8.18.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
