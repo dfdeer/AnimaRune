@@ -1321,6 +1321,8 @@
   .bb-sub{position:relative; margin-top:2px; font-size:13px; font-weight:800;}
   .bb-gm{position:relative; margin-top:8px; font-size:12px; color:#e9e4ff; display:flex; flex-wrap:wrap; justify-content:center; gap:2px 6px;} .bb-gm i{font-style:normal; opacity:.4;}
   .bb-rune{position:relative; display:inline-block; margin-top:6px; padding:2px 10px; border-radius:999px; font-size:11px; color:#ffb3c4; background:#0006; border:1px solid #ff9ab055;}
+  .bb-more{position:relative; display:inline-flex; flex-direction:column; align-items:center; margin-top:10px; padding:6px 18px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--bc) 60%, #fff); background:#000a; color:#fff; font-size:13px; font-weight:800; cursor:pointer;} .bb-more small{font-size:10px; font-weight:400; color:#cfc8ff;}
+  .bb.sm{margin:0 0 8px; padding:10px 10px 8px;} .bb.sm .bb-art .bb-img, .bb.sm .bb-art img{width:96px; height:96px;} .bb.sm .bb-name{font-size:18px;}
   .bb-i{position:absolute; top:10px; right:10px; z-index:2; width:30px; height:30px; border-radius:50%; border:1.5px solid #ffffff55; background:#0008; color:#fff; font-weight:900; font-style:italic; font-family:Georgia,serif;}
   .rd-diffs2{display:flex; gap:6px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none;} .rd-diffs2::-webkit-scrollbar{display:none;}
   .rd-diffs2 button{flex:0 0 auto; padding:7px 14px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--dc) 50%, transparent); background:#16132e; color:color-mix(in srgb, var(--dc) 80%, #fff); font-size:13px; font-weight:800; white-space:nowrap;} .rd-diffs2 button.on{background:var(--dc); color:#111; border-color:#fff; box-shadow:0 0 12px color-mix(in srgb, var(--dc) 70%, transparent);} .rd-diffs2 button i{font-style:normal; margin-right:3px; color:#5cd65c;} .rd-diffs2 button.on i{color:#063;}
@@ -1514,8 +1516,8 @@
   .gm-chip{display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:#ffffff12; color:#e2dcf5; white-space:nowrap;} .gm-chip .elic{width:13px; height:13px;}
   .gm-hardt{font-size:11px; font-weight:900; padding:2px 7px; border-radius:6px; background:#ff3a5a; color:#fff; vertical-align:3px;}
   .gm-sec{margin-top:10px; text-align:left;}
-  .gm-sh{font-size:11px; font-weight:900; color:var(--sub); margin:0 2px 5px; display:flex; align-items:center; gap:4px;} .gm-sh .uic{width:14px; height:14px;}
-  .gm-sec.hard .gm-sh{color:#ff8a9a;} .gm-sec.rune .gm-sh{color:#ff9ab0;}
+  .gm-sh{font-size:13px; font-weight:900; color:#e6deff; margin:2px 2px 6px; padding-left:8px; border-left:3px solid #9a6bff; display:flex; align-items:center; gap:4px; letter-spacing:.3px;} /* (v8.16.0) 구역 제목을 또렷하게 */ .gm-sh .uic{width:14px; height:14px;}
+  .gm-sec.hard .gm-sh{color:#ff8a9a; border-left-color:#ff5a7a;} .gm-sec.rune .gm-sh{color:#ff9ab0; border-left-color:#ff9ab0;}
   .gm-row{display:flex; gap:9px; align-items:flex-start; padding:8px 10px; border-radius:10px; background:#ffffff0a; margin-bottom:5px;}
   .gm-sec.hard .gm-row{background:#ff3a5a14; box-shadow:inset 3px 0 0 #ff5a6a;}
   .gm-ic{font-size:18px; width:22px; text-align:center; flex:none; line-height:1.25;}
@@ -4907,7 +4909,7 @@ function raidListHtml(){
   return h + '</div>';
 }
 function bossBannerHtml(o){ // (v8.16.0) 레이드·월드 보스 화면 머리 — 속성 색 빛이 퍼지는 큰 배너
-  return '<div class="bb" style="--bc:'+(o.color||'#9a6bff')+';"><div class="bb-glow"></div><div class="bb-rays"></div>'
+  return '<div class="bb'+(o.small?' sm':'')+'" style="--bc:'+(o.color||'#9a6bff')+';"><div class="bb-glow"></div><div class="bb-rays"></div>'
     + (o.info ? '<button class="bb-i" id="'+o.info+'" aria-label="보스 정보">i</button>' : '')
     + '<div class="bb-art">'+o.img+'</div><div class="bb-name">'+o.name+'</div>'+(o.sub ? '<div class="bb-sub">'+o.sub+'</div>' : '')+(o.foot||'')+'</div>'; }
 function raidDetailHtml(){
@@ -4919,8 +4921,7 @@ function raidDetailHtml(){
   // (v8.16.0) 사용자 요청: 보스 화면을 웅장하게 · 덜 어수선하게 — 큰 보스 배너 + 난이도 한 줄 + 보상 한 칸
   h += bossBannerHtml({ img: bossImg(info.id, 'bb-img', info.icon), name: info.name, color: ec,
       sub: '<span class="bb-el" style="color:'+ec+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</span>',
-      foot: '<div class="bb-gm">'+info.gimmicks.map(g=>g.name).concat(['그로기']).join('<i>·</i>')+'</div>'+(br ? '<div class="bb-rune">'+uiIc('runestone')+' 처치 보상 '+br.icon+' '+br.name+'</div>' : ''),
-      info: 'raidBossInfo' });
+      foot: '<button class="bb-more" id="raidBossInfo">📖 상세 정보 <small>기믹 · 스킬 · 처치 보상</small></button>' }); // (v8.16.0) 사용자 결정: 기믹은 상세 정보에서만
   h += '<div class="rd-diffs2">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+(prog.includes(x.id)?'<i>✓</i>':'')+x.name+'</button>').join('')+'</div>';
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
@@ -4948,7 +4949,7 @@ function bindRaidTab(){
   if(q('raidSweepBtn')) q('raidSweepBtn').addEventListener('click', raidSweep);
   document.querySelectorAll('[data-raid-open]').forEach(el=>el.addEventListener('click', ()=>{ state.raidBossSel = el.dataset.raidOpen; raidView = 'detail'; save(); render(); window.scrollTo(0,0); }));
   if(q('raidBack')) q('raidBack').addEventListener('click', ()=>{ raidView = 'list'; render(); });
-  if(q('raidBossInfo')) q('raidBossInfo').addEventListener('click', ()=>{ const i = raidWeekBoss(); openInfoOverlay(i.name, gmHeadHtml(i.id, i.icon, [gmElChip(i.element)]) + raidBossInfoHtml(i)); });
+  if(q('raidBossInfo')) q('raidBossInfo').addEventListener('click', ()=>{ const i = raidWeekBoss(); openInfoOverlay('📖 상세 정보', bossBannerHtml({ img: bossImg(i.id, 'bb-img', i.icon), name: i.name, color: ELEMENT_INFO[i.element].color, sub:'<span style="color:'+ELEMENT_INFO[i.element].color+';">'+ELEMENT_INFO[i.element].icon+' '+ELEMENT_INFO[i.element].name+'</span>', small:true }) + raidBossInfoHtml(i)); });
   document.querySelectorAll('[data-raid-tabdiff]').forEach(el=>el.addEventListener('click', ()=>{ state.raidDiff = el.dataset.raidTabdiff; save(); render(); }));
   if(q('raidReopenBtn')) q('raidReopenBtn').addEventListener('click', ()=>{ if(raidNet.doc) raidOnDoc({exists:true, data:()=>raidNet.doc}); });
 }
