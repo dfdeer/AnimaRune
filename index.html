@@ -9326,15 +9326,18 @@ function pickupLimitedAt(idx){ // idx 기간의 한정 성좌
 const SHARD_IC = '<img class="uic" src="assets/ui/ic_starshard.webp" alt="별빛 조각" draggable="false">'; // (v318) 별빛 조각 재화 그림 (균열 별 평가는 STAR_IC 그대로)
 const STAR_IC = '<svg class="star-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l2.6 6.5 6.9.5-5.3 4.5 1.7 6.8L12 16.4 6.1 20.1l1.7-6.8L2.5 8.8l6.9-.5z" fill="#ffcf4a" stroke="#b8641a" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 5.5l1.3 3.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/></svg>';
 function pickupOnline(){ return navigator.onLine!==false && !!raidNet.db && !!raidNet.tOffOk; }
+const PICKUP_LATE = { [PICKUP_P0+1]: Date.UTC(2026,9,16,1) }; // (v8.19.0) 기간 번호 → 실제로 여는 시각 · 10월 16일 기간은 10시(한국)부터 — 0~10시는 픽업·균열 닫힘, 빙고도 10시부터 (사용자 결정 10/16)
 function pickupKst(ms){ const d = new Date(ms + 9*3600000); return { y:d.getUTCFullYear(), m:d.getUTCMonth(), day:d.getUTCDate() }; }
 function pickupPeriod(ms){ // 지금(또는 ms) 픽업 기간 — 번호 · 신화 2종 · 끝나는 시각
   if(ms===undefined) ms = serverNow(); // (v6.2.0) 오프라인이어도 마지막 서버 시각부터
   const k = pickupKst(ms), half = k.day<=15 ? 0 : 1, idx = (k.y*12+k.m)*2 + half;
   const endUtc = half ? Date.UTC(k.y, k.m+1, 1) : Date.UTC(k.y, k.m, 16), end = endUtc - 9*3600000;
-  const lim = pickupLimitedAt(idx);
-  const pair = lim ? [lim, LIMITED_PAIR[lim]] : PICKUP_PAIRS[(((idx-PICKUP_P0) % PICKUP_PAIRS.length) + PICKUP_PAIRS.length) % PICKUP_PAIRS.length];
-  return { idx, pair, end, left: Math.max(0, end - ms) };
+  const late = PICKUP_LATE[idx];
+  if(late && ms < late) return { idx: idx-1, pair: pickupPairAt(idx-1), end: late, left: Math.max(0, late - ms), wait: true }; // (v8.19.0) 늦게 여는 기간 — 열릴 때까지 앞 기간 그대로(픽업 소환·균열은 닫힘)
+  return { idx, pair: pickupPairAt(idx), end, left: Math.max(0, end - ms) };
 }
+function pickupPairAt(idx){ const lim = pickupLimitedAt(idx); return lim ? [lim, LIMITED_PAIR[lim]] : PICKUP_PAIRS[(((idx-PICKUP_P0) % PICKUP_PAIRS.length) + PICKUP_PAIRS.length) % PICKUP_PAIRS.length]; }
+function pickupOpenText(per){ const d = new Date(per.end + 9*3600000); return (d.getUTCMonth()+1)+'월 '+d.getUTCDate()+'일 '+d.getUTCHours()+'시'; } // 늦게 여는 픽업이 열리는 시각 (한국)
 function pickupLeftText(ms){ const m = Math.floor(ms/60000), d = Math.floor(m/1440), h = Math.floor((m%1440)/60); return d>0 ? d+'일 '+h+'시간' : (h>0 ? h+'시간 '+(m%60)+'분' : Math.max(1, m%60)+'분'); }
 function pickupLeftShort(ms){ const m = Math.floor(ms/60000), d = Math.floor(m/1440), h = Math.floor((m%1440)/60); return d>0 ? d+'일' : (h>0 ? h+'시간' : Math.max(1, m)+'분'); }
 function pickupState(){ const pk = state.pickup = state.pickup || { pity:0, guar:false, sel:'' }; const per = pickupPeriod(); if(!per.pair.includes(pk.sel)) pk.sel = per.pair[0]; return pk; }
@@ -9346,9 +9349,10 @@ function pickupRoll(pk){ // 한 번 뽑기 → 정령 키 · (v5.1.0) 천장(pit
   if(r==='mythic'){ const pool = ELEMENTS.flatMap(e=>VARIANTS.map(v=>e+'_mythic_'+v)).filter(k=>SPIRITS[k] && !pair.includes(k)); return pool[Math.floor(Math.random()*pool.length)]; } // 이번 픽업이 아닌 신화 (신화로 나옴)
   return ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)]+'_'+r+'_'+VARIANTS[Math.floor(Math.random()*VARIANTS.length)];
 }
-function canPickup(n){ return pickupOnline() && (state.starShard||0) >= PICKUP_COST*n; }
+function canPickup(n){ return pickupOnline() && !pickupPeriod().wait && (state.starShard||0) >= PICKUP_COST*n; }
 function doPickup(n){
   if(!pickupOnline()){ toast('픽업 소환은 온라인일 때만 가능'); return; }
+  { const pw = pickupPeriod(); if(pw.wait){ toast('이번 픽업은 끝났음 · 다음 픽업은 '+pickupOpenText(pw)+' 시작'); return; } }
   if((state.starShard||0) < PICKUP_COST*n){ toast('별빛 조각 부족 ('+(PICKUP_COST*n)+' 필요)'); return; }
   const go = ()=>{
     if(!pickupOnline() || (state.starShard||0) < PICKUP_COST*n) return;
@@ -9404,7 +9408,7 @@ function renderPickupTab(){
   let h = '<div class="pu-topbar"><div class="pu-t">'+uiIc('pickup')+' 픽업 소환</div><div class="pu-wallet">'+SHARD_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>' + TOP_MARK;
   h += puFxHtml(el);
   h += '<div class="pu-page">';
-  h += '<div class="pu-leftrow"><span class="pu-left">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 남음' : '📡 오프라인')+'</span></div>';
+  h += '<div class="pu-leftrow"><span class="pu-left">'+(!on ? '📡 오프라인' : per.wait ? uiIc('time')+' 다음 픽업 '+pickupLeftText(per.left)+' 뒤' : uiIc('time')+' '+pickupLeftText(per.left)+' 남음')+'</span></div>';
   h += '<div class="pu-stage" style="--ec:'+ELEMENT_INFO[el].color+';"><button class="pu-nav l" data-pu="-1" aria-label="이전">‹</button>'
     + '<div class="pu-card"><div class="pu-art">'+spArt(sp, 'hero')+'</div><div class="pu-rar astral">★★★★★</div><div class="pu-nm">'+elIc(el)+' '+sp.name+'<button class="pu-info" id="puInfo" aria-label="스킬 정보">i</button></div><div class="pu-sub">'+'<b class="as-name"><i>성좌</i></b><span class="pu-subt">'+' · '+ELEMENT_INFO[el].name+' · '+kit.role+(own?' · 보유 '+own:'')+(own&&transLevel(k)?' · 초월 '+transLevel(k):'')+'</span>'+'</div></div>'
     + '<button class="pu-nav r" data-pu="1" aria-label="다음">›</button></div>';
@@ -9413,6 +9417,7 @@ function renderPickupTab(){
   h += '<div class="pu-pity"><div class="pu-pt"><span>픽업 확정까지</span><b>'+(PICKUP_PITY-pk.pity)+'회</b></div><div class="pu-barw"><div class="pu-bar"><i style="width:'+(pk.pity/PICKUP_PITY*100)+'%"></i></div><img class="pu-gem'+(PICKUP_PITY-pk.pity<=10?' near':'')+'" src="assets/ui/deco_pity_gem.webp" alt="" draggable="false"></div>'
     + '<div class="pu-note">'+(pk.guar ? '✅ 다음 픽업은 <b>'+sp.name+'</b> 확정 (80회 안)' : '다른 픽업 정령이 나오면, 다음 80회 안에 고른 정령 확정')+'</div></div>';
   if(!on) h += '<div class="pu-off">📡 픽업 소환은 온라인일 때만 가능</div>';
+  else if(per.wait) h += '<div class="pu-off">이번 픽업은 끝났음 · 다음 픽업은 '+pickupOpenText(per)+' 시작</div>';
   h += '<div class="pu-btns"><button class="btn" id="puOne" '+(canPickup(1)?'':'disabled')+'>1회 '+SHARD_IC+' '+PICKUP_COST+'</button><button class="btn gold" id="puTen" '+(canPickup(10)?'':'disabled')+'>10회 '+SHARD_IC+' '+PICKUP_COST*10+'</button></div>';
   h += '<label class="sub-skip"><input type="checkbox" data-multi-skip '+(state.settings.multiNoAsk?'checked':'')+'> 10회 소환 바로 하기</label>';
   h += '<div class="pu-rate">픽업 정령 '+PICKUP_RATES[0].w+'% (그중 '+Math.round(PICKUP_SEL_RATE*100)+'%가 고른 정령) · 그 밖의 신화 '+PICKUP_RATES[1].w+'% · 레전더리 '+PICKUP_RATES[2].w+'% · 에픽 '+PICKUP_RATES[3].w+'% · 레어 '+PICKUP_RATES[4].w+'%<br>매달 1일·16일 0시(한국 시각) 픽업 교체 · 천장 횟수는 이어짐 · 1회마다 고른 정령 기억 조각 '+PICKUP_MEM_PER_PULL+'개 · 초월·성좌를 끝낸 신화는 별빛 조각 '+PICKUP_DUP_REFUND+'개로 환급'+(per.pair.some(x=>SPIRITS[x].limited) ? '<br>한정 성좌는 픽업에서만 나옴 · 다음·다다음 기간엔 안 나옴' : '')+'</div>'; // (v5.0.5) 두 정령 화면 높이가 같게 — 보는 정령이 아니라 이번 픽업 기준
@@ -9619,7 +9624,7 @@ function attAutoTry(){
 }
 setInterval(attAutoTry, 2000);
 function homePickupBtnHtml(){ const per = pickupPeriod(), sp = SPIRITS[per.pair[0]], sp2 = SPIRITS[per.pair[1]];
-  return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+uiIc('time')+' '+pickupLeftShort(per.left)+'</small></span></button>'; }
+  return '<button class="home-pu" data-home="pickup"><span class="hp-av">'+spArt(sp)+'</span><span class="hp-av b">'+spArt(sp2)+'</span><span class="hp-tx"><b>픽업</b><small>'+(per.wait ? '다음 '+pickupOpenText(per).replace(/^.*일 /,'') : uiIc('time')+' '+pickupLeftShort(per.left))+'</small></span></button>'; }
 // (v297) 장비 확정권 — 그 등급 장비 1개 (부위·속성 무작위)
 function doEquipSureTicket(tk){ const r = TICKET_INFO[tk] && TICKET_INFO[tk].eqSure; if(!r) return; if(ticketCount(tk)<=0){ toast(TICKET_INFO[tk].name+' 없음'); return; }
   spendAsk(TICKET_INFO[tk].name, {tk, n:1}, ()=>doEquipSureTicketNow(tk)); }
@@ -11595,6 +11600,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:437, v:'8.19.0', date:'2026-10-16', secs:[
+    { t:'픽업', items:[ '10월 16일 픽업은 오전 10시(한국 시간)에 시작 — 0시 ~ 10시는 픽업 소환 닫힘', '별빛 균열 새 판도 10시부터 (그 전엔 닫힘)' ]}
+  ]},
   { build:436, v:'8.18.1', date:'2026-10-15', secs:[
     { t:'출정', items:[ '지도 칸에 나오는 유물 계열을 미리 보여 주지 않음 — 들어가서 이기면 그때 무작위 선택지', '보물 상자는 열 때마다 무작위 유물 3개 중 하나 고르기 (예전엔 정해진 유물 1개)' ]}
   ]},
@@ -14111,7 +14119,7 @@ function riftDuoDmgAdjust(sf, a, d, v, opts){
   if(id==='lk') return aliveUnits(sf.enemyUnits).some(u=>u.isAdd && (u.st.shield>0 || u.st.buff)) ? v*0.5 : v;
   return v;
 }
-function riftState(){ const per = riftPeriod(); let r = state.rift; if(!isPlainObj(r) || (r.p!==per.idx && pickupOnline())) r = state.rift = { p: per.idx, st: {} }; /* 기간(=픽업)이 바뀌면 초기화 — 폰 시각이 틀릴 수 있어 서버 시각을 쓸 때(온라인)만 */ if(!isPlainObj(r.st)) r.st = {}; return r; }
+function riftState(){ const per = riftPeriod(); let r = state.rift; if(!isPlainObj(r) || (r.p!==per.idx && pickupOnline() && !(per.wait && r.p > per.idx))) r = state.rift = { p: per.idx, st: {} }; /* 기간(=픽업)이 바뀌면 초기화 — 폰 시각이 틀릴 수 있어 서버 시각을 쓸 때(온라인)만 */ if(!isPlainObj(r.st)) r.st = {}; return r; }
 function riftStars(f){ const b = riftState().st[f]||0; return (b&1?1:0)+(b&2?1:0)+(b&4?1:0); }
 function riftTotalStars(){ let n = 0; for(let f=1; f<=RIFT_FLOORS.length; f++) n += riftStars(f); return n; }
 function riftFloorOpen(f){ return f===1 || (riftState().st[f-1]&1); }
@@ -14179,6 +14187,7 @@ function riftRecCP(f){ const bf = riftMakeEnemies(f); return recCP(teamCP(bf.ene
 function rfRuleBar(box){ const w = box && box.parentElement, sb = w && w.querySelector('.rf-sb'); if(!sb) return; const ch = box.clientHeight, sh = box.scrollHeight;
   if(sh <= ch + 1){ sb.classList.remove('on'); return; } sb.classList.add('on'); const H = sb.clientHeight, th = Math.max(14, H*ch/sh), t = (H - th)*box.scrollTop/(sh - ch); sb.firstChild.style.cssText = 'top:'+t+'px; height:'+th+'px;'; }
 function showRiftPrep(f, keep){
+  { const pw = riftPeriod(); if(pw.wait){ toast('새 균열은 '+pickupOpenText(pw)+'에 열림'); return; } } // (v8.19.0)
   if(!pickupOnline()){ toast('온라인 연결 후 도전'); return; }
   if(!riftFloorOpen(f)){ toast((f-1)+'층을 먼저 돌파'); return; }
   state.riftForm = Array.isArray(state.riftForm) ? state.riftForm : [];
@@ -14386,6 +14395,7 @@ function renderRiftTab(){
   let h = '<div class="rf-head rf-h2"><div class="rf-hl"><div class="rf-t">'+uiIc('rift')+' '+RIFT_NAME+'<button class="mh-btn" data-mh="rift" aria-label="설명">ⓘ</button></div><div class="rf-sub">'+(on ? uiIc('time')+' '+pickupLeftText(per.left)+' 뒤 초기화' : '온라인일 때만 열림')+'</div>'
     + '<div class="rf-bless">'+SHARD_IC+' 별빛 조각 <b>'+(state.starShard||0)+'</b></div></div>'
     + '</div>' + TOP_MARK; // (v5.2.0) 픽업 정령 작은 그림 뺌 (사용자 결정) // (v343) 한 줄로 줄임 — 지도가 더 보이게
+  if(per.wait) return h + '<div class="card" style="text-align:center; margin-top:10px;">'+uiIc('time')+' 새 균열은 '+pickupOpenText(per)+'에 열림<div class="sub" style="margin-top:6px;">다음 픽업과 함께 새 층 · 새 보스</div></div>'; // (v8.19.0)
   if(!on) h += '<div class="card" style="text-align:center; margin-top:10px;">'+uiIc('offline')+' 온라인일 때만 도전 가능</div>';
   // (v343) 균열 지도 — 아래 1층에서 위 12층으로 오르는 별길 · 깨면 금빛, 다음 층은 반짝임, 하드 구간은 붉은 균열
   const hardFrom = RIFT_TIERS.findIndex(t=>t.h) + 1, ZGAP = hardFrom>1 ? 30 : 0; // (v6.2.1) 「깊은 균열」 띠 자리 — 층 칸 사이가 칸 높이만큼밖에 안 돼서 띠가 5층 칸 위와 겹쳤음
@@ -17729,7 +17739,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 436, APP_VERSION = '8.18.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 437, APP_VERSION = '8.19.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
