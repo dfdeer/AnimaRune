@@ -7261,6 +7261,7 @@ function showSkillStageScreen(){
     + '<div style="display:flex; gap:4px;">'
     + (sf.mode==='trial' ? '<button id="trRuleBtn" class="bs-exit" aria-label="시련 규칙">📜 규칙</button>' : '') // (build 392) 시련 규칙 다시 보기
     + (sf.mode==='rift' ? '<button id="rfRuleBtn" class="bs-exit" aria-label="균열 규칙">📜 규칙</button>' : '') // (v8.11.1) 균열 보스 기믹·기간 규칙 다시 보기
+    + (sf.mode==='expedition' && state.expedition ? '<button id="xpRelBsBtn" class="bs-exit" aria-label="유물">🔮</button>' : '') // (v8.16.0) 전투 중에도 유물 창
     + '<button id="bsSetBtn" class="bs-exit" aria-label="설정">'+uiIc('settings')+'</button>' // (v8.11.1) 전투 중에도 설정(소리 등)
     + '<button id="skillSpeedBtn" class="bs-exit" style="'+(state.skillSpeed2x?'background:#ffbc5755; border-color:#ffbc57;':'')+'">'+(state.skillSpeed2x?'⏩2x':'▶1x')+'</button>'
     + '<button id="skillAutoBtn" class="bs-exit" style="'+(state.skillAuto?'background:#5cc8ff55; border-color:#5cc8ff;':'')+'">'+uiIc('auto')+''+(state.skillAuto?'ON':'OFF')+'</button>'
@@ -7398,6 +7399,7 @@ function showSkillStageScreen(){
   if(q('trRuleBtn')) q('trRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showTrialRules(sf.trialId); });
   if(q('rfRuleBtn')) q('rfRuleBtn').addEventListener('click', e=>{ e.stopPropagation(); showRiftRules(sf); });
   if(q('bsSetBtn')) q('bsSetBtn').addEventListener('click', e=>{ e.stopPropagation(); bsKeepModal = true; showSettingsModal(); });
+  if(q('xpRelBsBtn')) q('xpRelBsBtn').addEventListener('click', e=>{ e.stopPropagation(); bsKeepModal = true; xpShowRelics('own'); }); // (v8.16.0) 다시 그려도 안 닫히게
   if(q('skillSpeedBtn')) q('skillSpeedBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillSpeed2x = !state.skillSpeed2x; save(); showSkillStageScreen(); });
   if(q('skillAutoBtn')) q('skillAutoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); state.skillAuto = !state.skillAuto; save(); showSkillStageScreen(); });
   if(q('waveNextBtn')) q('waveNextBtn').addEventListener('click', advanceBossWave);
@@ -11506,7 +11508,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:425, v:'8.16.0', date:'2026-10-15', secs:[
     { t:'출정 · 유물', items:[ '유물 15개 → 43개 · 등급(일반 · 희귀 · 전설) · 계열마다 6~8종', '유물 계열 5개 — 같은 계열 2개 · 4개면 세트 효과', '🔥 업화: 적이 받는 화상 · 독 피해 +25% / 전투 시작 때 적 전체 화상 2중첩 · 화상 · 독 피해 +25% 더', '🛡️ 수호: 전투 시작 때 아군 전체 보호막 (최대체력 12%) / 보호막 +30% · 보호막이 있는 아군 받는 피해 −20%', '💚 생명: 아군이 받는 회복 +20% / 준 피해의 6% 회복 · 라운드 시작마다 체력이 가장 낮은 아군 6% 회복', '🌪️ 질풍: 아군 속도 +6 / 속도 +6 더 · 1라운드 아군 공격력 +40%', '⚔️ 광기: 치명타 확률 +10%p / 치명타 피해 +25% · 적을 쓰러뜨릴 때마다 그 정령 공격력 +10% (최대 5번)', '같은 유물을 또 얻으면 레벨 +1 · 유물마다 최고 레벨 다름 (최대 Lv 5) · 얻을 때 · 유물 창 · 상점에 「Lv 지금/최고」 표시 — 유물을 다 모으면 보상 칸이 비던 것', '휴식에 「연마」 (유물 하나 레벨 +1) · 상점 유물 3개 · 등급별 값 · 유물 연마 판매', '지도 칸 옆 문양 = 이기면 나오는 유물 계열 · 보물 상자도 계열이 미리 보임', '새 유물: 용암 씨앗 (화상 걸린 적이 쓰러지면 양옆 적에게 화상) · 제비 깃 (라운드 시작에 확률로 가장 빠른 아군 스킬 대기 −1) · 속박 사슬 (전투 첫 공격에 확률로 속박)' ]},
-    { t:'출정 · 화면', items:[ '지도 칸을 누르면 아래에 칸 정보 (보상 · 유물 계열 · 금화) · 「이동」이나 한 번 더 누르면 들어감 · 지나온 칸 · 앞으로 갈 칸도 정보 보기', '갈 수 있는 길은 금색 점선 · 지나온 칸은 ✓ · 칸 종류마다 색', '위쪽에 단계 진행 막대 · 유물 계열 5칸 (모은 개수 · 세트 발동 표시) — 누르면 그 계열 유물 전부와 세트 효과', '유물 창 — 가진 유물 그림 + 오른쪽 계열 버튼 · 누르면 아래에 효과 · 다음 레벨 수치 · 계열은 세트 효과와 그 계열 유물 (없는 건 흐리게)' ]},
+    { t:'출정 · 화면', items:[ '지도 칸을 누르면 아래에 칸 정보 (보상 · 유물 계열 · 금화) · 「이동」이나 한 번 더 누르면 들어감 · 지나온 칸 · 앞으로 갈 칸도 정보 보기', '갈 수 있는 길은 금색 점선 · 지나온 칸은 ✓ · 칸 종류마다 색', '위쪽에 단계 진행 막대 · 유물 계열 5칸 (모은 개수 · 세트 발동 표시) — 누르면 그 계열 유물 전부와 세트 효과', '유물 창 — 가진 유물 그림 + 오른쪽 계열 버튼 · 누르면 아래에 효과 · 다음 레벨 수치 · 계열은 세트 효과와 그 계열 유물 (없는 건 흐리게)', '출정 전투 중에도 위쪽 🔮 버튼으로 유물 창' ]},
     { t:'출정 · 보상', items:[ '전투 보상은 유물 · 단련 · 전리품 중 하나 (같은 종류가 둘 나오지 않음) · 정예는 유물 3개 · 킵 보너스는 희귀 이상 유물 3개', '단련은 얻는 것과 잃는 것이 함께 — 광폭 (공격력 +20% · 받는 피해 +10%) · 강체 (최대체력 +25% · 공격력 −8%) · 경신 (속도 +10 · 최대체력 −10%) · 집중 (치명타 확률 +12%p · 속도 −5) · 응급 처치 (체력 50% 회복 · 피로 초기화) · 재기 (쓰러진 정령 체력 40%로)', '전리품이 사이클마다 커짐 — 강화석 15 + 15×사이클 · 정수 40 + 60×사이클 · 장비 소환권 사이클÷2 (최대 4) · 금화 30 + 20×사이클 · 완주 보상 +25%', '새 사건: 피 묻은 제단 · 노름꾼 · 버려진 대장간', '공격력이 1배 아래로 내려간 출정을 다시 켜면 1배로 돌아가던 것' ]}
   ]},
   { build:424, v:'8.15.1', date:'2026-10-15', secs:[
