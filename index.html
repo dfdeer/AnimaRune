@@ -1533,6 +1533,7 @@
   .dg-foes{display:flex; justify-content:center; gap:6px; margin-bottom:8px;} .dg-foes{gap:10px; flex-wrap:wrap;} .dg-foe{font-size:20px; cursor:pointer; margin-bottom:4px;} .dg-foe.g{box-shadow:0 0 0 2px #ffd557, 0 0 10px #ffd557aa;} /* (v266) 등급 테두리·속성 표시가 있는 칸으로 — 그림만 있으니 잘려 보이고 휑했음 */
   .dg-rw{margin-top:8px; font-size:12px; text-align:center; color:var(--sub);}
   .ch-card{position:relative; display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:16px; text-align:left; color:var(--text); background:linear-gradient(135deg,#2e2a6a,#1d1b48); border:2px solid var(--line); box-shadow:inset 0 2px 0 #ffffff14, 0 4px 0 #0000004d;} .ch-card > .uic{width:40px; height:40px;} .ch-card span{flex:1; display:flex; flex-direction:column; gap:2px;} .ch-card b{font-size:15px;} .ch-card small{font-size:11px; color:var(--sub);} .ch-card em{font-style:normal; font-size:22px; color:var(--sub);} .ch-card em .uic{width:18px; height:18px;} .ch-card.lock{opacity:.6;} .ch-dot{position:absolute; top:8px; left:8px; width:9px; height:9px; border-radius:50%; background:#ff5757;}
+  .upd-block{position:fixed; inset:0; z-index:100000; display:flex; align-items:center; justify-content:center; padding:16px; background:#0b0a1ee8;} .upd-block-box{width:100%; max-width:340px; padding:20px 18px; border-radius:18px; text-align:center; background:#1d1a45; border:1px solid #ffd55766; box-shadow:0 10px 30px #000c;} /* (v9.2.0) 앞자리 업데이트·점검 막기 */
   .upd-bar{position:fixed; left:50%; transform:translateX(-50%); top:calc(env(safe-area-inset-top, 0px) + 6px); z-index:998; padding:8px 14px; border-radius:999px; border:1px solid #ffd557; background:#2b2760f0; color:#ffe7a0; font-size:13px; font-weight:800; box-shadow:0 6px 18px #000a; white-space:nowrap; cursor:pointer;}
   /* 시작 화면 (불러오는 동안) */
   #splash{position:fixed; inset:0; z-index:100000; overflow:hidden; background:#0b1238; transition:opacity .45s ease;}
@@ -1955,6 +1956,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
         <button data-hmenu="mailsend" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;"><img class="uic" src="assets/ui/ic_mail.webp" alt="" draggable="false"> 우편 보내기 <small style="color:#ffd557;">관리자</small></button>
         <button data-hmenu="mode" class="hm-admin hm-mode" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;"><img class="uic" src="assets/ui/ic_mode.webp" alt="" draggable="false"> <span id="hmModeTx">일반 모드로</span></button>
         <button data-hmenu="admin" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;"><img class="uic" src="assets/ui/ic_admin.webp" alt="" draggable="false"> 관리자 세팅</button>
+        <button data-hmenu="maint" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;">🔧 점검 <small style="color:#ffd557;">관리자</small></button>
         <button data-hmenu="inbox" class="hm-admin" style="display:flex; align-items:center; gap:6px; width:100%; background:none; border:none; color:var(--text); font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; text-align:left; cursor:pointer; white-space:nowrap;; display:none;"><img class="uic" src="assets/ui/ic_inbox.webp" alt="" draggable="false"> 문의함 <small style="color:#ffd557;">관리자</small><span id="hmInboxN" class="hm-n" style="display:none;"></span></button>
       </div>
       <button id="headerAchieveBtn" style="display:none; background:none; border:none; color:var(--sub); font-size:16px; padding:4px; cursor:pointer; line-height:1; position:relative;"><img class="uic" src="assets/ui/ic_medal.webp" alt=""></button>
@@ -5482,6 +5484,7 @@ async function raidInitNet(){
     friendInit().catch(()=>netRetryLater()); // (v314) 실패하면 다시 시도
     accountInit().catch(()=>{});
     pushRefresh(); // (v310)
+    if(typeof maintWatch==='function') maintWatch(); // (v9.2.0) 점검
   }catch(e){ raidNet.failed = true; raidNet.failReason = (e && e.message) || ''; state.raidSession = null; netRetryLater(); }
   if(activeTab==='raid' && !raidNet.code) render();
 }
@@ -11601,6 +11604,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:440, v:'9.2.0', date:'2026-10-16', secs:[
+    { t:'업데이트', items:[ '앞자리가 바뀌는 큰 업데이트가 나오면 업데이트해야 게임을 이어서 할 수 있음 (전투 중이면 전투가 끝난 뒤)', '업데이트 점검 중에는 게임이 잠깐 닫힘 — 점검이 끝나면 저절로 열림' ]}
+  ]},
   { build:439, v:'9.1.1', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '픽업이 끝나고 다음 픽업이 열리기 전에는 홈의 픽업 배너를 숨김' ]},
     { t:'광산', items:[ '별빛 광맥 칸이 처음 드러날 때 빈칸으로 보이던 것 수정 (다른 칸을 캐야 보였음)' ]}
@@ -17289,7 +17295,7 @@ document.getElementById('headerResetBtn').addEventListener('click', showSettings
     document.getElementById('headerMenuBtn').addEventListener('click', e=>{ e.stopPropagation(); hm.style.display = hm.style.display==='none' ? 'block' : 'none'; });
     { const bb = document.getElementById('headerBellBtn'); if(bb && !bb.dataset.bound){ bb.dataset.bound = '1'; bb.addEventListener('click', showToastLog); } } // (v296) 놓친 알림
     if(document.getElementById('headerFriendBtn') && !document.getElementById('headerFriendBtn').dataset.bound){ document.getElementById('headerFriendBtn').dataset.bound='1'; document.getElementById('headerFriendBtn').addEventListener('click', e=>{ e.stopPropagation(); if(xpLockBlock()) return; showFriendsModal(); }); }
-    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({bag:showBagModal, achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
+    hm.querySelectorAll('[data-hmenu]').forEach(b=>b.addEventListener('click', ()=>{ hm.style.display = 'none'; ({bag:showBagModal, achieve:showAchievementsModal, guide:showGuideModal, notes:showPatchNotes, ask:showAskModal, inbox:showInboxModal, settings:showSettingsModal, mail:showMailboxModal, tlog:showToastLog, update:appUpdateNow, mailsend:showMailSendModal, maint:showMaintModal, admin:showAdminSetupModal, mode:showModeSwitchModal})[b.dataset.hmenu](); }));
     document.addEventListener('click', ()=>{ hm.style.display = 'none'; }); }
 
 // (v95) 전투 결과가 표시되면, 모달이 화면보다 길 때 결과와 확인 버튼이 보이도록 맨 아래로 스크롤
@@ -17753,7 +17759,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 439, APP_VERSION = '9.1.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 440, APP_VERSION = '9.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
@@ -17779,6 +17785,7 @@ var updLatest = 0, updSnoozed = false, updCheckedAt = 0, updCheckDone = false; /
 function updBusy(){ return !!(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code) || (state && state.bossFight)); }
 // (v2.10.2) 끝자리만 바뀐 자잘한 업데이트(소리·문구 등)는 알림 창을 띄우지 않고 메뉴와 업데이트 버튼에 빨간 점만 — 가운데·앞자리가 바뀌면(큰 버그·수치 조정·새 콘텐츠) 지금처럼 알림 창
 function verParts(v){ const p = String(v||'').split('.').map(x=>parseInt(x,10)); if(p.length===2 && String(v).split('.')[1].length===2) return [p[0], Math.floor(p[1]/10), p[1]%10]; return [p[0]||0, p[1]||0, p[2]||0]; } // 예전 '2.93' = 2.9.3
+function updMajor(){ const nv = buildVer[updLatest]; return !!nv && updLatest > APP_BUILD && verParts(nv)[0] > verParts(APP_VERSION)[0]; } // (v9.2.0) 앞자리가 바뀐 업데이트 — 업데이트 전엔 게임 못 함 (사용자 결정 10/15)
 function updPatchOnly(){ const nv = buildVer[updLatest]; if(!nv) return false; const a = verParts(APP_VERSION), c = verParts(nv); return a[0]===c[0] && a[1]===c[1]; }
 function updMarkMenu(){ const v = document.getElementById('hmVer'); if(v && updLatest > APP_BUILD){ v.innerHTML = verTxt(APP_BUILD)+' → <b style="color:#ffd557;">'+verTxt(updLatest)+'</b><span class="upd-dot"></span>'; } if(typeof mailBadgeUpdate==='function') mailBadgeUpdate(); }
 function updBar(text){
@@ -17786,7 +17793,61 @@ function updBar(text){
   if(!b){ b = document.createElement('button'); b.id = 'updBar'; b.className = 'upd-bar'; b.addEventListener('click', ()=>{ if(updBusy()) toast('전투가 끝나면 업데이트'); else showUpdatePopup(true); }); document.body.appendChild(b); }
   b.innerHTML = text; // (v335) 아이콘 그림 — 내부 문구만 넘어옴
 }
+function showUpdateBlock(){ // (v9.2.0) 앞자리 업데이트 — 닫을 수 없는 창 · 전투·레이드 방에 있으면 끝난 뒤
+  if(document.getElementById('updBlock')) return;
+  if(document.getElementById('battleScreen') || (typeof raidNet!=='undefined' && raidNet.code)){ updBar(uiIc('update')+' 새 버전 '+verTxt(updLatest)+' · 전투 끝나면 업데이트 필요'); return; }
+  const bar = document.getElementById('updBar'); if(bar) bar.remove();
+  document.querySelectorAll('#updPop').forEach(o=>{ const bg = o.closest('.modal-bg'); if(bg) bg.remove(); });
+  const d = document.createElement('div'); d.id = 'updBlock'; d.className = 'upd-block';
+  d.innerHTML = '<div class="upd-block-box"><div class="ttl" style="font-size:16px;">'+uiIc('update')+' 새 버전 <b style="color:#ffd557;">'+verTxt(updLatest)+'</b></div>'
+    + '<div class="sub" style="font-size:12px; line-height:1.6; margin-top:6px;">큰 업데이트가 나와서 업데이트해야 이어서 할 수 있음<br>지금 '+verTxt(APP_BUILD)+' · 진행 상황은 그대로 남음</div>'
+    + '<button class="btn" id="updBlockNow" style="margin-top:14px; width:100%;">지금 업데이트</button></div>';
+  document.body.appendChild(d);
+  try{ save(); }catch(e){}
+  d.querySelector('#updBlockNow').addEventListener('click', ()=>appUpdateNow());
+}
+// (v9.2.0) 점검 — 관리자가 Firebase maint = { on, msg, t } 를 켜면 모두 게임이 닫힘(관리자 빼고) · 끄면 저절로 열리고 새 버전 확인
+const ADMIN_UID = '8V7bN7HfeIRGHCsGu8aeAcJlUBq2';
+const MAINT_MSG = '업데이트 점검 중 · 잠시 뒤에 다시 열림';
+var maintNet = { on:false, v:null, was:false };
+function maintAdmin(){ return (typeof raidNet!=='undefined' && raidNet.uid===ADMIN_UID) || (typeof isAdmin==='function' && isAdmin()); }
+function maintOn(){ return !!(maintNet.v && maintNet.v.on===true); }
+function maintWatch(){
+  const fb = typeof raidNet!=='undefined' && raidNet.fb; if(!fb || maintNet.on) return; maintNet.on = true;
+  try{ fb.onValue(fb.ref(fb.rtdb, 'maint'), s=>{ maintNet.v = s.val() || null; maintApply(); }, ()=>{ maintNet.on = false; }); }catch(e){ maintNet.on = false; }
+}
+function maintApply(){
+  const on = maintOn(), el = document.getElementById('maintBlock');
+  if(on && !maintAdmin()){
+    maintNet.was = true;
+    const msg = String((maintNet.v && maintNet.v.msg) || MAINT_MSG).slice(0, 200);
+    if(el){ const m = el.querySelector('.maint-msg'); if(m) m.textContent = msg; return; }
+    try{ save(); }catch(e){}
+    const d = document.createElement('div'); d.id = 'maintBlock'; d.className = 'upd-block';
+    d.innerHTML = '<div class="upd-block-box"><div class="ttl" style="font-size:16px;">🔧 점검 중</div><div class="sub maint-msg" style="font-size:12px; line-height:1.6; margin-top:6px; white-space:pre-line;"></div><div class="sub" style="font-size:11px; margin-top:8px;">점검이 끝나면 저절로 열림 · 진행 상황은 그대로 남음</div></div>';
+    d.querySelector('.maint-msg').textContent = msg;
+    document.body.appendChild(d);
+    return;
+  }
+  if(el) el.remove();
+  if(on && maintAdmin() && !maintNet.adminTold){ maintNet.adminTold = true; toast('🔧 점검 중 — 관리자라 들어올 수 있음', 3000); }
+  if(!on){ maintNet.adminTold = false; if(maintNet.was){ maintNet.was = false; updCheckedAt = 0; checkAppUpdate(); } } // 점검이 끝나면 바로 새 버전 확인
+}
+function showMaintModal(){
+  const fb = typeof raidNet!=='undefined' && raidNet.fb; const on = maintOn();
+  document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:380px;"><button class="close-x" id="modalClose">x</button>'
+    + '<h3 style="text-align:center;">🔧 점검</h3><div class="sub" style="text-align:center; margin-bottom:8px;">지금 '+(on ? '<b style="color:#ff6b6b;">점검 중</b>' : '<b style="color:#7be38b;">열림</b>')+(fb ? '' : ' · 서버 연결 안 됨')+'</div>'
+    + '<textarea id="maintMsg" maxlength="200" rows="3" style="width:100%; box-sizing:border-box; border-radius:10px; padding:8px; background:#0e0c26; color:var(--text); border:1px solid #ffffff22;"></textarea>'
+    + '<div class="sub" style="font-size:11px; margin-top:4px;">켜면 관리자 빼고 모두 게임이 닫힘 · 끄면 저절로 열리고 새 버전 확인</div>'
+    + '<div style="display:flex; gap:6px; margin-top:10px;"><button class="btn secondary" id="maintOff" style="flex:1; margin:0;" '+(on?'':'disabled')+'>점검 끝</button><button class="btn" id="maintOnBtn" style="flex:1; margin:0;">'+(on?'문구 바꾸기':'점검 시작')+'</button></div></div></div>';
+  document.getElementById('maintMsg').value = String((maintNet.v && maintNet.v.msg) || MAINT_MSG);
+  bindModalClose();
+  const put = v=>{ if(!fb){ toast('서버 연결 안 됨'); return; } fb.set(fb.ref(fb.rtdb, 'maint'), v).then(()=>{ toast(v.on ? '🔧 점검 시작' : '🔧 점검 끝'); closeModal(); }).catch(e=>toast('실패 — '+((e && e.message) || '권한 확인 (Firebase 규칙)'))); };
+  document.getElementById('maintOnBtn').addEventListener('click', ()=>{ const msg = document.getElementById('maintMsg').value.trim().slice(0, 200) || MAINT_MSG; confirmBox('점검', on ? '점검 문구를 바꿈' : '관리자 빼고 모두 게임이 닫힘', on ? '바꾸기' : '점검 시작', ()=>put({ on:true, msg, t:serverNow() })); });
+  document.getElementById('maintOff').addEventListener('click', ()=>put({ on:false, msg:'', t:serverNow() }));
+}
 function showUpdatePopup(force){
+  if(updMajor()){ showUpdateBlock(); return; }
   if(!updLatest || updLatest <= APP_BUILD || (updSnoozed && !force)) return;
   if(!force && updPatchOnly()) return; // (v2.10.2) 자잘한 업데이트는 빨간 점만
   if(updBusy()){ updBar(uiIc('update')+' 새 버전 '+verTxt(updLatest)+' · 전투 끝나면 알림'); return; }
@@ -17805,14 +17866,17 @@ async function checkAppUpdate(){
   updCheckedAt = Date.now();
   const latest = await latestBuild(); updCheckDone = true; if(!latest || latest <= APP_BUILD) return;
   if(latest > updLatest){ updLatest = latest; updSnoozed = false; } // 더 새 버전이 또 나오면 다시 알림
+  try{ if(navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.update().catch(()=>{}); }).catch(()=>{}); }catch(e){} // (v9.2.0) 새 서비스 워커를 바로 받아 둠
   updMarkMenu(); showUpdatePopup();
 }
 setTimeout(checkAppUpdate, 1500);
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') checkAppUpdate(); });
+window.addEventListener('online', ()=>{ updCheckedAt = 0; checkAppUpdate(); }); // (v9.2.0) 오프라인으로 켠 뒤 인터넷이 돌아오면 바로 새 버전 확인 — 앞자리면 강제 업데이트
 
 // 폰의 뒤로가기(안드로이드 버튼·아이폰 왼쪽 끝 밀기) — 열린 창 닫기 → 하위 화면 → 홈 → (홈에서 두 번) 종료
 let backArmAt = 0, exitArmAt = 0, lastPopAt = 0;
 function appBack(){
+  if(document.getElementById('updBlock') || document.getElementById('maintBlock')) return true; // (v9.2.0) 업데이트·점검 창이 떠 있는 동안 뒤로 가기 막음
   document.querySelectorAll('.rw-tip').forEach(x=>x.remove());
   const hm = document.getElementById('headerMenu'); if(hm && hm.style.display==='block'){ hm.style.display = 'none'; return true; }
   const mods = [...document.querySelectorAll('.modal-bg')].filter(m=>getComputedStyle(m).display!=='none');
@@ -17855,6 +17919,7 @@ if(!IS_IOS){
   const pick = ()=>{
     // (v266) 의뢰·업적처럼 지금 화면 위에 뜬 창이 있으면 밀어서 뒤로 안 됨(창은 ✕로 닫기) — 화면 자체가 바뀐 경우(하위 화면)만 밀어서 뒤로
     if([...document.querySelectorAll('.modal-bg')].some(m=>getComputedStyle(m).display!=='none')) return null;
+    if(document.getElementById('updBlock') || document.getElementById('maintBlock')) return null;
     const hm = document.getElementById('headerMenu'); if(hm && hm.style.display==='block') return null;
     if(document.getElementById('battleScreen') || activeTab==='home') return null;
     const mn = document.getElementById('main'); return mn ? { el: mn, bg: null } : null;
@@ -17882,6 +17947,7 @@ if(!IS_IOS){
 <script>
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  navigator.serviceWorker.addEventListener('message', e=>{ if(e.data && e.data.t==='ar-ver?' && e.ports && e.ports[0]) e.ports[0].postMessage({ build: APP_BUILD }); }); // (v9.2.0) 서비스 워커가 버전을 물으면 대답 — 대답 못 하는 옛 화면만 새로 불러옴
 }
 </script>
 </body>
