@@ -3138,6 +3138,7 @@ function dmgReduction(sf, d){
   if(d.line==='wood_sg' && aw3(d) && d.st && d.st.counter) r += 0.15; // (v8.7.0) 산군 바위 가죽
   if(d.st && d.st.rwd) r += d.st.rwd.v; // (v8.7.0) 므네모시네 기억의 조각
   if(sf && sf.riftRule==='flow' && d.side==='me' && d===flowHost(sf)) r += FLOW_DR; // (v7.4.0) 균열 물길 — 물받이
+  if(sf && sf.riftRule==='sky' && skyHidden(sf, d)) r += SKY.dr; // (v10.0.0) 균열 밤하늘 — 해로운 효과 없는 적
   r += runeDr(d);
   if(sf && sf.xr) r += xpDr(sf, d); // (v8.17.0) 출정 유물·단련
   { const w = sideWidth(sf, d.side); if(!isFrontRow(d.idx, w)){ const f = unitAt(sf, d.side, d.idx-w); if(f && f.alive && !f.inert && f.line==='wood_a' && f.g>=4) r += 0.2; } }
@@ -3402,7 +3403,7 @@ function makeActCtx(sf, a, tSide, tIdx){
   const supM = raidGazed(sf, a) ? 1.5 : 1; // (v272) 시선 받은 편의 회복·보호막 1.5배
   C.heal = (u, amt)=>{ if(!u || !u.alive) return; amt *= supM; if(u.trUndead){ trialUndeadHurt(sf, u, amt, C.skNm||'회복', C.hits); C.healed = 0; return 0; } /* (build 390) 시련 역류: 회복 → 피해 */ const before = u.hp, hv = healAmount(u, amt); const over = u.hp + hv - u.maxHp; hbTide(sf, u, over); if(over>0 && sf.xr && sf.xr.cup && u.side==='me'){ u.st.shield = (u.st.shield||0) + Math.round(over*sf.xr.cup/100); u.st.shieldR = 2; } /* (v8.17.0) 넘치는 잔 */ u.hp = Math.min(u.maxHp, u.hp + hv); C.hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-before, src:C.skNm||'' }); C.healed = u.hp-before; return Math.max(0, over); }; // (v8.7.0) 넘친 양을 돌려줌 // (v308) 회복 글자에 출처(스킬 이름)
   C.shield = (u, amt)=>{ if(!u || !u.alive) return; const v = Math.round(amt*supM*xpShieldMult(sf, u)); u.st.shield = (u.st.shield||0) + v; u.st.shieldR = 2; C.hits.push({ side:u.side, idx:u.idx, kind:'shield', amount:v }); }; // (v173) 보호막은 2라운드 유지
-  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); return true; };
+  C.neg = (u, fn, label)=>{ if(!u || !u.alive) return false; if(u.st.ward>0){ u.st.ward--; if(!u.st.ward) delete u.st.ward; C.hits.push({ side:u.side, idx:u.idx, kind:'status', ward:true, text:'<img class="uic" src="assets/ui/ic_guard.webp" alt="">막음' }); return false; } fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:true, text:label }); if(sf.riftRule==='sky') skyGain(C, u, label); return true; };
   C.pos = (u, fn, label)=>{ if(!u || !u.alive) return; fn(u.st); C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, text:label }); };
   C.burn = (u, n)=>{ if(a.line==='fire_b' && aw1(a)) n += 1; n += xpBurnAdd(sf, a); const cap = (a.line==='fire_b' && a.g>=4) ? 8 : 5; C.neg(u, st=>{ st.burnCap = Math.max(cap, st.burnCap||5); st.burn = Math.min(st.burnCap, (st.burn||0)+n); st.burnDmg = Math.max(st.burnDmg||0, Math.round(a.atk*0.15)); }, '🔥화상'); };
   C.poison = (u, pct)=>{ pct *= dbMul(a); if(C.neg(u, st=>{ const wb = a.line==='wood_b', mx = (wb && awUq(a)) ? (awAs(a) ? 3 : 2) : 1, n = st.poison ? Math.min(mx, Math.max(st.poison.n||1, 1) + 1) : 1; st.poison = { r:(wb && aw1(a)) ? 4 : 3, pct, srcG:a.g, ...(mx>1 ? { n:Math.min(mx, n) } : {}), ...((wb && aw3(a)) || (st.poison && st.poison.sl) ? { sl:1 } : {}) }; }, '☠독') && sf.xr && sf.xr.venom && a.side==='me' && u.st.poison) u.st.poison.r += sf.xr.venom; }; // (v8.7.0) 아난시 중첩 · 끈적한 실
@@ -6968,6 +6969,7 @@ function statusList(u){
   if(s.linkHost) o.push({i:stIc('linkhost'), t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
   if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에 · 다음 차례까지', good:true});
   { const sf = state.skillFight; if(sf && sf.riftRule==='flow' && u && u.side==='me' && u.alive && flowHost(sf)===u) o.push({i:stIc('linkhost'), t:'물받이', d:'다른 아군 피해 '+Math.round(FLOW_SHARE*100)+'% 대신 받음 · 받는 피해 −'+Math.round(FLOW_DR*100)+'% · 물 '+fmtHp((sf.flow&&sf.flow.g)||0)+' / '+fmtHp(u.maxHp*FLOW_FILL)+' — 가득 차면 물살', good:true}); } // (v7.4.0) 균열 물길
+  { const sf = state.skillFight; if(sf && sf.riftRule==='sky' && u && u.alive && skyHidden(sf, u)) o.push({i:'🌌', t:'밤하늘', d:'해로운 효과가 없어 받는 피해 −'+Math.round(SKY.dr*100)+'% · 별빛 '+((sf.sky&&sf.sky.n)||0)+' / '+SKY.need}); } // (v10.0.0) 균열 밤하늘
   if(u && u.line==='water_hb' && u.tide>0) o.push({i:stIc('linkhost'), t:'수위', d:fmtHp(u.tide)+' — 범람 때 적마다 '+Math.round(HB_TIDE_MUL*100)+'%만큼 추가 피해', good:true});
   if(s.veil) o.push({i:stIc('veil'), t:'도깨비불', d:'받는 피해 −'+Math.round(s.veil.v*100)+'%'+r(s.veil), good:true});
   if(s.club) o.push({i:stIc('club'), t:'방망이', d:'다음 공격 공격력 +'+(s.club===2 ? 70 : 40)+'%', good:true}); // (b433) 큰 방망이는 +70%
@@ -9315,6 +9317,7 @@ const PICKUP_P0 = (2026*12+9)*2; // 2026년 10월 1~15일 = 첫 픽업
 // 순서는 기간 번호로 정해지는 무작위 (모두 같은 순서) · 바로 앞 두 기간에 나온 한정은 빠짐 · LIMITED_P0 전 기간은 예전 2신화 픽업
 const LIMITED_P0 = PICKUP_P0; // (v344) 2026년 10월 1일 기간부터 바로 (사용자 결정 — 예전엔 10월 16일~)
 const LIMITED_PAIR = { fire_mythic_sc:'water_mythic_b', fire_mythic_su:'fire_mythic_a', water_mythic_mn:'wood_mythic_a', water_mythic_hb:'water_mythic_a', wood_mythic_sg:'light_mythic_a', light_mythic_as:'fire_mythic_b', dark_mythic_lk:'dark_mythic_b', dark_mythic_dk:'wood_mythic_b' };
+const LIMITED_FIX = { [PICKUP_P0+1]: 'light_mythic_as' }; // (v10.0.0) 기간 번호 → 한정 성좌 고정 · 10월 16일 기간은 아스트라이아 (사용자 결정 10/16) — 뒤 기간 순서도 이걸 보고 다시 정해짐
 const PICKUP_MEM_PER_PULL = 1; // 픽업 1회마다 고른 정령 기억 조각
 const limSeqCache = [];
 function pickupLimitedAt(idx){ // idx 기간의 한정 성좌
@@ -9323,6 +9326,7 @@ function pickupLimitedAt(idx){ // idx 기간의 한정 성좌
     const w = pool.map(k=>{ const last = limSeqCache.lastIndexOf(k); return Math.pow(last<0 ? 12 : i - last, 2); }); // 오래 안 나온 정령일수록 잘 나옴 (고르게 돌아오게)
     let x = seededRand((LIMITED_P0+i)*7.31 + 13.7) * w.reduce((a,b)=>a+b, 0), pick = pool[pool.length-1];
     for(let j=0; j<pool.length; j++){ if(x < w[j]){ pick = pool[j]; break; } x -= w[j]; }
+    if(LIMITED_FIX[LIMITED_P0+i]) pick = LIMITED_FIX[LIMITED_P0+i]; // (v10.0.0) 정해 둔 기간
     limSeqCache.push(pick); }
   return limSeqCache[n];
 }
@@ -11604,6 +11608,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:441, v:'10.0.0', date:'2026-10-16', secs:[
+    { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
+    { t:'별빛 균열 · 기간 규칙 「밤하늘」', items:[ '해로운 효과가 하나도 없는 적은 받는 피해 −40%', '적에게 해로운 효과를 걸 때마다 별빛 1개 (아스트라이아 별 표식은 3개)', '별빛 5개가 모이면 별똥별 — 마지막으로 건 정령이 그 적과 십자 1칸에 공격력 150% + 별 표식 1개', '규칙이 있는 기간이라 픽업 공격력 보너스(+25% · +25%)는 없음' ]},
+    { t:'이벤트', items:[ '정령 빙고 진행 중 — 10월 31일까지 · 홈 픽업 배너 밑 「빙고」' ]}
+  ]},
   { build:440, v:'9.2.0', date:'2026-10-16', secs:[
     { t:'업데이트', items:[ '앞자리가 바뀌는 큰 업데이트가 나오면 업데이트해야 게임을 이어서 할 수 있음 (전투 중이면 전투가 끝난 뒤)', '업데이트 점검 중에는 게임이 잠깐 닫힘 — 점검이 끝나면 저절로 열림' ]}
   ]},
@@ -14036,9 +14045,21 @@ function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 
 // 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
 const RIFT_DUO_ON = false, RIFT_DUO_FROM = 11; // (v7.3.0) 연계 층·공명 뺌 (사용자 결정 10/8 — 기간 규칙으로 바꿀 예정) · 연계 층 코드는 끄기만 함(진행 중이던 전투 세이브용)
 // (v7.4.0) 균열 기간 규칙 — 한정 성좌 픽업마다 모든 층에 하나 (사용자 결정: 숫자 버프 대신 싸우는 방식이 바뀌게) · 규칙이 있는 기간엔 픽업 공격력 +25%·+25% 대신 규칙만
-const RIFT_RULES = { water_mythic_hb:'flow', fire_mythic_sc:'fuse' }; // (v8.1.0) 스칼렛 「도화선」
-const RIFT_RULE_INFO = { fuse:{ nm:'도화선', ic:'🧨', d:['2라운드마다 보스가 앞줄 빈 칸에 정령을 부름 (보스와 같은 속성 · 최대 2)', '부른 정령은 2라운드 뒤 터짐 — 아군 전체 피해', '앞줄 적이 쓰러지면 걸려 있던 화상·독·폭탄이 보스로 옮겨 붙음'] }, flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
+const RIFT_RULES = { water_mythic_hb:'flow', fire_mythic_sc:'fuse', light_mythic_as:'sky' }; // (v8.1.0) 스칼렛 「도화선」 · (v10.0.0) 아스트라이아 「밤하늘」
+const RIFT_RULE_INFO = { sky:{ nm:'밤하늘', ic:'🌌', d:['해로운 효과가 하나도 없는 적은 받는 피해 −40%', '적에게 해로운 효과를 걸 때마다 별빛 1개 (아스트라이아 별 표식은 3개)', '별빛 5개가 모이면 별똥별 — 마지막으로 건 정령이 그 적과 십자 1칸에 공격력 150% + 별 표식 1개'] }, fuse:{ nm:'도화선', ic:'🧨', d:['2라운드마다 보스가 앞줄 빈 칸에 정령을 부름 (보스와 같은 속성 · 최대 2)', '부른 정령은 2라운드 뒤 터짐 — 아군 전체 피해', '앞줄 적이 쓰러지면 걸려 있던 화상·독·폭탄이 보스로 옮겨 붙음'] }, flow:{ nm:'물길', ic:'🌊', d:['물 속성 정령 공격력 +10%', '물은 최대체력이 가장 높은 아군(물받이)에게 모여 다른 아군 피해의 10%를 대신 받음 · 물받이는 받는 피해 −30%', '모인 물이 물받이 최대체력의 20%면 물살 — 적 전체 다음 라운드 맨 뒤로 + 약한 피해', '하백이 물길 잇기 중이면 물받이는 하백 (연결된 아군 몫 40%도 물로 모임)'] } };
 const FLOW_WATER_ATK = 0.10, FLOW_SHARE = 0.10, FLOW_DR = 0.30, FLOW_FILL = 0.2, FLOW_WAVE = 0.6; // 물살 기준 = 물받이 최대체력 20% (자동 전투 측정: 50%면 10층 10라운드 동안 한 번도 안 터짐)
+// (v10.0.0) 균열 기간 규칙 「밤하늘」 (아스트라이아 · 사용자 결정 10/16) — 해로운 효과가 없는 적은 숨고, 해로운 효과를 걸수록 별빛이 모여 별똥별
+const SKY = { dr:0.4, need:5, as:3, mult:1.5 };
+function skyHidden(sf, u){ if(!sf || sf.riftRule!=='sky' || u.side!=='enemy' || u.inert) return false; const s = u.st || {}; return !XP_NEG_KEYS.some(k=> s[k] && !(Array.isArray(s[k]) && !s[k].length)); }
+function skyGain(C, u, label){ const sf = C.sf; if(sf.riftRule!=='sky' || C.a.side!=='me' || !u || u.side!=='enemy') return;
+  const g = sf.sky = sf.sky || { n:0 }; g.n += (C.a.line==='light_as' && /별 표식/.test(label||'')) ? SKY.as : 1;
+  if(g.n < SKY.need || g.busy) return;
+  g.n = 0; g.busy = true;
+  try{ const w = sideWidth(sf, u.side), L = [u].concat(gridNeighbors(u.idx, 'cross', w).map(i=>unitAt(sf, u.side, i))).filter(x=>x && x.alive);
+    C.hits.push({ side:u.side, idx:u.idx, kind:'status', text:'🌠별똥별' }); pushLog(sf, '🌌 <b>밤하늘</b> — 별빛 '+SKY.need+'개 · 별똥별');
+    L.forEach(x=>{ C.hit(x, SKY.mult, { starfall:true }); if(x.alive && !x.inert){ x.st.star = { n:Math.min(3, ((x.st.star&&x.st.star.n)||0)+1), r:3 }; C.hits.push({ side:x.side, idx:x.idx, kind:'status', neg:true, text:'✴️별 표식' }); } }); }
+  finally{ g.busy = false; }
+}
 function riftRuleOf(per){ per = per || riftPeriod(); return (per && per.pair && RIFT_RULES[per.pair[0]]) || null; }
 function flowHost(sf){ if(!sf || sf.riftRule!=='flow' || !sf.myUnits) return null; const my = sf.myUnits.filter(u=>u.alive && !u.inert); // 물받이: 물길 잇기 중인 하백 → 아니면 최대체력이 가장 높은 아군
   return my.find(u=>u.line==='water_hb' && u.st.linkHost) || my.reduce((b,u)=> !b || u.maxHp>b.maxHp ? u : b, null); }
@@ -17431,6 +17452,7 @@ function rwLedger(){
 // (v7.0.1) 사용자 결정: 업데이트 선물은 출시부터 7일 안에 접속한 사람만 · 게임이 넣는 우편(선물·보상 개편)은 받은 날부터 7일 지나면 사라짐
 const SYS_MAIL_DAYS = 7;
 const UPDATE_GIFTS = [
+  { id:'upd1000', until: Date.UTC(2026,9,22,15), title:'10.0.0 업데이트 · 아스트라이아', body:'10월 16일 10시 아스트라이아 픽업\n· 균열 새 규칙 「밤하늘」\n· 빙고 이벤트 진행 중 (31일까지)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }, // until = 출시일(10/16) + 7일
   { id:'upd900', until: Date.UTC(2026,9,22,15), title:'9.0.0 업데이트 · 정령 빙고', body:'10월 16일부터 빙고 이벤트\n· 칸을 채우면 정수 · 강화석\n· 한 줄마다 별빛 조각 50\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }, // 출시 2026-10-16 · until = 출시일 + 7일
   { id:'upd800', until: Date.UTC(2026,9,16,15), title:'8.0.0 업데이트 · 난이도 개편', body:'탐험 난이도가 이지 · 노말 · 하드 세 단계로\n· 예전 노말은 이지로 (보스 추가 기믹 없음)\n· 예전 하드 1·2는 노말 1·2로 · 노말 3~6 새로\n· 하드 1·2 새로 · 하드 3~6 그대로\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd700', until: Date.UTC(2026,9,15,15), title:'7.0.0 업데이트 · 정령 마을', body:'화로 탭이 「마을」로\n· 광산 해금\n· 화로 강화 상한 증가 (30레벨)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
@@ -17759,7 +17781,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 440, APP_VERSION = '9.2.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 441, APP_VERSION = '10.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
