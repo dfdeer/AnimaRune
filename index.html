@@ -1310,6 +1310,7 @@
   .mg-fav{position:absolute; top:10px; left:12px; z-index:3; width:36px; height:36px; border-radius:50%; border:1.5px solid #ffffff33; background:#0006; color:#cfc8ff; font-size:20px; line-height:1; cursor:pointer;} .mg-fav.on{color:#ffd557; border-color:#ffd55799; text-shadow:0 0 8px #ffd557aa;} .sp-fav{color:#ffd557; margin-right:1px;} .sp-favh{font-weight:800; margin:10px 0 6px;} .sp-favh span{color:var(--sub); font-weight:400; margin-left:4px;}
   .ud-plus{display:block; font-style:normal; font-size:11px; font-weight:800; color:#6fe39a;} .ud-plusn{text-align:center; font-size:10px; margin-top:3px;}
   .sub-stop{display:flex; align-items:center; gap:6px; justify-content:center; margin-top:8px; font-size:12px;} .sub-stop span{white-space:nowrap; color:var(--sub);} .sub-stop select{min-width:0; flex:1; max-width:120px; padding:4px; border-radius:8px; background:#1b1838; color:var(--text); border:1px solid #ffffff33; font-size:12px;} .sub-held{background:linear-gradient(135deg,#3fd98a,#1f9e63) !important; color:#fff;}
+  .toast.stk{overflow:visible;} .toast.stk::before, .toast.stk::after{content:''; position:absolute; left:8%; right:8%; height:100%; top:5px; z-index:-1; border-radius:inherit; background:#1d1a4acc; border:1px solid #5b6bff66;} .toast.stk::after{display:none;} .toast.stk3::after{display:block; left:16%; right:16%; top:10px; z-index:-2; background:#1d1a4a99; border-color:#5b6bff40;} /* (v8.16.0) 쌓인 알림 */
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
@@ -3441,7 +3442,8 @@ function raidWeekBoss(){ // (v173) 이름은 그대로 두고 '지금 선택한 
   const i = RAID_BOSSES.findIndex(x=>x.id===state.raidBossSel);
   return (i>=0 && raidBossUnlocked(i)) ? RAID_BOSSES[i] : RAID_BOSSES[0];
 }
-function raidMarkClear(sf){ if(!sf || !sf.result || !sf.result.win || sf.result.surrender) return; state.raidProgress = state.raidProgress || {}; const l = state.raidProgress[sf.raidBossId] || []; if(!l.includes(sf.raidDiff)){ state.raidProgress[sf.raidBossId] = l.concat(sf.raidDiff); save(); } }
+const RAID_FIRST_STAR = { easy:20, normal:30, hard:50, extreme:80, hell:120, inferno:160, chaos:200 }; // (v8.16.0) 사용자 결정: 보스·난이도마다 첫 클리어 별빛 조각 (체크 표시만 있고 보상이 없었음)
+function raidMarkClear(sf){ if(!sf || !sf.result || !sf.result.win || sf.result.surrender) return; state.raidProgress = state.raidProgress || {}; const l = state.raidProgress[sf.raidBossId] || []; if(!l.includes(sf.raidDiff)){ state.raidProgress[sf.raidBossId] = l.concat(sf.raidDiff); const B = raidBossById(sf.raidBossId), D = raidDiffById(sf.raidDiff), st = RAID_FIRST_STAR[sf.raidDiff]||0; if(st && B && D) addPendingReward('raid_first_'+sf.raidBossId+'_'+sf.raidDiff, uiIc('raid'), B.name+' '+D.name+' 첫 클리어', 0, 0, 'raid', null, st); save(); } }
 function raidBossHpMult(){ return BOSS_HP_MULT * 7; } // 8마리가 같이 때리는 만큼 오래 버티게(초기값)
 
 let raidNet = { db:null, user:null, room:null, uid:null, ready:false, failed:false, canWrite:null,
@@ -4895,7 +4897,7 @@ function raidDetailHtml(){
   h += '<div class="rd-diffs">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+x.name+(prog.includes(x.id)?'<i><img class="uic" src="assets/ui/ic_check.webp" alt=""></i>':'')+(raidRecCP(info.id, x.id) ? '<small class="rd-rec">🎯'+fmtCP(raidRecCP(info.id, x.id))+'</small>' : '')+'</button>').join('')+'</div>';
   if(raidRecCP(info.id, cur.id)) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">🎯 '+cur.name+' 추천 전투력 <b style="color:var(--text);">'+fmtCP(raidRecCP(info.id, cur.id))+'</b> · 둘이 고른 8마리 합산</div>';
   h += '<div class="rw-sec-t" style="margin:10px 0 4px; text-align:center;">승리 보상 <span>· 입장권을 쓴 판만</span></div>';
-  h += '<div class="rd-rew" style="margin-top:0;"><span>'+uiIc('runestone')+' <b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> <b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비 <b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+'<span class="'+(wd.includes(cur.id)?'done':'')+'">주간 첫 승리 '+itemsShort(cur.weekly)+'</span></div>'
+  h += '<div class="rd-rew" style="margin-top:0;"><span>'+uiIc('runestone')+' <b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"> <b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비 <b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+'<span class="'+(wd.includes(cur.id)?'done':'')+'">주간 첫 승리 '+itemsShort(cur.weekly)+'</span>'+(RAID_FIRST_STAR[cur.id] ? '<span class="'+(prog.includes(cur.id)?'done':'')+'">첫 클리어 '+SHARD_IC+' <b>'+RAID_FIRST_STAR[cur.id]+'</b></span>' : '')+'</div>'
     + '</div>';
   if(!raidNet.code && prog.includes(cur.id)) h += '<button class="btn" id="raidSweepBtn" style="margin:0 0 6px; background:linear-gradient(180deg,#7ad0ff,#3a7bd5);" '+(raidTicketCount()<1?'disabled':'')+'>'+uiIc('ticket')+' 소탕 · 입장권 1장으로 '+cur.name+' 승리 보상</button>'; // (v8.3.0) 깬 난이도는 소탕
   if(raidNet.code){}
@@ -8865,10 +8867,12 @@ function toast(msg, ms, html){
   el.dataset.sig = grp; el.dataset.n = 1; el._t0 = Date.now();
   document.querySelectorAll('.toast').forEach(t=>{ if(Date.now()-(t._t0||0) < TOAST_SEEN_MS){ toastMissed += (+t.dataset.n||1); } clearTimeout(t._tm); t.remove(); }); // 이전 알림은 바로 바꿈 — 잠깐만 보인 건 🔔에 셈
   toastBell();
+  { const now = Date.now(); toastBurst = toastBurst.filter(t=>now-t < 4000); toastBurst.push(now); const n = toastBurst.length; if(n>=2){ el.classList.add('stk'); if(n>=3) el.classList.add('stk3'); el.dataset.stk = n; } } // (v8.16.0) 짧은 사이에 알림이 여러 개 오면 뒤에 카드가 겹친 모양 — 누르면 알림 기록 (사용자 요청)
   document.body.appendChild(el);
   layoutToasts();
   el._tm = setTimeout(()=>{ el.remove(); layoutToasts(); }, dur);
 }
+let toastBurst = [];
 function weightedPick(list){
   const total = list.reduce((s,x)=>s+x.w,0);
   let r = Math.random()*total;
@@ -16944,9 +16948,10 @@ function migrateTierV800(){
 // 보상 정의를 바꾸면 RW_VER +1 → 다음 접속 때 늘어난 만큼 우편(sysMail)으로 · 줄어든 건 회수 안 함
 // 주의: 진행 기록의 모양(스테이지 번호 등)을 옮기는 업데이트와 RW_VER 올림을 같은 버전에 섞지 말 것 — 옮긴 만큼이 늘어난 보상으로 잡힘
 // (v5.3.0) 별빛 조각 예산 기준: 반복 수입 ≈ 주 240 (일일 의뢰 2×4×7 · 균열 기간(15일)당 약 360 · 패스 무료 28일 60) · 픽업 1회 10, 천장 80회 = 800 · 이번 한 번 보상 추가분 ≈ 1600 (약 7주치) — 이벤트·새 콘텐츠 몫을 남겨 둠
-const RW_VER = 4; // (v5.3.0) 업적·계정 레벨 5의 배수·챕터 진행도 100%·요일 던전 5단계마다·시련·탑 25층마다에 별빛 조각 · 챕터 100%에 정수
+const RW_VER = 5; // (v8.16.0) 레이드 첫 클리어 별빛 조각 추가
+// (RW_VER 4 · v5.3.0) 업적·계정 레벨 5의 배수·챕터 진행도 100%·요일 던전 5단계마다·시련·탑 25층마다에 별빛 조각 · 챕터 100%에 정수
 const RW_VER_OLD_NOTE = 3; // (v317) 계정 레벨 보상에 별빛 조각 · (v5.3.0) 챕터 보스 첫 격파에 별빛 조각 (노말 50 · 하드 100)
-const RW_CAT_NM = { wbrec:'월드 보스 최고 기록', stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
+const RW_CAT_NM = { raid:'레이드 첫 클리어', wbrec:'월드 보스 최고 기록', stage:'스테이지 첫 클리어·등급', boss:'챕터 보스 첫 격파', ch:'챕터 진행도', tower:'무한의 탑 층 보상', dg:'요일 던전', trial:'시련의 전당', lv:'계정 레벨 보상', ach:'업적' };
 const RW_V0_ADDED = { boss:/^i\.(eq_|eqpick_|engr$|mythic$)/, tower:/^i\.(eq_|eqpick_)/, dg:/^i\.(eq_|eqpick_|engr$)/, trial:/^i\.(eq_|eqpick_|engr$)/, lv:/^i\.(eq_|eqpick_)/ }; // 장부가 없던 세이브(v312 이하)의 기준 = 지금 정의 − v2.11.0·v3.0.0에서 더한 장비권·각인석
 function rwLedger(){
   const s = state, L = {}, rank = {C:1,B:2,A:3,S:4};
@@ -16963,6 +16968,7 @@ function rwLedger(){
   Object.keys(s.lvClaimed||{}).forEach(k=>{ const n = Number(k); if(Number.isInteger(n) && n>1 && s.lvClaimed[k]) add('lv', accountLvReward(n)); });
   ACHIEVEMENTS.forEach(a=>{ if(s.achievementsClaimed && s.achievementsClaimed[a.id]) add('ach', a.reward); });
   WB_RECORD_RW.forEach((m,i)=>{ if(s.wbRecClaim && s.wbRecClaim[i]) add('wbrec', m.rw); }); // (v5.3.0)
+  Object.keys(s.raidProgress||{}).forEach(b=>{ const l = s.raidProgress[b]; if(Array.isArray(l)) l.forEach(d=>{ if(RAID_FIRST_STAR[d]) add('raid', { star: RAID_FIRST_STAR[d] }); }); }); // (v8.16.0) 레이드 첫 클리어
   { const vm = s.village && s.village.mine; if(vm && isPlainObj(vm.rw)) Object.keys(vm.rw).forEach(f=>{ if(vm.rw[f] && +f>0 && +f%5===0) add('mine', vmDepthRw(+f)); }); } // (v7.0.0) 광산 깊이 보상
   return L;
 }
