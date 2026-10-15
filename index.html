@@ -161,7 +161,8 @@
   .bg-ov.hit .bg-bb{box-shadow:inset -14px -18px 28px #0007, 0 0 34px var(--bc), 0 0 70px #ffcf4a99;}
   .bg-bb.miss{filter:grayscale(1) brightness(.55); animation:bgShake .45s ease-in-out;}
   @keyframes bgShake{0%,100%{transform:translateX(0);} 20%{transform:translateX(-12px) rotate(-7deg);} 40%{transform:translateX(10px) rotate(6deg);} 60%{transform:translateX(-6px) rotate(-3deg);} 80%{transform:translateX(4px);}}
-  .bg-bb.gone{opacity:0;}
+  .bg-bb.gone{opacity:0;} .bg-bb.spin b{color:#1d163680;}
+  .bg-bb.reveal b{animation:bgReveal .45s cubic-bezier(.2,1.8,.4,1);} @keyframes bgReveal{0%{transform:scale(.2) rotate(-90deg);} 100%{transform:scale(1) rotate(0);}}
   .bg-ov-t{min-height:26px; font-size:20px; font-weight:900; color:#fff;} .bg-ov.gold .bg-ov-t{color:#ffcf4a;}
   .bg-ov-t.hit{color:#ffcf4a; text-shadow:0 0 12px #ffcf4a99; animation:bgPop .45s cubic-bezier(.2,1.8,.4,1);} @keyframes bgPop{from{transform:scale(.4);} to{transform:scale(1);}}
   .bg-ov-t.miss{font-size:14px; color:#9aa0b8;}
@@ -190,6 +191,7 @@
   .bg-m .bg-mt{flex:none; display:inline-flex; align-items:center; gap:2px; min-width:54px; justify-content:flex-end; font-size:11px; font-weight:800; color:#ffd1ec;} .bg-m .bg-mt .uic{width:14px; height:14px; margin:0;} .bg-m .bg-mt.g{color:#ffcf4a;} .bg-m .bg-mt.g .uic{filter:sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1);}
   .bg-m.done{border-color:#ffcf4a66;} .bg-m.done .bg-mp{color:#8fe3b4; font-weight:800;} .bg-m.done .bg-mb i{background:#8fe3b4;}
   .bg-modal .btn{margin-top:2px;}
+  .bg-adm{display:flex; gap:6px; margin-top:8px;} .bg-adm .btn{flex:1; margin:0; font-size:11px;}
   @keyframes puGlow{0%,100%{box-shadow:0 0 8px #ffcf4a55, 0 4px 10px #0006;} 50%{box-shadow:0 0 16px #ffcf4aaa, 0 4px 10px #0006;}}
   .star-ic{width:1.05em; height:1.05em; vertical-align:-.16em; display:inline-block;}
   #main.tab-bg{background:linear-gradient(180deg,#0b0a2430 0%,#0b0a2455 55%,#0b0a24a0 100%), var(--tabbg) 50% 0 / cover no-repeat; background-color:#14112e;} #main.tab-bg .scr-top{background:none;}
@@ -9551,8 +9553,10 @@ const BINGO_LINE_RW = [ // 줄 보상 — BINGO_LINES 순서 (가로 1~5 · 세�
   {star:50, items:{eqpick_epic:1}}
 ];
 const BINGO_FULL_RW = { star:300, items:{ pick_legendary:1 } };
-function bingoActive(){ return pickupPeriod().idx===BINGO.idx; }
-function bingoVisible(){ return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
+const BINGO_ADMIN_ONLY = true; // (v9.4.0) 관리자 계정만 보이고 할 수 있음 — 연출 확인용, 시작 전에도 됨 (사용자 결정 10/16) · 풀 때 false
+function bingoAdmin(){ return isAdmin() || !!state.adminUnlockAll; }
+function bingoActive(){ const i = pickupPeriod().idx; if(BINGO_ADMIN_ONLY) return bingoAdmin() && i >= BINGO.idx-1 && i <= BINGO.idx; return i===BINGO.idx; }
+function bingoVisible(){ if(BINGO_ADMIN_ONLY) return bingoActive(); return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
 function bingoOpenMs(){ const late = PICKUP_LATE[BINGO.idx]; if(late) return late; const i = BINGO.idx, ym = Math.floor(i/2); return Date.UTC(Math.floor(ym/12), ym%12, i%2 ? 16 : 1) - 9*3600000; } // 빙고가 열리는 시각
 function bingoOpenText(){ return pickupOpenText({ end: bingoOpenMs() }); } // 예: 10월 16일 10시
 function bingoNums(){ const a = Array.from({length:BINGO_POOL}, (_,i)=>i+1); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a.slice(0, 25); }
@@ -9619,7 +9623,7 @@ function bingoPlay(b, u, gold){
   const A = bingoAnim = { timers:[], done:false, u };
   const later = (fn, ms)=>{ A.timers.push(setTimeout(()=>{ if(!A.done) fn(); }, ms)); };
   const ov = document.createElement('div'); ov.className = 'bg-ov'+(gold?' gold':''); A.ov = ov;
-  ov.innerHTML = '<div class="bg-bw"><div class="bg-rays"></div><div class="bg-bb spin" id="bgBB"><b>?</b></div></div><div class="bg-ov-t">'+(gold ? '황금 티켓' : '두근두근…')+'</div><div class="bg-ov-s">누르면 건너뛰기</div>';
+  ov.innerHTML = '<div class="bg-bw"><div class="bg-rays"></div><div class="bg-bb spin" id="bgBB"><b>?</b></div></div><div class="bg-ov-t"></div><div class="bg-ov-s">누르면 건너뛰기</div>';
   if(modal) modal.appendChild(ov);
   const ball = ov.querySelector('#bgBB'), txt = ov.querySelector('.bg-ov-t');
   const show = n=>{ ball.style.setProperty('--bc', bingoBallCol(n)); ball.querySelector('b').textContent = n; };
@@ -9633,18 +9637,21 @@ function bingoPlay(b, u, gold){
     if(activeTab==='home' && !document.getElementById('battleScreen')) render();
   }
   ov.addEventListener('click', finish);
-  // 1) 굴리기 — 안 나온 번호 사이를 돌다가 점점 느려짐 (황금 티켓은 짧게)
-  const pool = bingoPool(b).concat([u.num]); let k = 0, gap = 40; const steps = gold ? 5 : 15; // 약 1.5초 동안 점점 느려짐
+  // 1) 굴리기 — 번호를 가린 공이 굴러가다 점점 느려짐 (황금 티켓은 짧게) · 번호는 멈출 때까지 안 보임 (사용자 결정 10/16)
+  let k = 0, gap = 40; const steps = gold ? 5 : 15; // 약 1.5초
   const roll = ()=>{ if(A.done) return;
-    if(k < steps){ show(pool[Math.floor(Math.random()*pool.length)]); if(k%2===0 || gap>110) sfx('click'); k++; gap = Math.min(260, gap*1.12); later(roll, gap); return; }
-    // 2) 멈춤
-    show(u.num); ball.classList.remove('spin'); ball.classList.add('land');
+    if(k < steps){ if(k%2===0 || gap>110) sfx('click'); k++; gap = Math.min(260, gap*1.12); later(roll, gap); return; }
+    // 2) 멈추며 번호 공개 — 잠깐 번호만 보여 준 뒤 판정
+    show(u.num); ball.classList.remove('spin'); ball.classList.add('land', 'reveal'); sfx('summonCharge');
+    later(judge, 520);
+  };
+  const judge = ()=>{
     if(!u.r){ // 꽝 — 회색으로 바뀌고 흔들린 뒤 「꽝」 도장 → 사라짐
-      ball.classList.add('miss'); txt.textContent = u.num+'번 · 판에 없음'; txt.className = 'bg-ov-t miss'; sfx('fail');
+      ball.classList.remove('land'); ball.classList.add('miss'); sfx('fail');
       const st = document.createElement('div'); st.className = 'bg-kwang'; st.textContent = '꽝'; ov.appendChild(st);
       later(finish, 1150); return; }
     // 당첨 — 빛이 퍼지고 번호가 빛 구슬로 날아감
-    ov.classList.add('hit'); txt.textContent = u.num+'번 당첨!'; txt.className = 'bg-ov-t hit'; sfx('summonCharge');
+    ov.classList.add('hit'); txt.textContent = '당첨!'; txt.className = 'bg-ov-t hit'; sfx('claim');
     later(()=>bingoFly(ball, u, A, finish), 620);
   };
   roll();
@@ -9732,6 +9739,7 @@ function bingoBoardHtml(b){
   else if(!left.length && !bingoBusy) h += '<button class="btn" disabled>판을 다 채움</button>';
   else h += '<div class="bg-btns"><button class="btn gold" id="bgDraw"'+(t.n<1 || bingoBusy ? ' disabled' : '')+'>'+uiIc('dice')+' 뽑기</button>'
     + '<button class="btn'+(pick?' secondary':' bg-gbtn')+'" id="bgGold"'+((t.g<1 && !pick) || bingoBusy ? ' disabled' : '')+'>'+(pick ? '취소' : '황금 티켓')+'</button></div>';
+  if(bingoAdmin()) h += '<div class="bg-adm"><button class="btn secondary small" id="bgAdmFill">'+uiIc('admin')+' 미션 모두 채우기</button><button class="btn secondary small" id="bgAdmReset">'+uiIc('admin')+' 빙고 초기화</button></div>'; // 관리자 시험용
   h += '<div class="att-note">'+(pick ? '열 칸을 고르기' : '티켓 = 1~50 뽑기 (판에 없으면 꽝) · 황금 = 원하는 칸<br>칸·줄을 누르면 보상 · 끝나면 남은 티켓은 대신 뽑아 우편으로')+'</div>';
   return h;
 }
@@ -9760,6 +9768,8 @@ function bingoRefresh(){ const bd = document.getElementById('bingoBody'); if(!bd
   bd.querySelectorAll('[data-bg-tab]').forEach(el=>el.addEventListener('click', ()=>{ if(bingoBusy) return; bingoTab = el.dataset.bgTab; bingoGoldMode = false; bingoRefresh(); }));
   const d = document.getElementById('bgDraw'); if(d) d.addEventListener('click', ()=>bingoDraw(false));
   const g = document.getElementById('bgGold'); if(g) g.addEventListener('click', ()=>{ if(bingoBusy) return; bingoGoldMode = !bingoGoldMode; bingoRefresh(); });
+  const af = document.getElementById('bgAdmFill'); if(af) af.addEventListener('click', ()=>{ if(bingoBusy || !bingoAdmin()) return; const b = bingoS(); BINGO_MISSIONS.forEach(m=>{ b.c[m.k] = Math.max(b.c[m.k]||0, m.n); }); save(); bingoRefresh(); toast('관리자 · 미션 모두 채움'); });
+  const ar = document.getElementById('bgAdmReset'); if(ar) ar.addEventListener('click', ()=>{ if(bingoBusy || !bingoAdmin()) return; state.bingo = null; bingoS(); save(); bingoLast = 0; bingoRefresh(); toast('관리자 · 빙고 초기화 (새 판)'); });
   if(bingoGoldMode) bd.querySelectorAll('.bg-c.pick').forEach(el=>el.addEventListener('click', ()=>bingoDraw(true, +el.dataset.bgC))); }
 // ===================== (v6.0.0) 출석 체크 — 온라인일 때만 · 하루 = 서버 시각(한국 시간) 날짜(todayStr) =====================
 // 28일 달력(누적, 연속 아님 · (v6.2.0) 달마다 새 달력 — 한국 시간으로 다음 달 1일에 1칸부터, 28칸을 다 채우면 그달은 끝 (사용자 결정)) + 새 정령사 7일(계정당 한 번, 기존 유저도)
