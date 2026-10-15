@@ -825,6 +825,9 @@
   @keyframes buPulse{0%,100%{opacity:1} 50%{opacity:.5}}
   .bu-marker{position:absolute; top:-15px; left:50%; transform:translateX(-50%); z-index:5; color:#4b70dc; font-size:13px; text-shadow:0 1px 0 #fff; animation:curBob 1s ease-in-out infinite;}
   @keyframes curBob{0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,3px)}}
+  .bs-slot .bu-cur .bu-marker{font-size:20px !important; line-height:1; animation:curBob 1s ease-in-out infinite, curGlow 1s ease-in-out infinite;} .bs-slot .bu-cur .bu-marker .uic{width:20px; height:20px;} /* (b429) 지금 차례 ▼를 크게 + 빛나게 — 잘 안 보였음 (사용자 요청) */
+  @keyframes curGlow{0%,100%{filter:drop-shadow(0 0 1px #3a2a00) drop-shadow(0 0 4px #ffd557) drop-shadow(0 0 8px #ffb300);} 50%{filter:drop-shadow(0 0 1px #3a2a00) drop-shadow(0 0 7px #fff4b8) drop-shadow(0 0 14px #ffb300);}}
+  @media (max-width:360px){ .bs-slot .bu-cur .bu-marker{font-size:16px !important;} .bs-slot .bu-cur .bu-marker .uic{width:16px; height:16px;} }
   .bu-badge{position:absolute; top:-4px; right:-14px; z-index:3; background:#ffd557; color:#2a1a00; font-size:9px; font-weight:900; padding:1px 5px; border-radius:8px; white-space:nowrap; box-shadow:0 1px 3px #0004;}
   .bu-badge.cd{background:#3a4458; color:#ffc2c2;}
   .bu-plate{margin-top:calc(12px * min(var(--k,1),1)); /* (v214) 발밑 링과 이름표 사이 여유 */ max-width:72px; background:#1a2438e0; color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -1133,7 +1136,7 @@
   /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
   .bs-arena2{position:relative; z-index:2; flex:1; min-height:0;}
   .bs-arena2::before{content:''; position:absolute; left:50%; top:6%; bottom:4%; width:2px; transform:translateX(-50%); background:linear-gradient(180deg,transparent,var(--bs-line,#9fb4cf66),transparent);}
-  .bs-slot{position:absolute; transform:translate(-50%,-50%) scale(var(--d,1)); transform-origin:50% 60%;}
+  .bs-slot{position:absolute; transform:translate(-50%,-50%) scale(var(--d,1)); transform-origin:50% 60%;} .bs-slot:has(.bu-cur){z-index:350 !important;} .bs-slot:has(.bu-float), .bs-slot:has(.fx-boom){z-index:360 !important;} /* 피해 숫자 같은 연출이 뜨는 동안은 그 칸이 맨 위 — 차례 표시를 가려도 됨 (사용자 결정) */ /* (b429) 지금 차례인 정령(▼ 표시·발밑 링)은 다른 정령 그림·상태 배지(300)보다 항상 위에 (사용자 요청) */
   .bs-gtag{position:absolute; top:0; transform:translateX(-50%); z-index:1; font-size:9px; font-weight:800; color:var(--bs-tag,#5b6f8c); background:var(--bs-tagbg,#ffffffb0); padding:1px 7px; border-radius:6px; white-space:nowrap;}
   .bs-field.scene{background:var(--g2,#eef4fb); box-shadow:0 6px 18px #0007;}
   /* (v268) 컴퓨터처럼 세로로 긴 화면에서 전장이 끝없이 길어지면 배경 그림(가로의 약 1.95배 높이)이 모자라 위아래가 비고 정령이 천장까지 흩어졌음 → 높이를 가로의 1.55배로 제한하고 남는 공간은 전장 위·행동 칸 아래로 나눔 */
@@ -1273,6 +1276,7 @@
   .bu-boss .bu-hpnum{font-size:11px;}
   /* (v220) 글자 칸도 화면 비율(--ts, 0.72~1)에 맞춰 — 보스는 제외 */
   .bs-slot .bu:not(.bu-boss) .bu-plate{font-size:calc(10px * var(--ts,1)); padding:calc(1px * var(--ts,1)) calc(6px * var(--ts,1));}
+  .bs-slot .bu:not(.bu-boss) .bu-plate{margin-top:calc(2px * min(var(--k,1),1));} /* (b429) 그림과 이름표 사이를 좁혀 아래 상태 배지 자리를 만듦 (사용자 요청) */
   .bs-slot .bu:not(.bu-boss) .bu-hp{width:calc(56px * var(--ts,1)); height:calc(6px * var(--ts,1));}
   .bs-slot .bu:not(.bu-boss) .bu-hpnum{font-size:calc(9px * var(--ts,1)); white-space:nowrap; letter-spacing:-.2px;} /* (b427) 쉴드 수치가 다음 줄로 내려가던 것 — 한 줄로 */
   .bs-slot .bu:not(.bu-boss) .sbg, .bu-sts.lifted .sbg{min-width:calc(17px * var(--ts,1)); height:calc(17px * var(--ts,1)); font-size:calc(10px * var(--ts,1));}
@@ -1310,7 +1314,7 @@
   .mg-fav{position:absolute; top:10px; left:12px; z-index:3; width:36px; height:36px; border-radius:50%; border:1.5px solid #ffffff33; background:#0006; color:#cfc8ff; font-size:20px; line-height:1; cursor:pointer;} .mg-fav.on{color:#ffd557; border-color:#ffd55799; text-shadow:0 0 8px #ffd557aa;} .sp-fav{color:#ffd557; margin-right:1px;} .sp-favh{font-weight:800; margin:10px 0 6px;} .sp-favh span{color:var(--sub); font-weight:400; margin-left:4px;}
   .ud-plus{display:block; font-style:normal; font-size:11px; font-weight:800; color:#6fe39a;} .ud-plusn{text-align:center; font-size:10px; margin-top:3px;}
   .sub-stop{display:flex; align-items:center; gap:6px; justify-content:center; margin-top:8px; font-size:12px;} .sub-stop span{white-space:nowrap; color:var(--sub);} .sub-stop select{min-width:0; flex:1; max-width:120px; padding:4px; border-radius:8px; background:#1b1838; color:var(--text); border:1px solid #ffffff33; font-size:12px;} .sub-held{background:linear-gradient(135deg,#3fd98a,#1f9e63) !important; color:#fff;}
-  .toast.stk{overflow:visible;} .toast.stk::before, .toast.stk::after{content:''; position:absolute; left:8%; right:8%; height:100%; top:6px; z-index:-1; border-radius:inherit; background:#16133a; border:1px solid #4a56c8;} .toast.stk::after{display:none;} .toast.stk3::after{display:block; left:16%; right:16%; top:12px; z-index:-2; background:#100e2c; border-color:#3a4398;} /* (v8.16.0) 쌓인 알림 */
+  .toast.behind{pointer-events:none; color:transparent; background:#16133a; border-color:#4a56c8; box-shadow:0 3px 8px #0006; animation:none; overflow:hidden;} .toast.behind *{visibility:hidden;} .toast.behind.d2{background:#100e2c; border-color:#3a4398;} /* (b429) 쌓인 알림 — 새 알림이 위를 덮고 이전 알림은 살짝 아래로 밀려 뒤에 깔림 (사용자 요청) */
   .bs-tgt{display:flex; align-items:center; gap:6px; height:30px; margin:2px 8px 0; padding:0 8px; border-radius:10px; background:#000000a0; border:1px solid #ff6b6b66; box-sizing:border-box; cursor:pointer;} .bs-tgt.off{visibility:hidden;} .bs-tgt .bt-art{width:24px; height:24px; flex-shrink:0; display:flex; border-radius:6px; overflow:hidden;} .bs-tgt .bt-art img, .bs-tgt .bt-art .spimg{width:100%; height:100%; object-fit:contain;} .bs-tgt .bt-mid{flex:1; min-width:0;} .bs-tgt .bt-nm{display:flex; align-items:center; gap:4px; font-size:11px; line-height:1.1; white-space:nowrap; overflow:hidden;} .bs-tgt .bt-nm small{margin-left:auto; color:#ffd0d0; font-size:10px;} .bs-tgt .bt-hp{height:5px; border-radius:3px; background:#ffffff22; margin-top:2px; overflow:hidden;} .bs-tgt .bt-hp i{display:block; height:100%; background:linear-gradient(90deg,#ff5a5a,#ff9a5a);} .bs-tgt .bt-sts{display:flex; gap:1px; flex-shrink:0;} .bs-tgt .bt-sts span{position:relative; display:flex;} .bs-tgt .bt-sts .uic{width:16px; height:16px; margin:0;} .bs-tgt .bt-sts em{position:absolute; right:-2px; bottom:-3px; font-size:8px; font-style:normal; color:#fff; text-shadow:0 0 2px #000;} .bs-tgt .bt-i{font-size:12px; color:var(--sub); flex-shrink:0;} /* (v8.16.0) 고른 적 정보 줄 */
   .bb{position:relative; overflow:hidden; text-align:center; padding:14px 12px 12px; margin:8px 0; border-radius:20px; background:radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--bc) 38%, #1a1538) 0%, #120f26 70%); border:1.5px solid color-mix(in srgb, var(--bc) 55%, transparent); box-shadow:0 8px 24px #0009, inset 0 0 40px color-mix(in srgb, var(--bc) 25%, transparent);}
   .bb-glow{position:absolute; left:50%; top:38%; width:260px; height:260px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 70%, transparent) 0%, transparent 65%); opacity:.55; pointer-events:none;}
@@ -1605,7 +1609,7 @@
 .m-actions{position:sticky; bottom:-20px; z-index:3; margin:12px -20px -20px !important; padding:10px 20px 14px; background:linear-gradient(180deg,#1d1b4800,#1d1b48 22%);}
 @keyframes pulseDim{0%,100%{opacity:.25} 50%{opacity:.65}}
   .close-x{z-index:20 !important; position:absolute; top:10px; right:14px; font-size:30px; color:var(--sub); background:none; border:none; font-family:var(--fun, 'Jua'); line-height:1; padding:0 4px;} /* (v272) X도 주아체 — 주아 글꼴에 ✕ 기호가 없어 알파벳을 씀 · (v2.9.6) 대문자 X는 세로로 길어 보여서 소문자 x를 크게 */
-  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#1d1a4a; /* (v8.16.0) 불투명 (사용자 결정) */ border:1px solid #5b6bff99; padding:7px 13px; border-radius:999px; z-index:60; font-size:13px; line-height:1.35; width:max-content; max-width:88vw; word-break:keep-all; text-align:center; box-shadow:0 4px 14px #0007; cursor:pointer; transition:top .18s ease, opacity .2s ease; animation:toastIn .18s ease-out;}
+  .toast{position:fixed; top:60px; left:50%; transform:translateX(-50%); background:#1d1a4a; /* (v8.16.0) 불투명 (사용자 결정) */ border:1px solid #5b6bff99; padding:7px 13px; border-radius:999px; z-index:60; font-size:13px; line-height:1.35; width:min(320px, 88vw); box-sizing:border-box; /* (b429) 알림 길이 고정 — 쌓일 때 길이가 들쭉날쭉하지 않게 (사용자 요청) */ word-break:keep-all; text-align:center; box-shadow:0 4px 14px #0007; cursor:pointer; transition:top .2s ease, transform .2s ease, opacity .2s ease, width .2s ease, height .2s ease; animation:toastIn .18s ease-out;}
   @keyframes toastIn{from{opacity:0; transform:translate(-50%,-6px);}}
   .toast .uic{width:18px; height:18px;} .toast .t-n{display:inline-block; margin-left:6px; padding:0 6px; border-radius:8px; background:#ffd557; color:#3b2500; font-size:11px; font-weight:900; font-style:normal; line-height:16px;}
   .bell-n{position:absolute; top:-3px; right:-4px; min-width:15px; padding:0 3px; border-radius:8px; background:#ff5757; color:#fff; font-size:10px; font-weight:900; line-height:15px; text-align:center;} /* (v296) 놓친 알림 */
@@ -6802,12 +6806,12 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
   const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
   if(!W || !H) return;
-  const T0 = 40, PAD = rs < 0.22 ? 0 : 9; // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
+  const T0 = 40, STS = 8, PAD = rs < 0.22 ? 0 : 9; // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
   let kw = W*0.21/72, kh = (H*rs - T0 - PAD)/(sz*1.25); // 후열~전열 간격(22%)에 한 칸이 들어가도록 · (v212) 그림 높이(아이콘의 1.2배+여백)까지 계산해서 같은 열 위아래 정령이 겹치지 않게 · (v214) 범위 테두리끼리도 안 닿게 여유 6px(레이드는 8마리라 정령이 너무 작아지지 않게 예전 그대로)
   let k = Math.max(0.45, Math.min(1.5, kw, kh));
   // (v220) 좁은 화면에선 글자 칸(이름표·체력)도 같은 비율로 줄임(최소 72%) — 예전엔 그림만 줄고 글자는 고정 크기라 320px 레이드에서 겹쳤음
-  const ts = Math.max(0.72, Math.min(1, k));
-  if(ts < 1){ kh = (H*rs - T0*ts - PAD)/(sz*1.25); k = Math.max(0.45, Math.min(1.5, kw, kh)); }
+  const ts = Math.max(0.72, Math.min(1, k)); // 글자 배율은 배지 여유 넣기 전 기준 — 글자까지 작아지지 않게
+  kh = (H*rs - (T0+STS)*ts - PAD)/(sz*1.25); k = Math.max(0.45, Math.min(1.5, kw, kh)); // (b429) 그림을 살짝 줄여 아래 상태 배지가 아래 칸 정령에 안 닿게 (사용자 요청 — 이름표 간격 줄이기와 같이)
   const ks = k.toFixed(3), tss = ts.toFixed(3);
   if(bs.style.getPropertyValue('--k')!==ks) bs.style.setProperty('--k', ks);
   if(bs.style.getPropertyValue('--ts')!==tss) bs.style.setProperty('--ts', tss);
@@ -8868,7 +8872,12 @@ document.addEventListener('click', (e)=>{
 
 
 // ===================== 유틸 =====================
-function layoutToasts(){ let y = 60; document.querySelectorAll('.toast').forEach(t=>{ t.style.top = y+'px'; y += t.offsetHeight + 5; }); }
+function layoutToasts(){ // (b429) 맨 앞 알림 하나 + 뒤에 깔린 이전 알림(최대 2장)이 아래로 6px씩 삐져나옴
+  const all = [...document.querySelectorAll('.toast')], front = all.filter(t=>!t.classList.contains('behind')).pop(); if(!front) return;
+  front.style.top = '60px'; front.style.zIndex = 62; front.style.height = ''; front.style.transform = '';
+  const h = front.offsetHeight;
+  all.filter(t=>t.classList.contains('behind')).forEach(t=>{ const d = +t.dataset.d||1; t.classList.toggle('d2', d>=2); t.style.top = (60 + d*6)+'px'; t.style.zIndex = 62-d; t.style.height = h+'px'; t.style.transform = 'translateX(-50%) scale('+(1-d*0.06)+')'; });
+}
 // (v296) 알림 정리 — 화면에는 한 번에 1개(작은 한 줄) · 같은 종류(앞머리가 같은 알림)는 하나로 합쳐 ×N · 새 알림이 오면 이전 것을 바로 바꿈
 // 다 보기 전에 바뀐 알림이 있으면 위쪽 🔔에 개수 → 누르면 '알림 기록'. 메뉴(☰) › 알림 기록에서도 볼 수 있음
 const TOAST_LOG_MAX = 50, TOAST_SEEN_MS = 1500; let toastLog = [], toastMissed = 0;
@@ -8908,17 +8917,15 @@ function toast(msg, ms, html){
   const content = el.innerHTML, sig = toastSig(content), dur = ms||2200;
   const last = toastLog[0]; if(last && last.sig===sig && Date.now()-last.t < 8000){ last.n = (last.n||1)+1; last.html = content; last.t = Date.now(); } else { toastLog.unshift({ html:content, sig, t:Date.now(), n:1 }); if(toastLog.length > TOAST_LOG_MAX) toastLog.length = TOAST_LOG_MAX; }
   const grp = sig.split(/ · | — /)[0]; // 화면에선 앞머리가 같은 알림(예: '업적 달성 · …')끼리 합침 — 기록에는 따로 남음
-  const same = [...document.querySelectorAll('.toast')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
-  if(same){ const n = (+same.dataset.n||1) + 1; same.dataset.n = n; same.innerHTML = content+'<i class="t-n">×'+n+'</i>'; clearTimeout(same._tm); same._tm = setTimeout(()=>{ same.remove(); layoutToasts(); }, Math.max(dur, 2200)); layoutToasts(); return; }
+  const same = [...document.querySelectorAll('.toast:not(.behind)')].find(t=>t.dataset.sig===grp); // 같은 종류가 떠 있으면 합침
+  if(same){ const n = (+same.dataset.n||1) + 1; same.dataset.n = n; same.innerHTML = content+'<i class="t-n">×'+n+'</i>'; clearTimeout(same._tm); same._tm = setTimeout(()=>{ document.querySelectorAll('.toast.behind').forEach(t=>t.remove()); same.remove(); layoutToasts(); }, Math.max(dur, 2200)); layoutToasts(); return; }
   el.dataset.sig = grp; el.dataset.n = 1; el._t0 = Date.now();
-  document.querySelectorAll('.toast').forEach(t=>{ if(Date.now()-(t._t0||0) < TOAST_SEEN_MS){ toastMissed += (+t.dataset.n||1); } clearTimeout(t._tm); t.remove(); }); // 이전 알림은 바로 바꿈 — 잠깐만 보인 건 🔔에 셈
+  document.querySelectorAll('.toast').forEach(t=>{ if(!t.classList.contains('behind') && Date.now()-(t._t0||0) < TOAST_SEEN_MS){ toastMissed += (+t.dataset.n||1); } clearTimeout(t._tm); const d = (+t.dataset.d||0) + 1; if(d>2){ t.remove(); return; } t.dataset.d = d; t.classList.add('behind'); }); // (b429) 이전 알림은 지우지 않고 뒤로 밀어 깔아 둠(최대 2장) — 맨 앞 알림이 사라질 때 같이 사라짐 // 이전 알림은 바로 바꿈 — 잠깐만 보인 건 🔔에 셈
   toastBell();
-  { const now = Date.now(); toastBurst = toastBurst.filter(t=>now-t < 4000); toastBurst.push(now); const n = toastBurst.length; if(n>=2){ el.classList.add('stk'); if(n>=3) el.classList.add('stk3'); el.dataset.stk = n; } } // (v8.16.0) 짧은 사이에 알림이 여러 개 오면 뒤에 카드가 겹친 모양 — 누르면 알림 기록 (사용자 요청)
   document.body.appendChild(el);
   layoutToasts();
-  el._tm = setTimeout(()=>{ el.remove(); layoutToasts(); }, dur);
+  el._tm = setTimeout(()=>{ document.querySelectorAll('.toast.behind').forEach(t=>t.remove()); el.remove(); layoutToasts(); }, dur);
 }
-let toastBurst = [];
 function weightedPick(list){
   const total = list.reduce((s,x)=>s+x.w,0);
   let r = Math.random()*total;
@@ -11539,11 +11546,12 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:426, v:'8.16.1', date:'2026-10-15', secs:[
+  { build:429, v:'8.16.2', date:'2026-10-15', secs:[
     { t:'전투', items:[ '적을 쓰러뜨려도 내 파티가 같이 전멸하면 패배 (결투는 그대로)', '챕터 보스 3웨이브는 라운드를 이어서 셈 (화면 표시 · 기믹 주기는 웨이브마다 그대로)', '고른 적의 이름 · 체력 · 효과를 위쪽 줄에 표시 — 누르면 자세히' ]},
     { t:'밸런스', items:[ '현무 계열: 무기 효과의 절반만큼 체력도 오름', '월드 보스 한 주 체력 150만 → 450만 (10월 19일 보스부터)', '성좌 승급에 기억 조각이 필요 없음 (각성 5단계 + 정수 20,000)' ]},
     { t:'레이드', items:[ '보스·난이도마다 첫 클리어 별빛 조각 (이지 20 · 노말 30 · 하드 50 · 익스트림 80 · 헬 120 · 인페르노 160 · 카오스 200) — 이미 깬 난이도는 우편으로', '레이드 보스·월드 보스 화면을 큰 배너로 · 기믹은 「상세 정보」에서' ]},
-    { t:'편의', items:[ '정령 즐겨찾기 — 정령 창의 ☆ · 정령 목록 맨 위에 즐겨찾기 묶음', '정령 정보에 장비·각인·룬·초월로 늘어난 공격력·체력·속도 표시', '각인·장비 부가 능력에 자동 멈춤 — 고른 품질(능력) 이상이 나오면 확인을 눌러야 다시 굴림', '알림이 여러 개 오면 겹친 카드 모양 · 알림을 불투명하게' ]}
+    { t:'편의', items:[ '정령 즐겨찾기 — 정령 창의 ☆ · 정령 목록 맨 위에 즐겨찾기 묶음', '정령 정보에 장비·각인·룬·초월로 늘어난 공격력·체력·속도 표시', '각인·장비 부가 능력에 자동 멈춤 — 고른 품질(능력) 이상이 나오면 확인을 눌러야 다시 굴림', '알림이 연달아 오면 새 알림이 위를 덮고 이전 알림은 살짝 아래로 밀려 뒤에 깔림 · 알림 너비를 하나로 고정 · 알림을 불투명하게' ]},
+    { t:'화면', items:[ '전투: 보호막은 현재 체력에 더해 파란 숫자로 (보호막 양은 효과 칸을 눌러 확인) · 특수 규칙 배율은 정령 그림 모서리로', '전투: 효과 칸은 한 줄(넘치면 +개수) · 그림과 이름표 사이를 좁히고 그림을 살짝 줄여 효과 칸이 아래 정령을 가리지 않게', '전투: 지금 차례 표시(▼)를 조금 크게 · 빛나게 · 다른 정령보다 항상 위에' ]}
   ]},
   { build:424, v:'8.15.1', date:'2026-10-15', secs:[
     { t:'화면', items:[ '픽업 여러 회 결과의 기억 조각·성좌 승급 표시를 그림 대신 등급 글자 자리에' ]}
@@ -17351,7 +17359,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 428, APP_VERSION = '8.16.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 429, APP_VERSION = '8.16.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
