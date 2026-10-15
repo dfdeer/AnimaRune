@@ -9553,7 +9553,7 @@ const BINGO_LINE_RW = [ // 줄 보상 — BINGO_LINES 순서 (가로 1~5 · 세�
   {star:50, items:{eqpick_epic:1}}
 ];
 const BINGO_FULL_RW = { star:300, items:{ pick_legendary:1 } };
-const BINGO_ADMIN_ONLY = true; // (v9.4.0) 관리자 계정만 보이고 할 수 있음 — 연출 확인용, 시작 전에도 됨 (사용자 결정 10/16) · 풀 때 false
+const BINGO_ADMIN_ONLY = false; // (v9.4.0) true = 관리자 계정만 보이고 할 수 있음(시작 전에도) — 연출 확인용 · (v9.4.1) 모두에게 풂 (사용자 결정 10/16)
 function bingoAdmin(){ return isAdmin() || !!state.adminUnlockAll; }
 function bingoActive(){ const i = pickupPeriod().idx; if(BINGO_ADMIN_ONLY) return bingoAdmin() && i >= BINGO.idx-1 && i <= BINGO.idx; return i===BINGO.idx; }
 function bingoVisible(){ if(BINGO_ADMIN_ONLY) return bingoActive(); return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
@@ -9624,12 +9624,13 @@ function bingoPlay(b, u, gold){
   const later = (fn, ms)=>{ A.timers.push(setTimeout(()=>{ if(!A.done) fn(); }, ms)); };
   const ov = document.createElement('div'); ov.className = 'bg-ov'+(gold?' gold':''); A.ov = ov;
   ov.innerHTML = '<div class="bg-bw"><div class="bg-rays"></div><div class="bg-bb spin" id="bgBB"><b>?</b></div></div><div class="bg-ov-t"></div><div class="bg-ov-s">누르면 건너뛰기</div>';
-  if(modal) modal.appendChild(ov);
+  const sc = modal ? modalScroller(modal) : null; // 창 안 스크롤 상자(.m-body) — 연출 동안 잠금
+  if(modal){ modal.appendChild(ov); if(sc) sc.style.overflowY = 'hidden'; }
   const ball = ov.querySelector('#bgBB'), txt = ov.querySelector('.bg-ov-t');
   const show = n=>{ ball.style.setProperty('--bc', bingoBallCol(n)); ball.querySelector('b').textContent = n; };
   function finish(){ // 끝 — 판을 결과대로 다시 그림 (건너뛰기도 여기로)
     if(A.done) return; A.done = true; A.timers.forEach(clearTimeout); document.querySelectorAll('.bg-orb,.bg-trail').forEach(e=>e.remove());
-    bingoBusy = false; bingoHide = -1; bingoLast = u.num; bingoAnim = null;
+    bingoBusy = false; bingoHide = -1; bingoLast = u.num; bingoAnim = null; if(sc) sc.style.overflowY = '';
     bingoNew = u.r ? u.i : -1; bingoNewLines = u.r ? u.r.lines : []; bingoRefresh(); bingoNew = -1; bingoNewLines = [];
     if(ov.isConnected){ ov.classList.add('out'); setTimeout(()=>ov.remove(), 260); }
     if(u.r){ sfx(u.r.lines.length || u.r.full ? 'win' : 'claim'); bingoBingoFx(u.r);
@@ -9659,7 +9660,9 @@ function bingoPlay(b, u, gold){
 function bingoFly(ball, u, A, finish){ // 빛 구슬이 곡선을 그리며 칸으로 날아감 (꼬리 빛가루를 흘림)
   const cell = document.querySelector('#bingoBody .bg-c[data-bg-c="'+u.i+'"]');
   if(!cell || !ball.isConnected){ finish(); return; }
-  const a = ball.getBoundingClientRect(), c = cell.getBoundingClientRect();
+  const a = ball.getBoundingClientRect(), md = cell.closest('.m-body') || cell.closest('.bg-modal'); // 칸이 스크롤에 가려 있으면 먼저 보이게
+  if(md){ const mr = md.getBoundingClientRect(), cr = cell.getBoundingClientRect(); if(cr.top < mr.top) md.scrollTop -= mr.top - cr.top + 8; else if(cr.bottom > mr.bottom) md.scrollTop += cr.bottom - mr.bottom + 8; }
+  const c = cell.getBoundingClientRect();
   const x0 = a.left + a.width/2, y0 = a.top + a.height/2, x1 = c.left + c.width/2, y1 = c.top + c.height/2;
   const cx = (x0 + x1)/2 + (x1 >= x0 ? -1 : 1) * 90, cy = Math.min(y0, y1) - 80; // 곡선 꺾는 점 — 옆으로 휘며 위로 솟았다 내려감
   const col = bingoBallCol(u.num), orb = document.createElement('div'); orb.className = 'bg-orb'; orb.style.setProperty('--bc', col); orb.textContent = u.num; document.body.appendChild(orb);
@@ -11841,10 +11844,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:444, v:'9.4.1', date:'2026-10-16', secs:[
-    { t:'우편', items:[ '받지 않은 9.0.0 업데이트 우편 정리 (9.3.0 우편으로 바뀜)' ]}
-  ]},
-  { build:443, v:'9.4.0', date:'2026-10-16', secs:[
+  { build:445, v:'9.4.2', date:'2026-10-16', secs:[
     { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 2장 — 미션 25개 (티켓 40장 · 황금 티켓 10장)', '빙고판 = 1~50 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 — 판에 있으면 그 칸이 열리고, 없으면 꽝', '황금 티켓 = 원하는 칸을 골라 엶', '미션을 모두 채우면 판을 끝까지 채울 수 있음', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '「뽑은 번호」 탭에서 나온 번호 확인 · 한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
@@ -18023,7 +18023,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 444, APP_VERSION = '9.4.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 445, APP_VERSION = '9.4.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
