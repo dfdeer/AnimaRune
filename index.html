@@ -2302,7 +2302,9 @@ function subTotals(k){
   if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전
   return t;
 }
-function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
+function tankWeaponHp(k){ const sp = SPIRITS[k]; return (sp && sp.element==='wood' && sp.variant==='a') ? 1 + TANK_WEAPON_HP*(weaponMult(k)-1) : 1; } // (v8.16.0) 현무 계열(탱커)은 스킬이 공격력을 안 써서 무기가 쓸모없었음 → 무기 효과의 절반을 체력으로도
+const TANK_WEAPON_HP = 0.5;
+function spiritHpMult(k){ return armorMult(k) * tankWeaponHp(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
 // (v298) 초월 10단계 특전 — 종(계열)마다 역할에 맞게 다름 (사용자 결정)
 const TRANS10 = {
   fire_a:  { ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
@@ -14726,7 +14728,9 @@ function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 ·
 // 한 번 도전 = 5라운드 · 보스 체력바는 '지금 남은 전체 체력'에서 시작 → 내 공격으로 0을 만들면 처치자(막타)
 // 날마다 약점 속성이 바뀜(그 속성 정령 공격력 ×1.5) · 하루 3번 · 전체 25/50/75/100% 마다 참여자 모두 보상
 const WB_ROUNDS = 5;
-let WB_HP = 1500000; // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 5명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도 (v269: 300만→150만)
+const WB_HP_OLD = 1500000, WB_HP_NEW = 4500000, WB_HP_NEW_WEEK = 41; // (v8.16.0) 150만이 이틀 만에 깎임(하루 약 75만) → 3배 · 주 후반(6일째쯤)에 잡히게 · 달성 보상은 비율이라 그대로 · 이미 잡힌 이번 주 보스가 되살아나지 않게 다음 주(10/19, 41주차)부터
+function wbHp(){ try{ return wbWeekIndex() >= WB_HP_NEW_WEEK ? WB_HP_NEW : WB_HP_OLD; }catch(e){ return WB_HP_OLD; } }
+// 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 5명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도 (v269: 300만→150만)
 const WB_PCT_HP = 20000, WB_ATK_RATIO = 0.35;
 // (v280) 주마다 보스 하나 — 한 주 안에서 단계가 바뀌던 방식은 없앰. 목록을 섞어서 한 바퀴씩 돌리고(같은 보스가 연달아 안 나오게), 바퀴마다 순서가 바뀜
 // 나중에 속성별 2종쯤으로 늘리면 이 목록에 넣기만 하면 됨 (el = 보스 속성, 다양하게 나오도록 같은 속성이 연달아 오면 한 칸 미룸)
@@ -14773,7 +14777,7 @@ let wbNet = { week:null, data:null, unsub:null };
 function wbWeek(){ return raidWeekKey(); }
 function wbState(){ const w = wbWeek(), s = state.wb = state.wb || {}; if(s.week!==w){ s.week = w; s.claimed = {}; s.joined = false; s.killRw = false; } if(s.day!==todayStr()){ s.day = todayStr(); s.used = 0; s.best = 0; } /* (v279) best = 오늘 직접 도전한 최고 피해(소탕 기준) */ return s; }
 function wbTotal(){ return Math.max(0, (wbNet.data && Number.isFinite(wbNet.data.total)) ? wbNet.data.total : 0); }
-function wbRemain(){ return Math.max(0, WB_HP - wbTotal()); }
+function wbRemain(){ return Math.max(0, wbHp() - wbTotal()); }
 function wbPhase(){ return wbBossForWeek(wbWeekIndex()); } // 이번 주 보스 (예전 이름 그대로 씀)
 function wbNextBoss(){ return wbBossForWeek(wbWeekIndex()+1); }
 function wbWeakEl(){ const d = todayStr(); let h = 0; for(let i=0;i<d.length;i++) h = (h*33 + d.charCodeAt(i)) >>> 0; return ELEMENTS[h % ELEMENTS.length]; }
@@ -14790,7 +14794,7 @@ function buildWorldBossFight(){
   // 공격력은 도전 팀 체력에 맞춰 조절 → 약한 팀도 몇 라운드는 버티고, 강한 팀은 딜로 차이가 남
   const avgHp = bf.myUnits.reduce((t,u)=>t+u.maxHp,0) / Math.max(1, bf.myUnits.length);
   boss.pctHp = WB_PCT_HP; // 독·기믹 % 수치는 이 기준 체력으로 계산 (5천만 기준이면 독 한 번에 수백만)
-  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = WB_HP; boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm; setBossKit(boss, 'wboss_'+ph.g); // (v270) 월드 보스 전용 스킬
+  boss.atk = Math.max(30, Math.round(avgHp*WB_ATK_RATIO)); boss.maxHp = wbHp(); boss.hp = Math.max(1, wbRemain()); boss.dispName = ph.nm; setBossKit(boss, 'wboss_'+ph.g); // (v270) 월드 보스 전용 스킬
   bf.myUnits.forEach(u=>{ if(u.element===weak) u.atk = Math.round(u.atk*1.5); });
   const sf = Object.assign(bf, { mode:'worldboss', wbStart: boss.hp, wbPhase: ph.g, log:['월드 보스 · '+ph.nm+'!'] });
   return sf;
@@ -14819,7 +14823,7 @@ async function wbSubmit(sf){
     const me = await raidNet.db.doc(base+'/p/'+raidNet.uid).get(), v = (me && me.exists) ? me.data() : {};
     await raidNet.db.doc(base+'/p/'+raidNet.uid).set({ dmg: (Number(v.dmg)||0) + dmg, best: Math.max(Number(v.best)||0, top), n: (Number(v.n)||0) + cnt, name: homeProfileName() });
     s.pending = Math.max(0, (s.pending||0) - dmg); s.pendN = Math.max(0, (s.pendN||0) - cnt); if(!s.pending){ s.pendN = 0; s.pendBest = 0; } // 보내는 사이 새로 쌓인 건 남김
-    if(before < WB_HP && after >= WB_HP){ // 막타
+    if(before < wbHp() && after >= wbHp()){ // 막타
       let won = false; await fb.runTransaction(fb.ref(fb.rtdb, base+'/killer'), cur=>{ if(cur) return; won = true; return { uid: raidNet.uid, name: homeProfileName(), at: Date.now() }; });
       if(won && !s.killRw){ s.killRw = true; state.essence += WB_KILL_RW.essence; grantItems(WB_KILL_RW.items); state.wbGems = (state.wbGems||0) + WB_KILL_RW.wbGems; toastReward(WB_KILL_RW, '⚔️ 월드 보스 처치자!', 4000); }
       if(sf && sf.result) sf.result.killer = won;
@@ -14829,12 +14833,12 @@ async function wbSubmit(sf){
 }
 function wbClaim(i){
   const s = wbState(), m = WB_MILESTONES[i]; if(!m || s.claimed[i] || !s.joined) return;
-  if(wbTotal()/WB_HP < m.p){ toast('아직 달성 전'); return; }
+  if(wbTotal()/wbHp() < m.p){ toast('아직 달성 전'); return; }
   s.claimed[i] = true; state.essence += m.rw.essence||0; state.enhanceStone = (state.enhanceStone||0) + (m.rw.stone||0); state.wbGems = (state.wbGems||0) + (m.rw.wbGems||0); grantItems(m.rw.items); save();
   toastReward(m.rw, uiIc('worldboss')+' 월드 보스 '+Math.round(m.p*100)+'% 보상');
 }
 function wbResultOverlayHtml(sf){
-  const r = sf.result, pct = x=> (x/WB_HP*100).toFixed(2)+'%';
+  const r = sf.result, pct = x=> (x/wbHp()*100).toFixed(2)+'%';
   let h = '<div class="bs-result"><div class="bs-rcard win"><div class="bs-ricon">'+uiIc('worldboss')+'</div><div class="bs-rtitle">'+(r.localKill ? '월드 보스 격파!' : '도전 끝')+'</div>'
     + '<div class="bs-rsub">준 피해 <b style="color:#ffd557;">'+fmtHp(r.dmg)+'</b> · 전체의 '+pct(r.dmg)+'</div>'
     + (r.killer===true ? '<div class="bs-rsub" style="color:#ff9aa8;">⚔️ 막타 — 처치자 보상</div>' : '')
@@ -14845,7 +14849,7 @@ function wbResultOverlayHtml(sf){
 function leaveWorldBossFight(){ state.skillFight = null; unmountBattleScreen(); activeTab = 'worldboss'; save(); render(); } // (v278) 월드 보스 화면으로 돌아감
 function wbCardHtml(){ // 레이드 목록 맨 위 카드
   wbWatch();
-  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl();
+  const s = wbState(), ratio = wbRemain()/wbHp(), ph = wbPhase(), weak = wbWeakEl();
   if(!raidNet.db) return '<div class="wb-card off"><b>'+uiIc('worldboss')+' 월드 보스</b><small>온라인 연결 후 참여</small></div>';
   const marks = '';
   return '<button class="wb-card" id="wbOpen">'+bossImg(ph.g, 'wb-img', '🌍')+'<span class="wb-mid"><b>🌍 월드 보스 · '+ph.nm+'</b>'
@@ -14890,11 +14894,11 @@ function wbShopBuy(id){
 }
 function renderWorldBossTab(){
   wbWatch();
-  const s = wbState(), ratio = wbRemain()/WB_HP, ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {}, dead = wbRemain()<=0, nx = wbNextBoss();
+  const s = wbState(), ratio = wbRemain()/wbHp(), ph = wbPhase(), weak = wbWeakEl(), d = wbNet.data || {}, dead = wbRemain()<=0, nx = wbNextBoss();
   let h = '<div class="wb-scr">';
   h += '<div class="wb-hero">'+bossImg(ph.g, 'wb-himg', '🌍')+'<div class="wb-htx"><b>🌍 '+(dead ? '이번 주 처치 완료' : ph.nm)+'</b>'
     + '<div class="wb-bar big"><span style="width:'+(ratio*100)+'%;"></span></div>'
-    + '<small>'+fmtHp(wbRemain())+' / '+fmtHp(WB_HP)+(d.killer ? ' · ⚔️ '+escTxt(d.killer.name) : '')+'</small></div></div>';
+    + '<small>'+fmtHp(wbRemain())+' / '+fmtHp(wbHp())+(d.killer ? ' · ⚔️ '+escTxt(d.killer.name) : '')+'</small></div></div>';
   { const w0 = raidWeekStart(), w1 = new Date(w0.getTime() + 7*86400000 - 1), D = ['일','월','화','수','목','금','토'], f = d0=>{ const d = new Date(d0.getTime() + 9*3600000); return (d.getUTCMonth()+1)+'/'+d.getUTCDate()+'('+D[d.getUTCDay()]+')'; }; // (v6.2.0) 한국 시간으로 표시 // (v324) 이번 주 보스 기간
     h += '<div class="sub wb-period">이번 주 보스 <b>'+f(w0)+' 0시 ~ '+f(w1)+' 24시</b> · '+pickupLeftText(w0.getTime() + 7*86400000 - serverNow())+' 남음 · 매주 월요일 0시에 다음 보스</div>'; }
   h += '<div class="wb-chips"><span class="gm-chip">오늘 약점 '+elIc(weak)+' ×1.5</span><span class="gm-chip">한 번 '+WB_ROUNDS+'라운드</span><span class="gm-chip">'+uiIc('wbgem')+' '+(state.wbGems||0)+'</span></div>';
@@ -14902,10 +14906,10 @@ function renderWorldBossTab(){
   { const left = Math.max(0, wbTries()-s.used), can = !dead && raidNet.db && s.best>0 && left>0; // (v279) 소탕
     h += '<div class="wb-sweep"><button class="btn secondary" id="wbSweep1"'+(can?'':' disabled')+'>⚡ 소탕 1회</button><button class="btn secondary" id="wbSweepAll"'+(can && left>1?'':' disabled')+'>⚡ 모두 소탕'+(left>1?' ('+left+')':'')+'</button></div>'
       + '<div class="sub wb-sweep-t">'+(s.best>0 ? '오늘 최고 '+fmtHp(s.best)+' 피해로 바로 처리 · 보상은 도전과 같음' : '오늘 한 번 직접 도전하면 그 피해로 나머지를 소탕 가능')+'</div>'; }
-  h += '<div class="seg" style="margin-bottom:8px;">'+[['boss','현황'],['reward','보상'],['rank','순위'],['shop','상점']].map(([k,t])=>{ const n = k==='reward' ? WB_MILESTONES.filter((m,i)=>wbTotal()/WB_HP>=m.p && !s.claimed[i] && s.joined).length + WB_RECORD_RW.filter((m,i)=>(state.wbRecord||0)>=m.d && !(state.wbRecClaim||{})[i]).length : 0;
+  h += '<div class="seg" style="margin-bottom:8px;">'+[['boss','현황'],['reward','보상'],['rank','순위'],['shop','상점']].map(([k,t])=>{ const n = k==='reward' ? WB_MILESTONES.filter((m,i)=>wbTotal()/wbHp()>=m.p && !s.claimed[i] && s.joined).length + WB_RECORD_RW.filter((m,i)=>(state.wbRecord||0)>=m.d && !(state.wbRecClaim||{})[i]).length : 0;
     return '<button data-wbtab="'+k+'" class="'+(wbTab===k?'on':'')+'">'+t+(n?' <i class="hot">'+n+'</i>':'')+'</button>'; }).join('')+'</div>';
   if(wbTab==='reward'){
-    h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/WB_HP >= m.p, got = s.claimed[i];
+    h += '<div class="gm-sec"><div class="gm-sh">함께 달성 보상 · 이번 주 참여자 모두</div><div class="wb-ms">'+WB_MILESTONES.map((m,i)=>{ const reached = wbTotal()/wbHp() >= m.p, got = s.claimed[i];
       return '<button class="wb-m'+(reached?' on':'')+(got?' got':'')+'" data-wb-claim="'+i+'"'+((!reached||got||!s.joined)?' disabled':'')+'><b>'+Math.round(m.p*100)+'%</b>'+rewardBrief(m.rw)+'<small>'+(got?'받음':(reached?(s.joined?'받기':'참여 필요'):'진행 중'))+'</small></button>'; }).join('')+'</div></div>';
     { const rec = state.wbRecord||0, cl = state.wbRecClaim||{};
       h += '<div class="gm-sec"><div class="gm-sh">최고 기록 보상 · 한 번만 · 내 최고 '+fmtHp(rec)+' (직접 도전 1회 피해)</div><div class="wb-ms">'+WB_RECORD_RW.map((m,i)=>{ const reached = rec>=m.d, got = !!cl[i];
@@ -16225,7 +16229,7 @@ function showManageModal(key){
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
-  if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)-1)+'%</div>';
+  if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)*tankWeaponHp(key)-1)+'%</div>';
   { const kit = LINE_KITS[sp.element+'_'+sp.variant]; // (v170) 옛 패시브 대신 실제 전투에서 쓰는 역할·스킬
     html += '<button class="btn secondary small" id="kitInfoBtn" style="margin-top:8px; width:auto; padding:5px 12px;">'+kit.icon+' '+kit.role+' · 스킬 보기</button>'; }
   html += '</div>';
