@@ -1444,7 +1444,6 @@
   .xp-sb{display:flex; gap:7px; align-items:flex-start; font-size:11.5px; color:#8c90a8; margin-top:4px; line-height:1.35;} .xp-sb em{flex:none; font-style:normal; font-weight:900; width:17px; height:17px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#ffffff14; font-size:10.5px;} .xp-sb.on{color:#eef0fa; font-weight:700;} .xp-sb.on em{background:var(--sc); color:#120f2c;}
   .xp-rl.off{opacity:.45;} .xp-rl > div:nth-child(2){flex:1; min-width:0;} .xp-rl small em{font-style:normal; color:#9dffb0;} .xp-rlv{flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px;} .xp-rlv small{font-size:10.5px; color:#ffd557; font-weight:800; white-space:nowrap;} .xp-rlv small.mx{color:#ff9af0;} .xp-rlv small.off{color:#8c90a8;} .xp-pick small.xp-lvt{display:inline; font-size:11px; color:#ffd557; font-weight:900; margin-left:2px;} .xp-rl.off .xp-lvp i{background:#ffffff18;}
   .xp-lvp{display:flex; gap:2px;} .xp-lvp i{width:6px; height:6px; border-radius:50%; background:#ffffff22;} .xp-lvp i.on{background:#ffd557;}
-  .xp-nset{position:absolute; top:-5px; right:-9px; width:19px; height:19px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-style:normal; background:#1b1942; border:1.5px solid var(--sc); box-shadow:0 2px 4px #0009;}
   .xp-pick i.xp-tags{display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; font-style:normal;} .xp-pick i.xp-tag{font-style:normal; font-size:10px; font-weight:800; padding:1px 7px; border-radius:9px; background:#ffffff14; color:#c9cde0; white-space:nowrap;}
   .xp-pick.t-r{border-color:#ffd55799 !important;} .xp-pick.t-l{border-color:#ff9af0 !important; box-shadow:0 0 10px #ff9af044;}
   .xp-rl.t-r{border-color:#ffd55777;} .xp-rl.t-l{border-color:#ff9af0aa;} .xp-rl b small{font-size:10px;}
@@ -11596,6 +11595,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:436, v:'8.18.1', date:'2026-10-15', secs:[
+    { t:'출정', items:[ '지도 칸에 나오는 유물 계열을 미리 보여 주지 않음 — 들어가서 이기면 그때 무작위 선택지', '보물 상자는 열 때마다 무작위 유물 3개 중 하나 고르기 (예전엔 정해진 유물 1개)' ]}
+  ]},
   { build:435, v:'8.18.0', date:'2026-10-15', secs:[
     { t:'출정', items:[ '전투 중에 나가면 출정이 끝남 — 지는 것과 같음 (쌓인 완주 보상을 잃고 이번 사이클 진행 보상만 받음) · 예전엔 지도로 돌아가 같은 전투를 다시 할 수 있었음', '나가기 전 경고창에 잃는 완주 보상 · 모은 유물 수 표시 · 출전 배치 창에도 경고' ]}
   ]},
@@ -13656,7 +13658,7 @@ function expPickLoot(run){ const ks = Object.keys(EXP_LOOT); return ks[Math.floo
 // 돌파 보상 선택지 — 전투: 유물 · 단련 · 전리품 하나씩 (같은 종류 둘이 나오지 않음) · 정예: 유물 3 · 보스(킵): 희귀↑ 유물 3
 function pickExpeditionBuffChoices(kind, room){
   const run = state.expedition, mod = expRunMod(run); if(!run) return null;
-  kind = kind || 'battle'; const pref = room && room.set;
+  kind = kind || 'battle'; const pref = null; // (v8.18.1) 칸 계열 없음 — 늘 무작위
   const extra = ((mod && mod.id==='chaos') || (kind==='elite' && mod && mod.id==='elites')) ? 1 : 0;
   let picks;
   if(kind==='battle'){
@@ -13689,7 +13691,7 @@ function chooseExpeditionBuff(buffId){
   if(id.indexOf('r:')===0) expGainRelic(run, body);
   else if(id.indexOf('t:')===0){ const t = EXP_TRAINS.find(x=>x.id===body); t.apply(run); xpAlert(t.ic+' '+t.nm, t.d, true); }
   else if(id.indexOf('l:')===0){ const n = expLootN(run, body); EXP_LOOT[body].give(n, run); xpAlert(uiIc(EXP_LOOT[body].ic)+' 전리품', expLootLabel(run, body), true); }
-  run.pendingBuffChoice = null;
+  run.pendingBuffChoice = null; delete run.pendingSrc;
   save();
   render();
 }
@@ -15318,14 +15320,12 @@ const EXP_ROOM_INFO = {
 };
 function expEnemyCompFor(run){ const m = expRunMod(run); if(m && m.id==='blaze') return Array(GRID_SLOTS).fill('fire'); if(m && m.id==='shadow') return Array(GRID_SLOTS).fill('dark'); return expeditionEnemyComposition(); }
 function expMakeRoom(run, type, stepIndex){
-  if(type==='battle' || type==='elite') return { type, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex + (type==='elite'?4:0)), set: expRollSet(run) }; // (v8.17.0) set = 이 칸을 깨면 나오는 유물 계열(지도에 문양)
+  if(type==='battle' || type==='elite') return { type, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex + (type==='elite'?4:0)) }; // (v8.18.1) 칸마다 나오는 유물 계열을 미리 정하지 않음 — 들어가서 이기면 그때 무작위 선택지 (사용자 결정 10/15)
   if(type==='event') return { type, eventId: EXPEDITION_EVENTS[Math.floor(Math.random()*EXPEDITION_EVENTS.length)].id };
   if(type==='shop'){ return { type, stock: expDrawRelics(run, 3, 'shop').map(id=>({id, price: expRelicPrice(run, id), sold:false})), heal:false, healPrice: Math.round(45*expShopMult(run)), forge:false, forgePrice: Math.round(90*expShopMult(run)) }; } // (v5.3.0) 사이클마다 가격 +50% · (v8.17.0) 3개 · 등급별 값 · 유물 연마
-  if(type==='treasure'){ const id = expDrawRelics(run, 1, 'treasure')[0] || null, r = id && EXP_RELICS.find(x=>x.id===id); return { type, relic:id, set: r && r.set ? r.set : null }; } // (v8.17.0) 무엇이 들었는지 계열 문양을 미리 보여 줌
   if(type==='boss'){ const g = CHAPTER_BOSS_GIMMICK[Math.floor(Math.random()*HARD_EFF_CH)]; /* (v317) 출정 보스는 기존 5종 그대로 */ return { type, gimmick: g, enemyComp: expEnemyCompFor(run), enemyRarity: expeditionEnemyRarity(stepIndex) }; }
   return { type }; // '?' · rest
 }
-function expRollSet(run){ const sc = expSetCounts(run), w = EXP_SET_KEYS.map(k=>1 + 0.6*Math.min(3, sc[k]||0)), tot = w.reduce((a,b)=>a+b, 0); let x = Math.random()*tot; for(let i=0;i<w.length;i++){ x -= w[i]; if(x<=0) return EXP_SET_KEYS[i]; } return EXP_SET_KEYS[0]; } // 모은 계열이 조금 더 잘 나오게
 function expRelicPrice(run, id){ const r = EXP_RELICS.find(x=>x.id===id); if(!r) return 999; return Math.round(EXP_TIER[r.t].price*(expRelicLv(run, id) ? 0.8 : 1)*expShopMult(run)); }
 function expForgeable(run){ return (run.relics||[]).filter(id=>EXP_RELICS.some(r=>r.id===id) && !expRelicMaxed(run, id)); }
 function expGenerateMap(run){
@@ -15483,10 +15483,11 @@ function expForgePick(id){
 }
 function expTreasureTake(){
   const run = state.expedition, room = run && run.currentRoom; if(!run || !room || room.type!=='treasure') return;
-  if(!room.relic || expRelicMaxed(run, room.relic)){ room.relic = expDrawRelics(run, 1, 'treasure', room.set)[0] || null; } // 예전 세이브 · 그사이 최고 레벨이 된 경우
-  if(!room.relic || !expGainRelic(run, room.relic, '보물 · 유물 획득')) expGold(run, 60); // (v8.17.0) 유물을 다 모았으면 금화로
   expGold(run, 30);
+  const picks = expDrawRelics(run, 3, 'treasure').map(id=>'r:'+id); // (v8.18.1) 열 때마다 무작위 유물 3개 중 하나 고르기 (미리 정해 두지 않음)
+  if(!picks.length) expGold(run, 60); // 유물을 다 모았으면 금화로
   advanceExpeditionAfterRoom(run);
+  if(picks.length && state.expedition===run && !run.pendingKeep){ run.pendingBuffChoice = picks; run.pendingSrc = 'treasure'; save(); render(); }
 }
 // 이번 주 출정 순위(나 + 친구) — 친구 기록은 players/<uid>/expWeek 에서 1분에 한 번 읽음
 let expRankCache = { at:0, data:{} };
@@ -15511,11 +15512,11 @@ let xpScrolledKey = null;
 let xpSel = null;
 function xpSelOf(run){ return (xpSel && run && run.map && xpSel.k===xpActKey() && run.map.steps[xpSel.s] && run.map.steps[xpSel.s][xpSel.i]) ? xpSel : null; }
 function expNodeInfo(run, n){
-  const info = EXP_ROOM_INFO[n.type] || EXP_ROOM_INFO.battle, S = n.set && EXP_SETS[n.set], setTxt = S ? '<b style="color:'+S.c+'">'+S.ic+' '+S.nm+'</b> 계열 유물' : '유물';
+  const info = EXP_ROOM_INFO[n.type] || EXP_ROOM_INFO.battle, setTxt = '유물';
   const gm = expRelicLv(run,'purse') ? ' (주머니 +'+expRelicVal(EXP_RELICS.find(r=>r.id==='purse'), expRelicLv(run,'purse'))+'%)' : '';
   if(n.type==='battle') return { nm:info.nm, ic:info.ic, lines:['이기면 '+setTxt+' · 단련 · 전리품 중 하나', '금화 25'+gm] };
-  if(n.type==='elite') return { nm:info.nm, ic:info.ic, lines:['적이 강함 (공격력 ×1.35 · 높은 등급)', '이기면 유물 3개 중 하나 — 첫 칸은 '+setTxt, '금화 50'+gm] };
-  if(n.type==='treasure') return { nm:info.nm, ic:info.ic, lines:[setTxt+' 1개 + 금화 30', '싸우지 않음'] };
+  if(n.type==='elite') return { nm:info.nm, ic:info.ic, lines:['적이 강함 (공격력 ×1.35 · 높은 등급)', '이기면 유물 3개 중 하나', '금화 50'+gm] };
+  if(n.type==='treasure') return { nm:info.nm, ic:info.ic, lines:['유물 3개 중 하나 + 금화 30', '싸우지 않음'] };
   if(n.type==='shop') return { nm:info.nm, ic:info.ic, lines:['유물 '+((n.stock||[]).length||3)+'개 · 회복 물약 · 유물 연마', '지금 금화 '+(run.gold||0)] };
   if(n.type==='rest') return { nm:info.nm, ic:info.ic, lines:['휴식 (체력 35%) · 단련 (공격력 +8%) · 연마 (유물 레벨 +1) 중 하나'] };
   if(n.type==='event') return { nm:info.nm, ic:info.ic, lines:['고르기에 따라 보상이나 대가', '싸우지 않음'] };
@@ -15536,10 +15537,9 @@ function expMapHtml(run){
   map.steps.forEach((row, s)=> row.forEach((n, i)=>{
     const done = path[s]===i && s < run.currentIndex, here = path[s]===i && s===run.currentIndex, can = s===run.currentIndex && reach.has(i), skip = s < run.currentIndex && !done;
     const inf = expNodeInfo(run, n);
-    const St = n.set && EXP_SETS[n.set] && ['battle','elite','treasure'].includes(n.type) ? EXP_SETS[n.set] : null; // (v8.17.0) 이 칸에서 나오는 유물 계열
     const isSel = sel && sel.s===s && sel.i===i;
     nodes += '<button class="xp-node t-'+n.type.replace('?','q')+(done?' done':'')+(here?' here':'')+(can?' can':'')+(skip?' skip':'')+(s>run.currentIndex?' later':'')+(isSel?' sel':'')+'" style="left:'+X(i,row.length)+'%; top:'+Y(s)+'%;"'+(here ? ' data-xp-here="1"' : ' data-xp-node="'+s+':'+i+'"')+'><span>'+inf.ic+'</span>'
-      + (St ? '<i class="xp-nset" style="--sc:'+St.c+'">'+St.ic+'</i>' : '') + (done ? '<i class="xp-ndone">✓</i>' : '') + '<small>'+inf.nm+'</small></button>';
+      + (done ? '<i class="xp-ndone">✓</i>' : '') + '<small>'+inf.nm+'</small></button>';
   }));
   return '<div class="xp-map" style="height:'+H+'px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none">'+lines+'</svg>'+nodes+'</div>';
 }
@@ -15755,7 +15755,7 @@ function renderExpeditionTab(){
   if(run.pendingBuffChoice){
     const keepB = (run.keeps||0)>0 && run.currentIndex===0;
     html += '<div class="card" style="margin-top:10px; border:1px solid #ffd55755;">';
-    html += '<div class="ttl" style="text-align:center;">'+uiIc('party_pop')+' '+(keepB ? '킵 보너스' : '돌파 보상')+' — 하나만 선택</div>';
+    html += '<div class="ttl" style="text-align:center;">'+uiIc('party_pop')+' '+(run.pendingSrc==='treasure' ? '💎 보물 상자' : keepB ? '킵 보너스' : '돌파 보상')+' — 하나만 선택</div>';
     run.pendingBuffChoice.forEach(bid=>{ html += expChoiceBtnHtml(run, bid); });
     html += '</div>';
     dock();
@@ -15764,7 +15764,7 @@ function renderExpeditionTab(){
 
   const node = currentExpeditionNode();
   if(!node && run.map){ // (v266) 지도에서 다음 칸 고르기
-    html += '<div class="sub xp-maphint">칸 옆 문양 = 이기면 나오는 유물 계열 · 들어가면 되돌릴 수 없음</div>';
+    html += '<div class="sub xp-maphint">들어가면 되돌릴 수 없음</div>';
     abandonBar(); return html;
   }
   if(!node){ // 상태가 읽히지 않으면 화면이 죽지 않게 포기 버튼만
@@ -15800,8 +15800,7 @@ function renderExpeditionTab(){
       html += '<button class="btn secondary xp-pick" data-xp-buy="forge" style="margin-top:8px;"'+(node.forge || !nf ?' disabled':'')+'><span class="xp-pic">⚒️</span><span><b>유물 연마</b><small>'+(nf ? '가진 유물 하나 레벨 +1' : '올릴 유물이 없음')+'</small></span><em>'+(node.forge?'사용함':uiIc('gold')+' '+fp)+'</em></button>'; }
     html += '<button class="btn" id="xpLeaveShop" style="margin-top:10px;">떠나기 ▶</button></div>';
   }else if(node.type==='treasure'){ // (v266) 보물
-    const tS = node.set && EXP_SETS[node.set];
-    html += '<div class="card" style="margin-top:10px; text-align:center;"><div style="font-size:34px;">💎</div><div class="ttl">보물 상자</div><div class="sub" style="margin-top:4px;">'+(tS ? '<b style="color:'+tS.c+'">'+tS.ic+' '+tS.nm+'</b> 계열 유물 1개' : '무작위 유물 1개')+' + 금화 30</div>'
+    html += '<div class="card" style="margin-top:10px; text-align:center;"><div style="font-size:34px;">💎</div><div class="ttl">보물 상자</div><div class="sub" style="margin-top:4px;">유물 3개 중 하나 고르기 + 금화 30</div>'
       + '<button class="btn" id="xpTreasure" style="margin-top:10px;">열기</button></div>';
   }else if(node.type==='event' || node.resolvedType==='event'){
     const ev = currentExpeditionEvent();
@@ -15824,7 +15823,6 @@ function renderExpeditionTab(){
     html += '<div class="card" style="margin-top:10px;">';
     if(isBoss && node.gimmick && BOSS_GIMMICK_INFO[node.gimmick]){ const gi = BOSS_GIMMICK_INFO[node.gimmick]; html += '<div class="card xp-boss" style="margin-top:10px;">'+bossImg(node.gimmick, 'xp-bossimg', gi.icon)+'<div><b>'+gi.name+'</b><small>'+((run.cycle||1)>=3?'🔥 하드 기믹 · ':'')+'챕터 보스 기믹 그대로</small></div><button class="bs-info" id="xpBossInfo">ⓘ</button></div>'; }
     html += '<div class="ttl">'+(isBoss?'<img class="uic" src="assets/ui/ic_crown.webp" alt=""> 보스 전투':(node.type==='elite'?'<img class="uic" src="assets/ui/ic_skull.webp" alt=""> 정예 전투 <small class="sub">· 적 강화 · 이기면 유물 3개 중 선택</small>':'<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투'))+(run.powerMult>1?' <span class="sub" style="font-weight:600;">· 공격력 배율 x'+run.powerMult.toFixed(2)+'</span>':'')+'</div>';
-    if(!isBoss && node.set && EXP_SETS[node.set]){ const S = EXP_SETS[node.set]; html += '<div class="sub" style="font-size:11.5px; margin-top:2px;">이기면 <b style="color:'+S.c+'">'+S.ic+' '+S.nm+'</b> 계열 유물이 선택지에</div>'; } // (v8.17.0)
     html += enemyPreviewHtml;
     html += '</div>';
     html += '<button class="btn" id="expeditionBattleBtn" style="margin-top:10px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 출전 배치</button>';
@@ -17731,7 +17729,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 435, APP_VERSION = '8.18.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 436, APP_VERSION = '8.18.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
