@@ -443,6 +443,7 @@
   html.lock-scroll{position:fixed; inset:0; width:100%; height:100%; overflow:hidden; overscroll-behavior:none;}
   html.lock-scroll body{position:fixed; top:var(--sat); bottom:var(--sab); left:0; right:0; width:auto; height:auto; margin:0; overflow:hidden; overscroll-behavior:none;}
   html, body{overscroll-behavior-y:none;}
+  body{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none;} input, textarea, select, [contenteditable="true"]{-webkit-user-select:text; user-select:text; -webkit-touch-callout:default;} /* (v8.14.1) 꾹 눌러 정보를 열 때 글자가 드래그·선택되던 것 — 게임 화면 전체에서 글자 선택을 끔 (입력칸은 그대로) */
   *{overscroll-behavior:none;} /* (v266) 끝까지 스크롤한 뒤 더 당기면 화면이 고무줄처럼 늘어나던 것(아이폰) — 모든 스크롤 영역에서 없앰 */
   .modal-bg{overscroll-behavior:none;}
   main *, .modal-bg *{overscroll-behavior:auto;} /* (v8.6.0) 최신 크롬(154~)은 overflow:hidden + overscroll-behavior:none 상자 위에서 시작한 스크롤을 바깥(화면·창)으로 안 넘김 — 별빛 균열 지도 위에서 화면이 안 내려갔음 (v2.10.1 친구 목록과 같은 원인). 스크롤 칸 자체(main·창 본문·목록)는 각자 규칙으로 none/contain 그대로 */
@@ -556,6 +557,7 @@
   .species-tile.dx{padding:8px 3px 7px;} .species-tile.dx::after{display:none;} .species-tile.dx .name{font-weight:800; margin-top:4px;}
   .species-tile .name{font-size:10px; margin-top:2px; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .species-tile .count{position:absolute; top:2px; right:3px; font-size:10px; line-height:12px; background:#0b0a22; padding:0 5px; border-radius:8px; z-index:2;}
+  .eq-on-b{position:absolute; right:-6px; bottom:-6px; z-index:2; display:flex; align-items:center; gap:1px; padding:1px 3px; border-radius:9px; background:linear-gradient(135deg,#3fd98a,#1f9e63); border:1.5px solid #0b0a22; box-shadow:0 1px 3px #0008;} .eq-on-b .uic{width:13px; height:13px; margin:0;} .eq-on-b b{font-size:9px; color:#fff; line-height:1;} /* (v8.14.1) 장착 중 표시 */
   .species-tile .passive-badge{position:absolute; top:1px; left:4px; font-size:11px; line-height:13px; z-index:2;}
   .species-tile.undiscovered{opacity:0.35;}
 /* (v99) 보스 출전 명단 선택 — 등급은 테두리·배경색, 유리는 아이콘 위 배지, 선택은 흰 링+체크 */
@@ -1303,6 +1305,7 @@
   .pn-t{font-size:13px; color:#ffd35a; margin:10px 0 4px;} .pn ul{margin:0; padding-left:18px;} .pn li{font-size:12.5px; line-height:1.5; margin:3px 0; color:#e3e1ff;}
   .dp-cancel{margin-top:4px; padding:2px 10px; border-radius:8px; border:1px solid #ffffff2a; background:#ffffff10; color:var(--sub); font-size:11px; cursor:pointer;}
   .fr-lv{position:absolute; left:-4px; bottom:-4px; min-width:18px; padding:0 4px; border-radius:8px; background:#ffcf4a; color:#3b2500; font-size:10px; font-weight:900; line-height:15px; text-align:center; box-shadow:0 1px 3px #0008;} /* (v296) 친구 레벨 */
+  .tw-acts{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; margin:8px 0 4px;} .tw-acts > *{white-space:nowrap; flex-shrink:0;} .tw-acts > .sub{flex-basis:100%; text-align:center;} .tw-acts .btn{flex:1 1 0; min-width:0; width:auto; margin:0; padding:5px 4px; font-size:12px;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
@@ -6340,7 +6343,7 @@ function applyHardBossExtra(sf, g, boss){ // (v258) 하드 전용 — (v260) 보
     allies().forEach(u=>{ if(u.st.freeze) u.st.curse = { v: Math.max(0.5, (u.st.curse && u.st.curse.v)||0), r: 2 }; }); // 동상 — 라운드 시작 때 1 줄어서 이번 라운드 동안 유지
   }
   else if(g.type==='lavaLord'){
-    if(r%4===0){ boss.atk = Math.round(boss.atk*(1+LAVA_RAGE)); pushLog(sf, '😡 '+nm('격노')+'! 공격력 상승'); }
+    if(r%4===0){ boss.atk = Math.round(boss.atk*(1+LAVA_RAGE)); boss.rage = (boss.rage||0) + 1; pushLog(sf, '😡 '+nm('격노')+'! 공격력 상승'); } // (v8.14.1) boss.rage: 효과 칸에 격노 중첩 표시
     sf.enemyUnits.filter(u=>u.isAdd && u.alive).forEach(a=>{ // 용암 정령 자폭 타이머
       a.fuse = (a.fuse||1) - 1;
       if(a.fuse<=0){ allies().forEach(u=>dealDamage(sf, boss, u, 0.5, {noCrit:true})); killUnit(sf, a); pushLog(sf, '💥 용암 정령 자폭!'); }
@@ -6803,6 +6806,7 @@ function statusList(u){
   if(s.burn) o.push({i:stIc('burn'), n:s.burn, t:'화상 '+s.burn+'중첩', d:'라운드마다 피해', good:false});
   if(s.poison) o.push({i:stIc('poison'), n:(s.poison.n>1 ? s.poison.n : 0), t:'독'+(s.poison.n>1 ? ' '+s.poison.n+'중첩' : ''), d:'라운드마다 자신 최대체력 비례 피해'+(s.poison.n>1 ? ' (중첩마다)' : '')+' · 치유 감소'+(s.poison.sl ? ' · 속도 −5' : '')+r(s.poison), good:false}); // (v8.7.0) 아난시 중첩·끈적한 실
   if(s.rwd) o.push({i:stIc('guardup'), t:'기억의 조각', d:'받는 피해 −'+Math.round(s.rwd.v*100)+'%'+r(s.rwd), good:true}); // (v8.7.0)
+  if(u.rage>0) o.push({i:stIc('buff'), n:u.rage, t:'격노 '+u.rage+'중첩', d:'공격력 +'+Math.round((Math.pow(1+LAVA_RAGE, u.rage)-1)*100)+'% (4라운드마다 +'+Math.round(LAVA_RAGE*100)+'%씩 곱으로 쌓임 · 전투 끝까지)', good:true}); // (v8.14.1) 용암 군주 격노 — 예전엔 공격력만 올라 효과 칸에 안 보였음
   if(u.hunt>0) o.push({i:stIc('buff'), n:u.hunt, t:'태양 사냥 +'+(u.hunt*10)+'%', d:'공격력 +'+(u.hunt*10)+'% (전투 끝까지)', good:true}); // (v8.7.0) 스콜
   if(s.freeze) o.push({i:stIc('freeze'), t:'빙결', d:'다음 행동 1회 못 함', good:false});
   if(s.slow) o.push({i:stIc('slow'), t:'둔화', d:'속도 −'+s.slow.v+r(s.slow), good:false});
@@ -9872,6 +9876,7 @@ function fuseUnequipAsk(k){ // (v8.3.0) 합성 화면에서 장착 중인 장비
     users.forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ if(state.equipped[sp][sl]===k) state.equipped[sp][sl] = null; }));
     save(); render(); toast(equipInfo(k).name+' 장착 해제'); });
 }
+function fuseScrollTop(){ const m = document.getElementById('main'); if(m && activeTab==='spirits' && spiritsSub==='fuse') m.scrollTop = 0; } // (v8.14.1) 합성하면 칸이 비며 내용이 줄어 스크롤이 아래에 머물렀음 → 합성판(맨 위)으로
 function doSlotFuse(){
   checkDailyRollover();
   const info = fuseSlotInfo(); if(!info) return;
@@ -9881,12 +9886,12 @@ function doSlotFuse(){
   if(x.bad){ render(); toast('재료가 바뀌어 칸을 비움'); return; }
   if(!eq) cleanupFormation();
   checkAchievements(); save();
-  if(!x.ok){ showFuseFailResult({ eq, unit, guard: x.guard, keys: info.keys, survivor: x.survivor, downTo: x.downTo, nr: info.nr, streakKey: info.streakKey }); render(); return; }
+  if(!x.ok){ showFuseFailResult({ eq, unit, guard: x.guard, keys: info.keys, survivor: x.survivor, downTo: x.downTo, nr: info.nr, streakKey: info.streakKey }); render(); fuseScrollTop(); return; }
   const res = x.res, isNew = x.isNew, inherited = x.inherited, awInh = x.awInh;
   if(eq){ const v = equipResultView(res); v.custom.own = '장비 3개 합성'; const i0 = equipInfo(info.keys[0]); showResultModal(v.sp, isNew, null, { fuse:{element:i0.element, name:i0.name, icon:i0.img, icons: info.keys.map(k=>equipInfo(k).img)}, custom:v.custom, ticketKey:'equip' }); }
   else showResultModal(SPIRITS[res], isNew, null, {fuse: Object.assign({}, SPIRITS[info.keys[0]], { icons: info.keys.map(k=>spArt(SPIRITS[k])), label: new Set(info.keys).size>1 ? '정령 3마리 합성' : null })});
   if(inherited || awInh) setTimeout(()=>toast([inherited ? '⬆️ 강화 계승 +'+inherited : '', awInh ? uiIc('awaken')+' 각성 계승 '+awInh+'단계' : ''].filter(Boolean).join(' · ')+' · '+(eq ? equipInfo(res).name : SPIRITS[res].name)), Math.round(summonRevT(eq ? equipInfo(res).rarity : spRar(SPIRITS[res]), true)*1000) + 900); // (v232) 공개 뒤에(연출 중에 뜨면 성공을 미리 알게 됨)
-  render();
+  render(); fuseScrollTop();
 }
 // ===================== (v250) 자동 합성: 등급·속성·종(장비는 부위) 필터 + 남길 수량 → 3개씩 묶어 한 번에 =====================
 function autoFuseCfg(){
@@ -9970,7 +9975,7 @@ function runAutoFuse(plan, cfg){
   fuseGuardOn = prevGuard && ticketCount('fuseGuard')>0;
   fuseSlots = [null,null,null];
   if(!eq) cleanupFormation();
-  checkAchievements(); save(); render();
+  checkAchievements(); save(); render(); fuseScrollTop();
   sfx(ok ? 'fuse' : 'fail');
   const art = k=> eq ? equipInfo(k).img : spArt(SPIRITS[k]), nm = k=> eq ? equipInfo(k).name : SPIRITS[k].name, rar = k=> eq ? equipInfo(k).rarity : SPIRITS[k].rarity;
   const list = Object.keys(got).sort((a,b)=>RARITY_ORDER.indexOf(rar(b))-RARITY_ORDER.indexOf(rar(a)) || got[b]-got[a]);
@@ -10702,10 +10707,10 @@ function equipSpeciesTile(k){
   return '<div class="species-tile" data-equip-key="'+k+'">'
     + ((eqSubState(k) || (state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id)) ? '<div class="count" style="color:#ffe08a;">'+((state.eqTrait && state.eqTrait[k] && EQ_TRAITS[state.eqTrait[k].id]) ? EQ_TRAITS[state.eqTrait[k].id].ic : uiIc('substat'))+'</div>' : '')
     + (canEquipFuse(k) ? '<div class="passive-badge" style="color:#5cd65c; font-weight:900;" title="합성 가능">▲</div>' : '')
-    + '<div class="icon av r-'+i.rarity+'">'+i.img+'</div>'
+    + '<div class="icon av r-'+i.rarity+'">'+i.img+(used ? '<span class="eq-on-b" title="장착 중">'+uiIc('shield')+(used>1 ? '<b>'+used+'</b>' : '')+'</span>' : '')+'</div>' // (v8.14.1) 「장착 N」 글자 대신 그림 모서리 표시 (사용자 결정)
     + '<div class="name">'+(isEqLocked(k)?'<img class="uic" src="assets/ui/ic_lock.webp" alt="">':'')+i.name+'</div>'
     + '<div class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</div>'
-    + ((equipEnhLevel(k) || used) ? '<div class="sub" style="margin-top:2px;">'+(equipEnhLevel(k)?'+'+equipEnhLevel(k)+' ':'')+(used?'장착 '+used:'')+'</div>' : '')
+    + (equipEnhLevel(k) ? '<div class="sub" style="margin-top:2px;">+'+equipEnhLevel(k)+'</div>' : '')
     + '</div>';
 }
 function equipInventoryHtml(){
@@ -15380,7 +15385,7 @@ function showTowerPrepModal(){
   if(special) enemyPower *= specialAggregateMultForEnemy(special, enemyComp, slots);
   html += '</div>';
   html += '<div class="sub" style="margin-top:6px; text-align:center;">🟢유리 🟡보통 🔴불리</div>';
-  html += '<div style="display:flex; align-items:center; justify-content:center; gap:10px; margin:8px 0 4px;"><div class="sub" style="font-weight:700;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 내 진형</div><button id="clearFormationBtn" class="btn secondary small" style="width:auto; padding:3px 10px; font-size:12px;">'+uiIc('clear')+' 비우기</button><button id="towerRecBtn" class="btn secondary small" style="width:auto; padding:3px 10px; font-size:12px;">✨ 추천 배치</button><button class="btn secondary small" data-preset-open="1" style="width:auto; padding:3px 10px; font-size:12px;">'+uiIc('log')+' 프리셋</button></div>';
+  html += '<div class="tw-acts"><div class="sub" style="font-weight:700;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 내 진형</div><button id="clearFormationBtn" class="btn secondary small">'+uiIc('clear')+' 비우기</button><button id="towerRecBtn" class="btn secondary small">✨ 추천 배치</button><button class="btn secondary small" data-preset-open="1">'+uiIc('log')+' 프리셋</button></div>'; // (v8.14.1) 좁은 폰에서 버튼 글자가 두 줄로 내려가던 것 — 한 줄 고정 · 모자라면 버튼째 다음 줄
   html += '<div class="formation-wrap" style="margin-top:2px;">';
   let slotsHtml = '';
   const myMarks = special ? specialSlotMarks(special, state.formation.map(k=>k?SPIRITS[k].element:null), slots, true) : [];
