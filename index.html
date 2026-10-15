@@ -11841,6 +11841,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:444, v:'9.4.1', date:'2026-10-16', secs:[
+    { t:'우편', items:[ '받지 않은 9.0.0 업데이트 우편 정리 (9.3.0 우편으로 바뀜)' ]}
+  ]},
   { build:443, v:'9.4.0', date:'2026-10-16', secs:[
     { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 2장 — 미션 25개 (티켓 40장 · 황금 티켓 10장)', '빙고판 = 1~50 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 — 판에 있으면 그 칸이 열리고, 없으면 꽝', '황금 티켓 = 원하는 칸을 골라 엶', '미션을 모두 채우면 판을 끝까지 채울 수 있음', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '「뽑은 번호」 탭에서 나온 번호 확인 · 한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
@@ -17694,8 +17697,10 @@ const UPDATE_GIFTS = [
   { id:'upd600', until: Date.UTC(2026,9,15,15), title:'6.0.0 업데이트 · 출석 체크', body:'매일 접속하면 출석 보상\n· 28일 출석 달력 (빠진 날 상관없이 누적)\n· 새 정령사 7일 출석 (한 번만)\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } },
   { id:'upd500', until: Date.UTC(2026,9,10,15), title:'5.0.0 업데이트 · 성좌 등장!', body:'새 등급 「성좌」와 한정 성좌 8종 등장\n· 픽업: 한정 성좌 + 짝 정령 (둘 다 성좌로 나옴)\n· 별빛 균열 11·12층 연계 층 · 픽업 둘을 같이 넣으면 공명 +15%\n업데이트 기념 별빛 조각 100개', reward:{ star:100 } }
 ];
+const GIFT_WITHDRAWN = ['upd900']; // (v9.3.1) 거둔 업데이트 선물 — 아직 안 받은 우편은 우편함에서 지움 (사용자 결정 10/16)
 function updateGiftMigrate(){
   const s = state; s.giftGot = isPlainObj(s.giftGot) ? s.giftGot : {};
+  if(Array.isArray(s.sysMail)) s.sysMail = s.sysMail.filter(x=> !(x && GIFT_WITHDRAWN.includes(x.id) && !x.got));
   UPDATE_GIFTS.forEach(g=>{ if(s.giftGot[g.id] || serverNow() >= g.until) return; s.giftGot[g.id] = serverNow();
     if(!s.sysMail.some(x=>x.id===g.id)) s.sysMail.push({ id:g.id, title:g.title, body:g.body, t:serverNow(), exp:serverNow()+SYS_MAIL_DAYS*86400000, reward:g.reward }); });
 }
@@ -18018,7 +18023,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 443, APP_VERSION = '9.4.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 444, APP_VERSION = '9.4.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
