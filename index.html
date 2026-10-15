@@ -9486,7 +9486,7 @@ setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !
 function homeEventBannersHtml(){ return bingoBannerHtml(); } // (v6.1.1) 출석은 왼쪽 버튼으로 옮김 (사용자 결정) — 이 자리는 기간 이벤트용
 // ===================== (v9.4.0) 빙고 이벤트 — 번호 뽑기 =====================
 // 미션(BINGO_MISSIONS)을 채우면 티켓 · 티켓 1장 = 판에 남은 번호 중 무작위 1칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶 (사용자 결정 10/16)
-// 판 = 1~100 중 무작위 25개(사람마다 다름) · 칸마다 보상이 다름(BINGO_CELL_RW) · 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — ↘ 대각선은 줄로 안 셈 (사용자 결정 10/16)
+// 판 = 1~25 번호를 무작위로 배치(사람마다 다름) (사용자 결정 10/16 — 1~100이면 꽝이 너무 많음) · 칸마다 보상이 다름(BINGO_CELL_RW) · 세로줄 보상은 판 위 · 가로줄은 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — ↘ 대각선은 줄로 안 셈 (사용자 결정 10/16)
 // 미션 25개 = 티켓 20 + 황금 티켓 5 → 미션을 다 하면 판이 꼭 다 참 · 기간 = pickupPeriod()의 번호(서버 시각) · 기간 안에 한 것만 셈
 // 끝난 뒤 쓰지 않은 티켓은 자동으로 뽑아 우편으로 (bingoSettle)
 const BINGO = { id:'bg2', idx: PICKUP_P0+1, name:'정령 빙고' };
@@ -9517,7 +9517,7 @@ function bingoActive(){ return pickupPeriod().idx===BINGO.idx; }
 function bingoVisible(){ return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
 function bingoOpenMs(){ const late = PICKUP_LATE[BINGO.idx]; if(late) return late; const i = BINGO.idx, ym = Math.floor(i/2); return Date.UTC(Math.floor(ym/12), ym%12, i%2 ? 16 : 1) - 9*3600000; } // 빙고가 열리는 시각
 function bingoOpenText(){ return pickupOpenText({ end: bingoOpenMs() }); } // 예: 10월 16일 10시
-function bingoNums(){ const a = Array.from({length:100}, (_,i)=>i+1); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a.slice(0, 25); }
+function bingoNums(){ const a = Array.from({length:25}, (_,i)=>i+1); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
 function bingoS(){ let b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id){ b = state.bingo = { id:BINGO.id, c:{}, nums:null, op:0, lg:0, full:false, un:0, ug:0, mailed:false }; }
   if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums(); return b; }
 function bingoBump(k, n){ try{ if(!bingoActive()) return; const b = bingoS(); b.c[k] = Math.min(1e6, (b.c[k]||0) + (n||1)); }catch(e){} }
@@ -9568,7 +9568,7 @@ function bingoDraw(gold, pick){
   if(ball){ ball.classList.remove('hit'); ball.classList.add('spin'); }
   let k = 0; const tick = ()=>{
     const el = document.getElementById('bgBall');
-    if(k < spin){ if(el) el.textContent = String(1 + Math.floor(Math.random()*100)); k++; setTimeout(tick, 40 + k*6); return; }
+    if(k < spin){ if(el) el.textContent = String(1 + Math.floor(Math.random()*25)); k++; setTimeout(tick, 40 + k*6); return; }
     if(el){ el.textContent = String(num); el.classList.remove('spin'); el.classList.add('hit'); }
     setTimeout(()=>{ bingoBusy = false; bingoHide = -1; bingoNew = i; bingoLast = num; bingoRefresh(); bingoNew = -1;
       sfx(r.lines.length || r.full ? 'win' : 'claim');
@@ -11720,7 +11720,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:443, v:'9.4.0', date:'2026-10-16', secs:[
-    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 — 미션 25개 (티켓 20장 · 황금 티켓 5장)', '빙고판 = 1~100 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 남은 번호 중 하나를 뽑아 그 칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
+    { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 — 미션 25개 (티켓 20장 · 황금 티켓 5장)', '빙고판 = 1~25 번호를 무작위로 배치 (사람마다 다름)', '티켓 1장 = 남은 번호 중 하나를 뽑아 그 칸을 엶 · 황금 티켓 = 원하는 칸을 골라 엶', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
     { t:'픽업', items:[ '10월 16일 10시 픽업 — 아스트라이아(한정 성좌) · 금오', '픽업 정령 0.6% (그중 50%가 고른 정령) · 천장 80회는 그대로' ]},
     { t:'별빛 균열 · 기간 규칙 「낮과 밤」', items:['1·2라운드는 낮, 3·4라운드는 밤 — 2라운드마다 바뀜', '☀️ 낮: 아군의 직접 공격 피해 +20%', '🌙 밤: 빛나지 않는 적은 어둠에 숨어 받는 피해 −50% · 빛나는 적은 받는 지속 피해(화상 · 독 · 표식 피해) +100%', '빛나는 적: 빛 속성 아군의 공격에 맞은 적 (다음 라운드까지)', '규칙이 있는 기간이라 픽업 공격력 보너스(+25% · +25%)는 없음']},
@@ -17869,7 +17869,7 @@ function sanitizeState(){
   { const b = s.bingo; // (v8.0.0) 빙고 — 모양이 이상하면 버림 · (v9.4.0) 번호판 · 연 칸·줄 비트는 범위 안으로
     if(!isPlainObj(b) || typeof b.id!=='string' || !isPlainObj(b.c)) delete s.bingo;
     else { const c = {}; Object.keys(b.c).forEach(k=>{ const v = b.c[k]; if(/^[a-z]{1,12}$/.test(k) && Number.isFinite(v) && v>0) c[k] = Math.min(1e6, Math.floor(v)); });
-      const nums = Array.isArray(b.nums) && b.nums.length===25 && b.nums.every(v=>Number.isInteger(v) && v>=1 && v<=100) && new Set(b.nums).size===25 ? b.nums.slice() : null, cnt = v=>Number.isInteger(v) && v>0 ? Math.min(BINGO_MISSIONS.length, v) : 0;
+      const nums = Array.isArray(b.nums) && b.nums.length===25 && b.nums.every(v=>Number.isInteger(v) && v>=1 && v<=25) && new Set(b.nums).size===25 ? b.nums.slice() : null, cnt = v=>Number.isInteger(v) && v>0 ? Math.min(BINGO_MISSIONS.length, v) : 0;
       s.bingo = { id:String(b.id).slice(0,12), c, nums, op: Number.isInteger(b.op) ? b.op & BINGO_ALL : 0, lg: Number.isInteger(b.lg) ? b.lg & ((1<<BINGO_LINES.length)-1) : 0, full: b.full===true, un: cnt(b.un), ug: cnt(b.ug), mailed: b.mailed===true };
       try{ bingoSettle(); }catch(e){ console.error('bingoSettle', e); } } }
   // (v223) 예전 세이브 보충 지급은 뺌 — 이제 특수 규칙 조건을 충족하고 깨야 보너스를 받음
