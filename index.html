@@ -1342,7 +1342,7 @@
   .bs-slot .bu:not(.bu-boss) .bu-plate{margin-top:calc(2px * min(var(--k,1),1));} /* (b429) 그림과 이름표 사이를 좁혀 아래 상태 배지 자리를 만듦 (사용자 요청) */
   .bs-slot .bu:not(.bu-boss) .bu-hp{width:calc(56px * var(--ts,1)); height:calc(6px * var(--ts,1));}
   .bs-slot .bu:not(.bu-boss) .bu-hpnum{font-size:calc(9px * var(--ts,1)); white-space:nowrap; letter-spacing:-.2px;} /* (b427) 쉴드 수치가 다음 줄로 내려가던 것 — 한 줄로 */
-  .bs-slot .bu:not(.bu-boss) .sbg, .bu-sts.lifted .sbg{min-width:calc(17px * var(--ts,1)); height:calc(17px * var(--ts,1)); font-size:calc(10px * var(--ts,1));}
+  .bs-slot .bu:not(.bu-boss) .sbg, .bu-sts.lifted .sbg{min-width:calc(14px * var(--ts,1)); height:calc(14px * var(--ts,1)); font-size:calc(9px * var(--ts,1));} .bs-slot .bu:not(.bu-boss) .sbg .uic, .bu-sts.lifted .sbg .uic{width:calc(15px * var(--ts,1)); height:calc(15px * var(--ts,1));} /* (v9.4.4) 상태 아이콘을 줄여 정령을 크게 (사용자 요청) */
   .bu-sts.lifted{position:absolute; margin:0; z-index:300;} /* (v5.2.0) 상태 아이콘은 칸 밖 맨 위 층 — 아래 칸 정령 그림에 가려지던 것 */
   .bu-gg{position:relative; margin-top:3px; width:100%; height:13px; border-radius:7px; background:#1a1024cc; border:1px solid #ffd55788; overflow:hidden; cursor:pointer;}
   .bu-gg > div{height:100%; background:linear-gradient(90deg,#ffc357,#ffe066); transition:width .3s;}
@@ -6922,12 +6922,12 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   // (v179) 자유 배치: 한 줄 간격(세로)과 열 간격(가로)에 정령 한 칸(아이콘+이름표+체력바)이 들어가도록 배율 계산
   const W = ar.clientWidth, H = ar.clientHeight, rs = parseFloat(ar.dataset.rs)||0.27, sz = parseFloat(ar.dataset.sz)||44;
   if(!W || !H) return;
-  const T0 = 40, PAD = rs < 0.22 ? 0 : 9, TXT = rs < 0.22 ? 48 : 37, IMG = rs < 0.22 ? 1.25 : 1.12; // (v9.4.4) 레이드(8마리, rs 0.19)는 예전 값 그대로 — 새 값이면 작은 폰에서 겹침 // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
+  const T0 = 40, PAD = rs < 0.22 ? 0 : 9, TXT = 48, IMG = rs < 0.22 ? 1.25 : 1.12; // (v9.4.4) 레이드(8마리, rs 0.19)는 그림 배율도 예전 값 그대로 — 새 값이면 작은 폰에서 겹침 // 이름표·체력 막대·숫자 높이(px, 글자 배율 1일 때) · 범위 테두리 여유(줄이지 않음)
   let kw = W*0.21/72, kh = (H*rs - T0 - PAD)/(sz*1.25); // 후열~전열 간격(22%)에 한 칸이 들어가도록 · (v212) 그림 높이(아이콘의 1.2배+여백)까지 계산해서 같은 열 위아래 정령이 겹치지 않게 · (v214) 범위 테두리끼리도 안 닿게 여유 6px(레이드는 8마리라 정령이 너무 작아지지 않게 예전 그대로)
   let k = Math.max(0.45, Math.min(1.5, kw, kh));
   // (v220) 좁은 화면에선 글자 칸(이름표·체력)도 같은 비율로 줄임(최소 72%) — 예전엔 그림만 줄고 글자는 고정 크기라 320px 레이드에서 겹쳤음
   const ts = Math.max(0.72, Math.min(1, k)); // 글자 배율은 배지 여유 넣기 전 기준 — 글자까지 작아지지 않게
-  kh = (H*rs - TXT*ts - PAD)/(sz*IMG); k = Math.max(0.45, Math.min(1.5, kw, kh)); // (v9.4.4) 실제 한 칸 높이를 재서 맞춤 — 360×700에서 배지까지 붙은 칸이 배율 1일 때 86px(그림 쪽 49 · 글자·배지 쪽 37)인데 예전 식은 그림 55 · 글자 48로 잡아 0.78로 줄였음 (작은 폰에서 정령이 너무 작다는 제보) // (b429) 그림을 살짝 줄여 아래 상태 배지가 아래 칸 정령에 안 닿게 (사용자 요청 — 이름표 간격 줄이기와 같이)
+  kh = (H*rs - TXT*ts - PAD)/(sz*IMG); k = Math.max(0.45, Math.min(1.5, kw, kh)); // (v9.4.4) 실제 한 칸 높이를 재서 맞춤 — 그림 쪽은 sz×1.12(예전 1.25로 너무 크게 잡았음) · 글자·상태 아이콘 쪽 48 (상태 아이콘은 칸 밖으로 옮겨 그려서 아래 칸과 닿는지 따로 잼) (작은 폰에서 정령이 너무 작다는 제보) // (b429) 그림을 살짝 줄여 아래 상태 배지가 아래 칸 정령에 안 닿게 (사용자 요청 — 이름표 간격 줄이기와 같이)
   const ks = k.toFixed(3), tss = ts.toFixed(3);
   if(bs.style.getPropertyValue('--k')!==ks) bs.style.setProperty('--k', ks);
   if(bs.style.getPropertyValue('--ts')!==tss) bs.style.setProperty('--ts', tss);
@@ -11845,7 +11845,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:447, v:'9.4.4', date:'2026-10-16', secs:[
-    { t:'전투 화면', items:[ '화면이 작은 폰에서 정령이 너무 작게 보이던 것 수정 — 전장을 넓히고 정령을 더 크게', '고른 적 정보 막대는 행동 순서 줄 아래에 겹쳐 뜸 (늘 자리를 차지하지 않음)', '고른 대상 표시가 다른 정령의 상태 아이콘에 가려지던 것 수정' ]},
+    { t:'전투 화면', items:[ '화면이 작은 폰에서 정령이 너무 작게 보이던 것 수정 — 전장을 넓히고 정령을 더 크게', '고른 적 정보 막대는 행동 순서 줄 아래에 겹쳐 뜸 (늘 자리를 차지하지 않음)', '고른 대상 표시가 다른 정령의 상태 아이콘에 가려지던 것 수정', '전투 상태 아이콘 크기를 줄임' ]},
     { t:'픽업 · 균열', items:[ '픽업이 끝나고 다음 픽업이 열리기 전에는 균열 입구도 숨김 (10월 16일은 10시에 열림)' ]},
     { t:'정령 빙고 개편 · 번호 뽑기', items:[ '미션을 채우면 티켓 2장 — 미션 25개 (티켓 40장 · 황금 티켓 10장)', '빙고판 = 1~50 중 무작위 25개 번호 (사람마다 다름)', '티켓 1장 = 1~50 중 아직 안 나온 번호 하나를 뽑음 — 판에 있으면 그 칸이 열리고, 없으면 꽝', '황금 티켓 = 원하는 칸을 골라 엶', '미션을 모두 채우면 판을 끝까지 채울 수 있음', '칸마다 보상이 다름 — 정수 · 강화석 · 소환권 · 장비 소환권 · 각인석 · 확정권 · 룬석 · 파편 · 별빛 조각 등 · 가운데 칸은 레전더리 정령 확정권', '줄 보상 11줄: 세로줄은 판 위 · 가로줄은 판 오른쪽 · 대각선(↙)은 오른쪽 위 모서리 — 줄마다 별빛 조각 30(대각선 50) + 줄마다 다른 보상', '25칸을 모두 채우면 별빛 조각 300 + 레전더리 정령 선택권', '「뽑은 번호」 탭에서 나온 번호 확인 · 한 칸만 남은 줄은 빛남', '이벤트가 끝나면 쓰지 않은 티켓은 대신 뽑아 우편으로' ]} ]},
   { build:442, v:'9.3.0', date:'2026-10-16', secs:[
