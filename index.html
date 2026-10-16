@@ -1151,6 +1151,7 @@
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
   .slot{position:relative;} .slot-info{display:inline-block; margin-left:3px; width:15px; height:15px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff66; color:#fff; font-size:10px; line-height:13px; text-align:center; vertical-align:1px; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
+  .st-sheet{display:flex; flex-direction:column; gap:5px;} .st-row{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:2px 8px; padding:7px 10px; border-radius:10px; background:#ffffff0d;} .st-row .st-ic{text-align:center;} .st-row .st-ic .uic{width:18px; height:18px;} .st-row em{font-style:normal; font-weight:800; font-size:16px; color:#ffe9a8;} .st-row small{grid-column:2 / 4; display:flex; flex-wrap:wrap; gap:2px 8px; font-size:11px; color:var(--sub);} .st-ex{display:flex; flex-direction:column; gap:2px; padding:7px 10px; border-radius:10px; background:#7affc812; font-size:12px;} .st-ex b{font-size:12px; color:#9fe8c0;} .st-note{text-align:center; font-size:11px; margin-top:2px;} /* (v9.5.0) 능력치 창 */
   .ud-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
   .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
   .sp-line{margin:6px 0 4px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 3px;} .sp-line > i{color:var(--sub); font-style:normal; font-size:11px;}
@@ -7192,6 +7193,41 @@ function skillTypeOf(sk, u, tSide){
 let udStsUnits = [];
 function udStsReg(u){ if(udStsUnits.length > 40) udStsUnits = []; udStsUnits.push(u); return udStsUnits.length-1; }
 document.addEventListener('click', e=>{ const t = e.target && e.target.closest ? e.target.closest('[data-udsts]') : null; if(!t) return; const u = udStsUnits[+t.dataset.udsts]; if(u){ e.stopPropagation(); showStatusInfo(u); } });
+// (v9.5.0) 능력치 한눈에 — 정령 창 「📊 능력치」: 최종 공격력·체력·속도·치명타·흡혈·받는 피해 감소와 어디서 얼마나 왔는지 (사용자 요청 10/17: % 말고 실제 수치 · 치명타·속도도 보이게)
+function spiritStatSrc(k){ // 출처별 부가 능력 { 각인, 장비 부가 능력, 고유 효과, 초월, 룬 } — 값은 SUB_STATS 단위(비율·속도)
+  const sum = e=>{ const o = {}; if(e) e.lines.forEach(l=>{ if(subValid(l)) o[l.s] = (o[l.s]||0) + subVal(l); }); return o; };
+  const eqs = {}; if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl), o = ek ? sum(eqSubState(ek)) : {}; Object.keys(o).forEach(x=>{ eqs[x] = (eqs[x]||0) + o[x]; }); });
+  const tr = {}; if(transLevel(k)>=5) tr.spd = 3; { const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ tr[x] = (tr[x]||0) + p.sub[x]; }); }
+  const rn = {}; { const r = spiritRune(k); if(r && r.tier!=='boss' && r.tier!=='world' && RUNE_BASE[r.id]) rn[r.id] = runeVal(r); }
+  return [ ['각인', sum(engrState(k))], ['장비 부가 능력', eqs], ['장비 고유 효과', eqTraitSubFor(k)], ['초월 특전', tr], ['룬', rn] ];
+}
+function spiritStatSheetHtml(k){
+  const sp = SPIRITS[k], u = makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT), src = spiritStatSrc(k);
+  const pct = v=> (Math.round(v*1000)/10)+'%', tot = s=> src.reduce((a,[,o])=>a+(o[s]||0), 0);
+  const from = s=> src.filter(([,o])=>o[s]).map(([n,o])=>n+' '+(SUB_STATS[s] && !SUB_STATS[s].pct ? '+'+o[s] : '+'+pct(o[s]))).join(' · ');
+  const rn = spiritRune(k), rAtk = rn && rn.id==='atk' && RUNE_BASE.atk ? runeVal(rn) : 0, rHp = rn && rn.id==='hp' ? runeVal(rn) : 0;
+  const tm = transMult(k);
+  const mul = (nm, m)=> m>1.0005 ? '<span>'+nm+' +'+pct(m-1)+'</span>' : '';
+  const row = (ic, nm, val, det)=> '<div class="st-row"><span class="st-ic">'+ic+'</span><b>'+nm+'</b><em>'+val+'</em>'+(det ? '<small>'+det+'</small>' : '')+'</div>';
+  const spd0 = speedForElementRarity(sp.element, sp.rarity), spdAdd = runeSpeed(u);
+  const crit = BASE_CRIT + runeCrit(u), life = tot('life'), dr = runeDr(u);
+  let h = '<div class="st-sheet">';
+  const n0 = v=> Math.round(v).toLocaleString(), part = st=> src.filter(([nm,o])=>o[st] && nm!=='룬').map(([nm,o])=>mul(nm, 1+o[st])).join('');
+  h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('무기', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk));
+  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k)*tankWeaponHp(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp));
+  h += row('💨', '속도', String(spd0 + spdAdd), '<span>기본 '+spd0+'</span>'+(spdAdd ? '<span>'+from('spd')+'</span>' : ''));
+  h += row(uiIc('target'), '치명타 확률', pct(crit), '<span>기본 '+pct(BASE_CRIT)+'</span>'+(crit>BASE_CRIT ? '<span>'+from('crit')+'</span>' : ''));
+  h += row('💥', '치명타 피해', '×'+CRIT_MULT, '');
+  h += row('🩸', '흡혈', pct(life), life ? '<span>준 피해의 '+pct(life)+' 회복 · '+from('life')+'</span>' : '<span>없음</span>');
+  h += row(uiIc('shield'), '받는 피해 감소', pct(dr), dr ? '<span>'+from('dr')+'</span>' : '<span>없음</span>');
+  { const ex = []; const all = {}; src.forEach(([,o])=>Object.keys(o).forEach(x=>{ if(!SUB_STATS[x]) all[x] = (all[x]||0) + o[x]; }));
+    if(all.emp) ex.push('전투 첫 행동 피해 +'+pct(all.emp)); if(all.sh) ex.push('전투 시작 보호막 최대체력 '+pct(all.sh)); if(all.burn) ex.push('공격이 맞으면 화상 '+all.burn+'중첩');
+    if(all.poi) ex.push('공격이 맞으면 독 (최대체력 '+pct(all.poi)+')'); if(all.frz) ex.push('공격이 맞으면 '+pct(all.frz)+' 확률로 빙결'); if(all.curse) ex.push('공격이 맞으면 '+pct(all.curse)+' 확률로 저주'); if(all.rheal) ex.push('라운드마다 가장 약한 아군 '+pct(all.rheal)+' 회복');
+    if(rn && (rn.tier==='boss' || rn.tier==='world')) ex.push(runeName(rn));
+    if(ex.length) h += '<div class="st-ex"><b>추가 효과</b>'+ex.map(x=>'<span>· '+x+'</span>').join('')+'</div>'; }
+  h += '<div class="sub st-note">전투 전 기준 · 특성·스킬·전투 중 효과는 빼고 셈</div></div>';
+  return h;
+}
 function gearBonusOf(u){ // (v8.16.0) 내 정령: 공격력·체력·속도 중 장비·각인·룬·초월이 더한 몫 (레이드 동료 정령은 그 사람 장비라 계산 안 함)
   const k = u && u.key; if(!k || !SPIRITS[k] || u.side!=='me' || u.isBoss || u.isWard || u.isAdd || !(ownedCount(k)>0)) return null;
   const sf = state.skillFight; if(sf && sf.mode==='raid') return null;
@@ -17049,7 +17085,7 @@ function showManageModal(key){
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
   if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)*tankWeaponHp(key)-1)+'%</div>';
   { const kit = LINE_KITS[sp.element+'_'+sp.variant]; // (v170) 옛 패시브 대신 실제 전투에서 쓰는 역할·스킬
-    html += '<button class="btn secondary small" id="kitInfoBtn" style="margin-top:8px; width:auto; padding:5px 12px;">'+kit.icon+' '+kit.role+' · 스킬 보기</button>'; }
+    html += '<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;"><button class="btn secondary small" id="kitInfoBtn" style="margin-top:8px; width:auto; padding:5px 12px;">'+kit.icon+' '+kit.role+' · 스킬 보기</button><button class="btn secondary small" id="statSheetBtn" style="margin-top:8px; width:auto; padding:5px 12px;">📊 능력치</button></div>'; } // (v9.5.0)
   html += '</div>';
   html += runeManageHtml(key);
   html += equipSlotsHtml(key);
@@ -17090,6 +17126,7 @@ function showManageModal(key){
   if(tfBtn) tfBtn.addEventListener('click', ()=>openFuseTab('spirit', key));
   const kBtn = document.getElementById('kitInfoBtn');
   if(kBtn) kBtn.addEventListener('click', ()=>showUnitKitInfo(makeBattleUnit('me', 0, key, unitAtk(key), ALLY_HP_MULT)));
+  { const sb = document.getElementById('statSheetBtn'); if(sb) sb.addEventListener('click', ()=>openInfoOverlay('📊 '+SPIRITS[key].name+' 능력치', spiritStatSheetHtml(key))); } // (v9.5.0)
   const rrBtn = document.getElementById('runeRerollBtn');
   if(rrBtn) rrBtn.addEventListener('click', (e)=>{
     const cur = spiritRune(key);
