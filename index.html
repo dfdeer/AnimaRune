@@ -2394,16 +2394,19 @@ const SUB_STATS = {
   spd:  { nm:'속도',           v:[1,2,3,5,7] },
   crit: { nm:'치명타 확률',    v:[.02,.04,.06,.09,.12], pct:true },
   life: { nm:'흡혈',           v:[.02,.03,.05,.08,.11], pct:true },
-  dr:   { nm:'받는 피해 감소', v:[.02,.03,.05,.07,.10], pct:true, neg:true }
+  dr:   { nm:'받는 피해 감소', v:[.02,.03,.05,.07,.10], pct:true, neg:true },
+  cdmg: { nm:'치명타 피해',    v:[.04,.08,.12,.18,.24], pct:true }, // (v10.0.0) 치명타 확률의 두 배 (원신 비율) — 기본 치명타 피해 +50%에 더함
+  atkf: { nm:'공격력',         v:[20,40,60,90,120], flat:true }, // (v10.0.0) 깡공격력 — 모든 %를 곱한 뒤 마지막에 더함 (원신과 같게, 사용자 결정 10/17)
+  hpf:  { nm:'체력',           v:[150,300,450,700,950], flat:true } // (v10.0.0) 깡체력 — 마지막에 더함
 };
 const SUB_Q = [ {nm:'일반', c:'#b8bcc8', p:.55}, {nm:'희귀', c:'#57d3ff', p:.30}, {nm:'영웅', c:'#b98bff', p:.11}, {nm:'전설', c:'#ffb347', p:.03}, {nm:'신화', c:'#ff5777', p:.01} ];
-const SUB_LINES_TOP = 9; // 한 정령에 붙을 수 있는 줄 수 최대 (각인 3 + 신화 장비 3 × 2) — 세이브 검사용
-const ENGR_LINES = 3, ENGR_LOCK_MAX = 2, EQ_SUB_LINES = { common:0, rare:1, epic:1, legendary:2, mythic:3 };
+const SUB_LINES_TOP = 11; // 한 정령에 붙을 수 있는 줄 수 최대 (각인 5 + 신화 장비 3 × 2) — 세이브 검사용
+const ENGR_LINES = 5, ENGR_LOCK_MAX = 3, EQ_SUB_LINES = { common:0, rare:1, epic:1, legendary:2, mythic:3 }; // (v10.0.0) 각인 3줄 → 5줄 · 잠금 최대 2 → 3 (사용자 결정 10/17)
 const ENGR_DISMANTLE = [0,0,1,2,4]; // 정령 분해 때 각인석 (등급 순서)
 function subRollLine(){ const ks = Object.keys(SUB_STATS); let x = Math.random(), q = 0; for(; q<SUB_Q.length-1; q++){ if(x < SUB_Q[q].p) break; x -= SUB_Q[q].p; } return { s: ks[Math.floor(Math.random()*ks.length)], q }; }
 function subValid(l){ return !!(l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<SUB_Q.length); }
 function subVal(l){ return SUB_STATS[l.s].v[l.q]; }
-function subTxt(l){ const d = SUB_STATS[l.s], v = subVal(l); return d.nm+' '+(d.neg?'−':'+')+(d.pct ? Math.round(v*100)+'%' : v); }
+function subTxt(l){ const d = SUB_STATS[l.s], v = subVal(l); return d.nm+' '+(d.neg?'−':'+')+(d.pct ? Math.round(v*100)+'%' : v.toLocaleString()); }
 function subLineHtml(l, lock, idx, canLock){ const q = SUB_Q[l.q];
   return '<div class="sub-line" style="--qc:'+q.c+';"><i>'+q.nm+'</i><b>'+subTxt(l)+'</b>'+(canLock ? '<button class="sub-lk'+(lock?' on':'')+'" data-sub-lock="'+idx+'">'+(lock?uiIc('lock'):uiIc('unlock'))+'</button>' : '')+'</div>'; }
 function engrState(k){ const e = state.engrave && state.engrave[k]; return e && Array.isArray(e.lines) ? e : null; }
@@ -2434,7 +2437,7 @@ function enhShowHtml(k){ const e = enhanceLevel(k), t = transLevel(k);
   return (e ? '+'+e : '') + transTag(k); } // 예전에 강화를 덜 하고 초월한 정령은 ✦ 표시 그대로
 // 합계 · 전투 반영
 function subTotals(k){
-  const t = { atk:0, hp:0, spd:0, crit:0, life:0, dr:0 };
+  const t = { atk:0, hp:0, spd:0, crit:0, life:0, dr:0, cdmg:0, atkf:0, hpf:0 };
   const add = e=>{ if(e) e.lines.forEach(l=>{ if(subValid(l)) t[l.s] += subVal(l); }); };
   add(engrState(k));
   if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl); if(ek) add(eqSubState(ek)); });
@@ -2512,7 +2515,7 @@ function eqTraitTxt(key, id){ const d = EQ_TRAITS[id], tier = Math.max(0, eqTrai
 function eqTraitRollOffers(cur){ const ids = Object.keys(EQ_TRAITS).filter(x=>x!==cur), out = []; while(out.length<EQ_TRAIT_OFFERS && ids.length){ out.push(ids.splice(Math.floor(Math.random()*ids.length),1)[0]); } return out; }
 function eqTraitSubFor(k){ const o = {}; if(typeof isEquipUnlocked!=='function' || !isEquipUnlocked()) return o; EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl), t = ek && eqTraitOf(ek); if(t) o[t.d.sub] = (o[t.d.sub]||0) + t.v; }); return o; }
 function trans10Of(k){ const sp = SPIRITS[k]; return TRANS10[sp.element+'_'+sp.variant] || null; }
-function battleSubFor(k){ const t = subTotals(k), o = { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr };
+function battleSubFor(k){ const t = subTotals(k), o = { spd:t.spd, crit:t.crit, life:t.life, dr:t.dr, cdmg:t.cdmg };
   const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ o[x] = (o[x]||0) + p.sub[x]; }); // 특전
   const tr = eqTraitSubFor(k); Object.keys(tr).forEach(x=>{ o[x] = (o[x]||0) + tr[x]; }); // (v328) 장비 고유 효과
   o.dbs = debuffBonusOf(k); // (v8.3.0) 약화 효과량
@@ -2523,7 +2526,7 @@ function debuffBonusOf(k){ return Math.max(0, Math.min(DEBUFF_MAX, (unitPower(k)
 function dbMul(u){ return 1 + ((u && u.sub && u.sub.dbs) || 0); }
 function cleanSub(o){ if(!o || typeof o!=='object') return null; const n = (v,cap)=> Number.isFinite(v) ? Math.max(0, Math.min(cap, v)) : 0;
   const top = s=> SUB_STATS[s].v[SUB_STATS[s].v.length-1]*SUB_LINES_TOP;
-  return { spd:n(o.spd, top('spd')+3+11+10), crit:n(o.crit, top('crit')+.16), life:n(o.life, top('life')+.12+.12), dr:n(o.dr, top('dr')+.12+.12), sh:n(o.sh, .15+.24), // 세이브 검사용 최대 = 부가 능력 줄 최대 + 초월 특전 + 장비 고유 효과 2개 (v6.2.0 부가 능력 상한 없앰)
+  return { spd:n(o.spd, top('spd')+3+11+10), crit:n(o.crit, top('crit')+.16), life:n(o.life, top('life')+.12+.12), dr:n(o.dr, top('dr')+.12+.12), cdmg:n(o.cdmg, top('cdmg')+3), sh:n(o.sh, .15+.24), // 세이브 검사용 최대 = 부가 능력 줄 최대 + 초월 특전 + 장비 고유 효과 2개 (v6.2.0 부가 능력 상한 없앰)
     emp:n(o.emp, .4+.5), burn:n(o.burn, 2), rheal:n(o.rheal, .05+.06), frz:n(o.frz, .15+.2), poi:n(o.poi, .04+.06), curse:n(o.curse, .25+.36), dbs:n(o.dbs, DEBUFF_MAX) }; }
 function applySubOnBuild(u, sub){ const s = cleanSub(sub); if(!s) return; u.sub = s;
   if(s.sh>0){ u.st.shield = Math.max(u.st.shield||0, Math.round(u.maxHp*s.sh)); u.st.shieldR = Math.max(u.st.shieldR||0, 2); }
@@ -2552,9 +2555,9 @@ function subStopHit(l){ const c = subStopCfg(); return c.q>=0 && l && l.q>=c.q &
 function showSubModal(kind, k, back){
   const isEq = kind==='eq', max = subLinesMax(kind, k), e = isEq ? eqSubState(k) : engrState(k), have = ticketCount('engr');
   const nm = isEq ? equipInfo(k).name : SPIRITS[k].name, art = isEq ? equipInfo(k).img : spArt(SPIRITS[k]);
-  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?uiIc('substat')+' 부가 능력':uiIc('engrave')+' 각인')+' · '+nm+'</h3>'
-    + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 부가 능력 '+ENGR_LINES+'줄')+'</div></div>'; // (v7.0.1) 품질·상한 문구 뺌 (상한은 v6.2.0에 없앰)
-  if(!max) h += '<div class="sub" style="text-align:center; padding:16px 0;">일반 장비는 부가 능력 없음</div>';
+  let h = '<div style="text-align:center;"><div style="font-size:40px;">'+art+'</div><h3 style="margin:4px 0;">'+(isEq?uiIc('substat')+' 장비 각인':uiIc('engrave')+' 각인')+' · '+nm+'</h3>'
+    + '<div class="sub" style="font-size:11px; line-height:1.5;">'+(isEq ? '끼운 정령이면 속성과 상관없이 누구에게나 붙음' : '정령마다 무작위 능력 '+ENGR_LINES+'줄')+'</div></div>'; // (v7.0.1) 품질·상한 문구 뺌 (상한은 v6.2.0에 없앰)
+  if(!max) h += '<div class="sub" style="text-align:center; padding:16px 0;">일반 장비는 장비 각인 없음</div>';
   else if(!e || !e.lines.length) h += '<div class="sub" style="text-align:center; padding:12px 0;">아직 '+(isEq?'감정':'각인')+' 안 함</div><button class="btn gold" id="subGo">'+(isEq?uiIc('substat')+' 감정하기':uiIc('engrave')+' 각인하기')+' (무료)</button>';
   else if(subMissing(kind, k)){ const miss = subMissing(kind, k), ks = Object.keys(SUB_STATS), q = SUB_Q.length-1;
     h += '<div class="sub-lines">'+e.lines.map((l,i)=>subLineHtml(l, false, i, false)).join('')+'</div>';
@@ -2591,19 +2594,20 @@ function showSubModal(kind, k, back){
   const go = document.getElementById('subGo'); if(go) go.addEventListener('click', ()=>{ const e2 = isEq ? eqSubState(k) : engrState(k);
     if(!e2 || !e2.lines.length){ subRoll(kind, k); render(); re(); return; }
     const cost = subRerollCost(e2); if(ticketCount('engr') < cost){ toast('각인석 부족'); return; }
-    spendAsk(isEq ? '부가 능력 다시 굴리기' : '각인 다시 굴리기', {tk:'engr', n:cost}, ()=>{ if(ticketCount('engr') < cost) return; state.tickets.engr -= cost; subRoll(kind, k); render(); re(); }, state.settings.subNoAsk ? false : undefined); });
+    spendAsk(isEq ? '장비 각인 다시 굴리기' : '각인 다시 굴리기', {tk:'engr', n:cost}, ()=>{ if(ticketCount('engr') < cost) return; state.tickets.engr -= cost; subRoll(kind, k); render(); re(); }, state.settings.subNoAsk ? false : undefined); });
   const bk = document.getElementById('subBack'); if(bk) bk.addEventListener('click', back);
 }
 // (v327) 부가 능력 확률표 · 능력 목록 — 각인·장비 부가 능력 공통
 function showSubOdds(){
-  const ks = Object.keys(SUB_STATS), pc = v=>Math.round(v*1000)/10+'%', val = (d,v)=>(d.neg?'−':'+')+(d.pct ? Math.round(v*100)+'%' : v);
+  const ks = Object.keys(SUB_STATS), pc = v=>Math.round(v*1000)/10+'%', val = (d,v)=>(d.neg?'−':'+')+(d.pct ? Math.round(v*100)+'%' : v.toLocaleString());
   let h = '<div class="so-sec">한 줄이 나올 때 — 능력 '+ks.length+'가지 중 하나(각 '+pc(1/ks.length)+') × 품질</div>'
     + '<div class="so-q">'+SUB_Q.map(q=>'<span style="--qc:'+q.c+';"><i>'+q.nm+'</i><b>'+pc(q.p)+'</b></span>').join('')+'</div>'
     + '<table class="so-t"><tr><th>능력</th>'+SUB_Q.map(q=>'<th style="color:'+q.c+';">'+q.nm+'</th>').join('')+'</tr>'
-    + ks.map(s=>{ const d = SUB_STATS[s]; return '<tr><td>'+d.nm+'</td>'+d.v.map(v=>'<td>'+val(d,v)+'</td>').join('')+'</tr>'; }).join('')+'</table>'
-    + '<div class="so-sec">줄 수</div><div class="sub so-d">정령 각인 '+ENGR_LINES+'줄 · 장비 레어·에픽 1줄 · 레전더리 2줄 · 신화 3줄 · 일반 장비 없음</div>'
+    + ks.map(s=>{ const d = SUB_STATS[s]; return '<tr><td>'+d.nm+(d.flat?' (깡)':'')+'</td>'+d.v.map(v=>'<td>'+val(d,v)+'</td>').join('')+'</tr>'; }).join('')+'</table>'
+    + '<div class="so-sec">줄 수</div><div class="sub so-d">정령 각인 '+ENGR_LINES+'줄 · 장비 각인: 레어·에픽 1줄 · 레전더리 2줄 · 신화 3줄 · 일반 장비 없음</div>'
+    + '<div class="so-sec">계산</div><div class="sub so-d">% 능력은 정령력에 곱함 · 깡 능력은 모두 곱한 뒤 마지막에 더함 · 치명타 피해는 기본 +'+Math.round((CRIT_MULT-1)*100)+'%에 더함</div>'
     + '<div class="so-sec">다시 굴리기</div><div class="sub so-d">각인석 1개 · 잠근 줄 하나마다 +2 (최대 '+ENGR_LOCK_MAX+'줄)</div>';
-  openInfoOverlay('📊 부가 능력 확률표', h);
+  openInfoOverlay('📊 각인 확률표', h);
 }
 // (v328) 장비 고유 효과 창 — 후보 3개 중 하나를 골라 붙임 · 처음 후보는 무료 · 각인석으로 다시 뽑기
 function showEqTraitModal(key, back){
@@ -2782,7 +2786,7 @@ const RAID_SHOP = [ // (v247) desc = 구매 창에 보이는 설명(간결체) �
   { id:'essence', sec:'res', icon:'<img class="uic" src="assets/ui/ic_essence.webp" alt="">', name:'정수 ×500', price:5, limit:0, desc:'소환·강화·화로에 쓰는 재화 500' },
   { id:'stone', sec:'res', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:3, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' },
   { id:'equip', sec:'res', icon:'<img class="uic" src="assets/ui/ic_tk_equip.webp" alt="">', name:'장비 소환권', price:5, limit:5, desc:'정령장비 1회 소환' },
-  { id:'engr', sec:'res', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:4, limit:10, desc:'각인·장비 부가 능력 다시 굴리기에 씀' }, // (v298)
+  { id:'engr', sec:'res', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:4, limit:10, desc:'정령 각인·장비 각인 다시 굴리기에 씀' }, // (v298)
   { id:'eq_epic', sec:'res', icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', price:40, limit:1, desc:'에픽 장비 1개 (부위·속성 무작위)' }, // (v297)
   { id:'eqpick_epic', sec:'res', icon:TICKET_INFO_EQP('epic'), name:'에픽 장비 선택권', price:70, limit:1, desc:'에픽 장비 10종 중 원하는 1개' },
   { id:'eq_legendary', sec:'res', icon:tkIcon('sure','legendary',true), name:'레전더리 장비 확정권', price:140, limit:1, desc:'레전더리 장비 1개 (부위·속성 무작위)' },
@@ -3091,7 +3095,7 @@ function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride,
   const g = Math.min(4, g0 + (aw>=5 ? 1 : 0));
   // (v168 버그수정) 6칸 전투에서 방어구(체력 +%)가 적용되지 않던 문제 — 내 정령은 방어구 배율을 체력에 곱함(레이드 팀원은 보내온 값 사용)
   const armor = Number.isFinite(armorOverride) ? armorOverride : (side==='me' ? spiritHpMult(key) : 1); // (v298) 방어구 × 각인·부가 능력 체력 × 초월
-  const maxHp = Math.max(1, Math.round(atk*hpMult*armor)); // (v146) specialMult는 공격력에만 적용, 체력에는 반영 안 함
+  const maxHp = Math.max(1, Math.round(atk*hpMult*armor + (side==='me' && armorOverride===undefined && SPIRITS[key] && typeof subTotals==='function' ? subTotals(key).hpf : 0))); // (v146) specialMult는 공격력에만 적용, 체력에는 반영 안 함 · (v10.0.0) + 깡체력 (마지막에)
   const u = { side, idx, key, element: sp.element, line: sp.element+'_'+sp.variant, g, aw, pg: (g0>=1 || aw>=1) ? Math.max(1, g) : 0, s2on: g0>=2 || aw>=3, atk, hp: maxHp, maxHp,
     cd1: 0, cd2: 0, alive: true, st: {}, reviveUsed: false, reviveGiven: false, specialMult: specialMult||1,
     uq: aw>=5 && g0>=4, ast: !!sp.limited || (side==='me' && !Number.isFinite(awOverride) && isAstral(key)) }; // (v8.7.0) 각성 5단계 고유(신화) · 성좌(레이드·결투는 보내온 ast) // (v162) 스킬2 시작 쿨타임 2턴 제거 — 등급만 되면 바로 사용 가능
@@ -3394,7 +3398,7 @@ function dealDamage(sf, a, d, mult, opts){
   if(a.line==='dark_b' && unitPG(a)>=1 && s.curse) critCh += [0,.10,.15,.20,.25][unitPG(a)];
   if(a.st && a.st.haste){ const lb = aliveUnits(sideUnits(sf, a.side)).find(x=>x.line==='light_b' && awUq(x)); if(lb) critCh += awAs(lb) ? 0.25 : 0.15; } // (v8.7.0) 백록 별의 눈
   const crit = !opts.noCrit && !sf.noRng && Math.random() < critCh; // (v266) 시련: 치명타 없음
-  if(crit){ v *= CRIT_MULT; if(sf.xr && sf.xr.S_fury4 && a.side==='me') v *= 1.25; } // (v8.17.0) 광기 4세트
+  if(crit){ v *= CRIT_MULT + ((a.sub && a.sub.cdmg) || 0); if(sf.xr && sf.xr.S_fury4 && a.side==='me') v *= 1.25; } // (v8.17.0) 광기 4세트 · (v10.0.0) 치명타 피해 각인
   const total = Math.max(0, Math.round(v));
   let rest = total;
   if(sf.riftRule==='flow' && d.side==='me' && rest>0){ const fh = flowHost(sf); // (v7.4.0) 균열 물길: 다른 아군 피해의 10%를 물받이가 대신 받음 (하백과 연결된 아군은 하백 40%로)
@@ -7200,7 +7204,7 @@ function spiritStatSrc(k){ // 출처별 부가 능력 { 각인, 장비 부가 �
   const eqs = {}; if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl), o = ek ? sum(eqSubState(ek)) : {}; Object.keys(o).forEach(x=>{ eqs[x] = (eqs[x]||0) + o[x]; }); });
   const tr = {}; if(transLevel(k)>=5) tr.spd = 3; { const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ tr[x] = (tr[x]||0) + p.sub[x]; }); }
   const rn = {}; { const r = spiritRune(k); if(r && r.tier!=='boss' && r.tier!=='world' && RUNE_BASE[r.id]) rn[r.id] = runeVal(r); }
-  return [ ['각인', sum(engrState(k))], ['장비 부가 능력', eqs], ['장비 고유 효과', eqTraitSubFor(k)], ['초월 특전', tr], ['룬', rn] ];
+  return [ ['각인', sum(engrState(k))], ['장비 각인', eqs], ['장비 고유 효과', eqTraitSubFor(k)], ['초월 특전', tr], ['룬', rn] ];
 }
 function spiritStatSheetHtml(k){
   const sp = SPIRITS[k], u = makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT), src = spiritStatSrc(k);
@@ -7214,11 +7218,12 @@ function spiritStatSheetHtml(k){
   const crit = BASE_CRIT + runeCrit(u), life = tot('life'), dr = runeDr(u);
   let h = '<div class="st-sheet">';
   const n0 = v=> Math.round(v).toLocaleString(), part = st=> src.filter(([nm,o])=>o[st] && nm!=='룬').map(([nm,o])=>mul(nm, 1+o[st])).join('');
-  h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('무기', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk));
-  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp));
+  const flat = st=> tot(st) ? '<span>깡 +'+n0(tot(st))+' ('+from(st)+')</span>' : '';
+  h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('무기', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk)+flat('atkf'));
+  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp)+flat('hpf'));
   h += row('💨', '속도', String(spd0 + spdAdd), '<span>기본 '+spd0+'</span>'+(spdAdd ? '<span>'+from('spd')+'</span>' : ''));
   h += row(uiIc('target'), '치명타 확률', pct(crit), '<span>기본 '+pct(BASE_CRIT)+'</span>'+(crit>BASE_CRIT ? '<span>'+from('crit')+'</span>' : ''));
-  h += row('💥', '치명타 피해', '×'+CRIT_MULT, '');
+  h += row('💥', '치명타 피해', '+'+pct(CRIT_MULT-1+tot('cdmg')), '<span>기본 +'+pct(CRIT_MULT-1)+'</span>'+(tot('cdmg') ? '<span>'+from('cdmg')+'</span>' : '')); // (v10.0.0)
   h += row('🩸', '흡혈', pct(life), life ? '<span>준 피해의 '+pct(life)+' 회복 · '+from('life')+'</span>' : '<span>없음</span>');
   h += row(uiIc('shield'), '받는 피해 감소', pct(dr), dr ? '<span>'+from('dr')+'</span>' : '<span>없음</span>');
   { const ex = []; const all = {}; src.forEach(([,o])=>Object.keys(o).forEach(x=>{ if(!SUB_STATS[x]) all[x] = (all[x]||0) + o[x]; }));
@@ -8321,7 +8326,7 @@ function unitPower(speciesKey){
   return base * (1 + 0.05*enhanceLevel(speciesKey)) * (1 + awakenRate(speciesKey)*awakenLevel(speciesKey)); // (v222) 각성 · 반올림은 최종 표시/전투 계산 단계에서만(속성 보정치가 낮은 등급에서 사라지지 않도록)
 }
 // 전투 공격력의 바탕 — 지금은 정령력과 같음. 속성별로 공격/체력 비율을 다르게 하려면 여기(공격 비율)와 ELEMENT_HP_MULT(체력 비율)를 조정
-function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
+function unitAtk(speciesKey){ const t = subTotals(speciesKey); return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + t.atk) * transMult(speciesKey) + t.atkf; } // (v10.0.0) + 깡공격력 (마지막에) // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
 function trIc(k){ return '<img class="uic" src="assets/ui/tr/'+k+'.webp" alt="" draggable="false">'; } // (v317) 특성 아이콘 그림
 // (v9.5.0) 정령 특성(속성별 공격력 +% · 확률 폭발 · 상성 완화 · 정수 보상 · 신화 통솔) 없앰 (사용자 결정 10/17 — 스킬 전투엔 거의 안 들어가고 탑에서만 쓰였음)
@@ -9536,7 +9541,7 @@ const BINGO_MISSIONS = [ // k = 세는 행동 (bingoBump) · g = 황금 티켓
   {k:'summon', n:50, nm:'정령 소환', u:'회', ic:'summon'}, {k:'stage', n:30, nm:'스테이지 클리어', u:'회', ic:'explore'}, {k:'enh', n:30, nm:'강화', u:'회', ic:'upstone'}, {k:'dispatch', n:10, nm:'파견 완료', u:'회', ic:'dispatch'}, {k:'quest', n:30, nm:'일일 의뢰', u:'개', ic:'quest'},
   {k:'fuse', n:20, nm:'합성', u:'회', ic:'fuse'}, {k:'dungeon', n:10, nm:'요일 던전 승리', u:'회', ic:'mode'}, {k:'eqsum', n:30, nm:'장비 소환', u:'회', ic:'tk_equip'}, {k:'wb', n:3, nm:'월드 보스 도전', u:'회', ic:'worldboss'}, {k:'mine', n:200, nm:'곡괭이질', u:'번', ic:'pick'},
   {k:'boss', n:5, nm:'챕터 보스 격파', u:'회', ic:'skull'}, {k:'tower', n:10, nm:'탑 승리', u:'회', ic:'tower'}, {k:'att', n:1, nm:'출석', u:'일', ic:'gift'}, {k:'raid', n:3, nm:'레이드 승리', u:'회', ic:'raid'}, {k:'spark', n:300, nm:'화로 불씨 수확', u:'개', ic:'hearth'},
-  {k:'exp', n:20, nm:'출정 방 클리어', u:'개', ic:'expedition'}, {k:'sub', n:10, nm:'각인 · 부가 능력', u:'회', ic:'engrave'}, {k:'pickup', n:10, nm:'픽업 소환', u:'회', ic:'pickup'}, {k:'rift', n:5, nm:'균열 승리', u:'회', ic:'rift'}, {k:'dismantle', n:30, nm:'정령 분해', u:'마리', ic:'recycle'},
+  {k:'exp', n:20, nm:'출정 방 클리어', u:'개', ic:'expedition'}, {k:'sub', n:10, nm:'각인 · 장비 각인', u:'회', ic:'engrave'}, {k:'pickup', n:10, nm:'픽업 소환', u:'회', ic:'pickup'}, {k:'rift', n:5, nm:'균열 승리', u:'회', ic:'rift'}, {k:'dismantle', n:30, nm:'정령 분해', u:'마리', ic:'recycle'},
   {k:'att', n:10, nm:'출석', u:'일', ic:'gift', g:1}, {k:'summon', n:150, nm:'정령 소환', u:'회', ic:'summon', g:1}, {k:'stage', n:80, nm:'스테이지 클리어', u:'회', ic:'explore', g:1}, {k:'enh', n:80, nm:'강화', u:'회', ic:'upstone', g:1}, {k:'quest', n:40, nm:'일일 의뢰', u:'개', ic:'quest', g:1}
 ];
 const BINGO_CELL_RW = [ // 칸 보상 — 가로로 5칸씩 · 가운데·네 모서리는 큰 보상
@@ -10111,7 +10116,7 @@ function renderFuseTab(){
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
       + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+' <span style="opacity:.8;">(재료 강화 합 +'+info.inheritFrom+' ÷ 3)</span></div>'
-        + (fuseMode==='equip' ? '<div class="fz-warn">'+uiIc('warn')+' 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">'+uiIc('warn')+' 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
+        + (fuseMode==='equip' ? '<div class="fz-warn">'+uiIc('warn')+' 재료로 쓴 장비는 강화·장비 각인·고유 효과와 함께 사라짐 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">'+uiIc('warn')+' 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
       + '</div>'
       + (info.rate<100 && fuseGuardEligible(info.nr) ? '<div class="sub fz-small" style="margin-top:6px;">'+uiIc('guard')+' 방패를 켜면 실패해도 재료 유지 · 보유 '+ticketCount('fuseGuard')+'장</div>' : '')
       + fuseGoRowHtml(info); // (v7.0.1) 합성판이 보이는 동안은 아래 바가 숨으니 합성판 안에도 합성 버튼
@@ -10820,7 +10825,7 @@ function guideSectionHtml(cat){
       + guideHeader('<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본')
       + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
       + guideHeader('💥 피해')
-      + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 ×'+CRIT_MULT+' (룬·각인으로 확률 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
+      + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 +'+Math.round((CRIT_MULT-1)*100)+'% (룬·각인으로 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
       + guideHeader(G+' 그로기 (보스)')
       + guideList(['보스마다 그로기 게이지 '+GROGGY_MAX+' — 아군 공격이 맞을 때마다 줄어듦', '한 번에 깎이는 양: 기본 4 (레이드 3) × 스킬 배율(0.5~2.5배) × 보스별 배수 · 치명타면 ×1.5', '0이 되면 그로기: 받는 피해 <b>×'+GROGGY_DMG_MULT+'</b> · 이번 라운드에 아직 행동 전이면 행동 못 함', '다음 라운드 시작 때 풀리고 게이지가 다시 가득', '보스마다 잘 깎이는 속성·'+uiIc('lock')+' 잠기는 때가 다름 — 준비 창 보스 정보에서 확인', '보스전에서 스킬 버튼에 게이지가 얼마나 깎이는지 표시 (치명타 제외)'])
       + guideHeader(stIc('buff')+' 이로운 효과')
@@ -11195,7 +11200,7 @@ function showEquipDetailModal(key){
   { const lv = equipEnhLevel(key), mx = equipEnhMax(key), c = equipEnhCost(key), can = lv<mx && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone;
     html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
   { const mx = EQ_SUB_LINES[i.rarity]||0, e = eqSubState(key); // (v298) 장비 부가 능력
-    html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">'+uiIc('substat')+'<b>부가 능력</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
+    html += '<button class="aw-row eg-row" id="eqSubOpen" style="margin-top:8px;">'+uiIc('substat')+'<b>장비 각인</b><span class="sub">'+(!mx ? '일반 장비는 없음' : (e && e.lines.length ? e.lines.map(l=>'<i style="color:'+SUB_Q[l.q].c+'; font-style:normal;">'+subTxt(l)+'</i>').join(' · ') : mx+'줄 · 감정 전 (무료)'))+'</span><span class="aw-go'+(mx && !(e && e.lines.length) ? ' on' : '')+'">'+(mx?'자세히 ›':'')+'</span></button>'; }
   if(eqTraitTier(key)>=0){ const t = eqTraitOf(key); // (v328) 장비 고유 효과
     html += '<button class="aw-row eg-row" id="eqTraitOpen" style="margin-top:8px;">'+uiIc('special')+'<b>고유 효과</b><span class="sub">'+(t ? t.d.ic+' <b style="color:#ffe08a;">'+t.d.nm+'</b> · '+t.d.d(t.v) : '아직 없음 — 눌러서 고르기')+'</span><span class="aw-go'+(t?'':' on')+'">'+(t?'바꾸기':'고르기')+' ›</span></button>'; }
   if(i.rarity!=='mythic') html += '<button class="btn" id="equipFuseBtn" style="margin-top:12px;" '+(isEqLocked(key)?'disabled':'')+'><img class="uic" src="assets/ui/ic_fuse.webp" alt=""> 합성 탭에서 합성하기</button>';
@@ -11267,7 +11272,7 @@ function equipSlotsHtml(spKey){
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
-  return h + '</div>' + (EQUIP_SLOTS.some(sl=>equippedKey(spKey, sl)) ? '<div class="sub" style="font-size:10px; text-align:center; margin-top:4px; opacity:.75;">장비를 꾹 누르면 장비 정보 (강화·부가 능력·잠금)</div>' : '');
+  return h + '</div>' + (EQUIP_SLOTS.some(sl=>equippedKey(spKey, sl)) ? '<div class="sub" style="font-size:10px; text-align:center; margin-top:4px; opacity:.75;">장비를 꾹 누르면 장비 정보 (강화·장비 각인·잠금)</div>' : '');
 }
 function summonRateTableHtml(mode){
   const cur = mode==='equip' ? equipSummonLevel() : summonLevel();
@@ -12231,7 +12236,7 @@ const PATCH_NOTES = [
     { t:'화면', items:[ '도전·요일 던전 화면에서 아래 카드가 살짝 잘려 스크롤되던 것 수정 — 화면이 짧으면 위 그림 높이를 줄여 한눈에 보이게' ]}
   ]},
   { build:330, v:'4.3.0', date:'2026-10-02', secs:[
-    { t:'장비 한 개씩 따로', items:[ '같은 장비도 하나하나 따로 강화·부가 능력·고유 효과·잠금을 가짐 — 같은 장비를 정령마다 다르게 맞출 수 있음', '같은 종류를 여러 개 갖고 있던 장비는 1개만 지금 상태 그대로 두고 나머지는 새 장비(+0 · 부가 능력·고유 효과 없음)로 나눔', '한 장비는 정령 한 명만 낄 수 있음 — 여러 정령이 같은 장비를 끼고 있었다면 나눈 새 장비를 끼워 줌', '합성·분해 재료로 쓴 장비는 강화·부가 능력·고유 효과와 함께 사라짐 (강화·능력 붙은 장비는 자동 합성에서 빠짐)' ]},
+    { t:'장비 한 개씩 따로', items:[ '같은 장비도 하나하나 따로 강화·부가 능력·고유 효과·잠금을 가짐 — 같은 장비를 정령마다 다르게 맞출 수 있음', '같은 종류를 여러 개 갖고 있던 장비는 1개만 지금 상태 그대로 두고 나머지는 새 장비(+0 · 부가 능력·고유 효과 없음)로 나눔', '한 장비는 정령 한 명만 낄 수 있음 — 여러 정령이 같은 장비를 끼고 있었다면 나눈 새 장비를 끼워 줌', '합성·분해 재료로 쓴 장비는 강화·장비 각인·고유 효과와 함께 사라짐 (강화·능력 붙은 장비는 자동 합성에서 빠짐)' ]},
     { t:'정령 중복 배치 금지', items:[ '같은 정령은 한 팀에 한 번만 — 이미 놓인 정령을 고르면 그 자리로 옮김', '이미 중복으로 놓여 있던 자리는 비움 (팀·균열·결투 덱·프리셋)' ]},
     { t:'장비 강화 비용', items:[ '최대 강화까지 합계 — 신화(+10): 정수 2,325 → 6,000 · 강화석 245 → 551', '레전더리(+9): 정수 1,800 → 2,980 · 강화석 189 → 273', '에픽(+7): 정수 1,085 → 1,157 · 일반·레어는 그대로' ]}
   ]},
@@ -12888,7 +12893,7 @@ function bagTicketInfo(k){ const t = TICKET_INFO[k], R = r=>RARITY_INFO[r].name;
   if(k==='summon') return { d:'정령 1회 소환 (10장이면 10연)', go:'summon0' };
   if(k==='equip') return { d:'정령장비 1회 소환 (10장이면 10연)', go:'summon1' };
   if(k==='fuseGuard') return { d:'레전더리·신화 합성이 실패해도 재료 유지', go:'fuse' };
-  if(k==='engr') return { d:'정령 각인 · 장비 부가 능력 다시 굴리기 — 정령 정보 창의 각인에서', go:'spirits' };
+  if(k==='engr') return { d:'정령 각인 · 장비 각인 다시 굴리기 — 정령 정보 창·장비 정보 창의 각인에서', go:'spirits' };
   if(t.pick) return { d:R(t.pick)+' 정령 10종 중 원하는 1마리', go:'summon0' };
   if(t.eqPick) return { d:R(t.eqPick)+' 장비 중 원하는 1개 (부위·속성 고르기)', go:'summon1' };
   if(t.eqSure) return { d:R(t.eqSure)+' 장비 확정 (부위·속성 무작위)', go:'summon1' };
@@ -15422,7 +15427,7 @@ const WB_SHOP = [ // limit: 이번 주 구매 한도(0 = 무제한)
   { id:'legend', icon:uiIc('dice'), name:'전설 룬 뽑기', price:20, limit:2, desc:'전설 등급 기본 룬 1개 (무작위 종류)' },
   { id:'upgrade', icon:uiIc('upstone'), name:'룬 승급석', price:12, limit:2, desc:'룬 한 단계 승급 (일반 → 희귀 → 전설)' },
   { id:'pick_epic', icon:tkIcon('pick','epic'), name:'에픽 정령 선택권', price:30, limit:1, desc:'에픽 정령 10종 중 원하는 1마리' },
-  { id:'engr', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:3, limit:6, desc:'각인·장비 부가 능력 다시 굴리기에 씀' }, // (v298)
+  { id:'engr', icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석', price:3, limit:6, desc:'정령 각인·장비 각인 다시 굴리기에 씀' }, // (v298)
   { id:'eqpick_legendary', icon:TICKET_INFO_EQP('legendary'), name:'레전더리 장비 선택권', price:60, limit:1, desc:'레전더리 장비 10종 중 원하는 1개' }, // (v297)
   { id:'stone', icon:'<img class="uic" src="assets/ui/ic_stone.webp" alt="">', name:'강화석 ×30', price:2, limit:0, desc:'강화·각성·화로에 쓰는 재화 30' }
 ];
@@ -18021,8 +18026,9 @@ function sanitizeState(){
     else if(!buffOk) e.pendingBuffChoice = ['old']; // (v8.17.0) 예전 선택지(atk10 등) — 버리지 않고 화면에서 새로 뽑음 (예전엔 고를 차례가 통째로 사라졌음)
   }
   { // (v298) 각인 · 장비 부가 능력 · 초월 — 모양이 이상한 건 버림
-    const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<SUB_Q.length).slice(0,3); /* (v7.0.1) 신화(q=4)를 지우던 것 — <4 고정이었음 */ if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
+    const cleanBox = (box, ok)=>{ const o = {}; if(box && typeof box==='object') Object.keys(box).forEach(k=>{ const e = box[k]; if(!ok(k) || !e || !Array.isArray(e.lines)) return; const lines = e.lines.filter(l=>l && SUB_STATS[l.s] && Number.isInteger(l.q) && l.q>=0 && l.q<SUB_Q.length).slice(0, box===s.engrave ? ENGR_LINES : 3); /* (v7.0.1) 신화(q=4)를 지우던 것 — <4 고정이었음 */ if(!lines.length) return; const lock = lines.map((_,i)=> !!(Array.isArray(e.lock) && e.lock[i]===true)); o[k] = { lines, lock }; }); return o; };
     s.engrave = cleanBox(s.engrave, k=>!!SPIRITS[k]);
+    Object.keys(s.engrave).forEach(k=>{ const e = s.engrave[k]; while(e.lines.length < ENGR_LINES){ e.lines.push(subRollLine()); e.lock.push(false); } }); // (v10.0.0) 각인 3줄 → 5줄: 이미 각인한 정령은 새 줄을 무료 무작위로 채움 (사용자 결정 10/17)
     s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/.test(k));
     { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)(#\d+)?$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
