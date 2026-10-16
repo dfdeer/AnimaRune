@@ -1405,7 +1405,8 @@
   .bb-bar{position:relative; margin:10px 4px 0;} .bb-hp{position:relative; margin-top:4px; font-size:12px; font-weight:800;} .bb-hp small{color:var(--sub); font-weight:400;}
   .wb-period2{text-align:center; font-size:11px; margin:2px 0 6px;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
-  .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} /* (v298) 각인석 */
+  .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} .tk-eqm{filter:hue-rotate(60deg) saturate(1.6) brightness(1.1);} .tk-eqq{filter:hue-rotate(260deg) saturate(1.4) brightness(1.15);} /* (v10.0.0) 변환석 · 정련석 */
+  .eqm-box{margin-top:8px; padding:10px; background:var(--panel2); border-radius:12px; text-align:left;} .eqm-box .eqm-t{display:flex; justify-content:space-between; align-items:baseline; gap:8px;} .eqm-box .eqm-t b{font-size:15px;} .eqm-q{display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px;} .eqm-q i{flex:1; height:6px; border-radius:3px; background:#2d2a62; overflow:hidden;} .eqm-q i em{display:block; height:100%; background:linear-gradient(90deg,#8fe3ff,#ffd557);} .eqm-btns{display:flex; gap:6px; margin-top:8px;} .eqm-btns .btn{flex:1; margin:0; padding:8px 4px; font-size:12px;} /* (v298) 각인석 */
   .sub-lines{display:flex; flex-direction:column; gap:6px; margin-top:10px;} .sub-line{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#ffffff0d; border:1px solid var(--qc);} .sub-line i{font-style:normal; font-size:11px; font-weight:900; color:var(--qc); min-width:30px;} .sub-line b{flex:1; font-size:14px;} .sub-lk{background:none; border:1px solid #ffffff2a; border-radius:8px; padding:2px 6px; font-size:14px; cursor:pointer;} .sub-lk.on{border-color:#ffd557; background:#ffd5571f;}
   .tr-steps{display:flex; justify-content:center; align-items:center; gap:5px; margin:10px 0;} /* (v5.2.0) 큰 동그라미도 세로 가운데 */ .tr-steps i{width:16px; height:16px; border-radius:50%; background:#ffffff14; border:1px solid #ffffff2a;} .tr-steps i.big{width:20px; height:20px;} .tr-steps i.on{background:radial-gradient(circle at 35% 30%,#fff2b0,#ffb347); border-color:#ffd557; box-shadow:0 0 8px #ffd55799;}
   .tr-info{display:flex; flex-direction:column; gap:6px; padding:10px; border-radius:12px; background:#ffffff0b;} .tr-info div{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px;} .tr-info > div > span{min-width:64px; color:var(--sub); font-size:12px;} /* (v5.2.0) 바로 아래 칸만 — 기억 조각 그림(span)까지 64px로 늘어나 찌그러졌음 */ .tr-info b{font-size:13px;} .tr-info small{width:100%; padding-left:70px; color:var(--sub); font-size:11px;}
@@ -2442,6 +2443,7 @@ function subTotals(k){
   add(engrState(k));
   if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl); if(ek) add(eqSubState(ek)); });
   if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전
+  if(typeof eqMainSubFor==='function'){ const m = eqMainSubFor(k); Object.keys(m).forEach(x=>{ t[x] += m[x]; }); } // (v10.0.0) 장비 주효과(치명·속도·피해 감소·흡혈)
   return t;
 }
 // (v9.5.0) 현무 계열 「무기 효과 절반을 체력으로」(v8.16.0)는 없앰 (사용자 결정 10/17)
@@ -7204,7 +7206,7 @@ function spiritStatSrc(k){ // 출처별 부가 능력 { 각인, 장비 부가 �
   const eqs = {}; if(typeof isEquipUnlocked==='function' && isEquipUnlocked()) EQUIP_SLOTS.forEach(sl=>{ const ek = equippedKey(k, sl), o = ek ? sum(eqSubState(ek)) : {}; Object.keys(o).forEach(x=>{ eqs[x] = (eqs[x]||0) + o[x]; }); });
   const tr = {}; if(transLevel(k)>=5) tr.spd = 3; { const p = transLevel(k)>=10 && trans10Of(k); if(p) Object.keys(p.sub).forEach(x=>{ tr[x] = (tr[x]||0) + p.sub[x]; }); }
   const rn = {}; { const r = spiritRune(k); if(r && r.tier!=='boss' && r.tier!=='world' && RUNE_BASE[r.id]) rn[r.id] = runeVal(r); }
-  return [ ['각인', sum(engrState(k))], ['장비 각인', eqs], ['장비 고유 효과', eqTraitSubFor(k)], ['초월 특전', tr], ['룬', rn] ];
+  return [ ['장비 주효과', eqMainSubFor(k)], ['각인', sum(engrState(k))], ['장비 각인', eqs], ['장비 고유 효과', eqTraitSubFor(k)], ['초월 특전', tr], ['룬', rn] ];
 }
 function spiritStatSheetHtml(k){
   const sp = SPIRITS[k], u = makeBattleUnit('me', 0, k, unitAtk(k), ALLY_HP_MULT), src = spiritStatSrc(k);
@@ -7218,9 +7220,9 @@ function spiritStatSheetHtml(k){
   const crit = BASE_CRIT + runeCrit(u), life = tot('life'), dr = runeDr(u);
   let h = '<div class="st-sheet">';
   const n0 = v=> Math.round(v).toLocaleString(), part = st=> src.filter(([nm,o])=>o[st] && nm!=='룬').map(([nm,o])=>mul(nm, 1+o[st])).join('');
-  const flat = st=> tot(st) ? '<span>깡 +'+n0(tot(st))+' ('+from(st)+')</span>' : '';
-  h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('무기', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk)+flat('atkf'));
-  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp)+flat('hpf'));
+  const flat = st=> tot(st) ? '<span>깡 +'+n0(tot(st))+' ('+from(st)+')</span>' : ''; // 장비 주효과 공격력·체력은 위 「장비 주효과」 배율
+  h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('장비 주효과', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk)+flat('atkf'));
+  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('장비 주효과', armorMult(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp)+flat('hpf'));
   h += row('💨', '속도', String(spd0 + spdAdd), '<span>기본 '+spd0+'</span>'+(spdAdd ? '<span>'+from('spd')+'</span>' : ''));
   h += row(uiIc('target'), '치명타 확률', pct(crit), '<span>기본 '+pct(BASE_CRIT)+'</span>'+(crit>BASE_CRIT ? '<span>'+from('crit')+'</span>' : ''));
   h += row('💥', '치명타 피해', '+'+pct(CRIT_MULT-1+tot('cdmg')), '<span>기본 +'+pct(CRIT_MULT-1)+'</span>'+(tot('cdmg') ? '<span>'+from('cdmg')+'</span>' : '')); // (v10.0.0)
@@ -9113,11 +9115,13 @@ function equipOwnedCount(key){ return (state.equipOwned && state.equipOwned[key]
 function eqType(k){ return String(k).split('#')[0]; }
 function ownedEquipItems(){ const o = state.equipOwned || {}; return Object.keys(o).filter(k=>o[k]>0); }
 function equipTypeCount(type){ return ownedEquipItems().filter(k=>eqType(k)===type).length; }
-function eqClearItem(k){ ['equipEnh','eqSub','eqTrait','lockedEquip'].forEach(b=>{ if(state[b]) delete state[b][k]; }); }
+function eqClearItem(k){ ['equipEnh','eqSub','eqTrait','lockedEquip','eqMain','eqQual'].forEach(b=>{ if(state[b]) delete state[b][k]; }); }
 function eqRemoveItem(k){ if(state.equipOwned) delete state.equipOwned[k]; eqClearItem(k); const eq = state.equipped || {}; Object.keys(eq).forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ if(eq[sp] && eq[sp][sl]===k) eq[sp][sl] = null; })); }
 function eqAddItem(type){ state.equipOwned = state.equipOwned || {}; state.equipSeen = state.equipSeen || {}; const isNew = !state.equipSeen[type]; let k = type;
   if((state.equipOwned[k]||0)>0){ let n = 2; while((state.equipOwned[type+'#'+n]||0)>0) n++; k = type+'#'+n; }
-  eqClearItem(k); state.equipOwned[k] = 1; state.equipSeen[type] = true; return { key:k, isNew }; }
+  eqClearItem(k); state.equipOwned[k] = 1; state.equipSeen[type] = true;
+  state.eqMain = state.eqMain || {}; state.eqQual = state.eqQual || {}; state.eqMain[k] = rollEqMain(equipInfo(k).slot); state.eqQual[k] = Math.floor(Math.random()*101); // (v10.0.0) 새 장비(소환·보상·합성 결과)는 주효과·품질 무작위
+  return { key:k, isNew }; }
 function eqInvest(k){ return equipEnhLevel(k)*10 + (eqSubState(k) ? 1 : 0) + ((state.eqTrait && state.eqTrait[k] && state.eqTrait[k].id) ? 5 : 0); } // 덜 키운 것부터 재료로
 function eqSameTypeFree(k){ const t = eqType(k); return ownedEquipItems().filter(x=>eqType(x)===t && equipFreeCount(x)>0 && !isEqLocked(x)); }
 function equipUsedCount(key){
@@ -9144,12 +9148,36 @@ function doEquipEnhance(k){
   if(!state.equipEnh) state.equipEnh = {}; state.equipEnh[k] = lv+1; passBump('enh');
   checkAchievements(); save(); sfx('enhance'); return true;
 }
-function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * equipEnhMult(eqKey) * (SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); }
-function weaponMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'weapon'), spKey); }
-function armorMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'armor'), spKey); }
+// (v10.0.0) 장비 주효과 — 장비마다 무작위 (사용자 결정 10/17) · 이미 있던 장비는 무기 = 공격력 · 방어구 = 체력 그대로 (state.eqMain에 없으면 기본)
+// 크기 = 등급 기본값 × 강화 배율 × 속성 일치 × 품질 배율 × 능력 배율(EQ_MAIN_K) · 품질 0~100(없으면 75 = 1.0, 예전 수치 그대로)
+const EQ_MAIN_NM = { atk:'공격력', hp:'체력', crit:'치명타 확률', cdmg:'치명타 피해', spd:'속도', dr:'받는 피해 감소', life:'흡혈' };
+const EQ_MAIN_K = { atk:1, hp:1, crit:0.5, cdmg:1.0, spd:20, dr:0.25, life:0.25 }; // 시뮬로 다듬을 값 (프로토타입)
+const EQ_MAIN_W = { weapon:{ atk:40, crit:20, cdmg:20, hp:10, spd:10 }, armor:{ hp:40, dr:20, atk:15, spd:15, life:10 } }; // 부위별 주효과 확률 (%)
+const EQ_QUAL_DEF = 75;
+function eqMainStat(k){ const m = state.eqMain && state.eqMain[k]; return (m && EQ_MAIN_K[m]) ? m : (equipInfo(k).slot==='weapon' ? 'atk' : 'hp'); }
+function eqQual(k){ const q = state.eqQual && state.eqQual[k]; return Number.isFinite(q) ? q : EQ_QUAL_DEF; }
+function eqQualMult(k){ return 0.7 + 0.4*eqQual(k)/100; }
+function rollEqMain(slot){ const w = EQ_MAIN_W[slot] || EQ_MAIN_W.weapon, tot = Object.values(w).reduce((a,b)=>a+b, 0); let x = Math.random()*tot; for(const s in w){ x -= w[s]; if(x<0) return s; } return Object.keys(w)[0]; }
+function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * equipEnhMult(eqKey) * eqQualMult(eqKey) * (spKey && SPIRITS[spKey] && SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); } // 주효과 세기(능력 배율 빼고) — 비교·추천용
+function eqMainVal(k, spKey){ return equipEffect(k, spKey) * EQ_MAIN_K[eqMainStat(k)]; }
+function eqMainTxt(k, spKey){ const s = eqMainStat(k), v = eqMainVal(k, spKey); return EQ_MAIN_NM[s]+' '+(s==='dr'?'−':'+')+(s==='spd' ? Math.round(v) : eqPct(v)+'%'); }
+function eqMainSum(spKey, stat){ let t = 0; if(typeof isEquipUnlocked!=='function' || !isEquipUnlocked()) return 0; EQUIP_SLOTS.forEach(sl=>{ const k = equippedKey(spKey, sl); if(k && eqMainStat(k)===stat) t += eqMainVal(k, spKey); }); return t; }
+function eqMainSubFor(spKey){ const o = {}; ['crit','cdmg','spd','dr','life'].forEach(st=>{ const v = eqMainSum(spKey, st); if(v) o[st] = st==='spd' ? Math.round(v) : v; }); return o; } // 공격력·체력 말고 다른 주효과 — 부가 능력처럼 더함
+function weaponMult(spKey){ return 1 + eqMainSum(spKey, 'atk'); } // (v10.0.0) 장비 주효과 공격력 합 (무기·방어구 둘 다)
+function armorMult(spKey){ return 1 + eqMainSum(spKey, 'hp'); } // (v10.0.0) 장비 주효과 체력 합
 function eqPct(v){ const x = Math.round(v*1000)/10; return (x%1===0 ? x.toFixed(0) : x.toFixed(1)); } // 0.225 → '22.5'
-function equipEffectText(key){ const i = equipInfo(key), b = EQUIP_BONUS[i.rarity]*equipEnhMult(key); return EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(b)+'%'; } // (v9.5.0) 기본 수치만 — 속성이 맞는 정령이 끼거나 고를 때만 노란 수치(eqValHtml) (사용자 결정 10/17)
-function eqValHtml(k, spKey){ const v = '+'+eqPct(equipEffect(k, spKey))+'%'; return equipInfo(k).element===SPIRITS[spKey].element ? '<b class="eq-mt">'+v+'</b>' : v; } // 속성이 맞으면 노란 글씨 (효과 ×EQUIP_MATCH_MULT)
+function equipEffectText(key){ return eqMainTxt(key); } // (v9.5.0) 기본 수치만 — 속성이 맞는 정령이 끼거나 고를 때만 노란 수치(eqValHtml) (사용자 결정 10/17)
+function eqValHtml(k, spKey){ const v = eqMainTxt(k, spKey); return equipInfo(k).element===SPIRITS[spKey].element ? '<b class="eq-mt">'+v+'</b>' : v; } // 속성이 맞으면 노란 글씨 (효과 ×EQUIP_MATCH_MULT)
+function eqMainBoxHtml(key){ // (v10.0.0) 장비 정보 — 주효과 · 품질 · 다시 굴리기 · 품질 올리기
+  const q = eqQual(key), ok1 = ticketCount('eqmain')>0, ok2 = ticketCount('eqqual')>0 && q<100;
+  return '<div class="eqm-box"><div class="eqm-t"><span class="sub">주효과</span><b>'+eqMainTxt(key)+'</b></div>'
+    + '<div class="eqm-q"><span>품질 <b>'+q+'</b></span><i><em style="width:'+q+'%;"></em></i><span class="sub">×'+eqQualMult(key).toFixed(2)+'</span></div>'
+    + '<div class="sub" style="font-size:11px; margin-top:4px;">속성이 맞는 정령이 끼면 ×'+EQUIP_MATCH_MULT+'</div>'
+    + '<div class="eqm-btns"><button class="btn secondary" id="eqMainRoll" '+(ok1?'':'disabled')+'>'+uiIc('dice')+' 주효과 바꾸기 · '+TICKET_INFO.eqmain.icon+' 1 <small>('+ticketCount('eqmain')+')</small></button>'
+    + '<button class="btn secondary" id="eqQualUp" '+(ok2?'':'disabled')+'>⬆️ 품질 올리기 · '+TICKET_INFO.eqqual.icon+' 1 <small>('+ticketCount('eqqual')+')</small><br><small>성공 '+(100-q)+'%</small></button></div></div>';
+}
+function eqMainRoll(key){ if(ticketCount('eqmain')<1) return false; state.tickets.eqmain -= 1; state.eqMain = state.eqMain || {}; const old = eqMainStat(key); state.eqMain[key] = rollEqMain(equipInfo(key).slot); save(); return { old, now: state.eqMain[key] }; } // 같은 주효과도 나올 수 있음 (사용자 결정 10/17)
+function eqQualUp(key){ if(ticketCount('eqqual')<1) return null; const q = eqQual(key); if(q>=100) return null; state.tickets.eqqual -= 1; const r = Math.floor(Math.random()*101); const ok = r > q; state.eqQual = state.eqQual || {}; if(ok) state.eqQual[key] = r; else state.eqQual[key] = q; save(); return { ok, r, q }; } // 로스트아크식: 0~100을 뽑아 지금보다 높으면 성공 · 낮으면 그대로 (사용자 결정 10/17)
 function equipItem(spKey, slot, key){ if(!state.equipped[spKey]) state.equipped[spKey] = {}; state.equipped[spKey][slot] = key; save(); render(); }
 function unequipItem(spKey, slot){ if(state.equipped[spKey]){ state.equipped[spKey][slot] = null; } save(); render(); }
 function cleanupEquipment(){ // 보유하지 않게 된 정령의 장착 정보 정리, 장착 수가 보유 수를 넘으면 초과분 해제
@@ -10116,7 +10144,7 @@ function renderFuseTab(){
         + (rest.length ? '<div class="fz-out rest"><span class="fz-onm">그 외 '+rest.length+'종</span><b>'+pct(restP)+'</b></div>' : '')+'</div>'
       + (info.rate<100 ? '<div class="sub fz-small fz-risk">실패 시 재료 중 무작위 1'+unit+'만 남음'+(FUSE_DOWN[info.src] ? ' · 그중 '+Math.round(FUSE_DOWN[info.src]*100)+'% 확률로 '+RARITY_INFO[fusePrevRarity(info.src)].name+' 강등' : '')+'</div>' : '')
       + (info.inheritFrom>0 ? '<div class="sub fz-small" style="color:#ffd557;">⬆️ 강화 계승 → '+RARITY_INFO[info.nr].name+' +'+info.inherit+' <span style="opacity:.8;">(재료 강화 합 +'+info.inheritFrom+' ÷ 3)</span></div>'
-        + (fuseMode==='equip' ? '<div class="fz-warn">'+uiIc('warn')+' 재료로 쓴 장비는 강화·장비 각인·고유 효과와 함께 사라짐 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">'+uiIc('warn')+' 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
+        + (fuseMode==='equip' ? '<div class="fz-warn">'+uiIc('warn')+' 재료로 쓴 장비는 강화·장비 각인·고유 효과와 함께 사라짐 · 결과 장비의 주효과·품질은 무작위 (강화는 합 ÷ 3만큼 결과로)<br>실패하면 남는 1개만 그대로</div>' : '<div class="fz-warn">'+uiIc('warn')+' 합성하면 재료로 쓴 정령의 강화는 +0 — 남아 있는 같은 정령도 +0<br>실패하면 남는 1마리만 강화 그대로 · 같은 정령을 여러 마리 넣어도 강화는 한 번만 셈</div>') : '')
       + '</div>'
       + (info.rate<100 && fuseGuardEligible(info.nr) ? '<div class="sub fz-small" style="margin-top:6px;">'+uiIc('guard')+' 방패를 켜면 실패해도 재료 유지 · 보유 '+ticketCount('fuseGuard')+'장</div>' : '')
       + fuseGoRowHtml(info); // (v7.0.1) 합성판이 보이는 동안은 아래 바가 숨으니 합성판 안에도 합성 버튼
@@ -11193,9 +11221,9 @@ function showEquipDetailModal(key){
     + '<h3>'+i.name+' '+eqEnhTag(key)+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
-    + '<div style="margin-top:8px; padding:8px; background:var(--panel2); border-radius:10px;"><div style="font-weight:700;">'+equipEffectText(key)+'</div></div></div>';
+    + eqMainBoxHtml(key)+'</div>'; // (v10.0.0) 주효과 · 품질 · 다시 굴리기
   if(users.length){
-    html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+EQUIP_SLOT_INFO[i.slot].stat+' '+eqValHtml(key, sp)+'</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
+    html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+eqValHtml(key, sp)+'</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
   }
   { const lv = equipEnhLevel(key), mx = equipEnhMax(key), c = equipEnhCost(key), can = lv<mx && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone;
     html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
@@ -11212,6 +11240,8 @@ function showEquipDetailModal(key){
   const edb = document.getElementById('equipDismantleBtn'); if(edb) edb.addEventListener('click', ()=>showEquipDismantleModal(key));
   { const eo = document.getElementById('eqEnhOpen'); if(eo) eo.addEventListener('click', ()=>showEquipEnhanceModal(key)); }
   { const so = document.getElementById('eqSubOpen'); if(so && (EQ_SUB_LINES[i.rarity]||0)) so.addEventListener('click', ()=>showSubModal('eq', key, ()=>showEquipDetailModal(key))); }
+  { const mr = document.getElementById('eqMainRoll'); if(mr) mr.addEventListener('click', ()=>spendAsk('주효과 바꾸기', {tk:'eqmain', n:1}, ()=>{ const r = eqMainRoll(key); if(!r) return; sfx('enhance'); toast(uiIc('dice')+' 주효과 → '+eqMainTxt(key)+(r.old===r.now?' (같은 효과)':'')); render(); showEquipDetailModal(key); })); } // (v10.0.0)
+  { const qu = document.getElementById('eqQualUp'); if(qu) qu.addEventListener('click', ()=>spendAsk('품질 올리기', {tk:'eqqual', n:1}, ()=>{ const r = eqQualUp(key); if(!r) return; sfx(r.ok ? 'enhance' : 'click'); toast(r.ok ? '⬆️ 품질 '+r.q+' → '+r.r+' 성공' : '품질 '+r.r+' — 지금('+r.q+')보다 낮아 그대로'); render(); showEquipDetailModal(key); })); }
   { const to = document.getElementById('eqTraitOpen'); if(to) to.addEventListener('click', ()=>showEqTraitModal(key, ()=>showEquipDetailModal(key))); }
   const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>{ eqDetailBack = null; openFuseTab('equip', key); });
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
@@ -11219,20 +11249,20 @@ function showEquipDetailModal(key){
 }
 function showEquipEnhanceModal(key, fxLabel){
   const i = equipInfo(key), lv = equipEnhLevel(key), mx = equipEnhMax(key), maxed = lv>=mx, c = equipEnhCost(key), b = EQUIP_BONUS[i.rarity];
-  const now = b*(1+EQ_ENH_STEP*lv), nxt = b*(1+EQ_ENH_STEP*(lv+1)), st = EQUIP_SLOT_INFO[i.slot].stat;
+  const ms = eqMainStat(key), mk = EQ_MAIN_K[ms]*eqQualMult(key), now = b*(1+EQ_ENH_STEP*lv)*mk, nxt = b*(1+EQ_ENH_STEP*(lv+1))*mk, st = EQ_MAIN_NM[ms]; // (v10.0.0) 주효과 기준
   let h = '<button class="aw-back" id="eeBack">‹ 장비 정보</button>';
   h += '<div class="aw-top"><div class="av r-'+i.rarity+' up-host" id="upHost" style="font-size:40px;">'+i.img+'</div><div><b style="font-size:17px;">'+i.name+' '+eqEnhTag(key)+'</b><div class="sub">'+RARITY_INFO[i.rarity].name+' '+EQUIP_SLOT_INFO[i.slot].name+' · 강화 '+lv+' / '+mx+'</div></div></div>';
   h += '<div class="en-bar"><i style="width:'+Math.round(lv/Math.max(1,mx)*100)+'%"></i></div>';
   if(!maxed){
     const okE = state.essence>=c.essence, okS = (state.enhanceStone||0)>=c.stone;
-    h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+st+' +'+eqPct(now)+'%</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+st+' +'+eqPct(nxt)+'%</b></div></div>';
+    h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+st+' +'+(ms==='spd' ? Math.round(now) : eqPct(now)+'%')+'</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+st+' +'+(ms==='spd' ? Math.round(nxt) : eqPct(nxt)+'%')+'</b></div></div>';
     h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">이 장비를 낀 모든 정령에 적용</div>';
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
       + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화를 모아 계승 (같은 장비는 한 번만 셈)</div></div>';
     h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
-  }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+eqPct(now)+'%</div></div>';
+  }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+(ms==='spd' ? Math.round(now) : eqPct(now)+'%')+'</div></div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.getElementById('eeBack').addEventListener('click', ()=>showEquipDetailModal(key));
@@ -11244,14 +11274,14 @@ function showEquipPicker(spKey, slot){
   const si = EQUIP_SLOT_INFO[slot], cur = equippedKey(spKey, slot);
   const items = ownedEquipItems().filter(k=>equipInfo(k).slot===slot).sort((a,b)=>equipEffect(b,spKey)-equipEffect(a,spKey));
   const bestKey = items.find(k=>equipFreeCount(k)>0 || k===cur);
-  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">'+si.stat+'에 정령력 % 추가 · 꾹 누르면 장비 정보</div>';
+  let html = '<h3 style="text-align:center; margin-bottom:4px;">'+si.icon+' '+SPIRITS[spKey].name+' '+si.name+'</h3><div class="sub" style="text-align:center; margin-bottom:8px;">주효과는 장비마다 다름 · 꾹 누르면 장비 정보</div>';
   if(!items.length) html += '<div class="sub" style="text-align:center; padding:14px 0;">보유한 '+si.name+' 없음 — 소환 탭 › 정령장비 소환</div>';
   html += items.map(k=>{
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
     return '<div data-eq-lp="'+k+'" data-eq-sp="'+spKey+'" data-eq-slot="'+slot+'" '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
       + '<div style="font-size:22px;">'+i.img+'</div>'
       + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
-      + '<div style="text-align:right;"><b style="color:'+(match ? '#ffd557' : 'var(--text)')+';">+'+eqPct(equipEffect(k,spKey))+'%</b>'
+      + '<div style="text-align:right;"><b style="color:'+(match ? '#ffd557' : 'var(--text)')+';">'+eqMainTxt(k, spKey)+'</b>'
       + (k===cur ? '<div class="sub" style="font-size:10px; color:#fff;">착용 중</div>' : (free<=0 ? '<div class="sub" style="font-size:10px;">다른 정령 착용</div>' : ''))+'</div></div>';
   }).join('');
   if(cur) html += '<button class="btn secondary" id="unequipBtn" style="margin-top:6px;">해제</button>';
@@ -11268,7 +11298,7 @@ function equipSlotsHtml(spKey){
     const any = ownedEquipItems().some(x=>equipInfo(x).slot===slot);
     h += '<div data-equip-slot="'+slot+'" '+(k ? 'data-eq-lp="'+k+'" data-eq-sp="'+spKey+'"' : '')+' style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
-      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' '+eqValHtml(k, spKey)+'</div>'
+      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+eqValHtml(k, spKey)+'</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
@@ -12870,7 +12900,9 @@ const TICKET_INFO = {
   pick_mythic:{icon:tkIcon('pick','mythic'), name:'신화 정령 선택권', pick:'mythic'},
   // (v297) 신화 확정권 · 장비 확정권(등급 확정, 부위·속성 무작위) · 장비 선택권(부위·속성을 골라 받음) — 그림은 기존 아이콘에 등급 빛·방패 표시
   mythic:{icon:tkIcon('sure','mythic'), name:'신화 정령 확정권', sure:'mythic'},
-  engr:{icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석'}, // (v298) 각인·장비 부가 능력 다시 굴리기
+  engr:{icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석'},
+  eqmain:{icon:'<img class="uic tk-eqm" src="assets/ui/ic_shard.webp" alt="">', name:'변환석'}, // (v10.0.0) 장비 주효과 다시 굴리기
+  eqqual:{icon:'<img class="uic tk-eqq" src="assets/ui/ic_shard.webp" alt="">', name:'정련석'}, // (v10.0.0) 장비 품질 올리기 // (v298) 각인·장비 부가 능력 다시 굴리기
   eq_rare:{icon:tkIcon('sure','rare',true), name:'레어 장비 확정권', eqSure:'rare'},
   eq_epic:{icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', eqSure:'epic'},
   eq_legendary:{icon:tkIcon('sure','legendary',true), name:'레전더리 장비 확정권', eqSure:'legendary'},
@@ -12894,6 +12926,8 @@ function bagTicketInfo(k){ const t = TICKET_INFO[k], R = r=>RARITY_INFO[r].name;
   if(k==='equip') return { d:'정령장비 1회 소환 (10장이면 10연)', go:'summon1' };
   if(k==='fuseGuard') return { d:'레전더리·신화 합성이 실패해도 재료 유지', go:'fuse' };
   if(k==='engr') return { d:'정령 각인 · 장비 각인 다시 굴리기 — 정령 정보 창·장비 정보 창의 각인에서', go:'spirits' };
+  if(k==='eqmain') return { d:'장비 주효과 다시 굴리기 (같은 주효과가 또 나올 수 있음) — 장비 정보 창에서', go:'spirits' };
+  if(k==='eqqual') return { d:'장비 품질 올리기 — 지금보다 높게 나오면 성공, 낮으면 그대로 · 장비 정보 창에서', go:'spirits' };
   if(t.pick) return { d:R(t.pick)+' 정령 10종 중 원하는 1마리', go:'summon0' };
   if(t.eqPick) return { d:R(t.eqPick)+' 장비 중 원하는 1개 (부위·속성 고르기)', go:'summon1' };
   if(t.eqSure) return { d:R(t.eqSure)+' 장비 확정 (부위·속성 무작위)', go:'summon1' };
@@ -17800,7 +17834,7 @@ function sanitizeState(){
   s.riftForm = Array.isArray(s.riftForm) ? dedupeKeys(s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)) : [];
   if(!isPlainObj(s.pickup)) s.pickup = {}; { const pk = s.pickup; pk.pity = fin(pk.pity) ? Math.max(0, Math.min(PICKUP_PITY-1, Math.floor(pk.pity))) : 0; pk.guar = !!pk.guar; pk.sel = (typeof pk.sel==='string' && SPIRITS[pk.sel] && SPIRITS[pk.sel].rarity==='mythic') ? pk.sel : ''; }
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeQuests','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr','eqmain','eqqual'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
@@ -18030,6 +18064,9 @@ function sanitizeState(){
     s.engrave = cleanBox(s.engrave, k=>!!SPIRITS[k]);
     Object.keys(s.engrave).forEach(k=>{ const e = s.engrave[k]; while(e.lines.length < ENGR_LINES){ e.lines.push(subRollLine()); e.lock.push(false); } }); // (v10.0.0) 각인 3줄 → 5줄: 이미 각인한 정령은 새 줄을 무료 무작위로 채움 (사용자 결정 10/17)
     s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/.test(k));
+    { const EK = /^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/, M = {}, Q = {}; // (v10.0.0) 장비 주효과 · 품질
+      if(isPlainObj(s.eqMain)) Object.keys(s.eqMain).forEach(k=>{ const v = s.eqMain[k], sl = k.split('_')[0]; if(EK.test(k) && EQ_MAIN_W[sl] && EQ_MAIN_W[sl][v]) M[k] = v; }); s.eqMain = M;
+      if(isPlainObj(s.eqQual)) Object.keys(s.eqQual).forEach(k=>{ const v = s.eqQual[k]; if(EK.test(k) && Number.isInteger(v) && v>=0 && v<=100) Q[k] = v; }); s.eqQual = Q; }
     { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)(#\d+)?$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
     if(s.transPity && typeof s.transPity==='object') Object.keys(s.transPity).forEach(k=>{ const v = s.transPity[k]; if(SPIRITS[k] && Number.isFinite(v) && v>0) TP[k] = Math.min(1, v); }); s.transPity = TP;
