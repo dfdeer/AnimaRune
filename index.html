@@ -1151,7 +1151,7 @@
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
   .slot{position:relative;} .slot-info{display:inline-block; margin-left:3px; width:15px; height:15px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff66; color:#fff; font-size:10px; line-height:13px; text-align:center; vertical-align:1px; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
-  .st-sheet{display:flex; flex-direction:column; gap:5px;} .st-row{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:2px 8px; padding:7px 10px; border-radius:10px; background:#ffffff0d;} .st-row .st-ic{text-align:center;} .st-row .st-ic .uic{width:18px; height:18px;} .st-row em{font-style:normal; font-weight:800; font-size:16px; color:#ffe9a8;} .st-row small{grid-column:2 / 4; display:flex; flex-wrap:wrap; gap:2px 8px; font-size:11px; color:var(--sub);} .st-ex{display:flex; flex-direction:column; gap:2px; padding:7px 10px; border-radius:10px; background:#7affc812; font-size:12px;} .st-ex b{font-size:12px; color:#9fe8c0;} .st-note{text-align:center; font-size:11px; margin-top:2px;} /* (v9.5.0) 능력치 창 */
+  .st-sheet{display:flex; flex-direction:column; gap:5px;} .st-row{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:2px 8px; padding:7px 10px; border-radius:10px; background:#ffffff0d;} .st-row .st-ic{text-align:center;} .st-row .st-ic .uic{width:18px; height:18px;} .st-row em{font-style:normal; font-weight:800; font-size:16px; color:#ffe9a8;} .st-row small{grid-column:2 / 4; display:flex; flex-wrap:wrap; gap:2px 8px; font-size:11px; color:var(--sub);} .st-ex{display:flex; flex-direction:column; gap:2px; padding:7px 10px; border-radius:10px; background:#7affc812; font-size:12px;} .st-ex b{font-size:12px; color:#9fe8c0;} .st-note{text-align:center; font-size:11px; margin-top:2px;} .st-trs{background:#ffffff0d; gap:8px;} .st-tr{display:flex; flex-direction:column; gap:2px;} .st-tr b{color:var(--text); font-size:13px;} .st-tr b .uic{width:16px; height:16px;} .st-tr span{color:var(--sub); line-height:1.5;} .st-tr small{font-size:10.5px; color:#ffb0a0;} /* (v9.5.0) 능력치 창 */
   .ud-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
   .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
   .sp-line{margin:6px 0 4px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px 3px;} .sp-line > i{color:var(--sub); font-style:normal; font-size:11px;}
@@ -7225,7 +7225,12 @@ function spiritStatSheetHtml(k){
     if(all.poi) ex.push('공격이 맞으면 독 (최대체력 '+pct(all.poi)+')'); if(all.frz) ex.push('공격이 맞으면 '+pct(all.frz)+' 확률로 빙결'); if(all.curse) ex.push('공격이 맞으면 '+pct(all.curse)+' 확률로 저주'); if(all.rheal) ex.push('라운드마다 가장 약한 아군 '+pct(all.rheal)+' 회복');
     if(rn && (rn.tier==='boss' || rn.tier==='world')) ex.push(runeName(rn));
     if(ex.length) h += '<div class="st-ex"><b>추가 효과</b>'+ex.map(x=>'<span>· '+x+'</span>').join('')+'</div>'; }
-  h += '<div class="sub st-note">전투 전 기준 · 특성·스킬·전투 중 효과는 빼고 셈</div></div>';
+  { const ps = passiveFor(k), kit = kitOf(u), pg = unitPG(u); // (v9.5.0) 특성 · 전투 패시브는 글로 (사용자 요청 10/17)
+    let t = '';
+    if(ps) t += '<div class="st-tr"><b>'+ps.icon+' 특성 · '+ps.name+'</b><span>'+ps.desc+'</span>'+((ps.atkMult || ps.crit || ps.unfavorableFloor!==undefined || SPIRITS[k].rarity==='mythic') ? '<small>공격력·확률 폭발·상성·통솔은 무한의 탑에서 적용</small>' : '')+'</div>';
+    if(kit && kit.passive) t += '<div class="st-tr"><b>'+(kit.passive.icon||'✦')+' 패시브 · '+kit.passive.name+'</b><span>'+(pg>=1 ? kit.passive.desc(pg, u) : '레어 또는 각성 1단계부터')+'</span></div>';
+    if(t) h += '<div class="st-ex st-trs">'+t+'</div>'; }
+  h += '<div class="sub st-note">전투 전 기준 · 스킬을 써야 생기거나 전투 중에만 켜지는 효과는 빼고 셈</div></div>';
   return h;
 }
 function gearBonusOf(u){ // (v8.16.0) 내 정령: 공격력·체력·속도 중 장비·각인·룬·초월이 더한 몫 (레이드 동료 정령은 그 사람 장비라 계산 안 함)
@@ -9595,7 +9600,7 @@ const BINGO_N = 5, BINGO_ALL = (1<<25) - 1, BINGO_POOL = 50, BINGO_TK = 2; // �
 const BINGO_MISSIONS = [ // k = 세는 행동 (bingoBump) · g = 황금 티켓
   {k:'summon', n:50, nm:'정령 소환', u:'회', ic:'summon'}, {k:'stage', n:30, nm:'스테이지 클리어', u:'회', ic:'explore'}, {k:'enh', n:30, nm:'강화', u:'회', ic:'upstone'}, {k:'dispatch', n:10, nm:'파견 완료', u:'회', ic:'dispatch'}, {k:'quest', n:30, nm:'일일 의뢰', u:'개', ic:'quest'},
   {k:'fuse', n:20, nm:'합성', u:'회', ic:'fuse'}, {k:'dungeon', n:10, nm:'요일 던전 승리', u:'회', ic:'mode'}, {k:'eqsum', n:30, nm:'장비 소환', u:'회', ic:'tk_equip'}, {k:'wb', n:3, nm:'월드 보스 도전', u:'회', ic:'worldboss'}, {k:'mine', n:200, nm:'곡괭이질', u:'번', ic:'pick'},
-  {k:'boss', n:5, nm:'챕터 보스 격파', u:'회', ic:'skull'}, {k:'tower', n:10, nm:'탑 승리', u:'회', ic:'tower'}, {k:'att', n:1, nm:'출석', u:'일', ic:'gift'}, {k:'raid', n:3, nm:'레이드 승리', u:'회', ic:'raid'}, {k:'hearth', n:10, nm:'화로 수확', u:'회', ic:'hearth'},
+  {k:'boss', n:5, nm:'챕터 보스 격파', u:'회', ic:'skull'}, {k:'tower', n:10, nm:'탑 승리', u:'회', ic:'tower'}, {k:'att', n:1, nm:'출석', u:'일', ic:'gift'}, {k:'raid', n:3, nm:'레이드 승리', u:'회', ic:'raid'}, {k:'spark', n:300, nm:'화로 불씨 수확', u:'개', ic:'hearth'},
   {k:'exp', n:20, nm:'출정 방 클리어', u:'개', ic:'expedition'}, {k:'sub', n:10, nm:'각인 · 부가 능력', u:'회', ic:'engrave'}, {k:'pickup', n:10, nm:'픽업 소환', u:'회', ic:'pickup'}, {k:'rift', n:5, nm:'균열 승리', u:'회', ic:'rift'}, {k:'dismantle', n:30, nm:'정령 분해', u:'마리', ic:'recycle'},
   {k:'att', n:10, nm:'출석', u:'일', ic:'gift', g:1}, {k:'summon', n:150, nm:'정령 소환', u:'회', ic:'summon', g:1}, {k:'stage', n:80, nm:'스테이지 클리어', u:'회', ic:'explore', g:1}, {k:'enh', n:80, nm:'강화', u:'회', ic:'upstone', g:1}, {k:'quest', n:40, nm:'일일 의뢰', u:'개', ic:'quest', g:1}
 ];
@@ -9625,7 +9630,7 @@ function bingoNums(){ const a = Array.from({length:BINGO_POOL}, (_,i)=>i+1); for
 function bingoS(){ let b = state.bingo; if(!isPlainObj(b) || b.id!==BINGO.id){ b = state.bingo = { id:BINGO.id, c:{}, nums:null, dr:[], op:0, lg:0, full:false, un:0, ug:0, mailed:false }; }
   if(!Array.isArray(b.nums) || b.nums.length!==25) b.nums = bingoNums(); if(!Array.isArray(b.dr)) b.dr = []; return b; }
 function bingoBump(k, n){ try{ if(!bingoActive()) return; const b = bingoS(); b.c[k] = Math.min(1e6, (b.c[k]||0) + (n||1)); }catch(e){} }
-function bingoMCnt(b, m){ return Math.min(m.n, b.c[m.k]||0); }
+function bingoMCnt(b, m){ let v = b.c[m.k]||0; if(m.k==='spark' && b.c.hearth) v += b.c.hearth>=10 ? m.n : b.c.hearth*12; return Math.min(m.n, v); } // (v9.5.0) 화로 수확 10회 → 불씨 300개 (사용자 결정 10/17) · 예전 횟수는 1회 = 불씨 12개로 쳐 주고, 이미 10회 채운 미션은 그대로 완료
 function bingoMDone(b, m){ return bingoMCnt(b, m) >= m.n; }
 function bingoTk(b){ let n = 0, g = 0; BINGO_MISSIONS.forEach(m=>{ if(bingoMDone(b, m)){ if(m.g) g += BINGO_TK; else n += BINGO_TK; } }); return { n: Math.max(0, n - (b.un||0)), g: Math.max(0, g - (b.ug||0)) }; } // 남은 티켓 = 채운 미션 × 2 − 쓴 것
 function bingoOpened(b, i){ return !!(b.op & (1<<i)); }
@@ -11947,6 +11952,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:450, v:'9.5.0', date:'2026-10-17', secs:[
+    { t:'정령 능력치', items:[ '정령 창에 「📊 능력치」 — 공격력·체력을 실제 수치로 · 속도 · 치명타 확률 · 치명타 피해 · 흡혈 · 받는 피해 감소', '능력치마다 어디서 얼마나 늘었는지 (무기 · 방어구 · 각인 · 장비 부가 능력 · 장비 고유 효과 · 초월 · 룬)', '특성 · 패시브 설명도 같이' ]},
+    { t:'정령 빙고', items:[ '「화로 수확 10회」 미션을 「화로 불씨 수확 300개」로 — 이미 수확한 횟수는 1회당 불씨 12개로 쳐 줌 · 10회를 채운 미션은 그대로 완료', '「모두 거두기」로 거둔 불씨도 빙고에 셈 (예전엔 안 셌음)' ]}
+  ]},
   { build:449, v:'9.4.6', date:'2026-10-16', secs:[
     { t:'뒤로 가기', items:[ '← 버튼(과 휴대폰 뒤로 가기)은 홈이 아니라 바로 이전 화면으로 — 예: 레이드 보스 → 레이드 목록 → 홈 · 마을 건물 → 마을 · 탑 → 도전', '레이드 보스 화면의 「보스 목록」 · 마을 건물 안의 「← 마을」 버튼은 위 ← 버튼 하나로 합침' ]},
     { t:'화면 스크롤', items:[ '목록이 있는 화면은 목록만 스크롤 — 위쪽 제목·탭·버튼은 그대로 (정령 · 균열 · 패스 · 시련 · 레이드 · 월드 보스 · 출정 순위)', '출정 중엔 지도만 스크롤 — 위 막대 · 아래 버튼 줄은 움직이지 않음', '탭이 있는 창(업적 · 가이드북 · 도감 · 설정 · 프로필 등)은 탭을 바꿔도 창 크기가 그대로 — 탭이 위아래로 움직이던 것 수정', '화면이 낮은 폰에서 내용이 조금 넘쳐 화면 전체가 스크롤되던 것 수정 — 큰 그림을 줄여 한 화면에 (마을 · 출정 · 레이드 · 월드 보스 · 소환 · 픽업)' ]},
@@ -13113,7 +13122,7 @@ function hearthNextSparkMs(){
 function collectHearth(){
   const sparks = hearthSparks();
   if(sparks<=0){ toast('모인 불씨 없음'); return; }
-  bingoBump('hearth'); // (v8.0.0)
+  bingoBump('spark', sparks); // (v8.0.0) · (v9.5.0) 수확 횟수 대신 불씨 개수
   const stoneGain = sparks*HEARTH_STONE_PER_SPARK();
   const essenceGain = sparks*HEARTH_ESSENCE_PER_SPARK();
   state.enhanceStone = (state.enhanceStone||0) + stoneGain;
@@ -13342,7 +13351,7 @@ function vlCollectAll(){
   if(s<=0 && m.cart<=0){ toast('거둘 것 없음'); return; }
   const rw = { essence:0, stone:0 };
   if(s>0){
-    rw.essence += s*HEARTH_ESSENCE_PER_SPARK(); rw.stone += s*HEARTH_STONE_PER_SPARK();
+    rw.essence += s*HEARTH_ESSENCE_PER_SPARK(); rw.stone += s*HEARTH_STONE_PER_SPARK(); bingoBump('spark', s); // (v9.5.0) 「모두 거두기」도 빙고에 셈 (예전엔 안 셌음)
     state.hearth.lastCollect = s>=HEARTH_MAX() ? serverNow() : state.hearth.lastCollect + s*HEARTH_INTERVAL_MS(); // collectHearth와 같은 방식
   }
   if(m.cart>0){ const cr = vmCartRw(m); rw.essence += cr.essence; rw.stone += cr.stone; m.cart = 0; }
@@ -18140,7 +18149,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 449, APP_VERSION = '9.4.6'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 450, APP_VERSION = '9.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
