@@ -1,11 +1,15 @@
 // 별빛 균열 승률 시뮬레이션 — 사용: (1) 저장소 루트에서 python3 -m http.server 8765 (2) 아무 폴더에서 npm i playwright-core (3) node rift_winrate_sim.js <판수> <층들>
-// 예: node rift_winrate_sim.js 10 6,8,10,11,12  — 지금 기간(서버 시각 대신 기기 시각의 pickupPeriod) 그 층 그대로
-// 팀: 기본 신화 10마리(한정 성좌 빼고) + 이번 픽업 둘 중에서 '추천 배치'(recommendFormation)로 6마리 · 강화 +10
-// (v8.17.2) 장비: 기본은 정령마다 같은 속성 신화 무기·방어구 +10 (사용자 결정 10/15) · GEAR=0 node ... 이면 장비 없음
-// 수치 바꿔 보기: TWEAK='RIFT_TIERS[11].hp=10;' node rift_winrate_sim.js 10 12
-// 출력: 층 · 기믹 · [팀, 승률%, 별3%(10라운드 안 + 전원 생존), 평균 라운드] · 크로미움 경로 /opt/pw-browsers/chromium
+// 예: node rift_winrate_sim.js 20 10,11,12  — 지금 기간(기기 시각의 pickupPeriod) 그 층 그대로
+// 수치 바꿔 보기: TWEAK='RIFT_TIERS[11].hp=12; RIFT_TIERS[11].atk=2.3;' node rift_winrate_sim.js 20 12
+// 기준 팀 3개 (사용자 결정 10/17 — 12층: 픽업 있는 풀성장 = 널널 · 픽업 없는 풀성장 = 조금 빡빡 · 덜 성장 = 정말 잘해야 / 10·11층은 12층보다 쉽게)
+//   풀성장 = 운이 없는 성장은 끝까지: 각성 5 · 강화 최대(+15) · 성좌 승급 · 신화 무기·방어구 +10 (같은 속성)
+//            운이 걸린 성장은 절반쯤: 초월 5 · 각인 3줄 영웅(공격력·치명타·체력) · 장비 부가 능력 줄마다 영웅(같은 셋) · 장비 고유 효과 예리함 · 희귀 맹공의 룬
+//   덜 성장 = 각성 2 · 강화 +10 · 신화 장비 +10 (부가 능력·고유 효과 없음) · 초월·각인·룬·성좌 없음
+//   팀 = 기본 신화 10마리(한정 성좌 빼고) 중 추천 배치 · 「+픽업」은 그 층에 맞춘 픽업 + 추천 5 · GEAR=0 이면 장비 없이
+// 출력: 층 · 기믹 · 추천 전투력 · [팀, 팀 전투력, 승률%, 별3%(10라운드 안 + 전원 생존), 평균 라운드] · 크로미움 경로 /opt/pw-browsers/chromium
+// 자동 전투 기준 — 직접 하면(대상·스킬 골라 쓰기) 이보다 잘 깸
 const { chromium } = require('playwright-core');
-const N = parseInt(process.argv[2]||'6'), floors = (process.argv[3]||'6,7,8,9,10,11,12').split(',').map(Number), port = process.argv[4]||'8765';
+const N = parseInt(process.argv[2]||'10'), floors = (process.argv[3]||'10,11,12').split(',').map(Number), port = process.argv[4]||'8765';
 (async()=>{
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   for(const f of floors){
@@ -15,26 +19,30 @@ const N = parseInt(process.argv[2]||'6'), floors = (process.argv[3]||'6,7,8,9,10
     const r = await p.evaluate(async ([N,f,TWEAK,GEAR])=>{
       window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.showSkillStageScreen=()=>{}; window.render=()=>{}; window.afterFightMutation=()=>{}; window.unmountBattleScreen=()=>{}; window.bingoBump=()=>{}; state.skillAuto = true;
       if(TWEAK) eval(TWEAK);
-      const per = riftPeriod(), mythics = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity==='mythic' && !SPIRITS[k].limited); // 기본 신화 10마리 (한정 성좌는 이번 픽업 둘만)
-      const pool = [...new Set(mythics.concat(per.pair))];
-      // [이름, 성좌로 볼지, 각성, 픽업 정령 넣을지]
-      const LADDER = [ ['신화 각0', false, 0, false], ['신화 각2', false, 2, false], ['신화 각2+픽업', false, 2, true], ['성좌 각2', true, 2, false], ['성좌 각2+픽업', true, 2, true], ['성좌 각4+픽업', true, 4, true] ];
-      const simGear = ks=>{ if(!GEAR) return; window.isEquipUnlocked=()=>true; state.equipped={}; state.equipOwned={}; state.equipEnh={}; ks.forEach((k,i)=>{ const el = SPIRITS[k].element; EQUIP_SLOTS.forEach(sl=>{ const ek = equipKey(sl, el, 'mythic')+'#'+(i+1); state.equipOwned[ek]=1; state.equipEnh[ek]=EQ_ENH_MAX.mythic; (state.equipped[k]=state.equipped[k]||{})[sl]=ek; }); }); };
+      const per = riftPeriod(), P = riftPlan(f, per), pu = P.pu;
+      const base = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity==='mythic' && !SPIRITS[k].limited);
+      const L3 = s=>({ lines: s.map(x=>({ s:x, q:2 })) }); // 영웅 품질 = 5단계 중 가운데
+      const grow = (keys, full)=>{
+        state.owned={}; state.awaken={}; state.enhanceLevel={}; state.trans={}; state.astral={}; state.engrave={}; state.runes={}; state.eqSub={}; state.eqTrait={};
+        state.equipped={}; state.equipOwned={}; state.equipEnh={}; window.isEquipUnlocked=()=>true;
+        keys.forEach((k,i)=>{ state.owned[k]=6; state.awaken[k] = full ? AWAKEN_MAX : 2; state.enhanceLevel[k] = full ? maxEnhanceFor(k) : 10;
+          if(full){ state.trans[k]=5; state.astral[k]=1; state.engrave[k]=L3(['atk','crit','hp']); state.runes[k]={ id:'atk', tier:'rare' }; }
+          if(GEAR) EQUIP_SLOTS.forEach(sl=>{ const ek = equipKey(sl, SPIRITS[k].element, 'mythic')+'#'+(i+1); state.equipOwned[ek]=1; state.equipEnh[ek]=EQ_ENH_MAX.mythic; (state.equipped[k]=state.equipped[k]||{})[sl]=ek;
+            if(full){ state.eqSub[ek]=L3(['atk','crit','hp']); state.eqTrait[ek]={ id:'keen' }; } }); }); };
       const run1 = ()=>{ let n=0; while(n++<4000){ const sf = state.skillFight; if(!sf || sf.result) break; if(checkRiftOutcome(sf)) break;
         const side = settleQueue(sf); if(side==='me') stepMyAutoTurn(); else if(side==='enemy') stepEnemyTurn(); else { if(sf.round>=SKILL_ROUND_CAP) break; nextSkillRound(); } } };
-      const P = riftPlan(f, per), rows = [];
-      for(const [name, ast, aw, withPu] of LADDER){
-        const cand = withPu ? pool : pool.filter(k=>!per.pair.includes(k));
-        state.owned = {}; state.awaken = {}; state.enhanceLevel = {}; state.astral = {};
-        cand.forEach(k=>{ state.owned[k]=6; state.awaken[k]=aw; state.enhanceLevel[k]=10; if(ast) state.astral[k]=1; });
-        const base = recommendFormation([P.el], cand.filter(k=>!per.pair.includes(k))).filter(Boolean);
-        state.formation = (withPu ? per.pair.concat(base.slice(0, GRID_SLOTS-2)) : base).slice(0, GRID_SLOTS); // 픽업 넣는 팀은 픽업 둘 + 추천 4
-        const team = state.formation.filter(Boolean); simGear(team);
+      const PROFILES = [ ['풀성장+픽업', true, true], ['풀성장', true, false], ['덜 성장', false, false] ];
+      const rows = [];
+      for(const [name, full, withPu] of PROFILES){
+        grow(withPu ? base.concat([pu]) : base.slice(), full);
+        const rec = recommendFormation([P.el], base).filter(Boolean);
+        state.formation = (withPu ? [pu].concat(rec.slice(0, GRID_SLOTS-1)) : rec).slice(0, GRID_SLOTS);
+        const team = state.formation.filter(Boolean);
         let w=0, s3=0, rs=0;
-        for(let k=0;k<N;k++){ state.skillFight = buildRiftFight(f); run1(); const sf = state.skillFight, res = sf && sf.result; if(res && res.win){ w++; rs+=res.rounds; if(res.bits===7) s3++; } }
-        rows.push([name+' ('+team.map(k=>SPIRITS[k].name).join('·')+')', Math.round(w/N*100), Math.round(s3/N*100), w ? +(rs/w).toFixed(1) : '-']);
+        for(let k=0;k<N;k++){ state.skillFight = buildRiftFight(f); run1(); const res = state.skillFight && state.skillFight.result; if(res && res.win){ w++; rs+=res.rounds; if(res.bits===7) s3++; } }
+        rows.push([name+' ('+team.map(k=>SPIRITS[k].name).join('·')+')', team.reduce((a,k)=>a+spiritCP(k),0), Math.round(w/N*100), Math.round(s3/N*100), w ? +(rs/w).toFixed(1) : '-']);
       }
-      return { gim: (P.duo ? P.duo.name : P.gim)+' · '+P.el+' · 추천 '+riftRecCP(f), rows };
+      return { gim: (P.duo ? P.duo.name : P.gim)+' · '+P.el+' · 픽업 '+SPIRITS[pu].name+' · 추천 '+riftRecCP(f), rows };
     }, [N, f, process.env.TWEAK||'', process.env.GEAR!=='0']);
     console.log(f+'층', r.gim, ((Date.now()-t0)/1000).toFixed(0)+'s'+(errs.length?(' ERR '+errs.slice(0,2).join(' | ')):''));
     r.rows.forEach(x=>console.log('   ', JSON.stringify(x)));
