@@ -1151,6 +1151,7 @@
   .pq-eb{position:relative; padding:0; overflow:visible; cursor:pointer;} .pq-eb .spimg{width:118%; height:118%; margin:0; border-radius:50%;} .pq-el{position:absolute; right:-5px; bottom:-5px; width:14px; height:14px;} .pq-eb .pq-bimg{width:120%; height:120%; object-fit:contain;}
   .slot{position:relative;} .slot-info{display:inline-block; margin-left:3px; width:15px; height:15px; border-radius:50%; background:#1b1942e6; border:1px solid #ffffff66; color:#fff; font-size:10px; line-height:13px; text-align:center; vertical-align:1px; cursor:pointer;}
   .ud-top{display:flex; align-items:center; gap:10px; margin-bottom:8px;} .ud-art{font-size:34px; flex:none;} .ud-art .ud-bimg{width:100%; height:100%; object-fit:contain;} .ud-nm{text-align:left; min-width:0;} .ud-nm b{font-size:15px;}
+  .eq-mt{color:#ffd557; font-weight:800;} /* (v9.5.0) 속성이 맞는 장비 수치 */
   .st-sheet{display:flex; flex-direction:column; gap:5px;} .st-row{display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:2px 8px; padding:7px 10px; border-radius:10px; background:#ffffff0d;} .st-row .st-ic{text-align:center;} .st-row .st-ic .uic{width:18px; height:18px;} .st-row em{font-style:normal; font-weight:800; font-size:16px; color:#ffe9a8;} .st-row small{grid-column:2 / 4; display:flex; flex-wrap:wrap; gap:2px 8px; font-size:11px; color:var(--sub);} .st-ex{display:flex; flex-direction:column; gap:2px; padding:7px 10px; border-radius:10px; background:#7affc812; font-size:12px;} .st-ex b{font-size:12px; color:#9fe8c0;} .st-note{text-align:center; font-size:11px; margin-top:2px;} .st-trs{background:#ffffff0d; gap:8px;} .st-tr{display:flex; flex-direction:column; gap:2px;} .st-tr b{color:var(--text); font-size:13px;} .st-tr b .uic{width:16px; height:16px;} .st-tr span{color:var(--sub); line-height:1.5;} .st-tr small{font-size:10.5px; color:#ffb0a0;} /* (v9.5.0) 능력치 창 */
   .ud-stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px;} .ud-st{background:#ffffff0d; border-radius:8px; padding:5px 2px; text-align:center;} .ud-st small{display:block; font-size:10px; color:var(--sub);} .ud-st b{font-size:13px;}
   .ud-sk{padding:7px 0; border-bottom:1px solid #ffffff12; text-align:left; font-size:13px;} .ud-sk small{font-size:10px; color:var(--sub);} .ud-sk .sub{font-size:12px; margin-top:2px;} .ud-sk.off{opacity:.45;}
@@ -9142,7 +9143,8 @@ function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; c
 function weaponMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'weapon'), spKey); }
 function armorMult(spKey){ return 1 + equipEffect(equippedKey(spKey,'armor'), spKey); }
 function eqPct(v){ const x = Math.round(v*1000)/10; return (x%1===0 ? x.toFixed(0) : x.toFixed(1)); } // 0.225 → '22.5'
-function equipEffectText(key){ const i = equipInfo(key), b = EQUIP_BONUS[i.rarity]*equipEnhMult(key); return EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(b)+'% (속성 일치 +'+eqPct(b*EQUIP_MATCH_MULT)+'%)'; }
+function equipEffectText(key){ const i = equipInfo(key), b = EQUIP_BONUS[i.rarity]*equipEnhMult(key); return EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(b)+'%'; } // (v9.5.0) 기본 수치만 — 속성이 맞는 정령이 끼거나 고를 때만 노란 수치(eqValHtml) (사용자 결정 10/17)
+function eqValHtml(k, spKey){ const v = '+'+eqPct(equipEffect(k, spKey))+'%'; return equipInfo(k).element===SPIRITS[spKey].element ? '<b class="eq-mt">'+v+'</b>' : v; } // 속성이 맞으면 노란 글씨 (효과 ×EQUIP_MATCH_MULT)
 function equipItem(spKey, slot, key){ if(!state.equipped[spKey]) state.equipped[spKey] = {}; state.equipped[spKey][slot] = key; save(); render(); }
 function unequipItem(spKey, slot){ if(state.equipped[spKey]){ state.equipped[spKey][slot] = null; } save(); render(); }
 function cleanupEquipment(){ // 보유하지 않게 된 정령의 장착 정보 정리, 장착 수가 보유 수를 넘으면 초과분 해제
@@ -11188,7 +11190,7 @@ function showEquipDetailModal(key){
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
     + '<div style="margin-top:8px; padding:8px; background:var(--panel2); border-radius:10px;"><div style="font-weight:700;">'+equipEffectText(key)+'</div></div></div>';
   if(users.length){
-    html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+EQUIP_SLOT_INFO[i.slot].stat+' +'+eqPct(equipEffect(key,sp))+'%</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
+    html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+EQUIP_SLOT_INFO[i.slot].stat+' '+eqValHtml(key, sp)+'</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
   }
   { const lv = equipEnhLevel(key), mx = equipEnhMax(key), c = equipEnhCost(key), can = lv<mx && state.essence>=c.essence && (state.enhanceStone||0)>=c.stone;
     html += '<button class="aw-row enh-row" id="eqEnhOpen">⬆️<b>강화 +'+lv+'</b><span class="sub">/ '+mx+' · 효과 +'+Math.round(lv*EQ_ENH_STEP*100)+'%</span><span class="aw-go'+(can?' on':'')+'">'+(lv>=mx?'최대':(can?'강화 가능 ':'')+'자세히')+' ›</span></button>'; }
@@ -11219,7 +11221,7 @@ function showEquipEnhanceModal(key, fxLabel){
   if(!maxed){
     const okE = state.essence>=c.essence, okS = (state.enhanceStone||0)>=c.stone;
     h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+st+' +'+eqPct(now)+'%</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+st+' +'+eqPct(nxt)+'%</b></div></div>';
-    h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">같은 속성 정령이 끼면 ×'+EQUIP_MATCH_MULT+' (+'+eqPct(nxt*EQUIP_MATCH_MULT)+'%) · 이 장비를 낀 모든 정령에 적용</div>';
+    h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">이 장비를 낀 모든 정령에 적용</div>';
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
       + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
@@ -11243,8 +11245,8 @@ function showEquipPicker(spKey, slot){
     const i = equipInfo(k), hex = RARITY_HEX[i.rarity], free = equipFreeCount(k), usable = free>0 || k===cur, match = i.element===SPIRITS[spKey].element;
     return '<div data-eq-lp="'+k+'" data-eq-sp="'+spKey+'" data-eq-slot="'+slot+'" '+(usable?'data-pick-eq="'+k+'"':'')+' style="display:flex; align-items:center; gap:8px; padding:8px; margin-bottom:6px; border-radius:10px; border:2px solid '+(k===cur?'#fff':hex)+'; background:linear-gradient(160deg,'+hex+'2e,#1e1e2b 80%); '+(usable?'cursor:pointer;':'opacity:.4;')+'">'
       + '<div style="font-size:22px;">'+i.img+'</div>'
-      + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+(match?' · 속성 일치':'')+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
-      + '<div style="text-align:right;"><b style="color:#ffd557;">+'+eqPct(equipEffect(k,spKey))+'%</b>'
+      + '<div style="flex:1; min-width:0;"><div style="font-size:13px; font-weight:700;">'+i.name+' '+eqEnhTag(k)+(k===bestKey?' <img class="uic" src="assets/ui/ic_star.webp" alt="">':'')+'</div><div class="sub" style="font-size:11px;">'+RARITY_INFO[i.rarity].name+' · 보유 '+equipOwnedCount(k)+'개</div></div>'
+      + '<div style="text-align:right;"><b style="color:'+(match ? '#ffd557' : 'var(--text)')+';">+'+eqPct(equipEffect(k,spKey))+'%</b>'
       + (k===cur ? '<div class="sub" style="font-size:10px; color:#fff;">착용 중</div>' : (free<=0 ? '<div class="sub" style="font-size:10px;">다른 정령 착용</div>' : ''))+'</div></div>';
   }).join('');
   if(cur) html += '<button class="btn secondary" id="unequipBtn" style="margin-top:6px;">해제</button>';
@@ -11261,7 +11263,7 @@ function equipSlotsHtml(spKey){
     const any = ownedEquipItems().some(x=>equipInfo(x).slot===slot);
     h += '<div data-equip-slot="'+slot+'" '+(k ? 'data-eq-lp="'+k+'" data-eq-sp="'+spKey+'"' : '')+' style="flex:1; padding:8px 6px; border-radius:10px; background:var(--panel2); border:1px solid '+(k?RARITY_HEX[equipInfo(k).rarity]:'#3a3a4a')+'; text-align:center; cursor:pointer;">'
       + '<div class="sub" style="font-size:10px;">'+si.name+'</div>'
-      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' +'+eqPct(equipEffect(k,spKey))+'%</div>'
+      + (k ? '<div style="font-size:18px;">'+equipInfo(k).img+'</div><div style="font-size:11px; font-weight:700;">'+equipInfo(k).name+' '+eqEnhTag(k)+'</div><div class="sub" style="font-size:10px;">'+si.stat+' '+eqValHtml(k, spKey)+'</div>'
            : '<div style="font-size:22px; opacity:.4;">＋</div><div class="sub" style="font-size:10px;">'+(any?'장비 선택':'장비 없음')+'</div>')
       + '</div>';
   });
@@ -11888,6 +11890,7 @@ const PATCH_NOTES = [
   { build:450, v:'9.5.0', date:'2026-10-17', secs:[
     { t:'정령 능력치', items:[ '정령 창에 「📊 능력치」 — 공격력·체력을 실제 수치로 · 속도 · 치명타 확률 · 치명타 피해 · 흡혈 · 받는 피해 감소', '능력치마다 어디서 얼마나 늘었는지 (무기 · 방어구 · 각인 · 장비 부가 능력 · 장비 고유 효과 · 초월 · 룬)', '특성 · 패시브 설명도 같이' ]},
     { t:'정령', items:[ '정령 특성을 없앰 — 공격력 +% · 확률 폭발 · 상성 완화 · 정수 보상 · 신화 통솔 (탐험·보스·균열·레이드 등 대부분의 전투에는 원래 들어가지 않았음)', '숲결 A 계열 · 산군의 최대 강화 레벨 +5/+10은 그대로 — 패시브 「단단한 껍질」·「산의 주인」으로 옮김', '현무 계열의 「무기 효과 절반만큼 체력도 오름」을 없앰 — 무기는 모든 정령이 공격력만 올림', '특정 업적의 조건 문구 정리' ]},
+    { t:'장비', items:[ '장비 정보엔 기본 수치만 — 속성이 맞는 정령이 끼고 있거나 고를 때 그 수치를 노란 글씨로' ]},
     { t:'정령 빙고', items:[ '「화로 수확 10회」 미션을 「화로 불씨 수확 300개」로 — 이미 수확한 횟수는 1회당 불씨 12개로 쳐 줌 · 10회를 채운 미션은 그대로 완료', '「모두 거두기」로 거둔 불씨도 빙고에 셈 (예전엔 안 셌음)' ]}
   ]},
   { build:449, v:'9.4.6', date:'2026-10-16', secs:[
