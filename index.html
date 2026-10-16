@@ -1410,6 +1410,7 @@
   .hu-list{display:flex; flex-direction:column; gap:8px;} .hu-card{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:14px; background:var(--panel2); border:1px solid #ffffff1a; color:var(--text); text-align:left;} .hu-art{width:56px; height:56px; flex:none; display:flex; align-items:center; justify-content:center;} .hu-art img{width:56px; height:56px; object-fit:contain;} .hu-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .hu-info small{font-size:11px; color:var(--sub);} .hu-lv{font-size:11px; color:#ffd557; white-space:nowrap;}
   .hu-drop{display:flex; flex-direction:column; gap:2px; margin:8px 0 2px; padding:8px 10px; border-radius:10px; background:#ffffff0d; font-size:11px; color:var(--sub);} .hu-drop b{color:var(--text); font-size:12px;} .hu-drop i{font-style:normal; font-weight:700;}
   .hu-loot{margin-top:8px;} .hu-n{text-align:center; font-size:12px; margin-bottom:4px;} .hu-eqs{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:6px;} .hu-eq{display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; border-radius:10px; background:#0d0b26cc; border:2px solid var(--rc); color:var(--text); font-size:11px;} .hu-eq.r-mythic{box-shadow:0 0 10px var(--rc);} .hu-eqi{font-size:24px; line-height:1;} .hu-eq b{font-size:11px;} .hu-eq small{font-size:10px; color:#ffe9a8;} .hu-q{width:80%; height:4px; border-radius:2px; background:#2d2a62; overflow:hidden;} .hu-q i{display:block; height:100%; background:linear-gradient(90deg,#8fe3ff,#ffd557);} .hu-eq em{font-style:normal; font-size:9.5px; color:var(--sub);}
+  .bs-rlist{display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:34vh; overflow-y:auto;} .bs-rl{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:2px 8px; padding:6px 10px; border-radius:10px; background:#ffd5570f; border:1px solid #ffd55733; font-size:12px; text-align:left;} .bs-rl-n i{font-style:normal; font-size:10px; margin-left:4px; padding:1px 5px; border-radius:6px; background:#ffd55733; color:#ffe08a;} .bs-rl-n{flex:1 1 130px;} .bs-rl-v{margin-left:auto; white-space:nowrap; font-weight:700;} /* (v10.0.0) 결과 창 보상 목록 */
   .hu-tools{display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 8px; font-size:12px;} .hu-tools select{background:var(--panel2); color:var(--text); border:1px solid #ffffff2a; border-radius:8px; padding:3px 4px; font-size:12px;} .hu-tools .btn{width:auto; margin:0; padding:5px 10px;}
   .hu-mats{display:flex; flex-wrap:wrap; justify-content:center; gap:4px 10px; margin-top:8px; font-size:12px;} /* (v10.0.0) 보스 토벌 */
   .eqm-box{margin-top:8px; padding:10px; background:var(--panel2); border-radius:12px; text-align:left;} .eqm-box .eqm-t{display:flex; justify-content:space-between; align-items:baseline; gap:8px;} .eqm-box .eqm-t b{font-size:15px;} .eqm-q{display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px;} .eqm-q i{flex:1; height:6px; border-radius:3px; background:#2d2a62; overflow:hidden;} .eqm-q i em{display:block; height:100%; background:linear-gradient(90deg,#8fe3ff,#ffd557);} .eqm-btns{display:flex; gap:6px; margin-top:8px;} .eqm-btns .btn{flex:1; margin:0; padding:8px 4px; font-size:12px;} /* (v298) 각인석 */
@@ -7728,6 +7729,22 @@ function expeditionResultOverlayHtml(sf){
   h += '<div class="bs-rbtns"><button class="btn" id="skillResultCloseBtn">확인</button></div></div></div>';
   return h;
 }
+// (v10.0.0) 보상 화면 정리 (사용자 요청 10/17) — 이긴 스테이지의 첫 클리어·등급 보상을 자동으로 받고 결과 창에 한 목록으로 (예전엔 🎁에 숨어 하나씩 받기)
+function claimStageResultRewards(idx){
+  const got = (state.pendingRewards||[]).filter(r=>r.id.indexOf('stage_'+idx+'_')===0 || r.id.indexOf('boss_'+idx+'_')===0).map(r=>Object.assign({}, r));
+  if(!got.length) return [];
+  const ids = new Set(got.map(r=>r.id));
+  got.forEach(r=>{ state.essence += r.essence; state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.star>0) state.starShard = (state.starShard||0) + r.star; grantItems(r.items); });
+  state.pendingRewards = state.pendingRewards.filter(r=>!ids.has(r.id)); save();
+  return got;
+}
+function resultClaimedHtml(list){ if(!list || !list.length) return '';
+  { const gr = list.filter(r=>/_(grade|bossclear)_[CBAS]$/.test(r.id)); if(gr.length>1){ // 등급 보상 여러 줄 → 한 줄 (C·B·A·S)
+      const m = { id:'grades', icon:gr[0].icon, label:'등급 달성 '+gr.map(r=>r.id.slice(-1)).join('·'), essence:0, stone:0, star:0, items:{} };
+      gr.forEach(r=>{ m.essence += r.essence||0; m.stone += r.stone||0; m.star += r.star||0; if(r.items) Object.keys(r.items).forEach(k=>{ m.items[k] = (m.items[k]||0) + r.items[k]; }); });
+      list = list.filter(r=>!gr.includes(r)).concat([m]); } }
+  return '<div class="bs-rlist">'+list.map(r=>{ const lab = r.label==='???' ? '첫 격파 보너스' : r.label, ic = r.icon==='❓' ? uiIc('gift') : r.icon;
+    return '<div class="bs-rl"><span class="bs-rl-n">'+ic+' '+lab+'<i>처음</i></span><span class="bs-rl-v">'+rewardBrief({essence:r.essence, stone:r.stone, star:r.star||0, items:r.items})+'</span></div>'; }).join('')+'</div>'; }
 function resultRewardBtnHtml(stageIdx){
   const n = pendingRewardsFor('stage_'+stageIdx+'_').length;
   return '<button class="bs-rgift" id="resRewardBtn"><img class="uic" src="assets/ui/ic_gift.webp" alt="">'+(n?'<i>'+n+'</i>':'')+'</button>';
@@ -7739,8 +7756,9 @@ function skillResultOverlayHtml(sf){
     const info = r.info || {}, grade = info.grade || skillGradeForRounds(r.rounds);
     h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_victory.webp" alt=""></div><div class="bs-rtitle">승리!</div><div class="bs-rgrade g'+grade+'">'+grade+'</div>'
       + '<div class="bs-rsub">'+(r.totalRounds||r.rounds)+'라운드'+(info.improved && r.prevBest ? ' · '+r.prevBest+' → '+grade : '')+'</div>'
-      + '<div class="bs-rrew"><div>🔁 기본 클리어 보상 <img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+(info.baseReward||0)+'</div></div>'
-      + resultRewardBtnHtml(sf.stageIdx); // (v180) 받을 보상은 목록 대신 카드 모서리 <img class="uic" src="assets/ui/ic_gift.webp" alt=""> 버튼 하나로(누르면 보상 창)
+      + '<div class="bs-rrew"><div>🔁 기본 클리어 보상 <img class="uic" src="assets/ui/ic_essence.webp" alt="정수"> +'+(info.baseReward||0)+'</div></div>';
+    if(!r.autoCl) r.autoCl = claimStageResultRewards(sf.stageIdx); // (v10.0.0) 처음 한 번 보상은 자동으로 받고 여기 목록으로
+    h += resultClaimedHtml(r.autoCl) + resultRewardBtnHtml(sf.stageIdx); // 🎁 = 보상 정보 (남은 보상이 있으면 숫자)
   }else{
     h += '<div class="bs-ricon"><img class="uic" src="assets/ui/deco_defeat.webp" alt=""></div><div class="bs-rtitle">'+(r.timeout?'시간 초과':'패배')+'</div><div class="bs-rsub">'+r.rounds+'라운드</div>';
   }
