@@ -6019,8 +6019,9 @@ const LINE_KITS = {
       ].filter(Boolean).join('<br>'),
       run:C=>{ C.hit(C.t,1.5); C.neg(C.t,st=>{ st.freeze=true; },'❄빙결'); if(C.g>=3) C.around('row').forEach(u=>{ if(C.g>=4) C.neg(u,st=>{ st.freeze=true; },'❄빙결'); else C.neg(u,st=>{ st.slow={v:15,r:2}; },'🐌둔화'); }); } } },
   wood_a: { role:'탱커', icon:ELEMENT_INFO.wood.icon,
-    passive:{ name:'단단한 껍질', icon:artIc('pv_wood_a'), desc:g=>[
+    passive:{ name:'단단한 껍질', icon:artIc('pv_wood_a'), desc:(g,u)=>[
       '받는 피해 −'+pctTxt([0,.08,.10,.12,.15][g]),
+      (u && u.key ? enhCapBonusOf(u.key) : (g>=3 ? 10 : g>=2 ? 5 : 0)) ? '최대 강화 레벨 +'+(u && u.key ? enhCapBonusOf(u.key) : (g>=3 ? 10 : 5))+' (에픽 +5 · 레전더리 이상 +10)' : null, // (v9.5.0) 예전 특성 만개·천년수
       g>=4?'전열에 있으면 바로 뒤 칸 아군의 받는 피해도 −20%':null
     ].filter(Boolean).join('<br>') },
     // (v192) 탱커는 자기 몸에 거는 스킬로 — 예전엔 아군에게 보호막까지 줬는데, 아군 보호막은 빛 서포터(수호의 빛) 역할이라 뺌
@@ -6156,7 +6157,7 @@ const LINE_KITS = {
         if(C.tSide===C.a.side){ C.side(C.a.side).forEach(u=>{ C.heal(u, C.a.atk*m); C.pos(u, st=>{ st.haste = { v:Math.max(10, (st.haste&&st.haste.v)||0), r:2 }; }, '⏩가속'); }); return; } // (v8.7.0) 아군에게 범람 (사용자 결정)
         C.side(C.tSide).forEach(u=>{ C.hit(u, m); if(u.alive) C.neg(u, st=>{ st.slow = { v:Math.max(10, (st.slow&&st.slow.v)||0), r:2 }; }, '🐌둔화'); }); } } },
   wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
-    passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%<br>반격은 그때 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+'만큼 추가 피해 (아군이 씌운 보호막도 포함)' },
+    passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%<br>최대 강화 레벨 +10<br>반격은 그때 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+'만큼 추가 피해 (아군이 씌운 보호막도 포함)' },
     s1:{ name:'포효', icon:artIc('sk_wood_sg_1'), cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 보호막 · 반격',
       desc:(g,u)=>'자신에게 도발 + 보호막 (최대체력 '+pctTxt(SG_GUARD_SHIELD)+') + 반격 자세 — 반격 자세와 이 보호막은 산군의 다음 차례에 꺼짐<br>적이 산군을 때리면 언제든 바로 반격: 공격력 '+awUp('70%', awUq(u)?'30%':0)+' + 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+' · 적의 행동 하나에 1번<br>후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)',
       run:C=>{ const b0 = C.a.st.shield||0; C.shield(C.a, pctHp(C.a)*SG_GUARD_SHIELD); C.a.st.roarSh = (C.a.st.roarSh||0) + Math.max(0, (C.a.st.shield||0) - b0); C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1 }; }, '🐯반격 자세'); } },
@@ -7226,7 +7227,6 @@ function spiritStatSheetHtml(k){
     if(ex.length) h += '<div class="st-ex"><b>추가 효과</b>'+ex.map(x=>'<span>· '+x+'</span>').join('')+'</div>'; }
   { const ps = passiveFor(k), kit = kitOf(u), pg = unitPG(u); // (v9.5.0) 특성 · 전투 패시브는 글로 (사용자 요청 10/17)
     let t = '';
-    if(ps) t += '<div class="st-tr"><b>'+ps.icon+' 특성 · '+ps.name+'</b><span>'+ps.desc+'</span>'+((ps.atkMult || ps.crit || ps.unfavorableFloor!==undefined || SPIRITS[k].rarity==='mythic') ? '<small>공격력·확률 폭발·상성·통솔은 무한의 탑에서 적용</small>' : '')+'</div>';
     if(kit && kit.passive) t += '<div class="st-tr"><b>'+(kit.passive.icon||'✦')+' 패시브 · '+kit.passive.name+'</b><span>'+(pg>=1 ? kit.passive.desc(pg, u) : '레어 또는 각성 1단계부터')+'</span></div>';
     if(t) h += '<div class="st-ex st-trs">'+t+'</div>'; }
   h += '<div class="sub st-note">전투 전 기준 · 스킬을 써야 생기거나 전투 중에만 켜지는 효과는 빼고 셈</div></div>';
@@ -7790,8 +7790,7 @@ const ELEMENT_ATK_MULT = { fire:1, water:1, wood:1, light:0.96, dark:1.06 };
 function enhanceLevel(key){ return (state.enhanceLevel && state.enhanceLevel[key]) || 0; }
 const MAX_ENHANCE = 10;
 function maxEnhanceFor(key){
-  const passive = passiveFor(key);
-  return MAX_ENHANCE + ((passive && passive.enhanceCapBonus) || 0) + awakenLevel(key); // (v222) 각성마다 +1
+  return MAX_ENHANCE + enhCapBonusOf(key) + awakenLevel(key); // (v222) 각성마다 +1 · (v9.5.0) 숲결 A·산군은 패시브로 +5/+10
 }
 // (v93) 정령력 = 정령의 기본 힘(등급·속성 보정·강화 반영). 정령 상세에는 이 값 하나만 보여줌.
 // 공격력·팀 체력은 정령력에서 나옴: 전투 공격력 = 정령력 x (상성·특성 등 전투 효과), 체력 = 정령력 x 속성 체력 비율 x 배수.
@@ -8324,77 +8323,12 @@ function unitPower(speciesKey){
 function unitAtk(speciesKey){ return unitPower(speciesKey) * weaponMult(speciesKey) * (1 + subTotals(speciesKey).atk) * transMult(speciesKey); } // (v298) × 각인·장비 부가 능력 공격 × 초월 // (v104) 무기 배율 반영
 // 속성별 고유 특성 — 에픽/레전더리는 속성마다 다름 (레전더리는 같은 계통의 진화형), 신화는 공통
 function trIc(k){ return '<img class="uic" src="assets/ui/tr/'+k+'.webp" alt="" draggable="false">'; } // (v317) 특성 아이콘 그림
-const ELEMENT_PASSIVE = {
-  fire: {
-    epic: {
-      a: { icon:trIc('tr_fire_ea'), name:'폭발', desc:'20% 확률로 공격력 x1.5', crit:{chance:0.2, mult:1.5} },
-      b: { icon:trIc('tr_fire_eb'), name:'돌진', desc:'공격력 +10%', atkMult:1.10 }
-    },
-    legendary: {
-      a: { icon:trIc('tr_fire_la'), name:'대폭발', desc:'35% 확률로 공격력 x2.0', crit:{chance:0.35, mult:2.0} },
-      b: { icon:trIc('tr_fire_lb'), name:'광란', desc:'공격력 +35%', atkMult:1.35 }
-    }
-  },
-  water: {
-    epic: {
-      a: { icon:trIc('tr_water_ea'), name:'완화', desc:'패배 시 정수 +10 획득', reviveBonus:10 },
-      b: { icon:trIc('tr_water_eb'), name:'적응', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 }
-    },
-    legendary: {
-      a: { icon:trIc('tr_water_la'), name:'회생', desc:'패배 시 정수 +20 획득', reviveBonus:20 },
-      b: { icon:trIc('tr_water_lb'), name:'해일', desc:'상성 무시', unfavorableFloor:1.0 }
-    }
-  },
-  wood: {
-    epic: {
-      a: { icon:trIc('tr_wood_ea'), name:'만개', desc:'이 정령 최대 강화 레벨 +5', enhanceCapBonus:5 },
-      b: { icon:trIc('tr_wood_eb'), name:'무성함', desc:'공격력 +10%', atkMult:1.10 }
-    },
-    legendary: {
-      a: { icon:trIc('tr_wood_la'), name:'천년수', desc:'이 정령 최대 강화 레벨 +10', enhanceCapBonus:10 },
-      b: { icon:trIc('tr_wood_lb'), name:'거목', desc:'공격력 +20%', atkMult:1.20 }
-    }
-  },
-  light: {
-    epic: {
-      a: { icon:trIc('tr_light_ea'), name:'정화', desc:'상성 불리 페널티 50% 완화', unfavorableFloor:0.9 },
-      b: { icon:trIc('tr_light_eb'), name:'광휘', desc:'공격력 +8%', atkMult:1.08 }
-    },
-    legendary: {
-      a: { icon:trIc('tr_light_la'), name:'심판', desc:'상성 무시', unfavorableFloor:1.0 },
-      b: { icon:trIc('tr_light_lb'), name:'서광', desc:'공격력 +15%', atkMult:1.15 }
-    }
-  },
-  dark: {
-    epic: {
-      a: { icon:trIc('tr_dark_ea'), name:'탐욕', desc:'전투 승리 시 정수 보상 +15%', rewardBonus:0.15 },
-      b: { icon:trIc('tr_dark_eb'), name:'침식', desc:'공격력 +10%', atkMult:1.10 }
-    },
-    legendary: {
-      a: { icon:trIc('tr_dark_la'), name:'파멸의 탐식', desc:'전투 승리 시 정수 보상 +30%', rewardBonus:0.3 },
-      b: { icon:trIc('tr_dark_lb'), name:'황폐', desc:'공격력 +20%', atkMult:1.20 }
-    }
-  }
-};
-const LIMITED_TRAIT_OF = { sc:'b', su:'a', mn:'a', hb:'b', sg:'a', as:'b', lk:'b', dk:'a' }; // 스칼렛 광란 · 수르트 대폭발 · 므네모시네 회생 · 하백 해일 · 산군 천년수 · 아스트라이아 서광 · 로키 황폐 · 도깨비 파멸의 탐식
-const MYTHIC_PASSIVE = { icon:'<img class="uic" src="assets/ui/ic_crown.webp" alt="">', name:'통솔', desc:'모든 팀원의 공격력 +10%' };
-function passiveForERV(element, rarity, variant){
-  if(rarity==='common' || rarity==='rare') return null; // 일반·레어는 아직 variant 간 차이 없음(쌍둥이)
-  if(rarity==='mythic'){ // (v297) 레전더리 특성 + 통솔 — 예전엔 에픽 특성 + 통솔이라 최대 강화·공격력 특성이 레전더리보다 낮았음
-    const legP = ELEMENT_PASSIVE[element].legendary[LIMITED_TRAIT_OF[variant] || variant]; // (v343) 한정 성좌는 같은 속성 레전더리 특성 중 하나를 빌려 씀
-    return Object.assign({}, legP, {
-      name: legP.name+' + 통솔',
-      desc: legP.desc+' · '+MYTHIC_PASSIVE.desc
-    });
-  }
-  const byElement = ELEMENT_PASSIVE[element];
-  const byRarity = byElement && byElement[rarity];
-  return (byRarity && byRarity[variant]) || null;
-}
-function passiveFor(key){
-  const sp = SPIRITS[key];
-  return passiveForERV(sp.element, sp.rarity, sp.variant);
-}
+// (v9.5.0) 정령 특성(속성별 공격력 +% · 확률 폭발 · 상성 완화 · 정수 보상 · 신화 통솔) 없앰 (사용자 결정 10/17 — 스킬 전투엔 거의 안 들어가고 탑에서만 쓰였음)
+// 남은 쓸모 있던 하나(숲결 A 계열 · 산군 최대 강화 +5/+10)는 패시브 「단단한 껍질」·「산의 주인」으로 옮김 → enhCapBonusOf
+// 탑(옛 슬롯 전투)에서 특성을 읽던 곳이 많아 passiveFor·passiveForERV는 늘 null을 돌려주는 채로 남김
+function passiveForERV(element, rarity, variant){ return null; }
+function passiveFor(key){ return null; }
+function enhCapBonusOf(key){ const sp = SPIRITS[key]; if(!sp || sp.element!=='wood' || !(sp.variant==='a' || sp.variant==='sg')) return 0; return sp.variant==='sg' ? 10 : ({epic:5, legendary:10, mythic:10}[sp.rarity] || 0); } // 예전 만개 +5 · 천년수 +10 그대로
 const AWAKEN_COST_MUL = [2, 5, 10, 18, 30]; // (v297) 각성 정수 등급 배율 — 높은 등급일수록 비싸게
 const ENH_COST_MUL = [1, 2, 3.5, 6, 10];
 function enhanceCost(key){
@@ -10808,7 +10742,7 @@ let achievementCategory = 'general';
 let guideCategory = 'element';
 const GUIDE_CATEGORIES = [
   {id:'element', icon:'🌈', name:'속성'},
-  {id:'rarity', icon:'<img class="uic" src="assets/ui/ic_star.webp" alt="">', name:'등급·특성'},
+  {id:'rarity', icon:'<img class="uic" src="assets/ui/ic_star.webp" alt="">', name:'등급'},
   {id:'enhance', icon:'🔨', name:'강화·합성'},
   {id:'battle', icon:uiIc('atk'), name:'전투'}, // (v8.6.0)
   {id:'modes', icon:uiIc('map'), name:'모드'}
@@ -10848,9 +10782,9 @@ function guideSectionHtml(cat){
         '🔮 룬: 정령마다 1칸 · 정령 분해로 얻는 <img class="uic" src="assets/ui/ic_shard.webp" alt=""> 파편 '+RUNE_REROLL_COST+'개로 무작위 재각인', '<img class="uic" src="assets/ui/ic_runestone.webp" alt="룬석"> 고대 룬석: 레이드 승리 보상 → 레이드 상점에서 룬 뽑기·고대 룬 교환·룬 승급석 등 구입', '레이드 입장권: 최대 3장 · 8시간마다 1장 · 입장권을 쓴 판만 보상'
       ])
       + guideHeader('<img class="uic" src="assets/ui/ic_crown.webp" alt=""> '+RARITY_INFO.mythic.name)
-      + guideList(['등급이 오를수록 스킬 효과가 커지고 추가 효과가 붙음', '탑에서는 통솔: 팀 전체 공격력 ×1.1'])
+      + guideList(['등급이 오를수록 스킬 효과가 커지고 추가 효과가 붙음'])
       + guideHeader('<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 적')
-      + guideList(['스테이지가 진행될수록 높은 등급 등장 확률 상승', RARITY_INFO.epic.name+' 이상은 정령과 같은 특성 보유', '적 아이콘 탭 → 상세 정보'])
+      + guideList(['스테이지가 진행될수록 높은 등급 등장 확률 상승', '적 아이콘 탭 → 상세 정보'])
       + '</div>';
   }
   if(cat==='enhance'){
@@ -10858,7 +10792,7 @@ function guideSectionHtml(cat){
       + guideHeader('<img class="uic" src="assets/ui/ic_shard.webp" alt=""> 정령력')
       + guideList(['정령의 기본 힘', '공격력과 보스전 체력의 바탕'])
       + guideHeader('🔨 강화')
-      + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' ('+ELEMENT_INFO.wood.name+' 계열 특성 보유 시 증가)', '레벨이 오를수록 비용 증가'])
+      + guideList(['정수·강화석 소모, 레벨당 정령력 +5%', '최대 Lv.'+MAX_ENHANCE+' · 각성마다 +1 ('+ELEMENT_INFO.wood.name+' A 계열 · 산군은 패시브로 +5~10)', '레벨이 오를수록 비용 증가'])
       + guideHeader(uiIc('awaken')+' 각성') + awakenRulesHtml()
       + guideHeader('✨ 합성')
       + fuseRulesHtml()
@@ -10884,7 +10818,7 @@ function guideSectionHtml(cat){
       + guideHeader('<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본')
       + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
       + guideHeader('💥 피해')
-      + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 ×'+CRIT_MULT+' (룬·특성으로 확률 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
+      + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 ×'+CRIT_MULT+' (룬·각인으로 확률 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
       + guideHeader(G+' 그로기 (보스)')
       + guideList(['보스마다 그로기 게이지 '+GROGGY_MAX+' — 아군 공격이 맞을 때마다 줄어듦', '한 번에 깎이는 양: 기본 4 (레이드 3) × 스킬 배율(0.5~2.5배) × 보스별 배수 · 치명타면 ×1.5', '0이 되면 그로기: 받는 피해 <b>×'+GROGGY_DMG_MULT+'</b> · 이번 라운드에 아직 행동 전이면 행동 못 함', '다음 라운드 시작 때 풀리고 게이지가 다시 가득', '보스마다 잘 깎이는 속성·'+uiIc('lock')+' 잠기는 때가 다름 — 준비 창 보스 정보에서 확인', '보스전에서 스킬 버튼에 게이지가 얼마나 깎이는지 표시 (치명타 제외)'])
       + guideHeader(stIc('buff')+' 이로운 효과')
@@ -11953,7 +11887,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:450, v:'9.5.0', date:'2026-10-17', secs:[
     { t:'정령 능력치', items:[ '정령 창에 「📊 능력치」 — 공격력·체력을 실제 수치로 · 속도 · 치명타 확률 · 치명타 피해 · 흡혈 · 받는 피해 감소', '능력치마다 어디서 얼마나 늘었는지 (무기 · 방어구 · 각인 · 장비 부가 능력 · 장비 고유 효과 · 초월 · 룬)', '특성 · 패시브 설명도 같이' ]},
-    { t:'정령', items:[ '현무 계열의 「무기 효과 절반만큼 체력도 오름」을 없앰 — 무기는 모든 정령이 공격력만 올림' ]},
+    { t:'정령', items:[ '정령 특성을 없앰 — 공격력 +% · 확률 폭발 · 상성 완화 · 정수 보상 · 신화 통솔 (탐험·보스·균열·레이드 등 대부분의 전투에는 원래 들어가지 않았음)', '숲결 A 계열 · 산군의 최대 강화 레벨 +5/+10은 그대로 — 패시브 「단단한 껍질」·「산의 주인」으로 옮김', '현무 계열의 「무기 효과 절반만큼 체력도 오름」을 없앰 — 무기는 모든 정령이 공격력만 올림', '특정 업적의 조건 문구 정리' ]},
     { t:'정령 빙고', items:[ '「화로 수확 10회」 미션을 「화로 불씨 수확 300개」로 — 이미 수확한 횟수는 1회당 불씨 12개로 쳐 줌 · 10회를 채운 미션은 그대로 완료', '「모두 거두기」로 거둔 불씨도 빙고에 셈 (예전엔 안 셌음)' ]}
   ]},
   { build:449, v:'9.4.6', date:'2026-10-16', secs:[
@@ -12903,7 +12837,7 @@ const ACHIEVEMENTS = [ // (v5.3.0) 별빛 조각은 속성 도감 업적까지 �
   {id:'fuse_unlucky', name:'불운의 연금술사', desc:'같은 등급 합성에서 3번 연속 실패하기', reward:{items:{fuseGuard:2}}, category:'general', secret:true, check:()=> hidHas('fuseFail3')},
   {id:'betray_2', name:'배신의 완성', desc:'레이드에서 파티원의 정령을 내 정령으로 쓰러뜨리기', reward:{essence:2000, items:{pick_legendary:1}}, category:'general', secret:'full', check:()=> hidHas('raidFriendKill')},
   {id:'rune_master', name:'룬 각인사', desc:'룬을 5번 새기기', reward:{stone:150}, category:'general', check:()=> (state.lifetimeEngraves||0)>=5},
-  {id:'wood_bloom_max', name:'천년의 나이테', desc:'만개/천년수 특성을 가진 정령을 최대 레벨까지 강화하기', reward:{essence:600}, category:'general', secret:true, check:()=> Object.keys(state.enhanceLevel||{}).some(k=>{ const p=passiveFor(k); return p && p.enhanceCapBonus && enhanceLevel(k)>=maxEnhanceFor(k); })}
+  {id:'wood_bloom_max', name:'천년의 나이테', desc:'강화 한도가 늘어나는 정령을 최대 레벨까지 강화하기', reward:{essence:600}, category:'general', secret:true, check:()=> Object.keys(state.enhanceLevel||{}).some(k=>SPIRITS[k] && enhCapBonusOf(k)>0 && enhanceLevel(k)>=maxEnhanceFor(k))}
 ];
 // 속성별 도감 완성 보상 (정령 10종 / 장비 10종씩)
 ELEMENTS.forEach(el=>{
@@ -13517,14 +13451,12 @@ function challengeTower(floor){
   const slots = towerSlotCount(floor);
   const special = towerFloorSpec(floor);
   let playerPower = 0;
-  let hasMythicLeader = false;
   const slotDetails = [];
   state.formation.forEach((key,idx)=>{
     if(idx>=slots) return;
     if(!key){ slotDetails.push(null); return; }
     const sp = SPIRITS[key];
     const passive = passiveFor(key);
-    if(sp.rarity==='mythic') hasMythicLeader = true;
     let atk = baseSlotAtk(key, idx, enemyComp, special);
     let crit = false;
     if(passive && passive.crit && Math.random()<passive.crit.chance){ atk *= passive.crit.mult; crit = true; }
@@ -13532,7 +13464,6 @@ function challengeTower(floor){
     slotDetails.push({ atk, adv: slotAdvantage(key, enemyComp[idx]), crit });
   });
   const rawPlayerSum = playerPower;
-  if(hasMythicLeader) playerPower *= 1.1;
   if(special) playerPower *= specialAggregateMultForFormation(special, slots);
   let playerPowerDisplay = playerPower;
   if(rawPlayerSum>0){
@@ -16282,8 +16213,7 @@ function showTowerPrepModal(){
   html += '<div class="formation-row" style="grid-template-columns:repeat('+slots+',1fr);">'+slotsHtml+'</div>';
   html += '</div>';
   let playerPreviewPower = 0;
-  const hasMythicLeaderPreview = state.formation.slice(0,slots).some(k=>k && SPIRITS[k].rarity==='mythic');
-  const mythicMult = hasMythicLeaderPreview?1.1:1;
+  const mythicMult = 1; // (v9.5.0) 통솔(신화 특성) 없앰
   const specialMult = special ? specialAggregateMultForFormation(special, slots) : 1;
   const pAtkRaw = [];
   for(let idx=0; idx<slots; idx++){
@@ -17090,7 +17020,7 @@ function showManageModal(key){
   html += '<div class="mg-hero" style="font-size:44px;">'+spArt(sp)+'</div>'; // (v343) 정령 그림이 둥실 떠 있음
   html += '<h3>'+sp.name+' <span class="rarity-tag'+(spRar(sp)==='astral'?' astral':'')+'" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span>'+(sp.variant==='a'||sp.variant==='b' ? ' <span class="rarity-tag" style="background:#ffffff14; color:var(--sub);">'+sp.variant.toUpperCase()+'형</span>' : '')+awakenStars(key)+'</h3>'; // (v8.3.0) A/B형
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
-  { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
+  { const kt = LINE_KITS[SPIRITS[key].line || (SPIRITS[key].element+'_'+SPIRITS[key].variant)], cb = enhCapBonusOf(key); if(cb) html += '<div class="mg-trait">'+(kt && kt.passive ? kt.passive.icon+' <b>패시브 · '+kt.passive.name+'</b>' : '')+'<span>최대 강화 레벨 +'+cb+'</span></div>'; } // (v9.5.0) 특성 대신 — 강화 한도가 늘어나는 패시브만 여기서 알려 줌 // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
   if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)-1)+'%</div>';
   { const kit = LINE_KITS[sp.element+'_'+sp.variant]; // (v170) 옛 패시브 대신 실제 전투에서 쓰는 역할·스킬
@@ -17409,14 +17339,6 @@ function showEnemyDetailPopup(element, rarity, variant, atk, pw){
   html += '<div class="ttl" style="font-size:15px;">'+ELEMENT_INFO[element].name+' · '+RARITY_INFO[rarity].name+(rarity!=='common'&&rarity!=='rare'?' ('+(variant==='a'?'A형':'B형')+')':'')+'</div>';
   if(isFinite(pw)) html += '<div class="sub" style="margin-top:4px;"><img class="uic" src="assets/ui/ic_shard.webp" alt=""> 정령력 <b style="color:var(--text);">'+fmtDmg(pw)+'</b></div>';
   html += '<div class="sub" style="margin-top:'+(isFinite(pw)?2:4)+'px;"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격력 <b style="color:var(--text);">'+fmtDmg(atk)+'</b></div>';
-  if(passive){
-    html += '<div style="margin-top:12px; padding:10px; background:var(--panel); border-radius:10px; text-align:left;">'
-      + '<div class="ttl">'+passive.icon+' '+passive.name+'</div>'
-      + '<div class="sub" style="margin-top:2px;">'+passive.desc+'</div>'
-      + '</div>';
-  }else{
-    html += '<div class="sub" style="margin-top:12px;">일반·레어는 특성 없음</div>';
-  }
   html += '</div>';
   openInfoOverlay('<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 적 정보', html);
 }
