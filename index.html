@@ -4274,7 +4274,7 @@ function friendMarkGoogle(){
 }
 let admUsers = { list:null, busy:false, err:'' };
 async function admLoadUsers(){
-  if(!isAdmin() || !friendsAvailable() || admUsers.busy) return;
+  if(!adminOn() || !friendsAvailable() || admUsers.busy) return;
   admUsers.busy = true; admUsers.err = '';
   try{
     const sn = await raidNet.db.doc('players').get(), v = (sn && sn.exists && sn.data() && typeof sn.data()==='object') ? sn.data() : {};
@@ -4515,7 +4515,7 @@ function renderFriendsTab(){
   const invs = friendLiveInvites(), reqs = friendIncomingReqs(), nReq = invs.length + reqs.length;
   const rep = homeRepSpirit(); friendPushRep();
   h += '<div class="fr-me"><span class="fr-av big">'+(rep?spArt(SPIRITS[rep]):'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">'+uiIc('log')+' 복사</button></div>';
-  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].concat(isAdmin() ? [['all','전체',admUsers.list ? admUsers.list.length : null]] : []).map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
+  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].concat(adminOn() ? [['all','전체',admUsers.list ? admUsers.list.length : null]] : []).map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-scroll fit-rest" data-below="0" data-min="160"><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
@@ -4532,7 +4532,7 @@ function renderFriendsTab(){
     if(reqs.length) h += '<div class="fr-cap">친구 요청</div><div class="fr-list">'+reqs.map(k=>{ const r = friendNet.reqs[k] || {};
       return '<div class="fr-row"><span class="fr-av">🙋</span><div class="fr-nm"><b>'+escTxt(String(r.name||raidNameOf(k)).slice(0,12))+'</b><small>친구 요청</small></div><button class="btn small" data-f-accept="'+k+'">수락</button><button class="fr-x" data-f-reject="'+k+'">거절</button></div>'; }).join('')+'</div>';
     if(sent.length) h += '<div class="fr-cap">보낸 요청 · 수락 대기 중</div><div class="fr-list">'+sent.map(k=>'<div class="fr-row"><span class="fr-av">📨</span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(state.friendSent[k].code?'코드 '+escTxt(state.friendSent[k].code)+' · ':'')+'수락을 기다리는 중</small></div><button class="fr-x" data-f-cancel="'+k+'">취소</button></div>').join('')+'</div>';
-  }else if(friendTab==='all' && isAdmin()){ // (v335) 관리자: 구글 로그인한 모든 유저 — 친구 / 친구 아님
+  }else if(friendTab==='all' && adminOn()){ // (v335) 관리자: 구글 로그인한 모든 유저 — 친구 / 친구 아님
     if(!admUsers.list && !admUsers.busy && !admUsers.err) setTimeout(admLoadUsers, 0);
     const ref = '<button class="fr-x" id="admUsersRe" style="font-size:12px; padding:3px 9px;">새로고침</button>';
     if(admUsers.err) h += '<div class="fr-empty">전체 유저를 못 불러옴 ('+escTxt(admUsers.err)+')<br><small>Firebase 규칙에 관리자 전체 읽기가 있어야 함</small><br>'+ref+'</div>';
@@ -7811,6 +7811,7 @@ const ADMIN_CODES = ['N6RAK876'];
 function isAdmin(){ return !!(typeof friendNet!=='undefined' && friendNet.on && ADMIN_CODES.includes(friendNet.code)); }
 // (v247) 관리자 계정의 모드 — 관리자/일반 진행을 따로 저장. 지금 모드 진행은 state, 반대쪽 진행은 state.otherSlot(문자열)에 보관 → 서버 저장에도 같이 올라감
 function adminModeOn(){ return (state.slotMode||'admin')==='admin'; }
+function adminOn(){ return isAdmin() && adminModeOn(); } // (v9.4.5) 관리자 기능은 관리자 모드에서만 (사용자 결정 10/16) — 일반 모드로 바꾸면 관리자 계정도 일반 사용자처럼
 function showModeSwitchModal(){
   if(!isAdmin()){ toast('관리자 전용'); return; }
   const toAdmin = !adminModeOn(), fresh = !state.otherSlot;
@@ -7888,7 +7889,7 @@ async function askAddMsg(uid, id, text, admin){ const mid = Date.now().toString(
   await raidNet.db.doc('inquiries/'+uid+'/'+id+'/msgs/'+mid).set({ m: text.slice(0,300), t, a: !!admin });
   await raidNet.db.doc('inquiries/'+uid+'/'+id).update(admin ? { rt: t } : { ut: t }); pushPing({ t:'askMsg', uid, id, mid }); }
 function askNewReply(){ const v = askNet.mine || {}; return Object.keys(v).some(k=>v[k] && (v[k].rt||0) > (state.askSeen||0)); }
-function inboxNewCount(){ if(!askNet.all || !isAdmin()) return 0; let n = 0; Object.keys(askNet.all).forEach(u=>{ const m = askNet.all[u] || {}; Object.keys(m).forEach(id=>{ const x = m[id]; if(x && x.text && askWaiting(x) && askLastUser(x) > (state.inboxSeen||0)) n++; }); }); return n; }
+function inboxNewCount(){ if(!askNet.all || !adminOn()) return 0; let n = 0; Object.keys(askNet.all).forEach(u=>{ const m = askNet.all[u] || {}; Object.keys(m).forEach(id=>{ const x = m[id]; if(x && x.text && askWaiting(x) && askLastUser(x) > (state.inboxSeen||0)) n++; }); }); return n; }
 function askMarkSeen(){ const v = askNet.mine || {}; let t = state.askSeen||0; Object.keys(v).forEach(k=>{ if(v[k] && v[k].rt > t) t = v[k].rt; }); if(t!==(state.askSeen||0)){ state.askSeen = t; save(); } mailBadgeUpdate(); }
 function inboxMarkSeen(){ let t = state.inboxSeen||0; const a = askNet.all || {}; Object.keys(a).forEach(u=>{ const m = a[u] || {}; Object.keys(m).forEach(id=>{ if(m[id] && askLastUser(m[id]) > t) t = askLastUser(m[id]); }); }); if(t!==(state.inboxSeen||0)){ state.inboxSeen = t; save(); } mailBadgeUpdate(); }
 function mailBadgeUpdate(){
@@ -7958,7 +7959,7 @@ function showMailDetail(id){ // (v243) 우편 한 통 — 작은 창으로 내�
   const dl = o.querySelector('#mdDel'); if(dl) dl.addEventListener('click', ()=>{ mailHide([m.id]); close(); if(document.getElementById('mailBox')) showMailboxModal(); });
 }
 function showMailSendModal(){
-  if(!isAdmin()){ toast('관리자 전용'); return; }
+  if(!adminOn()){ toast('관리자 모드에서만'); return; }
   let h = '<h3 style="text-align:center;">'+uiIc('mail')+' 우편 보내기</h3>'
     + '<div class="sub" style="text-align:center; font-size:11px; margin:-4px 0 8px;">내 UID <b id="msUid" style="color:var(--text); user-select:all;">'+raidNet.uid+'</b> <button class="btn secondary small" id="msUidCp" style="width:auto; padding:2px 8px;">복사</button><br>Firebase 규칙의 \'관리자UID\' 자리에 이 값</div>'
     + '<div class="seg" id="msTo"><button data-to="all" class="on">모든 플레이어</button><button data-to="one">한 명 (친구 코드)</button></div>'
@@ -8082,7 +8083,7 @@ function mailManageRows(tab){
   return out.sort((a,b)=>b.t-a.t);
 }
 function showMailManageModal(tab){
-  if(!isAdmin()){ toast('관리자 전용'); return; }
+  if(!adminOn()){ toast('관리자 모드에서만'); return; }
   if(tab) mailMngTab = tab;
   mailAdminWatch();
   const now = serverNow(), rows = mailManageRows(mailMngTab);
@@ -8110,7 +8111,7 @@ function showMailManageModal(tab){
     try{ await raidNet.db.doc(rows[+b.dataset.mmDel].path).delete(); toast('삭제됨'); showMailManageModal(); }catch(e){ raidNetError(e); } }));
 }
 function showMailEditModal(m){
-  if(!m || !isAdmin()) return;
+  if(!m || !adminOn()) return;
   const left = Math.max(1, Math.ceil(((m.exp||serverNow())-serverNow())/86400000));
   const o = document.createElement('div'); o.className = 'modal-bg'; o.style.zIndex = 210; o.id = 'mailEdit';
   o.innerHTML = '<div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="meClose">x</button><h3 style="text-align:center; margin:0 0 6px;">'+uiIc('rename')+' 우편 수정</h3>'
@@ -8137,7 +8138,7 @@ function showMailEditModal(m){
   });
 }
 function showAdminSetupModal(){
-  if(!isAdmin()){ toast('관리자 전용'); return; }
+  if(!adminOn()){ toast('관리자 모드에서만'); return; }
   const h = '<h3 style="text-align:center;">'+uiIc('admin')+' 관리자 세팅</h3><div class="sub" style="line-height:1.6;">· 정수·강화석·파편·룬석·티켓을 최대치로<br>· 모든 기능·모든 스테이지(노말·하드) 해금<br>· 모든 정령·장비 1개씩 · 룬 종류마다 1개씩 (이미 있으면 그대로)<br>· 강화·각성은 그대로</div>'
     + '<button class="btn gold" id="admApply" style="margin-top:12px;">적용하기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
@@ -9556,8 +9557,8 @@ const BINGO_LINE_RW = [ // 줄 보상 — BINGO_LINES 순서 (가로 1~5 · 세�
 ];
 const BINGO_FULL_RW = { star:300, items:{ pick_legendary:1 } };
 const BINGO_ADMIN_ONLY = false; // (v9.4.0) true = 관리자 계정만 보이고 할 수 있음(시작 전에도) — 연출 확인용 · (v9.4.1) 모두에게 풂 (사용자 결정 10/16)
-function bingoAdmin(){ return isAdmin() || !!state.adminUnlockAll; }
-function bingoTester(){ return (isAdmin() && adminModeOn()) || !!state.adminUnlockAll; } // (v9.4.5) 시험 버튼은 관리자 모드에서만 — 관리자 계정이 일반 모드로 바꿔도 보였음
+function bingoAdmin(){ return adminOn() || !!state.adminUnlockAll; }
+function bingoTester(){ return adminOn() || !!state.adminUnlockAll; } // (v9.4.5) 시험 버튼은 관리자 모드에서만 — 관리자 계정이 일반 모드로 바꿔도 보였음
 function bingoActive(){ const i = pickupPeriod().idx; if(BINGO_ADMIN_ONLY) return bingoAdmin() && i >= BINGO.idx-1 && i <= BINGO.idx; return i===BINGO.idx; }
 function bingoVisible(){ if(BINGO_ADMIN_ONLY) return bingoActive(); return bingoActive() || (!!state.adminUnlockAll && pickupPeriod().idx < BINGO.idx); } // 관리자는 시작 전에 미리 보기
 function bingoOpenMs(){ const late = PICKUP_LATE[BINGO.idx]; if(late) return late; const i = BINGO.idx, ym = Math.floor(i/2); return Date.UTC(Math.floor(ym/12), ym%12, i%2 ? 16 : 1) - 9*3600000; } // 빙고가 열리는 시각
@@ -12629,7 +12630,7 @@ async function showAskModal(){
   }catch(e){ const el = document.getElementById('askMine'); if(el) el.textContent = '불러오지 못함'; }
 }
 async function showInboxModal(){
-  if(!isAdmin()){ toast('관리자 전용'); return; }
+  if(!adminOn()){ toast('관리자 모드에서만'); return; }
   let h = '<h3 style="text-align:center;">'+uiIc('inbox')+' 문의함</h3><div class="seg" id="ibTabs"><button data-ibtab="wait" class="'+(ibTab==='wait'?'on':'')+'">'+uiIc('time')+' 답장 대기</button><button data-ibtab="all" class="'+(ibTab==='all'?'on':'')+'">'+uiIc('log')+' 전체</button></div><div id="ibList" class="sub" style="margin-top:8px;">불러오는 중…</div>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
@@ -15189,7 +15190,7 @@ function showTrialPrep(id){
   { const hb = document.getElementById('trHintBtn'); if(hb) hb.addEventListener('click', ()=>{ document.getElementById('trHint').innerHTML = '<div class="tr-hinttxt">💡 '+t.hint+'</div>'; }); }
   document.getElementById('trStart').addEventListener('click', ()=>{ closeModal(); state.skillFight = buildTrialFight(t); skillSel.key = null; skillIntroPending = true; state.skillAuto = false; save(); showSkillStageScreen(); });
 }
-function puzzleVisible(){ return PUZZLE_OPEN || isAdmin(); } // (build 396) 퍼즐 시련 — 공개 전엔 관리자만
+function puzzleVisible(){ return PUZZLE_OPEN || adminOn(); } // (build 396) 퍼즐 시련 — 공개 전엔 관리자만
 function trialTabList(){ return (state.trialTab==='puzzle' && puzzleVisible()) ? PUZZLE_TRIALS : TRIALS; }
 function renderTrialTab(){
   if(!isUnlocked('trial')) return lockedFeatureScreenHtml('trial');
@@ -18086,7 +18087,8 @@ function showUpdateBlock(){ // (v9.2.0) 앞자리 업데이트 — 닫을 수 �
 const ADMIN_UID = '8V7bN7HfeIRGHCsGu8aeAcJlUBq2';
 const MAINT_MSG = '업데이트 점검 중 · 잠시 뒤에 다시 열림';
 var maintNet = { on:false, v:null, was:false };
-function maintAdmin(){ return (typeof raidNet!=='undefined' && raidNet.uid===ADMIN_UID) || (typeof isAdmin==='function' && isAdmin()); }
+function maintAdminAcct(){ return (typeof raidNet!=='undefined' && raidNet.uid===ADMIN_UID) || (typeof isAdmin==='function' && isAdmin()); } // 관리자 계정인지 (모드와 상관없이)
+function maintAdmin(){ return maintAdminAcct() && adminModeOn(); } // (v9.4.5) 점검을 통과하는 건 관리자 모드일 때만 — 일반 모드면 점검 창에 「관리자 모드로」 버튼
 function maintOn(){ return !!(maintNet.v && maintNet.v.on===true); }
 function maintWatch(){
   const fb = typeof raidNet!=='undefined' && raidNet.fb; if(!fb || maintNet.on) return; maintNet.on = true;
@@ -18100,8 +18102,9 @@ function maintApply(){
     if(el){ const m = el.querySelector('.maint-msg'); if(m) m.textContent = msg; return; }
     try{ save(); }catch(e){}
     const d = document.createElement('div'); d.id = 'maintBlock'; d.className = 'upd-block';
-    d.innerHTML = '<div class="upd-block-box"><div class="ttl" style="font-size:16px;">🔧 점검 중</div><div class="sub maint-msg" style="font-size:12px; line-height:1.6; margin-top:6px; white-space:pre-line;"></div><div class="sub" style="font-size:11px; margin-top:8px;">점검이 끝나면 저절로 열림 · 진행 상황은 그대로 남음</div></div>';
+    d.innerHTML = '<div class="upd-block-box"><div class="ttl" style="font-size:16px;">🔧 점검 중</div><div class="sub maint-msg" style="font-size:12px; line-height:1.6; margin-top:6px; white-space:pre-line;"></div><div class="sub" style="font-size:11px; margin-top:8px;">점검이 끝나면 저절로 열림 · 진행 상황은 그대로 남음</div>'+(maintAdminAcct() ? '<button class="btn" id="maintToAdmin" style="margin-top:12px; width:100%;">'+uiIc('admin')+' 관리자 모드로</button>' : '')+'</div>'; // (v9.4.5) 관리자 계정이 일반 모드면 나에게만 전환 버튼
     d.querySelector('.maint-msg').textContent = msg;
+    { const tb = d.querySelector('#maintToAdmin'); if(tb) tb.addEventListener('click', async ()=>{ tb.disabled = true; tb.textContent = '전환 중…'; try{ await adminModeSwitch(); }catch(e){ tb.disabled = false; toast('전환 실패'); } }); }
     document.body.appendChild(d);
     return;
   }
