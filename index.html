@@ -9706,23 +9706,27 @@ function bingoPlay(b, u, gold){
       toastReward(u.r.rw, uiIc('dice')+' '+u.num+'번 당첨'+(u.r.full ? ' · 빙고 완성!' : u.r.lines.length ? ' · '+u.r.lines.length+'줄 빙고!' : '')); }
     if(activeTab==='home' && !document.getElementById('battleScreen')) render();
   }
-  ov.addEventListener('click', finish);
+  let stage = 'roll'; // (v10.0.1) 건너뛰기 = 굴리기만 건너뜀 — 당첨이면 「당첨!」→ 칸으로 날아가는 모습, 꽝이면 「꽝」 도장은 짧게라도 보여 줌 (사용자 요청 10/17)
+  ov.addEventListener('click', ()=>{ if(stage!=='roll' || A.done) return; A.fast = true; A.timers.forEach(clearTimeout); A.timers = []; ov.querySelector('.bg-ov-s').style.visibility = 'hidden'; reveal(); });
   // 1) 굴리기 — 번호를 가린 공이 굴러가다 점점 느려짐 (황금 티켓은 짧게) · 번호는 멈출 때까지 안 보임 (사용자 결정 10/16)
   let k = 0, gap = 40; const steps = gold ? 5 : 15; // 약 1.5초
   const roll = ()=>{ if(A.done) return;
     if(k < steps){ if(k%2===0 || gap>110) sfx('click'); k++; gap = Math.min(260, gap*1.12); later(roll, gap); return; }
-    // 2) 멈추며 번호 공개 — 잠깐 번호만 보여 준 뒤 판정
-    show(u.num); ball.classList.remove('spin'); ball.classList.add('land', 'reveal'); sfx('summonCharge');
-    later(judge, 520);
+    reveal();
   };
-  const judge = ()=>{
+  const reveal = ()=>{ // 2) 멈추며 번호 공개 — 잠깐 번호만 보여 준 뒤 판정
+    if(stage!=='roll') return; stage = 'reveal';
+    show(u.num); ball.classList.remove('spin'); ball.classList.add('land', 'reveal'); sfx('summonCharge');
+    later(judge, A.fast ? 260 : 520);
+  };
+  const judge = ()=>{ stage = 'judge';
     if(!u.r){ // 꽝 — 회색으로 바뀌고 흔들린 뒤 「꽝」 도장 → 사라짐
       ball.classList.remove('land'); ball.classList.add('miss'); sfx('fail');
       const st = document.createElement('div'); st.className = 'bg-kwang'; st.textContent = '꽝'; ov.appendChild(st);
-      later(finish, 1150); return; }
+      later(finish, A.fast ? 800 : 1150); return; }
     // 당첨 — 빛이 퍼지고 번호가 빛 구슬로 날아감
     ov.classList.add('hit'); txt.textContent = '당첨!'; txt.className = 'bg-ov-t hit'; sfx('claim');
-    later(()=>bingoFly(ball, u, A, finish), 620);
+    later(()=>bingoFly(ball, u, A, finish), A.fast ? 420 : 620);
   };
   roll();
 }
@@ -9782,6 +9786,13 @@ function showBingoModal(){
   o.addEventListener('click', ev=>{ if(ev.target===o) close(); });
   o.querySelector('#bingoClose').addEventListener('click', close);
   bingoRefresh();
+  requestAnimationFrame(()=>bingoLockH(o)); // 창 테두리(frameModal)를 씌운 다음에 잼
+}
+function bingoLockH(o){ // (v10.0.1) 탭을 바꿀 때마다 창 높이가 바뀌어 탭 줄이 위아래로 움직이던 것 — 세 탭 중 가장 큰 높이로 고정 (화면보다 크면 화면 높이까지, 그 안에서 스크롤)
+  const m = o && o.isConnected && o.querySelector('.bg-modal'); if(!m) return;
+  const keep = bingoTab; m.style.height = ''; let h = 0;
+  ['board','drawn','mis'].forEach(t=>{ bingoTab = t; bingoRefresh(); h = Math.max(h, m.offsetHeight); });
+  bingoTab = keep; bingoRefresh(); m.style.height = h+'px';
 }
 function bingoLineHtml(b, l, mark){ // 줄 보상 칸 — 위(세로줄)·오른쪽(가로줄)·모서리(대각선)
   const rw = BINGO_LINE_RW[l], L = bingoRwList(rw), main = L[0], on = bingoLnShown(b, l), cnt = BINGO_LINES[l].filter(i=>bingoOpened(b, i) && i!==bingoHide).length;
@@ -11956,6 +11967,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:452, v:'10.0.1', date:'2026-10-17', secs:[
+    { t:'빙고', items:[ '탭을 바꿔도 창 크기가 그대로 — 탭 줄이 위아래로 움직이지 않음', '뽑기 연출을 눌러 건너뛰어도 당첨이면 「당첨!」과 칸으로 날아가는 모습, 꽝이면 「꽝」 도장은 보여 줌' ] } ] },
   { build:451, v:'10.0.0', date:'2026-10-17', secs:[
     { t:'보스 토벌 (새 콘텐츠)', items:[ '도전 화면에 「보스 토벌」 — 챕터 보스 6종을 1~6단계로 다시 토벌', '보스마다 그 속성 장비가 나옴 — 서리거인 물결 · 용암군주 화염 · 고대수목 숲결 · 유적파수꾼 빛 · 그림자 군주 그림자 · 심연의 수정 무작위', '기력 하루 80 (한 판 20 · 하루 4판) · 최대 160까지 쌓임 · 이긴 판만 기력을 씀', '한 판마다 장비 1~2개 + 각인석 · 정련석 · 변환석(확률) · 정수 — 높은 단계일수록 좋은 등급', '신화 장비 천장 40판 — 40판 안에 신화 장비가 꼭 나옴', '한 번 깬 보스·단계는 소탕 · 토벌 장비 자동 분해 설정' ]},
     { t:'장비 주효과 · 품질', items:[ '새로 얻는 장비는 주효과가 무작위 — 무기: 공격력 · 치명타 확률 · 치명타 피해 · 체력 · 속도 / 방어구: 체력 · 받는 피해 감소 · 공격력 · 속도 · 흡혈', '이미 가진 장비는 그대로 (무기 공격력 · 방어구 체력 · 품질 75)', '「주효과 바꾸기」 변환석 1개 — 같은 효과가 다시 나올 수도 있음', '품질 0~100 — 주효과 크기 ×0.7~×1.1 · 「품질 올리기」 정련석 1개: 지금보다 높게 나오면 성공, 낮으면 그대로', '합성 결과 장비의 주효과·품질은 무작위', '장비 부가 능력 → 「장비 각인」' ]},
@@ -18308,7 +18321,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 451, APP_VERSION = '10.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 452, APP_VERSION = '10.0.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
