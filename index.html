@@ -2440,9 +2440,8 @@ function subTotals(k){
   if(transLevel(k)>=5) t.spd += 3; // 초월 5단계 특전
   return t;
 }
-function tankWeaponHp(k){ const sp = SPIRITS[k]; return (sp && sp.element==='wood' && sp.variant==='a') ? 1 + TANK_WEAPON_HP*(weaponMult(k)-1) : 1; } // (v8.16.0) 현무 계열(탱커)은 스킬이 공격력을 안 써서 무기가 쓸모없었음 → 무기 효과의 절반을 체력으로도
-const TANK_WEAPON_HP = 0.5;
-function spiritHpMult(k){ return armorMult(k) * tankWeaponHp(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
+// (v9.5.0) 현무 계열 「무기 효과 절반을 체력으로」(v8.16.0)는 없앰 (사용자 결정 10/17)
+function spiritHpMult(k){ return armorMult(k) * (1 + subTotals(k).hp) * transMult(k); } // 체력 배율 = 방어구 × 각인·장비 부가 능력 × 초월
 // (v298) 초월 10단계 특전 — 종(계열)마다 역할에 맞게 다름 (사용자 결정)
 const TRANS10 = {
   fire_a:  { ic:'🔥', d:'전투 첫 행동 피해 +40%', sub:{ emp:.40 } },
@@ -7214,7 +7213,7 @@ function spiritStatSheetHtml(k){
   let h = '<div class="st-sheet">';
   const n0 = v=> Math.round(v).toLocaleString(), part = st=> src.filter(([nm,o])=>o[st] && nm!=='룬').map(([nm,o])=>mul(nm, 1+o[st])).join('');
   h += row(uiIc('atk'), '공격력', n0(u.atk), '<span>정령력 '+n0(unitPower(k))+'</span>'+mul('무기', weaponMult(k))+part('atk')+mul('초월', tm)+mul('룬', 1+rAtk));
-  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k)*tankWeaponHp(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp));
+  h += row(uiIc('shield'), '체력', n0(u.maxHp), mul('방어구', armorMult(k))+part('hp')+mul('초월', tm)+mul('룬', 1+rHp));
   h += row('💨', '속도', String(spd0 + spdAdd), '<span>기본 '+spd0+'</span>'+(spdAdd ? '<span>'+from('spd')+'</span>' : ''));
   h += row(uiIc('target'), '치명타 확률', pct(crit), '<span>기본 '+pct(BASE_CRIT)+'</span>'+(crit>BASE_CRIT ? '<span>'+from('crit')+'</span>' : ''));
   h += row('💥', '치명타 피해', '×'+CRIT_MULT, '');
@@ -11954,6 +11953,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:450, v:'9.5.0', date:'2026-10-17', secs:[
     { t:'정령 능력치', items:[ '정령 창에 「📊 능력치」 — 공격력·체력을 실제 수치로 · 속도 · 치명타 확률 · 치명타 피해 · 흡혈 · 받는 피해 감소', '능력치마다 어디서 얼마나 늘었는지 (무기 · 방어구 · 각인 · 장비 부가 능력 · 장비 고유 효과 · 초월 · 룬)', '특성 · 패시브 설명도 같이' ]},
+    { t:'정령', items:[ '현무 계열의 「무기 효과 절반만큼 체력도 오름」을 없앰 — 무기는 모든 정령이 공격력만 올림' ]},
     { t:'정령 빙고', items:[ '「화로 수확 10회」 미션을 「화로 불씨 수확 300개」로 — 이미 수확한 횟수는 1회당 불씨 12개로 쳐 줌 · 10회를 채운 미션은 그대로 완료', '「모두 거두기」로 거둔 불씨도 빙고에 셈 (예전엔 안 셌음)' ]}
   ]},
   { build:449, v:'9.4.6', date:'2026-10-16', secs:[
@@ -17092,7 +17092,7 @@ function showManageModal(key){
   html += spiritLineHtml(key); // (v219) 종(계열): 같은 속성·같은 종의 등급별 모습
   { const ps = passiveFor(key); if(ps) html += '<div class="mg-trait">'+ps.icon+' <b>특성 · '+ps.name+'</b><span>'+ps.desc+'</span></div>'; } // (v296) 정령 관리 창에도 특성(최대 강화 +N 등) 표시
   html += '<div class="sub">보유 '+ownedCount(key)+'개 · 정령력 '+fmtDmg(unitPower(key))+' · <img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투력 '+fmtCP(spiritCP(key))+'</div>'; // (v246) 강화 단계는 아래 강화 줄에 있으니 한 줄로
-  if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)*tankWeaponHp(key)-1)+'%</div>';
+  if(weaponMult(key)>1 || armorMult(key)>1) html += '<div class="sub"><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 공격 +'+eqPct(weaponMult(key)-1)+'% · <img class="uic" src="assets/ui/ic_shield.webp" alt=""> 체력 +'+eqPct(armorMult(key)-1)+'%</div>';
   { const kit = LINE_KITS[sp.element+'_'+sp.variant]; // (v170) 옛 패시브 대신 실제 전투에서 쓰는 역할·스킬
     html += '<div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;"><button class="btn secondary small" id="kitInfoBtn" style="margin-top:8px; width:auto; padding:5px 12px;">'+kit.icon+' '+kit.role+' · 스킬 보기</button><button class="btn secondary small" id="statSheetBtn" style="margin-top:8px; width:auto; padding:5px 12px;">📊 능력치</button></div>'; } // (v9.5.0)
   html += '</div>';
