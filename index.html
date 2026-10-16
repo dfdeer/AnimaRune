@@ -2843,7 +2843,7 @@ function showStoneExModal(id){
 // (v8.5.0) 사용자 결정: 강화석 교환소(상단 팝업)를 정령 마을 「대장간」으로 옮김 — 마을 지도의 작업장 자리
 function renderForgeView(){
   const st = state.enhanceStone||0;
-  let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>대장간</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="forge">ⓘ 설명</button></div>';
+  let h = '<div class="vl-sub"><b>대장간</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="forge">ⓘ 설명</button></div>';
   h += '<div class="card fg-hero">'+VL_IMG('work')+'<div><div class="ttl">강화석으로 만들기</div><div class="sub">보유 <img class="uic" src="assets/ui/ic_stone.webp" alt=""> <b style="color:var(--text);">'+st.toLocaleString()+'</b><br>한도는 월요일 0시 초기화</div></div></div>';
   h += STONE_EX.map(it=>{ const left = it.limit - stoneExBought(it.id), can = left>0 && st>=it.price;
     return '<div class="sx-row"><span class="sx-ic">'+it.icon+'</span><span class="sx-tx"><b>'+it.name+'</b><small>이번 주 '+left+' / '+it.limit+'</small></span><button class="btn small'+(can?' gold':'')+'" data-sx="'+it.id+'" '+(can?'':'disabled')+'><img class="uic" src="assets/ui/ic_stone.webp" alt="">'+it.price+'</button></div>'; }).join('');
@@ -5055,7 +5055,7 @@ function bossBannerHtml(o){ // (v8.16.0) 레이드·월드 보스 화면 머리 
 function raidDetailHtml(){
   const info = raidWeekBoss(), cur = raidDiffById(state.raidDiff), prog = (state.raidProgress && state.raidProgress[info.id]) || [];
   const wd = (state.raidWeekDone && state.raidWeekDone.week===raidWeekKey()) ? state.raidWeekDone.diffs : [];
-  let h = '<div class="rd">' + '<div style="display:flex; gap:6px; align-items:stretch;"><button class="btn secondary small" id="raidBack" style="width:auto; margin:0; padding:6px 12px;">‹ 보스 목록</button><div style="flex:1;"></div><div class="rd-tk" style="flex-direction:row; gap:6px;">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>'
+  let h = '<div class="rd">' + '<div style="display:flex; gap:6px; align-items:stretch;"><div style="flex:1;"></div><div class="rd-tk" style="flex-direction:row; gap:6px;">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>'
     + (raidNet.code ? '<button class="btn" id="raidReopenBtn" style="margin:0;">🚪 방으로 돌아가기 · '+raidNet.code+'</button>' : '');
   const br = BOSS_RUNES[info.id], ec = ELEMENT_INFO[info.element].color, rec = raidRecCP(info.id, cur.id);
   // (v8.16.0) 사용자 요청: 보스 화면을 웅장하게 · 덜 어수선하게 — 큰 보스 배너 + 난이도 한 줄 + 보상 한 칸
@@ -5088,7 +5088,6 @@ function bindRaidTab(){
   if(q('raidShopBtn')) q('raidShopBtn').addEventListener('click', showRaidShop);
   if(q('raidSweepBtn')) q('raidSweepBtn').addEventListener('click', raidSweep);
   document.querySelectorAll('[data-raid-open]').forEach(el=>el.addEventListener('click', ()=>{ state.raidBossSel = el.dataset.raidOpen; raidView = 'detail'; save(); render(); window.scrollTo(0,0); }));
-  if(q('raidBack')) q('raidBack').addEventListener('click', ()=>{ raidView = 'list'; render(); });
   if(q('raidBossInfo')) q('raidBossInfo').addEventListener('click', ()=>{ const i = raidWeekBoss(); openInfoOverlay('📖 상세 정보', bossBannerHtml({ img: bossImg(i.id, 'bb-img', i.icon), name: i.name, color: ELEMENT_INFO[i.element].color, sub:'<span style="color:'+ELEMENT_INFO[i.element].color+';">'+ELEMENT_INFO[i.element].icon+' '+ELEMENT_INFO[i.element].name+'</span>', small:true }) + raidBossInfoHtml(i)); });
   document.querySelectorAll('[data-raid-tabdiff]').forEach(el=>el.addEventListener('click', ()=>{ state.raidDiff = el.dataset.raidTabdiff; save(); render(); }));
   if(q('raidReopenBtn')) q('raidReopenBtn').addEventListener('click', ()=>{ if(raidNet.doc) raidOnDoc({exists:true, data:()=>raidNet.doc}); });
@@ -10886,6 +10885,39 @@ function showGuideModal(){
 }
 function mainScrollMark(main){ main.classList.toggle('scrolled', main.scrollTop>6); } // (v317)
 const TOP_MARK = '<!--top-->'; // 화면 html에 넣으면 이 앞부분이 위쪽에 고정됨
+// (v9.4.5) 화면 이동 기록 — ← 버튼(과 기기 뒤로 가기)은 홈이 아니라 바로 이전 화면으로 (사용자 요청 10/16)
+// 화면 = 탭 + 레이드 목록/상세 + 마을 지도/건물 · 홈에 오면 기록을 비움 · 이미 기록에 있는 화면으로 가면 거기까지 되감음(왔다 갔다 해도 쌓이지 않게)
+let navStack = [], navCur = null, navGoingBack = false;
+const NAV_NM = { home:'홈', summon:'소환', spirits:'정령', hearth:'마을', pickup:'픽업', rift:'균열', sanctum:'성역', tower:'탑', trial:'시련', pass:'패스', dispatch:'파견', dungeon:'요일 던전', challenge:'도전', expedition:'출정', raid:'레이드', worldboss:'월드 보스', friends:'친구', duel:'결투', stage:'탐험' };
+const VL_NM = { hearth:'화로', mine:'광산', forge:'대장간' };
+function navSnap(){ return { tab:activeTab, rv: activeTab==='raid' ? raidView : '', vv: activeTab==='hearth' ? villageView : '' }; }
+function navKey(x){ return x.tab+'|'+(x.rv||'')+'|'+(x.vv||''); }
+function navTrack(){
+  const cur = navSnap(), k = navKey(cur);
+  if(cur.tab==='home'){ navStack = []; navCur = cur; navGoingBack = false; return; }
+  if(navCur && navKey(navCur)!==k && !navGoingBack){
+    const at = navStack.findIndex(x=>navKey(x)===k);
+    if(at>=0) navStack = navStack.slice(0, at); else { navStack.push(navCur); if(navStack.length>20) navStack.shift(); }
+  }
+  navCur = cur; navGoingBack = false;
+}
+function navParent(){ // 기록이 없을 때(앱을 이 화면에서 켬 등) 위 단계
+  if(activeTab==='raid' && raidView==='detail') return { tab:'raid', rv:'list' };
+  if(activeTab==='hearth' && villageView!=='map') return { tab:'hearth', vv:'map' };
+  if(CHALLENGE_TABS.includes(activeTab)) return { tab:'challenge' };
+  if(activeTab==='worldboss') return { tab:'raid', rv:'list' };
+  return { tab:'home' };
+}
+function navTarget(){ return navStack.length ? navStack[navStack.length-1] : navParent(); }
+function navLabel(t){ if(t.tab==='raid' && t.rv==='detail') return '레이드 보스'; if(t.tab==='hearth' && t.vv && t.vv!=='map') return VL_NM[t.vv]||'마을'; return NAV_NM[t.tab]||'홈'; }
+function navBack(){
+  const t = navTarget(); if(navStack.length) navStack.pop();
+  navGoingBack = true; activeTab = t.tab;
+  if(t.tab==='raid') raidView = t.rv || 'list';
+  if(t.tab==='hearth') villageView = t.vv || 'map';
+  render(); save();
+  const m = document.getElementById('main'); if(m) m.scrollTop = 0;
+}
 const BODY_BOX_TABS = ['spirits','rift','pass','sanctum']; // (v9.4.5) TOP_MARK 뒤(목록)를 한 상자(.scr-body)에 넣어 그 상자만 스크롤 — 화면 전체가 움직이지 않게
 let lastRenderedTab = null;
 function headerNum(n){ n = Math.floor(n||0); if(n < 100000) return String(n); const m = n/10000; return (m < 100 ? Math.floor(m*10)/10 : Math.floor(m))+'만'; }
@@ -10965,9 +10997,10 @@ function render(){
   const TAB_RENDER = { pickup:renderPickupTab, rift:renderRiftTab, sanctum:renderSanctumTab, summon:renderSummonTab, hearth:renderHearthTab, spirits:renderSpiritsTab, tower:renderTowerTab, trial:renderTrialTab, pass:renderPassTab, dispatch:renderDispatchTab, dungeon:renderDungeonTab, challenge:renderChallengeTab, expedition:renderExpeditionTab, raid:renderRaidTab, worldboss:renderWorldBossTab, home:renderHomeTab, friends:renderFriendsTab, duel:renderDuelTab };
   { // (v187) 화면 html에서 TOP_MARK 앞부분은 위쪽 고정 영역으로(← 홈 버튼 포함), 뒤는 스크롤 영역
     // (v213) 예전엔 화면을 한 번 그린 뒤 다시 읽어서 또 그려서(두 번 해석) 그림이 매번 새로 만들어졌음 — 글자에서 나눈 뒤 한 번만 그림
-    const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">'+(CHALLENGE_TABS.includes(activeTab) ? '← 도전' : activeTab==='worldboss' ? '← 레이드' : '← 홈')+'</button>' : '';
+    navTrack(); // (v9.4.5) 들어온 순서를 기억 — ← 버튼은 바로 이전 화면으로
+    const back = (HOME_MODE_TABS.includes(activeTab) && !(activeTab==='expedition' && xpRunOn())) ? '<button class="home-back" id="homeBackBtn">← '+navLabel(navTarget())+'</button>' : '';
     const html = (TAB_RENDER[activeTab] || renderStageTab)(), k = html.indexOf(TOP_MARK);
-    const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '');
+    const rKey = activeTab+'|'+(activeTab==='spirits' ? spiritsSub : '')+'|'+(typeof summonPage!=='undefined' ? summonPage : '')+'|'+(activeTab==='raid' ? raidView : '')+'|'+(activeTab==='hearth' ? villageView : '');
     const sameScreen = main.__rKey === rKey; main.__rKey = rKey;
     const keepSc = sameScreen ? [...main.querySelectorAll('.fit-scroll')].map(e=>[e.dataset.sk||'', e.scrollTop]) : null; // (v9.4.5) 같은 화면을 다시 그려도 목록 상자 스크롤 위치 유지
     main._keepSc = keepSc;
@@ -11877,6 +11910,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:448, v:'9.4.5', date:'2026-10-16', secs:[
+    { t:'뒤로 가기', items:[ '← 버튼(과 휴대폰 뒤로 가기)은 홈이 아니라 바로 이전 화면으로 — 예: 레이드 보스 → 레이드 목록 → 홈 · 마을 건물 → 마을 · 탑 → 도전', '레이드 보스 화면의 「보스 목록」 · 마을 건물 안의 「← 마을」 버튼은 위 ← 버튼 하나로 합침' ]},
     { t:'화면 스크롤', items:[ '목록이 있는 화면은 목록만 스크롤 — 위쪽 제목·탭·버튼은 그대로 (정령 · 균열 · 패스 · 시련 · 레이드 · 월드 보스 · 출정 순위)', '출정 중엔 지도만 스크롤 — 위 막대 · 아래 버튼 줄은 움직이지 않음', '탭이 있는 창(업적 · 가이드북 · 도감 · 설정 · 프로필 등)은 탭을 바꿔도 창 크기가 그대로 — 탭이 위아래로 움직이던 것 수정', '화면이 낮은 폰에서 내용이 조금 넘쳐 화면 전체가 스크롤되던 것 수정 — 큰 그림을 줄여 한 화면에 (마을 · 출정 · 레이드 · 월드 보스 · 소환 · 픽업)' ]},
     { t:'전투 화면', items:[ '화면이 작은 폰에서 정령이 너무 작게 보이던 것 수정 — 전장을 넓히고 정령을 더 크게', '고른 적 정보 막대는 행동 순서 줄 아래에 겹쳐 뜸 (늘 자리를 차지하지 않음)', '고른 대상 표시가 다른 정령의 상태 아이콘에 가려지던 것 수정', '전투 상태 아이콘 크기를 줄임', '특수 스테이지 규칙 줄을 없애고 위쪽 제목 옆 아이콘으로 — 누르면 규칙과 우리 팀 배율', '좁은 화면에서 대상 선택 틀 · 차례 고리를 정령 크기에 맞춤', '앞줄·뒷줄 정령 크기 차이를 줄임' ]},
     { t:'픽업 · 균열', items:[ '픽업이 끝나고 다음 픽업이 열리기 전에는 균열 입구도 숨김 (10월 16일은 10시에 열림)' ]},
@@ -13285,7 +13319,7 @@ function vlBld(o){ // o: { k, x, y, svg, sign, st, bub, lock }
     + VL_IMG(o.svg)+'<span class="vl-sign">'+o.sign+'</span>'+(o.st ? '<span class="vl-st">'+o.st+'</span>' : '')+'</div>';
 }
 function renderVillageTab(){
-  if(villageView==='hearth') return '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>화로</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="hearth">ⓘ 설명</button><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
+  if(villageView==='hearth') return '<div class="vl-sub"><b>화로</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="hearth">ⓘ 설명</button><button class="btn small" id="hearthUpBtn">'+uiIc('hearth')+' 강화</button></div>' + renderHearthHero(); // 강화는 창으로 (스크롤 없이)
   if(villageView==='mine') return renderMineView();
   if(villageView==='forge') return renderForgeView(); // (v8.5.0)
   vmPreload(); // 광산에 들어가기 전에 칸 그림을 받아 둠
@@ -13341,7 +13375,7 @@ function vlHelpHtml(k){
 }
 function renderMineView(){
   vmPreload();
-  let h = '<div class="vl-sub"><button class="btn small secondary" data-vl="map">← 마을</button><b>광산</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="mine">ⓘ 설명</button><button class="btn small" id="vmUpBtn">'+uiIc('pick')+' 강화</button></div>';
+  let h = '<div class="vl-sub"><b>광산</b><span style="flex:1;"></span><button class="btn small secondary vl-help" data-vl-help="mine">ⓘ 설명</button><button class="btn small" id="vmUpBtn">'+uiIc('pick')+' 강화</button></div>';
   h += '<div id="vmWrap">'+vmMineHtml()+'</div>';
   return h;
 }
@@ -17501,7 +17535,7 @@ function attachHandlers(){
   if(activeTab==='raid') bindRaidTab();
   if(activeTab==='worldboss') bindWorldBossTab(); // (v278)
   if(activeTab==='home') bindHomeTab();
-  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', ()=>{ activeTab = CHALLENGE_TABS.includes(activeTab) ? 'challenge' : activeTab==='worldboss' ? 'raid' : 'home'; render(); save(); }); } // (v266) 탑·요일 던전·시련은 도전 화면으로
+  { const hb = document.getElementById('homeBackBtn'); if(hb) hb.addEventListener('click', navBack); } // (v266) 탑·요일 던전·시련은 도전 화면으로 · (v9.4.5) 바로 이전 화면으로 (navStack)
   document.querySelectorAll('[data-manage]').forEach(el=>{
     el.addEventListener('click', ()=>showManageModal(el.dataset.manage));
   });
@@ -18201,7 +18235,6 @@ function appBack(){
     const ex = document.getElementById('skillExitBtn'); if(ex) ex.click(); // (v268) 나가기 버튼과 같은 확인창
     return true;
   }
-  if(activeTab==='raid' && typeof raidView!=='undefined' && raidView==='detail'){ const rb = document.getElementById('raidBack'); if(rb){ rb.click(); return true; } }
   if(activeTab==='expedition' && xpRunOn()){ xpLockBlock(); return true; } // (v315) 출정 중 뒤로 가기
   { const hb = document.getElementById('homeBackBtn'); if(hb){ hb.click(); return true; } }
   if(activeTab!=='home'){ activeTab = 'home'; render(); save(); return true; }
