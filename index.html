@@ -1198,6 +1198,10 @@
   .bs-teamtag{position:absolute; bottom:4px; z-index:4; font-size:11px; font-weight:900; padding:2px 9px; border-radius:8px; color:#fff; border:1.5px solid #fff; box-shadow:0 1px 4px #000a; text-shadow:0 1px 2px #0009;} /* (v294) 밝은 배경(설원 등)에서도 보이게 흰 테두리·그림자 */
   .bs-teamtag.me{left:8px; background:#3a5fcc;} .bs-teamtag.en{right:8px; background:#c0313c;}
   .bs-roundtag{position:absolute; bottom:4px; left:50%; transform:translateX(-50%); z-index:4; font-size:12px; font-weight:900; padding:2px 12px; border-radius:8px; white-space:nowrap; color:#ffe7a0; background:#000000a6; border:1.5px solid #ffe7a0aa; box-shadow:0 1px 4px #000a;} /* (build 398) 라운드 표시 */
+.bs-field .sky-ov{position:absolute; inset:0; z-index:1; pointer-events:none; transition:background .6s;} .bs-field.sky-night .sky-ov{background:radial-gradient(ellipse at 80% 10%, #9fb4ff33 0 8%, #0000 30%), linear-gradient(180deg,#02051ef0,#060a2ce0 55%,#02041ad0); mix-blend-mode:multiply;} .bs-field.sky-day .sky-ov{background:radial-gradient(ellipse at 82% 14%, #fff2b0aa 0 9%, #ffd86a44 24%, #0000 50%), linear-gradient(180deg,#ffe9a01f,#0000 60%);}
+  .sky-ov i{position:absolute; top:40px; right:12px; font-style:normal; font-size:26px; filter:drop-shadow(0 0 8px #fff8); animation:skyBob 3s ease-in-out infinite;} @keyframes skyBob{50%{transform:translateY(-3px);}}
+  .bu.sky-hid .bu-icon{filter:brightness(.32) saturate(.2); opacity:.55;} .bu.sky-hid .bu-body::after{content:'🌑'; position:absolute; top:-4px; right:-2px; font-size:14px; z-index:3;} .bu.sky-lit .bu-icon{filter:drop-shadow(0 0 6px #ffe27a) drop-shadow(0 0 12px #ffd24a);}
+  .bs-roundtag.sky-n{background:#141c5ccc; border-color:#9fb4ff; color:#dfe6ff;} .bs-roundtag.sky-d{background:#6a4a10cc; border-color:#ffd86a; color:#fff3c2;} .bs-roundtag small{font-size:10px; opacity:.85;} .bs-banner.sky-bn span{background:linear-gradient(90deg,#141c5c,#2a3a9a,#141c5c);} .bs-banner.sky-bd span{background:linear-gradient(90deg,#8a5a10,#d9a032,#8a5a10);} /* (v10.0.3) 균열 낮과 밤 표시 */
   .bs-roundtag.last{color:#fff; background:#c0313ccc; border-color:#fff;} /* 제한이 있는 전투의 마지막 라운드 */
 
   /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
@@ -7151,6 +7155,7 @@ function battleUnitHtml(u, opts){
   const cls = ['bu', isEnemy?'bu-enemy':'bu-mine'];
   if(!u.alive) cls.push('bu-dead');
   if(u.alive && u.st){ if(u.st.freeze) cls.push('st-frz'); if(u.st.burn>0) cls.push('st-burn'); if(u.st.poison) cls.push('st-poi'); if(u.st.curse) cls.push('st-curse'); if(u.st.guard) cls.push('st-guard'); } // (v305) 상태 이상 연출
+  { const sk = state.skillFight; if(sk && sk.riftRule==='sky' && isEnemy && u.alive && !u.inert && skyNight(sk)) cls.push(skyLit(sk, u) ? 'sky-lit' : 'sky-hid'); } // (v10.0.3) 낮과 밤 — 밤에 숨은 적은 어둡게 · 빛나는 적은 금빛
   if(artFlipFor(u)) cls.push('bu-flip');
   if(opts.cur) cls.push('bu-cur');
   if(opts.sel) cls.push('bu-target');
@@ -7494,7 +7499,8 @@ function showSkillStageScreen(){
     : chapterTheme(Math.floor(sf.stageIdx/CHAPTER_LENGTH)+1).icon+' '+stageLabel(sf.stageIdx);
   const rdMax = sf.mode==='worldboss' ? WB_ROUNDS : sf.mode==='trial' ? ((trialDef(sf.trialId)||{}).maxRounds||0) : 0;
   const rdNow = rdMax ? Math.min(sf.round, rdMax) : shownRound(sf);
-  const roundTag = '<span class="bs-roundtag'+(rdMax && sf.round>=rdMax ? ' last' : '')+'">라운드 '+rdNow+(rdMax ? ' / '+rdMax : '')+'</span>';
+  const skyN = sf.riftRule==='sky' ? skyNight(sf) : null, skyLeft = sf.riftRule==='sky' ? 2 - (((sf.round||1)-1) % 2) : 0; // (v10.0.3) 낮과 밤 — 지금 낮·밤과 바뀌기까지 남은 라운드
+  const roundTag = '<span class="bs-roundtag'+(rdMax && sf.round>=rdMax ? ' last' : '')+(skyN===null ? '' : skyN ? ' sky-n' : ' sky-d')+'">라운드 '+rdNow+(rdMax ? ' / '+rdMax : '')+(skyN===null ? '' : ' · '+(skyN ? '🌙 밤' : '☀️ 낮')+' <small>'+(skyLeft===1 ? '다음 R '+(skyN ? '낮' : '밤') : skyLeft+'R 남음')+'</small>')+'</span>';
   html += '<div class="bs-top"><button class="bs-exit" id="skillExitBtn">← 나가기</button>'
     + '<div class="bs-title">'+titleTxt+(sf.special ? '<button class="bs-spc" id="bsSpecialBtn" aria-label="특수 규칙"><img class="uic" src="assets/ui/ic_special.webp" alt=""></button>' : '')+'</div>'
     + '<div style="display:flex; gap:4px;">'
@@ -7522,7 +7528,8 @@ function showSkillStageScreen(){
   // (v9.4.4) 특수 규칙 줄은 없앰 — 위쪽 제목 옆 아이콘(#bsSpecialBtn)을 누르면 규칙 창 (사용자 결정 10/16: 작은 폰에서 전장이 좁아짐)
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
-  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(anyCrit ? ' fx-shake' : '')+(resShown && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
+  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(skyN===null ? '' : skyN ? ' sky-night' : ' sky-day')+(anyCrit ? ' fx-shake' : '')+(resShown && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
+    + (skyN===null ? '' : '<div class="sky-ov"><i>'+(skyN ? '🌙' : '☀️')+'</i></div>') // (v10.0.3) 낮·밤 하늘빛
     + '<div class="bs-logtop"><div class="bs-log">'+logText((sf.log||[]).slice(-1)[0]||'', !!sf.mirrored)+'</div></div>'
     + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
     + lay.tags.map(t=>'<span class="bs-gtag" style="left:'+t.x+'%;">'+t.t+'</span>').join('')
@@ -7530,7 +7537,7 @@ function showSkillStageScreen(){
     + lay.slots.map(p=>{ const su = unitAt(sf, p.side, p.idx); return '<div class="bs-slot" style="left:'+p.x+'%; top:'+p.y+'%; z-index:'+(su && su.isBoss ? 5 : 10+Math.round(p.y))+'; --d:'+p.d.toFixed(3)+';">'+cellHtml(p.side, p.idx, p.size)+'</div>'; }).join('')
     + '</div><span class="bs-teamtag me">아군</span>'+roundTag+'<span class="bs-teamtag en">적</span>'
     + (intro ? '<div class="bs-banner"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 개시'+(sf.special ? '<small class="bs-bsp"><img class="uic" src="assets/ui/ic_special.webp" alt=""> '+specialRuleParts(sf.special).name+'</small>' : '')+'</span></div>' : '')
-    + (fx && fx.kind==='round' ? '<div class="bs-banner"><span>ROUND '+fx.round+'</span></div>' : '')
+    + (fx && fx.kind==='round' ? '<div class="bs-banner'+(skyN!==null && fx.round>=3 && (fx.round-1)%2===0 ? (skyN ? ' sky-bn' : ' sky-bd') : '')+'"><span>ROUND '+fx.round+(skyN!==null && fx.round>=3 && (fx.round-1)%2===0 ? '<small class="bs-bsp">'+(skyN ? '🌙 밤이 됨 — 빛나지 않는 적은 숨음' : '☀️ 낮이 됨 — 직접 공격 피해 +'+Math.round(SKY.day*100)+'%')+'</small>' : '')+'</span></div>' : '')
     + '</div>';
 
   if(sf.mode==='raid') html += raidSurrenderBannerHtml(sf);
@@ -12010,6 +12017,7 @@ const PATCH_NOTES = [
   { build:456, v:'10.0.3', date:'2026-10-17', secs:[
     { t:'레벨 보상', items:[ '레벨 보상 탭에서 보상 목록만 스크롤 — 위쪽 레벨 막대·탭은 그대로' ]},
     { t:'빙고', items:[ '「뽑은 번호」 공판이 창에 꽉 차게 — 공 크기를 화면에 맞춤' ]},
+    { t:'균열 「낮과 밤」', items:[ '전장이 낮엔 햇빛, 밤엔 어두운 하늘빛으로 · 라운드 표시에 지금 낮·밤과 바뀌기까지 남은 라운드', '밤엔 숨은 적이 어둡게, 빛나는 적은 금빛으로 보임 · 낮·밤이 바뀌는 라운드에 알림' ]},
     { t:'도전', items:[ '도전 화면 배경을 새로 — 무한의 탑 · 시련의 전당 · 요일 던전 · 보스 토벌 네 곳' ]},
     { t:'재료 얻는 곳', items:[ '강화·각성 비용 줄, 각인·장비·룬 창의 재료를 누르면 얻는 곳 목록과 「이동」 버튼', '가방 칸 설명에도 얻는 곳' ]}
   ]},
