@@ -11970,7 +11970,7 @@ const PATCH_NOTES = [
   { build:452, v:'10.0.1', date:'2026-10-17', secs:[
     { t:'빙고', items:[ '탭을 바꿔도 창 크기가 그대로 — 탭 줄이 위아래로 움직이지 않음', '뽑기 연출을 눌러 건너뛰어도 당첨이면 「당첨!」과 칸으로 날아가는 모습, 꽝이면 「꽝」 도장은 보여 줌' ] } ] },
   { build:451, v:'10.0.0', date:'2026-10-17', secs:[
-    { t:'보스 토벌 (새 콘텐츠)', items:[ '도전 화면에 「보스 토벌」 — 챕터 보스 6종을 1~6단계로 다시 토벌', '보스마다 그 속성 장비가 나옴 — 서리거인 물결 · 용암군주 화염 · 고대수목 숲결 · 유적파수꾼 빛 · 그림자 군주 그림자 · 심연의 수정 무작위', '기력 하루 80 (한 판 20 · 하루 4판) · 최대 160까지 쌓임 · 이긴 판만 기력을 씀', '한 판마다 장비 1~2개 + 각인석 · 정련석 · 변환석(확률) · 정수 — 높은 단계일수록 좋은 등급', '신화 장비 천장 40판 — 40판 안에 신화 장비가 꼭 나옴', '한 번 깬 보스·단계는 소탕 · 토벌 장비 자동 분해 설정' ]},
+    { t:'보스 토벌 (새 콘텐츠)', items:[ '도전 화면에 「보스 토벌」 — 챕터 보스 6종을 1~6단계로 다시 토벌', '보스마다 그 속성 장비가 나옴 — 서리거인 물결 · 용암군주 화염 · 고대수목 숲결 · 유적파수꾼 빛 · 그림자 군주 그림자 · 심연의 수정 무작위', '기력 하루 80 (한 판 20 · 하루 4판) · 최대 160까지 쌓임 · 이긴 판만 기력을 씀', '한 판마다 장비 1~2개(에픽·레전더리) + 각인석 · 정련석 · 변환석(확률) · 정수 — 높은 단계일수록 레전더리가 잘 나옴 · 6단계는 레전더리 확정', '한 번 깬 보스·단계는 소탕 · 토벌 장비 자동 분해 설정' ]},
     { t:'장비 주효과 · 품질', items:[ '새로 얻는 장비는 주효과가 무작위 — 무기: 공격력 · 치명타 확률 · 치명타 피해 · 체력 · 속도 / 방어구: 체력 · 받는 피해 감소 · 공격력 · 속도 · 흡혈', '이미 가진 장비는 그대로 (무기 공격력 · 방어구 체력 · 품질 75)', '「주효과 바꾸기」 변환석 1개 — 같은 효과가 다시 나올 수도 있음', '품질 0~100 — 주효과 크기 ×0.7~×1.1 · 「품질 올리기」 정련석 1개: 지금보다 높게 나오면 성공, 낮으면 그대로', '합성 결과 장비의 주효과·품질은 무작위', '장비 부가 능력 → 「장비 각인」' ]},
     { t:'각인', items:[ '정령 각인 3줄 → 5줄 · 잠금 최대 3줄 — 이미 각인한 정령은 새 2줄을 무료로 채움', '새 능력: 치명타 피해 +4~24% · 공격력(깡) +20~120 · 체력(깡) +150~950', '치명타 피해 기본 +50% (예전 ×1.5와 같음) · 깡 능력은 모든 %를 곱한 뒤 더함' ]},
     { t:'장비 분해', items:[ '분해하면 각인 가루도 나옴 (에픽 3 · 레전더리 8 · 신화 20) · 가루 10개 → 정련석 1개 (보스 토벌 화면)' ]},
@@ -14816,20 +14816,20 @@ function showSanctumPrep(id, t, keep){
 // ===================== (v10.0.0) 보스 토벌 — 원신 비경처럼 원하는 속성 장비를 노려 도는 곳 (사용자 결정 10/17) =====================
 // 챕터 보스 6종 = 장비 속성 (심연의 수정은 무작위) · 세기는 토벌 단계가 정함(균열처럼 기준 보스에 배율) — 스토리 챕터·이지/노말/하드와 상관없음
 // 기력: 하루 4판(80) · 최대 2일치(160) · 한 판 20 — 이긴 판만 씀 · 신화 장비 천장 40판 · 깬 보스·단계는 소탕
-const HUNT_NAME = '보스 토벌', HUNT_TIERS = 6, HUNT_COST = 20, HUNT_DAY = 80, HUNT_CAP = 160, HUNT_PITY = 40;
+const HUNT_NAME = '보스 토벌', HUNT_TIERS = 6, HUNT_COST = 20, HUNT_DAY = 80, HUNT_CAP = 160; // (사용자 결정 10/17) 신화 장비는 소환·합성으로만 — 토벌은 에픽·레전더리까지 · 신화 천장 없앰
 const HUNT_EL = { frostGiant:'water', lavaLord:'fire', ancientTree:'wood', ruinGuardian:'light', shadowLord:'dark', abyssCrystal:null };
 const HUNT_TIER_DEF = [ // 세기 (프로토타입 — 시뮬로 다듬음)
   {h:0, ref:['n',1], hp:1, atk:1}, {h:0, ref:['n',3], hp:1, atk:1}, {h:1, ref:['h',0], hp:1.2, atk:1.1},
   {h:1, ref:['h',0], hp:4, atk:1.7}, {h:1, ref:['h',0], hp:8, atk:2.4}, {h:1, ref:['h',0], hp:16, atk:3.4} ]; // (시뮬 10/17, 보스 6종 평균 · 기준 팀 3.3만: 4단계 92% · 5단계 67% · 6단계 33% / 풀성장 11만: 전부 100%)
 const HUNT_DROP = [ // 장비 n개 · 등급 확률(%) · 재료 (각인석 · 정련석 · 변환석 확률) · 정수
-  {n:1, r:{epic:70, legendary:28, mythic:2},  engr:1, qual:1, main:.15, ess:300},
-  {n:1, r:{epic:55, legendary:41, mythic:4},  engr:1, qual:1, main:.25, ess:400},
-  {n:1, r:{epic:30, legendary:62, mythic:8},  engr:2, qual:1, main:.35, ess:500},
-  {n:1, r:{epic:15, legendary:75, mythic:10}, engr:2, qual:2, main:.45, ess:600},
-  {n:2, r:{epic:10, legendary:78, mythic:12}, engr:3, qual:2, main:.6,  ess:700},
-  {n:2, r:{legendary:85, mythic:15},          engr:3, qual:3, main:.8,  ess:800} ];
+  {n:1, r:{epic:75, legendary:25},  engr:1, qual:1, main:.15, ess:300},
+  {n:1, r:{epic:60, legendary:40},  engr:1, qual:1, main:.25, ess:400},
+  {n:1, r:{epic:40, legendary:60},  engr:2, qual:1, main:.35, ess:500},
+  {n:1, r:{epic:20, legendary:80},  engr:2, qual:2, main:.45, ess:600},
+  {n:2, r:{epic:10, legendary:90},  engr:3, qual:2, main:.6,  ess:700},
+  {n:2, r:{legendary:100},          engr:3, qual:3, main:.8,  ess:800} ]; // 6단계 = 레전더리 확정 (사용자 결정 10/17)
 function huntUnlocked(){ return !!state.adminUnlockAll || chapter1BossCleared(); }
-function huntState(){ let s = state.hunt; if(!isPlainObj(s)) s = state.hunt = { e:HUNT_DAY, t:serverNow(), best:{}, pity:0 }; if(!isPlainObj(s.best)) s.best = {}; return s; }
+function huntState(){ let s = state.hunt; if(!isPlainObj(s)) s = state.hunt = { e:HUNT_DAY, t:serverNow(), best:{} }; if(!isPlainObj(s.best)) s.best = {}; return s; }
 function huntEnergy(){ const s = huntState(), now = serverNow(), per = 86400000/HUNT_DAY; if(!Number.isFinite(s.t) || s.t>now) s.t = now; if(!Number.isFinite(s.e)) s.e = HUNT_DAY;
   if(s.e>=HUNT_CAP){ s.t = now; return s.e; } const g = Math.floor((now - s.t)/per); if(g>0){ s.e = Math.min(HUNT_CAP, s.e + g); s.t = s.e>=HUNT_CAP ? now : s.t + g*per; } return s.e; }
 function huntNextMs(){ const s = huntState(); huntEnergy(); return s.e>=HUNT_CAP ? 0 : Math.max(0, 86400000/HUNT_DAY - (serverNow() - s.t)); }
@@ -14851,23 +14851,19 @@ function buildHuntFight(g, tier){
 }
 function huntRecCP(g, t){ const bf = huntMakeEnemies(g, t); return recCP(teamCP(bf.enemyUnits) * (REC_CP_MULT.boss || 1)); }
 function huntRollRarity(w){ const tot = Object.values(w).reduce((a,b)=>a+b, 0); let x = Math.random()*tot; for(const r in w){ x -= w[r]; if(x<0) return r; } return Object.keys(w)[0]; }
-function huntRollLoot(g, tier){ // 한 판 보상 — 장비는 바로 가방에 (주효과·품질 무작위) · 신화 천장
+function huntRollLoot(g, tier){ // 한 판 보상 — 장비는 바로 가방에 (주효과·품질 무작위)
   const D = HUNT_DROP[tier-1], s = huntState(), eq = [], auto = { n:0, stone:0, dust:0 };
-  let gotMythic = false;
   for(let i=0;i<D.n;i++){
-    let r = huntRollRarity(D.r);
-    if(i===0 && r!=='mythic' && (s.pity||0)+1 >= HUNT_PITY) r = 'mythic';
-    if(r==='mythic') gotMythic = true;
+    const r = huntRollRarity(D.r);
     const el = HUNT_EL[g] || ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)], sl = EQUIP_SLOTS[Math.floor(Math.random()*EQUIP_SLOTS.length)];
     const ri = RARITY_ORDER.indexOf(r), ad = (state.settings && Number.isInteger(state.settings.huntAutoDis)) ? state.settings.huntAutoDis : -1;
     if(ri <= ad){ auto.n++; auto.stone += EQUIP_DISMANTLE_GAIN[ri]; auto.dust += EQ_DUST_GAIN[ri]; continue; } // (v10.0.0) 자동 분해 (설정한 등급 이하)
     const a = eqAddItem(equipKey(sl, el, r)); eq.push(a.key);
   }
   if(auto.n){ state.enhanceStone = (state.enhanceStone||0) + auto.stone; if(auto.dust) grantItems({ eqdust: auto.dust }); }
-  s.pity = gotMythic ? 0 : (s.pity||0) + 1;
   const items = { engr: D.engr, eqqual: D.qual }; if(Math.random() < D.main) items.eqmain = 1;
   grantItems(items); state.essence += D.ess; pushRecentEquip(eq);
-  return { eq, items, ess: D.ess, myth: gotMythic, auto };
+  return { eq, items, ess: D.ess, auto };
 }
 function huntLootMerge(list){ const o = { eq:[], items:{}, ess:0, n:list.length, auto:{ n:0, stone:0, dust:0 } }; list.forEach(l=>{ o.eq = o.eq.concat(l.eq); o.ess += l.ess; if(l.auto){ o.auto.n += l.auto.n; o.auto.stone += l.auto.stone; o.auto.dust += l.auto.dust; } Object.keys(l.items).forEach(k=>{ o.items[k] = (o.items[k]||0) + l.items[k]; }); }); return o; }
 function huntEqCardHtml(k){ const i = equipInfo(k), q = eqQual(k);
@@ -14912,7 +14908,7 @@ function renderHuntTab(){
   if(!huntUnlocked()) return '<div class="card" style="text-align:center;">'+uiIc('lock')+' '+HUNT_NAME+' 잠김<div class="sub" style="margin-top:6px;">'+chapterBossName(1)+' 처치 시 해금</div></div>';
   const s = huntState();
   let h = '<div class="hu-head"><div class="hu-t">⚔️ '+HUNT_NAME+'</div><div class="hu-sub">'+huntEnergyHtml()+'<span>한 판 ⚡'+HUNT_COST+' · 이긴 판만</span></div>'
-    + '<div class="hu-sub"><span>'+uiIc('crown')+' 신화 장비 확정까지 <b>'+Math.max(1, HUNT_PITY - (s.pity||0))+'</b>판</span><span>열린 단계 '+Math.min(HUNT_TIERS, huntTop()+1)+'</span></div></div>' + TOP_MARK;
+    + '<div class="hu-sub"><span>장비는 에픽·레전더리 (6단계 레전더리 확정)</span><span>열린 단계 '+Math.min(HUNT_TIERS, huntTop()+1)+'</span></div></div>' + TOP_MARK;
   { const ad = Number.isInteger(state.settings.huntAutoDis) ? state.settings.huntAutoDis : -1, dust = ticketCount('eqdust');
     h += '<div class="hu-tools"><label>'+uiIc('recycle')+' 자동 분해 <select id="huAutoDis"><option value="-1">끔</option>'+[1,2,3].map(i=>'<option value="'+i+'" '+(ad===i?'selected':'')+'>'+RARITY_INFO[RARITY_ORDER[i]].name+' 이하</option>').join('')+'</select></label>'
       + '<button class="btn secondary small" id="huDust" '+(dust>=EQ_DUST_PER?'':'disabled')+'>'+TICKET_INFO.eqdust.icon+' '+dust+' → '+TICKET_INFO.eqqual.icon+' '+Math.floor(dust/EQ_DUST_PER)+'</button></div>'; } // (v10.0.0) 자동 분해 · 가루 → 정련석
@@ -18267,7 +18263,7 @@ function sanitizeState(){
     Object.keys(s.engrave).forEach(k=>{ const e = s.engrave[k]; while(e.lines.length < ENGR_LINES){ e.lines.push(subRollLine()); e.lock.push(false); } }); // (v10.0.0) 각인 3줄 → 5줄: 이미 각인한 정령은 새 줄을 무료 무작위로 채움 (사용자 결정 10/17)
     s.eqSub = cleanBox(s.eqSub, k=>/^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/.test(k));
     if(isPlainObj(s.hunt)){ const h = s.hunt, B = {}; if(isPlainObj(h.best)) Object.keys(h.best).forEach(g=>{ const v = h.best[g]; if(CHAPTER_BOSS_GIMMICK.includes(g) && Number.isInteger(v) && v>0) B[g] = Math.min(HUNT_TIERS, v); }); // (v10.0.0) 보스 토벌
-      s.hunt = { e: fin(h.e) ? Math.max(0, Math.min(HUNT_CAP, Math.floor(h.e))) : HUNT_DAY, t: (fin(h.t) && h.t<=serverNow()+60000) ? h.t : serverNow(), best:B, pity: Number.isInteger(h.pity) ? Math.max(0, Math.min(HUNT_PITY-1, h.pity)) : 0 }; } else delete s.hunt;
+      s.hunt = { e: fin(h.e) ? Math.max(0, Math.min(HUNT_CAP, Math.floor(h.e))) : HUNT_DAY, t: (fin(h.t) && h.t<=serverNow()+60000) ? h.t : serverNow(), best:B }; } else delete s.hunt;
     { const EK = /^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/, M = {}, Q = {}; // (v10.0.0) 장비 주효과 · 품질
       if(isPlainObj(s.eqMain)) Object.keys(s.eqMain).forEach(k=>{ const v = s.eqMain[k], sl = k.split('_')[0]; if(EK.test(k) && EQ_MAIN_W[sl] && EQ_MAIN_W[sl][v]) M[k] = v; }); s.eqMain = M;
       if(isPlainObj(s.eqQual)) Object.keys(s.eqQual).forEach(k=>{ const v = s.eqQual[k]; if(EK.test(k) && Number.isInteger(v) && v>=0 && v<=100) Q[k] = v; }); s.eqQual = Q; }
