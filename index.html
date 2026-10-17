@@ -1367,7 +1367,7 @@
   .hid-tag{display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:8px; background:#7a4dff; color:#fff; vertical-align:1px;} /* (v276) 히든 업적 표시 */
   .al-sec{font-family:var(--fun); font-size:14px; margin:12px 0 6px; display:flex; align-items:center;}
   .al-parts > div, .al-perks > div{display:flex; justify-content:space-between; gap:8px; padding:5px 2px; border-bottom:1px solid #ffffff10; font-size:12.5px;} .al-parts small{color:var(--sub);} .al-perks > div{opacity:.55;} .al-perks > div.on{opacity:1;} .al-perks > div.on b{color:#7dffb0;}
-  .al-rw{display:flex; flex-direction:column; gap:5px;} .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
+  .al-rw{display:flex; flex-direction:column; gap:5px;} .modal.framed > .m-body.al-fix{display:flex; flex-direction:column; overflow:hidden;} .m-body.al-fix > *{flex:none;} .m-body.al-fix > .al-rw{flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; position:relative;} /* (v10.0.3) 레벨 보상은 목록만 스크롤 */ .al-row{display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:#ffffff0a;} .al-row > b{width:44px; flex:none;} .al-row > span{flex:1; min-width:0;} .al-row .btn{width:auto; margin:0; padding:4px 12px;} .al-row em{font-style:normal; width:40px; text-align:center;} .al-row.got{opacity:.5;} .al-row.lock{opacity:.6;}
   .pn{margin-top:8px; border-radius:12px; background:#ffffff0a; border:1px solid #ffffff14; padding:8px 12px;} .pn summary{cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:8px;} .pn summary::-webkit-details-marker{display:none;} .pn summary b{font-size:16px;} .pn summary small{color:var(--sub); font-size:11px;} .pn summary::after{content:'▾'; margin-left:auto; color:var(--sub);} .pn[open] summary::after{content:'▴';}
   .ask-it{padding:8px 10px; border-radius:10px; background:#ffffff0a; border:1px solid #ffffff14; margin-top:6px; text-align:left;} .ask-it.done{opacity:.6;} .ask-h{font-size:12.5px; color:var(--text); display:flex; gap:6px; align-items:baseline; flex-wrap:wrap;} .ask-h small{color:var(--sub); font-size:10.5px;} .ask-q{font-size:12.5px; color:#e3e1ff; margin-top:3px; white-space:pre-wrap; word-break:break-all;} .ask-a{font-size:12px; color:#9fe8c0; margin-top:4px; white-space:pre-wrap;} .ask-w{font-size:11px; color:var(--sub); margin-top:3px;} /* (v269) 문의 */
   .ask-u{font-size:12.5px; color:#e3e1ff; margin-top:4px; white-space:pre-wrap; word-break:break-all;} .ask-u small, .ask-a small{color:var(--sub); font-size:10px; margin-left:4px;} .ask-more{display:flex; gap:6px; margin-top:6px;} .ask-more .fr-in{flex:1; min-width:0;} .ask-more .btn{width:auto; margin:0;} /* (v300) 문의 이어 쓰기 */
@@ -11993,7 +11993,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:455, v:'10.0.2', date:'2026-10-17', secs:[
+  { build:456, v:'10.0.3', date:'2026-10-17', secs:[
+    { t:'레벨 보상', items:[ '레벨 보상 탭에서 보상 목록만 스크롤 — 위쪽 레벨 막대·탭은 그대로' ]},
     { t:'도전', items:[ '도전 화면 배경을 새로 — 무한의 탑 · 시련의 전당 · 요일 던전 · 보스 토벌 네 곳' ]},
     { t:'재료 얻는 곳', items:[ '강화·각성 비용 줄, 각인·장비·룬 창의 재료를 누르면 얻는 곳 목록과 「이동」 버튼', '가방 칸 설명에도 얻는 곳' ]}
   ]},
@@ -12860,8 +12861,11 @@ function bindAccountRewardTab(){
   document.querySelectorAll('[data-al]').forEach(b=>b.addEventListener('click', ()=>{ if(accountLvClaim(+b.dataset.al)) after(); }));
   { const a = document.getElementById('alAll'); if(a) a.addEventListener('click', ()=>{ accountLvClaimable().forEach(L=>accountLvClaim(L)); after(); }); }
   // 받을 보상이 있으면 그 줄, 없으면 지금 레벨 근처로 목록을 내려 줌
-  const can = accountLvClaimable(), row = document.querySelector('[data-alrow="'+(can.length ? can[0] : Math.max(2, accountLevel()))+'"]');
-  if(row && row.scrollIntoView) row.scrollIntoView({block:'nearest'});
+  // (v10.0.3) 보상 목록만 스크롤 (사용자 제보 10/17: 위쪽 레벨 막대·탭까지 같이 스크롤됨) — 창 테두리(frameModal)가 씌워진 뒤 몸통을 세로 칸으로
+  requestAnimationFrame(()=>{ const rw = document.querySelector('.al-rw'), body = rw && rw.parentElement;
+    if(body && body.classList.contains('m-body')){ body.classList.add('al-fix'); body.scrollTop = 0; }
+    const can = accountLvClaimable(), row = document.querySelector('[data-alrow="'+(can.length ? can[0] : Math.max(2, accountLevel()))+'"]');
+    if(row && rw){ rw.scrollTop = Math.max(0, row.offsetTop - 4); } }); // .al-rw가 position:relative라 offsetTop이 목록 기준
 }
 // (v271) 위 레벨 줄을 누르면 프로필의 계정 레벨 탭(받을 보상이 있으면 레벨 보상 탭)
 function showAccountLevelModal(){ showProfileModal(accountLvClaimable().length ? 'reward' : 'level'); }
@@ -18384,7 +18388,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 455, APP_VERSION = '10.0.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 456, APP_VERSION = '10.0.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
