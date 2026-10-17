@@ -1406,6 +1406,8 @@
   .wb-period2{text-align:center; font-size:11px; margin:2px 0 6px;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} .tk-eqm{filter:hue-rotate(60deg) saturate(1.6) brightness(1.1);} .tk-eqq{filter:hue-rotate(260deg) saturate(1.4) brightness(1.15);} .tk-eqd{filter:hue-rotate(200deg) saturate(1.3);} .tk-anc{filter:hue-rotate(-30deg) saturate(1.8) brightness(1.2);}
+  .mat-row{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:8px;} .mat-chip{display:inline-flex; align-items:center; gap:3px; padding:4px 9px; border-radius:999px; border:1px solid #ffffff2a; background:#0005; color:var(--text); font-size:11px; cursor:pointer;} .mat-chip i{font-style:normal; opacity:.6;} [data-mat].aw-cr{cursor:pointer;} [data-mat].aw-cr span::after{content:' ⓘ'; opacity:.5; font-size:10px;}
+  .mat-src{margin-top:10px; text-align:left;} .mat-st{font-size:12px; font-weight:800; color:#ffe08a; margin-bottom:4px;} .mat-sr{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0; border-top:1px solid #ffffff14; font-size:12px;} /* (v10.0.2) 재료 얻는 곳 */
   .anc-tag{display:inline-block; margin-left:3px; padding:0 5px; border-radius:6px; font-size:10px; font-weight:900; vertical-align:middle; background:linear-gradient(90deg,#ffb347,#ff6fd8,#7ab8ff); color:#1b1030; text-shadow:none;} .anc-box{margin-top:10px; padding:10px; border-radius:12px; background:linear-gradient(160deg,#ffb34722,#ff6fd81a,#7ab8ff1a); border:1px solid #ffb34766;} /* (v10.0.0) 고대 장비 */ /* (v10.0.0) 변환석 · 정련석 */
   .hu-head{display:flex; flex-direction:column; gap:4px; padding:4px 2px 6px;} .hu-t{font-family:var(--fun); font-size:20px; text-align:center;} .hu-sub{display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--sub);} .hu-en b{color:#ffd557;} .hu-sub b{color:var(--text);}
   .hu-list{display:flex; flex-direction:column; gap:8px;} .hu-card{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:14px; background:var(--panel2); border:1px solid #ffffff1a; color:var(--text); text-align:left;} .hu-art{width:56px; height:56px; flex:none; display:flex; align-items:center; justify-content:center;} .hu-art img{width:56px; height:56px; object-fit:contain;} .hu-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .hu-info small{font-size:11px; color:var(--sub);} .hu-lv{font-size:11px; color:#ffd557; white-space:nowrap;}
@@ -2582,7 +2584,7 @@ function showSubModal(kind, k, back){
     const held = subHold===kind+'|'+k, sc = subStopCfg();
     h += '<div class="sub-stop"><span>⏸ 자동 멈춤</span><select id="subStopQ"><option value="-1">끔</option>'+SUB_Q.map((q,i)=>i>=2 ? '<option value="'+i+'" '+(sc.q===i?'selected':'')+'>'+q.nm+' 이상</option>' : '').join('')+'</select><select id="subStopS" '+(sc.q<0?'disabled':'')+'><option value="">아무 능력</option>'+Object.keys(SUB_STATS).map(st=>'<option value="'+st+'" '+(sc.s===st?'selected':'')+'>'+SUB_STATS[st].nm+'</option>').join('')+'</select></div>';
     h += held ? '<button class="btn sub-held" id="subHoldOk" style="margin-top:10px;">✋ 원하는 줄이 나옴 — 확인하면 다시 굴릴 수 있음</button>'
-      : '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>'+uiIc('dice')+' 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button>';
+      : '<button class="btn gold" id="subGo" style="margin-top:10px;" '+(have>=cost?'':'disabled')+'>'+uiIc('dice')+' 다시 굴리기 · '+TICKET_INFO.engr.icon+' '+cost+' <small>(보유 '+have+')</small></button><div class="mat-row">'+matChip('engr')+'</div>';
     h += '<label class="sub-skip"><input type="checkbox" id="subSkip" '+(state.settings.subNoAsk?'checked':'')+'> 바로 굴리기</label>'; // (v305)
   }
   h += '<button class="btn secondary small" id="subOdds" style="margin-top:8px;">📊 확률표 · 능력 목록</button>'; // (v327)
@@ -2629,7 +2631,7 @@ function showEqTraitModal(key, back){
     + '<div class="sub" style="font-size:11px; line-height:1.5;">레전더리·신화 장비마다 하나 · 끼운 정령에게 붙음 (신화가 더 셈)<br>후보 '+EQ_TRAIT_OFFERS+'개 중에서 골라 붙이고, 마음에 안 들면 후보를 다시 뽑음</div></div>';
   if(cur && !(t.offers||[]).includes(cur.id)) h += '<div class="et-cur"><span>지금</span><b>'+cur.d.ic+' '+cur.d.nm+'</b><small>'+cur.d.d(cur.v)+'</small></div>'; // (v7.1.2) 붙은 효과가 후보에 보이면 「지금」 칸은 뺌 — 다시 뽑아 후보에서 빠졌을 때만 보여 줌
   h += '<div class="et-offers">'+(t.offers||[]).filter(id=>EQ_TRAITS[id]).map(id=>{ const d = EQ_TRAITS[id]; return '<button class="et-off'+(cur && cur.id===id?' on':'')+'" data-et-pick="'+id+'"><b>'+d.ic+' '+d.nm+'</b><small>'+eqTraitTxt(key, id)+'</small>'+(cur && cur.id===id ? '<em class="et-sel">선택됨</em>' : '')+'</button>'; }).join('')+'</div>';
-  h += '<button class="btn gold" id="etReroll" style="margin-top:10px;" '+(have>=EQ_TRAIT_REROLL?'':'disabled')+'>'+uiIc('dice')+' 후보 다시 뽑기 · '+TICKET_INFO.engr.icon+' '+EQ_TRAIT_REROLL+' <small>(보유 '+have+')</small></button>';
+  h += '<button class="btn gold" id="etReroll" style="margin-top:10px;" '+(have>=EQ_TRAIT_REROLL?'':'disabled')+'>'+uiIc('dice')+' 후보 다시 뽑기 · '+TICKET_INFO.engr.icon+' '+EQ_TRAIT_REROLL+' <small>(보유 '+have+')</small></button><div class="mat-row">'+matChip('engr')+'</div>';
   h += '<button class="btn secondary small" id="etList" style="margin-top:8px;">📋 고유 효과 전체 목록</button>';
   if(back) h += '<button class="btn secondary" id="etBack" style="margin-top:8px;">‹ 돌아가기</button>';
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative; max-width:360px;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
@@ -2740,7 +2742,7 @@ function runeManageHtml(key){
   h += '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;"><b style="font-size:13px;">🔮 룬 칸</b>'+runeChipHtml(r)+'</div>';
   if(r) h += '<div class="sub" style="font-size:12px; margin-top:4px; text-align:right;">'+runeDesc(r)+'</div>';
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary small" id="runeRerollBtn" style="flex:1;" '+((state.shards||0)>=RUNE_REROLL_COST?'':'disabled')+'>'+uiIc('dice')+' 재각인 · <img class="uic" src="assets/ui/ic_shard.webp" alt="">'+RUNE_REROLL_COST+' ('+(state.shards||0)+')</button>'
-    + '<button class="btn secondary small" id="runeInvBtn" style="flex:1;" '+(inv.length?'':'disabled')+'>'+uiIc('box')+' 보관함에서 ('+inv.length+')</button></div>';
+    + '<button class="btn secondary small" id="runeInvBtn" style="flex:1;" '+(inv.length?'':'disabled')+'>'+uiIc('box')+' 보관함에서 ('+inv.length+')</button></div><div class="mat-row">'+matChip('shards')+matChip('upStones')+'</div>';
   if(r && (r.tier==='common' || r.tier==='rare')) h += '<button class="btn secondary small" id="runeUpBtn" style="margin-top:6px;" '+((state.runeUpStones||0)>0?'':'disabled')+'>'+uiIc('upstone')+' 승급 → '+RUNE_TIERS[r.tier==='common'?'rare':'legend'].name+' · 승급석 1 ('+(state.runeUpStones||0)+')</button>';
   h += '</div>';
   return h;
@@ -7893,7 +7895,7 @@ function showAstralModal(k){
     h += '<div class="aw-cost"><div class="aw-ch">필요한 것</div>'
       + '<div class="aw-cr"><span>'+uiIc('awaken')+' 각성</span><b class="'+(aw>=AWAKEN_MAX?'':'lack')+'">'+aw+' / '+AWAKEN_MAX+'단계</b></div>'
       + (ASTRAL_MEM>0 ? '<div class="aw-cr"><span>'+memIc(k)+' 기억 조각</span><b class="'+(have>=ASTRAL_MEM?'':'lack')+'">'+have+' / '+ASTRAL_MEM+'</b></div>' : '')
-      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(state.essence>=ASTRAL_ESSENCE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ASTRAL_ESSENCE+'</b></div></div>';
+      + '<div class="aw-cr" data-mat="essence"><span>'+uiIc('essence')+' 정수</span><b class="'+(state.essence>=ASTRAL_ESSENCE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ASTRAL_ESSENCE+'</b></div></div>';
     h += '<button class="btn gold sticky-ok" id="asGo" '+(ok?'':'disabled')+'>✦ 성좌로 승급</button>';
   }
   h += memHowHtml();
@@ -8295,8 +8297,8 @@ function showEnhanceModal(key, fxLabel){
     const okE = state.essence>=cost.essence, okS = (state.enhanceStone||0)>=cost.stone;
     h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+fmtDmg(pNow)+'</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+fmtDmg(pNext)+'</b></div></div>';
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
-      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+cost.essence+'</b></div>'
-      + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+cost.stone+'</b></div>'
+      + '<div class="aw-cr" data-mat="essence"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+cost.essence+'</b></div>'
+      + '<div class="aw-cr" data-mat="stone"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+cost.stone+'</b></div>'
       + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 정령력 +5% · 각성하면 한도 +1</div></div>';
     h += '<button class="btn gold" id="enDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b>'+(awakenCost(key)?'<div class="sub" style="font-size:12px; margin-top:4px;">각성하면 한도 +1</div>':'')+'</div>';
@@ -8332,7 +8334,7 @@ function showAwakenModal(key, fxLabel){
     const okC = copyHave(key, ac), okE = state.essence>=ac.essence;
     h += '<div class="aw-cost"><div class="aw-ch">'+(lv+1)+'단계 각성에 필요한 것</div>'
       + '<div class="aw-cr"><span>'+copyLabel(key)+'</span><b class="'+(okC?'':'lack')+'">'+copyHaveTxt(key, ac)+'</b></div>'
-      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ac.essence+'</b></div>'
+      + '<div class="aw-cr" data-mat="essence"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+ac.essence+'</b></div>'
       + (ac.mem ? memHowHtml() : '<div class="sub" style="font-size:11px; margin-top:4px;">같은 정령은 1마리를 남기고 사용 (보유 '+ownedCount(key)+'마리)</div>')+'</div>';
     h += '<button class="btn gold sticky-ok" id="awDo" '+(okC&&okE?'':'disabled')+'>'+uiIc('awaken')+' '+(lv+1)+'단계 각성하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 각성</b></div>';
@@ -9222,14 +9224,14 @@ function eqMainBoxHtml(key){ // (v10.0.0) 장비 정보 — 주효과 · 품질 
     + '<div class="eqm-q"><span>품질 <b>'+q+'</b></span><i><em style="width:'+q+'%;"></em></i><span class="sub">×'+eqQualMult(key).toFixed(2)+'</span></div>'
     + '<div class="sub" style="font-size:11px; margin-top:4px;">속성이 맞는 정령이 끼면 ×'+EQUIP_MATCH_MULT+'</div>'
     + '<div class="eqm-btns"><button class="btn secondary" id="eqMainRoll" '+(ok1?'':'disabled')+'>'+uiIc('dice')+' 주효과 바꾸기 · '+TICKET_INFO.eqmain.icon+' 1 <small>('+ticketCount('eqmain')+')</small></button>'
-    + '<button class="btn secondary" id="eqQualUp" '+(ok2?'':'disabled')+'>⬆️ 품질 올리기 · '+TICKET_INFO.eqqual.icon+' 1 <small>('+ticketCount('eqqual')+')</small><br><small>성공 '+(100-q)+'%</small></button></div></div>';
+    + '<button class="btn secondary" id="eqQualUp" '+(ok2?'':'disabled')+'>⬆️ 품질 올리기 · '+TICKET_INFO.eqqual.icon+' 1 <small>('+ticketCount('eqqual')+')</small><br><small>성공 '+(100-q)+'%</small></button></div><div class="mat-row">'+matChip('eqmain')+matChip('eqqual')+'</div></div>';
 }
 function eqAncBoxHtml(key){ // (v10.0.0) 고대 승급 칸 — 신화 장비만
   if(equipInfo(key).rarity!=='mythic') return '';
   if(isEqAnc(key)) return '<div class="anc-box"><b><span class="anc-tag">고대</span> 고대 장비</b><div class="sub" style="font-size:11px; margin-top:3px;">주효과 ×'+ANC_MULT+'</div></div>';
   const lvOk = equipEnhLevel(key)>=EQ_ENH_MAX.mythic, have = ticketCount('ancient'), ok = lvOk && have>=ANC_COST.ancient && state.essence>=ANC_COST.essence;
   return '<div class="anc-box"><b>고대 승급</b><div class="sub" style="font-size:11px; margin:3px 0 6px;">그림·각인·품질 그대로 · 주효과 ×'+ANC_MULT+' (+'+Math.round((ANC_MULT-1)*100)+'%)'+(lvOk ? '' : ' · 강화 +'+EQ_ENH_MAX.mythic+' 필요')+'</div>'
-    + '<button class="btn gold" id="eqAncDo" '+(ok?'':'disabled')+'>'+TICKET_INFO.ancient.icon+' '+have+' / '+ANC_COST.ancient+' · '+uiIc('essence')+' '+(ANC_COST.essence/10000)+'만</button></div>';
+    + '<button class="btn gold" id="eqAncDo" '+(ok?'':'disabled')+'>'+TICKET_INFO.ancient.icon+' '+have+' / '+ANC_COST.ancient+' · '+uiIc('essence')+' '+(ANC_COST.essence/10000)+'만</button><div class="mat-row">'+matChip('ancient')+'</div></div>';
 }
 function eqMainRoll(key){ if(ticketCount('eqmain')<1) return false; state.tickets.eqmain -= 1; state.eqMain = state.eqMain || {}; const old = eqMainStat(key); state.eqMain[key] = rollEqMain(equipInfo(key).slot); save(); return { old, now: state.eqMain[key] }; } // 같은 주효과도 나올 수 있음 (사용자 결정 10/17)
 function eqQualUp(key){ if(ticketCount('eqqual')<1) return null; const q = eqQual(key); if(q>=100) return null; state.tickets.eqqual -= 1; const r = Math.floor(Math.random()*101); const ok = r > q; state.eqQual = state.eqQual || {}; if(ok) state.eqQual[key] = r; else state.eqQual[key] = q; save(); return { ok, r, q }; } // 로스트아크식: 0~100을 뽑아 지금보다 높으면 성공 · 낮으면 그대로 (사용자 결정 10/17)
@@ -11327,8 +11329,8 @@ function showEquipEnhanceModal(key, fxLabel){
     h += '<div class="en-cmp"><div><small>지금 +'+lv+'</small><b>'+st+' +'+(ms==='spd' ? Math.round(now) : eqPct(now)+'%')+'</b></div><span>→</span><div class="nx"><small>강화 후 +'+(lv+1)+'</small><b>'+st+' +'+(ms==='spd' ? Math.round(nxt) : eqPct(nxt)+'%')+'</b></div></div>';
     h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">이 장비를 낀 모든 정령에 적용</div>';
     h += '<div class="aw-cost"><div class="aw-ch">+'+(lv+1)+' 강화에 필요한 것</div>'
-      + '<div class="aw-cr"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
-      + '<div class="aw-cr"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
+      + '<div class="aw-cr" data-mat="stone"><span>'+uiIc('stone')+' 강화석</span><b class="'+(okS?'':'lack')+'">'+(state.enhanceStone||0)+' / '+c.stone+'</b></div>'
+      + '<div class="aw-cr" data-mat="essence"><span>'+uiIc('essence')+' 정수</span><b class="'+(okE?'':'lack')+'">'+Math.floor(state.essence)+' / '+c.essence+'</b></div>'
       + '<div class="sub" style="font-size:11px; margin-top:4px;">강화 1단계마다 기본 효과 +'+Math.round(EQ_ENH_STEP*100)+'% · 합성하면 재료 강화를 모아 계승 (같은 장비는 한 번만 셈)</div></div>';
     h += '<button class="btn gold" id="eeDo" '+(okE&&okS?'':'disabled')+'>⬆️ +'+(lv+1)+' 강화하기</button>';
   }else h += '<div class="aw-cost" style="text-align:center;"><b>최대 강화</b><div class="sub" style="font-size:12px; margin-top:4px;">'+st+' +'+(ms==='spd' ? Math.round(now) : eqPct(now)+'%')+'</div></div>';
@@ -11992,7 +11994,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:455, v:'10.0.2', date:'2026-10-17', secs:[
-    { t:'도전', items:[ '도전 화면 배경을 새로 — 무한의 탑 · 시련의 전당 · 요일 던전 · 보스 토벌 네 곳' ]}
+    { t:'도전', items:[ '도전 화면 배경을 새로 — 무한의 탑 · 시련의 전당 · 요일 던전 · 보스 토벌 네 곳' ]},
+    { t:'재료 얻는 곳', items:[ '강화·각성 비용 줄, 각인·장비·룬 창의 재료를 누르면 얻는 곳 목록과 「이동」 버튼', '가방 칸 설명에도 얻는 곳' ]}
   ]},
   { build:453, v:'10.0.0', date:'2026-10-17', secs:[
     { t:'보스 토벌 (새 콘텐츠)', items:[ '도전 화면에 「보스 토벌」 — 챕터 보스 6종을 1~6단계로 다시 토벌', '보스마다 그 속성 장비가 나옴 — 서리거인 물결 · 용암군주 화염 · 고대수목 숲결 · 유적파수꾼 빛 · 그림자 군주 그림자 · 심연의 수정 무작위', '기력 하루 80 (한 판 20 · 하루 4판) · 최대 160까지 쌓임 · 이긴 판만 기력을 씀', '한 판마다 장비 1~2개(에픽·레전더리) + 각인석 · 정련석 · 변환석(확률) · 정수 — 높은 단계일수록 레전더리가 잘 나옴 · 6단계는 레전더리 확정', '한 번 깬 보스·단계는 소탕 · 토벌 장비 자동 분해 설정' ]},
@@ -13020,6 +13023,31 @@ function bagTicketInfo(k){ const t = TICKET_INFO[k], R = r=>RARITY_INFO[r].name;
   if(r) return { d:R(r)+(k==='rare' ? ' 이상' : '')+' 정령 확정', go:'summon0' };
   return { d:'', go:null };
 }
+// (v10.0.2) 재료 얻는 곳 (사용자 요청 10/17: 필요한 재료를 누르면 획득처 + 이동 버튼) — data-mat="키" 가 달린 칸을 누르면 showMatSrc
+const MAT_SRC = {
+  essence:{ nm:'정수', ic:()=>uiIc('essence'), n:()=>state.essence, use:'정령·장비 강화 · 각성 · 초월', src:[['탐험 전투','stage'],['마을 화로','hearth'],['요일 던전','dungeon'],['보스 토벌','hunt'],['파견','dispatch']] },
+  stone:{ nm:'강화석', ic:()=>uiIc('stone'), n:()=>state.enhanceStone, use:'정령·장비 강화', src:[['마을 화로·광산','hearth'],['레이드','raid'],['출정 완주','expedition'],['요일 던전','dungeon'],['파견','dispatch'],['정령 분해','spirits'],['장비 분해','equip']] },
+  star:{ nm:'별빛 조각', ic:()=>SHARD_IC, n:()=>state.starShard, use:'픽업 소환', src:[['별빛 균열 별','rift'],['월드 보스 최고 기록','worldboss']] },
+  shards:{ nm:'정령 파편', ic:()=>BAG_IMG('ic_shard'), n:()=>state.shards, use:'룬 재각인 ('+RUNE_REROLL_COST+'개)', src:[['정령 분해','spirits'],['레이드 상점','raidshop']] },
+  upStones:{ nm:'룬 승급석', ic:()=>uiIc('upstone'), n:()=>state.runeUpStones, use:'룬 승급', src:[['레이드 상점','raidshop'],['월드 보스 상점','worldboss']] },
+  gems:{ nm:'고대 룬석', ic:()=>uiIc('runestone'), n:()=>state.raidGems, use:'레이드 상점 · 프리미엄 패스', src:[['레이드 승리','raid']] },
+  wbGems:{ nm:'세계 룬석', ic:()=>uiIc('wbgem'), n:()=>state.wbGems, use:'월드 보스 상점 · 프리미엄 패스', src:[['월드 보스 도전','worldboss']] },
+  engr:{ src:[['보스 토벌','hunt'],['레이드 주간 첫 승리','raid'],['챕터 보스 첫 격파','stage'],['시련의 전당','trial'],['정령 분해','spirits']] },
+  eqmain:{ src:[['보스 토벌 (확률 · 높은 단계일수록 잘 나옴)','hunt']] },
+  eqqual:{ src:[['보스 토벌','hunt'],['각인 가루 '+EQ_DUST_PER+'개 교환 (보스 토벌 화면)','hunt']] },
+  eqdust:{ src:[['장비 분해','equip'],['보스 토벌 자동 분해','hunt']] },
+  ancient:{ src:[['레이드 (추천 전투력 10만 이상 판)','raid']] }
+};
+function matInfo(k){ const m = MAT_SRC[k] || {}, t = TICKET_INFO[k];
+  if(t){ const b = bagTicketInfo(k); return { nm:t.name, ic:t.icon, n:ticketCount(k), use:b.d, src:m.src||[] }; }
+  return { nm:m.nm||k, ic:m.ic ? m.ic() : '', n:m.n ? Math.floor(m.n()||0) : 0, use:m.use||'', src:m.src||[] }; }
+function matSrcHtml(src){ return src && src.length ? '<div class="mat-src"><div class="mat-st">얻는 곳</div>'+src.map(([t,go])=>'<div class="mat-sr"><span>'+t+'</span><button class="btn secondary small" data-mat-go="'+go+'">이동 ›</button></div>').join('')+'</div>' : ''; }
+function bindMatGo(root){ if(!root) return; root.querySelectorAll('[data-mat-go]').forEach(b=>b.addEventListener('click', ()=>{ document.querySelectorAll('.modal-bg').forEach(x=>{ if(x.id!=='modalBg') x.remove(); }); bagGo(b.dataset.matGo); })); } // 겹친 정보 창은 지우고, 기본 창(modalBg)은 bagGo가 닫음
+function showMatSrc(k){ const m = matInfo(k);
+  openInfoOverlay('<span class="bag-oic">'+m.ic+'</span> '+m.nm, '<div class="bag-det mat-det"><div class="bag-own">보유 <b>'+Math.floor(m.n).toLocaleString()+'</b></div>'+(m.use ? '<div class="sub">'+m.use+'</div>' : '')+matSrcHtml(m.src)+'</div>');
+  const d = document.querySelectorAll('.mat-det'); bindMatGo(d.length ? d[d.length-1].closest('.modal-bg') : null); }
+function matChip(k){ const m = matInfo(k); return '<button class="mat-chip" data-mat="'+k+'">'+m.ic+' '+m.nm+' <b>'+Math.floor(m.n).toLocaleString()+'</b> <i>ⓘ</i></button>'; }
+document.addEventListener('click', ev=>{ const el = ev.target && ev.target.closest && ev.target.closest('[data-mat]'); if(!el || !(MAT_SRC[el.dataset.mat] || TICKET_INFO[el.dataset.mat])) return; ev.stopPropagation(); showMatSrc(el.dataset.mat); }, true);
 function bagSections(){
   const C = (k, nm, ic, n, d, go, keep)=>({ k, nm, ic, n: Math.floor(n||0), d, go, keep });
   const cur = [ C('essence','정수',uiIc('essence'),state.essence,'정령·장비 강화 · 각성 · 초월','spirits',1), C('stone','강화석',uiIc('stone'),state.enhanceStone,'정령·장비 강화','spirits',1),
@@ -13039,6 +13067,8 @@ function bagGo(go){
   if(go!=='expedition' && xpLockBlock()) return;
   closeModal();
   if(go==='spirits'){ activeTab = 'spirits'; spiritsSub = 'spirits'; }
+  else if(go==='equip'){ activeTab = 'spirits'; spiritsSub = 'equip'; } // (v10.0.2) 얻는 곳 이동
+  else if(go==='stage'){ activeTab = 'home'; homeMode = 'stage'; }
   else if(go==='runes'){ activeTab = 'spirits'; spiritsSub = 'runes'; }
   else if(go==='fuse'){ openFuseTab('spirit'); return; }
   else if(go==='pickup'){ const pp = pickupPeriod(); pickupView = Math.max(0, pp.pair.indexOf(pickupState().sel)); activeTab = 'pickup'; }
@@ -13050,14 +13080,16 @@ function bagGo(go){
 }
 function showBagModal(){
   const S = bagSections(), all = []; S.forEach(g=>g.L.forEach(x=>all.push(x)));
-  let h = '<h3 style="text-align:center; margin-bottom:2px;">'+uiIc('bag')+' 가방</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">칸을 누르면 설명 · 「쓰러 가기」</div>';
+  let h = '<h3 style="text-align:center; margin-bottom:2px;">'+uiIc('bag')+' 가방</h3><div class="sub" style="text-align:center; font-size:11px; margin-bottom:6px;">칸을 누르면 설명 · 「쓰러 가기」 · 얻는 곳</div>';
   S.forEach(g=>{ h += '<div class="bag-sec">'+g.t+'</div><div class="bag-grid">'+g.L.map(x=>{ const i = all.indexOf(x);
     return '<button class="bag-it'+(x.n>0?'':' zero')+'" data-bag="'+i+'"><span class="bag-ic">'+x.ic+'</span><b>'+fmtBagN(x.n)+'</b><small>'+x.nm+'</small></button>'; }).join('')+'</div>'; });
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal roster-modal bag-modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'+h+'</div></div>';
   bindModalClose();
   document.querySelectorAll('[data-bag]').forEach(b=>b.addEventListener('click', ()=>{ const x = all[+b.dataset.bag]; if(!x) return;
     openInfoOverlay('<span class="bag-oic">'+x.ic+'</span> '+x.nm, '<div class="bag-det"><div class="bag-own">보유 <b>'+x.n.toLocaleString()+'</b></div>'+(x.d ? '<div class="sub">'+x.d+'</div>' : '')
-      +(x.go ? '<button class="btn gold" id="bagGoBtn" style="margin-top:12px;">'+(x.go.indexOf('mem:')===0 ? '정령 정보 보기' : '쓰러 가기')+' ›</button>' : '')+'</div>');
+      +(x.go ? '<button class="btn gold" id="bagGoBtn" style="margin-top:12px;">'+(x.go.indexOf('mem:')===0 ? '정령 정보 보기' : '쓰러 가기')+' ›</button>' : '')
+      +matSrcHtml(x.k.indexOf('mem:')===0 ? [['픽업 소환 (가진 신화가 또 나오면)','pickup'],['정령 소환','summon0']] : (MAT_SRC[x.k.indexOf('tk:')===0 ? x.k.slice(3) : x.k]||{}).src)+'</div>'); // (v10.0.2) 얻는 곳
+    { const d = document.querySelectorAll('.bag-det'); bindMatGo(d.length ? d[d.length-1].closest('.modal-bg') : null); }
     const gb = document.getElementById('bagGoBtn'); if(gb) gb.addEventListener('click', ()=>{ const ov = gb.closest('.modal-bg'); if(ov) ov.remove(); bagGo(x.go); }); }));
 }
 function fmtBagN(n){ return n >= 100000 ? (Math.floor(n/1000)/10 >= 100 ? Math.floor(n/10000)+'만' : (Math.floor(n/1000)/10)+'만') : n.toLocaleString(); }
