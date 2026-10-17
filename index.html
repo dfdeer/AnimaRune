@@ -1207,7 +1207,7 @@
 
   /* ===== (v179) 옆 시점 자유 배치 + 지역별 배경 ===== */
   .bs-arena2{position:relative; z-index:2; flex:1; min-height:0;}
-  .bs-arena2::before{content:''; position:absolute; left:50%; top:6%; bottom:4%; width:2px; transform:translateX(-50%); background:linear-gradient(180deg,transparent,var(--bs-line,#9fb4cf66),transparent);}
+  .bs-arena2::before{content:''; position:absolute; left:var(--midx,50%); top:6%; bottom:4%; width:2px; transform:translateX(-50%); background:linear-gradient(180deg,transparent,var(--bs-line,#9fb4cf66),transparent);}
   .bs-slot{position:absolute; transform:translate(-50%,-50%) scale(var(--d,1)); transform-origin:50% 60%;} .bs-slot:has(.bu-cur){z-index:350 !important;} .bs-slot:has(.bu-target){z-index:340 !important;} /* (v9.4.4) 고른 대상 표시는 상태 아이콘(300)보다 위 — 위 칸 정령의 버프 칸에 가려졌음 */ .bs-slot:has(.bu-float), .bs-slot:has(.fx-boom){z-index:360 !important;} /* 피해 숫자 같은 연출이 뜨는 동안은 그 칸이 맨 위 — 차례 표시를 가려도 됨 (사용자 결정) */ /* (b429) 지금 차례인 정령(▼ 표시·발밑 링)은 다른 정령 그림·상태 배지(300)보다 항상 위에 (사용자 요청) */
   .bs-gtag{position:absolute; top:0; transform:translateX(-50%); z-index:1; font-size:9px; font-weight:800; color:var(--bs-tag,#5b6f8c); background:var(--bs-tagbg,#ffffffb0); padding:1px 7px; border-radius:6px; white-space:nowrap;}
   .bs-field.scene{background:var(--g2,#eef4fb); box-shadow:0 6px 18px #0007;}
@@ -6994,6 +6994,7 @@ function fitBattleScreen(){ // 전장 칸 높이에 맞춰 유닛 크기 배율(
   if(bs.style.getPropertyValue('--k')!==ks) bs.style.setProperty('--k', ks);
   if(bs.style.getPropertyValue('--ts')!==tss) bs.style.setProperty('--ts', tss);
   snapBossSideUnits(ar);
+  bsMidLine(ar);
   keepHpInside(ar);
   liftStatusBadges(ar);
 }
@@ -7020,6 +7021,14 @@ function liftStatusBadges(ar){
 }
 let stsReliftT = null;
 // (v260) 챕터 보스의 결계석·용암 정령을 보스 바로 위·아래에 붙임 — 화면 비율(%)로만 두면 큰 화면에선 멀리 떨어지고 작은 화면에선 겹쳤음
+function bsMidLine(ar){ // (v10.1.0) 균열 조합 전투 — 가운데 선을 우리 전열과 적 전열 사이 한가운데로 (사용자 요청 10/17: 두 전열과 선의 간격이 같게)
+  const sf = state.skillFight; if(!sf || !sf.encPos){ ar.style.removeProperty('--midx'); return; }
+  const ab = ar.getBoundingClientRect(); if(!ab.width) return;
+  const ic = (side, front)=>[...ar.querySelectorAll('.bs-slot')].filter(sl=>{ const u = sl.querySelector('.bu'); if(!u) return false; const k = (u.dataset.u||'').split(':'); return k[0]===side && isFrontRow(+k[1], 3) === front; }).map(sl=>sl.querySelector('.bu-icon')).filter(Boolean).map(e=>e.getBoundingClientRect());
+  const me = ic('me', true), en = ic('enemy', true).length ? ic('enemy', true) : ic('enemy', false); if(!me.length || !en.length) return;
+  const x = (Math.max(...me.map(r=>r.right)) + Math.min(...en.map(r=>r.left)))/2 - ab.left;
+  ar.style.setProperty('--midx', (x/ab.width*100).toFixed(2)+'%');
+}
 function snapBossSideUnits(ar){
   const slots = [...ar.querySelectorAll('.bs-slot')], bossSlot = slots.find(s=>s.querySelector('.bu-enemy.bu-boss'));
   if(!bossSlot || slots.filter(s=>s.querySelector('.bu-enemy')).length > 3) return; // 레이드(보스 혼자)·일반 전투는 해당 없음
