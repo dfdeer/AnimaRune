@@ -4300,7 +4300,7 @@ function friendMarkGoogle(){
 }
 let admUsers = { list:null, busy:false, err:'' };
 async function admLoadUsers(){
-  if(!adminOn() || !friendsAvailable() || admUsers.busy) return;
+  if(!isAdmin() || !friendsAvailable() || admUsers.busy) return; // (v10.0.1) 친구 「전체」 탭은 일반 모드에서도 (사용자 결정 10/17 — 모드 바꾸기 귀찮음, adminOn 예외)
   admUsers.busy = true; admUsers.err = '';
   try{
     const sn = await raidNet.db.doc('players').get(), v = (sn && sn.exists && sn.data() && typeof sn.data()==='object') ? sn.data() : {};
@@ -4541,7 +4541,7 @@ function renderFriendsTab(){
   const invs = friendLiveInvites(), reqs = friendIncomingReqs(), nReq = invs.length + reqs.length;
   const rep = homeRepSpirit(); friendPushRep();
   h += '<div class="fr-me"><span class="fr-av big">'+(rep?spArt(SPIRITS[rep]):'🔮')+'</span><div class="fr-nm"><b>'+escTxt(friendNet.name)+'</b><small>내 코드 <b class="fr-code">'+(friendNet.code||'—')+'</b></small></div><button class="fr-copy" id="fCopyBtn">'+uiIc('log')+' 복사</button></div>';
-  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].concat(adminOn() ? [['all','전체',admUsers.list ? admUsers.list.length : null]] : []).map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
+  h += '<div class="seg">'+[['list','친구',fl.length],['req','요청',nReq],['add','추가',null]].concat(isAdmin() ? [['all','전체',admUsers.list ? admUsers.list.length : null]] : []).map(([k,t,n])=>'<button data-ftab="'+k+'" class="'+(friendTab===k?'on':'')+'">'+t+(n!==null?' <i class="'+(k==='req'&&n>0?'hot':'')+'">'+n+'</i>':'')+'</button>').join('')+'</div></div>' + TOP_MARK + '<div class="fr">';
   if(friendTab==='list'){
     const on = fl.filter(friendOnline).length;
     if(fl.length) h += '<div class="fr-cap">접속 중 '+on+' · 전체 '+fl.length+'</div><div class="fr-scroll fit-rest" data-below="0" data-min="160"><div class="fr-list">'+fl.map(k=>{ const o = friendOnline(k);
@@ -4558,7 +4558,7 @@ function renderFriendsTab(){
     if(reqs.length) h += '<div class="fr-cap">친구 요청</div><div class="fr-list">'+reqs.map(k=>{ const r = friendNet.reqs[k] || {};
       return '<div class="fr-row"><span class="fr-av">🙋</span><div class="fr-nm"><b>'+escTxt(String(r.name||raidNameOf(k)).slice(0,12))+'</b><small>친구 요청</small></div><button class="btn small" data-f-accept="'+k+'">수락</button><button class="fr-x" data-f-reject="'+k+'">거절</button></div>'; }).join('')+'</div>';
     if(sent.length) h += '<div class="fr-cap">보낸 요청 · 수락 대기 중</div><div class="fr-list">'+sent.map(k=>'<div class="fr-row"><span class="fr-av">📨</span><div class="fr-nm"><b>'+escTxt(raidNameOf(k))+'</b><small>'+(state.friendSent[k].code?'코드 '+escTxt(state.friendSent[k].code)+' · ':'')+'수락을 기다리는 중</small></div><button class="fr-x" data-f-cancel="'+k+'">취소</button></div>').join('')+'</div>';
-  }else if(friendTab==='all' && adminOn()){ // (v335) 관리자: 구글 로그인한 모든 유저 — 친구 / 친구 아님
+  }else if(friendTab==='all' && isAdmin()){ // (v335) 관리자: 구글 로그인한 모든 유저 — 친구 / 친구 아님
     if(!admUsers.list && !admUsers.busy && !admUsers.err) setTimeout(admLoadUsers, 0);
     const ref = '<button class="fr-x" id="admUsersRe" style="font-size:12px; padding:3px 9px;">새로고침</button>';
     if(admUsers.err) h += '<div class="fr-empty">전체 유저를 못 불러옴 ('+escTxt(admUsers.err)+')<br><small>Firebase 규칙에 관리자 전체 읽기가 있어야 함</small><br>'+ref+'</div>';
@@ -18349,7 +18349,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 453, APP_VERSION = '10.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 454, APP_VERSION = '10.0.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
