@@ -177,8 +177,8 @@
   .bg-bingo{position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; pointer-events:none;}
   .bg-bingo b{font-size:46px; font-weight:900; color:#ffcf4a; white-space:nowrap; text-shadow:0 3px 0 #7a3b00, 0 0 18px #ff9ad5, 0 0 40px #ffcf4a; animation:bgBingo 1.5s ease-out .35s both;}
   @keyframes bgBingo{0%{transform:scale(.3) rotate(-8deg); opacity:0;} 20%{transform:scale(1.18) rotate(-4deg); opacity:1;} 30%{transform:scale(1) rotate(-4deg);} 80%{opacity:1;} 100%{transform:scale(1.04) rotate(-4deg); opacity:0;}}
-  .bg-dr{display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:5px; padding:8px; background:#0e0b2280; border:1px solid #ff9ad544; border-radius:12px;}
-  .bg-db{aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#ffffff55; border:1px dashed #ffffff30;}
+  .bg-dr{font-size:11px; display:grid; grid-template-columns:repeat(10, minmax(0,1fr)); gap:5px; padding:8px; margin:0 auto; justify-content:center; box-sizing:border-box; background:#0e0b2280; border:1px solid #ff9ad544; border-radius:12px;}
+  .bg-db{aspect-ratio:1; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:inherit; font-weight:800; color:#ffffff55; border:1px dashed #ffffff30;}
   .bg-db.hit{border:none; color:#fff; text-shadow:0 1px 2px #000a; background:radial-gradient(circle at 34% 26%, #fffb 0 8%, #fff0 32%), var(--bc); box-shadow:inset -3px -4px 6px #0006;}
   .bg-db.miss{border:1px solid #ffffff1a; background:#ffffff0d; color:#ffffff38; text-decoration:line-through;}
   .bg-tkn{display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--sub);} .bg-tkn span{display:flex; align-items:center; gap:4px;} .bg-tkn b{color:#fff; font-size:14px;} .bg-tkn .g b{color:#ffcf4a;} .bg-tkn .uic{width:16px; height:16px; margin:0;} .bg-tkn .g .uic{filter:sepia(1) saturate(4) hue-rotate(5deg) brightness(1.1);}
@@ -9813,6 +9813,20 @@ function showBingoModal(){
   bingoRefresh();
   requestAnimationFrame(()=>bingoLockH(o)); // 창 테두리(frameModal)를 씌운 다음에 잼
 }
+function bingoFitDrawn(){ // (v10.0.3) 뽑은 번호 공판을 창에 꽉 차게 — 열 수(5~10)를 골라 공을 가장 크게 (사용자 요청 10/17: 위쪽에 작게 몰려 있었음)
+  const dr = document.querySelector('#bingoBody .bg-dr'); if(!dr) return;
+  const box = dr.closest('.m-body') || dr.closest('.bg-modal'); if(!box) return;
+  dr.style.width = ''; dr.style.gridTemplateColumns = ''; dr.style.fontSize = '';
+  const gap = 5, pad = 16, bd = document.getElementById('bingoBody'), cs = getComputedStyle(box), inner = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const others = [...box.children].reduce((t,c)=>t + (c===bd ? 0 : c.offsetHeight), 0) + (bd.offsetHeight - dr.offsetHeight); // 공판 말고 나머지가 차지하는 높이
+  const W = dr.clientWidth - pad, avail = inner - others - pad - 6;
+  if(W<=0 || avail<=0) return;
+  let best = { c:10, sz:0 };
+  for(let c=5; c<=10; c++){ const rows = Math.ceil(BINGO_POOL/c), sz = Math.min((W - gap*(c-1))/c, (avail - gap*(rows-1))/rows); if(sz > best.sz) best = { c, sz }; }
+  const sz = Math.max(20, Math.floor(Math.min(best.sz, 64)));
+  dr.style.gridTemplateColumns = 'repeat('+best.c+', '+sz+'px)'; dr.style.width = (sz*best.c + gap*(best.c-1) + pad)+'px'; dr.style.fontSize = Math.round(sz*0.4)+'px';
+}
+window.addEventListener('resize', ()=>{ if(bingoTab==='drawn' && document.getElementById('bingoPop')) bingoFitDrawn(); });
 function bingoLockH(o){ // (v10.0.1) 탭을 바꿀 때마다 창 높이가 바뀌어 탭 줄이 위아래로 움직이던 것 — 세 탭 중 가장 큰 높이로 고정 (화면보다 크면 화면 높이까지, 그 안에서 스크롤)
   const m = o && o.isConnected && o.querySelector('.bg-modal'); if(!m) return;
   const keep = bingoTab; m.style.height = ''; let h = 0;
@@ -9872,7 +9886,7 @@ function bingoBodyHtml(){
   h += '<div class="bg-tabs">'+tab('board', '빙고판'+(bingoHasDot()?'<span class="home-dot"></span>':''))+tab('drawn', '뽑은 번호 '+(b.dr||[]).length)+tab('mis', '미션 '+md+'/'+BINGO_MISSIONS.length)+'</div>';
   return h + (bingoTab==='mis' ? bingoMisHtml(b) : bingoTab==='drawn' ? bingoDrawnHtml(b) : bingoBoardHtml(b));
 }
-function bingoRefresh(){ const bd = document.getElementById('bingoBody'); if(!bd) return; bd.innerHTML = bingoBodyHtml();
+function bingoRefresh(){ const bd = document.getElementById('bingoBody'); if(!bd) return; bd.innerHTML = bingoBodyHtml(); if(bingoTab==='drawn') requestAnimationFrame(bingoFitDrawn);
   bd.querySelectorAll('[data-bg-tab]').forEach(el=>el.addEventListener('click', ()=>{ if(bingoBusy) return; bingoTab = el.dataset.bgTab; bingoGoldMode = false; bingoRefresh(); }));
   const d = document.getElementById('bgDraw'); if(d) d.addEventListener('click', ()=>bingoDraw(false));
   const g = document.getElementById('bgGold'); if(g) g.addEventListener('click', ()=>{ if(bingoBusy) return; bingoGoldMode = !bingoGoldMode; bingoRefresh(); });
@@ -11995,6 +12009,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:456, v:'10.0.3', date:'2026-10-17', secs:[
     { t:'레벨 보상', items:[ '레벨 보상 탭에서 보상 목록만 스크롤 — 위쪽 레벨 막대·탭은 그대로' ]},
+    { t:'빙고', items:[ '「뽑은 번호」 공판이 창에 꽉 차게 — 공 크기를 화면에 맞춤' ]},
     { t:'도전', items:[ '도전 화면 배경을 새로 — 무한의 탑 · 시련의 전당 · 요일 던전 · 보스 토벌 네 곳' ]},
     { t:'재료 얻는 곳', items:[ '강화·각성 비용 줄, 각인·장비·룬 창의 재료를 누르면 얻는 곳 목록과 「이동」 버튼', '가방 칸 설명에도 얻는 곳' ]}
   ]},
