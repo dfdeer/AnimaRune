@@ -414,6 +414,7 @@
   .rf-fl small{flex-shrink:0; min-width:34px; text-align:right; font-size:11px; color:#ffe08a; font-weight:800;}
   .rf-stars{display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin:8px 0; padding:6px; border-radius:12px; background:#0007; border:1px solid #ffffff14;} /* (v321) 별 3칸을 같은 폭 칸으로 */ .rf-st{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-width:0; padding:8px 4px 7px; border-radius:9px; background:#ffffff08; border:1px solid #ffffff10; font-size:11px; color:var(--sub); text-align:center; line-height:1.2;} .rf-st small{font-size:11px; white-space:nowrap;} .rf-st.on{background:linear-gradient(180deg, #ffcf4a22, #ffcf4a08); border-color:#ffcf4a66;} .rf-st .star-ic{width:22px; height:22px; filter:grayscale(1) brightness(.5); opacity:.7;} .rf-st.on .star-ic{opacity:1;} .rf-st.on .star-ic{filter:none;} .rf-st.on small{color:#ffe08a; font-weight:800;} .rf-st.new .star-ic{animation:rfPop .6s ease-out;}
   .rf-pus{display:flex; justify-content:center; gap:14px; margin-top:8px;} .rf-pu{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:12px;} .rf-pu .av{width:54px; height:54px; border-radius:12px; overflow:hidden; display:block;} .rf-pu .av img{width:100%; height:100%;}
+  .rf-boss2.rf-b2s{margin:4px 0; padding:5px 8px;} .rf-b2s .rf-bimg2{width:40px; height:40px;} .rf-b2s small{font-size:10px;} /* (v10.1.0) 조합 전투 보스 두 줄 */
   .rf-boss2{display:flex; align-items:center; gap:10px; margin:8px 0 6px; padding:8px 10px; border-radius:12px; background:#0005; cursor:pointer;} .rf-bimg2{width:54px; height:54px; object-fit:contain; flex-shrink:0;} .rf-boss2 b{display:block; font-size:15px;} .rf-boss2 small{display:block; font-size:11px; color:var(--sub); line-height:1.4; margin-top:2px;}
   @keyframes rfPop{0%{transform:scale(.2);}70%{transform:scale(1.3);}100%{transform:scale(1);}}
   @media (max-height:700px){ .ex-mode{margin-bottom:3px;} .ex-mode button{padding:2px 0; font-size:11px; border-radius:9px;} }
@@ -2307,6 +2308,12 @@ function gridNeighbors(idx, shape, width){
   if(shape==='pierce' || shape==='cross'){ if(r===0) out.push(idx+w); }
   return out;
 }
+// (v10.1.0) 한 유닛이 여러 칸을 차지 (균열 조합 전투 — 큰 보스) · u.cells 없으면 자기 칸 하나 (예전과 같음)
+function unitCells(u){ return (u && u.cells) || [u.idx]; }
+function unitsAtCell(sf, side, i){ return sideUnits(sf, side).filter(x=>x.idx===i || (x.cells && x.cells.includes(i))); }
+function nbUnits(sf, side, u, shape, w){ w = w || sideWidth(sf, side); const own = unitCells(u), out = [];
+  own.forEach(c=>gridNeighbors(c, shape, w).forEach(i=>{ if(own.includes(i)) return; unitsAtCell(sf, side, i).forEach(x=>{ if(x!==u && !out.includes(x)) out.push(x); }); }));
+  return out; }
 let skillSel = { key:null, side:null, idx:null };
 let skillPumpTimer = null;
 let skillIntroPending = false, skillIntroUntil = 0, skillResSfxKey = null, skillFightSeq = 0;
@@ -3270,12 +3277,12 @@ function killUnit(sf, u){
   const poisoned = u.st.poison ? u.st.poison : null;
   const bombs = bombsOf(u), loop = u.st.loop || null; // (v343) · (v8.1.0) 폭탄 여러 개
   const burnS = u.st.burn>0 ? { n:u.st.burn, dmg:u.st.burnDmg||0, cap:u.st.burnCap||5 } : null; // (v8.1.0) 도화선 — 보스로 옮길 화상
-  if(burnS && sf.xr && sf.xr.magma && u.side==='enemy'){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && x!==u && !x.isWard && !x.hidden).forEach(x=>{ x.st.burnCap = Math.max(x.st.burnCap||5, 5); x.st.burn = Math.min(x.st.burnCap, (x.st.burn||0) + sf.xr.magma); x.st.burnDmg = Math.max(x.st.burnDmg||0, burnS.dmg); (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', neg:true, text:'🌋용암 씨앗' }); }); } // (v8.17.0)
+  if(burnS && sf.xr && sf.xr.magma && u.side==='enemy'){ nbUnits(sf, u.side, u, 'row').filter(x=>x && x.alive && x!==u && !x.isWard && !x.hidden).forEach(x=>{ x.st.burnCap = Math.max(x.st.burnCap||5, 5); x.st.burn = Math.min(x.st.burnCap, (x.st.burn||0) + sf.xr.magma); x.st.burnDmg = Math.max(x.st.burnDmg||0, burnS.dmg); (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', neg:true, text:'🌋용암 씨앗' }); }); } // (v8.17.0)
   if(u.line==='water_hb' && u.st.linkHost && u.st.linkHost.boost){ u.maxHp = Math.max(1, u.maxHp - u.st.linkHost.boost); } // (v343) 깊은 강 해제
   if(u.line==='water_hb' && u.st.linkHost && !aliveUnits(sideUnits(sf, u.side)).some(x=>x!==u && x.line==='water_hb' && x.st.linkHost)) aliveUnits(sideUnits(sf, u.side)).forEach(x=>{ if(x.st && x.st.link) delete x.st.link; }); // (v8.14.1) 하백이 쓰러지면 연결도 끊김 (예전: 효과는 없는데 🔗 표시가 남았음)
   u.st = {};
   if(u.isAdd){ u.hidden = true; delete u.fuse; raidOnAddDeath(sf, u); } // (v260) 용암 정령은 쓰러지면 사라짐 · (v272) 레이드 기둥·씨앗
-  if(bombs.length){ const w = sideWidth(sf, u.side); gridNeighbors(u.idx, 'row', w).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive).forEach(x=>{ let n = 0; bombs.forEach(bomb=>{ if(addBomb(x, { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) })) n++; }); if(n) (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
+  if(bombs.length){ nbUnits(sf, u.side, u, 'row').filter(x=>x && x.alive).forEach(x=>{ let n = 0; bombs.forEach(bomb=>{ if(addBomb(x, { r:Math.max(1, bomb.r), side:bomb.side, idx:bomb.idx, hop:Math.min(SC_HOP_MAX, (bomb.hop||0)+1) })) n++; }); if(n) (sf._rv = sf._rv || []).push({ side:x.side, idx:x.idx, kind:'status', text:'💣옮겨 붙음' }); });
   } // (v343) 스칼렛 불씨 전이 · (v8.1.0) 옮겨 붙을 때마다 hop +1
   if(sf.riftRule==='fuse' && u.side==='enemy' && !u.isBoss && isFrontRow(u.idx) && (bombs.length || burnS || poisoned)){ // (v8.1.0) 균열 도화선: 앞줄 적의 화상·독·폭탄 → 보스
     const B = (sf.enemyUnits||[]).find(x=>x.isBoss && x.alive), mv = [];
@@ -3303,7 +3310,7 @@ function killUnit(sf, u){
   // 숲결-b 패시브: 독 걸린 채 쓰러지면 옆 칸으로 독 전파
   const pch = poisoned ? [0,.5,.65,.8,1][poisoned.srcG] : 0;
   if(poisoned && poisoned.srcG>=1 && (sf.noRng ? pch>=1 : Math.random() < pch)){ // (v266) 시련: 확률 전염 없음 · 100%면 첫 이웃에게
-    const nb = gridNeighbors(u.idx, 'row').map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive);
+    const nb = nbUnits(sf, u.side, u, 'row', 3).filter(x=>x && x.alive);
     if(nb.length){ const t = nb[sf.noRng ? 0 : Math.floor(Math.random()*nb.length)]; if(!t.st.ward) t.st.poison = {r:3, pct:poisoned.pct, srcG:poisoned.srcG}; else t.st.ward--; }
   }
   if(u.trBlast) trialBlast(sf, u); // (build 390) 시련 시험 규칙 — 쓰러지면 터짐 (부활했으면 여기까지 안 옴)
@@ -3334,7 +3341,7 @@ function bombBlast(sf, u, hits, mul, b){
   if(r) hits.push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(src, u), dot:true, src:shock>1 ? '💣열충격' : '💣폭발' });
   pushLog(sf, '💣 '+logUnitName(u.side, u)+' 폭탄 폭발');
   if(aw3(src) && u.alive){ u.st.burnCap = Math.max(u.st.burnCap||5, 5); u.st.burn = Math.min(u.st.burnCap, (u.st.burn||0)+1); u.st.burnDmg = Math.max(u.st.burnDmg||0, Math.round(src.atk*0.15)); } // (v8.7.0) 짧은 심지
-  if(awUq(src)) gridNeighbors(u.idx, 'row', sideWidth(sf, u.side)).map(i=>unitAt(sf, u.side, i)).filter(x=>x && x.alive && !x.hidden).forEach(x=>{ const r2 = dealDamage(sf, src, x, BOMB_MULT*(aw1(src) ? 1.3 : 1)*(mul||1)*hop*0.3, { noCrit:true, noCounter:true }); if(r2) hits.push({ side:x.side, idx:x.idx, kind:'dmg', amount:r2.total, eff:effTypeMult(src, x), dot:true, src:'💥연쇄 폭발' }); }); // (v8.7.0) 연쇄 폭발
+  if(awUq(src)) nbUnits(sf, u.side, u, 'row').filter(x=>x && x.alive && !x.hidden).forEach(x=>{ const r2 = dealDamage(sf, src, x, BOMB_MULT*(aw1(src) ? 1.3 : 1)*(mul||1)*hop*0.3, { noCrit:true, noCounter:true }); if(r2) hits.push({ side:x.side, idx:x.idx, kind:'dmg', amount:r2.total, eff:effTypeMult(src, x), dot:true, src:'💥연쇄 폭발' }); }); // (v8.7.0) 연쇄 폭발
 }
 const STEAL_ORDER = ['shield','buff','haste','regen','guard','reflect','ward','taunt']; // 로키가 빼앗는 순서 (가장 센 것부터)
 const STEAL_NM = { shield:'보호막', buff:'강화', haste:'가속', regen:'재생', guard:'굳건함', reflect:'반사', ward:'보호', taunt:'도발' };
@@ -3477,9 +3484,9 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.P = arr=>arr[a.g];
   C.D = arr=>C.P(arr)*dbMul(a); // (v8.3.0) 약화 수치 — 강화·초월만큼 커짐
   C.side = s=>aliveUnits(sideUnits(sf, s));
-  C.around = shape=>{ const w = sideWidth(sf, tSide), out = gridNeighbors(C.t.idx, shape, w).map(i=>unitAt(sf, tSide, i));
+  C.around = shape=>{ const w = sideWidth(sf, tSide), out = nbUnits(sf, tSide, C.t, shape, w); // (v10.1.0) 여러 칸 차지하는 보스 포함
     // (v317) 챕터 보스(탐험·출정·월드 보스·균열)는 후열 3칸을 다 차지 — 전열 어느 칸을 때려도 '바로 뒤'는 보스 (예전엔 전열 가운데 뒤만)
-    if(sf.mode!=='raid' && (shape==='pierce' || shape==='cross') && isFrontRow(C.t.idx, w)){ const b = sideUnits(sf, tSide).find(u=>u.isBoss && !isFrontRow(u.idx, w)); if(b && !out.includes(b)) out.push(b); }
+    if(sf.mode!=='raid' && !sideUnits(sf, tSide).some(u=>u.cells) && (shape==='pierce' || shape==='cross') && isFrontRow(C.t.idx, w)){ const b = sideUnits(sf, tSide).find(u=>u.isBoss && !isFrontRow(u.idx, w)); if(b && !out.includes(b)) out.push(b); }
     return out.filter(u=>u && u.alive && u!==C.t); };
   C.hit = (u, mult, opts)=>{
     if(!u || !u.alive) return null;
@@ -6510,12 +6517,13 @@ function buildBossWaveFight(stageIdx, wave, active, unitHp, legacy){ // legacy: 
   return sf;
 }
 function applyBossGimmick(sf){
-  const g = sf.gimmick; if(!g) return;
-  const boss = sf.enemyUnits.find(u=>u.isBoss && u.alive);
-  if(!boss) return;
-  applyBaseBossGimmick(sf, g, boss); // (v259) 기본 기믹 다음에 추가·하드 기믹 (동상이 방금 얼린 정령에도 걸리게)
-  if(!g.easy) applyBossExtra(sf, g, boss); // (v8.0.0) 이지는 기본 기믹만
-  if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss);
+  if(!sf.gimmick) return;
+  // (v10.1.0) 보스가 둘이면 각자 기믹(u.gst) — 한 마리면 예전처럼 sf.gimmick
+  const bosses = sf.enemyUnits.filter(u=>u.isBoss && u.alive); if(!bosses.length) return;
+  (bosses.some(u=>u.gst) ? bosses : bosses.slice(0,1)).forEach(boss=>{ const g = boss.gst || sf.gimmick;
+    applyBaseBossGimmick(sf, g, boss); // (v259) 기본 기믹 다음에 추가·하드 기믹 (동상이 방금 얼린 정령에도 걸리게)
+    if(!g.easy) applyBossExtra(sf, g, boss); // (v8.0.0) 이지는 기본 기믹만
+    if(g.hard || isHardStage(sf.stageIdx)) applyHardBossExtra(sf, g, boss); });
 }
 function shadowErode(sf, boss, add){ // 아군 전체 잠식 add중첩 → 체력 감소(보호막 무시) → 보스 회복
   const hard = isHardStage(sf.stageIdx) || (sf.gimmick && sf.gimmick.hard), pct = hard ? SHADOW_ERODE_PCT_H : SHADOW_ERODE_PCT; let took = 0;
@@ -7016,6 +7024,7 @@ function snapBossSideUnits(ar){
   const slots = [...ar.querySelectorAll('.bs-slot')], bossSlot = slots.find(s=>s.querySelector('.bu-enemy.bu-boss'));
   if(!bossSlot || slots.filter(s=>s.querySelector('.bu-enemy')).length > 3) return; // 레이드(보스 혼자)·일반 전투는 해당 없음
   if(state.skillFight && state.skillFight.mode==='raid') return; // (v273) 레이드 기둥·씨앗은 보스 앞 줄에 따로 둠
+  if(state.skillFight && state.skillFight.encPos) return; // (v10.1.0) 균열 조합 전투는 정한 자리 그대로
   const bb = bossSlot.querySelector('.bu').getBoundingClientRect(), ab = ar.getBoundingClientRect(), GAP = 6;
   slots.forEach(s=>{
     const u = s.querySelector('.bu-enemy'); if(!u || s===bossSlot) return;
@@ -7100,7 +7109,7 @@ function statusList(u){
 }
 function statusBadgesHtml(u){
   const l = statusList(u); if(!l.length) return '';
-  const lim = u.isBoss ? 6 : 4, cut = l.length > lim ? lim-1 : lim; // (b427) 일반 정령은 한 줄(4칸)만 — 두 줄로 넘치면 아래 정령을 가렸음 · 나머지는 +n (눌러서 전부 보기)
+  const lim = u.isBoss && !(state.skillFight && state.skillFight.encPos) ? 6 : 4, cut = l.length > lim ? lim-1 : lim; // (b427) 일반 정령은 한 줄(4칸)만 — 두 줄로 넘치면 아래 정령을 가렸음 · 나머지는 +n (눌러서 전부 보기)
   return l.slice(0,cut).map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+(x.n?'<small>'+x.n+'</small>':(x.left?'<small class="sr">'+x.left+'</small>':''))+'</span>').join('') + (l.length > cut ? '<span class="sbg more">+'+(l.length-cut)+'</span>' : ''); // (v268) 남은 라운드
 }
 function showStatusInfo(u){
@@ -7348,6 +7357,12 @@ function battleLayout(sf){
     const fy = [26,51,76], by = [18,43,68]; // (v225) 전열이 후열보다 아래로 엇갈리게(앞줄이 화면 앞쪽=아래) // (v212) 맨 아래 후열이 배경 모서리 바위·'아군' 표시에 걸려서 세로 간격을 좁히고 위로 올림
     [0,1,2].forEach((idx,r)=>put('me', idx, 33+(r===1?2:0), fy[r], sz)); // (v180) 전열끼리 너무 붙어 보여서 가운데 간격을 넓힘
     [3,4,5].forEach((idx,r)=>put('me', idx, 11, by[r], sz));
+  }
+  if(sf.encPos){ // (v10.1.0) 균열 조합 전투 — 우리 편은 가로로 조금 좁히고, 적은 층마다 정한 자리
+    slots.length = 0;
+    [0,1,2].forEach((idx,r)=>put('me', idx, 28+(r===1?2:0), [26,51,76][r], 44)); [3,4,5].forEach((idx,r)=>put('me', idx, 9, [18,43,68][r], 44));
+    sf.enemyUnits.forEach(u=>{ if(u.hidden) return; const q = sf.encPos[u.idx] || [isFrontRow(u.idx, 3) ? 38 : 12, [26,51,76][u.idx%3], 44]; put('enemy', u.idx, q[0], q[1], q[2]); });
+    return { slots, tags:[{x:9,t:'후열'},{x:28,t:'전열'},{x:62,t:'전열'},{x:88,t:'후열'}], rs:0.25, sz:44 };
   }
   const ew = sideWidth(sf, 'enemy');
   let enemyRows = false;
@@ -12015,6 +12030,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:457, v:'10.1.0', date:'2026-10-17', secs:[
+    { t:'별빛 균열 — 조합 전투', items:[ '10~12층은 보스 1~2마리와 졸개가 함께 나오고, 적 앞줄·뒷줄 6칸을 다 씀 · 층마다 배치가 다름', '10층: 앞줄 그림자 졸개 3 · 뒷줄 그림자 군주 + 심연의 수정', '11층: 앞줄 결계석 2 + 유적 수호병 · 뒷줄 유적파수꾼', '12층: 앞줄 서리거인 · 뒷줄 심연의 수정', '큰 보스는 여러 칸을 차지 — 그 칸을 노리는 범위 공격(십자·가로·관통)에 맞음 · 두 보스가 가운데 칸을 나눠 가지면 둘 다 맞음', '보스 세기(그 층 보스 대비 체력 · 공격력): 10층 두 보스 각 0.55 · 0.7 / 11층 1.55 · 1.4 / 12층 두 보스 각 0.8 · 0.9 · 졸개 체력 0.07~0.08 · 공격력 0.3', '균열 준비 화면에 보스마다 한 줄 + 함께 나오는 적' ]}
+  ]},
   { build:456, v:'10.0.3', date:'2026-10-17', secs:[
     { t:'레벨 보상', items:[ '레벨 보상 탭에서 보상 목록만 스크롤 — 위쪽 레벨 막대·탭은 그대로' ]},
     { t:'빙고', items:[ '「뽑은 번호」 공판이 창에 꽉 차게 — 공 크기를 화면에 맞춤' ]},
@@ -14517,7 +14535,46 @@ function riftPlan(f, per){ // f층의 보스: 맞춘 픽업 · 기믹 · 속성 
   per = per || riftPeriod();
   { const D = RIFT_DUO_ON && f>=RIFT_DUO_FROM ? riftDuoOf(per) : null; if(D) return { pu:per.pair[0], duo:D, gim:riftDuoArt(D), gi:-1, el:D.el, why:'', hard:!!RIFT_TIERS[f-1].h }; } // (v344) 연계 층
   const pu = per.pair[riftPuSlot(f, per)], fits = RIFT_FIT[pu], fit = fits[Math.floor((f-1)/2) % fits.length];
+  const enc = riftEncOf(f, per); // (v10.1.0) 조합 전투 층이면 첫 보스가 대표
+  if(enc) return { pu, gim: enc.bosses[0].g, gi: CHAPTER_BOSS_GIMMICK.indexOf(enc.bosses[0].g), el: RIFT_BEATS[SPIRITS[pu].element], why: enc.why, hard: !!RIFT_TIERS[f-1].h, enc };
   return { pu, gim: fit.g, gi: CHAPTER_BOSS_GIMMICK.indexOf(fit.g), el: RIFT_BEATS[SPIRITS[pu].element], why: fit.why, hard: !!RIFT_TIERS[f-1].h };
+}
+// (v10.1.0) 균열 조합 전투 (사용자 결정 10/17) — 높은 층은 보스 1~2마리 + 졸개로 앞3·뒤3 칸을 다 씀 · 보스 조합은 그 기간 픽업·기간 규칙을 잘 쓰면 잡기 좋게 · 배치도 층마다 다름
+// 기간 키 = 그 기간 한정 성좌(per.pair[0]) · 층마다: bosses [{g 기믹, idx 칸, cells 차지하는 칸들, hp·atk 그 층 보스 대비}] · adds 졸개 [{idx, key 그림, nm, hp·atk 보스 대비}] · wards 결계석 칸(유적파수꾼)
+// pos = 그리는 자리 {칸: [x, y, 크기]} (x는 적 쪽 끝에서 %, 크기 px) · 칸 번호: 0·1·2 앞줄(위·가운데·아래) · 3·4·5 뒷줄
+// 가운데 칸을 두 보스가 나눠 가지면(cells) 그 칸을 노리는 범위 공격은 두 보스 모두 맞음 · 새 기간은 픽업을 준비할 때 같이 짬
+const RIFT_ENC = {
+  light_mythic_as: { // 아스트라이아 · 금오 기간 (기간 규칙 「낮과 밤」)
+    10: { why:'앞줄 그림자 졸개는 밤에 숨음 — 빛 공격으로 빛나게 · 가운데 칸 십자 표식이 두 보스에게 같이 · 수정이 속성을 바꿔도 표식은 남음',
+      bosses:[ {g:'shadowLord', idx:3, cells:[3,4], hp:0.55, atk:0.7}, {g:'abyssCrystal', idx:5, cells:[4,5], hp:0.55, atk:0.7} ],
+      adds:[ {idx:0, key:'dark_epic_a', nm:'그림자 졸개', hp:0.07, atk:0.3}, {idx:1, key:'dark_epic_b', nm:'그림자 졸개', hp:0.07, atk:0.3}, {idx:2, key:'dark_epic_a', nm:'그림자 졸개', hp:0.07, atk:0.3} ],
+      pos:{ 0:[38,26,44], 1:[40,51,44], 2:[38,76,44], 3:[13,26,52], 5:[13,75,52] } },
+    11: { why:'결계석에 붙인 화상이 번짐 · 밤에 빛나는 적은 화상 피해 2배',
+      bosses:[ {g:'ruinGuardian', idx:4, cells:[3,4,5], hp:1.55, atk:1.4} ], wards:[0,2],
+      adds:[ {idx:1, key:'wood_epic_b', nm:'유적 수호병', hp:0.08, atk:0.3} ],
+      pos:{ 0:[38,26,44], 1:[40,51,44], 2:[38,76,44], 4:[13,49,72] } },
+    12: { why:'앞의 서리거인에게 표식을 붙이면 십자로 뒤의 수정에도 퍼짐 · 얼음 갑옷은 직접 피해만 줄여서 화상·표식 피해가 잘 들어감',
+      bosses:[ {g:'frostGiant', idx:1, cells:[0,1,2], hp:0.8, atk:0.9}, {g:'abyssCrystal', idx:4, cells:[3,4,5], hp:0.8, atk:0.9} ],
+      adds:[], pos:{ 1:[40,50,66], 4:[13,49,60] } }
+  }
+};
+function riftEncOf(f, per){ per = per || riftPeriod(); const t = per && per.pair && RIFT_ENC[per.pair[0]]; return (t && t[f]) || null; }
+function riftEncEnemies(f, per, P){ // 조합 전투 적 만들기 — 보스마다 그 기믹 보스전에서 꺼내 층 배율(기준 보스 대비)로 맞춤
+  const T = RIFT_TIERS[f-1], E = P.enc, ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true), rb = ref.enemyUnits.find(u=>u.isBoss);
+  const units = []; let first = null;
+  E.bosses.forEach((d, n)=>{ const bf = buildBossWaveFight(riftBossStage(T.h, CHAPTER_BOSS_GIMMICK.indexOf(d.g)), BOSS_WAVE_COUNT, [], {}, true), b = bf.enemyUnits.find(u=>u.isBoss);
+    const ka = rb.atk/b.atk*T.atk*d.atk, kh = rb.maxHp/b.maxHp*T.hp*d.hp;
+    bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0; });
+    if(d.g!=='abyssCrystal') riftSetEl(b, P.el);
+    b.idx = d.idx; if(d.cells) b.cells = d.cells.slice(); b.gst = bf.gimmick;
+    if(!first) first = bf;
+    const wards = bf.enemyUnits.filter(u=>u.isWard); wards.forEach((w, i)=>{ w.idx = (E.wards||[])[i]; }); // 결계석은 정한 칸으로
+    units.push(b); wards.filter(w=>Number.isInteger(w.idx)).forEach(w=>units.push(w)); });
+  const lead = units.find(u=>u.isBoss);
+  (E.adds||[]).forEach(d=>{ const a = makeBattleUnit('enemy', d.idx, d.key, Math.max(1, Math.round(rb.atk*T.atk*d.atk)), 1); a.maxHp = a.hp = Math.max(1, Math.round(rb.maxHp*T.hp*d.hp)); a.dispName = d.nm; a.riftAdd = true; units.push(a); });
+  units.sort((a,b)=>a.idx-b.idx);
+  first.enemyUnits = units; first.gimmick = lead.gst; first.encPos = E.pos;
+  return first;
 }
 // (v344) 연계 층 — 한정 성좌 픽업 기간엔 11·12층이 그 기간 짝(한정 + 짝 신화)이 같이 풀어야 쉬운 기믹 (사용자 결정) · 그 전 기간은 예전처럼 번갈아
 // 그림은 블록 125를 받기 전까지 기존 챕터 보스 그림
@@ -14642,6 +14699,7 @@ function riftUnlocked(){ return !!state.adminUnlockAll || chapter1BossCleared();
 function riftSetEl(u, el){ u.element = el; if(SPIRITS[el+'_'+SPIRITS[u.key].rarity+'_'+SPIRITS[u.key].variant]) u.key = el+'_'+SPIRITS[u.key].rarity+'_'+SPIRITS[u.key].variant; if(u.isWard) u.dispName = ELEMENT_INFO[el].name+' 결계석'; }
 function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸고, 세기를 그 층 기준 보스에 맞춤 (결계석·용암 정령도 같은 비율)
   if(riftPlan(f, per).duo) return riftDuoEnemies(f, per); // (v344) 연계 층
+  { const P0 = riftPlan(f, per); if(P0.enc) return riftEncEnemies(f, per, P0); } // (v10.1.0) 조합 전투
   const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
   const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}, true), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true);
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
@@ -14710,7 +14768,12 @@ function showRiftPrep(f, keep){
   state.riftForm = state.formation.slice(); save();
   const fi = riftFloorInfo(f), per = riftPeriod(), pv = buildRiftFight(f), rs = riftState(), pu = SPIRITS[fi.pu];
   let h = '<h3 style="text-align:center; margin:0;">'+uiIc('rift')+' '+RIFT_NAME+' · '+f+'층</h3>';
-  h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
+  if(fi.enc){ // (v10.1.0) 조합 전투 — 보스마다 한 줄 + 졸개 (이유는 안 알려 줌)
+    fi.enc.bosses.forEach(d=>{ const I = BOSS_GIMMICK_INFO[d.g], u = pv.enemyUnits.find(x=>x.isBoss && x.gimmick===d.g) || {};
+      h += '<div class="rf-boss2'+(fi.enc.bosses.length>1?' rf-b2s':'')+'" data-unit-info="enemy:'+u.idx+'">'+bossImg(d.g, 'rf-bimg2', I.icon)+'<div><b>'+(d.g==='abyssCrystal' ? '' : elIc(u.element||fi.el)+' ')+I.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+I.desc+'</small></div></div>'; });
+    const ad = {}; (fi.enc.adds||[]).forEach(d=>{ ad[d.nm] = (ad[d.nm]||0) + 1; });
+    if(Object.keys(ad).length) h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:4px;">함께 나오는 적: '+Object.keys(ad).map(k=>k+' ×'+ad[k]).join(' · ')+'</div>';
+  }else h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
   { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-rulew"><div class="rf-bless rf-rule"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div><i class="rf-sb"><b></b></i></div>'; } /* (build 391) 상자 안에서 스크롤 */ else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
@@ -18413,7 +18476,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 456, APP_VERSION = '10.0.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 457, APP_VERSION = '10.1.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
