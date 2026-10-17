@@ -1405,7 +1405,8 @@
   .bb-bar{position:relative; margin:10px 4px 0;} .bb-hp{position:relative; margin-top:4px; font-size:12px; font-weight:800;} .bb-hp small{color:var(--sub); font-weight:400;}
   .wb-period2{text-align:center; font-size:11px; margin:2px 0 6px;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
-  .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} .tk-eqm{filter:hue-rotate(60deg) saturate(1.6) brightness(1.1);} .tk-eqq{filter:hue-rotate(260deg) saturate(1.4) brightness(1.15);} .tk-eqd{filter:hue-rotate(200deg) saturate(1.3);} /* (v10.0.0) 변환석 · 정련석 */
+  .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} .tk-eqm{filter:hue-rotate(60deg) saturate(1.6) brightness(1.1);} .tk-eqq{filter:hue-rotate(260deg) saturate(1.4) brightness(1.15);} .tk-eqd{filter:hue-rotate(200deg) saturate(1.3);} .tk-anc{filter:hue-rotate(-30deg) saturate(1.8) brightness(1.2);}
+  .anc-tag{display:inline-block; margin-left:3px; padding:0 5px; border-radius:6px; font-size:10px; font-weight:900; vertical-align:middle; background:linear-gradient(90deg,#ffb347,#ff6fd8,#7ab8ff); color:#1b1030; text-shadow:none;} .anc-box{margin-top:10px; padding:10px; border-radius:12px; background:linear-gradient(160deg,#ffb34722,#ff6fd81a,#7ab8ff1a); border:1px solid #ffb34766;} /* (v10.0.0) 고대 장비 */ /* (v10.0.0) 변환석 · 정련석 */
   .hu-head{display:flex; flex-direction:column; gap:4px; padding:4px 2px 6px;} .hu-t{font-family:var(--fun); font-size:20px; text-align:center;} .hu-sub{display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--sub);} .hu-en b{color:#ffd557;} .hu-sub b{color:var(--text);}
   .hu-list{display:flex; flex-direction:column; gap:8px;} .hu-card{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:14px; background:var(--panel2); border:1px solid #ffffff1a; color:var(--text); text-align:left;} .hu-art{width:56px; height:56px; flex:none; display:flex; align-items:center; justify-content:center;} .hu-art img{width:56px; height:56px; object-fit:contain;} .hu-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;} .hu-info small{font-size:11px; color:var(--sub);} .hu-lv{font-size:11px; color:#ffd557; white-space:nowrap;}
   .hu-drop{display:flex; flex-direction:column; gap:2px; margin:8px 0 2px; padding:8px 10px; border-radius:10px; background:#ffffff0d; font-size:11px; color:var(--sub);} .hu-drop b{color:var(--text); font-size:12px;} .hu-drop i{font-style:normal; font-weight:700;}
@@ -3563,33 +3564,39 @@ const RAID_DIFFS = [
   { id:'normal',  name:'노말',     color:'#5798ff', atk:3.5,  hp:3,   stone:150, runes:1, weekly:{rare:1, eq_rare:1, engr:2} },
   { id:'hard',    name:'하드',     color:'#ffae57', atk:5,    hp:5,   stone:260, runes:2, weekly:{rare:2, eq_epic:1, engr:3}, gear:{ legendary:.05, epic:.25 } },
   { id:'extreme', name:'익스트림', color:'#ff5a5a', atk:8,    hp:10,  stone:420, runes:3, weekly:{epic:1, eqpick_epic:1, engr:5}, gear:{ legendary:.15, epic:.40 } },
-  // (v8.3.0) 위 난이도 셋 — 성장한 팀용 (추천: 헬 약 4.4만 · 인페르노 약 8.9만 · 카오스 약 15.5만)
-  { id:'hell',    name:'헬',       color:'#c34dff', atk:28,   hp:40,  stone:600, runes:4, weekly:{epic:2, eqpick_epic:1, engr:6}, gear:{ legendary:.25, epic:.45 } },
-  { id:'inferno', name:'인페르노', color:'#ff3d8b', atk:60,   hp:80,  stone:800, runes:5, weekly:{legendary:1, eq_legendary:1, engr:8}, gear:{ legendary:.35, epic:.45 } },
-  { id:'chaos',   name:'카오스',   color:'#e6e6ff', atk:110,  hp:150, stone:1000, runes:6, weekly:{pick_legendary:1, eqpick_legendary:1, engr:10}, gear:{ legendary:.5, epic:.4 } }
+  // (v8.3.0) 위 난이도 셋 — 성장한 팀용 · (v10.0.0) 크게 올림 (사용자 요청 10/17: 카오스가 챕터 5 보스 수준이라 쉬움) — 첫 보스 추천 헬 6.5만 · 인페르노 9.5만 · 카오스 16만 · 카오스는 풀성장 반반, 고대 장비면 거의 다 깸
+  { id:'hell',    name:'헬',       color:'#c34dff', atk:72,   hp:104,  stone:600, runes:4, weekly:{epic:2, eqpick_epic:1, engr:6}, gear:{ legendary:.25, epic:.45 } },
+  { id:'inferno', name:'인페르노', color:'#ff3d8b', atk:150,  hp:200,  stone:800, runes:5, weekly:{legendary:1, eq_legendary:1, engr:8}, gear:{ legendary:.35, epic:.45 } },
+  { id:'chaos',   name:'카오스',   color:'#e6e6ff', atk:385,  hp:525, stone:1000, runes:6, weekly:{pick_legendary:1, eqpick_legendary:1, engr:10}, gear:{ legendary:.5, epic:.4 } }
 ];
 // (v284) 보스마다 기믹이 달라 같은 배율이어도 체감 난이도가 달라서, 보스·난이도별로 공격력·체력을 함께 곱하는 보정값
 // 목표 추천 전투력(기믹 미반영 자동 전투 기준): 이지 약 5,000 · 노말 약 8,400 · 하드 약 12,500 · 익스트림 약 16,500(신화 +15 각성5 8마리)
-const RAID_BOSS_TUNE = {
+const RAID_BOSS_TUNE = { // (v10.0.0) 헬·인페르노·카오스는 tools/raid_growth_sim.js 로 다시 맞춤 — 기믹 세기 차이만 메우고, 순서대로 세지는 건 RAID_BOSS_RAMP
   frostTyrant:  { easy:1.4,  normal:1.45, hard:1.45, extreme:1.15 },
-  infernoDrake: { easy:1.15, normal:1.3,  hard:1.15, extreme:1, hell:0.9, inferno:0.85, chaos:0.85 },
-  abyssEye:     { easy:1.6,  normal:1.5,  hard:1.45, extreme:1.2 },
-  eldertree:    { easy:1.6,  normal:1.6,  hard:1.7,  extreme:1.3 },
-  dawnJudge:    { easy:1.4,  normal:1.5,  hard:1.45, extreme:1.28 }
+  infernoDrake: { easy:1.15, normal:1.3,  hard:1.15, extreme:1, hell:0.75, inferno:0.5,  chaos:0.42 },
+  abyssEye:     { easy:1.6,  normal:1.5,  hard:1.45, extreme:1.2,  hell:0.75, inferno:0.68, chaos:0.65 },
+  eldertree:    { easy:1.6,  normal:1.6,  hard:1.7,  extreme:1.3,  chaos:1.5 }, // 태고수는 씨앗(보스 체력 비례)·개화 독(최대체력 비례)이 승패를 정해서 세기를 올려도 승률이 잘 안 변함
+  dawnJudge:    { easy:1.4,  normal:1.5,  hard:1.45, extreme:1.28, hell:0.75, inferno:0.55, chaos:0.48 }
 };
-function raidBossTune(bossId, diffId){ const t = RAID_BOSS_TUNE[bossId]; return (t && t[diffId]) || 1; }
+// (v10.0.0) 보스가 열리는 순서대로 점점 세게 (사용자 요청 10/17) — 공격력·체력 같이 · 모든 난이도
+const RAID_BOSS_RAMP = [1, 1.07, 1.14, 1.22, 1.3];
+function raidBossRamp(bossId){ const i = RAID_BOSSES.findIndex(b=>b.id===bossId); return RAID_BOSS_RAMP[i] || 1; }
+function raidBossTune(bossId, diffId){ const t = RAID_BOSS_TUNE[bossId]; return ((t && t[diffId]) || 1) * raidBossRamp(bossId); }
 function raidDiffById(id){ return RAID_DIFFS.find(d=>d.id===id) || RAID_DIFFS[1]; }
 // (v266) 레이드 추천 전투력 (둘 합산 8마리) — 등급·강화 단계별 표준 팀으로 자동 전투를 돌려, 4판 중 3판 이상 이긴 가장 약한 팀의 전투력
 // 레이드는 보스 한 마리 + 기믹이라 '상대 전투력'과 승패가 잘 안 맞아서 비율 대신 직접 잰 값을 씀 (보스·밸런스를 바꾸면 다시 재야 함)
 // (v8.3.0) 헬 · 인페르노 · 카오스 — 신화 각2 +10 신화 장비 +10(43,777) · 신화 각5 +15 장비 +10 부가 15% 초월 5(88,608) · 성좌 각5 +15 장비 +10 부가 30% 초월 10(154,539) 팀이 보스 다섯 모두 4판 중 3판 이상 이김
-const RAID_REC_CP = { // (v284) 난이도 전면 상향 뒤 다시 잰 값 — 전설+12각2(4,981) · 신화+5(8,431) · 신화+12각2(12,518) · 신화+15각5(16,522) 사다리에서 이긴 가장 약한 팀
-  frostTyrant:  { easy:4981, normal:8431, hard:12518, extreme:16522, hell:43777, inferno:88608, chaos:154539 },
-  infernoDrake: { easy:4981, normal:8431, hard:12518, extreme:16522, hell:43777, inferno:88608, chaos:154539 },
-  abyssEye:     { easy:4981, normal:8431, hard:12518, extreme:16522, hell:43777, inferno:88608, chaos:154539 },
-  eldertree:    { easy:4981, normal:8431, hard:12518, extreme:16522, hell:43777, inferno:88608, chaos:154539 },
-  dawnJudge:    { easy:4981, normal:8431, hard:12518, extreme:16522, hell:43777, inferno:88608, chaos:154539 }
+const RAID_REC_CP = { // (v10.0.0) 보스 순서 보정(RAID_BOSS_RAMP)만큼 이지~익스트림도 올림 · 헬~카오스는 tools/raid_growth_sim.js 성장 단계(덜 4.4만 · 중간 8.2만 · 풀 15.5만 · 풀+고대 19.4만) 승률로 다시 정함
+  frostTyrant:  { easy:4981, normal:8431, hard:12518, extreme:16522, hell:65000, inferno:95000, chaos:160000 },
+  infernoDrake: { easy:5330, normal:9021, hard:13394, extreme:17679, hell:70000, inferno:105000, chaos:170000 },
+  abyssEye:     { easy:5678, normal:9611, hard:14271, extreme:18835, hell:74000, inferno:110000, chaos:175000 },
+  eldertree:    { easy:6077, normal:10286, hard:15272, extreme:20157, hell:79000, inferno:115000, chaos:180000 },
+  dawnJudge:    { easy:6475, normal:10960, hard:16273, extreme:21479, hell:85000, inferno:125000, chaos:190000 }
 };
 function raidRecCP(bossId, diffId){ const t = RAID_REC_CP[bossId]; return (t && t[diffId]) ? recCP(t[diffId]) : 0; }
+// (v10.0.0) 고대의 파편 — 추천 전투력 10만 이상 판에서만 (사용자 결정 10/17) · 5만마다 1개(10만 = 2) · 이번 주 그 난이도 첫 승리는 ×3
+const RAID_ANC_MIN = 100000, RAID_ANC_STEP = 50000, RAID_ANC_WEEK = 3;
+function raidAncGain(bossId, diffId, first){ const rc = raidRecCP(bossId, diffId); if(rc < RAID_ANC_MIN) return 0; const n = Math.floor(rc/RAID_ANC_STEP); return first ? n*RAID_ANC_WEEK : n; }
 function raidBossById(id){ return RAID_BOSSES.find(b=>b.id===id) || null; }
 function raidWeekStartMs(ms){ const k = (ms===undefined ? serverNow() : ms) + 9*3600000, day = Math.floor(k/86400000), dow = (new Date(day*86400000).getUTCDay()+6)%7; return (day-dow)*86400000 - 9*3600000; } // (v6.2.0) 이번 주 월요일 0시 — 서버 시각 · 한국 시간
 function raidWeekStart(){ return new Date(raidWeekStartMs()); }
@@ -3803,10 +3810,11 @@ function raidGrantReward(sf){
     state.enhanceStone = (state.enhanceStone||0) + dd.stone;
     const gems = RAID_GEMS[dd.id] || 0; state.raidGems = (state.raidGems||0) + gems; // (v172) 룬석 = 레이드 상점 재화
     passBump('raid'); // (v297)
+    const anc = raidAncGain(sf.raidBossId, dd.id, first); if(anc) grantItems({ ancient: anc }); // (v10.0.0) 고대의 파편 — 추천 10만 이상만
     if(first){ grantItems(dd.weekly); state.raidWeekDone.diffs.push(dd.id); if(dd.id!=='easy') state.raidWeekCleared = wk; }
     // (v269) 보상 창 정리 — 한 줄에 몰아 쓰던 것을 칸으로: 기본 보상(룬석·강화석) / 이번 주 첫 승리 보너스 / 장비
     const rwCell = (ic, n, lbl)=> '<div class="rrw-c">'+ic+'<b>'+n+'</b><small>'+lbl+'</small></div>';
-    raidNet.rewardText = '<div class="rrw-h">'+dd.name+' 보상</div><div class="rrw-g">'+rwCell('<img class="uic" src="assets/ui/ic_runestone.webp" alt="">', '+'+gems, '고대 룬석')+rwCell('<img class="uic" src="assets/ui/ic_stone.webp" alt="">', '+'+dd.stone, '강화석')+'</div>'
+    raidNet.rewardText = '<div class="rrw-h">'+dd.name+' 보상</div><div class="rrw-g">'+rwCell('<img class="uic" src="assets/ui/ic_runestone.webp" alt="">', '+'+gems, '고대 룬석')+rwCell('<img class="uic" src="assets/ui/ic_stone.webp" alt="">', '+'+dd.stone, '강화석')+(anc ? rwCell(TICKET_INFO.ancient.icon, '+'+anc, '고대의 파편') : '')+'</div>'
       + (first ? '<div class="rrw-h gold">'+artIc('deco_chest')+' 이번 주 첫 승리 보너스</div><div class="rrw-g">'+Object.keys(dd.weekly).map(k=>rwCell(TICKET_INFO[k] ? TICKET_INFO[k].icon : '🎟️', '+'+dd.weekly[k], TICKET_INFO[k] ? TICKET_INFO[k].name : k)).join('')+'</div>' : '');
     raidNet.gotStones = true;
     // (v171) 하드부터 보스 속성 장비 드롭(레전더리 먼저 굴리고, 안 나오면 에픽) — 보스가 두른 속성의 무기·방어구가 떨어진다는 설정
@@ -5080,7 +5088,7 @@ function raidDetailHtml(){
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
     + '<div class="rd-pt">승리 보상 <small>입장권을 쓴 판만</small></div>'
-    + '<div class="rd-pr"><span>'+uiIc('runestone')+'<b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"><b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비<b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+'</div>'
+    + '<div class="rd-pr"><span>'+uiIc('runestone')+'<b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"><b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비<b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+(raidAncGain(info.id, cur.id, false) ? '<span>'+TICKET_INFO.ancient.icon+'<b>'+raidAncGain(info.id, cur.id, false)+'</b></span>' : '')+'</div>'
     + '<div class="rd-pb"><span class="'+(wd.includes(cur.id)?'done':'')+'"><small>주간 첫 승리</small>'+itemsShort(cur.weekly)+'</span>'+(RAID_FIRST_STAR[cur.id] ? '<span class="'+(prog.includes(cur.id)?'done':'')+'"><small>첫 클리어</small>'+SHARD_IC+' '+RAID_FIRST_STAR[cur.id]+'</span>' : '')+'</div>'
     + '</div>';
   if(!raidNet.code && prog.includes(cur.id)) h += '<button class="btn" id="raidSweepBtn" style="margin:0 0 6px; background:linear-gradient(180deg,#7ad0ff,#3a7bd5);" '+(raidTicketCount()<1?'disabled':'')+'>'+uiIc('ticket')+' 소탕 · 입장권 1장으로 '+cur.name+' 승리 보상</button>'; // (v8.3.0) 깬 난이도는 소탕
@@ -9147,7 +9155,7 @@ function equipOwnedCount(key){ return (state.equipOwned && state.equipOwned[key]
 function eqType(k){ return String(k).split('#')[0]; }
 function ownedEquipItems(){ const o = state.equipOwned || {}; return Object.keys(o).filter(k=>o[k]>0); }
 function equipTypeCount(type){ return ownedEquipItems().filter(k=>eqType(k)===type).length; }
-function eqClearItem(k){ ['equipEnh','eqSub','eqTrait','lockedEquip','eqMain','eqQual'].forEach(b=>{ if(state[b]) delete state[b][k]; }); }
+function eqClearItem(k){ ['equipEnh','eqSub','eqTrait','lockedEquip','eqMain','eqQual','eqAnc'].forEach(b=>{ if(state[b]) delete state[b][k]; }); }
 function eqRemoveItem(k){ if(state.equipOwned) delete state.equipOwned[k]; eqClearItem(k); const eq = state.equipped || {}; Object.keys(eq).forEach(sp=>EQUIP_SLOTS.forEach(sl=>{ if(eq[sp] && eq[sp][sl]===k) eq[sp][sl] = null; })); }
 function eqAddItem(type){ state.equipOwned = state.equipOwned || {}; state.equipSeen = state.equipSeen || {}; const isNew = !state.equipSeen[type]; let k = type;
   if((state.equipOwned[k]||0)>0){ let n = 2; while((state.equipOwned[type+'#'+n]||0)>0) n++; k = type+'#'+n; }
@@ -9168,11 +9176,19 @@ const EQ_ENH_STEP = 0.10, EQ_ENH_MAX = { common:3, rare:5, epic:7, legendary:9, 
 function equipEnhLevel(k){ return (state.equipEnh && state.equipEnh[k]) || 0; }
 function equipEnhMax(k){ return EQ_ENH_MAX[equipInfo(k).rarity] || 0; }
 function equipEnhMult(k){ return 1 + EQ_ENH_STEP*equipEnhLevel(k); }
+// (v10.0.0) 고대 장비 — 성좌 승급처럼 신화 +10 장비를 한 단계 위로 (그림·이름·각인·품질 그대로 · 주효과 ×ANC_MULT) · 재료는 레이드에서만 (사용자 결정 10/17)
+const ANC_MULT = 1.3, ANC_COST = { ancient:100, essence:30000 };
+function isEqAnc(k){ return !!(state.eqAnc && state.eqAnc[k]); }
+function eqAncCan(k){ const i = equipInfo(k); return i.rarity==='mythic' && !isEqAnc(k) && equipEnhLevel(k)>=EQ_ENH_MAX.mythic && equipOwnedCount(k)>0; }
+function doEqAnc(k){ if(!eqAncCan(k) || ticketCount('ancient')<ANC_COST.ancient || state.essence<ANC_COST.essence) return false;
+  state.tickets.ancient -= ANC_COST.ancient; state.essence -= ANC_COST.essence; state.eqAnc = state.eqAnc || {}; state.eqAnc[k] = 1;
+  state.lockedEquip = state.lockedEquip || {}; state.lockedEquip[k] = true; // 고대 장비는 저절로 잠금 (분해 실수 막기)
+  checkAchievements(); save(); sfx('summonLegend'); return true; }
 // (v330) 장비 강화 비용 — 정령과 같은 등급 배율(ENH_COST_MUL)에 정령 비용의 절반 · 예전 값보다 싸지지는 않게 (신화 +10 합계 정수 약 6,000 · 강화석 약 550)
 const EQ_ENH_COST_RATE = 0.5;
 function equipEnhCost(k){ const lv = equipEnhLevel(k), r = RARITY_ORDER.indexOf(equipInfo(k).rarity), mul = (ENH_COST_MUL[r]||1)*EQ_ENH_COST_RATE;
   return { essence: Math.max(40 + lv*25 + r*20, Math.round((30 + lv*20)*mul)), stone: Math.max(3 + lv*3 + r*2, Math.round((2 + lv*2)*mul)) }; }
-function eqEnhTag(k){ const n = equipEnhLevel(k); return n>0 ? '<span class="enh-tag">+'+n+'</span>' : ''; }
+function eqEnhTag(k){ const n = equipEnhLevel(k); return (n>0 ? '<span class="enh-tag">+'+n+'</span>' : '')+(isEqAnc(k) ? '<span class="anc-tag">고대</span>' : ''); }
 function doEquipEnhance(k){
   const lv = equipEnhLevel(k); if(lv>=equipEnhMax(k)) return false;
   const c = equipEnhCost(k); if(state.essence<c.essence || (state.enhanceStone||0)<c.stone) return false;
@@ -9190,7 +9206,7 @@ function eqMainStat(k){ const m = state.eqMain && state.eqMain[k]; return (m && 
 function eqQual(k){ const q = state.eqQual && state.eqQual[k]; return Number.isFinite(q) ? q : EQ_QUAL_DEF; }
 function eqQualMult(k){ return 0.7 + 0.4*eqQual(k)/100; }
 function rollEqMain(slot){ const w = EQ_MAIN_W[slot] || EQ_MAIN_W.weapon, tot = Object.values(w).reduce((a,b)=>a+b, 0); let x = Math.random()*tot; for(const s in w){ x -= w[s]; if(x<0) return s; } return Object.keys(w)[0]; }
-function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * equipEnhMult(eqKey) * eqQualMult(eqKey) * (spKey && SPIRITS[spKey] && SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); } // 주효과 세기(능력 배율 빼고) — 비교·추천용
+function equipEffect(eqKey, spKey){ if(!eqKey || !isEquipUnlocked()) return 0; const i = equipInfo(eqKey); return EQUIP_BONUS[i.rarity] * equipEnhMult(eqKey) * eqQualMult(eqKey) * (isEqAnc(eqKey) ? ANC_MULT : 1) * (spKey && SPIRITS[spKey] && SPIRITS[spKey].element===i.element ? EQUIP_MATCH_MULT : 1); } // 주효과 세기(능력 배율 빼고) — 비교·추천용
 function eqMainVal(k, spKey){ return equipEffect(k, spKey) * EQ_MAIN_K[eqMainStat(k)]; }
 function eqMainTxt(k, spKey){ const s = eqMainStat(k), v = eqMainVal(k, spKey); return EQ_MAIN_NM[s]+' '+(s==='dr'?'−':'+')+(s==='spd' ? Math.round(v) : eqPct(v)+'%'); }
 function eqMainSum(spKey, stat){ let t = 0; if(typeof isEquipUnlocked!=='function' || !isEquipUnlocked()) return 0; EQUIP_SLOTS.forEach(sl=>{ const k = equippedKey(spKey, sl); if(k && eqMainStat(k)===stat) t += eqMainVal(k, spKey); }); return t; }
@@ -9207,6 +9223,13 @@ function eqMainBoxHtml(key){ // (v10.0.0) 장비 정보 — 주효과 · 품질 
     + '<div class="sub" style="font-size:11px; margin-top:4px;">속성이 맞는 정령이 끼면 ×'+EQUIP_MATCH_MULT+'</div>'
     + '<div class="eqm-btns"><button class="btn secondary" id="eqMainRoll" '+(ok1?'':'disabled')+'>'+uiIc('dice')+' 주효과 바꾸기 · '+TICKET_INFO.eqmain.icon+' 1 <small>('+ticketCount('eqmain')+')</small></button>'
     + '<button class="btn secondary" id="eqQualUp" '+(ok2?'':'disabled')+'>⬆️ 품질 올리기 · '+TICKET_INFO.eqqual.icon+' 1 <small>('+ticketCount('eqqual')+')</small><br><small>성공 '+(100-q)+'%</small></button></div></div>';
+}
+function eqAncBoxHtml(key){ // (v10.0.0) 고대 승급 칸 — 신화 장비만
+  if(equipInfo(key).rarity!=='mythic') return '';
+  if(isEqAnc(key)) return '<div class="anc-box"><b><span class="anc-tag">고대</span> 고대 장비</b><div class="sub" style="font-size:11px; margin-top:3px;">주효과 ×'+ANC_MULT+'</div></div>';
+  const lvOk = equipEnhLevel(key)>=EQ_ENH_MAX.mythic, have = ticketCount('ancient'), ok = lvOk && have>=ANC_COST.ancient && state.essence>=ANC_COST.essence;
+  return '<div class="anc-box"><b>고대 승급</b><div class="sub" style="font-size:11px; margin:3px 0 6px;">그림·각인·품질 그대로 · 주효과 ×'+ANC_MULT+' (+'+Math.round((ANC_MULT-1)*100)+'%)'+(lvOk ? '' : ' · 강화 +'+EQ_ENH_MAX.mythic+' 필요')+'</div>'
+    + '<button class="btn gold" id="eqAncDo" '+(ok?'':'disabled')+'>'+TICKET_INFO.ancient.icon+' '+have+' / '+ANC_COST.ancient+' · '+uiIc('essence')+' '+(ANC_COST.essence/10000)+'만</button></div>';
 }
 function eqMainRoll(key){ if(ticketCount('eqmain')<1) return false; state.tickets.eqmain -= 1; state.eqMain = state.eqMain || {}; const old = eqMainStat(key); state.eqMain[key] = rollEqMain(equipInfo(key).slot); save(); return { old, now: state.eqMain[key] }; } // 같은 주효과도 나올 수 있음 (사용자 결정 10/17)
 function eqQualUp(key){ if(ticketCount('eqqual')<1) return null; const q = eqQual(key); if(q>=100) return null; state.tickets.eqqual -= 1; const r = Math.floor(Math.random()*101); const ok = r > q; state.eqQual = state.eqQual || {}; if(ok) state.eqQual[key] = r; else state.eqQual[key] = q; save(); return { ok, r, q }; } // 로스트아크식: 0~100을 뽑아 지금보다 높으면 성공 · 낮으면 그대로 (사용자 결정 10/17)
@@ -11266,7 +11289,7 @@ function showEquipDetailModal(key){
     + '<h3>'+i.name+' '+eqEnhTag(key)+' <span class="rarity-tag" style="background:'+info.color+'22; color:'+info.color+'">'+info.name+'</span></h3>'
     + '<div class="sub">'+EQUIP_SLOT_INFO[i.slot].name+' · '+elLabel(i.element)+'</div>'
     + '<div class="sub">보유 '+n+'개 · 장착 '+used+'개</div>'
-    + eqMainBoxHtml(key)+'</div>'; // (v10.0.0) 주효과 · 품질 · 다시 굴리기
+    + eqMainBoxHtml(key)+eqAncBoxHtml(key)+'</div>'; // (v10.0.0) 주효과 · 품질 · 다시 굴리기 · 고대 승급
   if(users.length){
     html += '<div style="margin-top:10px;">'+users.map(sp=>'<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0;"><span>'+ELEMENT_INFO[SPIRITS[sp].element].icon+' '+SPIRITS[sp].name+' <span class="sub">'+eqValHtml(key, sp)+'</span></span><button class="btn secondary small" data-unequip="'+sp+'">해제</button></div>').join('')+'</div>';
   }
@@ -11287,6 +11310,7 @@ function showEquipDetailModal(key){
   { const so = document.getElementById('eqSubOpen'); if(so && (EQ_SUB_LINES[i.rarity]||0)) so.addEventListener('click', ()=>showSubModal('eq', key, ()=>showEquipDetailModal(key))); }
   { const mr = document.getElementById('eqMainRoll'); if(mr) mr.addEventListener('click', ()=>spendAsk('주효과 바꾸기', {tk:'eqmain', n:1}, ()=>{ const r = eqMainRoll(key); if(!r) return; sfx('enhance'); toast(uiIc('dice')+' 주효과 → '+eqMainTxt(key)+(r.old===r.now?' (같은 효과)':'')); render(); showEquipDetailModal(key); })); } // (v10.0.0)
   { const qu = document.getElementById('eqQualUp'); if(qu) qu.addEventListener('click', ()=>spendAsk('품질 올리기', {tk:'eqqual', n:1}, ()=>{ const r = eqQualUp(key); if(!r) return; sfx(r.ok ? 'enhance' : 'click'); toast(r.ok ? '⬆️ 품질 '+r.q+' → '+r.r+' 성공' : '품질 '+r.r+' — 지금('+r.q+')보다 낮아 그대로'); render(); showEquipDetailModal(key); })); }
+  { const ad = document.getElementById('eqAncDo'); if(ad) ad.addEventListener('click', ()=>spendAsk('고대 승급', {tk:'ancient', n:ANC_COST.ancient, essence:ANC_COST.essence}, ()=>{ if(doEqAnc(key)){ toast(equipInfo(key).name+' 고대 승급!'); render(); showEquipDetailModal(key); const h = document.querySelector('#modalBg .eqimg'); if(h && typeof upgradeFx==='function') upgradeFx(h.parentElement, '고대 승급!', 'enh', true); } })); }
   { const to = document.getElementById('eqTraitOpen'); if(to) to.addEventListener('click', ()=>showEqTraitModal(key, ()=>showEquipDetailModal(key))); }
   const fb = document.getElementById('equipFuseBtn'); if(fb) fb.addEventListener('click', ()=>{ eqDetailBack = null; openFuseTab('equip', key); });
   const lb = document.getElementById('eqLockBtn'); if(lb) lb.addEventListener('click', ()=>{ if(!state.lockedEquip) state.lockedEquip = {}; if(state.lockedEquip[key]) delete state.lockedEquip[key]; else state.lockedEquip[key] = true; save(); render(); showEquipDetailModal(key); });
@@ -11294,7 +11318,7 @@ function showEquipDetailModal(key){
 }
 function showEquipEnhanceModal(key, fxLabel){
   const i = equipInfo(key), lv = equipEnhLevel(key), mx = equipEnhMax(key), maxed = lv>=mx, c = equipEnhCost(key), b = EQUIP_BONUS[i.rarity];
-  const ms = eqMainStat(key), mk = EQ_MAIN_K[ms]*eqQualMult(key), now = b*(1+EQ_ENH_STEP*lv)*mk, nxt = b*(1+EQ_ENH_STEP*(lv+1))*mk, st = EQ_MAIN_NM[ms]; // (v10.0.0) 주효과 기준
+  const ms = eqMainStat(key), mk = EQ_MAIN_K[ms]*eqQualMult(key)*(isEqAnc(key) ? ANC_MULT : 1), now = b*(1+EQ_ENH_STEP*lv)*mk, nxt = b*(1+EQ_ENH_STEP*(lv+1))*mk, st = EQ_MAIN_NM[ms]; // (v10.0.0) 주효과 기준
   let h = '<button class="aw-back" id="eeBack">‹ 장비 정보</button>';
   h += '<div class="aw-top"><div class="av r-'+i.rarity+' up-host" id="upHost" style="font-size:40px;">'+i.img+'</div><div><b style="font-size:17px;">'+i.name+' '+eqEnhTag(key)+'</b><div class="sub">'+RARITY_INFO[i.rarity].name+' '+EQUIP_SLOT_INFO[i.slot].name+' · 강화 '+lv+' / '+mx+'</div></div></div>';
   h += '<div class="en-bar"><i style="width:'+Math.round(lv/Math.max(1,mx)*100)+'%"></i></div>';
@@ -11967,14 +11991,17 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:452, v:'10.0.1', date:'2026-10-17', secs:[
-    { t:'빙고', items:[ '탭을 바꿔도 창 크기가 그대로 — 탭 줄이 위아래로 움직이지 않음', '뽑기 연출을 눌러 건너뛰어도 당첨이면 「당첨!」과 칸으로 날아가는 모습, 꽝이면 「꽝」 도장은 보여 줌' ] } ] },
-  { build:451, v:'10.0.0', date:'2026-10-17', secs:[
+  { build:453, v:'10.0.0', date:'2026-10-17', secs:[
     { t:'보스 토벌 (새 콘텐츠)', items:[ '도전 화면에 「보스 토벌」 — 챕터 보스 6종을 1~6단계로 다시 토벌', '보스마다 그 속성 장비가 나옴 — 서리거인 물결 · 용암군주 화염 · 고대수목 숲결 · 유적파수꾼 빛 · 그림자 군주 그림자 · 심연의 수정 무작위', '기력 하루 80 (한 판 20 · 하루 4판) · 최대 160까지 쌓임 · 이긴 판만 기력을 씀', '한 판마다 장비 1~2개(에픽·레전더리) + 각인석 · 정련석 · 변환석(확률) · 정수 — 높은 단계일수록 레전더리가 잘 나옴 · 6단계는 레전더리 확정', '한 번 깬 보스·단계는 소탕 · 토벌 장비 자동 분해 설정' ]},
     { t:'장비 주효과 · 품질', items:[ '새로 얻는 장비는 주효과가 무작위 — 무기: 공격력 · 치명타 확률 · 치명타 피해 · 체력 · 속도 / 방어구: 체력 · 받는 피해 감소 · 공격력 · 속도 · 흡혈', '이미 가진 장비는 그대로 (무기 공격력 · 방어구 체력 · 품질 75)', '「주효과 바꾸기」 변환석 1개 — 같은 효과가 다시 나올 수도 있음', '품질 0~100 — 주효과 크기 ×0.7~×1.1 · 「품질 올리기」 정련석 1개: 지금보다 높게 나오면 성공, 낮으면 그대로', '합성 결과 장비의 주효과·품질은 무작위', '장비 부가 능력 → 「장비 각인」' ]},
     { t:'각인', items:[ '정령 각인 3줄 → 5줄 · 잠금 최대 3줄 — 이미 각인한 정령은 새 2줄을 무료로 채움', '새 능력: 치명타 피해 +4~24% · 공격력(깡) +20~120 · 체력(깡) +150~950', '치명타 피해 기본 +50% (예전 ×1.5와 같음) · 깡 능력은 모든 %를 곱한 뒤 더함' ]},
     { t:'장비 분해', items:[ '분해하면 각인 가루도 나옴 (에픽 3 · 레전더리 8 · 신화 20) · 가루 10개 → 정련석 1개 (보스 토벌 화면)' ]},
-    { t:'보상 화면', items:[ '전투에 이기면 첫 클리어·등급 보상을 바로 받고 결과 창에 한 목록으로 (🎁에서 하나씩 받던 것 없앰) · 등급 보상은 한 줄로' ]}
+    { t:'보상 화면', items:[ '전투에 이기면 첫 클리어·등급 보상을 바로 받고 결과 창에 한 목록으로 (🎁에서 하나씩 받던 것 없앰) · 등급 보상은 한 줄로' ]},
+    { t:'고대 장비 (새 콘텐츠)', items:[ '신화 장비 +10을 「고대」로 승급 — 그림·각인·품질은 그대로, 주효과 ×1.3', '재료: 고대의 파편 100개 + 정수 3만 · 고대 장비는 저절로 잠김', '고대의 파편은 레이드에서만 — 추천 전투력 10만 이상 판에서 5만마다 1개 (그 난이도 이번 주 첫 승리는 3배)' ]},
+    { t:'레이드', items:[ '헬 보스 공격력 배율 28 → 72 · 체력 40 → 104', '인페르노 공격력 60 → 150 · 체력 80 → 200', '카오스 공격력 110 → 385 · 체력 150 → 525', '보스가 열리는 순서대로 세짐 — 혹한의 폭군 ×1 · 겁화룡 ×1.07 · 심연의 눈 ×1.14 · 태고수 ×1.22 · 새벽의 심판관 ×1.3 (모든 난이도)', '헬~카오스 보스별 보정: 겁화룡 0.75 · 0.5 · 0.42 / 심연의 눈 0.75 · 0.68 · 0.65 / 태고수 카오스 1.5 / 새벽의 심판관 0.75 · 0.55 · 0.48', '추천 전투력 — 헬 6.5만~8.5만 · 인페르노 9.5만~12.5만 · 카오스 16만~19만 (보스 순서대로)' ]},
+    { t:'별빛 균열', items:[ '10층 보스 체력 배율 3.6 → 50 · 공격력 1.5 → 6.5', '11층 체력 5.6 → 60 · 공격력 1.7 → 7', '12층 체력 8 → 70 · 공격력 1.95 → 7.5', '10층부터 보스마다 세기 보정 (체력 ×보정 · 공격력 ×보정^0.45) — 용암 군주 0.24 · 그림자 군주 0.3 · 서리거인 0.57 · 고대수목 0.65 · 심연의 수정 0.97 · 유적파수꾼 1.08', '새로 「픽업 가호」 — 그 기간 픽업 정령이 출전하면 아군 전체 공격력·체력 +20% (기간 규칙이 있어도)' ]},
+    { t:'월드 보스', items:[ '11월 2일 주부터 보스마다 체력이 다름 — 빙하의 거신 600만 · 업화의 군주 180만 · 심연의 핵 1,000만 (지금 450만)' ]},
+    { t:'빙고', items:[ '탭을 바꿔도 창 크기가 그대로 — 탭 줄이 위아래로 움직이지 않음', '뽑기 연출을 눌러 건너뛰어도 당첨이면 「당첨!」과 칸으로 날아가는 모습, 꽝이면 「꽝」 도장은 보여 줌' ]}
   ]},
   { build:450, v:'9.5.0', date:'2026-10-17', secs:[
     { t:'정령 능력치', items:[ '정령 창에 「📊 능력치」 — 공격력·체력을 실제 수치로 · 속도 · 치명타 확률 · 치명타 피해 · 흡혈 · 받는 피해 감소', '능력치마다 어디서 얼마나 늘었는지 (무기 · 방어구 · 각인 · 장비 부가 능력 · 장비 고유 효과 · 초월 · 룬)', '특성 · 패시브 설명도 같이' ]},
@@ -12957,6 +12984,7 @@ const TICKET_INFO = {
   engr:{icon:'<img class="uic tk-engr" src="assets/ui/ic_shard.webp" alt="">', name:'각인석'},
   eqmain:{icon:'<img class="uic tk-eqm" src="assets/ui/ic_shard.webp" alt="">', name:'변환석'}, // (v10.0.0) 장비 주효과 다시 굴리기
   eqqual:{icon:'<img class="uic tk-eqq" src="assets/ui/ic_shard.webp" alt="">', name:'정련석'}, // (v10.0.0) 장비 품질 올리기
+  ancient:{icon:'<img class="uic tk-anc" src="assets/ui/ic_runestone.webp" alt="">', name:'고대의 파편'}, // (v10.0.0) 신화 장비 → 고대 승급 (레이드 추천 10만 이상에서만)
   eqdust:{icon:'<img class="uic tk-eqd" src="assets/ui/ic_recycle.webp" alt="">', name:'각인 가루'}, // (v10.0.0) 장비 분해 → 모아서 정련석으로 // (v298) 각인·장비 부가 능력 다시 굴리기
   eq_rare:{icon:tkIcon('sure','rare',true), name:'레어 장비 확정권', eqSure:'rare'},
   eq_epic:{icon:tkIcon('sure','epic',true), name:'에픽 장비 확정권', eqSure:'epic'},
@@ -12982,6 +13010,7 @@ function bagTicketInfo(k){ const t = TICKET_INFO[k], R = r=>RARITY_INFO[r].name;
   if(k==='fuseGuard') return { d:'레전더리·신화 합성이 실패해도 재료 유지', go:'fuse' };
   if(k==='engr') return { d:'정령 각인 · 장비 각인 다시 굴리기 — 정령 정보 창·장비 정보 창의 각인에서', go:'spirits' };
   if(k==='eqmain') return { d:'장비 주효과 다시 굴리기 (같은 주효과가 또 나올 수 있음) — 장비 정보 창에서', go:'spirits' };
+  if(k==='ancient') return { d:'신화 장비 +'+EQ_ENH_MAX.mythic+'를 「고대」로 승급 — 레이드(추천 전투력 10만 이상)에서 모임 · 장비 정보 창에서', go:'raid' };
   if(k==='eqdust') return { d:'장비를 분해하면 모임 · '+EQ_DUST_PER+'개 → 정련석 1개 (보스 토벌 화면에서)', go:'hunt' };
   if(k==='eqqual') return { d:'장비 품질 올리기 — 지금보다 높게 나오면 성공, 낮으면 그대로 · 장비 정보 창에서', go:'spirits' };
   if(t.pick) return { d:R(t.pick)+' 정령 10종 중 원하는 1마리', go:'summon0' };
@@ -14389,9 +14418,13 @@ const RIFT_NAME = '별빛 균열';
 const RIFT_TIERS = [
   {h:0, ref:['n',0], hp:1, atk:1},     {h:0, ref:['n',1], hp:1, atk:1},     {h:0, ref:['n',2], hp:1, atk:1},     {h:0, ref:['n',3], hp:1, atk:1},
   {h:0, ref:['n',4], hp:1, atk:1},     {h:1, ref:['h',0], hp:1.3, atk:1.1}, {h:1, ref:['h',0], hp:1.5, atk:1.2}, {h:1, ref:['h',0], hp:1.7, atk:1.3},
-  {h:1, ref:['h',0], hp:1.9, atk:1.4}, {h:1, ref:['h',0], hp:3.6, atk:1.5}, {h:1, ref:['h',0], hp:5.6, atk:1.7}, {h:1, ref:['h',0], hp:8, atk:1.95}
+  {h:1, ref:['h',0], hp:1.9, atk:1.4}, {h:1, ref:['h',0], hp:50, atk:6.5}, {h:1, ref:['h',0], hp:60, atk:7}, {h:1, ref:['h',0], hp:70, atk:7.5}
 ];
 const RIFT_FLOORS = RIFT_TIERS; // 층 수
+// (v10.0.0) 10~12층 다시 맞춤 (사용자 결정 10/17 — 12층: 풀성장(운 요소 절반)+픽업 = 널널 · 픽업 없음 = 조금 빡빡 / 10·11층은 그보다 쉽게)
+// 보스마다 기믹 세기 차이가 너무 커서(같은 배율에서 용암 군주 0% · 유적 파수꾼 100%) 10층부터만 보스 보정 — 체력 ×k · 공격력 ×k^0.45 (tools/rift_winrate_sim.js 보스 6종 측정)
+const RIFT_GIM_FROM = 10, RIFT_GIM_K = { lavaLord:0.24, shadowLord:0.3, frostGiant:0.57, ancientTree:0.65, abyssCrystal:0.97, ruinGuardian:1.08 };
+function riftGimK(f, g){ return f>=RIFT_GIM_FROM ? (RIFT_GIM_K[g] || 1) : 1; }
 // 픽업 신화별로 잘 받아치는 기믹 (앞에 있을수록 자주) · why = 준비 창에 보이는 한 줄
 const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 넣었을 때 레전더리 대신보다 더 잘 깨는 기믹 순 (화면엔 안 보임 · 사용자 결정)
   fire_mythic_a:  [{g:'frostGiant', why:'체력 50% 이하 공격력 증가·부활 폭발로 얼음 갑옷을 밀어붙임'}, {g:'ancientTree', why:'상성 유리 + 연쇄 돌진'}, {g:'abyssCrystal', why:'부활 폭발로 파동을 버팀'}],
@@ -14417,7 +14450,9 @@ const RIFT_FIT = { // (v317) 시뮬로 확인: 같은 팀에서 이 신화를 �
 const RIFT_BEATS = { fire:'wood', wood:'water', water:'fire', light:'dark', dark:'light' }; // 픽업 속성 → 그 픽업이 유리한 적 속성
 const RIFT_ROUND_GOAL = 10; // ★2: 이 라운드 안에 처치
 const RIFT_STAR_SHARD = [5,5,5,5,10,10,10,10,15,15,15,15]; // 층별 별 하나당 별빛 조각
-const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25; // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
+const RIFT_BLESS = 0.25, RIFT_PU_BONUS = 0.25, RIFT_PU_TEAM = 0.2; // (v10.0.0) 픽업 가호: 그 기간 픽업 정령이 출전하면 아군 전체 공격력·체력 +20% (기간 규칙과 상관없이 — 자동 전투에서 픽업 이득이 안 보였음)
+function riftPuTeamHtml(per){ return '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">✨ 픽업 가호 — '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 출전 시 아군 전체 공격력·체력 +'+Math.round(RIFT_PU_TEAM*100)+'%</div>'; }
+// // 픽업 속성 공격력 +25% · 픽업 신화 본인은 +25% 더
 function riftBossStage(hard, c){ return (hard ? HARD_BASE : 0) + c*CHAPTER_LENGTH + CHAPTER_LENGTH-1; }
 function riftPeriod(){ return pickupPeriod(); }
 const RIFT_SWAP_FROM = PICKUP_P0 + 1; // (v8.1.0) 이 기간부터 짝수 층 = 첫 번째 픽업(한정 성좌) · 홀수 층 = 짝 정령 (사용자 결정 — 12층이 한정 성좌 층)
@@ -14554,7 +14589,7 @@ function riftMakeEnemies(f, per){ // 기믹 보스를 만들어 속성을 바꾸
   const T = RIFT_TIERS[f-1], P = riftPlan(f, per), st = riftBossStage(T.h, P.gi);
   const bf = buildBossWaveFight(st, BOSS_WAVE_COUNT, [], {}, true), ref = buildBossWaveFight(riftBossStage(T.ref[0]==='h', T.ref[1]), BOSS_WAVE_COUNT, [], {}, true);
   const b = bf.enemyUnits.find(u=>u.isBoss), rb = ref.enemyUnits.find(u=>u.isBoss);
-  const ka = rb.atk/b.atk*T.atk, kh = rb.maxHp/b.maxHp*T.hp; // (v8.12.0) 기믹별 배율(RIFT_GIM_K, 예전 용암 군주만 0.3) 아예 없앰 — 모든 보스가 층 배율 그대로 (사용자 결정)
+  const gk = riftGimK(f, P.gim), ka = rb.atk/b.atk*T.atk*Math.pow(gk, 0.45), kh = rb.maxHp/b.maxHp*T.hp*gk; // (v8.12.0) 기믹별 배율(RIFT_GIM_K, 예전 용암 군주만 0.3) 아예 없앰 — 모든 보스가 층 배율 그대로 (사용자 결정)
   bf.enemyUnits.forEach(u=>{ u.atk = Math.max(1, Math.round(u.atk*ka)); u.maxHp = Math.max(1, Math.round(u.maxHp*kh)); u.hp = u.alive ? u.maxHp : 0;
     if(P.gim!=='abyssCrystal' && u.isBoss) riftSetEl(u, P.el); }); // 결계석은 원래대로 서로 다른 속성
   return bf;
@@ -14564,6 +14599,7 @@ function buildRiftFight(f){
   const bf = riftMakeEnemies(f, per), my = buildBossWaveFight(riftBossStage(P.hard, Math.max(0, P.gi)), BOSS_WAVE_COUNT, state.formation.slice(0, GRID_SLOTS), {});
   const rule = riftRuleOf(per); // (v7.4.0) 기간 규칙이 있으면 픽업 공격력 버프 대신 규칙
   my.myUnits.forEach(u=>{ const m = rule ? (rule==='flow' && u.element==='water' ? 1+FLOW_WATER_ATK : 1) : (els.includes(u.element) ? 1+RIFT_BLESS : 1) * (per.pair.includes(u.key) ? 1+RIFT_PU_BONUS : 1); if(m>1) u.atk = Math.round(u.atk*m); });
+  if(my.myUnits.some(u=>per.pair.includes(u.key))) my.myUnits.forEach(u=>{ u.atk = Math.round(u.atk*(1+RIFT_PU_TEAM)); u.maxHp = Math.round(u.maxHp*(1+RIFT_PU_TEAM)); u.hp = u.maxHp; }); // (v10.0.0) 픽업 가호
   const sf = Object.assign(bf, { mode:'rift', riftF: f, riftP: per.idx, riftRule: rule, riftEl: P.el, myUnits: my.myUnits, log:[RIFT_NAME+' '+f+'층!'].concat(rule ? [RIFT_RULE_INFO[rule].ic+' 기간 규칙 「'+RIFT_RULE_INFO[rule].nm+'」'] : []) });
   if(rule==='fuse') fuseSummon(sf); // (v8.1.0) 도화선 — 1라운드에도 부름
   sf.queue = []; sf.queuePos = 0; startRoundQueue(sf);
@@ -14587,6 +14623,7 @@ function showRiftRules(sf){ // (v8.11.1) 전투 중 균열 규칙 다시 보기 
   let h = '<div class="rf-boss2">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   h += R ? '<div class="rf-bless rf-rule" style="display:block; text-align:left; margin:8px 0 0; max-height:none; overflow:visible;"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div>'
     : '<div class="rf-bless" style="display:block; text-align:center; margin:8px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>';
+  h += riftPuTeamHtml(per);
   h += '<div style="margin-top:8px;">'+riftStarRowHtml(riftState().st[f]||0, 0)+'</div>';
   h += '<div class="sub" style="text-align:center; font-size:11px; margin-top:6px;">정령을 누르면 능력치·스킬 · 상태 아이콘을 누르면 효과 설명</div>';
   openInfoOverlay(uiIc('rift')+' '+RIFT_NAME+' · '+f+'층', h);
@@ -14621,7 +14658,7 @@ function showRiftPrep(f, keep){
   let h = '<h3 style="text-align:center; margin:0;">'+uiIc('rift')+' '+RIFT_NAME+' · '+f+'층</h3>';
   h += '<div class="rf-boss2" data-unit-info="enemy:'+pv.enemyUnits.find(u=>u.isBoss).idx+'">'+bossImg(fi.gim, 'rf-bimg2', fi.info.icon)+'<div><b>'+(fi.gim==='abyssCrystal' ? '' : elIc(fi.el)+' ')+fi.info.name+(fi.hard?' <span class="ex-hbadge">HARD</span>':'')+'</b><small>'+fi.info.desc+'</small></div></div>';
   // (v317) 어느 픽업이 왜 유리한지는 안 알려 줌 — 직접 찾게 (사용자 결정 · 이유는 RIFT_FIT.why에 기록만)
-  { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-rulew"><div class="rf-bless rf-rule"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div><i class="rf-sb"><b></b></i></div>'; } /* (build 391) 상자 안에서 스크롤 */ else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
+  { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-rulew"><div class="rf-bless rf-rule"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div><i class="rf-sb"><b></b></i></div>'; } /* (build 391) 상자 안에서 스크롤 */ else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; h += riftPuTeamHtml(per); } // (v7.4.0) 기간 규칙 · (v10.0.0) 픽업 가호
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
   h += formationRowsHtml();
@@ -15519,7 +15556,10 @@ function trialProbe(t, tries){ // 무작위 성공률 · 자동 전투 결과 ·
 // 날마다 약점 속성이 바뀜(그 속성 정령 공격력 ×1.5) · 하루 3번 · 전체 25/50/75/100% 마다 참여자 모두 보상
 const WB_ROUNDS = 5;
 const WB_HP_OLD = 1500000, WB_HP_NEW = 4500000, WB_HP_NEW_WEEK = 41; // (v8.16.0) 150만이 이틀 만에 깎임(하루 약 75만) → 3배 · 주 후반(6일째쯤)에 잡히게 · 달성 보상은 비율이라 그대로 · 이미 잡힌 이번 주 보스가 되살아나지 않게 다음 주(10/19, 41주차)부터
-function wbHp(){ try{ return wbWeekIndex() >= WB_HP_NEW_WEEK ? WB_HP_NEW : WB_HP_OLD; }catch(e){ return WB_HP_OLD; } }
+// (v10.0.0) 보스마다 체력 따로 · 개편으로 피해가 늘어서 전체 ×1.3 — 같은 팀 한 번 도전 피해가 용암 군주 약 0.3배 · 심연 약 1.7배라 (tools/worldboss_dmg_sim.js — 풀성장 6마리 한 번 도전: 서리 31만 · 용암 8만 · 심연 53만)
+// 진행 중인 주의 보스 체력이 바뀌면 남은 체력이 튀어서 11/2(43주차)부터
+const WB_HP_K_WEEK = 43, WB_HP_K = { frostGiant:6000000, lavaLord:1800000, abyssCrystal:10000000 };
+function wbHp(){ try{ const w = wbWeekIndex(); if(w >= WB_HP_K_WEEK){ const b = wbBossForWeek(w); return WB_HP_K[b.g] || WB_HP_NEW; } return w >= WB_HP_NEW_WEEK ? WB_HP_NEW : WB_HP_OLD; }catch(e){ return WB_HP_OLD; } }
 // 한 주 전체 체력 — 모의 실험(한 번 도전): 에픽 팀 ≈2~6천 · 전설 ≈7천~1.5만 · 신화 ≈4~7만 (단계 상성 맞췄을 때). 플레이어 5명 안팎이 하루 3번씩이면 주 후반에 잡히는 정도 (v269: 300만→150만)
 const WB_PCT_HP = 20000, WB_ATK_RATIO = 0.35;
 // (v280) 주마다 보스 하나 — 한 주 안에서 단계가 바뀌던 방식은 없앰. 목록을 섞어서 한 바퀴씩 돌리고(같은 보스가 연달아 안 나오게), 바퀴마다 순서가 바뀜
@@ -18030,7 +18070,7 @@ function sanitizeState(){
   s.riftForm = Array.isArray(s.riftForm) ? dedupeKeys(s.riftForm.slice(0, GRID_SLOTS).map(k=> (typeof k==='string' && SPIRITS[k]) ? k : null)) : [];
   if(!isPlainObj(s.pickup)) s.pickup = {}; { const pk = s.pickup; pk.pity = fin(pk.pity) ? Math.max(0, Math.min(PICKUP_PITY-1, Math.floor(pk.pity))) : 0; pk.guar = !!pk.guar; pk.sel = (typeof pk.sel==='string' && SPIRITS[pk.sel] && SPIRITS[pk.sel].rarity==='mythic') ? pk.sel : ''; }
   ['lifetimeSummons','lifetimeFusions','lifetimeExpeditionClears','lifetimeQuests','lifetimeRerolls','lifetimeEquipSummons','lifetimeEquipFusions'].forEach(k=>{ s[k] = fin(s[k]) ? Math.max(0, Math.floor(s[k])) : 0; });
-  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr','eqmain','eqqual','eqdust'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
+  ['summon','rare','epic','legendary','equip','fuseGuard','pick_rare','pick_epic','pick_legendary','pick_mythic','mythic','eq_rare','eq_epic','eq_legendary','eq_mythic','eqpick_rare','eqpick_epic','eqpick_legendary','eqpick_mythic','engr','eqmain','eqqual','eqdust','ancient'].forEach(k=>{ s.tickets[k] = fin(s.tickets[k]) ? Math.max(0, Math.floor(s.tickets[k])) : 0; });
   // 정령
   Object.keys(s.owned).forEach(k=>{ const v = s.owned[k]; if(!SPIRITS[k] || !fin(v) || v<0) delete s.owned[k]; else s.owned[k] = Math.floor(v); });
   Object.keys(s.discovered).forEach(k=>{ if(!SPIRITS[k] || !s.discovered[k]) delete s.discovered[k]; else s.discovered[k] = true; });
@@ -18266,7 +18306,8 @@ function sanitizeState(){
       s.hunt = { e: fin(h.e) ? Math.max(0, Math.min(HUNT_CAP, Math.floor(h.e))) : HUNT_DAY, t: (fin(h.t) && h.t<=serverNow()+60000) ? h.t : serverNow(), best:B }; } else delete s.hunt;
     { const EK = /^(weapon|armor)_(fire|water|wood|light|dark)_(common|rare|epic|legendary|mythic)(#\d+)?$/, M = {}, Q = {}; // (v10.0.0) 장비 주효과 · 품질
       if(isPlainObj(s.eqMain)) Object.keys(s.eqMain).forEach(k=>{ const v = s.eqMain[k], sl = k.split('_')[0]; if(EK.test(k) && EQ_MAIN_W[sl] && EQ_MAIN_W[sl][v]) M[k] = v; }); s.eqMain = M;
-      if(isPlainObj(s.eqQual)) Object.keys(s.eqQual).forEach(k=>{ const v = s.eqQual[k]; if(EK.test(k) && Number.isInteger(v) && v>=0 && v<=100) Q[k] = v; }); s.eqQual = Q; }
+      if(isPlainObj(s.eqQual)) Object.keys(s.eqQual).forEach(k=>{ const v = s.eqQual[k]; if(EK.test(k) && Number.isInteger(v) && v>=0 && v<=100) Q[k] = v; }); s.eqQual = Q;
+      const A = {}; if(isPlainObj(s.eqAnc)) Object.keys(s.eqAnc).forEach(k=>{ if(/_mythic(#\d+)?$/.test(k) && EK.test(k) && s.eqAnc[k]) A[k] = 1; }); s.eqAnc = A; } // (v10.0.0) 고대 장비
     { const ET = {}; if(s.eqTrait && typeof s.eqTrait==='object') Object.keys(s.eqTrait).forEach(k=>{ const e = s.eqTrait[k]; if(!/^(weapon|armor)_(fire|water|wood|light|dark)_(legendary|mythic)(#\d+)?$/.test(k) || !e || typeof e!=='object') return; ET[k] = { id: EQ_TRAITS[e.id] ? e.id : null, offers: Array.isArray(e.offers) ? e.offers.filter(x=>EQ_TRAITS[x]).slice(0,EQ_TRAIT_OFFERS) : [] }; }); s.eqTrait = ET; } // (v328) 장비 고유 효과
     const T = {}, TP = {}; if(s.trans && typeof s.trans==='object') Object.keys(s.trans).forEach(k=>{ const v = s.trans[k]; if(SPIRITS[k] && Number.isInteger(v) && v>0) T[k] = Math.min(10, v); }); s.trans = T;
     if(s.transPity && typeof s.transPity==='object') Object.keys(s.transPity).forEach(k=>{ const v = s.transPity[k]; if(SPIRITS[k] && Number.isFinite(v) && v>0) TP[k] = Math.min(1, v); }); s.transPity = TP;
@@ -18317,7 +18358,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 452, APP_VERSION = '10.0.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 453, APP_VERSION = '10.0.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
