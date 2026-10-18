@@ -3522,6 +3522,7 @@ function makeActCtx(sf, a, tSide, tIdx){
     for(let p=q.length-1; p>sf.queuePos; p--) if(q[p].side===u.side && q[p].idx===u.idx) q.splice(p, 1);
     q.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u) });
   };
+  C.extraTurn = u=>{ if(u.alive) sf.queue.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u) }); }; // (v10.2.0) 원래 차례는 그대로 두고 바로 한 번 더 — 여명의 호령
   return C;
 }
 // 실제 행동 실행(내 정령·적 공통). act: basic | s1 | s2
@@ -5690,6 +5691,7 @@ function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
+      if(u.groggy && (sf.round||1) > (u.groggyR||0)) groggyWake(sf, u); // (v10.2.0) 그로기는 보스의 다음 차례까지 (사용자 결정 10/18 — 예전엔 다음 라운드 시작에 풀려서 우리가 먼저 다 때린 뒤엔 2배를 거의 못 썼음)
       if(u.st.freeze && u.st.dcharge && sf.duo && sf.duo.charge && sf.duo.id==='sc') sf.duo.charge.off = true; // (v344) 연계 층: 충전 중 빙결
       if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); { const jm = aliveUnits(sideUnits(sf, foeOf(u.side))).find(x=>x.line==='water_b' && awAs(x)); if(jm){ const r = dealDamage(sf, jm, u, 1.0, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(jm, u), dot:true, src:'❄️얼음 깨기' }); if(!u.alive){ sf.queuePos++; continue; } } } /* (v8.7.0) 얼음 깨기 */ if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
       if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
@@ -6123,10 +6125,10 @@ const LINE_KITS = {
       run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw1(C.a)?3:2; const f=u=>C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
     s2:{ name:'여명의 호령', icon:artIc('sk_light_b_2'), cd:4, kind:'buff', tag:()=> '즉시 행동',
       desc:g=>[
-        '대상이 즉시 다음 차례로 행동',
+        '대상이 바로 한 번 더 행동 (이번 라운드에 이미 행동했어도)',
         g>=3?'그 행동의 공격력 +25%':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ C.actNext(C.t); if(C.g>=3){ C.t.st.empower = 0.25; delete C.t.st.empSrc; } C.hits.push({side:C.t.side, idx:C.t.idx, kind:'status', text:'📯즉시 행동'}); } } },
+      run:C=>{ C.extraTurn(C.t); if(C.g>=3){ C.t.st.empower = 0.25; delete C.t.st.empSrc; } C.hits.push({side:C.t.side, idx:C.t.idx, kind:'status', text:'📯즉시 행동'}); } } },
   dark_a: { role:'흡혈·처형', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'굶주림', icon:artIc('pv_dark_a'), desc:g=>'대상이 잃은 체력 1%당 피해 +'+[0,.3,.4,.5,.6][g]+'%' },
     s1:{ name:'생명 흡수', icon:artIc('sk_dark_a_1'), cd:3, kind:'harm', tag:()=> '흡혈',
@@ -6695,7 +6697,7 @@ function gmElChip(el){ return el ? '<span class="gm-chip" style="color:'+ELEMENT
 function groggyInfoHtml(ruleId){
   const r = GROGGY_RULES[ruleId]; if(!r) return '';
   const parts = r.desc.split(' · ').map(t=>'<div class="gm-li">'+t+'</div>').join('');
-  return '<div class="gm-sec"><div class="gm-sh"><img class="uic" src="assets/ui/ic_groggy.webp" alt=""> 그로기 게이지 — 공격이 맞을 때마다 줄어듦</div><div class="gm-box">'+parts+'<div class="gm-foot">0이 되면 받는 피해 2배 · 행동 불가</div></div></div>';
+  return '<div class="gm-sec"><div class="gm-sh"><img class="uic" src="assets/ui/ic_groggy.webp" alt=""> 그로기 게이지 — 공격이 맞을 때마다 줄어듦</div><div class="gm-box">'+parts+'<div class="gm-foot">0이 되면 받는 피해 2배 · 행동 불가 — 보스의 다음 차례에 풀림</div></div></div>';
 }
 function raidBossInfoHtml(info){
   const rn = BOSS_RUNES[info.id], bk = RAID_BOSS_KITS[info.id];
@@ -6711,7 +6713,7 @@ function groggyAdd(sf, b, delta){
   if(!b.alive || b.groggy || !delta) return false;
   b.gauge = Math.max(0, Math.min(GROGGY_MAX, b.gauge + delta));
   if(b.gauge>0) return false;
-  b.groggy = true; if(b.cast) b.cast.broken = true; // (v260) 그로기로도 절대영도 저지
+  b.groggy = true; b.groggyR = sf.round||1; if(b.cast) b.cast.broken = true; // (v260) 그로기로도 절대영도 저지
   pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName('enemy', b)+' 그로기! 받는 피해 2배');
   return true;
 }
@@ -6737,13 +6739,14 @@ function groggyWardBroken(sf){
   groggyAdd(sf, b, -35);
 }
 // 라운드 시작: 그로기 해제 + 게이지 가득 / 재생형 보스는 게이지 회복
+function groggyWake(sf, b){ b.groggy = false; delete b.groggyR; b.gauge = GROGGY_MAX; pushLog(sf, logUnitName('enemy', b)+'이(가) 정신을 차렸다'); }
 function groggyRoundStart(sf){
   sf.enemyUnits.forEach(b=>{
     if(!b.isBoss || !b.alive) return;
     const r = groggyRuleOf(sf, b); if(!r) return;
     ensureGroggy(b);
-    if(b.groggy){ b.groggy = false; b.gauge = GROGGY_MAX; pushLog(sf, logUnitName('enemy', b)+'이(가) 정신을 차렸다'); }
-    else if(r.regen) b.gauge = Math.min(GROGGY_MAX, b.gauge + r.regen);
+    if(b.groggy) return; // (v10.2.0) 그로기는 라운드 시작이 아니라 보스의 다음 차례에 풀림 (groggyWake)
+    if(r.regen) b.gauge = Math.min(GROGGY_MAX, b.gauge + r.regen);
   });
 }
 function shownRound(sf){ // (v8.16.0) 사용자 결정: 챕터 보스 3웨이브는 화면 라운드를 이어서 셈 (기믹 주기용 sf.round는 웨이브마다 그대로) — 등급도 누적 라운드 기준
@@ -7065,7 +7068,7 @@ function stIc(k){ return '<img class="uic" src="assets/ui/st/st_'+k+'.webp" alt=
 function statusList(u){
   const s = u.st, o = [], r = x=> (x && x.r) ? ' · '+x.r+'R 남음' : '';
   if(typeof trialUnitRules==='function') trialUnitRules(u).forEach(k=>{ const R = TRIAL_RULES[k]; o.push({ i:R.i, t:R.t, d:R.d(u), good:false, n:R.n ? R.n(u) : 0 }); }); // (build 390) 시련 시험 규칙은 늘 맨 앞
-  if(u.isBoss && u.groggy) o.push({i:'<img class="uic" src="assets/ui/ic_groggy.webp" alt="">', t:'그로기', d:'행동 불가 · 받는 피해 2배 (다음 라운드 시작 때 풀림)', good:false});
+  if(u.isBoss && u.groggy) o.push({i:'<img class="uic" src="assets/ui/ic_groggy.webp" alt="">', t:'그로기', d:'행동 불가 · 받는 피해 2배 (보스의 다음 차례에 풀림)', good:false});
   if(s.jail) o.push({i:stIc('jail'), t:'갇힘', d:'얼음 기둥을 깨면 풀려남 · 갇힌 동안 행동 불가', good:false}); // (v272)
   if(raidGazed(state.skillFight, u)) o.push({i:stIc('gaze'), t:'시선', d:'보스를 때리면 준 피해 25%를 돌려받음 · 대신 회복·보호막 1.5배 · 그로기 게이지를 못 깎음', good:false});
   if(s.shield>0) o.push({i:'<img class="uic" src="assets/ui/ic_shield.webp" alt="">', t:'보호막', d:'피해 '+fmtHp(s.shield)+' 흡수'+(s.shieldR?' · '+s.shieldR+'R 남음':''), good:true});
@@ -10979,7 +10982,7 @@ function guideSectionHtml(cat){
       + guideHeader('💥 피해')
       + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 +'+Math.round((CRIT_MULT-1)*100)+'% (룬·각인으로 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
       + guideHeader(G+' 그로기 (보스)')
-      + guideList(['보스마다 그로기 게이지 '+GROGGY_MAX+' — 아군 공격이 맞을 때마다 줄어듦', '한 번에 깎이는 양: 기본 4 (레이드 3) × 스킬 배율(0.5~2.5배) × 보스별 배수 · 치명타면 ×1.5', '0이 되면 그로기: 받는 피해 <b>×'+GROGGY_DMG_MULT+'</b> · 이번 라운드에 아직 행동 전이면 행동 못 함', '다음 라운드 시작 때 풀리고 게이지가 다시 가득', '보스마다 잘 깎이는 속성·'+uiIc('lock')+' 잠기는 때가 다름 — 준비 창 보스 정보에서 확인', '보스전에서 스킬 버튼에 게이지가 얼마나 깎이는지 표시 (치명타 제외)'])
+      + guideList(['보스마다 그로기 게이지 '+GROGGY_MAX+' — 아군 공격이 맞을 때마다 줄어듦', '한 번에 깎이는 양: 기본 4 (레이드 3) × 스킬 배율(0.5~2.5배) × 보스별 배수 · 치명타면 ×1.5', '0이 되면 그로기: 받는 피해 <b>×'+GROGGY_DMG_MULT+'</b> · 이번 라운드에 아직 행동 전이면 행동 못 함', '보스의 다음 차례(다음 라운드)가 오면 풀리고 게이지가 다시 가득 — 그 전까지 아군은 계속 2배', '보스마다 잘 깎이는 속성·'+uiIc('lock')+' 잠기는 때가 다름 — 준비 창 보스 정보에서 확인', '보스전에서 스킬 버튼에 게이지가 얼마나 깎이는지 표시 (치명타 제외)'])
       + guideHeader(stIc('buff')+' 이로운 효과')
       + guideList(['<img class="uic" src="assets/ui/ic_shield.webp" alt=""> 보호막: 체력 대신 피해를 먼저 받음', '<img class="uic" src="assets/ui/ic_target.webp" alt=""> 도발: 적이 이 정령만 공격', stIc('guardup')+' 굳건함: 받는 피해 감소', stIc('haste')+' 가속: 속도 증가', stIc('buff')+' 강화: 공격력 증가', stIc('regen')+' 재생: 라운드마다 체력 회복', stIc('reflect')+' 반사: 받은 피해 일부 되돌림', '<img class="uic" src="assets/ui/ic_guard.webp" alt=""> 보호: 해로운 효과 1번 막음'])
       + guideHeader(stIc('poison')+' 해로운 효과')
@@ -12049,7 +12052,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const PATCH_NOTES = [
   { build:458, v:'10.2.0', date:'2026-10-18', secs:[
     { t:'별빛 균열 — 6~9층 세기 조정', items:[ '6~9층 보스가 5층과 10층 사이에 고르게 세지도록 올림 (하드 1 보스 대비 체력 · 공격력)', '6층: 1.3 · 1.1 → 2 · 1.45', '7층: 1.5 · 1.2 → 4 · 2', '8층: 1.7 · 1.3 → 7.5 · 2.8', '9층: 1.9 · 1.4 → 14 · 3.8' ]},
-    { t:'스킬 변경 — 쿨타임 때문에 특성을 못 살리던 스킬', items:[ '아스트라이아 「별자리 표식」: 쿨타임 3 → 1 (매 라운드)', '아스트라이아 각성 2단계: 별자리 표식 쿨타임 −1 → 「큰 별자리」 별 표식 최대 3 → 4개', '산군 「포효」: 반격 자세가 다음 차례에 꺼지던 것 → 4라운드 유지 (다시 쓰면 이어짐) · 보호막은 그대로 다음 차례에 꺼짐', '하백 「물길 잇기」: 연결 3 → 4라운드 (다시 쓰면 끊기지 않고 이어짐)', '도깨비 「도깨비불」: 쿨타임 4 → 2', '도깨비 각성 4단계: 도깨비불 쿨타임 −1 → 「짙은 도깨비불」 받는 피해 감소 30% → 45%' ]}
+    { t:'스킬 변경 — 쿨타임 때문에 특성을 못 살리던 스킬', items:[ '아스트라이아 「별자리 표식」: 쿨타임 3 → 1 (매 라운드)', '아스트라이아 각성 2단계: 별자리 표식 쿨타임 −1 → 「큰 별자리」 별 표식 최대 3 → 4개', '산군 「포효」: 반격 자세가 다음 차례에 꺼지던 것 → 4라운드 유지 (다시 쓰면 이어짐) · 보호막은 그대로 다음 차례에 꺼짐', '하백 「물길 잇기」: 연결 3 → 4라운드 (다시 쓰면 끊기지 않고 이어짐)', '도깨비 「도깨비불」: 쿨타임 4 → 2', '도깨비 각성 4단계: 도깨비불 쿨타임 −1 → 「짙은 도깨비불」 받는 피해 감소 30% → 45%' ]},
+    { t:'그로기 · 즉시 행동', items:[ '그로기가 다음 라운드 시작이 아니라 보스의 다음 차례에 풀림 — 그 전까지 받는 피해 2배가 이어짐', '그로기에 걸린 라운드엔 예전처럼 보스가 행동 못 함 (이미 행동했으면 그대로)', '백록 「여명의 호령」: 대상이 이번 라운드에 이미 행동했어도 바로 한 번 더 행동 (예전엔 아직 행동 전이면 순서만 당겨짐)' ]}
   ]},
   { build:457, v:'10.1.0', date:'2026-10-17', secs:[
     { t:'별빛 균열 — 조합 전투', items:[ '10~12층은 보스 1~2마리와 졸개가 함께 나오고, 적 앞줄·뒷줄 6칸을 다 씀 · 층마다 배치가 다름', '10층: 앞줄 그림자 졸개 3 · 뒷줄 그림자 군주 + 심연의 수정', '11층: 앞줄 결계석 2 + 유적 수호병 · 뒷줄 유적파수꾼', '12층: 앞줄 서리거인 · 뒷줄 심연의 수정', '큰 보스는 여러 칸을 차지 — 그 칸을 노리는 범위 공격(십자·가로·관통)에 맞음 · 두 보스가 가운데 칸을 나눠 가지면 둘 다 맞음', '보스 세기(그 층 보스 대비 체력 · 공격력): 10층 두 보스 각 0.55 · 0.7 / 11층 1.55 · 1.4 / 12층 두 보스 각 0.76 · 0.87 · 졸개 체력 0.07~0.08 · 공격력 0.3', '균열 준비 화면에 보스마다 한 줄 + 함께 나오는 적' ]}
