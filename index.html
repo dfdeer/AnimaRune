@@ -3109,8 +3109,15 @@ function awLinesHtml(u, slot){ // 잠긴 줄은 흐리게 (신화가 아니면 5
     return '<div class="aw-ln'+(on?'':' off')+'"><i>'+TAG[x[1]]+'</i> '+nm+t+'</div>'; }).join('');
 }
 // (v227) 각성 ★2 스킬1 쿨 −1 · ★4 스킬2 쿨 −1 (최소 1)
+// (v10.2.0) 쿨을 줄일 수 없거나 줄이면 특성이 깨지는 계열은 그 단계에 다른 효과 (사용자 결정 10/18 — 각성 2·4가 꼭 쿨 −1일 필요는 없음)
+const AW_CD_ALT = {
+  light_as:{ 2:{ t:'큰 별자리', d:'별 표식 최대 3 → 4개' } },
+  dark_dk:{ 4:{ t:'짙은 도깨비불', d:'도깨비불 받는 피해 감소 30% → 45%' } }
+};
+function awAlt(u, lv){ return !!u && (u.aw||0)>=lv && !!(AW_CD_ALT[u.line]||{})[lv]; }
+function starMax(u){ return awAlt(u, 2) ? 4 : 3; } // 아스트라이아 별 표식 최대
 function cdLbl(u, act){ const c = unitCd(u, act), b = act==='s1' ? kitOf(u).s1.cd : kitOf(u).s2.cd; return c<b ? '<b style="color:#ffd557;">'+c+'</b>' : ''+c; }
-function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 : aw>=4) ? 1 : 0) - ((act==='s1' && u.line==='water_mn' && aw>=1) ? 1 : 0)); } // (v343) 므네모시네 ★5 되감기 쿨 −1
+function unitCd(u, act){ const k = kitOf(u), base = act==='s1' ? k.s1.cd : k.s2.cd, aw = u.aw||0; return Math.max(1, base - ((act==='s1' ? aw>=2 && !(AW_CD_ALT[u.line]||{})[2] : aw>=4 && !(AW_CD_ALT[u.line]||{})[4]) ? 1 : 0) - ((act==='s1' && u.line==='water_mn' && aw>=1) ? 1 : 0)); } // (v343) 므네모시네 ★5 되감기 쿨 −1
 function makeBattleUnit(side, idx, key, atk, hpMult, specialMult, armorOverride, runeOverride, awOverride, subOverride){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity);
   // (v225) 각성: ★1 패시브 · ★3 스킬2가 등급과 상관없이 열림 · ★5 스킬 효과 한 등급 위. 레이드·결투 상대는 보내온 값(awOverride)
@@ -3318,6 +3325,7 @@ function killUnit(sf, u){
 }
 // ---------- (v343) 한정 성좌 전투 처리 ----------
 var STAR_RES = 0.2, STAR_FALL = 0.6; // (v8.7.0) 아스트라이아: 표식 하나당 표식 피해(공격력 20%) · 별똥별(표식 하나당 공격력 60%)
+var HB_LINK_R = 4, SG_STANCE_R = 4; // (v10.2.0) 하백 연결 · 산군 반격 자세 지속 — 쿨(3)보다 1 길게 해서 다시 쓰기 전에 끊기지 않음 (라운드 시작에 줄어듦)
 var HB_TIDE_MUL = 0.3, SG_GUARD_SHIELD = 0.2, SG_COUNTER_SH = 0.5; // (v5.3.0) 하백 범람: 수위의 30%를 적마다 추가 피해 · 산군 포효: 자기 보호막(최대체력 20%) · 반격: 그때 남은 보호막의 50% 추가 피해 — 계산으로 정함(최대체력 = 공격력 2.7배): 범람은 테티스와 쓰면 보통 130~150% · 반격은 포효만 약 97%, 광명 보호막까지 약 125%
 var GEUMO_DET = [0,0,.5,.6,.7], GEUMO_DROP = 2, SC_CHAIN = 1.3, SC_CHAIN_BOMB = 2.0;
 // (v6.0.0) 한정 성좌 짝 기술 연계 (사용자 결정): 스칼렛 열충격 · 수르트 불꽃 제물(체력 50% 이하 대상) · 므네모시네 되감기 재사용 대기 · 로키 가로채기
@@ -3523,7 +3531,7 @@ function performAction(sf, a, act, tSide, tIdx){
   if(a.side==='me' && act!=='basic'){ const sk = kitOf(a) && kitOf(a)[act]; if(sk && sk.kind==='harm') sf.meHarmSkill = true; } // (v270) 평화주의자
   const empBefore = a.st.empower || 0; // (v269) 이번 행동 전부터 있던 강화만 이번 행동에서 소모
   const clubBefore = !!a.st.club; // (v343) 도깨비 방망이 — 자리를 바꾼 다음 공격에서 소모
-  if(a.st.counter) delete a.st.counter; // (v343) 산군 반격 자세는 다음 차례까지
+  // (v10.2.0) 산군 반격 자세는 다음 차례에 꺼지지 않고 SG_STANCE_R 라운드 (사용자 결정 10/18 — 쿨 3에 자세가 한 차례뿐이라 반격이 드물었음)
   if(a.st.roarSh){ const left = Math.min(a.st.shield||0, a.st.roarSh); if(left>0){ a.st.shield -= left; if(a.st.shield<=0) delete a.st.shield; } delete a.st.roarSh; } // (v5.3.0) 포효 보호막도 산군 다음 차례에 꺼짐 (남은 만큼만 — 다른 아군이 씌운 보호막은 그대로)
   const name = a.dispName || SPIRITS[a.key].name;
   if(act==='basic'){
@@ -5723,7 +5731,7 @@ function roundStartEffects(sf){
     if(s.regen && u.trUndead){ if(trialUndeadHurt(sf, u, pctHp(u)*s.regen.v, '💧'+(s.regen.src||'재생'), hits)) return; } // (build 390) 역류: 재생도 피해
     else if(s.regen){ const b = u.hp, hv = healAmount(u, pctHp(u)*s.regen.v); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧'+(s.regen.src||'재생') }); }
     if(s.memHeal){ const b = u.hp, hv = healAmount(u, s.memHeal); hbTide(sf, u, b + hv - u.maxHp); u.hp = Math.min(u.maxHp, b + hv); delete s.memHeal; if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'🌀흐르는 기억' }); } // (v343) 므네모시네
-    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link','rwd'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
+    ['slow','haste','curse','web','buff','regen','reflect','guard','seal','pyre','soul','loop','star','exposed','veil','link','rwd','counter'].forEach(k=>{ if(s[k]){ s[k].r--; if(s[k].r<=0) delete s[k]; } }); // (v343) 성좌 효과 지속시간
     if(s.linkHost && u.line==='water_hb' && aw3(u)){ const b = u.hp, hv = healAmount(u, u.maxHp*0.04); u.hp = Math.min(u.maxHp, b + hv); if(u.hp>b) hits.push({ side:u.side, idx:u.idx, kind:'heal', amount:u.hp-b, src:'💧깊은 수원' }); } // (v8.7.0)
     if(s.linkHost){ s.linkHost.r--; if(s.linkHost.r<=0){ u.maxHp = Math.max(1, u.maxHp - (s.linkHost.boost||0)); u.hp = Math.min(u.hp, u.maxHp); delete s.linkHost; } }
     if(s.bomb){ const L = bombsOf(u); L.forEach(b=>{ b.r--; }); u.st.bomb = L; const due = L.filter(b=>b.r<=0); if(due.length){ bombExplode(sf, u, hits, 1, due); if(!u.alive) return; } } // (v343) 스칼렛 시한폭탄 · (v8.1.0) 여러 개 따로
@@ -6182,10 +6190,10 @@ const LINE_KITS = {
   water_hb: { role:'연결', icon:ELEMENT_INFO.water.icon,
     passive:{ name:'깊은 강', icon:artIc('pv_water_hb'), desc:()=>'연결 중이면 최대체력 +15%<br>물길로 대신 받은 피해와, 하백·연결된 아군이 받은 회복 중 넘친 양을 수위로 모음 (최대 하백 최대체력만큼)' },
     s1:{ name:'물길 잇기', icon:artIc('sk_water_hb_1'), cd:3, kind:'shield', allyOnly:true, notSelf:true, tag:()=> '연결 3R',
-      desc:(g,u)=>'아군 '+awUp('하나', aw1(u)?1:0)+'와 3라운드 연결: 그 아군이 받는 피해의 40%를 하백이 대신 받음<br>연결 중 하백이 받는 피해 −20%',
-      run:C=>{ const a = C.a; if(C.t.side!==a.side || C.t===a) return; const link = u=>C.pos(u, st=>{ st.link = { r:3 }; }, '🔗연결');
+      desc:(g,u)=>'아군 '+awUp('하나', aw1(u)?1:0)+'와 '+HB_LINK_R+'라운드 연결 (물길 잇기를 다시 쓰면 이어짐): 그 아군이 받는 피해의 40%를 하백이 대신 받음<br>연결 중 하백이 받는 피해 −20%',
+      run:C=>{ const a = C.a; if(C.t.side!==a.side || C.t===a) return; const link = u=>C.pos(u, st=>{ st.link = { r:HB_LINK_R }; }, '🔗연결');
         link(C.t); if(aw1(a)){ const o = C.side(a.side).filter(u=>u!==a && u!==C.t).sort((x,y)=>x.hp/x.maxHp-y.hp/y.maxHp)[0]; if(o) link(o); }
-        if(!a.st.linkHost){ const b = Math.round(a.maxHp*0.15); a.maxHp += b; a.hp += b; a.st.linkHost = { r:3, boost:b }; } else a.st.linkHost.r = 3;
+        if(!a.st.linkHost){ const b = Math.round(a.maxHp*0.15); a.maxHp += b; a.hp += b; a.st.linkHost = { r:HB_LINK_R, boost:b }; } else a.st.linkHost.r = HB_LINK_R;
         C.hits.push({ side:a.side, idx:a.idx, kind:'status', text:'🌊깊은 강' }); } },
     s2:{ name:'범람', icon:artIc('sk_water_hb_2'), cd:4, kind:'harm', dual:true, tag:()=> '전체 · 적 피해 / 아군 회복',
       desc:()=>'적에게: 전체에 공격력 90% + 각자 수위의 '+pctTxt(HB_TIDE_MUL)+'만큼 추가 피해 + 둔화 (속도 −10, 2라운드)<br>아군에게: 전체에 같은 양만큼 회복 + 가속 (속도 +10, 2라운드)<br>쓰고 나면 수위가 비워짐',
@@ -6195,21 +6203,21 @@ const LINE_KITS = {
   wood_sg: { role:'반격', icon:ELEMENT_INFO.wood.icon,
     passive:{ name:'산의 주인', icon:artIc('pv_wood_sg'), desc:()=>'체력 50% 이상이면 받는 피해 −15%<br>최대 강화 레벨 +10<br>반격은 그때 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+'만큼 추가 피해 (아군이 씌운 보호막도 포함)' },
     s1:{ name:'포효', icon:artIc('sk_wood_sg_1'), cd:3, kind:'shield', self:true, tag:()=> '자신 · 도발 · 보호막 · 반격',
-      desc:(g,u)=>'자신에게 도발 + 보호막 (최대체력 '+pctTxt(SG_GUARD_SHIELD)+') + 반격 자세 — 반격 자세와 이 보호막은 산군의 다음 차례에 꺼짐<br>적이 산군을 때리면 언제든 바로 반격: 공격력 '+awUp('70%', awUq(u)?'30%':0)+' + 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+' · 적의 행동 하나에 1번<br>후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)',
-      run:C=>{ const b0 = C.a.st.shield||0; C.shield(C.a, pctHp(C.a)*SG_GUARD_SHIELD); C.a.st.roarSh = (C.a.st.roarSh||0) + Math.max(0, (C.a.st.shield||0) - b0); C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1 }; }, '🐯반격 자세'); } },
+      desc:(g,u)=>'자신에게 도발 + 보호막 (최대체력 '+pctTxt(SG_GUARD_SHIELD)+') + 반격 자세 ('+SG_STANCE_R+'라운드 — 포효를 다시 쓰면 이어짐)<br>보호막은 산군의 다음 차례에 꺼짐<br>적이 산군을 때리면 언제든 바로 반격: 공격력 '+awUp('70%', awUq(u)?'30%':0)+' + 가진 보호막의 '+pctTxt(SG_COUNTER_SH)+' · 적의 행동 하나에 1번<br>후열 적이 때리면 그 앞 전열 적이 맞음 (앞이 비었으면 가장 가까운 전열)',
+      run:C=>{ const b0 = C.a.st.shield||0; C.shield(C.a, pctHp(C.a)*SG_GUARD_SHIELD); C.a.st.roarSh = (C.a.st.roarSh||0) + Math.max(0, (C.a.st.shield||0) - b0); C.pos(C.a, st=>{ st.taunt = Math.max(typeof st.taunt==='number' ? st.taunt : 0, 2); st.counter = { seq:-1, r:SG_STANCE_R }; }, '🐯반격 자세'); } },
     s2:{ name:'산의 일격', icon:artIc('sk_wood_sg_2'), cd:4, kind:'harm', tag:()=> '반격 횟수 비례',
       desc:()=>'대상에게 공격력 200% + 이번 전투 반격 횟수마다 +10% (최대 +100%)',
       run:C=>{ C.hit(C.t, 2.0 + Math.min(1, 0.1*(C.a.counterN||0))); } } },
   light_as: { role:'별 표식', icon:ELEMENT_INFO.light.icon,
     passive:{ name:'별의 공명', icon:artIc('pv_light_as'), desc:(g,u)=>'표식 붙은 적이 지속 피해(화상 · 독 · 시한폭탄 · 발화)를 받으면 표식 피해가 같이 들어감<br>표식 피해: 표식 하나마다 공격력 '+awUp(pctTxt(STAR_RES), aw3(u)?pctTxt(STAR_RES*0.5):0)+' · 표식은 안 없어짐' }, // (v8.7.0) 표식 개편 (사용자 결정)
-    s1:{ name:'별자리 표식', icon:artIc('sk_light_as_1'), cd:3, kind:'harm', tag:()=> '표식',
-      desc:(g,u)=>'대상에게 공격력 140% + 별 표식 '+awUp(1, aw1(u)?1:0)+'개 (최대 3개, 3라운드)<br>이미 표식이 있는 적에게 쓰면 십자(앞뒤 · 양옆) 1칸에도 표식 1개씩',
-      run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const had = !!(C.t.st.star && C.t.st.star.n>0), n = aw1(C.a) ? 2 : 1, mark = (u, k)=>C.neg(u, st=>{ st.star = { n:Math.min(3, ((st.star&&st.star.n)||0)+k), r:3 }; }, '✴️별 표식');
+    s1:{ name:'별자리 표식', icon:artIc('sk_light_as_1'), cd:1, /* (v10.2.0) 3 → 1 매 라운드 (사용자 결정 10/18 — 쿨 3에 표식 3라운드라 각성 전엔 표식이 1개에서 안 쌓였음) */ kind:'harm', tag:()=> '표식',
+      desc:(g,u)=>'대상에게 공격력 140% + 별 표식 '+awUp(1, aw1(u)?1:0)+'개 (최대 '+awUp(3, awAlt(u, 2)?1:0)+'개, 3라운드)<br>이미 표식이 있는 적에게 쓰면 십자(앞뒤 · 양옆) 1칸에도 표식 1개씩',
+      run:C=>{ C.hit(C.t, 1.4); if(C.t.alive){ const had = !!(C.t.st.star && C.t.st.star.n>0), n = aw1(C.a) ? 2 : 1, mark = (u, k)=>C.neg(u, st=>{ st.star = { n:Math.min(starMax(C.a), ((st.star&&st.star.n)||0)+k), r:3 }; }, '✴️별 표식');
         mark(C.t, n); if(had) C.around('cross').forEach(u=>{ if(!u.inert) mark(u, 1); }); } } },
     s2:{ name:'별똥별', icon:artIc('sk_light_as_2'), cd:4, kind:'harm', tag:()=> '표식 있는 적 전체',
       desc:()=>'표식이 있는 모든 적에게 표식 하나마다 공격력 '+pctTxt(STAR_FALL)+'<br>표식은 안 없어짐',
       run:C=>{ const L = C.side(C.tSide).filter(u=>u.st.star && u.st.star.n>0); if(!L.length){ C.hits.push({ side:C.t.side, idx:C.t.idx, kind:'status', text:'✴️표식 없음' }); return; }
-        L.forEach(u=>{ C.hit(u, u.st.star.n*STAR_FALL, { starfall:true }); if(awUq(C.a) && u.alive && u.st.star) u.st.star.n = Math.min(3, u.st.star.n+1); }); } } }, // (v8.7.0) 별이 지는 밤
+        L.forEach(u=>{ C.hit(u, u.st.star.n*STAR_FALL, { starfall:true }); if(awUq(C.a) && u.alive && u.st.star) u.st.star.n = Math.min(starMax(C.a), u.st.star.n+1); }); } } }, // (v8.7.0) 별이 지는 밤
   dark_lk: { role:'강탈', icon:ELEMENT_INFO.dark.icon,
     passive:{ name:'날쌘 손', icon:artIc('pv_dark_lk'), desc:(g,u)=>'빼앗은 효과 하나마다 속도 +3 (최대 +'+awUp(12, aw3(u)?6:0)+')<br>가로채기: 적의 이로운 효과가 지워지거나 빼앗길 때 1개를 더 빼앗아 체력 비율이 가장 낮은 아군에게 줌 (다른 아군이 지운 것 포함 · 라운드에 1번)' },
     s1:{ name:'손버릇', icon:artIc('sk_dark_lk_1'), cd:3, kind:'harm', tag:()=> '효과 빼앗기',
@@ -6225,10 +6233,10 @@ const LINE_KITS = {
       run:C=>{ const t = C.t, w = sideWidth(C.sf, t.side);
         if(!isFrontRow(t.idx, w) && !t.isBoss){ const f = t.idx - w, occ = unitAt(C.sf, t.side, f); if(!occ || !occ.isBoss){ swapSlots(C.sf, t.side, t.idx, f); C.hits.push({ side:t.side, idx:t.idx, kind:'status', text:'🎭끌려 나옴' }); } } // (v6.1.0) 독 번짐 뺌 (사용자 결정)
         C.hit(t, 1.3); if(t.alive){ C.neg(t, st=>{ st.exposed = { v:(aw3(C.a) ? 0.3 : 0.2)*dbMul(C.a), r:2 }; }, '🎯노출'); /* (v8.7.0) 짙은 그림자 */ if(aw1(C.a) && t.alive) C.neg(t, st=>{ st.bind = true; }, '🕸속박'); } } },
-    s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:4, kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
-      desc:()=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 −30% (1라운드)',
+    s2:{ name:'도깨비불', icon:artIc('sk_dark_dk_2'), cd:2, /* (v10.2.0) 4 → 2 (사용자 결정 10/18 — 특성 방망이가 자리 바꾸기에 달렸는데 쿨이 길었음) */ kind:'buff', allyOnly:true, notSelf:true, swap:true, tag:()=> '자리 교환',
+      desc:(g,u)=>'아군 하나와 자리를 바꿈 · 둘 다 받는 피해 '+awUp('−30%', awAlt(u, 4)?'15%':0)+' (1라운드)',
       run:C=>{ const a = C.a, t = C.t; if(t.side!==a.side || t===a || !swapAllowed(C.sf, a, t)) return; swapSlots(C.sf, a.side, a.idx, t.idx);
-        [a, t].forEach(u=>C.pos(u, st=>{ st.veil = { v:0.3, r:2 }; }, '🔵도깨비불')); a.st.club = awUq(a) ? 2 : true; if(awUq(a)) t.st.club = true; } } } // (v8.7.0) 큰 방망이
+        [a, t].forEach(u=>C.pos(u, st=>{ st.veil = { v:awAlt(a, 4) ? 0.45 : 0.3, r:2 }; }, '🔵도깨비불')); a.st.club = awUq(a) ? 2 : true; if(awUq(a)) t.st.club = true; } } } // (v8.7.0) 큰 방망이
 };
 // (v269) 레이드 보스 전용 스킬 — 예전엔 보스가 속 정령(예: 혹한의 폭군 = 물결 레전더리 A형 '세이렌')의 스킬·특성을 그대로 써서
 // 정보창에 없는 회복(세이렌 특성 '맑은 물' · 치유 스킬)을 했음. 이제 보스마다 스킬 2개만 쓰고 정령 특성은 없음 (기믹·그로기는 그대로)
@@ -7106,7 +7114,7 @@ function statusList(u){
   if(s.memHeal) o.push({i:stIc('memheal'), t:'흐르는 기억', d:'다음 라운드 시작에 '+fmtHp(s.memHeal)+' 회복', good:true});
   if(s.link) o.push({i:stIc('link'), t:'물길 연결', d:'받는 피해 40%를 하백이 대신 받음'+r(s.link), good:true});
   if(s.linkHost) o.push({i:stIc('linkhost'), t:'물길 잇기', d:'최대체력 +15% · 받는 피해 −20%'+r(s.linkHost), good:true});
-  if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에 · 다음 차례까지', good:true});
+  if(s.counter) o.push({i:stIc('counter'), t:'반격 자세', d:'맞으면 공격력 70% + 가진 보호막의 '+Math.round(SG_COUNTER_SH*100)+'%로 반격 (적 행동 하나에 1번) · 후열이 때리면 그 앞 전열에'+r(s.counter), good:true});
   { const sf = state.skillFight; if(sf && sf.riftRule==='flow' && u && u.side==='me' && u.alive && flowHost(sf)===u) o.push({i:stIc('linkhost'), t:'물받이', d:'다른 아군 피해 '+Math.round(FLOW_SHARE*100)+'% 대신 받음 · 받는 피해 −'+Math.round(FLOW_DR*100)+'% · 물 '+fmtHp((sf.flow&&sf.flow.g)||0)+' / '+fmtHp(u.maxHp*FLOW_FILL)+' — 가득 차면 물살', good:true}); } // (v7.4.0) 균열 물길
   { const sf = state.skillFight; if(sf && sf.riftRule==='sky' && u && u.alive && u.side==='enemy' && !u.inert && skyNight(sf)) o.push(skyLit(sf, u) ? {i:'✨', t:'빛남', d:'밤에도 보임 · 받는 지속 피해 +'+Math.round(SKY.dot*100)+'%'} : {i:'🌙', t:'어둠에 숨음', d:'받는 피해 −'+Math.round(SKY.night*100)+'% · 빛 속성 공격에 맞으면 보임'}); } // (v9.3.0) 균열 낮과 밤
   if(u && u.line==='water_hb' && u.tide>0) o.push({i:stIc('linkhost'), t:'수위', d:fmtHp(u.tide)+' — 범람 때 적마다 '+Math.round(HB_TIDE_MUL*100)+'%만큼 추가 피해', good:true});
@@ -8346,9 +8354,9 @@ function awakenStepInfo(key, lv){
   const sp = SPIRITS[key], g0 = gradeOf(sp.rarity), L = sp.element+'_'+sp.variant, kit = LINE_KITS[L], a1 = AWAKEN1[L] || {}, a3 = AWAKEN3[L] || {}, uq = AWAKEN_UQ[L] || {};
   const fx = a=> a.t ? '「'+a.t+'」 '+a.d : ''; // (v8.7.0) 1·3단계 계열 효과 · 신화 5단계 고유
   const perk = lv===1 ? [g0<1 ? '패시브 「'+kit.passive.name+'」 열림' : '', fx(a1)].filter(Boolean).join('<br>')
-    : lv===2 ? '스킬1 「'+kit.s1.name+'」 쿨타임 −1'
+    : lv===2 ? ((AW_CD_ALT[L]||{})[2] ? fx(AW_CD_ALT[L][2]) : '스킬1 「'+kit.s1.name+'」 쿨타임 −1')
     : lv===3 ? [g0<2 ? '스킬2 「'+kit.s2.name+'」 열림' : '', fx(a3)].filter(Boolean).join('<br>')
-    : lv===4 ? '스킬2 「'+kit.s2.name+'」 쿨타임 −1'
+    : lv===4 ? ((AW_CD_ALT[L]||{})[4] ? fx(AW_CD_ALT[L][4]) : '스킬2 「'+kit.s2.name+'」 쿨타임 −1')
     : (g0<4 ? '스킬 효과 한 등급 위' : '고유 '+fx(uq));
   return perk;
 }
@@ -12040,7 +12048,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:458, v:'10.2.0', date:'2026-10-18', secs:[
-    { t:'별빛 균열 — 6~9층 세기 조정', items:[ '6~9층 보스가 5층과 10층 사이에 고르게 세지도록 올림 (하드 1 보스 대비 체력 · 공격력)', '6층: 1.3 · 1.1 → 2 · 1.45', '7층: 1.5 · 1.2 → 4 · 2', '8층: 1.7 · 1.3 → 7.5 · 2.8', '9층: 1.9 · 1.4 → 14 · 3.8' ]}
+    { t:'별빛 균열 — 6~9층 세기 조정', items:[ '6~9층 보스가 5층과 10층 사이에 고르게 세지도록 올림 (하드 1 보스 대비 체력 · 공격력)', '6층: 1.3 · 1.1 → 2 · 1.45', '7층: 1.5 · 1.2 → 4 · 2', '8층: 1.7 · 1.3 → 7.5 · 2.8', '9층: 1.9 · 1.4 → 14 · 3.8' ]},
+    { t:'스킬 변경 — 쿨타임 때문에 특성을 못 살리던 스킬', items:[ '아스트라이아 「별자리 표식」: 쿨타임 3 → 1 (매 라운드)', '아스트라이아 각성 2단계: 별자리 표식 쿨타임 −1 → 「큰 별자리」 별 표식 최대 3 → 4개', '산군 「포효」: 반격 자세가 다음 차례에 꺼지던 것 → 4라운드 유지 (다시 쓰면 이어짐) · 보호막은 그대로 다음 차례에 꺼짐', '하백 「물길 잇기」: 연결 3 → 4라운드 (다시 쓰면 끊기지 않고 이어짐)', '도깨비 「도깨비불」: 쿨타임 4 → 2', '도깨비 각성 4단계: 도깨비불 쿨타임 −1 → 「짙은 도깨비불」 받는 피해 감소 30% → 45%' ]}
   ]},
   { build:457, v:'10.1.0', date:'2026-10-17', secs:[
     { t:'별빛 균열 — 조합 전투', items:[ '10~12층은 보스 1~2마리와 졸개가 함께 나오고, 적 앞줄·뒷줄 6칸을 다 씀 · 층마다 배치가 다름', '10층: 앞줄 그림자 졸개 3 · 뒷줄 그림자 군주 + 심연의 수정', '11층: 앞줄 결계석 2 + 유적 수호병 · 뒷줄 유적파수꾼', '12층: 앞줄 서리거인 · 뒷줄 심연의 수정', '큰 보스는 여러 칸을 차지 — 그 칸을 노리는 범위 공격(십자·가로·관통)에 맞음 · 두 보스가 가운데 칸을 나눠 가지면 둘 다 맞음', '보스 세기(그 층 보스 대비 체력 · 공격력): 10층 두 보스 각 0.55 · 0.7 / 11층 1.55 · 1.4 / 12층 두 보스 각 0.76 · 0.87 · 졸개 체력 0.07~0.08 · 공격력 0.3', '균열 준비 화면에 보스마다 한 줄 + 함께 나오는 적' ]}
