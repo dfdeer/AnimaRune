@@ -10,7 +10,7 @@ const port=process.argv[2], N=parseInt(process.argv[3]||'4'), bosses=(process.ar
 for(const boss of bosses){ for(const diff of diffs){
   const p=await b.newPage({viewport:{width:390,height:844}}); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
-  const r = await p.evaluate(([N,boss,diff,GEAR])=>{ window.toast=()=>{}; window.sfx=()=>{}; raidNet.role='solo';
+  const r = await p.evaluate(([N,boss,diff,GEAR])=>{ window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.render=()=>{}; window.showSkillStageScreen=()=>{}; state.skillAuto=true; raidNet.role='solo'; // (v10.2.0) 자동 전투를 켜야 진행됨 (v5.2.0부터 자동이 꺼져 있으면 매 차례 화면만 그리고 멈췄음)
     const all = r=> ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+r+'_'+v)).filter(k=>SPIRITS[k]);
     const simGear = ks=>{ if(!GEAR) return; window.isEquipUnlocked=()=>true; state.equipped={}; state.equipOwned={}; state.equipEnh={}; ks.forEach((k,i)=>{ const el = SPIRITS[k].element; EQUIP_SLOTS.forEach(sl=>{ const ek = equipKey(sl, el, 'mythic')+'#'+(i+1); state.equipOwned[ek]=1; state.equipEnh[ek]=EQ_ENH_MAX.mythic; (state.equipped[k]=state.equipped[k]||{})[sl]=ek; }); }); }; // (v8.17.2) 사용자 결정 10/15: 신화 장비 풀강 기준
     const LADDER=[['레+5','rare',5,0],['에+5','epic',5,0],['에+10','epic',10,0],['에+15','epic',15,0],['전+1','legendary',1,0],['전+5','legendary',5,0],['전+10','legendary',10,0],['신+10','mythic',10,0],['신+12각2','mythic',12,2],['신+15각5','mythic',15,5]];
