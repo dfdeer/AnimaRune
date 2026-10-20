@@ -6027,18 +6027,18 @@ const LINE_KITS = {
       desc:(g,u)=>[
         '대상에게 공격력 80% + 화상 '+awUp([1,1,2,2,3][g], aw1(u)?1:0)+'중첩',
         g>=2?'양옆 대상에게도 40% + 화상 '+awUp(1, aw1(u)?1:0)+'중첩':null,
-        g>=4?'바로 뒤 칸 대상에게도 화상 '+awUp(1, aw1(u)?1:0)+'중첩':null,
         '화상은 라운드마다 중첩당 시전자 공격력 15%만큼 피해'
       ].filter(Boolean).join('<br>'),
-      run:C=>{ C.hit(C.t,0.8); C.burn(C.t,C.P([1,1,2,2,3])); if(C.g>=2) C.around('row').forEach(u=>{ C.hit(u,0.4); C.burn(u,1); }); if(C.g>=4) C.around('pierce').forEach(u=>{ if(!u.inert) C.burn(u,1); }); } }, // (v10.3.0) 신화: 바로 뒤 칸에도 화상 (사용자 결정 10/20 — 뒷줄에 화상을 못 걸어 아스트라이아 표식이 뒷줄에서 안 터졌음)
+      run:C=>{ C.hit(C.t,0.8); C.burn(C.t,C.P([1,1,2,2,3])); if(C.g>=2) C.around('row').forEach(u=>{ C.hit(u,0.4); C.burn(u,1); }); } },
     s2:{ name:'발화', icon:artIc('sk_fire_b_2'), cd:4, kind:'harm', tag:()=>'대상·양옆 화상 폭발',
       desc:(g,u)=>[
         '대상과 양옆 대상의 화상을 터뜨려 각자 중첩당 공격력 '+pctTxt(GEUMO_DET[g]),
         '피해는 줄기 전 중첩 기준 · 터뜨린 뒤 화상은 '+awDn(GEUMO_DROP, aw3(u)?GEUMO_DROP:0)+'중첩만 줄어듦 (남은 화상은 계속 탐)',
+        '터진 적마다 바로 뒤 칸 대상에게 화상 '+awUp(GEUMO_DROP, aw1(u)?1:0)+'중첩이 번짐',
         '고른 대상에게 화상이 없으면 그 대상에게 공격력 50% (양옆은 화상이 있을 때만 피해)'
       ].join('<br>'),
       run:C=>{ [C.t].concat(C.around('row')).forEach((u,i)=>{ if(!u || !u.alive) return; const n = u.st.burn||0; // (v5.3.0) 대상+양옆 · GEUMO_DROP(2)중첩만 줄임 (사용자 결정 — 스칼렛과 차별: 금오는 화상을 남겨 계속 태움)
-        if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-(aw3(C.a) ? 0 : GEUMO_DROP)); if(!u.st.burn) delete u.st.burn; /* (v8.7.0) 남는 불씨 */ } else if(i===0) C.hit(u, 0.5); }); } } },
+        if(n>0){ C.hit(u, n*GEUMO_DET[C.g], {detonate:true}); u.st.burn = Math.max(0, n-(aw3(C.a) ? 0 : GEUMO_DROP)); if(!u.st.burn) delete u.st.burn; /* (v8.7.0) 남는 불씨 */ nbUnits(C.sf, u.side, u, 'pierce', sideWidth(C.sf, u.side)).forEach(b=>{ if(b && b.alive && !b.inert) C.burn(b, GEUMO_DROP); }); /* (v10.3.0) 터진 불이 바로 뒤 칸으로 번짐 (사용자 결정 10/20 — 뒷줄에 화상을 못 걸어 아스트라이아 표식이 뒷줄에서 안 터졌음 · 앞줄에 쌓고 발화로 뒷줄에 옮기는 플레이) */ } else if(i===0) C.hit(u, 0.5); }); } } },
   water_a: { role:'치유', icon:ELEMENT_INFO.water.icon, // (v317) 회복 = 시전자 최대체력 % + 대상 최대체력 % (예전엔 시전자 % 만 — 체력 큰 탱커일수록 덜 차서 힐이 미미했음)
     passive:{ name:'맑은 물', icon:artIc('pv_water_a'), desc:g=>'라운드 시작마다 체력 비율이 가장 낮은 아군 '+pctTxt([0,.03,.04,.05,.06][g])+' 회복' },
     s1:{ name:'치유의 물결', icon:artIc('sk_water_a_1'), cd:3, kind:'heal', tag:g=>g>=3?'십자 · 재생':'',
@@ -12052,7 +12052,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:460, v:'10.3.0', date:'2026-10-20', secs:[
-    { t:'스킬', items:[ '금오 「불티 뿌리기」: 바로 뒤 칸 대상에게도 화상 1중첩 (각성 1이면 2중첩)' ]},
+    { t:'스킬', items:[ '금오 「발화」: 화상을 터뜨린 적마다 바로 뒤 칸 대상에게 화상 2중첩이 번짐 (각성 1이면 3중첩)' ]},
     { t:'별빛 균열 · 기간 규칙 「낮과 밤」', items:[ '별 표식이 붙은 적도 빛남 — 밤에 숨지 않고, 받는 지속 피해 +100%' ]}
   ]},
   { build:459, v:'10.2.1', date:'2026-10-20', secs:[
