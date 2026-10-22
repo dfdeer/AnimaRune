@@ -1412,6 +1412,10 @@
   .wbh{position:relative; overflow:hidden; display:flex; align-items:center; gap:12px; padding:10px 14px 10px 10px; margin:6px 0 0; border-radius:18px; background:radial-gradient(130% 140% at 12% 50%, color-mix(in srgb, var(--bc) 34%, #1a1538) 0%, #120f26 72%); border:1.5px solid color-mix(in srgb, var(--bc) 55%, transparent); box-shadow:0 6px 18px #0008;} /* (v10.4.1) 월드 보스 머리 — 가로 한 줄 */
   .wbh .bb-glow{left:52px; top:50%; width:150px; height:150px;} .wbh-art{position:relative; flex:none; width:84px; height:84px; display:flex; align-items:center; justify-content:center;} .wbh-img{width:84px; height:84px; object-fit:contain; filter:drop-shadow(0 6px 10px #000a) drop-shadow(0 0 12px color-mix(in srgb, var(--bc) 60%, transparent));}
   .wbh-main{position:relative; flex:1; min-width:0; text-align:left;} .wbh-nm{font-size:19px; font-weight:900; color:#fff; letter-spacing:.5px; text-shadow:0 2px 0 #0008, 0 0 12px color-mix(in srgb, var(--bc) 70%, transparent); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;} .wbh-sub{font-size:11px; font-weight:800; margin-top:1px;} .wbh .wb-bar.big{height:12px; margin:7px 0 3px;} .wbh-hp{font-size:11px;} .wbh-hp small{color:var(--sub);}
+  .rd-more{margin-top:6px; padding:4px 10px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--bc) 60%, #fff); background:#000a; color:#fff; font-size:12px; font-weight:800; cursor:pointer;} .rd-more small{font-size:10px; font-weight:600; opacity:.75; margin-left:3px;} .rdh{margin:2px 0 8px;} .rdh .wbh-nm{padding-right:64px;} .rd-tk2{position:absolute; right:10px; top:9px; display:flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; background:#000a; border:1px solid #ffffff22; font-size:12px;} /* (v10.4.2) 레이드 상세 머리 */
+  .rf-rankbtn{display:flex; align-items:center; gap:10px; width:100%; margin:10px 0 14px; padding:9px 12px; border-radius:14px; border:1.5px solid #ffd55777; background:linear-gradient(100deg, #4a3a12 0%, #2a2150 55%, #221c46 100%); box-shadow:0 4px 0 #0005, inset 0 1px 0 #ffffff22; color:var(--text); text-align:left; cursor:pointer;} /* (v10.4.2) 균열 순위 버튼 */
+  .rf-rk-ic{font-size:24px; filter:drop-shadow(0 2px 4px #000a);} .rf-rk-t{flex:1; display:flex; flex-direction:column; line-height:1.25;} .rf-rk-t b{font-size:14px; color:#ffe9a8;} .rf-rk-t small{font-size:11px; color:var(--sub);}
+  .rf-rk-me{display:flex; flex-direction:column; align-items:flex-end; line-height:1.25;} .rf-rk-me small{font-size:10px; color:var(--sub);} .rf-rk-me span{font-size:12px; font-weight:800; display:flex; align-items:center; gap:1px;} .rf-rk-me .star-ic{width:13px; height:13px;} .rf-rk-go{font-size:22px; color:#ffd557; margin-left:2px;}
   .wb-dock{display:flex; gap:6px; margin-top:8px;} .wb-dock .btn{margin:0; padding-left:6px; padding-right:6px; white-space:nowrap;} .wb-dock #wbGo{flex:1.7;} .wb-dock .secondary{flex:1;} .wb-dock + .wb-sweep-t{margin:4px 0 0;}
   .tk-eqp{position:relative; display:inline-block; line-height:0; vertical-align:middle;} .tk-eqp .tk-eqp-b{position:absolute; right:-3px; bottom:-3px; width:55%; height:auto; aspect-ratio:1; object-fit:contain; filter:drop-shadow(0 0 1px #000);} /* (v8.14.1) 높이를 %로 주면 줄 높이에 따라 방패가 늘어나거나 납작해졌음 */
   .tk-engr{filter:hue-rotate(170deg) saturate(1.5) brightness(1.1);} .tk-eqm{filter:hue-rotate(60deg) saturate(1.6) brightness(1.1);} .tk-eqq{filter:hue-rotate(260deg) saturate(1.4) brightness(1.15);} .tk-eqd{filter:hue-rotate(200deg) saturate(1.3);} .tk-anc{filter:hue-rotate(-30deg) saturate(1.8) brightness(1.2);}
@@ -5103,13 +5107,14 @@ function bossBannerHtml(o){ // (v8.16.0) 레이드·월드 보스 화면 머리 
 function raidDetailHtml(){
   const info = raidWeekBoss(), cur = raidDiffById(state.raidDiff), prog = (state.raidProgress && state.raidProgress[info.id]) || [];
   const wd = (state.raidWeekDone && state.raidWeekDone.week===raidWeekKey()) ? state.raidWeekDone.diffs : [];
-  let h = '<div class="rd">' + '<div style="display:flex; gap:6px; align-items:stretch;"><div style="flex:1;"></div><div class="rd-tk" style="flex-direction:row; gap:6px;">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>'
-    + (raidNet.code ? '<button class="btn" id="raidReopenBtn" style="margin:0;">🚪 방으로 돌아가기 · '+raidNet.code+'</button>' : '');
+  let h = '<div class="rd">' + (raidNet.code ? '<button class="btn" id="raidReopenBtn" style="margin:0;">🚪 방으로 돌아가기 · '+raidNet.code+'</button>' : '');
   const br = BOSS_RUNES[info.id], ec = ELEMENT_INFO[info.element].color, rec = raidRecCP(info.id, cur.id);
   // (v8.16.0) 사용자 요청: 보스 화면을 웅장하게 · 덜 어수선하게 — 큰 보스 배너 + 난이도 한 줄 + 보상 한 칸
-  h += bossBannerHtml({ img: bossImg(info.id, 'bb-img', info.icon), name: info.name, color: ec,
-      sub: '<span class="bb-el" style="color:'+ec+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</span>',
-      foot: '<button class="bb-more" id="raidBossInfo">📖 상세 정보 <small>기믹 · 스킬 · 처치 보상</small></button>' }); // (v8.16.0) 사용자 결정: 기믹은 상세 정보에서만
+  // (v10.4.2) 월드 보스처럼 가로 머리 — 작은 폰에서 보스 그림이 쪼그라들고 버튼이 넘치던 것 · 입장권은 머리 오른쪽 아래 (v8.16.0 사용자 결정: 기믹은 상세 정보에서만)
+  h += '<div class="wbh rdh" style="--bc:'+ec+';"><div class="bb-glow"></div><div class="wbh-art">'+bossImg(info.id, 'wbh-img', '<span style="font-size:52px;">'+info.icon+'</span>')+'</div>'
+    + '<div class="wbh-main"><div class="wbh-nm">'+info.name+'</div><div class="wbh-sub" style="color:'+ec+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div>'
+    + '<button class="rd-more" id="raidBossInfo">📖 상세 정보 <small>기믹 · 스킬 · 보상</small></button></div>'
+    + '<div class="rd-tk2">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>';
   h += '<div class="rd-diffs2">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+(prog.includes(x.id)?'<i>✓</i>':'')+x.name+'</button>').join('')+'</div>';
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
@@ -12060,8 +12065,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:462, v:'10.4.1', date:'2026-10-22', secs:[
-    { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]}
+  { build:463, v:'10.4.2', date:'2026-10-22', secs:[
+    { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]},
+    { t:'레이드 화면', items:[ '보스 정보를 월드 보스처럼 가로 한 줄로 — 작은 화면에서 보스 그림이 작아지고 버튼이 넘치던 것', '입장권 수는 보스 상자 오른쪽 아래' ]},
+    { t:'별빛 균열', items:[ '준비 창 순위 버튼에 내 기록(별 · 라운드)을 같이 표시 · 아래 진형과 간격' ]}
   ]},
   { build:461, v:'10.4.0', date:'2026-10-22', secs:[
     { t:'별빛 균열 — 순위', items:[ '층마다 순위 — 준비 창 「🏆 이 층 순위 · 다른 사람 조합」', '한 판에서 얻은 별이 많은 순 → 라운드가 적은 순 · 같으면 먼저 세운 기록이 위', '전체 · 친구 탭', '기록을 누르면 그 판의 정령 · 배치 · 각성 · 강화', '픽업 기간이 바뀌면 순위도 새로 시작' ]}
@@ -14869,7 +14876,8 @@ function showRiftPrep(f, keep){
   { const rule = riftRuleOf(per); if(rule){ const R = RIFT_RULE_INFO[rule]; h += '<div class="rf-rulew"><div class="rf-bless rf-rule"><b>'+R.ic+' 기간 규칙 「'+R.nm+'」</b><br>'+R.d.map(x=>'· '+x).join('<br>')+'</div><i class="rf-sb"><b></b></i></div>'; } /* (build 391) 상자 안에서 스크롤 */ else h += '<div class="rf-bless" style="display:block; text-align:center; margin:6px auto 0;">'+per.pair.map(k=>elIc(SPIRITS[k].element)).join('')+' 픽업 속성 공격력 +'+Math.round(RIFT_BLESS*100)+'% · '+per.pair.map(k=>SPIRITS[k].name).join('·')+' 본인은 +'+Math.round(RIFT_PU_BONUS*100)+'% 더</div>'; } // (v7.4.0) 기간 규칙
   if(fi.duo) h += '<div class="rf-duotag">'+uiIc('rift')+' 연계 층 — 이번 픽업 둘이 힘을 합치면 쉬워짐</div>';
   h += riftStarRowHtml(rs.st[f]||0, 0);
-  h += '<button class="btn secondary" id="rfRank" style="margin:6px 0 0;">🏆 이 층 순위 · 다른 사람 조합</button>'; // (v10.4.0)
+  { const my = (rs.rk||{})[f]; // (v10.4.0) 순위 · (v10.4.2) 내 기록을 같이 보여 주고 아래 진형과 간격 (사용자 제보: 밋밋하고 아래가 좁음)
+    h += '<button class="rf-rankbtn" id="rfRank"><span class="rf-rk-ic">🏆</span><span class="rf-rk-t"><b>이 층 순위</b><small>다른 사람 조합 보기</small></span><span class="rf-rk-me">'+(my ? '<small>내 기록</small><span>'+STAR_IC.repeat(Math.max(0, Math.min(3, my.s)))+' '+my.r+'R</span>' : '<small>기록 없음</small>')+'</span><span class="rf-rk-go">›</span></button>'; }
   h += formationRowsHtml();
   h += '<div style="display:flex; gap:6px; margin-top:8px;"><button class="btn secondary" id="rfClear" style="flex:1; margin:0;">'+uiIc('clear')+' 비우기</button><button class="btn secondary" id="rfRec" style="flex:1; margin:0;">✨ 추천 배치</button><button class="btn secondary" data-preset-open="1" style="flex:1; margin:0;">'+uiIc('log')+' 프리셋</button></div>';
   h += cpBarHtml(teamCP(pv.myUnits), teamCP(pv.enemyUnits), '<img class="uic" src="assets/ui/ic_enemy.webp" alt=""> 상대', '상대 '+fmtCP(teamCP(pv.enemyUnits)), riftRecCP(f));
@@ -18571,7 +18579,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 462, APP_VERSION = '10.4.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 463, APP_VERSION = '10.4.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
