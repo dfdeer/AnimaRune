@@ -2018,6 +2018,60 @@ body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연�
   @keyframes heroBob{0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)}}
   @media (prefers-reduced-motion: reduce){ .scr-hero{animation:none;} }
 
+
+  /* ===================== (v10.5.0) 디자인 개편 — 깔끔한 판타지 (사용자 요청 10/23: 누를 때 흔들림 · 구조가 구림 → 전체 개편) =====================
+     원칙: ① 누를 때 움직이지 않음(위치·크기 그대로, 밝기만) ② 두툼한 입체 그림자 대신 얇은 금빛 선 + 반투명 남색 판 ③ 탭은 밑줄 ④ 글자 그림자 최소
+     배치는 그대로 두고 공통 부품 모양만 덮어씀 — 화면마다 직접 쓴 색(인라인 style)은 그대로 */
+  :root{ --bg:#0d1024; --panel:#161a36; --panel2:#1d2246; --text:#eef0ff; --sub:#9ea4cc;
+    --line:#e8c47a40; --line2:#e8c47a80; --gold:#f1cf7e; --gold2:#d9a94a; --violet:#7c6cf0; --violet2:#5545c8;
+    --pn:linear-gradient(180deg,#1b2046e6 0%,#141838eb 100%); --pn-b:1px solid #e8c47a33; --pn-sh:0 10px 28px #00000073, inset 0 1px 0 #ffffff12; }
+  html,body{background:#0d1024;}
+  body{background:radial-gradient(110% 55% at 50% -8%, #2a2a6a 0%, #151838 48%, #0b0d20 100%) fixed #0d1024;}
+  /* 머리줄 · 아래 메뉴 — 납작하게, 얇은 금빛 선 */
+  header{background:linear-gradient(180deg,#161a3af5,#11142ef0); border-bottom:1px solid var(--line); box-shadow:0 6px 18px #0007; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);}
+  header .title{text-shadow:none;}
+  header .essence{background:#0b0e22cc; border:1px solid var(--line); box-shadow:inset 0 1px 0 #ffffff0d;}
+  #levelBar{background:#11142e !important;}
+  nav{background:linear-gradient(180deg,#141838f5,#0e1128fa); border-top:1px solid var(--line); box-shadow:0 -8px 22px #0008; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);}
+  nav button{position:relative; color:#8e94c0; text-shadow:none;}
+  nav button.active{color:var(--gold); text-shadow:none;}
+  nav button.active .ico{transform:none; filter:drop-shadow(0 0 7px #f1cf7e88);} /* 예전엔 고르면 아이콘이 위로 튀어 흔들려 보였음 */
+  nav button.active::before{content:''; position:absolute; top:0; left:28%; right:28%; height:2px; border-radius:0 0 2px 2px; background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  /* 판 */
+  .card, .modal{background:var(--pn); border:var(--pn-b); box-shadow:var(--pn-sh);}
+  .card{border-radius:16px;} .modal{border-radius:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);}
+  .modal-bg{background:#05061acc;}
+  .close-x{width:32px; height:32px; top:10px !important; right:10px !important; padding:0 !important; border-radius:50% !important; background:#ffffff0f !important; border:1px solid #ffffff1f !important; font-size:20px !important; line-height:30px !important; color:#c9cdee !important;}
+  /* 버튼 — 납작 · 얇은 테두리 · 누르면 살짝 어두워지기만 (움직이지 않음) */
+  .btn{background:linear-gradient(180deg,#6a5ae8 0%,#4b3cc0 100%); border:1px solid #f1cf7e66; border-radius:12px; box-shadow:0 4px 14px #2a1f8a55, inset 0 1px 0 #ffffff33; text-shadow:none; letter-spacing:.2px; transition:filter .08s ease;}
+  .btn.secondary{background:#ffffff0d; color:var(--text); border:1px solid #ffffff24; box-shadow:inset 0 1px 0 #ffffff0d; text-shadow:none;}
+  .btn.gold{background:linear-gradient(180deg,#f6dc95 0%,#dcae55 100%) !important; color:#2b1d05 !important; border:1px solid #fff2c6 !important; box-shadow:0 4px 14px #d9a94a44, inset 0 1px 0 #ffffff88 !important; text-shadow:none !important;}
+  .btn:active, .btn.secondary:active, .btn.gold:active{transform:none !important; filter:brightness(.86);}
+  button.btn:disabled, .btn:disabled{background:#ffffff0a !important; color:#7c81a8 !important; border:1px solid #ffffff14 !important; box-shadow:none !important; filter:none; opacity:1;}
+  .btn.secondary:disabled{opacity:.6;}
+  /* 누르면 움직이던 칸·카드 — 위치·크기 그대로 두고 밝기만 */
+  .slot:active, .species-tile[data-manage]:active, .roster-pick:active, .home-pu:active, .home-prof:active, .mt-wait .mt-in:not(.open):active{transform:none !important; filter:brightness(.85);}
+  /* 탭 — 밑줄형 */
+  .seg{padding:0; gap:0; border-radius:0; background:transparent; border:none; border-bottom:1px solid #ffffff1a; box-shadow:none;}
+  .seg button{position:relative; border-radius:0; padding:10px 0 9px; color:var(--sub); background:none; box-shadow:none !important;}
+  .seg button.on{background:none !important; color:var(--gold) !important; box-shadow:none !important; text-shadow:none; border:none !important;}
+  .seg button.on::after{content:''; position:absolute; left:18%; right:18%; bottom:-1px; height:2px; border-radius:2px; background:var(--gold); box-shadow:0 0 8px #f1cf7e99;}
+  /* 소제목 · 칩 */
+  .gm-sh{border-left:2px solid var(--gold); color:#f3ecd6;}
+  .gm-chip{background:#ffffff0a; border:1px solid #ffffff1f; color:#dfe2ff;}
+  /* 진형 칸 */
+  .slot{background:#ffffff08; border:1px dashed #ffffff2a;}
+  .slot.filled{border:1px solid #f1cf7e88; box-shadow:0 0 10px #f1cf7e22, inset 0 1px 0 #ffffff12;}
+  /* 탭은 어디서나 같은 모양 — 어두운 유리 띠 + 고른 탭 밑줄 (배경 그림 위에서도 잘 보이게) */
+  .seg, #main.tab-bg .seg{padding:0 4px; background:#0b0e24bf; border:1px solid #ffffff17; border-radius:12px; box-shadow:0 4px 14px #0006; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  .seg button.on::after{bottom:3px;}
+  #main[data-tbg] .seg button.on{background:none !important; color:var(--gold) !important;}
+  /* 배경 그림 화면(정령·소환·화로·탑 등) — 판은 얇은 금선 하나 + 모서리 장식만, 버튼은 공통 모양 */
+  #main.tab-bg .card, #main.tab-bg .hearth-hero, #main.tab-bg .ch-card{border:1px solid color-mix(in srgb, var(--pn-line, #c9a24a) 75%, transparent) !important; box-shadow:0 8px 22px #0008, inset 0 1px 0 #ffffff14 !important;}
+  #main[data-tbg] .btn.secondary{background:#0c0f26cc !important; border:1px solid #f1cf7e44 !important; box-shadow:0 4px 12px #0006 !important; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  #main[data-tbg=summon] .btn:not(.secondary):not(.gold){border:1px solid #f1cf7ecc !important; box-shadow:0 0 16px #9a6bff55, inset 0 1px 0 #ffffff55 !important;}
+  #main[data-tbg=spirits] .species-tile{box-shadow:inset 0 1px 0 #ffffff1a !important;}
+  #main[data-tbg=spirits] .pk-sort button{background:#0c0f26cc; border-color:#f1cf7e44; color:#e6e2f6;} #main[data-tbg=spirits] .pk-sort button.on{background:#f1cf7e22; color:var(--gold); border-color:var(--gold);}
 </style>
 <script>
 /* lz-string 1.5.0 — MIT License, (c) 2013 Pieroxy. 세이브 코드 압축용. 외부 CDN이 막힌 환경에서도 같은 코드를 읽고 쓰려고 내장함 */
@@ -12066,6 +12120,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:465, v:'10.5.0', date:'2026-10-23', secs:[
+    { t:'화면 디자인 개편 (1단계)', items:[ '버튼·칸을 누를 때 위아래로 움직이던 것 없앰 — 누르면 살짝 어두워지기만', '아래 메뉴: 고른 탭 아이콘이 위로 튀던 것 없앰 · 고른 탭 위에 금빛 줄', '버튼: 두툼한 입체 → 납작한 모양 + 얇은 금빛 테두리', '창·판: 반투명 남색 판 + 얇은 금빛 선 · 닫기 버튼은 동그라미', '탭: 어두운 띠 + 고른 탭 금빛 밑줄 (모든 화면 같은 모양)', '머리줄·아래 메뉴를 납작하게' ]}
+  ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
     { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]},
     { t:'레이드 화면', items:[ '보스 정보를 월드 보스처럼 가로 한 줄로 — 작은 화면에서 보스 그림이 작아지고 버튼이 넘치던 것', '입장권 수는 보스 상자 오른쪽 위', '난이도 7개를 두 줄로 — PC에서 옆으로 밀리지 않아 헬 뒤 난이도가 안 보이던 것', '승리 보상에 이름 표시 — 속성 장비(에픽 이상) 확률 · 고대의 파편 · 주간 첫 승리 칸에 그 주 첫 승리 때 받는 고대의 파편', '고대의 파편이 안 나오는 난이도엔 「추천 전투력 10만 이상부터」 안내' ]},
@@ -18580,7 +18637,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 464, APP_VERSION = '10.4.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 465, APP_VERSION = '10.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
