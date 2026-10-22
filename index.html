@@ -1400,8 +1400,8 @@
   .bb-more{position:relative; display:inline-flex; flex-direction:column; align-items:center; margin-top:10px; padding:6px 18px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--bc) 60%, #fff); background:#000a; color:#fff; font-size:13px; font-weight:800; cursor:pointer;} .bb-more small{font-size:10px; font-weight:400; color:#cfc8ff;}
   .bb.sm{margin:0 0 8px; padding:10px 10px 8px;} .bb.sm .bb-art .bb-img, .bb.sm .bb-art img{width:96px; height:96px;} .bb.sm .bb-name{font-size:18px;}
   .bb-i{position:absolute; top:10px; right:10px; z-index:2; width:30px; height:30px; border-radius:50%; border:1.5px solid #ffffff55; background:#0008; color:#fff; font-weight:900; font-style:italic; font-family:Georgia,serif;}
-  .rd-diffs2{display:flex; gap:6px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none;} .rd-diffs2::-webkit-scrollbar{display:none;}
-  .rd-diffs2 button{flex:0 0 auto; padding:7px 14px; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--dc) 50%, transparent); background:#16132e; color:color-mix(in srgb, var(--dc) 80%, #fff); font-size:13px; font-weight:800; white-space:nowrap;} .rd-diffs2 button.on{background:var(--dc); color:#111; border-color:#fff; box-shadow:0 0 12px color-mix(in srgb, var(--dc) 70%, transparent);} .rd-diffs2 button i{font-style:normal; margin-right:3px; color:#5cd65c;} .rd-diffs2 button.on i{color:#063;}
+  .rd-diffs2{display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; padding:2px 0 6px;} /* (v10.4.3) 옆으로 밀어야 보이던 난이도를 두 줄로 — PC에선 옆 스크롤이 안 됐음 */ .rd-lb{flex-wrap:wrap; row-gap:0;} .rd-lb small{flex-basis:100%; text-align:center; font-size:9.5px; color:var(--sub); font-weight:600;} .rd-diffs2::-webkit-scrollbar{display:none;}
+  .rd-diffs2 button{min-width:0; padding:7px 2px; text-align:center; border-radius:999px; border:1.5px solid color-mix(in srgb, var(--dc) 50%, transparent); background:#16132e; color:color-mix(in srgb, var(--dc) 80%, #fff); font-size:13px; font-weight:800; white-space:nowrap;} .rd-diffs2 button.on{background:var(--dc); color:#111; border-color:#fff; box-shadow:0 0 12px color-mix(in srgb, var(--dc) 70%, transparent);} .rd-diffs2 button i{font-style:normal; margin-right:3px; color:#5cd65c;} .rd-diffs2 button.on i{color:#063;}
   .rd-panel{margin:4px 0 8px; padding:10px 12px; border-radius:16px; background:#0f0c22d9; border:1px solid color-mix(in srgb, var(--dc) 45%, transparent);}
   .rd-ph{display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;} .rd-ph > b{font-size:18px;} .rd-ph span{font-size:12px; color:var(--sub);} .rd-ph span b{color:var(--text); font-size:14px;} .rd-ph small{display:block; font-size:10px; text-align:right;}
   .rd-pt{margin-top:8px; font-size:12px; font-weight:800; color:#d8d0ff;} .rd-pt small{font-weight:400; color:var(--sub); margin-left:4px;}
@@ -5119,8 +5119,9 @@ function raidDetailHtml(){
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
     + '<div class="rd-pt">승리 보상 <small>입장권을 쓴 판만</small></div>'
-    + '<div class="rd-pr"><span>'+uiIc('runestone')+'<b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"><b>'+cur.stone+'</b></span>'+(cur.gear?'<span>'+ELEMENT_INFO[info.element].icon+'장비<b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b></span>':'')+(raidAncGain(info.id, cur.id, false) ? '<span>'+TICKET_INFO.ancient.icon+'<b>'+raidAncGain(info.id, cur.id, false)+'</b></span>' : '')+'</div>'
-    + '<div class="rd-pb"><span class="'+(wd.includes(cur.id)?'done':'')+'"><small>주간 첫 승리</small>'+itemsShort(cur.weekly)+'</span>'+(RAID_FIRST_STAR[cur.id] ? '<span class="'+(prog.includes(cur.id)?'done':'')+'"><small>첫 클리어</small>'+SHARD_IC+' '+RAID_FIRST_STAR[cur.id]+'</span>' : '')+'</div>'
+    + '<div class="rd-pr"><span>'+uiIc('runestone')+'<b>'+RAID_GEMS[cur.id]+'</b></span><span><img class="uic" src="assets/ui/ic_stone.webp" alt="강화석"><b>'+cur.stone+'</b></span>'+(cur.gear?'<span class="rd-lb">'+ELEMENT_INFO[info.element].icon+'<b>'+Math.round((cur.gear.epic+cur.gear.legendary)*100)+'%</b><small>'+ELEMENT_INFO[info.element].name+' 장비</small></span>':'')+(raidAncGain(info.id, cur.id, false) ? '<span class="rd-lb">'+TICKET_INFO.ancient.icon+'<b>'+raidAncGain(info.id, cur.id, false)+'</b><small>고대의 파편</small></span>' : '')+'</div>'
+    + ((!raidAncGain(info.id, cur.id, false) && cur.gear && raidRecCP(info.id, cur.id) >= RAID_ANC_MIN*0.5) ? '<div class="sub" style="font-size:10.5px; margin-top:4px;">'+TICKET_INFO.ancient.icon+' 고대의 파편은 추천 전투력 '+Math.round(RAID_ANC_MIN/10000)+'만 이상 난이도부터</div>' : '')
+    + '<div class="rd-pb"><span class="'+(wd.includes(cur.id)?'done':'')+'"><small>주간 첫 승리</small>'+itemsShort(cur.weekly)+(raidAncGain(info.id, cur.id, true) ? ' '+TICKET_INFO.ancient.icon+'×'+raidAncGain(info.id, cur.id, true) : '')+'</span>'+(RAID_FIRST_STAR[cur.id] ? '<span class="'+(prog.includes(cur.id)?'done':'')+'"><small>첫 클리어</small>'+SHARD_IC+' '+RAID_FIRST_STAR[cur.id]+'</span>' : '')+'</div>'
     + '</div>';
   if(!raidNet.code && prog.includes(cur.id)) h += '<button class="btn" id="raidSweepBtn" style="margin:0 0 6px; background:linear-gradient(180deg,#7ad0ff,#3a7bd5);" '+(raidTicketCount()<1?'disabled':'')+'>'+uiIc('ticket')+' 소탕 · 입장권 1장으로 '+cur.name+' 승리 보상</button>'; // (v8.3.0) 깬 난이도는 소탕
   if(raidNet.code){}
@@ -12065,9 +12066,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:463, v:'10.4.2', date:'2026-10-22', secs:[
+  { build:464, v:'10.4.3', date:'2026-10-22', secs:[
     { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]},
-    { t:'레이드 화면', items:[ '보스 정보를 월드 보스처럼 가로 한 줄로 — 작은 화면에서 보스 그림이 작아지고 버튼이 넘치던 것', '입장권 수는 보스 상자 오른쪽 아래' ]},
+    { t:'레이드 화면', items:[ '보스 정보를 월드 보스처럼 가로 한 줄로 — 작은 화면에서 보스 그림이 작아지고 버튼이 넘치던 것', '입장권 수는 보스 상자 오른쪽 위', '난이도 7개를 두 줄로 — PC에서 옆으로 밀리지 않아 헬 뒤 난이도가 안 보이던 것', '승리 보상에 이름 표시 — 속성 장비(에픽 이상) 확률 · 고대의 파편 · 주간 첫 승리 칸에 그 주 첫 승리 때 받는 고대의 파편', '고대의 파편이 안 나오는 난이도엔 「추천 전투력 10만 이상부터」 안내' ]},
     { t:'별빛 균열', items:[ '준비 창 순위 버튼에 내 기록(별 · 라운드)을 같이 표시 · 아래 진형과 간격' ]}
   ]},
   { build:461, v:'10.4.0', date:'2026-10-22', secs:[
@@ -18579,7 +18580,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 463, APP_VERSION = '10.4.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 464, APP_VERSION = '10.4.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
