@@ -2072,6 +2072,29 @@ body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연�
   #main[data-tbg=summon] .btn:not(.secondary):not(.gold){border:1px solid #f1cf7ecc !important; box-shadow:0 0 16px #9a6bff55, inset 0 1px 0 #ffffff55 !important;}
   #main[data-tbg=spirits] .species-tile{box-shadow:inset 0 1px 0 #ffffff1a !important;}
   #main[data-tbg=spirits] .pk-sort button{background:#0c0f26cc; border-color:#f1cf7e44; color:#e6e2f6;} #main[data-tbg=spirits] .pk-sort button.on{background:#f1cf7e22; color:var(--gold); border-color:var(--gold);}
+
+  /* (v10.5.0) 보스 무대 — 보스를 크게 · 숨 쉬기 · 속성 빛 · 떠오르는 입자 */
+  .bst{position:relative; height:clamp(190px, 31vh, 268px); margin:0 -12px 6px; overflow:hidden; -webkit-mask:linear-gradient(180deg,transparent 0%,#000 16%,#000 80%,transparent 100%); mask:linear-gradient(180deg,transparent 0%,#000 16%,#000 80%,transparent 100%);}
+  @media (max-height:720px){ .bst{height:158px; margin-bottom:2px;} .bst-img{height:128px;} .bst-plate b{font-size:20px;} }
+  .bst-aura{position:absolute; left:50%; top:46%; width:330px; height:330px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 55%, transparent) 0%, color-mix(in srgb, var(--bc) 18%, transparent) 38%, transparent 66%); animation:bstPulse 3.2s ease-in-out infinite;}
+  .bst-rays{position:absolute; left:50%; top:46%; width:560px; height:560px; margin:-280px 0 0 -280px; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--bc) 22%, transparent) 0 5deg, transparent 5deg 20deg); -webkit-mask:radial-gradient(circle,#000 12%,transparent 58%); mask:radial-gradient(circle,#000 12%,transparent 58%); animation:bstSpin 40s linear infinite; opacity:.7;}
+  .bst-floor{position:absolute; left:50%; bottom:16%; width:190px; height:30px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse, #000a 0%, transparent 70%);}
+  .bst-boss{position:absolute; left:50%; bottom:15%; transform:translateX(-50%); animation:bstBreath 3.2s ease-in-out infinite; transform-origin:50% 100%;}
+  .bst-img{display:block; width:auto; height:clamp(150px, 25vh, 215px); object-fit:contain; filter:drop-shadow(0 10px 14px #000c) drop-shadow(0 0 18px color-mix(in srgb, var(--bc) 70%, transparent));}
+  .bst-plate{position:absolute; left:12px; bottom:10%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;}
+  .bst-plate b{font-family:var(--fun); font-weight:400; font-size:24px; color:#fff; letter-spacing:.5px; text-shadow:0 2px 0 #0009, 0 0 14px color-mix(in srgb, var(--bc) 85%, transparent);}
+  .bst-plate span{font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px; background:#000a; border:1px solid color-mix(in srgb, var(--bc) 50%, transparent);}
+  .bst-info{position:absolute; right:12px; bottom:10%; padding:6px 11px; border-radius:999px; border:1px solid color-mix(in srgb, var(--bc) 60%, #fff); background:#000b; color:#fff; font-size:12px; font-weight:800; cursor:pointer;}
+  .bst-tk{position:absolute; right:12px; top:8px; display:flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; background:#000b; border:1px solid #ffffff26; font-size:12px;}
+  .bst-pt{position:absolute; inset:0; pointer-events:none;}
+  .bst-pt i{position:absolute; left:var(--x); bottom:8%; width:calc(6px*var(--s)); height:calc(6px*var(--s)); border-radius:50%; background:var(--bc); box-shadow:0 0 8px var(--bc); opacity:0; animation:bstUp var(--d) linear infinite; animation-delay:var(--t);}
+  .bst-ember .bst-pt i{background:#ffb35a; box-shadow:0 0 8px #ff7a2a;} .bst-snow .bst-pt i{background:#e8f8ff; box-shadow:0 0 6px #9adfff;} .bst-leaf .bst-pt i{border-radius:60% 0; background:#9be86b; box-shadow:0 0 6px #5cd65c;}
+  .bst-spark .bst-pt i{background:#fff6c9; box-shadow:0 0 8px #ffd557;} .bst-mote .bst-pt i{background:#c79bff; box-shadow:0 0 8px #8a4dff;}
+  @keyframes bstBreath{0%,100%{transform:translateX(-50%) translateY(0) scale(1);} 50%{transform:translateX(-50%) translateY(-5px) scale(1.025);}}
+  @keyframes bstPulse{0%,100%{opacity:.75; transform:translate(-50%,-50%) scale(.96);} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.04);}}
+  @keyframes bstSpin{to{transform:rotate(360deg);}}
+  @keyframes bstUp{0%{opacity:0; transform:translateY(0) rotate(0);} 12%{opacity:.95;} 80%{opacity:.6;} 100%{opacity:0; transform:translateY(-190px) translateX(14px) rotate(160deg);}}
+  @media (prefers-reduced-motion: reduce){ .bst-aura, .bst-rays, .bst-boss, .bst-pt i{animation:none;} }
 </style>
 <script>
 /* lz-string 1.5.0 — MIT License, (c) 2013 Pieroxy. 세이브 코드 압축용. 외부 CDN이 막힌 환경에서도 같은 코드를 읽고 쓰려고 내장함 */
@@ -5158,6 +5181,13 @@ function bossBannerHtml(o){ // (v8.16.0) 레이드·월드 보스 화면 머리 
   return '<div class="bb'+(o.small?' sm':'')+'" style="--bc:'+(o.color||'#9a6bff')+';"><div class="bb-glow"></div><div class="bb-rays"></div>'
     + (o.info ? '<button class="bb-i" id="'+o.info+'" aria-label="보스 정보">i</button>' : '')
     + '<div class="bb-art">'+o.img+'</div><div class="bb-name">'+o.name+'</div>'+(o.sub ? '<div class="bb-sub">'+o.sub+'</div>' : '')+(o.foot||'')+'</div>'; }
+function bossStageHtml(o){ // (v10.5.0) 보스 무대 — 배경 위에 보스가 크게 서 있고(숨 쉬기) 뒤로 속성 빛·빛줄기, 앞으로 속성 입자가 떠오름 · 작은 화면에선 fitRest가 그림을 줄임(.fit-shrink)
+  const c = ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].color : '#9a6bff', P = { fire:'ember', water:'snow', wood:'leaf', light:'spark', dark:'mote' }[o.el] || 'spark';
+  let pt = ''; for(let k=0;k<12;k++){ const r = seededRand(k*7.13+3.1), r2 = seededRand(k*3.7+1.9); pt += '<i style="--x:'+Math.round(6+r*88)+'%; --d:'+(3.2+r2*3.4).toFixed(2)+'s; --t:-'+(r*6).toFixed(2)+'s; --s:'+(0.6+r2*0.8).toFixed(2)+';"></i>'; }
+  return '<div class="bst bst-'+P+'" style="--bc:'+c+';"><div class="bst-aura"></div><div class="bst-rays"></div><div class="bst-floor"></div>'
+    + '<div class="bst-boss">'+bossImg(o.id, 'bst-img fit-shrink', '<span style="font-size:96px;">'+(o.icon||'👑')+'</span>')+'</div><div class="bst-pt">'+pt+'</div>'
+    + '<div class="bst-plate"><b>'+o.name+'</b><span style="color:'+c+';">'+(ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].icon+' '+ELEMENT_INFO[o.el].name : '')+'</span></div>'
+    + (o.info ? '<button class="bst-info" id="'+o.info+'">📖 상세 정보</button>' : '') + (o.tk ? '<div class="bst-tk">'+o.tk+'</div>' : '') + '</div>'; }
 function raidDetailHtml(){
   const info = raidWeekBoss(), cur = raidDiffById(state.raidDiff), prog = (state.raidProgress && state.raidProgress[info.id]) || [];
   const wd = (state.raidWeekDone && state.raidWeekDone.week===raidWeekKey()) ? state.raidWeekDone.diffs : [];
@@ -5165,10 +5195,7 @@ function raidDetailHtml(){
   const br = BOSS_RUNES[info.id], ec = ELEMENT_INFO[info.element].color, rec = raidRecCP(info.id, cur.id);
   // (v8.16.0) 사용자 요청: 보스 화면을 웅장하게 · 덜 어수선하게 — 큰 보스 배너 + 난이도 한 줄 + 보상 한 칸
   // (v10.4.2) 월드 보스처럼 가로 머리 — 작은 폰에서 보스 그림이 쪼그라들고 버튼이 넘치던 것 · 입장권은 머리 오른쪽 아래 (v8.16.0 사용자 결정: 기믹은 상세 정보에서만)
-  h += '<div class="wbh rdh" style="--bc:'+ec+';"><div class="bb-glow"></div><div class="wbh-art">'+bossImg(info.id, 'wbh-img', '<span style="font-size:52px;">'+info.icon+'</span>')+'</div>'
-    + '<div class="wbh-main"><div class="wbh-nm">'+info.name+'</div><div class="wbh-sub" style="color:'+ec+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div>'
-    + '<button class="rd-more" id="raidBossInfo">📖 상세 정보 <small>기믹 · 스킬 · 보상</small></button></div>'
-    + '<div class="rd-tk2">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>';
+  h += bossStageHtml({ id: info.id, icon: info.icon, name: info.name, el: info.element, info: 'raidBossInfo', tk: uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b>' }); // (v10.5.0) 보스 무대 — 보스를 크게, 숨 쉬듯 움직이고 속성 빛·입자 (사용자: 보스 화면이 허전함)
   h += '<div class="rd-diffs2">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+(prog.includes(x.id)?'<i>✓</i>':'')+x.name+'</button>').join('')+'</div>';
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
@@ -12121,7 +12148,8 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:465, v:'10.5.0', date:'2026-10-23', secs:[
-    { t:'화면 디자인 개편 (1단계)', items:[ '버튼·칸을 누를 때 위아래로 움직이던 것 없앰 — 누르면 살짝 어두워지기만', '아래 메뉴: 고른 탭 아이콘이 위로 튀던 것 없앰 · 고른 탭 위에 금빛 줄', '버튼: 두툼한 입체 → 납작한 모양 + 얇은 금빛 테두리', '창·판: 반투명 남색 판 + 얇은 금빛 선 · 닫기 버튼은 동그라미', '탭: 어두운 띠 + 고른 탭 금빛 밑줄 (모든 화면 같은 모양)', '머리줄·아래 메뉴를 납작하게' ]}
+    { t:'화면 디자인 개편 (1단계)', items:[ '버튼·칸을 누를 때 위아래로 움직이던 것 없앰 — 누르면 살짝 어두워지기만', '아래 메뉴: 고른 탭 아이콘이 위로 튀던 것 없앰 · 고른 탭 위에 금빛 줄', '버튼: 두툼한 입체 → 납작한 모양 + 얇은 금빛 테두리', '창·판: 반투명 남색 판 + 얇은 금빛 선 · 닫기 버튼은 동그라미', '탭: 어두운 띠 + 고른 탭 금빛 밑줄 (모든 화면 같은 모양)', '머리줄·아래 메뉴를 납작하게' ]},
+    { t:'레이드 화면 — 보스 무대', items:[ '보스를 상자 밖으로 꺼내 크게 — 배경 위에 서 있게', '보스가 숨 쉬듯 움직이고 뒤로 속성 빛 · 빛줄기, 앞으로 속성 입자(불티 · 눈송이 · 잎 · 빛 · 그림자)가 떠오름', '작은 화면에선 보스를 조금 작게' ]}
   ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
     { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]},
