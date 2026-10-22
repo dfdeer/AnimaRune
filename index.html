@@ -939,18 +939,16 @@
   @keyframes boomEmoji{0%{transform:translate(-50%,-50%) scale(.2) rotate(-20deg); opacity:0;} 25%{transform:translate(-50%,-60%) scale(1.25) rotate(8deg); opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(0); opacity:0;}}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
-  .bu-hpr{position:relative; display:flex; align-items:center; justify-content:center;} /* 기세 동그라미는 자리를 차지하지 않고 체력 줄 오른쪽에 떠 있음 — 줄 간격·체력 줄 자리 그대로 */
-  .bu-hpr .bu-gin{position:absolute; left:100%; top:50%; transform:translate(3px,-50%); width:17px; height:17px; box-sizing:border-box; border-radius:50%; background:#1f2458; border:1.5px solid #ffcf3a; color:#ffd557; font-size:8px; font-weight:900; line-height:14px; text-align:center; letter-spacing:-.3px; box-shadow:0 1px 2px #0006; z-index:4;}
-  .bu-hpr .bu-gin.go{background:#ffcf3a; color:#3a2a00; border-color:#fff3c4; box-shadow:0 0 6px #ffcf3a, 0 1px 2px #0006; animation:giHot 1s ease-in-out infinite alternate;}
-  .bu-boss .bu-hpr{width:100%; box-sizing:border-box;} .bu-boss .bu-hpr.gi{padding-right:23px;} .bu-boss .bu-hpr .bu-hp{flex:1; min-width:0;} .bu-boss .bu-hpr .bu-gin{left:auto; right:0; transform:translateY(-50%); width:21px; height:21px; line-height:18px; font-size:10px;} /* 보스는 체력 줄이 칸을 꽉 채워서 동그라미를 칸 안 오른쪽에 */
+  .bu-gin{position:absolute; right:-8%; top:-2%; width:52%; aspect-ratio:1; border-radius:50%; color:#ffd557; font-size:calc(var(--sz,56px) * var(--k,1) * .22); /* 그림 크기에 맞춰 같이 줄어듦 (레이드 8칸 등) */ font-weight:900; display:flex; align-items:center; justify-content:center; text-align:center; letter-spacing:-.3px; z-index:6; pointer-events:none;
+    background:radial-gradient(closest-side, #1f2458 calc(100% - 3px), transparent calc(100% - 2.5px)), conic-gradient(#ffcf3a calc(var(--p,0) * 1%), #8c96c899 0); box-shadow:0 1px 3px #0007;} /* 둘레 3px가 기세만큼 시계 방향으로 참 */
+  .bu-gin.go{color:#3a2a00; background:radial-gradient(closest-side, #ffcf3a calc(100% - 3px), transparent calc(100% - 2.5px)), conic-gradient(#fff3c4 calc(var(--p,0) * 1%), #ffcf3a 0); box-shadow:0 0 7px #ffcf3a, 0 1px 3px #0007; animation:giHot 1s ease-in-out infinite alternate;}
+  .bu-hpr{position:relative; display:flex; align-items:center; width:100%; box-sizing:border-box; padding-right:26px;} .bu-hpr .bu-hp{flex:1; min-width:0;}
+  .bu-hpr .bu-gin{right:0; top:50%; transform:translateY(-50%); width:23px; font-size:10px;} /* 보스: 체력 줄 오른쪽 · 칸 안 */
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
-  .bu-giready{position:absolute; left:2px; top:2px; z-index:5; width:16px; height:16px; border-radius:50%; background:#ffcf3a; color:#3a2a00; font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 6px #ffcf3a; animation:giHot 1s ease-in-out infinite alternate; pointer-events:none;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
   .fx-gi .bu-icon{animation:fxGi .9s ease-out;}
   @keyframes fxGi{0%{filter:none; transform:none} 30%{filter:brightness(1.9) drop-shadow(0 0 14px #ffd557); transform:translateY(-6px) scale(1.12)} 100%{filter:none; transform:none}}
-  .bu-hp > b.bu-gi{position:absolute; left:0; bottom:0; height:2px; background:#ffd557; box-shadow:0 0 3px #ffcf3a;}
-  .bu-hp > b.bu-gi.hot{height:3px; background:#ffe98a; animation:giHot 1s ease-in-out infinite alternate;}
   @keyframes giHot{to{box-shadow:0 0 6px #ffcf3a, 0 0 2px #fff;}}
   .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v295) 부활 */
   .fx-revive .bu-icon{animation:fxRevive 1.2s ease-out .1s both;}
@@ -7274,20 +7272,20 @@ function battleUnitHtml(u, opts){
     }
     if(tags.length) gg += '<div class="bu-next" data-stat="'+u.side+':'+u.idx+'">'+tags.join(' · ')+'</div>';
   }
+  const gin = (u.alive && !u.inert && giOn(state.skillFight)) ? '<span class="bu-gin'+(giReady(state.skillFight, u)?' go':'')+'" style="--p:'+Math.min(100, u.gi|0)+';">'+Math.min(100, u.gi|0)+'</span>' : ''; // (v10.5.0) 기세 동그라미
   return '<div class="'+cls.join(' ')+'"'+attr+' data-u="'+u.side+':'+u.idx+'" style="--sz:'+opts.size+'px; --bd:-'+Math.round((performance.now() + (u.side==='me'?0:1500) + u.idx*530) % 3000)+'ms;'+((!u.bossIcon && ART_DROP[u.key]) ? ' --drop:'+ART_DROP[u.key]+';' : '')+'">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+stTintHtml(u)+'</div>'
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && !u.isBoss) ? '<span class="bu-spm cn '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (b427) 일반 정령은 특수 규칙 배율을 그림 귀퉁이로 — 체력 줄이 길어져 쉴드 수치가 다음 줄로 내려갔음
     + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + ((u.st.slow || u.st.chill) && !u.st.freeze ? SLOW_ART : '') + (u.st.burn>0 ? BURN_ART : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i><i></i><i></i><i></i></div>' : '') + ((u.st.bind || u.st.web) ? '<div class="fx-web">'+WEB_ART+'</div>' : '') + (u.st.curse ? CURSE_ART : '') + (u.st.seal ? (u.st.curse ? SEAL_ART.replace('fx-seal','fx-seal r') : SEAL_ART) : '') + (u.st.jail ? JAIL_ART : '') + (raidGazed(state.skillFight, u) ? GAZE_ART : '') + buffFxHtml(u.st) : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
-    + (giReady(state.skillFight, u) ? '<span class="bu-giready" title="다음 차례에 기세로 한 번 더">⚡</span>' : '') // (v10.5.0) 다음 차례에 한 번 더
+    + (u.isBoss ? '' : gin) // (v10.5.0) 기세 — 그림 오른쪽 위 동그라미 (둘레 = 게이지 · 가운데 = 숫자 · 사용자 제안 10/22) · 왼쪽 위는 저주 해골·봉인 자리
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + (opts.booms||[]).map(b=>'<div class="fx-boom '+b.kind+'" style="animation-delay:'+(-b.age)+'ms;"><i></i><i></i><i></i><b>💥</b></div>').join('') // (build 393) 시련 폭발
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
-    + (()=>{ const gOn = u.alive && !u.inert && giOn(state.skillFight), go = gOn && giReady(state.skillFight, u); // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠 + 오른쪽 숫자
-        return '<div class="bu-hpr'+(gOn?' gi':'')+'"><div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(gOn && u.gi>0 ? '<b class="bu-gi'+(go?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>'
-          + (gOn ? '<span class="bu-gin'+(go?' go':'')+'">'+Math.min(100, u.gi|0)+'</span>' : '')+'</div>'; })()
+    + (()=>{ const hp = '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+'</div>';
+        return (u.isBoss && gin) ? '<div class="bu-hpr">'+hp+gin+'</div>' : hp; })() // (v10.5.0) 보스는 기세 동그라미를 체력 줄 오른쪽에 — 그림 귀퉁이에 두면 얼굴을 가림
     + '<div class="bu-hpnum">'+(shV>0 && u.alive ? '<b class="bu-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,u.hp)+shV)+'</b>' : fmtHp(Math.max(0,u.hp)))+'/'+fmtHp(u.maxHp) /* (b428) 쉴드는 현재 체력에 더해 파란 글자로 — 따로 붙이면 줄이 길어졌음 · 쉴드량은 상태 배지(보호막)에서 */+((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && u.isBoss) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '')+ /* (v185) 특수 규칙 배율 · (v314) 체력 옆에 작게 */'</div>'
     + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
@@ -12111,7 +12109,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:465, v:'10.5.0', date:'2026-10-22', secs:[
-    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠 · 체력 줄 오른쪽에 지금 기세 숫자', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적 · 보스도 똑같은 식으로 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 그림 귀퉁이에 ⚡ · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
+    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 동그라미 — 그림 오른쪽 위(보스는 체력 줄 오른쪽) · 둘레가 기세만큼 차오르고 가운데에 숫자', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적 · 보스도 똑같은 식으로 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 동그라미가 금색으로 빛남 · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
     { t:'스킬 변경', items:[ '백록 「별빛 가속」: 대상 기세 +10 추가 (차면 바로 한 번 더 행동)', '백록 「여명의 호령」 · 불사귀 「처형」(처치하면 즉시 행동)으로 한 번 더 움직일 때도 스킬 대기 −1' ]}
   ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
