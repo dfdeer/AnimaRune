@@ -146,6 +146,18 @@ Realtime Database **규칙** 탭의 내용을 **전부 지우고** 아래를 통
         }
       }
     },
+    // 별빛 균열 순위 (v10.4.0) — 픽업 기간 · 층마다 플레이어 한 줄 (자기 기록만 씀)
+    "riftRank": {
+      "$p": {
+        ".read": "auth != null",
+        "$f": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.hasChildren(['n', 's', 'r', 'tm']) && newData.child('n').isString() && newData.child('n').val().length <= 20 && newData.child('s').isNumber() && newData.child('r').isNumber()"
+          }
+        }
+      }
+    },
     // (v3.3.0) 휴대폰 알림 — 기기 주소(subs)·끈 알림(pref)·예약 시각(pushDue)은 본인만. 보내는 건 Cloudflare 알림 서버(DB 비밀 키로 접근 — 규칙과 무관)
     "push": {
       "$uid": {
