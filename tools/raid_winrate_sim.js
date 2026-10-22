@@ -1,5 +1,6 @@
 // 레이드 승률 시뮬레이션 — 사용: (1) 저장소 루트에서 python3 -m http.server 8765 (2) npm i playwright-core (3) node raid_winrate_sim.js <포트> <판수> <보스목록> <난이도목록> [결과.json]
 // 예: node raid_winrate_sim.js 8765 4 frostTyrant,infernoDrake easy,normal,hard,extreme
+// 수치 바꿔 보기: TWEAK='GI_K=1.0;' node raid_winrate_sim.js 8765 8 eldertree normal (v10.5.0)
 // (v8.17.2) 장비: 기본은 정령마다 같은 속성 신화 무기·방어구 +10 (사용자 결정 10/15) · GEAR=0 node ... 이면 장비 없음
 // 출력: [팀, 둘 합산 전투력, 승률%, 평균 라운드, 끝났을 때 보스 남은 체력%] — 혼자 도전 + AI 동료(4+4마리), 둘 다 자동 전투 · 30라운드에서 끊음
 // (v8.3.0) 헬·인페르노·카오스는 이 사다리(최대 신화+15각5 · 장비 없음)로 못 잼 — 신화 각2 +10 + 장비 배율 2.2(43,777) · 각5 +15 장비 2.2 부가 15% 초월 5(88,608) · 성좌 각5 +15 장비 2.2 부가 30% 초월 10(154,539) 팀을 weaponMult·armorMult·transLevel·subTotals를 덮어써서 잼
@@ -10,7 +11,7 @@ const port=process.argv[2], N=parseInt(process.argv[3]||'4'), bosses=(process.ar
 for(const boss of bosses){ for(const diff of diffs){
   const p=await b.newPage({viewport:{width:390,height:844}}); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
-  const r = await p.evaluate(([N,boss,diff,GEAR])=>{ window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.render=()=>{}; window.showSkillStageScreen=()=>{}; state.skillAuto=true; raidNet.role='solo'; // (v10.2.0) 자동 전투를 켜야 진행됨 (v5.2.0부터 자동이 꺼져 있으면 매 차례 화면만 그리고 멈췄음)
+  const r = await p.evaluate(([N,boss,diff,GEAR,TWEAK])=>{ if(TWEAK) eval(TWEAK); window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.render=()=>{}; window.showSkillStageScreen=()=>{}; state.skillAuto=true; raidNet.role='solo'; // (v10.2.0) 자동 전투를 켜야 진행됨 (v5.2.0부터 자동이 꺼져 있으면 매 차례 화면만 그리고 멈췄음)
     const all = r=> ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+r+'_'+v)).filter(k=>SPIRITS[k]);
     const simGear = ks=>{ if(!GEAR) return; window.isEquipUnlocked=()=>true; state.equipped={}; state.equipOwned={}; state.equipEnh={}; ks.forEach((k,i)=>{ const el = SPIRITS[k].element; EQUIP_SLOTS.forEach(sl=>{ const ek = equipKey(sl, el, 'mythic')+'#'+(i+1); state.equipOwned[ek]=1; state.equipEnh[ek]=EQ_ENH_MAX.mythic; (state.equipped[k]=state.equipped[k]||{})[sl]=ek; }); }); }; // (v8.17.2) 사용자 결정 10/15: 신화 장비 풀강 기준
     const LADDER=[['레+5','rare',5,0],['에+5','epic',5,0],['에+10','epic',10,0],['에+15','epic',15,0],['전+1','legendary',1,0],['전+5','legendary',5,0],['전+10','legendary',10,0],['신+10','mythic',10,0],['신+12각2','mythic',12,2],['신+15각5','mythic',15,5]];
@@ -28,7 +29,7 @@ for(const boss of bosses){ for(const diff of diffs){
       }
       rows.push([nm, cp, Math.round(w/N*100), +(rs/N).toFixed(1), Math.round(bh/N*100)]);
     }
-    return rows; }, [N,boss,diff,process.env.GEAR!=='0']);
+    return rows; }, [N,boss,diff,process.env.GEAR!=='0',process.env.TWEAK||'']);
   out[boss+'/'+diff]=r; console.log(boss, diff, JSON.stringify(r), errs.length?'ERR '+errs.slice(0,2).join(' | '):''); await p.close();
 }}
 if(process.argv[6]) require('fs').writeFileSync(process.argv[6], JSON.stringify(out)); await b.close(); })();

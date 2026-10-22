@@ -939,6 +939,12 @@
   @keyframes boomEmoji{0%{transform:translate(-50%,-50%) scale(.2) rotate(-20deg); opacity:0;} 25%{transform:translate(-50%,-60%) scale(1.25) rotate(8deg); opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(0); opacity:0;}}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
+  .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
+  .fx-gi .bu-icon{animation:fxGi .9s ease-out;}
+  @keyframes fxGi{0%{filter:none; transform:none} 30%{filter:brightness(1.9) drop-shadow(0 0 14px #ffd557); transform:translateY(-6px) scale(1.12)} 100%{filter:none; transform:none}}
+  .bu-hp > b.bu-gi{position:absolute; left:0; bottom:0; height:2px; background:#ffd557; box-shadow:0 0 3px #ffcf3a;}
+  .bu-hp > b.bu-gi.hot{height:3px; background:#ffe98a; animation:giHot 1s ease-in-out infinite alternate;}
+  @keyframes giHot{to{box-shadow:0 0 6px #ffcf3a, 0 0 2px #fff;}}
   .bu-float.revive{font-size:21px; color:#ff9d2e; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v295) 부활 */
   .fx-revive .bu-icon{animation:fxRevive 1.2s ease-out .1s both;}
   .fx-revive .bu-body{animation:fxReviveUp 1.2s ease-out .1s both;}
@@ -2291,6 +2297,9 @@ function refreshRewardBtnDot(stageIdx){
 // (v146) 보스가 아닌 모든 일반 스테이지에 적용. 진형은 6칸(전열 0~2 · 후열 3~5, 같은 세로줄 = idx%3).
 // 상성은 "공격자 속성 vs 맞는 대상 속성". 대상은 항상 1명(어느 편이든), 모든 행동이 그 대상 기준으로 들어감.
 const SKILL_ROUND_CAP = 20;
+// (v10.5.0) 기세 — 자기 차례에 (속도 − GI_BASE)×GI_K만큼 쌓이고 100이 되면 그 자리에서 한 번 더 행동 (사용자 결정 10/22: 적도 받음 · 차는 즉시)
+// 추가 행동 때는 그 정령 스킬 쿨이 1 줄어듦 — 쿨 1(매 라운드) 스킬도 추가 행동에 쓸 수 있게 (아스트라이아 별자리 표식처럼 추가 행동이 기본 공격뿐이면 의미가 없음)
+let GI_BASE = 110, GI_K = 1.2, GI_BOSS = 10, GI_CUT = 25, GI_STAR = 10; // GI_BOSS: 보스는 차례마다 더 쌓임 · GI_CUT: 빙결로 차례를 거르거나 속박되면 깎임 · GI_STAR: 별빛 가속이 바로 채움 (let — 시뮬 TWEAK로 바꿔 볼 수 있게)
 const ALLY_HP_MULT = 2.7;
 const HEAL1_C = [.16,.19,.22,.26,.30], HEAL1_T = [.16,.19,.22,.26,.30]; // (v317) 치유의 물결 — 시전자 최대체력 % + 대상 최대체력 % (일반~신화)
 const HEAL2_C = [0,0,.09,.12,.15], HEAL2_T = [0,0,.09,.12,.15]; // (v317) 해일의 축복 — 전체
@@ -3527,10 +3536,11 @@ function makeActCtx(sf, a, tSide, tIdx){
   C.actNext = u=>{
     if(!u.alive) return;
     const q = sf.queue;
-    for(let p=q.length-1; p>sf.queuePos; p--) if(q[p].side===u.side && q[p].idx===u.idx) q.splice(p, 1);
-    q.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u) });
+    let had = false; for(let p=q.length-1; p>sf.queuePos; p--) if(q[p].side===u.side && q[p].idx===u.idx){ if(!q[p].x) had = true; q.splice(p, 1); }
+    q.splice(sf.queuePos+1, 0, had ? { side:u.side, idx:u.idx, speed:effSpeed(u) } : { side:u.side, idx:u.idx, speed:effSpeed(u), x:1 }); // (v10.5.0) 이미 행동했으면 추가 행동
   };
-  C.extraTurn = u=>{ if(u.alive) sf.queue.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u) }); }; // (v10.2.0) 원래 차례는 그대로 두고 바로 한 번 더 — 여명의 호령
+  C.extraTurn = u=>{ if(u.alive) sf.queue.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u), x:1 }); }; // (v10.2.0) 원래 차례는 그대로 두고 바로 한 번 더 — 여명의 호령
+  C.gi = (u, n)=>{ if(giAdd(sf, u, n)) C.hits.push({ side:u.side, idx:u.idx, kind:'status', neg:false, gi:true, text:'⚡기세!' }); }; // (v10.5.0)
   return C;
 }
 // 실제 행동 실행(내 정령·적 공통). act: basic | s1 | s2
@@ -3556,6 +3566,8 @@ function performAction(sf, a, act, tSide, tIdx){
   }
   if(clubBefore && (act==='basic' || (unitSkill(a, act)||{}).kind==='harm')) delete a.st.club;
   if(empBefore && a.st.empower===empBefore){ delete a.st.empower; delete a.st.empSrc; } // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
+  { const qe = sf.queue && sf.queue[sf.queuePos]; // (v10.5.0) 기세 — 자기 차례(추가 행동 말고)에 쌓이고, 차면 바로 한 번 더
+    if(giOn(sf) && qe && qe.side===a.side && qe.idx===a.idx && !qe.x && a.alive && !a.inert){ a.gi = Math.min(150, (a.gi||0) + giGain(a)); if(giGrant(sf, a)) C.hits.push({ side:a.side, idx:a.idx, kind:'status', neg:false, gi:true, text:'⚡기세!' }); } }
   setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
@@ -5685,11 +5697,22 @@ function checkSkillStageOutcome0(sf){
 }
 
 // ---------- 행동 순서 ----------
+// (v10.5.0) 기세: 시련(정해진 풀이가 있는 퍼즐)과 AI가 복사본으로 미리 계산할 때는 끔
+function giOn(sf){ return !!sf && sf.mode!=='trial' && !skillSimDepth; }
+function giGain(u){ return Math.max(0, Math.round((effSpeed(u) - GI_BASE) * GI_K)) + (u.isBoss ? GI_BOSS : 0); }
+function giGrant(sf, u){ // 100이 넘었으면 바로 다음 칸에 추가 행동 — 한 라운드에 한 번
+  if(!giOn(sf) || !u || !u.alive || u.inert || (u.gi||0) < 100 || u.giR===sf.round || !Array.isArray(sf.queue)) return false;
+  u.gi -= 100; u.giR = sf.round;
+  sf.queue.splice(sf.queuePos+1, 0, { side:u.side, idx:u.idx, speed:effSpeed(u), x:1 });
+  pushLog(sf, '⚡ '+logUnitName(u.side, u)+' 기세 — 한 번 더 행동');
+  return true;
+}
+function giAdd(sf, u, n){ if(!giOn(sf) || !u || !u.alive || u.inert) return false; u.gi = Math.min(150, Math.max(0, (u.gi||0) + n)); return giGrant(sf, u); }
 function buildQueue(sf){
   const e = [];
   [...sf.myUnits, ...sf.enemyUnits].forEach(u=>{ if(u.alive && !u.inert) e.push({ side:u.side, idx:u.idx, speed:effSpeed(u), bound:!!u.st.bind }); }); // (v272) 기둥·씨앗은 행동 안 함
   e.sort((x,y)=>{ if(x.bound!==y.bound) return x.bound?1:-1; if(y.speed!==x.speed) return y.speed-x.speed; if(x.side!==y.side) return x.side==='me'?-1:1; return x.idx-y.idx; });
-  [...sf.myUnits, ...sf.enemyUnits].forEach(u=>{ if(u.st.bind) delete u.st.bind; });
+  [...sf.myUnits, ...sf.enemyUnits].forEach(u=>{ if(u.st.bind){ delete u.st.bind; if(giOn(sf)) u.gi = Math.max(0, (u.gi||0) - GI_CUT); } });
   return e.map(x=>({ side:x.side, idx:x.idx, speed:x.speed }));
 }
 function battleStartFx(sf){ if(sf._bs) return; sf._bs = 1; // (v8.7.0) 전투 시작 효과 — 백록 계열 천상의 사슴
@@ -5701,9 +5724,10 @@ function settleQueue(sf){
   while(sf.queuePos < sf.queue.length){
     const e = sf.queue[sf.queuePos], u = unitAt(sf, e.side, e.idx);
     if(u && u.alive){
+      if(e.x && !e.t){ e.t = 1; if(sf.mode!=='trial'){ u.cd1 = Math.max(0, (u.cd1||0)-1); u.cd2 = Math.max(0, (u.cd2||0)-1); } } // (v10.5.0) 추가 행동(기세·여명의 호령)은 그 정령에게 한 차례가 지난 것 — 스킬 쿨 1 줄어듦
       if(u.groggy && (sf.round||1) > (u.groggyR||0)) groggyWake(sf, u); // (v10.2.0) 그로기는 보스의 다음 차례까지 (사용자 결정 10/18 — 예전엔 다음 라운드 시작에 풀려서 우리가 먼저 다 때린 뒤엔 2배를 거의 못 썼음)
       if(u.st.freeze && u.st.dcharge && sf.duo && sf.duo.charge && sf.duo.id==='sc') sf.duo.charge.off = true; // (v344) 연계 층: 충전 중 빙결
-      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); { const jm = aliveUnits(sideUnits(sf, foeOf(u.side))).find(x=>x.line==='water_b' && awAs(x)); if(jm){ const r = dealDamage(sf, jm, u, 1.0, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(jm, u), dot:true, src:'❄️얼음 깨기' }); if(!u.alive){ sf.queuePos++; continue; } } } /* (v8.7.0) 얼음 깨기 */ if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
+      if(u.st.freeze){ delete u.st.freeze; pushLog(sf, '❄️ '+logUnitName(u.side, u)+' 빙결 해제 · 행동 불가'); { const jm = aliveUnits(sideUnits(sf, foeOf(u.side))).find(x=>x.line==='water_b' && awAs(x)); if(jm){ const r = dealDamage(sf, jm, u, 1.0, { noCrit:true, noCounter:true }); if(r) (sf._rv = sf._rv || []).push({ side:u.side, idx:u.idx, kind:'dmg', amount:r.total, eff:effTypeMult(jm, u), dot:true, src:'❄️얼음 깨기' }); if(!u.alive){ sf.queuePos++; continue; } } } /* (v8.7.0) 얼음 깨기 */ if(giOn(sf)) u.gi = Math.max(0, (u.gi||0) - GI_CUT); /* (v10.5.0) 빙결로 거른 차례는 기세가 깎임 */ if(sf===state.skillFight){ u.thawT = Date.now(); skillFxBusyUntil = Math.max(skillFxBusyUntil, u.thawT + Math.round(700*skillSpeedMult())); } sf.queuePos++; continue; } // (v308) 자기 차례에 풀림 — 풀리는 모습을 잠깐 보여 줌
       if(u.st.jail){ pushLog(sf, '🧊 '+logUnitName(u.side, u)+' 갇혀서 행동 불가'); sf.queuePos++; continue; } // (v272)
       if(u.groggy){ pushLog(sf, '<img class="uic" src="assets/ui/ic_groggy.webp" alt=""> '+logUnitName(u.side, u)+' 그로기로 행동 불가'); sf.queuePos++; continue; } // (v179)
       return e.side;
@@ -6136,9 +6160,10 @@ const LINE_KITS = {
     s1:{ name:'별빛 가속', icon:artIc('sk_light_b_1'), cd:3, kind:'buff', tag:g=>g>=4?'전체':'',
       desc:(g,u)=>[
         '대상에게 속도 +15, 공격력 +'+pctTxt([.10,.12,.15,.18,.20][g])+' 부여 ('+awUp(2, aw1(u)?1:0)+'라운드)',
+        '기세 +'+GI_STAR+' (100이 되면 바로 한 번 더 행동)',
         g>=4?'대상 편 전체에게 적용':null
       ].filter(Boolean).join('<br>'),
-      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw1(C.a)?3:2; const f=u=>C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
+      run:C=>{ const v=C.P([.10,.12,.15,.18,.20]); const rr=aw1(C.a)?3:2; const f=u=>{ C.pos(u,st=>{ st.haste={v:15,r:rr}; st.buff={v,r:rr}; },'⚡가속'); C.gi(u, GI_STAR); }; if(C.g>=4) C.side(C.tSide).forEach(f); else f(C.t); } },
     s2:{ name:'여명의 호령', icon:artIc('sk_light_b_2'), cd:4, kind:'buff', tag:()=> '즉시 행동',
       desc:g=>[
         '대상이 바로 한 번 더 행동 (이번 라운드에 이미 행동했어도)',
@@ -7246,7 +7271,7 @@ function battleUnitHtml(u, opts){
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
-    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+'</div>'
+    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(u.alive && !u.inert && u.gi>0 && giOn(state.skillFight) ? '<b class="bu-gi'+(u.gi>=80?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>' // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠
     + '<div class="bu-hpnum">'+(shV>0 && u.alive ? '<b class="bu-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,u.hp)+shV)+'</b>' : fmtHp(Math.max(0,u.hp)))+'/'+fmtHp(u.maxHp) /* (b428) 쉴드는 현재 체력에 더해 파란 글자로 — 따로 붙이면 줄이 길어졌음 · 쉴드량은 상태 배지(보호막)에서 */+((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && u.isBoss) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '')+ /* (v185) 특수 규칙 배율 · (v314) 체력 옆에 작게 */'</div>'
     + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
@@ -7330,7 +7355,7 @@ function unitDetailHtml(u, bossId){
     + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[uRar(u, sp)].name+(isBoss?' · 보스':(u.isWard?' · 결계석 (기본 공격만)':(u.isAdd?' · 소환수 (기본 공격만 · 2라운드 뒤 자폭)':' · '+kit.role)))+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
   const gb = gearBonusOf(u), plus = v=> v>=1 ? '<em class="ud-plus">+'+v+'</em>' : ''; // (v8.16.0) 장비·각인·룬·초월로 늘어난 몫 (사용자 요청)
-  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk)+(gb ? plus(Math.round(gb.atk)) : ''))+stat('체력', (live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+(gb ? plus(Math.round(gb.hp)) : ''))+stat('속도', effSpeed(u)+(gb ? plus(Math.round(gb.spd)) : ''))+stat('전투력', fmtCP(unitCP(u)))+'</div>'
+  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk)+(gb ? plus(Math.round(gb.atk)) : ''))+stat('체력', (live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+(gb ? plus(Math.round(gb.hp)) : ''))+stat('속도', effSpeed(u)+(gb ? plus(Math.round(gb.spd)) : '')+(live && giOn(state.skillFight) && !u.inert ? '<small> · 기세 '+Math.min(100, u.gi|0)+'</small>' : ''))+stat('전투력', fmtCP(unitCP(u)))+'</div>'
     + (gb && (gb.atk>=1 || gb.hp>=1 || gb.spd>=1) ? '<div class="sub ud-plusn">초록 숫자 = 장비·각인·룬·초월로 늘어난 몫</div>' : '');
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
   if(live){ const sts = statusList(u); if(sts.length) h += '<div class="ud-sts" data-udsts="'+udStsReg(u)+'">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>'; }
@@ -7493,6 +7518,7 @@ function showSkillStageScreen(){
     const sh = mine.filter(h=>h.kind==='shield').reduce((x,h)=>x+h.amount, 0);
     const rv = mine.find(h=>h.rv); // (v295) 부활: 쓰러뜨린 피해 숫자 대신 '부활!'을 크게 + 빛나며 일어나는 연출
     if(rv){ out.cls += ' fx-revive'; out.text = rv.text+(rv.src?'<small>'+rv.src+'</small>':'')+(dmg?'<em class="fx-st">-'+dmg+'</em>':''); out.textCls = 'revive'; return out; }
+    if(mine.some(h=>h.gi) && !dmg){ out.cls += ' fx-gi'; out.text = '⚡기세!<small>한 번 더</small>'; out.textCls = 'gi'; return out; } // (v10.5.0)
     const stat = mine.find(h=>h.kind==='status');
     const d0 = mine.find(h=>h.kind==='dmg');
     if(dmg || (d0 && d0.amount===0)){
@@ -8740,7 +8766,7 @@ function sWobble(f1, f2, off, dur, peak, bus, rate, depth){ const t0 = aT(off), 
 const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summonCharge:1.13, summonEpic:0.55, summonLegend:0.51,
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
-  bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bDebuff:0.50,
+  bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bGi:0.9, bDebuff:0.50,
   bSk_fire:0.55, bBoom:0.155, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
@@ -8776,6 +8802,7 @@ function sfxPlay(name){
   else if(name==='bFall'){ sSlide(560,110,0,0.38,0.22,B,'triangle'); sWood(180,0.36,0.3,B); }
   else if(name==='bHeal') [784,988,1175].forEach((f,i)=>sMarimba(f,i*0.06,0.13,0.45,B));
   else if(name==='bShield'){ const t = aT(0); [1200,1650,2310].forEach((f,i)=>sOsc(f,'sine',t,0.7,0.07/(i+1),0.01,B)); sNoise(0,0.2,0.08,B,'highpass',5000,null,0.5,0.03); }
+  else if(name==='bGi'){ sSlide(500,1400,0,0.16,0.14,B); [1568,2093,2637].forEach((f,i)=>sGlock(f,0.1+i*0.05,0.07,B)); } // (v10.5.0) 기세
   else if(name==='bBuff'){ sNoise(0,0.2,0.18,B,'bandpass',900,4000,1.5,0.04); sGlock(2093,0.16,0.07,B); }
   else if(name==='bDebuff') sSlide(700,280,0,0.22,0.2,B);
   else if(name==='bBoom'){ sBoop(0,0.6,B,90,30,0.55); sNoise(0,0.7,0.34,B,'lowpass',650,80,0.7,0.012); sNoise(0.04,0.9,0.2,B,'lowpass',240,50,0.6,0.08); } // (build 397) 시련 폭발 — 낮은 '둥' (사용자 결정: 나중에 따로 구한 효과음으로 바꿀 수 있음)
@@ -8808,6 +8835,7 @@ function battleSfxFor(sf, fx){
   if(st.some(isNeg)) q.push('bDebuff');
   if(hits.some(h=>h.kind==='heal' && h.amount>0)) q.push('bHeal');
   if(hits.some(h=>h.kind==='shield')) q.push('bShield');
+  if(hits.some(h=>h.gi)) q.unshift('bGi'); // (v10.5.0) 기세는 맨 앞
   if(st.some(h=>!isNeg(h))) q.push('bBuff');
   q.slice(0, 4).forEach((n, i)=>sfxAt(Math.round((base + i*90)*m), ()=>{ if(battleSfxOn()) sfx(n); }));
 }
@@ -10994,7 +11022,7 @@ function guideSectionHtml(cat){
     const G = '<img class="uic" src="assets/ui/ic_groggy.webp" alt="">';
     return '<div class="sub">'
       + guideHeader('<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본')
-      + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
+      + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '⚡기세: 자기 차례마다 (속도 − '+GI_BASE+')×'+GI_K+'만큼 쌓여 100이 되면 바로 한 번 더 행동 (라운드에 한 번 · 적도 똑같고 보스는 차례마다 +'+GI_BOSS+' 더) · 추가 행동 땐 스킬 대기 −1 · 빙결로 차례를 거르거나 속박되면 −'+GI_CUT, '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
       + guideHeader('💥 피해')
       + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 +'+Math.round((CRIT_MULT-1)*100)+'% (룬·각인으로 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
       + guideHeader(G+' 그로기 (보스)')
@@ -12066,6 +12094,10 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:465, v:'10.5.0', date:'2026-10-22', secs:[
+    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적도 똑같이 쌓이고, 보스는 차례마다 10 더 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '정령 정보의 속도 옆에 지금 기세', '전투 도움말에 기세 설명' ]},
+    { t:'스킬 변경', items:[ '백록 「별빛 가속」: 대상 기세 +10 추가 (차면 바로 한 번 더 행동)', '백록 「여명의 호령」 · 불사귀 「처형」(처치하면 즉시 행동)으로 한 번 더 움직일 때도 스킬 대기 −1' ]}
+  ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
     { t:'월드 보스 화면', items:[ '보스 정보를 가로 한 줄로 줄임 — 그림 · 이름 · 체력이 한 상자에', '도전 · 소탕 · 모두 소탕을 맨 아래 한 줄로', '현황 · 보상 · 순위 · 상점 내용 칸이 두 배 넘게 넓어짐', '이번 주 기간(날짜)은 현황 탭 규칙으로' ]},
     { t:'레이드 화면', items:[ '보스 정보를 월드 보스처럼 가로 한 줄로 — 작은 화면에서 보스 그림이 작아지고 버튼이 넘치던 것', '입장권 수는 보스 상자 오른쪽 위', '난이도 7개를 두 줄로 — PC에서 옆으로 밀리지 않아 헬 뒤 난이도가 안 보이던 것', '승리 보상에 이름 표시 — 속성 장비(에픽 이상) 확률 · 고대의 파편 · 주간 첫 승리 칸에 그 주 첫 승리 때 받는 고대의 파편', '고대의 파편이 안 나오는 난이도엔 「추천 전투력 10만 이상부터」 안내' ]},
@@ -18580,7 +18612,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 464, APP_VERSION = '10.4.3'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 465, APP_VERSION = '10.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
