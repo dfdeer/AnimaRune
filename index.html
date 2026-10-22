@@ -939,6 +939,9 @@
   @keyframes boomEmoji{0%{transform:translate(-50%,-50%) scale(.2) rotate(-20deg); opacity:0;} 25%{transform:translate(-50%,-60%) scale(1.25) rotate(8deg); opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(0); opacity:0;}}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
+  .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
+  .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
+  .bu-giready{position:absolute; left:2px; top:2px; z-index:5; width:16px; height:16px; border-radius:50%; background:#ffcf3a; color:#3a2a00; font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 6px #ffcf3a; animation:giHot 1s ease-in-out infinite alternate; pointer-events:none;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
   .fx-gi .bu-icon{animation:fxGi .9s ease-out;}
   @keyframes fxGi{0%{filter:none; transform:none} 30%{filter:brightness(1.9) drop-shadow(0 0 14px #ffd557); transform:translateY(-6px) scale(1.12)} 100%{filter:none; transform:none}}
@@ -5707,6 +5710,12 @@ function giGrant(sf, u){ // 100이 넘었으면 바로 다음 칸에 추가 행�
   pushLog(sf, '⚡ '+logUnitName(u.side, u)+' 기세 — 한 번 더 행동');
   return true;
 }
+function giReady(sf, u){ return giOn(sf) && u && u.alive && !u.inert && (u.gi||0) + giGain(u) >= 100 && u.giR!==sf.round; } // (v10.5.0) 다음 자기 차례에 차서 한 번 더 움직일 정령
+function giChip(sf, u, full){ // (v10.5.0) 지금 기세 · 차례마다 쌓이는 양 — 차례 패널 · 고른 적 줄 · 정령 정보
+  if(!giOn(sf) || !u || u.inert) return '';
+  const g = Math.min(100, u.gi|0), n = giGain(u), go = giReady(sf, u);
+  return '<span class="gi-chip'+(go?' go':'')+'">⚡'+g+'<small>+'+n+'</small>'+(full ? '' : (go ? '<b>한 번 더</b>' : ''))+'</span>'+(full ? '<span class="gi-why'+(go?' go':'')+'">'+(go ? '다음 차례에 한 번 더' : (n>0 ? Math.ceil((100-g)/n)+'차례 뒤 한 번 더' : '속도 '+GI_BASE+' 이하라 안 쌓임'))+' · 차례마다 (속도 − '+GI_BASE+') × '+GI_K+(u.isBoss && GI_BOSS ? ' + 보스 '+GI_BOSS : '')+'</span>' : '');
+}
 function giAdd(sf, u, n){ if(!giOn(sf) || !u || !u.alive || u.inert) return false; u.gi = Math.min(150, Math.max(0, (u.gi||0) + n)); return giGrant(sf, u); }
 function buildQueue(sf){
   const e = [];
@@ -7266,12 +7275,13 @@ function battleUnitHtml(u, opts){
     + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+stTintHtml(u)+'</div>'
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && !u.isBoss) ? '<span class="bu-spm cn '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (b427) 일반 정령은 특수 규칙 배율을 그림 귀퉁이로 — 체력 줄이 길어져 쉴드 수치가 다음 줄로 내려갔음
     + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + ((u.st.slow || u.st.chill) && !u.st.freeze ? SLOW_ART : '') + (u.st.burn>0 ? BURN_ART : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i><i></i><i></i><i></i></div>' : '') + ((u.st.bind || u.st.web) ? '<div class="fx-web">'+WEB_ART+'</div>' : '') + (u.st.curse ? CURSE_ART : '') + (u.st.seal ? (u.st.curse ? SEAL_ART.replace('fx-seal','fx-seal r') : SEAL_ART) : '') + (u.st.jail ? JAIL_ART : '') + (raidGazed(state.skillFight, u) ? GAZE_ART : '') + buffFxHtml(u.st) : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
+    + (giReady(state.skillFight, u) ? '<span class="bu-giready" title="다음 차례에 기세로 한 번 더">⚡</span>' : '') // (v10.5.0) 다음 차례에 한 번 더
     + (opts.fx && opts.fx.text ? '<div class="bu-float '+(opts.fx.textCls||'')+'">'+opts.fx.text+'</div>' : '')
     + (opts.booms||[]).map(b=>'<div class="fx-boom '+b.kind+'" style="animation-delay:'+(-b.age)+'ms;"><i></i><i></i><i></i><b>💥</b></div>').join('') // (build 393) 시련 폭발
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
-    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(u.alive && !u.inert && u.gi>0 && giOn(state.skillFight) ? '<b class="bu-gi'+(u.gi>=80?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>' // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠
+    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(u.alive && !u.inert && u.gi>0 && giOn(state.skillFight) ? '<b class="bu-gi'+(giReady(state.skillFight, u)?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>' // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠
     + '<div class="bu-hpnum">'+(shV>0 && u.alive ? '<b class="bu-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,u.hp)+shV)+'</b>' : fmtHp(Math.max(0,u.hp)))+'/'+fmtHp(u.maxHp) /* (b428) 쉴드는 현재 체력에 더해 파란 글자로 — 따로 붙이면 줄이 길어졌음 · 쉴드량은 상태 배지(보호막)에서 */+((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && u.isBoss) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '')+ /* (v185) 특수 규칙 배율 · (v314) 체력 옆에 작게 */'</div>'
     + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
@@ -7355,7 +7365,7 @@ function unitDetailHtml(u, bossId){
     + '<div class="ud-nm"><b>'+(u.dispName || sp.name)+awakenBadge(u.aw)+'</b><div class="sub">'+elIc(sp.element)+' '+ELEMENT_INFO[sp.element].name+' · '+RARITY_INFO[uRar(u, sp)].name+(isBoss?' · 보스':(u.isWard?' · 결계석 (기본 공격만)':(u.isAdd?' · 소환수 (기본 공격만 · 2라운드 뒤 자폭)':' · '+kit.role)))+(u.aw>=5?' · 스킬 한 등급 위':'')+'</div></div></div>';
   const live = !!(state.skillFight && (state.skillFight.myUnits.includes(u) || state.skillFight.enemyUnits.includes(u)) && !state.skillFight.result && u.hp < u.maxHp + 1);
   const gb = gearBonusOf(u), plus = v=> v>=1 ? '<em class="ud-plus">+'+v+'</em>' : ''; // (v8.16.0) 장비·각인·룬·초월로 늘어난 몫 (사용자 요청)
-  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk)+(gb ? plus(Math.round(gb.atk)) : ''))+stat('체력', (live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+(gb ? plus(Math.round(gb.hp)) : ''))+stat('속도', effSpeed(u)+(gb ? plus(Math.round(gb.spd)) : '')+(live && giOn(state.skillFight) && !u.inert ? '<small> · 기세 '+Math.min(100, u.gi|0)+'</small>' : ''))+stat('전투력', fmtCP(unitCP(u)))+'</div>'
+  h += '<div class="ud-stats">'+stat('공격력', fmtDmg(u.atk)+(gb ? plus(Math.round(gb.atk)) : ''))+stat('체력', (live ? fmtHp(Math.max(0,u.hp))+'<small>/'+fmtHp(u.maxHp)+'</small>' : fmtHp(u.maxHp))+(gb ? plus(Math.round(gb.hp)) : ''))+stat('속도', effSpeed(u)+(gb ? plus(Math.round(gb.spd)) : ''))+stat('전투력', fmtCP(unitCP(u)))+'</div>'+(live && giOn(state.skillFight) && !u.inert ? '<div class="ud-gi">기세 '+giChip(state.skillFight, u, true)+'</div>' : '')
     + (gb && (gb.atk>=1 || gb.hp>=1 || gb.spd>=1) ? '<div class="sub ud-plusn">초록 숫자 = 장비·각인·룬·초월로 늘어난 몫</div>' : '');
   if(live && (u.st.shield||0)>0) h += '<div class="sub" style="text-align:center; font-size:12px; margin-top:4px; color:#8fdcff;"><img class="uic" src="assets/ui/ic_shield.webp" alt=""> 쉴드 '+fmtHp(u.st.shield)+' · 버틸 수 있는 양 '+fmtHp(Math.max(0,u.hp)+u.st.shield)+'</div>';
   if(live){ const sts = statusList(u); if(sts.length) h += '<div class="ud-sts" data-udsts="'+udStsReg(u)+'">'+sts.map(x=>'<span class="sbg '+(x.good?'g':'b')+'">'+x.i+' '+x.t+'</span>').join('')+'</div>'; }
@@ -7601,7 +7611,7 @@ function showSkillStageScreen(){
   } else html += '<div class="bs-order" style="visibility:hidden;" aria-hidden="true"></div>'; // (v5.2.0) 끝나도 순서 줄 자리는 남김 — 줄이 사라지며 전장이 위로 튀던 것
   { const tu = (!sf.result && skillSel && skillSel.side==='enemy' && Number.isInteger(skillSel.idx)) ? unitAt(sf, 'enemy', skillSel.idx) : null; // (v8.16.0) 고른 적 정보를 위쪽에 (사용자 제안 · 붕괴 스타레일처럼) — 누르면 자세히
     if(tu && tu.alive){ const sp = SPIRITS[tu.key], pct = Math.max(0, Math.min(100, tu.hp/Math.max(1,tu.maxHp)*100)), sts = statusList(tu).slice(0,5);
-      html += '<div class="bs-tgt" id="bsTgtBar"><span class="bt-art">'+(tu.isBoss ? bossImg(unitBossId(tu), 'oc-bimg', tu.bossIcon) : (sp ? spArt(sp) : ''))+'</span><div class="bt-mid"><div class="bt-nm">'+(sp ? elIc(sp.element) : '')+' <b>'+(tu.dispName || (sp ? sp.name : ''))+'</b><small>'+((tu.st&&tu.st.shield>0) ? '<b class="bt-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,tu.hp)+tu.st.shield)+'</b>' : fmtHp(Math.max(0,tu.hp)))+' / '+fmtHp(tu.maxHp)+'</small></div><div class="bt-hp"><i style="width:'+pct.toFixed(1)+'%"></i></div></div><span class="bt-sts">'+sts.map(x=>'<span class="'+(x.good?'g':'b')+'">'+x.i+(x.n?'<em>'+x.n+'</em>':'')+'</span>').join('')+'</span><span class="bt-i">ⓘ</span></div>'; }
+      html += '<div class="bs-tgt" id="bsTgtBar"><span class="bt-art">'+(tu.isBoss ? bossImg(unitBossId(tu), 'oc-bimg', tu.bossIcon) : (sp ? spArt(sp) : ''))+'</span><div class="bt-mid"><div class="bt-nm">'+(sp ? elIc(sp.element) : '')+' <b>'+(tu.dispName || (sp ? sp.name : ''))+'</b><small>'+((tu.st&&tu.st.shield>0) ? '<b class="bt-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,tu.hp)+tu.st.shield)+'</b>' : fmtHp(Math.max(0,tu.hp)))+' / '+fmtHp(tu.maxHp)+'</small>'+giChip(sf, tu)+'</div><div class="bt-hp"><i style="width:'+pct.toFixed(1)+'%"></i></div></div><span class="bt-sts">'+sts.map(x=>'<span class="'+(x.good?'g':'b')+'">'+x.i+(x.n?'<em>'+x.n+'</em>':'')+'</span>').join('')+'</span><span class="bt-i">ⓘ</span></div>'; }
     } // (v9.4.4) 고르지 않았을 땐 자리를 비워 두지 않음 — 막대는 행동 순서 줄 아래에 겹쳐 뜸(전장 높이를 뺏어 작은 폰에서 정령이 작아졌음)
   // (v9.4.4) 특수 규칙 줄은 없앰 — 위쪽 제목 옆 아이콘(#bsSpecialBtn)을 누르면 규칙 창 (사용자 결정 10/16: 작은 폰에서 전장이 좁아짐)
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
@@ -7626,7 +7636,7 @@ function showSkillStageScreen(){
     const sp = SPIRITS[curUnit.key], kit = kitOf(curUnit);
     const tU = unitAt(sf, skillSel.side, skillSel.idx), onAlly = skillSel.side==='me';
     const tm = tU ? effTypeMult(curUnit, tU) : 1; // (v270 버그수정) 고른 대상 칸이 비어 있으면 화면이 멈추던 문제
-    html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span></div>'
+    html += '<div class="bs-who"><div class="pic">'+spArt(sp)+'</div><div style="flex:1; min-width:0;"><div class="nm">'+sp.name+'의 차례 <span class="sb">· 속도 '+effSpeed(curUnit)+'</span> '+((sf.queue[sf.queuePos]||{}).x ? '<span class="gi-chip go">⚡추가 행동</span>' : giChip(sf, curUnit))+'</div>'
       + (skillSel.act ? (()=>{ const sk = unitSkill(curUnit, skillSel.act), ty = skillTypeOf(sk, curUnit, skillSel.side); return '<div class="bs-selact sk-'+ty.k+'">'+(skillSel.act==='basic' ? '<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본 공격' : sk.icon+' '+sk.name)+' <small>'+ty.t+'</small></div>'; })() : '')
       + '<div class="bs-tgt" id="bsTgtInfo" role="button"><img class="uic" src="assets/ui/ic_target.webp" alt=""> '+skillUnitName(skillSel.side, tU)+(tm!==1 ? ' <span class="eff '+(tm>1?'up':'down')+'">'+effLabel(tm)+'</span>' : '')+'</div></div>'
       + '<button class="bs-info" id="skillKitBtn">ⓘ</button></div>';
@@ -12095,7 +12105,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:465, v:'10.5.0', date:'2026-10-22', secs:[
-    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적도 똑같이 쌓이고, 보스는 차례마다 10 더 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '정령 정보의 속도 옆에 지금 기세', '전투 도움말에 기세 설명' ]},
+    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적도 똑같이 쌓이고, 보스는 차례마다 10 더 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 그림 귀퉁이에 ⚡ · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
     { t:'스킬 변경', items:[ '백록 「별빛 가속」: 대상 기세 +10 추가 (차면 바로 한 번 더 행동)', '백록 「여명의 호령」 · 불사귀 「처형」(처치하면 즉시 행동)으로 한 번 더 움직일 때도 스킬 대기 −1' ]}
   ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
