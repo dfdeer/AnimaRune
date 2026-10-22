@@ -939,6 +939,9 @@
   @keyframes boomEmoji{0%{transform:translate(-50%,-50%) scale(.2) rotate(-20deg); opacity:0;} 25%{transform:translate(-50%,-60%) scale(1.25) rotate(8deg); opacity:1;} 100%{transform:translate(-50%,-90%) scale(1) rotate(0); opacity:0;}}
   .bu-float.heal{color:#16913a;}
   .bu-float.buff{color:#447bc9; font-size:13px;}
+  .bu-hpr{display:flex; align-items:center; justify-content:center; gap:2px;} .bu-hpr.gi{margin-right:-16px;} /* 숫자 칸만큼 오른쪽으로 — 체력 줄은 기세 없을 때와 같은 자리 */
+  .bu-hpr .bu-gin{width:14px; font-size:9px; line-height:1; font-weight:900; color:#d99a00; text-align:left; margin-top:2px; text-shadow:0 0 2px #fff;} .bu-hpr .bu-gin.go{color:#ff9d00; text-shadow:0 0 4px #ffd557, 0 0 2px #fff;}
+  .bu-boss .bu-hpr{width:100%;} .bu-boss .bu-hpr .bu-hp{flex:1; min-width:0;} .bu-boss .bu-hpr.gi{margin-right:0;} .bu-boss .bu-hpr .bu-gin{width:auto; font-size:11px;}
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
   .bu-giready{position:absolute; left:2px; top:2px; z-index:5; width:16px; height:16px; border-radius:50%; background:#ffcf3a; color:#3a2a00; font-size:10px; line-height:16px; text-align:center; box-shadow:0 0 6px #ffcf3a; animation:giHot 1s ease-in-out infinite alternate; pointer-events:none;}
@@ -2302,7 +2305,7 @@ function refreshRewardBtnDot(stageIdx){
 const SKILL_ROUND_CAP = 20;
 // (v10.5.0) 기세 — 자기 차례에 (속도 − GI_BASE)×GI_K만큼 쌓이고 100이 되면 그 자리에서 한 번 더 행동 (사용자 결정 10/22: 적도 받음 · 차는 즉시)
 // 추가 행동 때는 그 정령 스킬 쿨이 1 줄어듦 — 쿨 1(매 라운드) 스킬도 추가 행동에 쓸 수 있게 (아스트라이아 별자리 표식처럼 추가 행동이 기본 공격뿐이면 의미가 없음)
-let GI_BASE = 110, GI_K = 1.2, GI_BOSS = 10, GI_CUT = 25, GI_STAR = 10; // GI_BOSS: 보스는 차례마다 더 쌓임 · GI_CUT: 빙결로 차례를 거르거나 속박되면 깎임 · GI_STAR: 별빛 가속이 바로 채움 (let — 시뮬 TWEAK로 바꿔 볼 수 있게)
+let GI_BASE = 110, GI_K = 1.2, GI_CUT = 25, GI_STAR = 10; // 아군·적·보스 모두 같은 식 (사용자 결정 10/22) · GI_CUT: 빙결로 차례를 거르거나 속박되면 깎임 · GI_STAR: 별빛 가속이 바로 채움 (let — 시뮬 TWEAK로 바꿔 볼 수 있게)
 const ALLY_HP_MULT = 2.7;
 const HEAL1_C = [.16,.19,.22,.26,.30], HEAL1_T = [.16,.19,.22,.26,.30]; // (v317) 치유의 물결 — 시전자 최대체력 % + 대상 최대체력 % (일반~신화)
 const HEAL2_C = [0,0,.09,.12,.15], HEAL2_T = [0,0,.09,.12,.15]; // (v317) 해일의 축복 — 전체
@@ -5702,7 +5705,7 @@ function checkSkillStageOutcome0(sf){
 // ---------- 행동 순서 ----------
 // (v10.5.0) 기세: 시련(정해진 풀이가 있는 퍼즐)과 AI가 복사본으로 미리 계산할 때는 끔
 function giOn(sf){ return !!sf && sf.mode!=='trial' && !skillSimDepth; }
-function giGain(u){ return Math.max(0, Math.round((effSpeed(u) - GI_BASE) * GI_K)) + (u.isBoss ? GI_BOSS : 0); }
+function giGain(u){ return Math.max(0, Math.round((effSpeed(u) - GI_BASE) * GI_K)); }
 function giGrant(sf, u){ // 100이 넘었으면 바로 다음 칸에 추가 행동 — 한 라운드에 한 번
   if(!giOn(sf) || !u || !u.alive || u.inert || (u.gi||0) < 100 || u.giR===sf.round || !Array.isArray(sf.queue)) return false;
   u.gi -= 100; u.giR = sf.round;
@@ -5714,7 +5717,7 @@ function giReady(sf, u){ return giOn(sf) && u && u.alive && !u.inert && (u.gi||0
 function giChip(sf, u, full){ // (v10.5.0) 지금 기세 · 차례마다 쌓이는 양 — 차례 패널 · 고른 적 줄 · 정령 정보
   if(!giOn(sf) || !u || u.inert) return '';
   const g = Math.min(100, u.gi|0), n = giGain(u), go = giReady(sf, u);
-  return '<span class="gi-chip'+(go?' go':'')+'">⚡'+g+'<small>+'+n+'</small>'+(full ? '' : (go ? '<b>한 번 더</b>' : ''))+'</span>'+(full ? '<span class="gi-why'+(go?' go':'')+'">'+(go ? '다음 차례에 한 번 더' : (n>0 ? Math.ceil((100-g)/n)+'차례 뒤 한 번 더' : '속도 '+GI_BASE+' 이하라 안 쌓임'))+' · 차례마다 (속도 − '+GI_BASE+') × '+GI_K+(u.isBoss && GI_BOSS ? ' + 보스 '+GI_BOSS : '')+'</span>' : '');
+  return '<span class="gi-chip'+(go?' go':'')+'">⚡'+g+'<small>+'+n+'</small>'+(full ? '' : (go ? '<b>한 번 더</b>' : ''))+'</span>'+(full ? '<span class="gi-why'+(go?' go':'')+'">'+(go ? '다음 차례에 한 번 더' : (n>0 ? Math.ceil((100-g)/n)+'차례 뒤 한 번 더' : '속도 '+GI_BASE+' 이하라 안 쌓임'))+' · 차례마다 (속도 − '+GI_BASE+') × '+GI_K+'</span>' : '');
 }
 function giAdd(sf, u, n){ if(!giOn(sf) || !u || !u.alive || u.inert) return false; u.gi = Math.min(150, Math.max(0, (u.gi||0) + n)); return giGrant(sf, u); }
 function buildQueue(sf){
@@ -7281,7 +7284,9 @@ function battleUnitHtml(u, opts){
     + (opts.floats||[]).map((f,i,a)=>'<div class="bu-float '+f.cls+'" style="animation-duration:'+f.dur+'ms; animation-delay:'+(150 - f.age)+'ms; margin-top:'+(-(a.length-1-i)*20)+'px;">'+f.text+'</div>').join('')
     + '</div>'
     + '<div class="bu-plate">'+((u.bossIcon || u.addKind) ? '' : elIc(u.element, 'bu-pel'))+((u.owner && raidIsNet() && u.owner!==raidNet.role) ? '<img class="uic" src="assets/ui/ic_party.webp" alt="">' : '')+(u.dispName || sp.name)+eff+'</div>'
-    + '<div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(u.alive && !u.inert && u.gi>0 && giOn(state.skillFight) ? '<b class="bu-gi'+(giReady(state.skillFight, u)?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>' // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠
+    + (()=>{ const gOn = u.alive && !u.inert && giOn(state.skillFight), go = gOn && giReady(state.skillFight, u); // (v10.5.0) 기세 — 체력 줄 아래쪽 금색 띠 + 오른쪽 숫자
+        return '<div class="bu-hpr'+(gOn?' gi':'')+'"><div class="bu-hp"><div style="width:'+hpPct+'%;"></div>'+(shPct>0?'<i style="left:'+hpPct+'%; width:'+shPct+'%;"></i>':'')+(gOn && u.gi>0 ? '<b class="bu-gi'+(go?' hot':'')+'" style="width:'+Math.min(100, u.gi)+'%;"></b>' : '')+'</div>'
+          + (gOn ? '<span class="bu-gin'+(go?' go':'')+'">'+Math.min(100, u.gi|0)+'</span>' : '')+'</div>'; })()
     + '<div class="bu-hpnum">'+(shV>0 && u.alive ? '<b class="bu-sh"><img class="uic" src="assets/ui/ic_shield.webp" alt="">'+fmtHp(Math.max(0,u.hp)+shV)+'</b>' : fmtHp(Math.max(0,u.hp)))+'/'+fmtHp(u.maxHp) /* (b428) 쉴드는 현재 체력에 더해 파란 글자로 — 따로 붙이면 줄이 길어졌음 · 쉴드량은 상태 배지(보호막)에서 */+((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && u.isBoss) ? '<span class="bu-spm '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '')+ /* (v185) 특수 규칙 배율 · (v314) 체력 옆에 작게 */'</div>'
     + gg
     + (st ? '<div class="bu-sts" data-stat="'+u.side+':'+u.idx+'">'+st+'</div>' : '')
@@ -11032,7 +11037,7 @@ function guideSectionHtml(cat){
     const G = '<img class="uic" src="assets/ui/ic_groggy.webp" alt="">';
     return '<div class="sub">'
       + guideHeader('<img class="uic" src="assets/ui/ic_atk.webp" alt=""> 기본')
-      + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '⚡기세: 자기 차례마다 (속도 − '+GI_BASE+')×'+GI_K+'만큼 쌓여 100이 되면 바로 한 번 더 행동 (라운드에 한 번 · 적도 똑같고 보스는 차례마다 +'+GI_BOSS+' 더) · 추가 행동 땐 스킬 대기 −1 · 빙결로 차례를 거르거나 속박되면 −'+GI_CUT, '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
+      + guideList(['진형 6칸: 전열 3 · 후열 3 — 전열이 살아 있는 동안 후열은 공격받지 않음', '라운드마다 속도가 빠른 순서로 아군·적이 번갈아 행동 · 속도가 같으면 아군 먼저', '⚡기세: 자기 차례마다 (속도 − '+GI_BASE+')×'+GI_K+'만큼 쌓여 100이 되면 바로 한 번 더 행동 (라운드에 한 번 · 적·보스도 똑같음) · 추가 행동 땐 스킬 대기 −1 · 빙결로 차례를 거르거나 속박되면 −'+GI_CUT, '대상을 먼저 누르고 기본 공격·스킬1·스킬2 중 선택 · 스킬은 쓰고 나면 몇 라운드 대기', '범위: 가로(양옆) · 관통(바로 뒤) · 십자 · 전체', uiIc('auto')+' 자동 전투 · ⏩ 2배속', SKILL_ROUND_CAP+'라운드 안에 못 이기면 패배'])
       + guideHeader('💥 피해')
       + guideList(['공격력 × 스킬 배율 × 상성(유리 ×1.3 · 불리 ×0.8)', '치명타: 기본 '+Math.round(BASE_CRIT*100)+'% 확률 · 피해 +'+Math.round((CRIT_MULT-1)*100)+'% (룬·각인으로 증가)', '받는 피해 감소(굳건함·룬·특성 등)는 합쳐서 최대 90%'])
       + guideHeader(G+' 그로기 (보스)')
@@ -12105,7 +12110,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
   { build:465, v:'10.5.0', date:'2026-10-22', secs:[
-    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적도 똑같이 쌓이고, 보스는 차례마다 10 더 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 그림 귀퉁이에 ⚡ · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
+    { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 게이지 — 체력 줄 아래쪽 금색 띠 · 체력 줄 오른쪽에 지금 기세 숫자', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적 · 보스도 똑같은 식으로 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 그림 귀퉁이에 ⚡ · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
     { t:'스킬 변경', items:[ '백록 「별빛 가속」: 대상 기세 +10 추가 (차면 바로 한 번 더 행동)', '백록 「여명의 호령」 · 불사귀 「처형」(처치하면 즉시 행동)으로 한 번 더 움직일 때도 스킬 대기 −1' ]}
   ]},
   { build:464, v:'10.4.3', date:'2026-10-22', secs:[
