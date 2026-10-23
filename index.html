@@ -2089,14 +2089,15 @@ body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연�
   #main[data-tbg=spirits] .pk-sort button{background:#0c0f26cc; border-color:#f1cf7e44; color:#e6e2f6;} #main[data-tbg=spirits] .pk-sort button.on{background:#f1cf7e22; color:var(--gold); border-color:var(--gold);}
 
   /* (v10.6.0) 보스 무대 — 보스를 크게 · 숨 쉬기 · 속성 빛 · 떠오르는 입자 */
-  .bstw{position:relative; margin:0 -12px 6px;} .bstw > .bst-plate, .bstw > .bst-info, .bstw > .bst-tk{z-index:3;} .bstw > .bst-plate{left:24px;} .bstw > .bst-info, .bstw > .bst-tk{right:24px;}
-  .bst{position:relative; height:clamp(190px, 31vh, 268px); margin:0; overflow:hidden; -webkit-mask:linear-gradient(180deg,transparent 0%,#000 8%,#000 84%,transparent 100%); mask:linear-gradient(180deg,transparent 0%,#000 8%,#000 84%,transparent 100%);} /* (v10.6.1) 위쪽 흐림 16% → 8% — 큰 보스 머리·날개가 흐림에 잘렸음 */
-  @media (max-height:720px){ .bst{height:158px;} .bstw{margin-bottom:2px;} .bst-plate b{font-size:20px;} }
-  .bst-aura{position:absolute; left:50%; top:46%; width:330px; height:330px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 55%, transparent) 0%, color-mix(in srgb, var(--bc) 18%, transparent) 38%, transparent 66%); animation:bstPulse 3.2s ease-in-out infinite;}
-  .bst-rays{position:absolute; left:50%; top:46%; width:560px; height:560px; margin:-280px 0 0 -280px; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--bc) 22%, transparent) 0 5deg, transparent 5deg 20deg); -webkit-mask:radial-gradient(circle,#000 12%,transparent 58%); mask:radial-gradient(circle,#000 12%,transparent 58%); animation:bstSpin 40s linear infinite; opacity:.7;}
-  .bst-floor{position:absolute; left:50%; bottom:16%; width:190px; height:30px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse, #000a 0%, transparent 70%);}
-  .bst-boss{position:absolute; left:50%; top:12%; bottom:13%; display:flex; align-items:flex-end; justify-content:center; transform:translateX(-50%); animation:bstBreath 3.2s ease-in-out infinite; transform-origin:50% 100%;}
-  .bst-img{display:block; width:auto; height:100%; max-width:calc(100vw - 40px); object-fit:contain; object-position:50% 100%; filter:drop-shadow(0 10px 14px #000c) drop-shadow(0 0 18px color-mix(in srgb, var(--bc) 70%, transparent));}
+  .bstw{position:relative; isolation:isolate; margin:0 -12px 6px; overflow-x:clip;} .bstw ~ *{position:relative; z-index:1;} /* (v10.6.1) 후광이 무대 밖으로 퍼져도 아래 칸들이 그 위에 */ .bstw > .bst-plate, .bstw > .bst-info, .bstw > .bst-tk{z-index:3;} .bstw > .bst-plate{left:24px;} .bstw > .bst-info, .bstw > .bst-tk{right:24px;}
+  .bst{position:relative; height:clamp(220px, 35vh, 310px); margin:0;} /* (v10.6.1) 무대 상자 가림막(overflow·mask) 없앰 — 보스 머리·후광이 상자 경계에서 잘렸음 · 후광은 맨 뒤에서 상자 밖까지 퍼지고 입자만 상자 안에서 흐려짐 */
+  .bst > .bst-pt{overflow:hidden; -webkit-mask:linear-gradient(180deg,transparent 0%,#000 18%,#000 84%,transparent 100%); mask:linear-gradient(180deg,transparent 0%,#000 18%,#000 84%,transparent 100%);}
+  @media (max-height:720px){ .bst{height:180px;} .bstw{margin-bottom:2px;} .bst-plate b{font-size:20px;} }
+  .bst-aura{position:absolute; z-index:-1; pointer-events:none; left:50%; top:46%; width:330px; height:330px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 55%, transparent) 0%, color-mix(in srgb, var(--bc) 18%, transparent) 38%, transparent 66%); animation:bstPulse 3.2s ease-in-out infinite;}
+  .bst-rays{position:absolute; z-index:-1; pointer-events:none; left:50%; top:46%; width:560px; height:560px; margin:-280px 0 0 -280px; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--bc) 22%, transparent) 0 5deg, transparent 5deg 20deg); -webkit-mask:radial-gradient(circle,#000 12%,transparent 58%); mask:radial-gradient(circle,#000 12%,transparent 58%); animation:bstSpin 40s linear infinite; opacity:.7;}
+  .bst-floor{position:absolute; left:50%; bottom:13%; width:190px; height:30px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse, #000a 0%, transparent 70%);}
+  .bst-boss{position:absolute; left:50%; top:3%; bottom:12%; display:flex; align-items:flex-end; justify-content:center; transform:translateX(-50%); animation:bstBreath 3.2s ease-in-out infinite; transform-origin:50% 100%;}
+  .bst-img{display:block; width:auto; height:100%; max-width:calc(100vw - 24px); object-fit:contain; object-position:50% 100%; filter:drop-shadow(0 10px 14px #000c) drop-shadow(0 0 18px color-mix(in srgb, var(--bc) 70%, transparent));}
   .bst-plate{position:absolute; left:12px; bottom:10%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;}
   .bst-plate b{font-family:var(--fun); font-weight:400; font-size:24px; color:#fff; letter-spacing:.5px; text-shadow:0 2px 0 #0009, 0 0 14px color-mix(in srgb, var(--bc) 85%, transparent);}
   .bst-plate span{font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px; background:#000a; border:1px solid color-mix(in srgb, var(--bc) 50%, transparent);}
@@ -5236,7 +5237,7 @@ function elPtClass(el){ return 'bst-'+({ fire:'ember', water:'snow', wood:'leaf'
 function bossStageHtml(o){ // (v10.6.0) 보스 무대 — 배경 위에 보스가 크게 서 있고(숨 쉬기) 뒤로 속성 빛·빛줄기, 앞으로 속성 입자가 떠오름 · 작은 화면에선 fitRest가 그림을 줄임(.fit-shrink)
   const c = ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].color : '#9a6bff', P = { fire:'ember', water:'snow', wood:'leaf', light:'spark', dark:'mote' }[o.el] || 'spark';
   const pt = stagePts(12);
-  return '<div class="bstw" style="--bc:'+c+';"><div class="bst bst-'+P+' fit-shrink" data-fit="h" data-min="150"><div class="bst-aura"></div><div class="bst-rays"></div><div class="bst-floor"></div>'
+  return '<div class="bstw" style="--bc:'+c+';"><div class="bst bst-'+P+' fit-shrink" data-fit="h" data-min="170"><div class="bst-aura"></div><div class="bst-rays"></div><div class="bst-floor"></div>'
     + '<div class="bst-boss">'+bossImg(o.id, 'bst-img', '<span style="font-size:96px;">'+(o.icon||'👑')+'</span>')+'</div><div class="bst-pt">'+pt+'</div></div>'
     + '<div class="bst-plate"><b>'+o.name+'</b><span style="color:'+c+';">'+(ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].icon+' '+ELEMENT_INFO[o.el].name : '')+'</span></div>'
     + (o.info ? '<button class="bst-info" id="'+o.info+'">📖 상세 정보</button>' : '') + (o.tk ? '<div class="bst-tk">'+o.tk+'</div>' : '') + '</div>'; } // (v10.6.0) 이름·상세 정보·입장권은 가림막(.bst mask) 밖 — 입장권이 위쪽 흐림에 묻혀 효과 아래 있는 것처럼 보였음
@@ -9837,7 +9838,8 @@ function puFit(){
   const overOf = ()=> m.scrollHeight - m.clientHeight; // (v9.4.6) 아래 여백 일부를 넘쳐도 된다고 봐서 2px 스크롤이 남던 것
   let over = overOf(); if(over <= 0) return;
   if(250 - over < 150){ m.classList.add('pu-tight'); over = overOf(); } // 작은 화면은 여백·글자도 줄임
-  if(over > 0) m.style.setProperty('--puh', Math.max(110, 250 - over)+'px');
+  let h = 250; // (v10.6.1) 한 번만 줄이고 끝내서 아주 작은 화면(320×640 등)에선 아래 확률 안내가 잘렸음 — 넘치는 만큼 두 번까지 더 줄임(최소 80)
+  for(let i=0; i<3 && over>0 && h>80; i++){ h = Math.max(80, h - over - 1); m.style.setProperty('--puh', h+'px'); over = overOf(); }
 }
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
@@ -12234,8 +12236,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
-  { build:467, v:'10.6.1', date:'2026-10-23', secs:[
-    { t:'레이드 화면', items:[ '큰 보스의 머리·날개 위쪽이 흐림에 잘리던 것 — 보스가 무대 안에 다 보이게', '작은 화면에서 보스 그림이 아주 작게 줄어들던 것 — 그림 대신 무대 높이를 줄임' ]}
+  { build:468, v:'10.6.2', date:'2026-10-23', secs:[
+    { t:'레이드 화면', items:[ '큰 보스의 머리·날개 위쪽이 잘리던 것 — 보스가 다 보이게', '보스 뒤 후광·빛줄기가 무대 상자 경계에서 잘리던 것 — 맨 뒤에서 상자 밖까지 자연스럽게 퍼지게', '보스 무대를 더 크게 (높이 최대 268 → 310)', '작은 화면에서 보스 그림이 아주 작게 줄어들던 것 — 그림 대신 무대 높이를 줄임' ]},
+    { t:'픽업 소환', items:[ '아주 작은 화면에서 아래 확률 안내가 화면 밖으로 잘리던 것 — 넘치는 만큼 그림을 더 줄임' ]}
   ]},
   { build:466, v:'10.6.0', date:'2026-10-23', secs:[
     { t:'화면 디자인 개편 (1단계)', items:[ '버튼·칸을 누를 때 위아래로 움직이던 것 없앰 — 누르면 살짝 어두워지기만', '아래 메뉴: 고른 탭 아이콘이 위로 튀던 것 없앰 · 고른 탭 위에 금빛 줄', '버튼: 두툼한 입체 → 납작한 모양 + 얇은 금빛 테두리', '창·판: 반투명 남색 판 + 얇은 금빛 선 · 닫기 버튼은 동그라미', '탭: 어두운 띠 + 고른 탭 금빛 밑줄 (모든 화면 같은 모양)', '머리줄·아래 메뉴를 납작하게' ]},
@@ -18760,7 +18763,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 467, APP_VERSION = '10.6.1'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 468, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
