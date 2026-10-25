@@ -2052,6 +2052,112 @@ body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연�
   @keyframes heroBob{0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)}}
   @media (prefers-reduced-motion: reduce){ .scr-hero{animation:none;} }
 
+
+  /* ===================== (v10.6.0) 디자인 개편 — 깔끔한 판타지 (사용자 요청 10/23: 누를 때 흔들림 · 구조가 구림 → 전체 개편) =====================
+     원칙: ① 누를 때 움직이지 않음(위치·크기 그대로, 밝기만) ② 두툼한 입체 그림자 대신 얇은 금빛 선 + 반투명 남색 판 ③ 탭은 밑줄 ④ 글자 그림자 최소
+     배치는 그대로 두고 공통 부품 모양만 덮어씀 — 화면마다 직접 쓴 색(인라인 style)은 그대로 */
+  :root{ --bg:#0d1024; --panel:#161a36; --panel2:#1d2246; --text:#eef0ff; --sub:#9ea4cc;
+    --line:#e8c47a40; --line2:#e8c47a80; --gold:#f1cf7e; --gold2:#d9a94a; --violet:#7c6cf0; --violet2:#5545c8;
+    --pn:linear-gradient(180deg,#1b2046e6 0%,#141838eb 100%); --pn-b:1px solid #e8c47a33; --pn-sh:0 10px 28px #00000073, inset 0 1px 0 #ffffff12; }
+  html,body{background:#0d1024;}
+  body{background:radial-gradient(110% 55% at 50% -8%, #2a2a6a 0%, #151838 48%, #0b0d20 100%) fixed #0d1024;}
+  /* 머리줄 · 아래 메뉴 — 납작하게, 얇은 금빛 선 */
+  header{background:linear-gradient(180deg,#161a3af5,#11142ef0); border-bottom:1px solid var(--line); box-shadow:0 6px 18px #0007; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);}
+  header .title{text-shadow:none;}
+  header .essence{background:#0b0e22cc; border:1px solid var(--line); box-shadow:inset 0 1px 0 #ffffff0d;}
+  #levelBar{background:#11142e !important;}
+  nav{background:linear-gradient(180deg,#141838f5,#0e1128fa); border-top:1px solid var(--line); box-shadow:0 -8px 22px #0008; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);}
+  nav button{position:relative; color:#8e94c0; text-shadow:none;}
+  nav button.active{color:var(--gold); text-shadow:none;}
+  nav button.active .ico{transform:none; filter:drop-shadow(0 0 7px #f1cf7e88);} /* 예전엔 고르면 아이콘이 위로 튀어 흔들려 보였음 */
+  nav button.active::before{content:''; position:absolute; top:0; left:28%; right:28%; height:2px; border-radius:0 0 2px 2px; background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  /* 판 */
+  .card, .modal{background:var(--pn); border:var(--pn-b); box-shadow:var(--pn-sh);}
+  .card{border-radius:16px;} .modal{border-radius:20px; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);}
+  .modal-bg{background:#05061acc;}
+  .close-x{width:32px; height:32px; top:10px !important; right:10px !important; padding:0 !important; border-radius:50% !important; background:#ffffff0f !important; border:1px solid #ffffff1f !important; font-size:20px !important; line-height:30px !important; color:#c9cdee !important;}
+  /* 버튼 — 납작 · 얇은 테두리 · 누르면 살짝 어두워지기만 (움직이지 않음) */
+  .btn{background:linear-gradient(180deg,#6a5ae8 0%,#4b3cc0 100%); border:1px solid #f1cf7e66; border-radius:12px; box-shadow:0 4px 14px #2a1f8a55, inset 0 1px 0 #ffffff33; text-shadow:none; letter-spacing:.2px; transition:filter .08s ease;}
+  .btn.secondary{background:#ffffff0d; color:var(--text); border:1px solid #ffffff24; box-shadow:inset 0 1px 0 #ffffff0d; text-shadow:none;}
+  .btn.gold{background:linear-gradient(180deg,#f6dc95 0%,#dcae55 100%) !important; color:#2b1d05 !important; border:1px solid #fff2c6 !important; box-shadow:0 4px 14px #d9a94a44, inset 0 1px 0 #ffffff88 !important; text-shadow:none !important;}
+  .btn:active, .btn.secondary:active, .btn.gold:active{transform:none !important; filter:brightness(.86);}
+  button.btn:disabled, .btn:disabled{background:#ffffff0a !important; color:#7c81a8 !important; border:1px solid #ffffff14 !important; box-shadow:none !important; filter:none; opacity:1;}
+  .btn.secondary:disabled{opacity:.6;}
+  /* 누르면 움직이던 칸·카드 — 위치·크기 그대로 두고 밝기만 */
+  .slot:active, .species-tile[data-manage]:active, .roster-pick:active, .home-pu:active, .home-prof:active, .mt-wait .mt-in:not(.open):active{transform:none !important; filter:brightness(.85);}
+  /* 탭 — 밑줄형 */
+  .seg{padding:0; gap:0; border-radius:0; background:transparent; border:none; border-bottom:1px solid #ffffff1a; box-shadow:none;}
+  .seg button{position:relative; border-radius:0; padding:10px 0 9px; color:var(--sub); background:none; box-shadow:none !important;}
+  .seg button.on{background:none !important; color:var(--gold) !important; box-shadow:none !important; text-shadow:none; border:none !important;}
+  .seg button.on::after{content:''; position:absolute; left:18%; right:18%; bottom:-1px; height:2px; border-radius:2px; background:var(--gold); box-shadow:0 0 8px #f1cf7e99;}
+  /* 소제목 · 칩 */
+  .gm-sh{border-left:2px solid var(--gold); color:#f3ecd6;}
+  .gm-chip{background:#ffffff0a; border:1px solid #ffffff1f; color:#dfe2ff;}
+  /* 진형 칸 */
+  .slot{background:#ffffff08; border:1px dashed #ffffff2a;}
+  .slot.filled{border:1px solid #f1cf7e88; box-shadow:0 0 10px #f1cf7e22, inset 0 1px 0 #ffffff12;}
+  /* 탭은 어디서나 같은 모양 — 어두운 유리 띠 + 고른 탭 밑줄 (배경 그림 위에서도 잘 보이게) */
+  .seg, #main.tab-bg .seg{padding:0 4px; background:#0b0e24bf; border:1px solid #ffffff17; border-radius:12px; box-shadow:0 4px 14px #0006; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  .seg button.on::after{bottom:3px;}
+  #main[data-tbg] .seg button.on{background:none !important; color:var(--gold) !important;}
+  /* 배경 그림 화면(정령·소환·화로·탑 등) — 판은 얇은 금선 하나 + 모서리 장식만, 버튼은 공통 모양 */
+  #main.tab-bg .card, #main.tab-bg .hearth-hero, #main.tab-bg .ch-card{border:1px solid color-mix(in srgb, var(--pn-line, #c9a24a) 75%, transparent) !important; box-shadow:0 8px 22px #0008, inset 0 1px 0 #ffffff14 !important;}
+  #main[data-tbg] .btn.secondary{background:#0c0f26cc !important; border:1px solid #f1cf7e44 !important; box-shadow:0 4px 12px #0006 !important; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);}
+  #main[data-tbg=summon] .btn:not(.secondary):not(.gold){border:1px solid #f1cf7ecc !important; box-shadow:0 0 16px #9a6bff55, inset 0 1px 0 #ffffff55 !important;}
+  #main[data-tbg=spirits] .species-tile{box-shadow:inset 0 1px 0 #ffffff1a !important;}
+  #main[data-tbg=spirits] .pk-sort button{background:#0c0f26cc; border-color:#f1cf7e44; color:#e6e2f6;} #main[data-tbg=spirits] .pk-sort button.on{background:#f1cf7e22; color:var(--gold); border-color:var(--gold);}
+
+  /* (v10.6.0) 보스 무대 — 보스를 크게 · 숨 쉬기 · 속성 빛 · 떠오르는 입자 */
+  .bstw{position:relative; isolation:isolate; margin:0 -12px 6px; overflow-x:clip;} .bstw ~ *{position:relative; z-index:1;} /* (v10.6.1) 후광이 무대 밖으로 퍼져도 아래 칸들이 그 위에 */ .bstw > .bst-plate, .bstw > .bst-info, .bstw > .bst-tk{z-index:3;} .bstw > .bst-plate{left:24px;} .bstw > .bst-info, .bstw > .bst-tk{right:24px;}
+  .bst{position:relative; height:clamp(220px, 35vh, 310px); margin:0;} /* (v10.6.1) 무대 상자 가림막(overflow·mask) 없앰 — 보스 머리·후광이 상자 경계에서 잘렸음 · 후광은 맨 뒤에서 상자 밖까지 퍼지고 입자만 상자 안에서 흐려짐 */
+  .bst > .bst-pt{overflow:hidden; -webkit-mask:linear-gradient(180deg,transparent 0%,#000 18%,#000 84%,transparent 100%); mask:linear-gradient(180deg,transparent 0%,#000 18%,#000 84%,transparent 100%);}
+  @media (max-height:720px){ .bst{height:180px;} .bstw{margin-bottom:2px;} .bst-plate b{font-size:20px;} }
+  .bst-aura{position:absolute; z-index:-1; pointer-events:none; left:50%; top:46%; width:330px; height:330px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 55%, transparent) 0%, color-mix(in srgb, var(--bc) 18%, transparent) 38%, transparent 66%); animation:bstPulse 3.2s ease-in-out infinite;}
+  .bst-rays{position:absolute; z-index:-1; pointer-events:none; left:50%; top:46%; width:560px; height:560px; margin:-280px 0 0 -280px; background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--bc) 22%, transparent) 0 5deg, transparent 5deg 20deg); -webkit-mask:radial-gradient(circle,#000 12%,transparent 58%); mask:radial-gradient(circle,#000 12%,transparent 58%); animation:bstSpin 40s linear infinite; opacity:.7;}
+  .bst-floor{position:absolute; left:50%; bottom:13%; width:190px; height:30px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse, #000a 0%, transparent 70%);}
+  .bst-boss{position:absolute; left:50%; top:3%; bottom:12%; display:flex; align-items:flex-end; justify-content:center; transform:translateX(-50%); animation:bstBreath 3.2s ease-in-out infinite; transform-origin:50% 100%;}
+  .bst-img{display:block; width:auto; height:100%; max-width:calc(100vw - 24px); object-fit:contain; object-position:50% 100%; filter:drop-shadow(0 10px 14px #000c) drop-shadow(0 0 18px color-mix(in srgb, var(--bc) 70%, transparent));}
+  .bst-plate{position:absolute; left:12px; bottom:10%; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;}
+  .bst-plate b{font-family:var(--fun); font-weight:400; font-size:24px; color:#fff; letter-spacing:.5px; text-shadow:0 2px 0 #0009, 0 0 14px color-mix(in srgb, var(--bc) 85%, transparent);}
+  .bst-plate span{font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px; background:#000a; border:1px solid color-mix(in srgb, var(--bc) 50%, transparent);}
+  .bst-info{position:absolute; right:12px; bottom:10%; padding:6px 11px; border-radius:999px; border:1px solid color-mix(in srgb, var(--bc) 60%, #fff); background:#000b; color:#fff; font-size:12px; font-weight:800; cursor:pointer;}
+  .bst-tk{position:absolute; right:12px; top:8px; display:flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; background:#000b; border:1px solid #ffffff26; font-size:12px;}
+  .bst-pt{position:absolute; inset:0; pointer-events:none;}
+  .bst-pt i{position:absolute; left:var(--x); bottom:8%; width:calc(6px*var(--s)); height:calc(6px*var(--s)); border-radius:50%; background:var(--bc); box-shadow:0 0 8px var(--bc); opacity:0; animation:bstUp var(--d) linear infinite; animation-delay:var(--t);}
+  .bst-ember .bst-pt i{background:#ffb35a; box-shadow:0 0 8px #ff7a2a;} .bst-snow .bst-pt i{background:#e8f8ff; box-shadow:0 0 6px #9adfff;} .bst-leaf .bst-pt i{border-radius:60% 0; background:#9be86b; box-shadow:0 0 6px #5cd65c;}
+  .bst-spark .bst-pt i{background:#fff6c9; box-shadow:0 0 8px #ffd557;} .bst-mote .bst-pt i{background:#c79bff; box-shadow:0 0 8px #8a4dff;}
+  @keyframes bstBreath{0%,100%{transform:translateX(-50%) translateY(0) scale(1);} 50%{transform:translateX(-50%) translateY(-5px) scale(1.025);}}
+  @keyframes bstPulse{0%,100%{opacity:.75; transform:translate(-50%,-50%) scale(.96);} 50%{opacity:1; transform:translate(-50%,-50%) scale(1.04);}}
+  @keyframes bstSpin{to{transform:rotate(360deg);}}
+  @keyframes bstUp{0%{opacity:0; transform:translateY(0) rotate(0);} 12%{opacity:.95;} 80%{opacity:.6;} 100%{opacity:0; transform:translateY(-190px) translateX(14px) rotate(160deg);}}
+  @media (prefers-reduced-motion: reduce){ .bst-aura, .bst-rays, .bst-boss, .bst-pt i{animation:none;} }
+
+  /* (v10.6.0) 전투 화면 보스 — 뒤에 속성 빛이 일렁이고 전장에 입자가 떠오름 */
+  .bu-aura{position:absolute; left:50%; top:52%; width:175%; height:175%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--bc) 52%, transparent) 0%, color-mix(in srgb, var(--bc) 16%, transparent) 40%, transparent 64%); animation:bstPulse 3.2s ease-in-out infinite; pointer-events:none; z-index:0;}
+  .bu-boss .bu-icon{z-index:1;}
+  .bu-boss .bu-shadow{transform:scale(1.25);}
+  .bf-pt{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden;} .bf-pt .bst-pt i{bottom:4%;}
+  @media (prefers-reduced-motion: reduce){ .bu-aura{animation:none;} }
+
+  /* (v10.6.0) 보스 등장 — 위에서 내려앉으며 땅 울림 + 이름 띠 */
+  .bs-intro .bu-enemy.bu-boss{animation:bsBossIn 1s cubic-bezier(.3,1.35,.5,1) .1s both;}
+  @keyframes bsBossIn{0%{opacity:0; transform:translateY(-70%) scale(1.25);} 55%{opacity:1; transform:translateY(4%) scale(.97);} 75%{transform:translateY(-2%) scale(1.01);} 100%{opacity:1; transform:none;}}
+  .bs-field.bs-bossin{animation:bsQuake .45s ease-out .62s;}
+  @keyframes bsQuake{0%,100%{transform:translate(0,0);} 20%{transform:translate(-5px,4px);} 40%{transform:translate(5px,-3px);} 60%{transform:translate(-3px,2px);} 80%{transform:translate(2px,-1px);}}
+  .bs-bossname{position:absolute; left:0; right:0; top:40%; z-index:9; display:flex; flex-direction:column; align-items:center; pointer-events:none; padding:8px 0; background:linear-gradient(90deg,transparent,#3a0610e6 18%,#3a0610e6 82%,transparent); border-top:1px solid #ff6a6a88; border-bottom:1px solid #ff6a6a88; animation:bsBossName 1.9s ease-out .55s both;}
+  .bs-bossname small{font-size:11px; font-weight:900; letter-spacing:4px; color:#ff9a9a;} .bs-bossname b{font-family:var(--fun); font-weight:400; font-size:26px; color:#fff; letter-spacing:2px; text-shadow:0 0 12px #ff3d3d, 0 2px 0 #0009;}
+  @keyframes bsBossName{0%{opacity:0; transform:scaleY(.2);} 12%{opacity:1; transform:scaleY(1);} 78%{opacity:1;} 100%{opacity:0;}}
+  /* (v10.6.0) 보스가 때릴 때 — 전장 흔들림 + 붉은 번쩍 · 기술 이름 자막 */
+  .bs-field.fx-bossatk{animation:bsQuake .42s ease-out .12s;} .bs-field.fx-bossatk::before{content:''; position:absolute; inset:0; z-index:29; pointer-events:none; background:radial-gradient(ellipse at 50% 50%, transparent 45%, #ff1e1e66 100%); opacity:0; animation:bossFlash .55s ease-out .12s;}
+  @keyframes bossFlash{0%{opacity:0;} 25%{opacity:1;} 100%{opacity:0;}}
+  .bs-skcap{position:absolute; left:50%; top:16%; z-index:9; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; padding:5px 22px; border-radius:10px; pointer-events:none; white-space:nowrap; background:linear-gradient(90deg,transparent,#2a0a14e6 15%,#2a0a14e6 85%,transparent); animation:skCap 1.4s ease-out both;}
+  .bs-skcap small{font-size:10px; font-weight:900; letter-spacing:2px; color:#ff9a9a;} .bs-skcap b{font-family:var(--fun); font-weight:400; font-size:19px; color:#fff; text-shadow:0 0 10px #ff5050, 0 2px 0 #0009;}
+  @keyframes skCap{0%{opacity:0; transform:translate(-50%,6px);} 15%{opacity:1; transform:translate(-50%,0);} 80%{opacity:1;} 100%{opacity:0;}}
+  /* (v10.6.0) 보스가 맞을 때 — 큰 숫자 + 타격 빛 */
+  .bu-float.big{font-size:23px;} .bu-float.big.crit{font-size:28px;}
+  .bu-hitfx{display:none;} .bu-boss.fx-bhit .bu-hitfx{display:block; position:absolute; left:50%; top:45%; width:72%; height:72%; z-index:6; border-radius:50%; transform:translate(-50%,-50%) scale(.2); background:radial-gradient(circle, #fffbe0 0%, #ffd77acc 30%, #ff9a3a55 55%, transparent 70%); pointer-events:none; animation:bHitBurst .45s ease-out .15s both;}
+  @keyframes bHitBurst{0%{opacity:0; transform:translate(-50%,-50%) scale(.2);} 30%{opacity:1;} 100%{opacity:0; transform:translate(-50%,-50%) scale(1.5);}}
+  @media (prefers-reduced-motion: reduce){ .bs-field.bs-bossin, .bs-field.fx-bossatk, .bs-intro .bu-enemy.bu-boss{animation:none;} }
 </style>
 <script>
 /* lz-string 1.5.0 — MIT License, (c) 2013 Pieroxy. 세이브 코드 압축용. 외부 CDN이 막힌 환경에서도 같은 코드를 읽고 쓰려고 내장함 */
@@ -3598,7 +3704,7 @@ function performAction(sf, a, act, tSide, tIdx){
   if(empBefore && a.st.empower===empBefore){ delete a.st.empower; delete a.st.empSrc; } // (v269 버그수정) 자기 자신에게 여명의 호령을 쓰면 방금 받은 +25%가 같은 행동 끝에 지워지던 문제
   { const qe = sf.queue && sf.queue[sf.queuePos]; // (v10.5.0) 기세 — 자기 차례(추가 행동 말고)에 쌓이고, 차면 바로 한 번 더
     if(giOn(sf) && qe && qe.side===a.side && qe.idx===a.idx && !qe.x && a.alive && !a.inert){ a.gi = Math.min(150, (a.gi||0) + giGain(a)); if(giGrant(sf, a)) C.hits.push({ side:a.side, idx:a.idx, kind:'status', neg:false, gi:true, text:'⚡기세!' }); } }
-  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits });
+  setFx(sf, { kind:'act', actorSide:a.side, actorIdx:a.idx, skill:act!=='basic', hits:C.hits, skName: act!=='basic' ? ((unitSkill(a, act)||{}).name||'') : '', boss: !!a.isBoss }); // (v10.6.0) 보스 공격 연출용
   sf.actSeq = (sf.actSeq||0) + 1; // (v165) 레이드 동기화용 행동 번호
   return C;
 }
@@ -5053,7 +5159,7 @@ function fitRest(){
   if(cmp && overNow()>0) main.classList.add('fit-cmp');
   for(let pass=0; pass<2; pass++){
     let over = overNow(); if(over<=0) break;
-    for(const e of shr){ if(over<=0) break; const b = e.offsetHeight, mn = parseFloat(e.dataset.min)||48, ar = parseFloat(e.dataset.ar)||1; if(!b || b<=mn) continue; const v = Math.max(mn, Math.floor(b - over)); e.style.width = Math.round(v*ar)+'px'; e.style.height = v+'px'; over -= b - v; }
+    for(const e of shr){ if(over<=0) break; const b = e.offsetHeight, mn = parseFloat(e.dataset.min)||48, ar = parseFloat(e.dataset.ar)||1; if(!b || b<=mn) continue; const v = Math.max(mn, Math.floor(b - over)); if(e.dataset.fit!=='h') e.style.width = Math.round(v*ar)+'px'; e.style.height = v+'px'; over -= b - v; }
   }
   if(els.length){
     const mr = main.getBoundingClientRect(), padB = parseFloat(getComputedStyle(main).paddingBottom)||0;
@@ -5146,6 +5252,15 @@ function bossBannerHtml(o){ // (v8.16.0) 레이드·월드 보스 화면 머리 
   return '<div class="bb'+(o.small?' sm':'')+'" style="--bc:'+(o.color||'#9a6bff')+';"><div class="bb-glow"></div><div class="bb-rays"></div>'
     + (o.info ? '<button class="bb-i" id="'+o.info+'" aria-label="보스 정보">i</button>' : '')
     + '<div class="bb-art">'+o.img+'</div><div class="bb-name">'+o.name+'</div>'+(o.sub ? '<div class="bb-sub">'+o.sub+'</div>' : '')+(o.foot||'')+'</div>'; }
+function stagePts(n){ let pt = ''; for(let k=0;k<n;k++){ const r = seededRand(k*7.13+3.1), r2 = seededRand(k*3.7+1.9); pt += '<i style="--x:'+Math.round(6+r*88)+'%; --d:'+(3.2+r2*3.4).toFixed(2)+'s; --t:-'+(r*6).toFixed(2)+'s; --s:'+(0.6+r2*0.8).toFixed(2)+';"></i>'; } return pt; } // (v10.6.0) 떠오르는 속성 입자
+function elPtClass(el){ return 'bst-'+({ fire:'ember', water:'snow', wood:'leaf', light:'spark', dark:'mote' }[el] || 'spark'); }
+function bossStageHtml(o){ // (v10.6.0) 보스 무대 — 배경 위에 보스가 크게 서 있고(숨 쉬기) 뒤로 속성 빛·빛줄기, 앞으로 속성 입자가 떠오름 · 작은 화면에선 fitRest가 그림을 줄임(.fit-shrink)
+  const c = ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].color : '#9a6bff', P = { fire:'ember', water:'snow', wood:'leaf', light:'spark', dark:'mote' }[o.el] || 'spark';
+  const pt = stagePts(12);
+  return '<div class="bstw" style="--bc:'+c+';"><div class="bst bst-'+P+' fit-shrink" data-fit="h" data-min="170"><div class="bst-aura"></div><div class="bst-rays"></div><div class="bst-floor"></div>'
+    + '<div class="bst-boss">'+bossImg(o.id, 'bst-img', '<span style="font-size:96px;">'+(o.icon||'👑')+'</span>')+'</div><div class="bst-pt">'+pt+'</div></div>'
+    + '<div class="bst-plate"><b>'+o.name+'</b><span style="color:'+c+';">'+(ELEMENT_INFO[o.el] ? ELEMENT_INFO[o.el].icon+' '+ELEMENT_INFO[o.el].name : '')+'</span></div>'
+    + (o.info ? '<button class="bst-info" id="'+o.info+'">📖 상세 정보</button>' : '') + (o.tk ? '<div class="bst-tk">'+o.tk+'</div>' : '') + '</div>'; } // (v10.6.0) 이름·상세 정보·입장권은 가림막(.bst mask) 밖 — 입장권이 위쪽 흐림에 묻혀 효과 아래 있는 것처럼 보였음
 function raidDetailHtml(){
   const info = raidWeekBoss(), cur = raidDiffById(state.raidDiff), prog = (state.raidProgress && state.raidProgress[info.id]) || [];
   const wd = (state.raidWeekDone && state.raidWeekDone.week===raidWeekKey()) ? state.raidWeekDone.diffs : [];
@@ -5153,10 +5268,7 @@ function raidDetailHtml(){
   const br = BOSS_RUNES[info.id], ec = ELEMENT_INFO[info.element].color, rec = raidRecCP(info.id, cur.id);
   // (v8.16.0) 사용자 요청: 보스 화면을 웅장하게 · 덜 어수선하게 — 큰 보스 배너 + 난이도 한 줄 + 보상 한 칸
   // (v10.4.2) 월드 보스처럼 가로 머리 — 작은 폰에서 보스 그림이 쪼그라들고 버튼이 넘치던 것 · 입장권은 머리 오른쪽 아래 (v8.16.0 사용자 결정: 기믹은 상세 정보에서만)
-  h += '<div class="wbh rdh" style="--bc:'+ec+';"><div class="bb-glow"></div><div class="wbh-art">'+bossImg(info.id, 'wbh-img', '<span style="font-size:52px;">'+info.icon+'</span>')+'</div>'
-    + '<div class="wbh-main"><div class="wbh-nm">'+info.name+'</div><div class="wbh-sub" style="color:'+ec+';">'+ELEMENT_INFO[info.element].icon+' '+ELEMENT_INFO[info.element].name+'</div>'
-    + '<button class="rd-more" id="raidBossInfo">📖 상세 정보 <small>기믹 · 스킬 · 보상</small></button></div>'
-    + '<div class="rd-tk2">'+uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b></div></div>';
+  h += bossStageHtml({ id: info.id, icon: info.icon, name: info.name, el: info.element, info: 'raidBossInfo', tk: uiIc('ticket')+' <b>'+raidTicketCount()+'/'+raidTicketMax()+'</b>' }); // (v10.6.0) 보스 무대 — 보스를 크게, 숨 쉬듯 움직이고 속성 빛·입자 (사용자: 보스 화면이 허전함)
   h += '<div class="rd-diffs2">'+RAID_DIFFS.map(x=>'<button data-raid-tabdiff="'+x.id+'" class="'+(x.id===cur.id?'on':'')+'" style="--dc:'+x.color+';">'+(prog.includes(x.id)?'<i>✓</i>':'')+x.name+'</button>').join('')+'</div>';
   h += '<div class="rd-panel" style="--dc:'+cur.color+';">'
     + '<div class="rd-ph"><b style="color:'+cur.color+';">'+cur.name+'</b>'+(rec ? '<span>🎯 추천 전투력 <b>'+fmtCP(rec)+'</b><small>둘이 고른 8마리 합산</small></span>' : '')+'</div>'
@@ -7301,7 +7413,7 @@ function battleUnitHtml(u, opts){
   const gin = (u.alive && !u.inert && giOn(state.skillFight)) ? '<span class="bu-gin'+(giReady(state.skillFight, u)?' go':'')+'" style="--p:'+Math.min(100, u.gi|0)+';">'+Math.min(100, u.gi|0)+'</span>' : ''; // (v10.5.0) 기세 동그라미
   return '<div class="'+cls.join(' ')+'"'+attr+' data-u="'+u.side+':'+u.idx+'" style="--sz:'+opts.size+'px; --bd:-'+Math.round((performance.now() + (u.side==='me'?0:1500) + u.idx*530) % 3000)+'ms;'+((!u.bossIcon && ART_DROP[u.key]) ? ' --drop:'+ART_DROP[u.key]+';' : '')+'">'
     + (opts.cur ? '<div class="bu-marker">'+(isEnemy?'<img class="uic" src="assets/ui/ic_enemy.webp" alt="">':'▼')+'</div><div class="bu-turnring"></div>' : '')
-    + '<div class="bu-body"><div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+stTintHtml(u)+'</div>'
+    + '<div class="bu-body">'+(u.isBoss && u.alive ? '<div class="bu-aura" style="--bc:'+((ELEMENT_INFO[u.element]||{}).color||'#9a6bff')+';"></div>' : '')+'<div class="bu-shadow"></div><div class="bu-icon">'+(u.bossIcon ? bossImg(unitBossId(u), 'bu-bimg', u.bossIcon) : (u.isWard ? wardArt(u.element) : (u.addKind ? addArtHtml(u.addKind) : spArt(SPIRITS[u.key]))))+stTintHtml(u)+'</div>'+(u.isBoss && u.alive ? '<div class="bu-hitfx"></div>' : '')
     + ((u.specialMult && Math.abs(u.specialMult-1)>0.001 && u.alive && !u.isBoss) ? '<span class="bu-spm cn '+(u.specialMult>1?'up':'down')+'">×'+(Math.round(u.specialMult*100)/100)+'</span>' : '') // (b427) 일반 정령은 특수 규칙 배율을 그림 귀퉁이로 — 체력 줄이 길어져 쉴드 수치가 다음 줄로 내려갔음
     + (u.alive && u.st ? (u.st.freeze ? '<div class="fx-frz">'+FRZ_ART+'</div>' : (u.thawT && Date.now()-u.thawT<900 ? '<div class="fx-frz thaw" style="animation-delay:-'+(Date.now()-u.thawT)+'ms">'+FRZ_ART+'<em style="animation-delay:-'+(Date.now()-u.thawT)+'ms">❄️ 빙결 해제<small>행동 불가</small></em></div>' : '')) + ((u.st.slow || u.st.chill) && !u.st.freeze ? SLOW_ART : '') + (u.st.burn>0 ? BURN_ART : '') + (u.st.poison ? '<div class="fx-poi"><i></i><i></i><i></i><i></i><i></i><i></i></div>' : '') + ((u.st.bind || u.st.web) ? '<div class="fx-web">'+WEB_ART+'</div>' : '') + (u.st.curse ? CURSE_ART : '') + (u.st.seal ? (u.st.curse ? SEAL_ART.replace('fx-seal','fx-seal r') : SEAL_ART) : '') + (u.st.jail ? JAIL_ART : '') + (raidGazed(state.skillFight, u) ? GAZE_ART : '') + buffFxHtml(u.st) : '')+(u.bossIcon ? '<span class="bu-bel">'+elIc(u.element)+'</span>' : '')
     // (v10.5.0) 기세 — 그림 오른쪽 위 동그라미 (둘레 = 게이지 · 가운데 = 숫자 · 사용자 제안 10/22) · 왼쪽 위는 저주 해골·봉인 자리
@@ -7475,8 +7587,8 @@ function battleLayout(sf){
   sf.enemyUnits.forEach(u=>{
     if(u.hidden) return; // (v260) 아직 안 나온 용암 정령
     // (v257) 챕터 보스: 적 쪽 절반 가운데에 조금 작게(80→64) — 예전엔 후열 칸에 커다랗게 있어서 전열까지 넘어옴. 결계석은 보스 앞쪽 위·아래
-    if(u.isBoss){ put('enemy', u.idx, raid ? 19 : 22, raid ? 50 : 50, raid ? 76 : 80); return; }
-    if(raid && u.addKind){ put('enemy', u.idx, 41, u.idx===0 ? 24 : 76, 38); return; } // (v273) 레이드 얼음 기둥·씨앗: 보스 앞(가운데 쪽) 위·아래 — 보스와 겹치지 않게
+    if(u.isBoss){ put('enemy', u.idx, raid ? 21 : 22, raid ? 52 : 50, raid ? 104 : 96); return; } // (v10.6.0) 보스를 크게 (레이드 76 → 104 · 챕터 80 → 96 — 사용자: 보스전 화면이 허전함)
+    if(raid && u.addKind){ put('enemy', u.idx, 46, u.idx===0 ? 20 : 80, 38); return; } // (v10.6.0) 보스가 커져서 기둥·씨앗을 가운데 쪽으로 // (v273) 레이드 얼음 기둥·씨앗: 보스 앞(가운데 쪽) 위·아래 — 보스와 겹치지 않게
     if(withBoss && !raid){ put('enemy', u.idx, 36, u.idx===0 ? 84 : 16, 40); return; } // 결계석은 가운데 선에서 떨어뜨려 보스 앞쪽 위·아래 대칭으로 — (v260) 그린 뒤 snapBossSideUnits가 보스에 붙임
     enemyRows = true;
     const front = isFrontRow(u.idx, ew), r = u.idx % ew;
@@ -7569,7 +7681,8 @@ function showSkillStageScreen(){
       const strong = d0 && d0.eff>1, weak = d0 && d0.eff<1, crit = mine.some(h=>h.crit), dot = d0 && d0.dot;
       out.cls += ' fx-hit'+(strong?' fx-strong':'')+(weak?' fx-weak':'')+(crit?' fx-crit':'');
       out.text = '-'+dmg+(crit?'!':'')+(strong?'<small>유리!</small>':(weak?'<small>불리</small>':(dot?'<small>'+(d0.src||'지속')+'</small>':'')));
-      out.textCls = crit ? 'crit' : (strong ? 'strong' : (weak ? 'weak' : ''));
+      out.textCls = (crit ? 'crit' : (strong ? 'strong' : (weak ? 'weak' : ''))) + (u.isBoss && !dot ? ' big' : ''); // (v10.6.0) 보스가 맞으면 숫자를 크게 + 타격 빛
+      if(u.isBoss && !dot && dmg>0) out.cls += ' fx-bhit';
     }else if(heal){ const hs = mine.find(h=>h.kind==='heal' && h.src); out.cls += ' fx-heal'; out.text = '+'+heal+(hs?'<small>'+hs.src+'</small>':''); out.textCls = 'heal'; }
     else if(sh){ out.cls += ' fx-heal'; out.text = '<img class="uic" src="assets/ui/ic_shield.webp" alt="">'+sh+'<small>보호막</small>'; out.textCls = 'buff'; }
     else if(stat){ out.cls += ' fx-heal'; out.text = stat.text+(stat.src?'<small>'+stat.src+'</small>':''); out.textCls = 'buff'; }
@@ -7651,7 +7764,10 @@ function showSkillStageScreen(){
   // (v9.4.4) 특수 규칙 줄은 없앰 — 위쪽 제목 옆 아이콘(#bsSpecialBtn)을 누르면 규칙 창 (사용자 결정 10/16: 작은 폰에서 전장이 좁아짐)
   const anyCrit = fx && fx.hits && fx.hits.some(h=>h.crit);
   const theme = battleThemeOf(sf);
-  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(skyN===null ? '' : skyN ? ' sky-night' : ' sky-day')+(anyCrit ? ' fx-shake' : '')+(resShown && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
+  const bossNow = sf.enemyUnits.find(x=>x.isBoss && x.alive), bossIn = intro && !sf.result && !!bossNow; // (v10.6.0) 보스 등장 연출
+  const bossAtk = !!(fx && fx.kind==='act' && fx.boss && fx.actorSide==='enemy' && (fx.hits||[]).some(h=>h.kind==='dmg' && h.side==='me')); // (v10.6.0) 보스가 우리를 때림 — 흔들림 + 붉은 번쩍 · 기술이면 이름 자막
+  html += '<div class="bs-field side scene bg-'+theme+(DARK_THEMES.includes(theme)?' dark':'')+(bossIn ? ' bs-bossin' : '')+(bossAtk ? ' fx-bossatk' : '')+(skyN===null ? '' : skyN ? ' sky-night' : ' sky-day')+(anyCrit ? ' fx-shake' : '')+(resShown && !sf.result.waveClear ? (sf.result.win ? ' bs-won' : ' bs-lost') : '')+'">'+battleSceneHtml(theme)
+    + (()=>{ const bu = sf.enemyUnits.find(x=>x.isBoss && x.alive); return bu ? '<div class="bf-pt '+elPtClass(bu.element)+'"><div class="bst-pt">'+stagePts(14)+'</div></div>' : ''; })() // (v10.6.0) 보스전 — 보스 속성 입자가 전장에 떠오름
     + (skyN===null ? '' : '<div class="sky-ov"><i>'+(skyN ? '🌙' : '☀️')+'</i></div>') // (v10.0.3) 낮·밤 하늘빛
     + '<div class="bs-logtop"><div class="bs-log">'+logText((sf.log||[]).slice(-1)[0]||'', !!sf.mirrored)+'</div></div>'
     + '<div class="bs-arena2" data-rs="'+lay.rs+'" data-sz="'+lay.sz+'">'
@@ -7659,7 +7775,9 @@ function showSkillStageScreen(){
     // (v266) 보스 칸은 맨 뒤 — 큰 그림의 투명 여백이 옆 칸 이름·체력 글자를 덮었음
     + lay.slots.map(p=>{ const su = unitAt(sf, p.side, p.idx); return '<div class="bs-slot" style="left:'+p.x+'%; top:'+p.y+'%; z-index:'+(su && su.isBoss ? 5 : 10+Math.round(p.y))+'; --d:'+p.d.toFixed(3)+';">'+cellHtml(p.side, p.idx, p.size)+'</div>'; }).join('')
     + '</div><span class="bs-teamtag me">아군</span>'+roundTag+'<span class="bs-teamtag en">적</span>'
-    + (intro ? '<div class="bs-banner"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 개시'+(sf.special ? '<small class="bs-bsp"><img class="uic" src="assets/ui/ic_special.webp" alt=""> '+specialRuleParts(sf.special).name+'</small>' : '')+'</span></div>' : '')
+    + (bossIn ? '<div class="bs-bossname"><small>⚠ BOSS</small><b>'+escTxt(bossNow.dispName || (SPIRITS[bossNow.key]||{}).name || '보스')+'</b></div>' : '')
+    + (bossAtk && fx.skName ? '<div class="bs-skcap" key="'+fx.id+'"><small>보스 기술</small><b>'+escTxt(fx.skName)+'</b></div>' : '')
+    + (intro && !bossIn ? '<div class="bs-banner"><span><img class="uic" src="assets/ui/ic_atk.webp" alt=""> 전투 개시'+(sf.special ? '<small class="bs-bsp"><img class="uic" src="assets/ui/ic_special.webp" alt=""> '+specialRuleParts(sf.special).name+'</small>' : '')+'</span></div>' : '')
     + (fx && fx.kind==='round' ? '<div class="bs-banner'+(skyN!==null && fx.round>=3 && (fx.round-1)%2===0 ? (skyN ? ' sky-bn' : ' sky-bd') : '')+'"><span>ROUND '+fx.round+(skyN!==null && fx.round>=3 && (fx.round-1)%2===0 ? '<small class="bs-bsp">'+(skyN ? '🌙 밤이 됨 — 빛나지 않는 적은 숨음' : '☀️ 낮이 됨 — 직접 공격 피해 +'+Math.round(SKY.day*100)+'%')+'</small>' : '')+'</span></div>' : '')
     + '</div>';
 
@@ -9746,7 +9864,8 @@ function puFit(){
   const overOf = ()=> m.scrollHeight - m.clientHeight; // (v9.4.6) 아래 여백 일부를 넘쳐도 된다고 봐서 2px 스크롤이 남던 것
   let over = overOf(); if(over <= 0) return;
   if(250 - over < 150){ m.classList.add('pu-tight'); over = overOf(); } // 작은 화면은 여백·글자도 줄임
-  if(over > 0) m.style.setProperty('--puh', Math.max(110, 250 - over)+'px');
+  let h = 250; // (v10.6.1) 한 번만 줄이고 끝내서 아주 작은 화면(320×640 등)에선 아래 확률 안내가 잘렸음 — 넘치는 만큼 두 번까지 더 줄임(최소 80)
+  for(let i=0; i<3 && over>0 && h>80; i++){ h = Math.max(80, h - over - 1); m.style.setProperty('--puh', h+'px'); over = overOf(); }
 }
 window.addEventListener('resize', ()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup') puFit(); });
 setInterval(()=>{ if(typeof activeTab!=='undefined' && activeTab==='pickup' && !document.getElementById('battleScreen') && !document.querySelector('.modal-bg')) render(); }, 30000); // 남은 시간·온라인 갱신
@@ -12273,6 +12392,15 @@ function leaveClimbFight(){ const sf = state.skillFight; if(sf && !sf.result && 
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
 // 적는 법: 새 기능·밸런스(스킬 수치·보스 기믹·추천 전투력)는 자세히 · 업적은 '특정 업적 조건 변경'처럼 두루뭉술하게(조건을 알려 주지 않게)
 const PATCH_NOTES = [
+  { build:468, v:'10.6.2', date:'2026-10-23', secs:[
+    { t:'레이드 화면', items:[ '큰 보스의 머리·날개 위쪽이 잘리던 것 — 보스가 다 보이게', '보스 뒤 후광·빛줄기가 무대 상자 경계에서 잘리던 것 — 맨 뒤에서 상자 밖까지 자연스럽게 퍼지게', '보스 무대를 더 크게 (높이 최대 268 → 310)', '작은 화면에서 보스 그림이 아주 작게 줄어들던 것 — 그림 대신 무대 높이를 줄임' ]},
+    { t:'픽업 소환', items:[ '아주 작은 화면에서 아래 확률 안내가 화면 밖으로 잘리던 것 — 넘치는 만큼 그림을 더 줄임' ]}
+  ]},
+  { build:466, v:'10.6.0', date:'2026-10-23', secs:[
+    { t:'화면 디자인 개편 (1단계)', items:[ '버튼·칸을 누를 때 위아래로 움직이던 것 없앰 — 누르면 살짝 어두워지기만', '아래 메뉴: 고른 탭 아이콘이 위로 튀던 것 없앰 · 고른 탭 위에 금빛 줄', '버튼: 두툼한 입체 → 납작한 모양 + 얇은 금빛 테두리', '창·판: 반투명 남색 판 + 얇은 금빛 선 · 닫기 버튼은 동그라미', '탭: 어두운 띠 + 고른 탭 금빛 밑줄 (모든 화면 같은 모양)', '머리줄·아래 메뉴를 납작하게' ]},
+    { t:'레이드 화면 — 보스 무대', items:[ '보스를 상자 밖으로 꺼내 크게 — 배경 위에 서 있게', '보스가 숨 쉬듯 움직이고 뒤로 속성 빛 · 빛줄기, 앞으로 속성 입자(불티 · 눈송이 · 잎 · 빛 · 그림자)가 떠오름', '작은 화면에선 보스를 조금 작게' ]},
+    { t:'전투 화면 — 보스전', items:[ '보스를 크게 — 레이드 보스 76 → 104 · 챕터 보스 80 → 96 (같은 배율 기준 크기) · 레이드 얼음 기둥·씨앗은 가운데 쪽으로', '보스 뒤로 속성 색 빛이 일렁임', '보스 속성 입자(불티 · 눈송이 · 잎 · 빛 · 그림자)가 전장에 떠오름', '보스 등장: 위에서 내려앉으며 땅이 울리고 「⚠ BOSS · 이름」 띠', '보스가 때릴 때: 전장 흔들림 + 붉은 번쩍 · 기술이면 기술 이름 자막', '보스를 때릴 때: 피해 숫자를 크게 + 타격 빛', '레이드 대기 화면 입장권이 위쪽 효과에 흐려지던 것' ]}
+  ]},
   { build:465, v:'10.5.0', date:'2026-10-22', secs:[
     { t:'⚡ 새 전투 규칙 — 기세', items:[ '모든 정령과 적에게 기세 동그라미 — 아군은 체력 줄 왼쪽 · 적은 오른쪽 · 둘레가 기세만큼 차오르고 가운데에 숫자', '동그라미 자리만큼 체력 칸이 조금 좁아짐 — 체력 숫자가 길면 「2.3만/1.5만」처럼 줄여 표시 · 상태 아이콘 줄 폭도 살짝 줄여 옆 정령과 겹치지 않게', '자기 차례에 행동할 때마다 (속도 − 110) × 1.2만큼 쌓임 (속도 110 이하면 안 쌓임)', '100이 되면 그 자리에서 바로 한 번 더 행동 · 한 라운드에 한 번까지 · 넘친 기세는 남음', '추가 행동 때는 그 정령의 스킬 대기가 1 줄어듦 — 매 라운드 쓰는 스킬(대기 1)도 추가 행동에 다시 쓸 수 있음', '적 · 보스도 똑같은 식으로 쌓임', '빙결로 차례를 거르면 기세 −25 · 속박에 걸려도 −25', '기세 숫자 — 차례 패널(지금 정령)과 위쪽 고른 적 줄에 ⚡지금 기세 +차례마다 쌓이는 양', '다음 자기 차례에 차서 한 번 더 움직일 정령은 동그라미가 금색으로 빛남 · 차례 패널에 「한 번 더」', '정령을 누르면 지금 기세 · 차례마다 쌓이는 양 · 몇 차례 뒤 한 번 더 움직이는지', '전투 도움말에 기세 설명' ]},
     { t:'스킬 변경', items:[ '백록 「별빛 가속」: 대상 기세 +10 추가 (차면 바로 한 번 더 행동)', '백록 「여명의 호령」 · 불사귀 「처형」(처치하면 즉시 행동)으로 한 번 더 움직일 때도 스킬 대기 −1' ]}
@@ -18793,7 +18921,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 466, APP_VERSION = '10.5.0'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 469, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
