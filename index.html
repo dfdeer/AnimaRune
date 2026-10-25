@@ -12251,11 +12251,11 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 사용자 결정 10/25: 시안 1(룬 발판) · 적은 위에서 내려와 결계에 붙어 때림 · 정령은 안 맞음(사라지지 않음) · 앞 발판 = 근접도 닿음 / 뒤 발판 = 원거리만
 // 덱 = 계열 5종 · 기운으로 소환(빈 발판 무작위 · 커먼) · 같은 계열·같은 등급 둘을 끌어 합치면 놓은 발판에 한 등급 위(덱 중 무작위) · 신화끼리는 같은 계열 각성
 // 웨이브는 끊김 없이 · 10웨이브마다 보스(발판 방해 기믹) · 결계가 0이면 끝 · 판 밖 성장 없음 (스킬트리는 따로 기획 → 사용자 승인 뒤)
-const WD_W = 360, WD_H = 560, WD_BAR_Y = 205; // 논리 좌표 · 결계선 높이
+const WD_W = 360, WD_H = 560, WD_BAR_Y = 318; // (사용자 10/25: 적 공간이 좁고 정령이 너무 큼 → 발판을 아래로 모으고 정령·적 크기를 비슷하게) // 논리 좌표 · 결계선 높이
 const WD_PADS = [ // x, y(발 위치), 성격 — 앞줄 3 · 가운데 2 · 뒤 3
-  { x:70,  y:300, k:'fire' }, { x:180, y:282, k:'light' }, { x:290, y:300, k:'water' },
-  { x:110, y:392, k:'haste' }, { x:250, y:392, k:'dark' },
-  { x:180, y:476, k:'wood' }, { x:56,  y:498, k:null }, { x:304, y:498, k:null } ];
+  { x:70,  y:384, k:'fire' }, { x:180, y:378, k:'light' }, { x:290, y:384, k:'water' },
+  { x:125, y:444, k:'haste' }, { x:235, y:444, k:'dark' },
+  { x:70,  y:508, k:null }, { x:180, y:504, k:'wood' }, { x:290, y:508, k:null } ];
 const WD_PAD_NM = { fire:'🔥 화염', water:'💧 물결', wood:'🌿 숲결', light:'✦ 빛', dark:'🌑 그림자', haste:'⚡ 가속' };
 const WD_EC = { fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#a46bff', haste:'#9fe6ff' };
 const WD_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ff5777'];
@@ -12273,7 +12273,7 @@ const WD_LINES = {
   dark_b:{ t:'shot', role:'저주', d:'맞은 적이 받는 피해 +15% (+3% × 등급)', dmg:10, iv:1.0 }
 };
 let WD_RM = [1, 2.2, 4.6, 9.5, 19], WD_HP0 = 40, WD_HPG = 1.13, WD_SUM0 = 10, WD_SUMUP = 3, WD_UP_COST = [100, 200, 400, 700, 1000], WD_KILL = 2.5, WD_WAVE_SP = 2, WD_BOSS_HP = 30, WD_BOSS_DPS = 4; // 단순 봇(꽉 차면 낮은 등급부터 합치기) 기준 웨이브 10~19 // 세기 (let — 시뮬 TWEAK)
-const WD_MELEE_R = 135, WD_AURA_R = 165;
+const WD_MELEE_R = 100, WD_AURA_R = 130; // 근접은 앞 발판에서만 닿게
 let wd = null;
 function wdKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[r]+'_'+k[1]; }
 function wdImg(src){ wd.imgs = wd.imgs || {}; if(!wd.imgs[src]){ const im = new Image(); im.src = src; wd.imgs[src] = im; } return wd.imgs[src]; }
@@ -12315,7 +12315,7 @@ function wdStart(){
   wd.el.querySelector('[data-wd="sum"]').addEventListener('click', ()=>wdSummon());
   wd.el.querySelectorAll('[data-wu]').forEach(b=>b.addEventListener('click', ()=>wdUpgrade(b.dataset.wu)));
   const pt = e=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left)/wd.scale, y:(e.clientY - r.top)/wd.scale }; };
-  const padAt = p=>{ let best = -1, bd = 46; WD_PADS.forEach((q,i)=>{ const d = Math.hypot(p.x-q.x, (p.y-(q.y-26))*0.8); if(d < bd){ bd = d; best = i; } }); return best; };
+  const padAt = p=>{ let best = -1, bd = 38; WD_PADS.forEach((q,i)=>{ const d = Math.hypot(p.x-q.x, (p.y-(q.y-18))*0.9); if(d < bd){ bd = d; best = i; } }); return best; };
   cv.addEventListener('pointerdown', e=>{ if(wd.over) return; const p = pt(e), i = padAt(p); if(i>=0 && wd.pads[i]){ wd.drag = { i, x:p.x, y:p.y, moved:false }; cv.setPointerCapture(e.pointerId); } });
   cv.addEventListener('pointermove', e=>{ if(!wd || !wd.drag) return; const p = pt(e); if(Math.hypot(p.x-wd.drag.x, p.y-wd.drag.y) > 5) wd.drag.moved = true; wd.drag.x = p.x; wd.drag.y = p.y; });
   cv.addEventListener('pointerup', e=>{ if(!wd || !wd.drag) return; const p = pt(e), j = padAt(p), d = wd.drag; wd.drag = null;
@@ -12351,7 +12351,7 @@ function wdMerge(a, b){
   if(!wdCanMerge(A, B)){ toast('같은 정령 · 같은 등급끼리만 합침', 1200); return; }
   wd.pads[a] = null;
   wd.pads[b] = A.r < 4 ? { line: wd.deck[Math.floor(Math.random()*5)], r: A.r+1, aw:0, cd:0.2, pop:0.6 } : { line:A.line, r:4, aw:(A.aw||0)+1, cd:0.2, pop:0.6 };
-  const q = WD_PADS[b]; wd.fx.push({ k:'ring', x:q.x, y:q.y-30, t:0, d:0.5, col:WD_RC[wd.pads[b].r], r:44 });
+  const q = WD_PADS[b]; wd.fx.push({ k:'ring', x:q.x, y:q.y-20, t:0, d:0.5, col:WD_RC[wd.pads[b].r], r:34 });
   try{ sfx(wd.pads[b].r >= 4 ? 'summonLegend' : 'enhance'); }catch(e){}
   wdHud();
 }
@@ -12366,10 +12366,10 @@ function wdNextWave(){
 function wdSpawn(){
   const w = wd.wave, x = 30 + Math.random()*300, el = ELEMENTS[Math.floor(Math.random()*5)];
   if(w % 10 === 0){ const g = wd.bossN % 2 ? 'frostGiant' : 'lavaLord', hp = wd.hpBase * WD_BOSS_HP;
-    wd.en.push({ x:WD_W/2, y:-30, hp, max:hp, spd:16, r:30, boss:g, dps:WD_BOSS_DPS, skT:5, rw:150, art:'assets/boss/'+g+'.webp', stopY: WD_BAR_Y - 34 }); return; }
+    wd.en.push({ x:WD_W/2, y:-30, hp, max:hp, spd:18, r:36, boss:g, dps:WD_BOSS_DPS, skT:5, rw:150, art:'assets/boss/'+g+'.webp', stopY: WD_BAR_Y - 40 }); return; }
   const r = Math.random(), fast = w>=3 && r<0.2, big = !fast && w>=5 && r<0.32, hp = wd.hpBase * (big ? 3.5 : fast ? 0.6 : 1);
-  wd.en.push({ x, y:-16, hp, max:hp, spd: (fast ? 62 : big ? 24 : 36) + Math.min(20, w*0.6), r: big ? 15 : fast ? 10 : 12, big, fast, dps: big ? 3 : fast ? 0.7 : 1, rw: big ? 8 : 3,
-    art:'assets/spirits/'+el+'_'+(big ? 'epic' : fast ? 'common' : 'rare')+'_'+(Math.random()<0.5?'a':'b')+'.webp', stopY: WD_BAR_Y - 8 - Math.random()*26 });
+  wd.en.push({ x, y:-16, hp, max:hp, spd: (fast ? 62 : big ? 24 : 36) + Math.min(20, w*0.6), r: big ? 20 : fast ? 13 : 16, big, fast, dps: big ? 3 : fast ? 0.7 : 1, rw: big ? 8 : 3,
+    art:'assets/spirits/'+el+'_'+(big ? 'epic' : fast ? 'common' : 'rare')+'_'+(Math.random()<0.5?'a':'b')+'.webp', stopY: WD_BAR_Y - 14 - Math.random()*44 });
 }
 function wdStats(i){
   const u = wd.pads[i], L = WD_LINES[u.line], q = WD_PADS[i]; let atk = 1, spd = 1;
@@ -12380,7 +12380,7 @@ function wdStats(i){
   return { dmg: L.dmg * WD_RM[u.r] * Math.pow(1.3, u.aw||0) * (1 + 0.25*wd.lv[u.line]) * atk, iv: L.iv / spd };
 }
 function wdTarget(i){
-  const u = wd.pads[i], L = WD_LINES[u.line], q = WD_PADS[i], hx = q.x, hy = q.y - 30;
+  const u = wd.pads[i], L = WD_LINES[u.line], q = WD_PADS[i], hx = q.x, hy = q.y - 22;
   let al = wd.en.filter(e=>e.hp>0 && e.y > -10);
   if(L.t==='melee') al = al.filter(e=>Math.hypot(e.x-hx, e.y-hy) <= WD_MELEE_R + e.r);
   if(!al.length) return null;
@@ -12418,8 +12418,8 @@ function wdTick(dt){
     else { wd.bar -= e.dps*dt; e.hitT = (e.hitT||0) + dt; }
     if(e.boss){ e.skT -= dt; if(e.skT <= 0 && e.y > 0){ e.skT = 6; const occ = wd.pads.map((u,i)=>u?i:-1).filter(i=>i>=0);
       if(occ.length){ const top = Math.max(...occ.map(i=>wd.pads[i].r)), cand = occ.filter(i=>wd.pads[i].r===top), i = cand[Math.floor(Math.random()*cand.length)], q = WD_PADS[i];
-        if(e.boss==='frostGiant'){ wd.pads[i].frz = 4; wd.fx.push({ k:'text', x:q.x, y:q.y-70, t:0, d:1.2, s:'❄ 얼음!', col:'#9fe6ff', sz:16 }); }
-        else { wd.pads[i].burn = 6; wd.fx.push({ k:'text', x:q.x, y:q.y-70, t:0, d:1.2, s:'🔥 불길!', col:'#ff8a4a', sz:16 }); } } } }
+        if(e.boss==='frostGiant'){ wd.pads[i].frz = 4; wd.fx.push({ k:'text', x:q.x, y:q.y-52, t:0, d:1.2, s:'❄ 얼음!', col:'#9fe6ff', sz:16 }); }
+        else { wd.pads[i].burn = 6; wd.fx.push({ k:'text', x:q.x, y:q.y-52, t:0, d:1.2, s:'🔥 불길!', col:'#ff8a4a', sz:16 }); } } } }
   });
   wd.en = wd.en.filter(e=>e.hp>0);
   if(wd.bar <= 0){ wd.bar = 0; wdOver(); return; }
@@ -12428,7 +12428,7 @@ function wdTick(dt){
     const L = WD_LINES[u.line], st = wdStats(i); if(u.frz > 0){ u.cd = 0.1; return; }
     const e = wdTarget(i); if(!e){ u.cd = 0.15; return; } u.cd = st.iv; const q = WD_PADS[i];
     if(L.t==='melee'){ wdHit(u, e, st.dmg); wd.fx.push({ k:'slash', x:e.x, y:e.y, t:0, d:0.22, col:WD_EC[u.line.split('_')[0]] }); u.lunge = 0.18; }
-    else wd.pr.push({ x:q.x, y:q.y-40, e, u, dmg:st.dmg, col:WD_EC[u.line.split('_')[0]] }); });
+    else wd.pr.push({ x:q.x, y:q.y-30, e, u, dmg:st.dmg, col:WD_EC[u.line.split('_')[0]] }); });
   wd.pr.forEach(p=>{ if(p.e.hp<=0){ p.done = true; return; } const dx = p.e.x - p.x, dy = p.e.y - p.y, dist = Math.hypot(dx, dy), step = 560*dt;
     if(dist <= step){ p.done = true; wdHit(p.u, p.e, p.dmg); } else { p.x += dx/dist*step; p.y += dy/dist*step; } });
   wd.pr = wd.pr.filter(p=>!p.done);
@@ -12447,14 +12447,14 @@ function wdOver(){
   d.querySelector('[data-wd="exit2"]').addEventListener('click', wdClose);
 }
 function wdDrawSpirit(c, u, x, y, alpha, i){
-  const w = 64 * (u.pop>0 ? 1 + u.pop*0.4 : 1), im = wdImg('assets/spirits/'+wdKey(u.line, u.r)+'.webp'), ly = (u.lunge>0 ? -10*u.lunge/0.18 : 0);
+  const w = 46 * (u.pop>0 ? 1 + u.pop*0.4 : 1), im = wdImg('assets/spirits/'+wdKey(u.line, u.r)+'.webp'), ly = (u.lunge>0 ? -8*u.lunge/0.18 : 0);
   c.save(); c.globalAlpha = alpha;
   // 발밑 등급 고리
-  c.beginPath(); c.ellipse(x, y-2, 26, 8, 0, 0, Math.PI*2); c.lineWidth = 2.5; c.strokeStyle = WD_RC[u.r]; c.shadowColor = WD_RC[u.r]; c.shadowBlur = 8; c.stroke(); c.shadowBlur = 0;
+  c.beginPath(); c.ellipse(x, y-2, 19, 6, 0, 0, Math.PI*2); c.lineWidth = 2; c.strokeStyle = WD_RC[u.r]; c.shadowColor = WD_RC[u.r]; c.shadowBlur = 8; c.stroke(); c.shadowBlur = 0;
   if(im.complete && im.naturalWidth){ if(u.frz>0) c.filter = 'brightness(1.3) hue-rotate(160deg) saturate(.6)'; else if(u.burn>0) c.filter = 'sepia(.6) saturate(2)'; c.drawImage(im, x - w/2, y - w + 2 + ly, w, w); c.filter = 'none'; }
   // 등급 별
-  c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd557'; c.strokeStyle = '#000a'; c.lineWidth = 2.5;
-  const s = '★'.repeat(u.r+1) + (u.aw ? ' +'+u.aw : ''); c.strokeText(s, x, y+10); c.fillText(s, x, y+10);
+  c.font = 'bold 8px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd557'; c.strokeStyle = '#000a'; c.lineWidth = 2.5;
+  const s = '★'.repeat(u.r+1) + (u.aw ? ' +'+u.aw : ''); c.strokeText(s, x, y+8); c.fillText(s, x, y+8);
   c.restore();
 }
 function wdDraw(){
@@ -12465,14 +12465,14 @@ function wdDraw(){
   const bp = Math.max(0, wd.bar/wd.barMax);
   const g = c.createLinearGradient(0, 0, WD_W, 0); g.addColorStop(0, '#7ac8ff00'); g.addColorStop(0.5, bp > 0.3 ? '#9fe6ffdd' : '#ff8a8add'); g.addColorStop(1, '#7ac8ff00');
   c.fillStyle = g; c.fillRect(0, WD_BAR_Y, WD_W, 6); c.shadowColor = '#7ac8ff'; c.shadowBlur = 14; c.fillRect(0, WD_BAR_Y+2, WD_W, 2); c.shadowBlur = 0;
-  c.fillStyle = '#000a'; c.fillRect(70, 541, 220, 10); c.fillStyle = bp > 0.3 ? '#7ac8ff' : '#ff5a5a'; c.fillRect(70, 541, 220*bp, 10); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; c.strokeRect(70, 541, 220, 10); // 결계 체력은 판 맨 아래 (위는 적이 내려오고 결계선 근처는 앞 발판 정령에 가려짐)
-  c.font = 'bold 10px sans-serif'; c.textAlign = 'right'; c.fillStyle = '#fff'; c.fillText('🛡️ 결계', 66, 550); c.textAlign = 'left'; c.fillText(Math.ceil(wd.bar)+'', 294, 550);
+  c.fillStyle = '#000a'; c.fillRect(70, 543, 220, 9); c.fillStyle = bp > 0.3 ? '#7ac8ff' : '#ff5a5a'; c.fillRect(70, 543, 220*bp, 9); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; c.strokeRect(70, 543, 220, 9); // 결계 체력은 판 맨 아래 (위는 적이 내려오고 결계선 근처는 앞 발판 정령에 가려짐)
+  c.font = 'bold 10px sans-serif'; c.textAlign = 'right'; c.fillStyle = '#fff'; c.fillText('🛡️ 결계', 66, 551); c.textAlign = 'left'; c.fillText(Math.ceil(wd.bar)+'', 294, 551);
   // 발판
   const drag = wd.drag && wd.drag.moved ? wd.pads[wd.drag.i] : null;
   WD_PADS.forEach((q,i)=>{ const col = q.k ? WD_EC[q.k] : '#ffffff', u = wd.pads[i], ok = drag && i!==wd.drag.i && (!u || wdCanMerge(drag, u));
-    c.save(); c.beginPath(); c.ellipse(q.x, q.y, 38, 14, 0, 0, Math.PI*2); const rg = c.createRadialGradient(q.x, q.y, 2, q.x, q.y, 38); rg.addColorStop(0, col+'88'); rg.addColorStop(1, col+'00'); c.fillStyle = rg; c.fill();
+    c.save(); c.beginPath(); c.ellipse(q.x, q.y, 30, 11, 0, 0, Math.PI*2); const rg = c.createRadialGradient(q.x, q.y, 2, q.x, q.y, 30); rg.addColorStop(0, col+'88'); rg.addColorStop(1, col+'00'); c.fillStyle = rg; c.fill();
     c.lineWidth = ok ? 3 : 1.5; c.strokeStyle = ok ? '#ffe08a' : col+(q.k ? 'cc' : '55'); c.shadowColor = ok ? '#ffe08a' : col; c.shadowBlur = q.k || ok ? 10 : 0; c.stroke(); c.restore();
-    if(q.k){ c.font = 'bold 8.5px sans-serif'; c.textAlign = 'center'; const t = WD_PAD_NM[q.k], tw = c.measureText(t).width + 10; c.fillStyle = '#000a'; c.fillRect(q.x - tw/2, q.y + 15, tw, 13); c.fillStyle = '#fff'; c.fillText(t, q.x, q.y + 25); } });
+    if(q.k){ c.font = 'bold 7.5px sans-serif'; c.textAlign = 'center'; const t = WD_PAD_NM[q.k], tw = c.measureText(t).width + 8; c.fillStyle = '#000a'; c.fillRect(q.x - tw/2, q.y + 12, tw, 11); c.fillStyle = '#fff'; c.fillText(t, q.x, q.y + 20.5); } });
   // 사거리 안내(끌 때) · 근접 범위
   WD_PADS.forEach((q,i)=>{ const u = wd.pads[i]; if(u && !(drag && wd.drag.i===i)) wdDrawSpirit(c, u, q.x, q.y, 1, i); });
   // 적
@@ -12491,7 +12491,7 @@ function wdDraw(){
     else if(f.k==='num'){ c.fillStyle = f.col; c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillText(f.s, f.x, f.y - f.t*22); }
     else if(f.k==='text'){ c.fillStyle = f.col; c.font = 'bold '+(f.sz||22)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000a'; c.strokeText(f.s, f.x, f.y); c.fillText(f.s, f.x, f.y); }
     c.restore(); });
-  if(drag) wdDrawSpirit(c, drag, wd.drag.x, wd.drag.y + 30, 0.85);
+  if(drag) wdDrawSpirit(c, drag, wd.drag.x, wd.drag.y + 22, 0.85);
 }
 
 // ===================== (v269) 패치노트 — 업데이트마다 새 항목을 맨 위에 추가 =====================
