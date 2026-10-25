@@ -975,6 +975,13 @@
   .sv-ult{position:absolute; right:12px; bottom:12px; width:62px; height:62px; border-radius:50%; padding:0; border:2px solid var(--ec,#fff); background:#0b0d26cc; overflow:hidden; cursor:pointer; touch-action:manipulation;} .sv-ult img{width:100%; height:100%; object-fit:contain; display:block;} .sv-ult i{position:absolute; left:0; right:0; bottom:0; height:var(--cd,0%); background:#000a; pointer-events:none;} .sv-ult b{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:900; text-shadow:0 1px 3px #000; pointer-events:none;} .sv-ult.ready b{font-size:10px; line-height:1.15; padding:0 4px; text-align:center; word-break:keep-all;} .sv-ult.ready{box-shadow:0 0 0 2px var(--ec), 0 0 18px var(--ec); animation:svUlt 1.2s ease-in-out infinite;} @keyframes svUlt{50%{transform:scale(1.07);}}
   .sv-pb span.evo{box-shadow:0 0 8px var(--rc);} .sv-pb span.rdy{animation:svRdy .8s ease-in-out infinite;} @keyframes svRdy{50%{box-shadow:0 0 10px #fff;}} .sv-pb u{width:1px; height:24px; background:#ffffff33; margin:0 2px;} .sv-pb span.ps{width:26px; height:26px; border-color:#ffffff33; display:flex; align-items:center; justify-content:center;} .sv-pb span.ps b{font-size:14px;}
   .sv-ew{display:flex; justify-content:center; gap:4px; margin:6px 0;} .sv-ew span{position:relative; width:38px; height:38px; border-radius:8px; border:1.5px solid var(--rc); background:#ffffff0d;} .sv-ew img{width:100%; height:100%; object-fit:contain;} .sv-ew i{position:absolute; right:1px; bottom:-2px; font-style:normal; font-size:9px; color:#ffd557; text-shadow:0 1px 2px #000;}
+  /* (build 474) 스킬 해금 · 대표 패시브 */
+  .sv-ltl em{font-style:normal; font-size:11px; color:#ffd557; margin-left:4px;} .sv-lc.lock img{filter:grayscale(1) brightness(.45);} .sv-lc.lock b{color:#9aa6e0;} .sv-lc.vw{border-color:#ffffff88;}
+  .sv-ldi.lock > img{filter:grayscale(1) brightness(.5);} .sv-ldi b i{font-style:normal; font-size:10px; color:#ffb4b4; margin-left:4px;} .sv-ldi small img{width:15px; height:15px; vertical-align:-3px; margin-right:3px;}
+  .sv-skd{display:grid; grid-template-columns:repeat(10, 1fr); gap:3px;} .sv-sk{aspect-ratio:1; padding:2px; border-radius:8px; border:1.5px solid color-mix(in srgb, var(--ec) 70%, transparent); background:#ffffff0b; cursor:pointer; min-width:0;} .sv-sk img{width:100%; height:100%; object-fit:contain; display:block;} .sv-sk.lock{border-color:#ffffff1a;} .sv-sk.lock img{filter:grayscale(1) brightness(.35);} .sv-sk.on{box-shadow:0 0 0 2px #fff;}
+  .sv-ski{font-size:11px; color:#d6dcff; padding:6px 10px; border-radius:10px; background:#ffffff0b; line-height:1.4;} .sv-ski b{color:#fff;}
+  .sv-card b small{font-size:10px; color:#9aa6e0; font-weight:600; margin-left:3px;}
+  .sv-enu{display:flex; flex-wrap:wrap; justify-content:center; gap:4px; margin:4px 0; font-size:11px;} .sv-enu b{width:100%; color:#ffe08a;} .sv-enu span{padding:2px 8px; border-radius:8px; background:#ffd55722; border:1px solid #ffd55766;}
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
@@ -12261,48 +12268,87 @@ function accountLvReward(L){ const r = { essence: 150*L, stone: 10*L, star: L%5=
 function accountLvClaimable(){ const lv = accountLevel(), c = state.lvClaimed || {}; const out = []; for(let L=2; L<=lv; L++) if(!c[L]) out.push(L); return out; }
 const ACCOUNT_LV_STAR = 10, ACCOUNT_LV_STAR5 = 30;
 function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.lvClaimed || {}; if(L>lv || state.lvClaimed[L]) return false; const r = accountLvReward(L); state.lvClaimed[L] = true; state.essence += r.essence; state.starShard = (state.starShard||0) + (r.star||0); state.enhanceStone = (state.enhanceStone||0) + r.stone; if(r.items) grantItems(r.items); return true; }
-// ===================== (build 473) 정령 서바이벌 — 시험판 (관리자 모드에서만) =====================
-// 사용자 결정 10/25: 롤 이벤트 「Swarm」 진행 방식을 바탕으로 (검색으로 확인) — 대표 정령을 골라 그 정령이 되어 움직임 · 기본 무기 1 + 무기 최대 5 · 능력 최대 3 · 레벨 5까지
-// 진화: 무기 Lv5 + 짝 능력 + 「진화의 룬」(정예 · 중간 보스가 떨굼)을 주우면 그 무기가 각성(신화 그림) · 대표 정령마다 궁극기(버튼, 쿨타임)
-// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예 · 상자를 부수면 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
-// 둘이 하기: 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드> · raidActs/<코드> (규칙 추가 없음)
-const SV_W = 360, SV_H = 600, SV_T_MID = 300, SV_T_END = 600, SV_MAX_W = 5, SV_MAX_P = 3;
-const SV_LINES = { // 무기 — cd: 간격(초) · pair: 진화에 필요한 짝 능력
-  fire_a:{ nm:'돌진', d:'가까운 적을 물어뜯음 · 치명타', cd:1.0, pair:'crit' },
-  fire_b:{ nm:'불덩이', d:'떨어진 자리에서 폭발', cd:1.6, pair:'area' },
-  water_a:{ nm:'물방울', d:'가까운 적에게 빠르게 쏨', cd:0.38, pair:'haste' },
-  water_b:{ nm:'얼음 고리', d:'둘레를 도는 얼음 · 맞으면 느려짐', cd:0, pair:'swift' },
-  wood_a:{ nm:'등껍질', d:'보호막 + 둘레 밀쳐냄', cd:5, pair:'vital' },
-  wood_b:{ nm:'독 웅덩이', d:'적 발밑에 독 장판', cd:2.2, pair:'greed' },
-  light_a:{ nm:'빛기둥', d:'적 여럿에 빛 · 나와 친구 회복', cd:3.5, pair:'vital' },
-  light_b:{ nm:'별빛 화살', d:'일직선으로 꿰뚫음', cd:1.4, pair:'might' },
-  dark_a:{ nm:'낫', d:'둘레를 크게 벰 · 약한 적은 바로 처치', cd:2.0, pair:'might' },
-  dark_b:{ nm:'유도 깃털', d:'적을 쫓는 깃털 여러 발', cd:1.2, pair:'haste' }
+// ===================== (build 474) 정령 서바이벌 — 시험판 (관리자 모드에서만) =====================
+// 롤 이벤트 「Swarm」 진행 방식 (챔피언마다 고정 시작 무기 · 패시브 · 궁극기 + 공용 무기 20종 해금 · 무기 Lv5 + 짝 능력 + 정예 카드 = 진화)
+// 사용자 결정 10/25: 무기 대신 아니마룬 스킬 — 대표 정령(기본 10계열)을 고르면 그 계열 스킬1 = 시작 스킬 · 스킬2 = 궁극기 · 계열 패시브 = 대표 패시브
+// 카드로 뽑는 스킬 = 10계열 스킬1·스킬2 20개 (자동으로 씀 · 대표 정령의 스킬2는 궁극기라 안 나옴) · 능력 최대 3 · 각각 Lv5까지
+// 사용자 결정 10/25: 해금 방식 — 처음엔 대표 정령 2 · 스킬 5만 · 판에서 조건을 채우면 해금(`SV_UNL`) · 성좌 계열은 나중에
+// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(진화의 룬) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
+// 둘이 하기: 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기 · 해금 목록만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드> · raidActs/<코드> (규칙 추가 없음)
+const SV_W = 360, SV_H = 600, SV_T_MID = 300, SV_T_END = 600, SV_MAX_W = 5, SV_MAX_P = 3, SV_ULT_CD = 45;
+const SV_LINE_IDS = ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v));
+const SV_SK = { // 스킬 20개 — cd: 간격(초) · pair: 진화에 필요한 짝 능력 (이름은 LINE_KITS 그대로)
+  fire_a_1:{ d:'가까운 적에게 불꽃 돌진 · 치명타가 잘 터짐', cd:1.0, pair:'crit' },
+  fire_a_2:{ d:'내 둘레가 터져 큰 범위 피해 · 화상', cd:2.6, pair:'area' },
+  fire_b_1:{ d:'앞쪽으로 불티 여러 발 · 화상', cd:1.3, pair:'haste' },
+  fire_b_2:{ d:'떨어진 적 자리에서 폭발 · 화상', cd:1.6, pair:'might' },
+  water_a_1:{ d:'물결이 퍼져 둘레 적 피해 · 나와 친구 회복', cd:2.4, pair:'vital' },
+  water_a_2:{ d:'물의 벽이 밀고 나가며 적을 밀쳐냄', cd:3.2, pair:'swift' },
+  water_b_1:{ d:'가까운 적에게 서리 화살을 빠르게 · 느려짐', cd:0.42, pair:'haste' },
+  water_b_2:{ d:'둘레를 도는 얼음 · 맞으면 느려짐', cd:0, pair:'swift' },
+  wood_a_1:{ d:'보호막 + 둘레 적 밀쳐냄', cd:5, pair:'vital' },
+  wood_a_2:{ d:'몸 둘레 가시 · 부딪힌 적에게 반사 피해', cd:0.5, pair:'might' },
+  wood_b_1:{ d:'적 발밑에 독 장판', cd:2.2, pair:'greed' },
+  wood_b_2:{ d:'적이 모인 곳에 거미줄 · 크게 느려짐', cd:3.5, pair:'area' },
+  light_a_1:{ d:'적 여럿에 빛기둥 · 나와 친구 회복', cd:3.5, pair:'greed' },
+  light_a_2:{ d:'나와 친구에게 보호막 + 빛 폭발', cd:6, pair:'crit' },
+  light_b_1:{ d:'별빛이 일직선으로 꿰뚫음 · 잠깐 빨라짐', cd:1.4, pair:'swift' },
+  light_b_2:{ d:'화면 곳곳의 적에게 빛이 떨어짐', cd:2.8, pair:'might' },
+  dark_a_1:{ d:'가까운 적의 생명을 빨아 내 체력 회복', cd:0.9, pair:'vital' },
+  dark_a_2:{ d:'둘레를 크게 벰 · 약한 적은 바로 처치', cd:2.0, pair:'haste' },
+  dark_b_1:{ d:'적을 쫓는 저주 · 저주 걸린 적은 피해 +25%', cd:1.2, pair:'crit' },
+  dark_b_2:{ d:'적이 모인 곳에 악몽 — 빨아들인 뒤 터짐', cd:4, pair:'area' }
 };
 const SV_PAS = { // 능력 — Lv마다
   might:{ nm:'힘', ic:'💪', d:'공격력 +10%' }, haste:{ nm:'재빠름', ic:'⏱️', d:'공격 간격 −8%' }, area:{ nm:'넓힘', ic:'🌀', d:'공격 범위 +12%' },
   vital:{ nm:'튼튼함', ic:'❤️', d:'최대 체력 +20 · 회복' }, swift:{ nm:'신발', ic:'👟', d:'이동 속도 +8%' }, greed:{ nm:'욕심', ic:'💎', d:'경험치 +12% · 자석 +25%' }, crit:{ nm:'날카로움', ic:'🎯', d:'치명타 확률 +7%' }
 };
-const SV_ULT = { // 대표 정령 속성별 궁극기 (쿨타임 45초)
-  fire:{ nm:'화염 폭풍', d:'화면의 모든 적에게 큰 피해' }, water:{ nm:'해일', d:'모든 적을 3초 얼리고 피해' }, wood:{ nm:'대지의 가호', d:'4초 무적 + 둘레 적 밀쳐냄' },
-  light:{ nm:'별의 축복', d:'나와 친구 체력 50% 회복 · 8초 공격력 +50%' }, dark:{ nm:'그림자 흡수', d:'둘레 약한 적 처치 + 큰 피해' } };
+const SV_LP = { // 대표 패시브 (계열 패시브 이름 그대로)
+  fire_a:'체력 50% 이하면 공격력 +30%', fire_b:'내 공격이 화상을 남김 (3초)', water_a:'4초마다 나와 친구 중 체력이 낮은 쪽 회복', water_b:'내 공격에 맞은 적 느려짐',
+  wood_a:'받는 피해 −25%', wood_b:'처치한 적 25% 확률로 독 장판', light_a:'10초마다 보호막 (최대 체력 20%)', light_b:'나와 친구 이동 속도 +12% · 공격 간격 −8%',
+  dark_a:'적이 잃은 체력만큼 피해 증가 (최대 +40%)', dark_b:'치명타 확률 +12%'
+};
+const SV_ULT = { // 궁극기 = 대표 정령의 스킬2 (쿨타임 45초)
+  fire_a:'둘레가 연달아 터짐 · 큰 피해 + 화상', fire_b:'화면의 모든 적에 큰 화상', water_a:'나와 친구 체력 50% 회복 · 둘레 적 밀쳐냄', water_b:'모든 적 3초 얼림 + 피해',
+  wood_a:'5초 무적 · 둘레 적 큰 피해 + 밀쳐냄', wood_b:'모든 적 6초 크게 느려짐 + 독', light_a:'나와 친구 큰 보호막 + 3초 무적', light_b:'8초 나와 친구 공격력 +50% · 공격 간격 −30%',
+  dark_a:'둘레 체력 50% 이하 적 처치 + 큰 피해', dark_b:'화면의 모든 적 큰 피해 · 처치한 만큼 회복'
+};
+// 해금 — 처음: 대표 정령 2 · 스킬 5 (Swarm도 처음엔 무기 5개) · 대표 정령을 열면 그 스킬1도 열림 · 스킬2는 같은 계열 스킬1을 각성시키면
+const SV_UNL0 = { ld:['fire_a','water_a'], sk:['fire_a_1','water_a_1','wood_a_1','light_a_1','dark_a_1'] };
+const SV_UNL = [ // 대표 정령은 정해진 정령으로 하는 조건이 섞여 차례로 열림
+  { ld:'wood_a', txt:'한 판에 3분 버티기', ok:c=>c.t >= 180 },
+  { ld:'light_a', txt:'한 판에 레벨 15', ok:c=>c.lvl >= 15 },
+  { ld:'fire_b', txt:'「스콜」로 중간 보스 처치', ok:c=>c.ld==='fire_a' && c.mid },
+  { ld:'water_b', txt:'「테티스」로 스킬 하나 각성', ok:c=>c.ld==='water_a' && c.me.wp.some(w=>w.evo) },
+  { ld:'dark_a', txt:'「현무」로 한 판에 적 600 처치', ok:c=>c.ld==='wood_a' && c.kills >= 600 },
+  { ld:'wood_b', txt:'「광명」으로 한 판에 스킬 3개 각성', ok:c=>c.ld==='light_a' && c.me.wp.filter(w=>w.evo).length >= 3 },
+  { ld:'light_b', txt:'둘이 하기로 3분 버티기', ok:c=>c.coop && c.t >= 180 },
+  { ld:'dark_b', txt:'최종 보스 처치', ok:c=>c.win }
+].concat(SV_LINE_IDS.map(l=>({ sk:l+'_2', txt:'「'+svSkNm(l+'_1')+'」 각성시키기', ok:c=>c.me.wp.some(w=>w.id===l+'_1' && w.evo) })));
 const SV_EC = { fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#a46bff' };
-const SV_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ffc857', '#ff5777']; // 무기 Lv1~5 · 각성
-const SV_LVM = [1, 1.35, 1.75, 2.2, 2.7]; // 무기 레벨별 피해 배율 · 각성은 ×2.2
+const SV_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ffc857', '#ff5777']; // 스킬 Lv1~5 · 각성
+const SV_LVM = [1, 1.35, 1.75, 2.2, 2.7]; // 스킬 레벨별 피해 배율 · 각성은 ×2.2
 const SV_PCOL = ['#ffd557', '#7ae0ff']; // 1P · 2P
 let SV_HPK = 1, SV_SPAWN = 1, SV_CONTACT = 0.5, SV_GROW = 80, SV_XPK = 2, SV_DMGK = 1.3; // 세기 (let — 시뮬)
 let sv = null;
+function svSkLine(id){ return id.slice(0, -2); }
+function svSkNm(id){ const k = LINE_KITS[svSkLine(id)]; return k ? k['s'+id.slice(-1)].name : id; }
+function svSkIc(id){ return 'assets/ui/sk_'+id+'.webp'; }
+function svLpNm(l){ return LINE_KITS[l].passive.name; }
 function svKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[Math.min(4, r)]+'_'+k[1]; }
-function svWArt(w){ return svKey(w.line, w.evo ? 4 : Math.min(3, w.lv-1)); } // Lv1 커먼 … Lv4·5 전설 · 각성 = 신화
+function svWArt(w){ return svKey(svSkLine(w.id), w.evo ? 4 : Math.min(3, w.lv-1)); } // 따라다니는 정령 그림 — Lv1 커먼 … Lv4·5 전설 · 각성 = 신화
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svRand(a){ return a[Math.floor(Math.random()*a.length)]; }
 function svFmtT(s){ s = Math.floor(s||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function svUnl(){ const u = state.svUnl = state.svUnl || {}; ['ld','sk'].forEach(k=>{ u[k] = Array.from(new Set((u[k]||[]).concat(SV_UNL0[k]))); }); return u; }
+function svHas(kind, id){ return svUnl()[kind].includes(id); }
 // ---------- 화면 · 로비 ----------
 function showSurvival(){
   if(!adminOn()){ toast('관리자 모드에서만'); return; }
   svClose();
   const el = document.createElement('div'); el.id = 'svScr'; el.className = 'sv'; document.body.appendChild(el);
-  sv = { el, imgs:{}, net:{ role:'solo' }, leader: state.svLeader || 'fire_a' };
+  const L = svHas('ld', state.svLeader) ? state.svLeader : 'fire_a';
+  sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L };
   svLobby();
 }
 function svClose(){
@@ -12312,20 +12358,31 @@ function svClose(){
   if(s.net && s.net.code) svNetLeave(s);
   if(s.el) s.el.remove();
 }
+function svUnlTxt(kind, id){ const u = SV_UNL.find(x=>x[kind]===id); return u ? u.txt : ''; }
 function svLobby(msg){
-  const n = sv.net, L = sv.leader, el = L.split('_')[0];
+  const n = sv.net, L = sv.leader, V = sv.view || L, el = V.split('_')[0], vOpen = svHas('ld', V), u = svUnl();
+  const sk1 = V+'_1', sk2 = V+'_2', P = SV_PAS[SV_SK[sk1].pair], skv = sv.skView;
   sv.el.innerHTML = '<div class="sv-top"><button class="sv-btn" data-sv="exit">← 나가기</button><b>⚔️ 정령 서바이벌 <small>시험판</small></b><span class="sv-best">최고 '+svFmtT(state.svBest||0)+' · 💰'+(state.svGold||0)+'</span></div>'
-    + '<div class="sv-lob"><div class="sv-ltl">대표 정령 고르기 <small>그 정령이 되어 움직임 · 기본 무기 · 궁극기</small></div>'
-    + '<div class="sv-lead">'+ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v)).map(l=>'<button class="sv-lc'+(l===L?' on':'')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+SPIRITS[svKey(l,4)].name+'</b></button>').join('')+'</div>'
-    + '<div class="sv-ldi" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(L,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(L,4)].name+'</b><small>기본 무기 · '+SV_LINES[L].nm+' — '+SV_LINES[L].d+'</small><small>궁극기 · '+SV_ULT[el].nm+' — '+SV_ULT[el].d+'</small><small>진화 짝 · '+SV_PAS[SV_LINES[L].pair].ic+' '+SV_PAS[SV_LINES[L].pair].nm+'</small></div></div>'
-    + '<div class="sv-how"><div><b>👆</b>화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div><b>⬆️</b>레벨업마다 카드 3장 — 무기(최대 5) · 능력(최대 3) · 각각 Lv5까지</div><div><b>✨</b><em>진화</em> = 무기 Lv5 + 짝 능력 + 정예가 떨군 「진화의 룬」</div><div><b>👑</b>5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
+    + '<div class="sv-lob"><div class="sv-ltl">대표 정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 시작 스킬 · 패시브 · 궁극기</small></div>'
+    + '<div class="sv-lead">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button class="sv-lc'+(l===L?' on':'')+(l===V && l!==L?' vw':'')+(op?'':' lock')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+(op ? SPIRITS[svKey(l,4)].name : '🔒')+'</b></button>'; }).join('')+'</div>'
+    + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>🔒 '+svUnlTxt('ld', V)+'</i>')+'</b>'
+      + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
+      + '<small><img src="'+svSkIc(sk1)+'" alt="">시작 스킬 · '+svSkNm(sk1)+' — '+SV_SK[sk1].d+' (진화 짝 '+P.ic+P.nm+')</small>'
+      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small></div></div>'
+    + '<div class="sv-ltl">스킬 <em>'+u.sk.length+'/20</em> <small>레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
+    + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
+    + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? SV_SK[skv].d+' · 진화 짝 '+SV_PAS[SV_SK[skv].pair].ic+SV_PAS[SV_SK[skv].pair].nm : '🔒 '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
+    + '<div class="sv-how"><div><b>👆</b>화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div><b>⬆️</b>레벨업마다 카드 3장 — 스킬(최대 5) · 능력(최대 3) · 각각 Lv5까지</div><div><b>✨</b><em>진화</em> = 스킬 Lv5 + 짝 능력 + 정예가 떨군 「진화의 룬」</div><div><b>👑</b>5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
     + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><small>'+(n.role==='host' ? (n.guest ? '✅ 친구 들어옴 — 시작!' : '친구에게 코드를 알려 줘 · 기다리는 중…') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
     + (n.code ? (n.role==='host' ? '<button class="sv-btn sv-go" data-sv="start" '+(n.guest?'':'disabled')+'>⚔️ 둘이 시작</button>' : '') + '<button class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
       : '<button class="sv-btn sv-go" data-sv="solo">⚔️ 혼자 하기</button><div class="sv-row"><button class="sv-btn sv-sub" data-sv="host">🤝 방 만들기</button><input class="sv-in" maxlength="6" placeholder="방 코드"><button class="sv-btn sv-sub" data-sv="join">참가</button></div>')
     + '</div>';
   const Q = s=>sv.el.querySelector(s), on = (s, f)=>{ const b = Q(s); if(b) b.addEventListener('click', f); };
-  sv.el.querySelectorAll('[data-ld]').forEach(b=>b.addEventListener('click', ()=>{ sv.leader = b.dataset.ld; state.svLeader = sv.leader; save(); svLobby(msg); if(sv.net.role==='guest') svGuestSend(); }));
+  const keep = ()=>{ const lob = Q('.sv-lob'); return lob ? lob.scrollTop : 0; }, re = top=>{ svLobby(msg); const lob = Q('.sv-lob'); if(lob) lob.scrollTop = top; };
+  sv.el.querySelectorAll('[data-ld]').forEach(b=>b.addEventListener('click', ()=>{ const l = b.dataset.ld, top = keep(); sv.view = l;
+    if(svHas('ld', l)){ sv.leader = l; state.svLeader = l; save(); if(sv.net.role==='guest') svGuestSend(); } re(top); }));
+  sv.el.querySelectorAll('[data-skv]').forEach(b=>b.addEventListener('click', ()=>{ const top = keep(); sv.skView = sv.skView===b.dataset.skv ? null : b.dataset.skv; re(top); }));
   on('[data-sv="exit"]', svClose);
   on('[data-sv="solo"]', ()=>svStart('solo'));
   on('[data-sv="host"]', svHost);
@@ -12346,6 +12403,7 @@ async function svHost(){
     sv.unsubs = sv.unsubs || [];
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/guest'), s=>{ if(!sv || sv.net.code!==code) return; const g = s.val(); const was = sv.net.guest; sv.net.guest = g || null; if(!sv.game && was!==sv.net.guest) svLobby(); }));
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code+'/ld'), s=>{ if(sv) sv.net.gLeader = s.val() || null; }));
+    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code+'/sk'), s=>{ if(sv){ const v = s.val(); sv.net.gSk = Array.isArray(v) ? v.filter(id=>SV_SK[id]) : null; } })); // 친구가 해금한 스킬
     svLobby();
   }catch(e){ svLobby('방 만들기 실패: '+(e && e.code || e)); }
 }
@@ -12375,13 +12433,66 @@ function svNetLeave(s){
   n.code = null;
 }
 // ---------- 게임 ----------
-function svNewPlayer(i, leader){ return { i, leader, x: SV_W/2 + (i ? 40 : -40), y: SV_H/2 + 60, hp:100, maxHp:100, spd:120, mag:40, down:false, rev:0, shield:0, wp:[{ line:leader, lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, mv:0 }; }
+function svNewPlayer(i, leader, unl){ return { i, leader, unl: unl || [], x: SV_W/2 + (i ? 40 : -40), y: SV_H/2 + 60, hp:100, maxHp:100, spd:120, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
 function svPasLv(p, k){ return p.ps[k] || 0; }
+function svOath(){ return sv.game.players.some(q=>q.leader==='light_b'); } // 서약: 나와 친구 모두
+function svSpd(p){ return p.spd * (1 + 0.08*svPasLv(p, 'swift')) * (svOath() ? 1.12 : 1) * (p.spdB > 0 ? 1.3 : 1); }
+function svCdK(p, w){ return Math.pow(0.92, svPasLv(p, 'haste')) * (w.evo ? 0.8 : 1) * (svOath() ? 0.92 : 1) * (p.rush > 0 ? 0.7 : 1); }
+// 레벨업 카드 — 스킬 새로/올리기 · 능력 새로/올리기 (Swarm처럼) · 새 스킬은 해금한 것만 · 대표 정령의 스킬2는 궁극기라 빠짐
+function svChoices(p){
+  const pool = [], wl = p.wp.map(w=>w.id), pk = Object.keys(p.ps);
+  p.wp.forEach(w=>{ if(w.lv < 5) pool.push({ k:'w', id:w.id }); });
+  if(p.wp.length < SV_MAX_W) Object.keys(SV_SK).filter(id=>!wl.includes(id) && id !== p.leader+'_2' && (p.unl||[]).includes(id)).forEach(id=>pool.push({ k:'w', id }));
+  pk.forEach(k=>{ if(p.ps[k] < 5) pool.push({ k:'p', pas:k }); });
+  if(pk.length < SV_MAX_P) Object.keys(SV_PAS).filter(k=>!pk.includes(k)).forEach(k=>pool.push({ k:'p', pas:k }));
+  const out = []; while(out.length < 3 && pool.length){ const i = Math.floor(Math.random()*pool.length); out.push(pool.splice(i,1)[0]); }
+  if(!out.length) out.push({ k:'heal' }, { k:'gold' });
+  return out;
+}
+function svCardKey(c){ return c.k+':'+(c.id || c.pas || ''); }
+function svApplyPick(p, c){
+  if(!c) return;
+  if(c.k==='w'){ const w = p.wp.find(x=>x.id===c.id); if(w){ w.lv = Math.min(5, w.lv+1); svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:svSkNm(w.id)+' Lv'+w.lv, col:SV_RC[w.lv-1], sz:12 }); }
+    else { p.wp.push({ id:c.id, lv:1, evo:false, cd:0.3, a:0 }); svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1.1, s:'+ '+svSkNm(c.id), col:'#fff', sz:12 }); } }
+  else if(c.k==='p'){ p.ps[c.pas] = (p.ps[c.pas]||0) + 1; if(c.pas==='vital'){ p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 30); } svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:SV_PAS[c.pas].ic+' '+SV_PAS[c.pas].nm+' Lv'+p.ps[c.pas], col:'#c9e2ff', sz:12 }); }
+  else if(c.k==='heal') p.hp = p.maxHp;
+  else if(c.k==='gold') sv.game.gold += 30;
+}
+function svCanEvo(p, w){ return !w.evo && w.lv >= 5 && svPasLv(p, SV_SK[w.id].pair) > 0; }
+function svEvolve(p){ // 「진화의 룬」을 주움 — 진화할 스킬이 있으면 각성, 없으면 스킬·능력 하나 +1
+  const w = p.wp.find(x=>svCanEvo(p, x));
+  if(w){ w.evo = true; const col = '#ff5777';
+    svFx({ k:'text', x:p.x, y:p.y-44, t:0, d:1.8, s:'✨ 각성! '+svSkNm(w.id), col, sz:15 }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.8, col, r:110 });
+    for(let k=0;k<34;k++){ const a = Math.random()*6.28, v = 60+Math.random()*150; svPart(p.x, p.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? col : '#ffd557', 0.9, 3); }
+    sv.game.shake = 0.3; try{ sfx('summonLegend'); }catch(e){} return; }
+  const up = p.wp.filter(x=>x.lv < 5).map(x=>({ k:'w', id:x.id })).concat(Object.keys(p.ps).filter(k=>p.ps[k] < 5).map(k=>({ k:'p', pas:k })));
+  if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
+  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'진화의 룬 — 아직 각성할 스킬 없음 (Lv5 + 짝 능력)', col:'#c9a6ff', sz:10 });
+}
+function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
+function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
+  const G = sv.game; if(!p || p.down || p.ultCd > 0 || G.over || G.pickWait) return;
+  const L = p.leader, col = SV_EC[L.split('_')[0]], k = (1 + G.t/120) * SV_DMGK; p.ultCd = SV_ULT_CD;
+  svFx({ k:'text', x:p.x, y:p.y-50, t:0, d:1.4, s:'💥 '+svSkNm(L+'_2'), col, sz:18 }); G.shake = 0.35; try{ sfx('battleStart'); }catch(e){}
+  const near = R=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < R + e.r), push = (e, v)=>{ if(e.kind==='boss') return; const d = Math.hypot(e.x-p.x, e.y-p.y)||1; e.x += (e.x-p.x)/d*v; e.y += (e.y-p.y)/d*v; };
+  const allies = G.players.filter(q=>!q.down);
+  if(L==='fire_a'){ for(let n=0;n<3;n++){ const R = 90 + n*45; near(R).forEach(e=>{ svHitBy(p, e, 70*k, col); svBurn(e, 12*k, 3); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35 + n*0.15, col, r:R }); } }
+  else if(L==='fire_b'){ G.en.forEach(e=>{ svHitBy(p, e, 40*k, col); svBurn(e, 30*k, 5); svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.35, col, r:22 }); }); svFx({ k:'flash', t:0, d:0.35, col }); }
+  else if(L==='water_a'){ allies.forEach(q=>{ q.hp = Math.min(q.maxHp, q.hp + q.maxHp*0.5); }); near(170).forEach(e=>{ svHitBy(p, e, 40*k, col); push(e, 90); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:170 }); }
+  else if(L==='water_b'){ G.en.forEach(e=>{ e.frz = e.kind==='boss' ? 1.2 : 3; svHitBy(p, e, 60*k, col); }); svFx({ k:'flash', t:0, d:0.35, col }); }
+  else if(L==='wood_a'){ p.inv = 5; near(150).forEach(e=>{ svHitBy(p, e, 90*k, col); push(e, 80); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col, r:150 }); }
+  else if(L==='wood_b'){ G.en.forEach(e=>{ e.web = e.kind==='boss' ? 2 : 6; svBurn(e, 14*k, 6); }); svFx({ k:'flash', t:0, d:0.35, col }); }
+  else if(L==='light_a'){ allies.forEach(q=>{ q.shield = Math.max(q.shield, q.maxHp*0.6); q.inv = Math.max(q.inv, 3); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
+  else if(L==='light_b'){ allies.forEach(q=>{ q.buff = 8; q.rush = 8; }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
+  else if(L==='dark_a'){ near(170).forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite' && e.hp/e.max < 0.5) svHit(e, e.hp+1, col, true); else svHitBy(p, e, 90*k, col); }); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.5, col, r:170 }); }
+  else { const k0 = G.kills; G.en.forEach(e=>svHitBy(p, e, 100*k, col)); const n = G.kills - k0; p.hp = Math.min(p.maxHp, p.hp + n*2); svFx({ k:'flash', t:0, d:0.4, col }); if(n) svFx({ k:'num', x:p.x, y:p.y-26, t:0, d:0.8, s:'+'+(n*2), col:'#7ce07c', sz:12 }); }
+}
 function svStart(role){
   sv.net.role = role;
   const G = sv.game = { t:0, over:null, players:[], en:[], gems:[], pr:[], pools:[], fx:[], pt:[], loot:[], lvl:1, xp:0, xpNext:4, kills:0, gold:0, spawnT:0, eliteT:60, podT:12, mid:false, end:false, paused:false, pickWait:false };
-  G.players.push(svNewPlayer(0, role==='guest' ? 'fire_a' : sv.leader));
-  if(role!=='solo') G.players.push(svNewPlayer(1, role==='guest' ? sv.leader : (sv.net.gLeader || 'water_a')));
+  G.players.push(svNewPlayer(0, role==='guest' ? 'fire_a' : sv.leader, role==='guest' ? [] : svUnl().sk));
+  if(role!=='solo') G.players.push(svNewPlayer(1, role==='guest' ? sv.leader : (sv.net.gLeader || 'water_a'), role==='guest' ? svUnl().sk : (sv.net.gSk || SV_UNL0.sk)));
+  G.newUnl = [];
   G.me = role==='guest' ? 1 : 0;
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill">💀 0</span><button class="sv-btn sv-ic" data-sv="pause">⏸</button></div>'
     + '<div class="sv-cv"><canvas></canvas><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
@@ -12404,7 +12515,7 @@ function svStart(role){
     svInput(dt);
     if(role!=='guest' && !G.over && !G.paused && !G.pickWait) svTick(dt);
     if(role==='guest') svGuestLerp(dt);
-    svFxTick(dt); svDraw(); svHud(); sv.raf = requestAnimationFrame(loop); };
+    svFxTick(dt); svDraw(); svHud(); sv.unlT = (sv.unlT||0) + dt; if(sv.unlT > 1){ sv.unlT = 0; svCheckUnl(); } sv.raf = requestAnimationFrame(loop); };
   sv.raf = requestAnimationFrame(loop);
 }
 function svInput(dt){
@@ -12412,51 +12523,10 @@ function svInput(dt){
   let vx = 0, vy = 0;
   if(sv.joy){ const dx = sv.joy.c.x - sv.joy.o.x, dy = sv.joy.c.y - sv.joy.o.y, d = Math.hypot(dx, dy); if(d > 4){ const k = Math.min(1, d/40); vx = dx/d*k; vy = dy/d*k; } }
   if(p.down || G.pickWait || G.paused) vx = vy = 0;
-  const sp = p.spd * (1 + 0.08*svPasLv(p, 'swift'));
+  const sp = svSpd(p);
   p.x = Math.max(14, Math.min(SV_W-14, p.x + vx*sp*dt)); p.y = Math.max(14, Math.min(SV_H-14, p.y + vy*sp*dt));
   if(vx || vy){ const d = Math.hypot(vx, vy); p.face = [vx/d, vy/d]; }
   p.mv = (vx || vy) ? 1 : 0;
-}
-// 레벨업 카드 — 무기 새로/올리기 · 능력 새로/올리기 (Swarm처럼)
-function svChoices(p){
-  const pool = [], wl = p.wp.map(w=>w.line), pk = Object.keys(p.ps);
-  p.wp.forEach(w=>{ if(w.lv < 5) pool.push({ k:'w', line:w.line }); });
-  if(p.wp.length < SV_MAX_W) Object.keys(SV_LINES).filter(l=>!wl.includes(l)).forEach(l=>pool.push({ k:'w', line:l }));
-  pk.forEach(k=>{ if(p.ps[k] < 5) pool.push({ k:'p', pas:k }); });
-  if(pk.length < SV_MAX_P) Object.keys(SV_PAS).filter(k=>!pk.includes(k)).forEach(k=>pool.push({ k:'p', pas:k }));
-  const out = []; while(out.length < 3 && pool.length){ const i = Math.floor(Math.random()*pool.length); out.push(pool.splice(i,1)[0]); }
-  if(!out.length) out.push({ k:'heal' }, { k:'gold' });
-  return out;
-}
-function svCardKey(c){ return c.k+':'+(c.line || c.pas || ''); }
-function svApplyPick(p, c){
-  if(!c) return;
-  if(c.k==='w'){ const w = p.wp.find(x=>x.line===c.line); if(w){ w.lv = Math.min(5, w.lv+1); svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:SV_LINES[w.line].nm+' Lv'+w.lv, col:SV_RC[w.lv-1], sz:12 }); }
-    else { p.wp.push({ line:c.line, lv:1, evo:false, cd:0.3, a:0 }); svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1.1, s:'+ '+SPIRITS[svKey(c.line,0)].name+' · '+SV_LINES[c.line].nm, col:'#fff', sz:12 }); } }
-  else if(c.k==='p'){ p.ps[c.pas] = (p.ps[c.pas]||0) + 1; if(c.pas==='vital'){ p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 30); } svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:SV_PAS[c.pas].ic+' '+SV_PAS[c.pas].nm+' Lv'+p.ps[c.pas], col:'#c9e2ff', sz:12 }); }
-  else if(c.k==='heal') p.hp = p.maxHp;
-  else if(c.k==='gold') sv.game.gold += 30;
-}
-function svCanEvo(p, w){ return !w.evo && w.lv >= 5 && svPasLv(p, SV_LINES[w.line].pair) > 0; }
-function svEvolve(p){ // 「진화의 룬」을 주움 — 진화할 무기가 있으면 진화, 없으면 무기·능력 하나 +1
-  const w = p.wp.find(x=>svCanEvo(p, x));
-  if(w){ w.evo = true; const col = '#ff5777';
-    svFx({ k:'text', x:p.x, y:p.y-44, t:0, d:1.8, s:'✨ 각성! '+SPIRITS[svKey(w.line,4)].name+' · '+SV_LINES[w.line].nm, col, sz:15 }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.8, col, r:110 });
-    for(let k=0;k<34;k++){ const a = Math.random()*6.28, v = 60+Math.random()*150; svPart(p.x, p.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? col : '#ffd557', 0.9, 3); }
-    sv.game.shake = 0.3; try{ sfx('summonLegend'); }catch(e){} return; }
-  const up = p.wp.filter(x=>x.lv < 5).map(x=>({ k:'w', line:x.line })).concat(Object.keys(p.ps).filter(k=>p.ps[k] < 5).map(k=>({ k:'p', pas:k })));
-  if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
-  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'진화의 룬 — 아직 진화할 무기 없음 (Lv5 + 짝 능력)', col:'#c9a6ff', sz:10 });
-}
-function svUlt(p){
-  const G = sv.game; if(!p || p.down || p.ultCd > 0 || G.over || G.pickWait) return;
-  const el = p.leader.split('_')[0], col = SV_EC[el], k = (1 + G.t/120) * SV_DMGK; p.ultCd = 45;
-  svFx({ k:'text', x:p.x, y:p.y-50, t:0, d:1.4, s:'💥 '+SV_ULT[el].nm, col, sz:18 }); G.shake = 0.35; try{ sfx('battleStart'); }catch(e){}
-  if(el==='fire'){ G.en.forEach(e=>{ svHit(e, (e.kind==='boss' ? 120 : 160)*k, col); svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.4, col, r:30 }); }); svFx({ k:'flash', t:0, d:0.35, col }); }
-  else if(el==='water'){ G.en.forEach(e=>{ e.frz = e.kind==='boss' ? 1.2 : 3; svHit(e, 60*k, col); }); svFx({ k:'flash', t:0, d:0.35, col }); }
-  else if(el==='wood'){ p.inv = 4; G.en.forEach(e=>{ const d = Math.hypot(e.x-p.x, e.y-p.y); if(d < 140){ svHit(e, 50*k, col); if(e.kind!=='boss'){ e.x += (e.x-p.x)/(d||1)*70; e.y += (e.y-p.y)/(d||1)*70; } } }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col, r:140 }); }
-  else if(el==='light'){ G.players.forEach(q=>{ if(!q.down){ q.hp = Math.min(q.maxHp, q.hp + q.maxHp*0.5); q.buff = 8; } }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
-  else { G.en.forEach(e=>{ const d = Math.hypot(e.x-p.x, e.y-p.y); if(d < 170){ if(e.kind!=='boss' && e.kind!=='elite' && e.hp/e.max < 0.5) svHit(e, e.hp+1, col, true); else svHit(e, 90*k, col); } }); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.5, col, r:170 }); }
 }
 function svLevelUp(){
   const G = sv.game; G.lvl++; G.xp -= G.xpNext; G.xpNext = Math.round(4 + G.lvl*4 + Math.pow(G.lvl, 1.5));
@@ -12479,18 +12549,27 @@ function svSpawn(kind){
   G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg, xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', fl:0 });
 }
 function svSpawnBoss(g, final){
-  const G = sv.game, hp = (final ? 22000 : 6000) * SV_HPK * (G.players.length > 1 ? 1.7 : 1) * (1 + G.t/300);
+  const G = sv.game, hp = (final ? 16000 : 6000) * SV_HPK * (G.players.length > 1 ? 1.7 : 1) * (1 + G.t/300);
   G.en.push({ x: SV_W/2, y: -40, r:34, spd:30, hp, max:hp, dmg:30, xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', fl:0, skT:3 });
   svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:2, s: final ? '👑 최종 보스!' : '⚠ 중간 보스!', col:'#ff6a6a', sz:26 }); try{ sfx('battleStart'); }catch(e){}
 }
 function svNear(x, y, r, pred){ let best = null, bd = r; sv.game.en.forEach(e=>{ if(e.hp<=0 || (pred && !pred(e))) return; const d = Math.hypot(e.x-x, e.y-y) - e.r; if(d < bd){ bd = d; best = e; } }); return best; }
 function svHit(e, v, col, crit){
-  if(e.hp<=0) return; e.hp -= v; e.fl = 0.1;
+  if(e.hp<=0) return; if(e.curse > 0) v *= 1.25; e.hp -= v; e.fl = 0.1;
   if(sv.game.fx.length < 90 && (crit || Math.random() < 0.3)) svFx({ k:'num', x:e.x + Math.random()*10-5, y:e.y-e.r-4, t:0, d:0.5, s:Math.round(v)+(crit?'!':''), col: crit ? '#ffb02e' : '#fff', sz: crit ? 11 : 9 });
   if(e.hp<=0) svKill(e, col);
 }
+function svHitBy(p, e, v, col, crit){ // 대표 패시브가 붙는 피해
+  if(!e || e.hp<=0) return; const L = p && p.leader;
+  if(L==='fire_a' && p.hp <= p.maxHp*0.5) v *= 1.3;
+  if(L==='dark_a') v *= 1 + 0.4*Math.max(0, 1 - e.hp/e.max);
+  svHit(e, v, col, crit);
+  if(L==='fire_b') svBurn(e, v*0.12, 3);
+  if(L==='water_b') e.slow = Math.max(e.slow||0, 1);
+  if(L==='wood_b' && e.hp<=0 && Math.random() < 0.25){ const G = sv.game; if(G.pools.length < 30) G.pools.push({ x:e.x, y:e.y, R:28, t:0, d:2.5, dps:8*(1 + G.t/150)*SV_DMGK, col:SV_EC.wood, p }); }
+}
 function svKill(e, col){
-  const G = sv.game; G.kills++;
+  const G = sv.game; G.kills++; if(e.kind==='boss' && !e.final) G.midKilled = true;
   G.gems.push({ x:e.x, y:e.y, v:e.xp*SV_XPK, big: e.xp >= 4 });
   if(e.kind==='elite' || e.kind==='boss'){ for(let k=0;k<(e.kind==='boss' ? 2 : 1);k++) G.loot.push({ x:e.x + k*24, y:e.y, k:'rune' }); for(let k=0;k<5;k++) G.loot.push({ x:e.x + Math.random()*50-25, y:e.y + Math.random()*50-25, k:'gold', v:10 }); }
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
@@ -12498,32 +12577,67 @@ function svKill(e, col){
 }
 function svFx(f){ const G = sv.game; if(G.fx.length < 140) G.fx.push(f); if(sv.net.role==='host' && f.k!=='num'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) })); } } // 친구 화면에도 효과 (피해 숫자는 빼고)
 function svPart(x, y, vx, vy, col, d, s){ const G = sv.game; if(G.pt.length < 260) G.pt.push({ x, y, vx, vy, col, t:0, d, s }); }
+function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄)
+  const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
+  let best = null, bn = -1; c.slice(0, 25).forEach(e=>{ let n = 0; c.forEach(o=>{ if(Math.hypot(o.x-e.x, o.y-e.y) < 55) n++; }); if(n > bn){ bn = n; best = e; } }); return best;
+}
+function svHurt(p, dmg){ if(p.leader==='wood_a') dmg *= 0.75; if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; return dmg; }
+function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? 2.2 : 1) * (1 + 0.10*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK; }
+function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), rad: (52 + w.lv*3) * (1 + 0.12*svPasLv(p, 'area')) }; }
 function svAttack(p, w, dt){
-  const G = sv.game, L = SV_LINES[w.line], col = SV_EC[w.line.split('_')[0]], ev = w.evo;
-  const m = SV_LVM[w.lv-1] * (ev ? 2.2 : 1) * (1 + 0.10*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK, ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit');
-  const hit = (e, v)=>{ const c = Math.random() < cr; svHit(e, v*(c?2:1), col, c); };
-  if(w.line==='water_b'){
-    const n = 3 + Math.floor(w.lv/2) + (ev ? 2 : 0), rad = (52 + w.lv*3) * ar; w.a += dt * (2.6 + (ev ? 1.2 : 0));
-    for(let k=0;k<n;k++){ const a = w.a + k*6.283/n, x = p.x + Math.cos(a)*rad, y = p.y + Math.sin(a)*rad;
+  const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
+  const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
+  const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?2:1), col, c); };
+  const inR = (R, x, y)=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-(x==null ? p.x : x), e.y-(y==null ? p.y : y)) < R + e.r);
+  if(id==='water_b_2'){ // 빙결 — 둘레를 도는 얼음 (간격 없이 계속)
+    const o = svOrbit(p, w); w.a += dt * (2.6 + (ev ? 1.2 : 0));
+    for(let k=0;k<o.n;k++){ const a = w.a + k*6.283/o.n, x = p.x + Math.cos(a)*o.rad, y = p.y + Math.sin(a)*o.rad;
       G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-x, e.y-y) < e.r + 8){ e.iceT = e.iceT || 0; if(e.iceT <= 0){ hit(e, 14*m); e.iceT = 0.45; e.slow = 1.2; if(ev && e.kind!=='boss' && Math.random()<0.15) e.frz = 1; } } }); }
     return;
   }
-  w.cd -= dt; if(w.cd > 0) return; w.cd = L.cd * Math.pow(0.92, svPasLv(p, 'haste')) * (ev ? 0.8 : 1);
-  if(w.line==='fire_a'){ const e = svNear(p.x, p.y, 95*ar); if(!e){ w.cd = 0.2; return; } const c = Math.random() < 0.25 + cr; svHit(e, 30*m*(c?2:1), col, c); svFx({ k:'slash', x:e.x, y:e.y, t:0, d:0.22, col, r:e.r+8 }); if(ev){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col, r:40 }); G.en.forEach(o=>{ if(o!==e && o.hp>0 && Math.hypot(o.x-e.x, o.y-e.y) < 40) hit(o, 15*m); }); } w.dash = [e.x, e.y, 0.18]; }
-  else if(w.line==='fire_b'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } for(let k=0;k<(ev ? 3 : 1);k++){ const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, col, R:(44 + w.lv*4)*ar }); } }
-  else if(w.line==='water_a'){ const e = svNear(p.x, p.y, 210); if(!e){ w.cd = 0.15; return; } for(let k=0;k<(ev ? 2 : 1);k++) G.pr.push({ x:p.x + k*6, y:p.y, e, sp:520, kind:'shot', dmg:8*m, col, crit:cr }); }
-  else if(w.line==='wood_a'){ p.shield = Math.max(p.shield, 15*m); const R = 70*ar*(ev ? 1.4 : 1); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.4, col, r:R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < R + e.r){ hit(e, 10*m); if(e.kind!=='boss'){ const d = Math.hypot(e.x-p.x, e.y-p.y)||1; e.x += (e.x-p.x)/d*30; e.y += (e.y-p.y)/d*30; } } }); }
-  else if(w.line==='wood_b'){ const e = svNear(p.x, p.y, 200); if(!e){ w.cd = 0.3; return; } G.pools.push({ x:e.x, y:e.y, R:(34 + w.lv*5)*ar*(ev ? 1.5 : 1), t:0, d: ev ? 5 : 3, dps:10*m, col }); }
-  else if(w.line==='light_a'){ const al = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 260).sort(()=>Math.random()-0.5).slice(0, 2 + w.lv + (ev ? 4 : 0));
+  w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
+  if(id==='fire_a_1'){ const e = svNear(p.x, p.y, 95*ar); if(!e){ w.cd = 0.2; return; } const c = Math.random() < 0.25 + cr; svHitBy(p, e, 30*m*(c?2:1), col, c); svFx({ k:'slash', x:e.x, y:e.y, t:0, d:0.22, col, r:e.r+8 });
+    if(ev){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col, r:40 }); inR(40, e.x, e.y).forEach(o=>{ if(o!==e){ hit(o, 15*m); svBurn(o, 4*m, 2); } }); } w.dash = [e.x, e.y, 0.18]; }
+  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
+  else if(id==='fire_b_1'){ const e = svNear(p.x, p.y, 220), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : Math.atan2(p.face[1], p.face[0]), n = 3 + Math.floor(lv/2) + (ev ? 3 : 0);
+    for(let k=0;k<n;k++){ const a = a0 + (n > 1 ? (k/(n-1) - 0.5) : 0)*0.9; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*330, vy:Math.sin(a)*330, kind:'spark', life:0.75, dmg:10*m, burn:3*m, pierce: ev ? 2 : 1, hitS:[], col, p, crit:cr }); } }
+  else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } for(let k=0;k<(ev ? 3 : 1);k++){ const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p }); } }
+  else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); inR(R).forEach(e=>hit(e, 12*m)); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.45, col, r:R });
+    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R){ const h = (2 + lv)*(ev ? 2 : 1); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
+  else if(id==='water_a_2'){ const e = svNear(p.x, p.y, 240); if(!e){ w.cd = 0.4; return; } const d = Math.hypot(e.x-p.x, e.y-p.y)||1, ux = (e.x-p.x)/d, uy = (e.y-p.y)/d;
+    [1].concat(ev ? [-1] : []).forEach(s=>G.pr.push({ x:p.x, y:p.y, vx:ux*s*200, vy:uy*s*200, kind:'wave', life:1.3, w:(70 + lv*6)*ar, dmg:20*m, hitS:[], col, p, crit:cr })); }
+  else if(id==='water_b_1'){ const e = svNear(p.x, p.y, 210); if(!e){ w.cd = 0.15; return; } for(let k=0;k<(ev ? 2 : 1);k++) G.pr.push({ x:p.x + k*6, y:p.y, e, sp:520, kind:'shot', dmg:8*m, slow:1, col, crit:cr, p }); }
+  else if(id==='wood_a_1'){ p.shield = Math.max(p.shield, 15*m); const R = 70*ar*(ev ? 1.4 : 1); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.4, col, r:R }); inR(R).forEach(e=>{ hit(e, 10*m); if(e.kind!=='boss'){ const d = Math.hypot(e.x-p.x, e.y-p.y)||1; e.x += (e.x-p.x)/d*30; e.y += (e.y-p.y)/d*30; } }); }
+  else if(id==='wood_a_2'){ const R = (34 + lv*3)*ar*(ev ? 1.5 : 1), tg = inR(R); tg.forEach(e=>hit(e, 7*m)); if(tg.length) svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.25, col:'#9be07a', r:R }); }
+  else if(id==='wood_b_1'){ const e = svNear(p.x, p.y, 200); if(!e){ w.cd = 0.3; return; } G.pools.push({ x:e.x, y:e.y, R:(34 + lv*5)*ar*(ev ? 1.5 : 1), t:0, d: ev ? 5 : 3, dps:10*m, col, p }); }
+  else if(id==='wood_b_2'){ const e = svDense(p, 230); if(!e){ w.cd = 0.4; return; } G.pools.push({ x:e.x, y:e.y, R:(46 + lv*6)*ar*(ev ? 1.4 : 1), t:0, d:4, dps:5*m, web:true, col:'#d8e8c8', p }); }
+  else if(id==='light_a_1'){ const al = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 260).sort(()=>Math.random()-0.5).slice(0, 2 + lv + (ev ? 4 : 0));
     al.forEach(e=>{ hit(e, 18*m); svFx({ k:'pillar', x:e.x, y:e.y, t:0, d:0.35, col }); });
-    G.players.forEach(q=>{ if(!q.down && Math.hypot(q.x-p.x, q.y-p.y) < 140){ const h = 4 + 2*w.lv + (ev ? 6 : 0); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
-  else if(w.line==='light_b'){ const e = svNear(p.x, p.y, 260), dirs = ev ? 3 : 1; const bx = e ? e.x-p.x : p.face[0], by = e ? e.y-p.y : p.face[1], b0 = Math.atan2(by, bx), L2 = 280*ar;
+    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < 140){ const h = 4 + 2*lv + (ev ? 6 : 0); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
+  else if(id==='light_a_2'){ const amt = (10 + lv*5)*(ev ? 2 : 1), R = (80 + lv*5)*ar; G.players.forEach(q=>{ if(!q.down && Math.hypot(q.x-p.x, q.y-p.y) < 160) q.shield = Math.max(q.shield, amt); });
+    inR(R).forEach(e=>hit(e, 16*m)); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.5, col, r:R }); }
+  else if(id==='light_b_1'){ const e = svNear(p.x, p.y, 260), dirs = ev ? 3 : 1; const bx = e ? e.x-p.x : p.face[0], by = e ? e.y-p.y : p.face[1], b0 = Math.atan2(by, bx), L2 = 280*ar; p.spdB = 1;
     for(let k=0;k<dirs;k++){ const a = b0 + (k - (dirs-1)/2)*0.35, ux = Math.cos(a), uy = Math.sin(a);
       G.en.forEach(o=>{ if(o.hp<=0) return; const t = (o.x-p.x)*ux + (o.y-p.y)*uy; if(t < 0 || t > L2) return; const q = Math.abs((o.x-p.x)*uy - (o.y-p.y)*ux); if(q < o.r + 7) hit(o, 16*m); });
       svFx({ k:'beam', x:p.x, y:p.y, x2:p.x+ux*L2, y2:p.y+uy*L2, t:0, d:0.22, col }); } }
-  else if(w.line==='dark_a'){ const R = (72 + w.lv*5)*ar*(ev ? 1.3 : 1); if(!svNear(p.x, p.y, R)){ w.cd = 0.2; return; } svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.3, col, r:R });
-    G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < R + e.r){ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*w.lv + (ev ? 0.1 : 0)){ svHit(e, e.hp+1, col, true); } else hit(e, 20*m); } }); }
-  else if(w.line==='dark_b'){ const n = 1 + w.lv + (ev ? 4 : 0); for(let k=0;k<n;k++){ const e = svRand(G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280)); if(!e){ w.cd = 0.3; return; } const a = Math.random()*6.28; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, e, sp:300, kind:'home', dmg:12*m, col, crit:cr }); } }
+  else if(id==='light_b_2'){ const tg = G.en.filter(o=>o.hp>0 && o.x > 0 && o.x < SV_W && o.y > 0 && o.y < SV_H).sort(()=>Math.random()-0.5).slice(0, 2 + lv + (ev ? 3 : 0)); if(!tg.length){ w.cd = 0.3; return; }
+    tg.forEach(e=>G.pr.push({ x:e.x, y:e.y-140, tx:e.x, ty:e.y, sp:520, kind:'boom', dmg:20*m, col, R:28*ar, p })); }
+  else if(id==='dark_a_1'){ const tg = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 160).sort((a,b)=>Math.hypot(a.x-p.x, a.y-p.y) - Math.hypot(b.x-p.x, b.y-p.y)).slice(0, ev ? 3 : 1); if(!tg.length){ w.cd = 0.2; return; }
+    tg.forEach(e=>{ hit(e, 16*m); svFx({ k:'beam', x:p.x, y:p.y, x2:e.x, y2:e.y, t:0, d:0.2, col:'#ff4a6a' }); }); const h = (1 + lv*0.4)*(ev ? 1.5 : 1)*tg.length; p.hp = Math.min(p.maxHp, p.hp + h); }
+  else if(id==='dark_a_2'){ const R = (72 + lv*5)*ar*(ev ? 1.3 : 1); if(!svNear(p.x, p.y, R)){ w.cd = 0.2; return; } svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.3, col, r:R });
+    inR(R).forEach(e=>{ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*lv + (ev ? 0.1 : 0)) svHit(e, e.hp+1, col, true); else hit(e, 20*m); }); }
+  else if(id==='dark_b_1'){ const n = 1 + lv + (ev ? 4 : 0); for(let k=0;k<n;k++){ const e = svRand(G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280)); if(!e){ w.cd = 0.3; return; } const a = Math.random()*6.28; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, e, sp:300, kind:'home', dmg:12*m, curse:4, col, crit:cr, p }); } }
+  else if(id==='dark_b_2'){ const e = svDense(p, 260); if(!e){ w.cd = 0.4; return; } G.pools.push({ x:e.x, y:e.y, R:(50 + lv*5)*ar*(ev ? 1.3 : 1), t:0, d:1.6, dps:8*m, pull:true, end:30*m, col:'#7a3cff', p }); }
+}
+function svCheckUnl(){ // 판 안에서 조건을 채우면 바로 해금 (내 기기 기준)
+  const G = sv && sv.game; if(!G) return; const me = G.players[G.me]; if(!me) return; const u = svUnl();
+  const c = { t:G.t, lvl:G.lvl, kills:G.kills, mid:!!G.midKilled, win:G.over==='win', coop:G.players.length > 1, me, ld:me.leader };
+  let got = false;
+  SV_UNL.forEach(x=>{ const kind = x.ld ? 'ld' : 'sk', id = x.ld || x.sk; if(u[kind].includes(id) || !x.ok(c)) return;
+    u[kind].push(id); if(kind==='ld' && !u.sk.includes(id+'_1')) u.sk.push(id+'_1'); got = true;
+    const nm = kind==='ld' ? '대표 정령 '+SPIRITS[svKey(id,4)].name : '스킬 '+svSkNm(id); (G.newUnl = G.newUnl || []).push(nm);
+    if(G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:130 + (G.newUnl.length % 3)*26, t:0, d:2.4, s:'🔓 해금 — '+nm, col:'#ffe08a', sz:15 }); try{ sfx('claim'); }catch(e){} });
+  if(got) save();
 }
 function svTick(dt){
   const G = sv.game; G.t += dt;
@@ -12534,28 +12648,44 @@ function svTick(dt){
   if(!G.mid && G.t >= SV_T_MID){ G.mid = true; svSpawnBoss('frostGiant', false); }
   if(!G.end && G.t >= SV_T_END){ G.end = true; svSpawnBoss('lavaLord', true); }
   const alive = G.players.filter(p=>!p.down);
-  G.en.forEach(e=>{ if(e.hp<=0) return; if(e.fl>0) e.fl -= dt; if(e.iceT>0) e.iceT -= dt; if(e.slow>0) e.slow -= dt; if(e.frz>0){ e.frz -= dt; return; }
+  G.en.forEach(e=>{ if(e.hp<=0) return; if(e.fl>0) e.fl -= dt; if(e.iceT>0) e.iceT -= dt; if(e.slow>0) e.slow -= dt; if(e.web>0) e.web -= dt; if(e.curse>0) e.curse -= dt;
+    if(e.burn > 0){ e.burn -= dt; e.hp -= e.bdps*dt; if(e.hp<=0){ svKill(e, SV_EC.fire); return; } }
+    if(e.frz>0){ e.frz -= dt; return; }
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
-    const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.slow>0 ? 0.55 : 1);
+    const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
     if(d > e.r + 8){ e.x += dx/d*sp*dt; e.y += dy/d*sp*dt; }
-    if(d < e.r + 10 && tg.inv <= 0){ let dmg = e.dmg * SV_CONTACT; if(tg.shield > 0){ const a = Math.min(tg.shield, dmg); tg.shield -= a; dmg -= a; } tg.hp -= dmg; tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 }); }
+    if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
+      const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, 25*svWM(tg, th), '#9be07a'); } // 가시 갑옷 반사
     if(e.kind==='boss'){ e.skT -= dt; if(e.skT <= 0){ e.skT = e.final ? 2.4 : 3.2; const n = e.final ? 14 : 10; for(let k=0;k<n;k++){ const a = k*6.283/n + G.t; G.pr.push({ x:e.x, y:e.y, vx:Math.cos(a)*110, vy:Math.sin(a)*110, kind:'ebul', t:0, col: e.boss==='frostGiant' ? '#9fe6ff' : '#ff8a4a', dmg:12 }); } } }
   });
   for(let i=0;i<G.en.length;i+=2){ const a = G.en[i], b = G.en[(i+7) % G.en.length]; if(!b || a===b) continue; const dx = a.x-b.x, dy = a.y-b.y, d = Math.hypot(dx, dy), m = a.r + b.r; if(d > 0 && d < m){ const k = (m-d)/d*0.5; a.x += dx*k; a.y += dy*k; b.x -= dx*k; b.y -= dy*k; } }
-  G.players.forEach(p=>{ if(p.inv>0) p.inv -= dt; if(p.ultCd>0) p.ultCd -= dt; if(p.buff>0) p.buff -= dt;
+  G.players.forEach(p=>{ if(p.inv>0) p.inv -= dt; if(p.ultCd>0) p.ultCd -= dt; if(p.buff>0) p.buff -= dt; if(p.rush>0) p.rush -= dt; if(p.spdB>0) p.spdB -= dt;
     if(p.down){ const ally = G.players.find(q=>q!==p && !q.down && Math.hypot(q.x-p.x, q.y-p.y) < 40); if(ally){ p.rev += dt; if(p.rev >= 2.5){ p.down = false; p.hp = p.maxHp*0.5; p.rev = 0; p.inv = 2; svFx({ k:'text', x:p.x, y:p.y-30, t:0, d:1.2, s:'부활!', col:'#7ce07c', sz:15 }); } } else p.rev = Math.max(0, p.rev - dt); return; }
     if(p.hp <= 0){ p.hp = 0; p.down = true; p.rev = 0; svFx({ k:'text', x:p.x, y:p.y-30, t:0, d:1.4, s: G.players.length > 1 ? '쓰러짐 — 친구가 곁에 서면 부활' : '쓰러짐', col:'#ff6a6a', sz:12 }); return; }
+    p.lpT += dt; // 대표 패시브 — 맑은 물 · 빛의 축복
+    if(p.leader==='water_a' && p.lpT >= 4){ p.lpT = 0; const q = alive.reduce((a,b)=> b.hp/b.maxHp < a.hp/a.maxHp ? b : a, p); if(q.hp < q.maxHp){ const h = Math.round(q.maxHp*0.08); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }
+    if(p.leader==='light_a' && p.lpT >= 10){ p.lpT = 0; p.shield = Math.max(p.shield, p.maxHp*0.2); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.4, col:SV_EC.light, r:30 }); }
     p.wp.forEach(w=>svAttack(p, w, dt)); });
   if(G.players.every(p=>p.down)){ G.over = 'lost'; svShowEnd(); return; }
   G.pr.forEach(b=>{
     if(b.kind==='ebul'){ b.x += b.vx*dt; b.y += b.vy*dt; b.t += dt; if(b.t > 6 || b.x < -20 || b.x > SV_W+20 || b.y < -20 || b.y > SV_H+20){ b.done = true; return; }
-      G.players.forEach(p=>{ if(!b.done && !p.down && p.inv <= 0 && Math.hypot(p.x-b.x, p.y-b.y) < 12){ let dmg = b.dmg; if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; p.inv = 0.4; b.done = true; } }); return; }
-    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; svFx({ k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r) svHit(e, b.dmg, b.col); }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
-    const dmgC = ()=>{ const c = Math.random() < (b.crit||0); svHit(b.e, b.dmg*(c?2:1), b.col, c); };
+      G.players.forEach(p=>{ if(!b.done && !p.down && p.inv <= 0 && Math.hypot(p.x-b.x, p.y-b.y) < 12){ svHurt(p, b.dmg); p.inv = 0.4; b.done = true; } }); return; }
+    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; svFx({ k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
+    if(b.kind==='spark' || b.kind==='wave'){ b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if(b.life <= 0){ b.done = true; return; }
+      const wv = b.kind==='wave', sp = Math.hypot(b.vx, b.vy)||1, ux = b.vx/sp, uy = b.vy/sp;
+      G.en.forEach(e=>{ if(b.done || e.hp<=0 || b.hitS.includes(e)) return;
+        const near = wv ? (Math.abs((e.x-b.x)*ux + (e.y-b.y)*uy) < e.r + 8 && Math.abs((e.x-b.x)*uy - (e.y-b.y)*ux) < b.w/2) : Math.hypot(e.x-b.x, e.y-b.y) < e.r + 4;
+        if(!near) return; b.hitS.push(e); const c = Math.random() < (b.crit||0); svHitBy(b.p, e, b.dmg*(c?2:1), b.col, c);
+        if(wv){ if(e.kind!=='boss'){ e.x += ux*36; e.y += uy*36; } } else { if(b.burn) svBurn(e, b.burn, 3); if(--b.pierce <= 0) b.done = true; } });
+      if(b.hitS.length > 60) b.hitS = b.hitS.slice(-60); return; }
+    const dmgC = ()=>{ const c = Math.random() < (b.crit||0); svHitBy(b.p, b.e, b.dmg*(c?2:1), b.col, c); if(b.slow) b.e.slow = Math.max(b.e.slow||0, b.slow); if(b.curse) b.e.curse = b.curse; };
     if(b.kind==='home'){ if(!b.e || b.e.hp<=0){ b.e = svNear(b.x, b.y, 300); if(!b.e){ b.done = true; return; } } const dx = b.e.x-b.x, dy = b.e.y-b.y, d = Math.hypot(dx, dy)||1; b.vx += dx/d*900*dt; b.vy += dy/d*900*dt; const v = Math.hypot(b.vx, b.vy); if(v > b.sp){ b.vx *= b.sp/v; b.vy *= b.sp/v; } b.x += b.vx*dt; b.y += b.vy*dt; if(d < b.e.r + 4){ b.done = true; dmgC(); } b.life = (b.life||0) + dt; if(b.life > 3) b.done = true; return; }
     if(!b.e || b.e.hp<=0){ b.done = true; return; } const dx = b.e.x-b.x, dy = b.e.y-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st + b.e.r){ b.done = true; dmgC(); } else { b.x += dx/d*st; b.y += dy/d*st; } });
   G.pr = G.pr.filter(b=>!b.done);
-  G.pools.forEach(o=>{ o.t += dt; G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r){ e.hp -= o.dps*dt; e.fl = Math.max(e.fl, 0.03); if(e.hp<=0) svKill(e, o.col); } }); });
+  G.pools.forEach(o=>{ o.t += dt; G.en.forEach(e=>{ if(e.hp<=0) return; const d = Math.hypot(e.x-o.x, e.y-o.y);
+      if(o.pull && d < o.R*1.6 && d > 4 && e.kind!=='boss'){ e.x += (o.x-e.x)/d*90*dt; e.y += (o.y-e.y)/d*90*dt; }
+      if(d < o.R + e.r){ e.hp -= o.dps*dt*(e.curse > 0 ? 1.25 : 1); e.fl = Math.max(e.fl, 0.03); if(o.web) e.web = Math.max(e.web||0, 0.3); if(e.hp<=0) svKill(e, o.col); } });
+    if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
   G.pools = G.pools.filter(o=>o.t < o.d);
   G.en = G.en.filter(e=>e.hp>0);
   // 상자 · 룬 · 골드
@@ -12576,42 +12706,46 @@ function svTick(dt){
   if(G.xp >= G.xpNext && !G.pickWait) svLevelUp();
 }
 function svFxTick(dt){ const G = sv.game; if(!G) return; G.fx.forEach(f=>f.t += dt); G.fx = G.fx.filter(f=>f.t < f.d); G.pt.forEach(p=>{ p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.94; p.vy *= 0.94; }); G.pt = G.pt.filter(p=>p.t < p.d); if(G.shake > 0) G.shake -= dt;
-  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.line!=='water_b' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
+  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
 function svCardHtml(me, c, i){
-  if(c.k==='w'){ const w = me.wp.find(x=>x.line===c.line), lv = w ? w.lv+1 : 1, L = SV_LINES[c.line], el = c.line.split('_')[0], pr = SV_PAS[L.pair], evoReady = lv===5 && svPasLv(me, L.pair) > 0;
-    return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="assets/spirits/'+svWArt({ line:c.line, lv, evo:false })+'.webp" alt=""><b>'+SPIRITS[svKey(c.line,0)].name+' · '+L.nm+'</b><span>'+(w ? '무기 Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : '🆕 새 무기')+'</span><small>'+L.d+' · 진화 짝 '+pr.ic+pr.nm+(evoReady ? ' ✓' : '')+'</small></button>'; }
-  if(c.k==='p'){ const P = SV_PAS[c.pas], lv = svPasLv(me, c.pas)+1, pairs = me.wp.filter(w=>SV_LINES[w.line].pair===c.pas).map(w=>SV_LINES[w.line].nm);
+  if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, S = SV_SK[c.id], pr = SV_PAS[S.pair], evoReady = lv===5 && svPasLv(me, S.pair) > 0;
+    return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="'+svSkIc(c.id)+'" alt=""><b>'+svSkNm(c.id)+' <small>'+SPIRITS[svKey(svSkLine(c.id),0)].name+'</small></b><span>'+(w ? '스킬 Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : '🆕 새 스킬')+'</span><small>'+S.d+' · 진화 짝 '+pr.ic+pr.nm+(evoReady ? ' ✓' : '')+'</small></button>'; }
+  if(c.k==='p'){ const P = SV_PAS[c.pas], lv = svPasLv(me, c.pas)+1, pairs = me.wp.filter(w=>SV_SK[w.id].pair===c.pas).map(w=>svSkNm(w.id));
     return '<button class="sv-card pas" data-pk="'+i+'"><i>'+P.ic+'</i><b>'+P.nm+'</b><span>'+(lv>1 ? '능력 Lv'+(lv-1)+' → '+lv : '🆕 새 능력')+'</span><small>'+P.d+(pairs.length ? ' · 진화 짝: '+pairs.join(', ') : '')+'</small></button>'; }
   return '<button class="sv-card pas" data-pk="'+i+'"><i>'+(c.k==='heal' ? '💚' : '💰')+'</i><b>'+(c.k==='heal' ? '회복' : '골드 30')+'</b><small>모두 최대 레벨</small></button>';
 }
+function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+';"><img src="'+svSkIc(w.id)+'" alt=""><i>'+(w.evo ? '✨' : w.lv)+'</i></span>'; }
 function svHud(){
   const G = sv.game, q = s=>sv.el.querySelector(s); if(!q('.sv-time')) return;
   q('.sv-time').textContent = svFmtT(G.t) + (G.t < SV_T_END ? ' / 10:00' : ' · 최종 보스');
   q('.sv-xp i').style.width = Math.min(100, G.xp/G.xpNext*100)+'%'; q('.sv-lv').textContent = 'Lv'+G.lvl; q('.sv-kill').textContent = '💀 '+G.kills+' · 💰'+G.gold;
   const me = G.players[G.me], box = q('.sv-pick');
-  const ub = q('.sv-ult'); if(ub && me){ const el = me.leader.split('_')[0], cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = 'assets/spirits/'+svKey(me.leader,4)+'.webp'; ub.style.setProperty('--ec', SV_EC[el]); }
-    ub.querySelector('i').style.height = (cd/45*100)+'%'; ub.querySelector('b').textContent = cd > 0 ? Math.ceil(cd) : SV_ULT[el].nm; ub.classList.toggle('ready', cd <= 0 && !me.down); }
+  const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
+    ub.querySelector('i').style.height = (cd/SV_ULT_CD*100)+'%'; ub.querySelector('b').textContent = cd > 0 ? Math.ceil(cd) : svSkNm(me.leader+'_2'); ub.classList.toggle('ready', cd <= 0 && !me.down); }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
       box.innerHTML = '<div class="sv-ptl">레벨 '+G.lvl+'! 하나 고르기</div>' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('');
       box.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.pk; if(sv.net.role==='guest'){ sv.myPick = { i, k: key }; svGuestSend(); box.dataset.k = 'sent'; box.innerHTML = '<div class="sv-ptl">친구 기다리는 중…</div>'; } else svDoPick(G.me, i); })); } }
   else if(G.pickWait && !G.over){ if(box.dataset.k !== 'wait' && box.dataset.k !== 'sent'){ box.dataset.k = 'wait'; box.innerHTML = '<div class="sv-ptl">친구가 고르는 중…</div>'; box.classList.add('on'); } }
   else if(box.classList.contains('on') && box.dataset.k){ box.classList.remove('on'); box.dataset.k = ''; box.innerHTML = ''; }
-  const bar = q('.sv-bar'); if(bar){ const k = G.players.map(p=>p.wp.map(w=>w.line+w.lv+(w.evo?'e':'')).join(',')+JSON.stringify(p.ps)+(p.down?'d':'')).join('/'); if(bar.dataset.k !== k){ bar.dataset.k = k;
-    bar.innerHTML = G.players.map((p,i)=>'<div class="sv-pb'+(i===G.me?' me':'')+'" style="--pc:'+SV_PCOL[i]+';"><em>'+(G.players.length>1 ? (i===G.me ? '나' : '친구') : '무기')+'</em>'
-      + p.wp.map(w=>'<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+';"><img src="assets/spirits/'+svWArt(w)+'.webp" alt=""><i>'+(w.evo ? '✨' : w.lv)+'</i></span>').join('')
-      + '<u></u>' + Object.keys(p.ps).map(k=>'<span class="ps"><b>'+SV_PAS[k].ic+'</b><i>'+p.ps[k]+'</i></span>').join('')+'</div>').join(''); } }
+  const bar = q('.sv-bar'); if(bar){ const k = G.players.map(p=>p.wp.map(w=>w.id+w.lv+(w.evo?'e':'')+(svCanEvo(p,w)?'r':'')).join(',')+JSON.stringify(p.ps)+(p.down?'d':'')).join('/'); if(bar.dataset.k !== k){ bar.dataset.k = k;
+    bar.innerHTML = G.players.map((p,i)=>'<div class="sv-pb'+(i===G.me?' me':'')+'" style="--pc:'+SV_PCOL[i]+';"><em>'+(G.players.length>1 ? (i===G.me ? '나' : '친구') : '스킬')+'</em>'
+      + p.wp.map(w=>svWIc(p, w)).join('') + '<u></u>' + Object.keys(p.ps).map(k=>'<span class="ps"><b>'+SV_PAS[k].ic+'</b><i>'+p.ps[k]+'</i></span>').join('')+'</div>').join(''); } }
 }
-function svRecord(){ const G = sv && sv.game; if(!G || G.recorded) return; G.recorded = true; const t = G.over==='win' ? Math.max(G.t, SV_T_END) : G.t; state.svBest = Math.max(state.svBest||0, Math.floor(t)); state.svGold = (state.svGold||0) + G.gold; save(); }
+function svRecord(){ const G = sv && sv.game; if(!G || G.recorded) return; G.recorded = true; svCheckUnl(); const t = G.over==='win' ? Math.max(G.t, SV_T_END) : G.t; state.svBest = Math.max(state.svBest||0, Math.floor(t)); state.svGold = (state.svGold||0) + G.gold; save(); }
 function svShowEnd(){
   const G = sv.game; svRecord(); const box = sv.el.querySelector('.sv-end'); if(!box) return;
   if(sv.net.role==='host') svHostSend();
-  const me = G.players[G.me];
+  const me = G.players[G.me], nu = G.newUnl || [];
   box.innerHTML = '<div class="sv-ebox"><b>'+(G.over==='win' ? '🏆 승리!' : '쓰러짐')+'</b><div>버틴 시간 <em>'+svFmtT(G.t)+'</em></div><small>레벨 '+G.lvl+' · 처치 '+G.kills+' · 💰 '+G.gold+' (모은 골드 '+(state.svGold||0)+')</small>'
-    + '<div class="sv-ew">'+(me ? me.wp.map(w=>'<span style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+';"><img src="assets/spirits/'+svWArt(w)+'.webp" alt=""><i>'+(w.evo?'✨':'Lv'+w.lv)+'</i></span>').join('') : '')+'</div><small>최고 '+svFmtT(state.svBest||0)+'</small>'
-    + '<div class="sv-erow">'+(sv.net.role==='solo' ? '<button class="sv-btn" data-sv="again">다시</button>' : '')+'<button class="sv-btn" data-sv="out">나가기</button></div></div>';
+    + '<div class="sv-ew">'+(me ? me.wp.map(w=>svWIc(me, w)).join('') : '')+'</div>'
+    + (nu.length ? '<div class="sv-enu"><b>🔓 새로 해금</b>'+nu.map(s=>'<span>'+s+'</span>').join('')+'</div>' : '')
+    + '<small>최고 '+svFmtT(state.svBest||0)+'</small>'
+    + '<div class="sv-erow">'+(sv.net.role==='solo' ? '<button class="sv-btn" data-sv="again">다시</button><button class="sv-btn" data-sv="lobby">대표 정령 바꾸기</button>' : '')+'<button class="sv-btn" data-sv="out">나가기</button></div></div>';
   box.classList.add('on');
-  const a = box.querySelector('[data-sv="again"]'); if(a) a.addEventListener('click', ()=>{ cancelAnimationFrame(sv.raf); window.removeEventListener('resize', sv.fit); sv.game = null; svStart('solo'); });
+  const reset = ()=>{ cancelAnimationFrame(sv.raf); window.removeEventListener('resize', sv.fit); sv.game = null; sv.cv = null; };
+  const a = box.querySelector('[data-sv="again"]'); if(a) a.addEventListener('click', ()=>{ reset(); svStart('solo'); });
+  const lb = box.querySelector('[data-sv="lobby"]'); if(lb) lb.addEventListener('click', ()=>{ reset(); svLobby(); });
   box.querySelector('[data-sv="out"]').addEventListener('click', svClose);
 }
 // ---------- 둘이 하기: 주고받기 ----------
@@ -12621,6 +12755,7 @@ function svNetStart(){
   if(sv.net.role==='host'){
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code), s=>{ const a = s.val(); if(!a || !sv || !sv.game) return; const G = sv.game, p = G.players[1]; if(!p) return; sv.gLast = Date.now();
       if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy];
+      if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
       if((a.u||0) > (sv.gUlt||0)){ sv.gUlt = a.u; svUlt(p); }
       if(a.pk && p.pick && a.pk.k === p.pick.map(svCardKey).join('|')) svDoPick(1, a.pk.i); }));
     sv.gLast = Date.now(); sv.gUlt = 0;
@@ -12635,35 +12770,35 @@ function svNetStart(){
 function svHostSend(){
   const G = sv.game, fb = raidNet.fb, n = sv.net; if(!fb || !n.code) return;
   const R = Math.round;
-  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0,
-    p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.line, w.lv, w.evo ? 1 : 0]), ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0 })),
-    e: G.en.slice(0, 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, e.fl > 0 ? 1 : 0, e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
+  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0,
+    p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo ? 1 : 0]), ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0 })),
+    e: G.en.slice(0, 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
     g: G.gems.slice(0, 150).map(g=>[R(g.x), R(g.y), g.big ? 1 : 0]),
     l: G.loot.slice(0, 40).map(o=>[R(o.x), R(o.y), o.k]),
-    b: G.pr.slice(0, 80).map(b=>[R(b.x), R(b.y), b.col, b.kind==='ebul' ? 1 : 0]),
-    o: G.pools.map(o=>[R(o.x), R(o.y), R(o.R), o.col]),
+    b: G.pr.slice(0, 80).map(b=>[R(b.x), R(b.y), b.col, b.kind==='ebul' ? 1 : b.kind==='wave' ? 2 : b.kind==='spark' ? 3 : 0, b.kind==='wave' ? R(Math.atan2(b.vy, b.vx)*100)/100 : 0, b.kind==='wave' ? R(b.w) : 0]),
+    o: G.pools.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.web ? 1 : o.pull ? 2 : 0]),
     f: (G.netFx || []).slice(-40) };
   G.netFx = [];
   fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), snap).catch(()=>{});
 }
 function svGuestSend(){
   const fb = raidNet.fb; if(!sv || !fb || !sv.net.code) return; const G = sv.game, p = G && G.players[1];
-  const a = { ld: sv.leader, t: Date.now(), u: sv.ultReq || 0 };
+  const a = { ld: sv.leader, sk: svUnl().sk, t: Date.now(), u: sv.ultReq || 0 };
   if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; }
   fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code), a).catch(()=>{});
 }
 function svGuestApply(v){
-  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw;
+  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk;
   (v.p||[]).forEach((q,i)=>{ const p = G.players[i] || (G.players[i] = svNewPlayer(i, q.ld));
     if(i!==1 || q.d){ p.tx = q.x; p.ty = q.y; if(Math.hypot((p.x||0)-q.x, (p.y||0)-q.y) > 80){ p.x = q.x; p.y = q.y; } }
     p.leader = q.ld || p.leader; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {};
-    p.wp = (q.w||[]).map((a,k)=>{ const o = (p.wp||[])[k] || {}; return { line:a[0], lv:a[1], evo: !!a[2], a: o.a || Math.random()*6 }; });
-    if(i===1){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' ? { k, line:x } : k==='p' ? { k, pas:x } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
-  G.en = (v.e||[]).map(a=>({ x:a[0], y:a[1], r:a[2], hp:a[3], max:100, art:a[4], fl: a[5] ? 0.1 : 0, kind: a[6]===1 ? 'boss' : a[6]===2 ? 'elite' : '' }));
+    p.wp = (q.w||[]).map((a,k)=>{ const o = (p.wp||[])[k] || {}; return { id:a[0], lv:a[1], evo: !!a[2], a: o.a || Math.random()*6 }; });
+    if(i===1){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' ? { k, id:x } : k==='p' ? { k, pas:x } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
+  G.en = (v.e||[]).map(a=>({ x:a[0], y:a[1], r:a[2], hp:a[3], max:100, art:a[4], fl: a[5]&1 ? 0.1 : 0, burn: a[5]&2 ? 1 : 0, curse: a[5]&4 ? 1 : 0, frz: a[5]&8 ? 1 : 0, web: a[5]&16 ? 1 : 0, kind: a[6]===1 ? 'boss' : a[6]===2 ? 'elite' : '' }));
   G.gems = (v.g||[]).map(a=>({ x:a[0], y:a[1], big:!!a[2] }));
   G.loot = (v.l||[]).map(a=>({ x:a[0], y:a[1], k:a[2] }));
-  G.pr = (v.b||[]).map(a=>({ x:a[0], y:a[1], col:a[2], kind: a[3] ? 'ebul' : 'shot' }));
-  G.pools = (v.o||[]).map(a=>({ x:a[0], y:a[1], R:a[2], col:a[3], t:0, d:1 }));
+  G.pr = (v.b||[]).map(a=>({ x:a[0], y:a[1], col:a[2], kind: ['shot','ebul','wave','spark'][a[3]||0], ang:a[4]||0, w:a[5]||0 }));
+  G.pools = (v.o||[]).map(a=>({ x:a[0], y:a[1], R:a[2], col:a[3], web: a[4]===1, pull: a[4]===2, t:0, d:1 }));
   (v.f||[]).forEach(f=>G.fx.push(Object.assign({}, f, { t:0 })));
   if(v.ov && !G.over){ G.over = v.ov; svShowEnd(); }
 }
@@ -12674,7 +12809,9 @@ function svDraw(){
   c.setTransform(S, 0, 0, S, (Math.random()-0.5)*sk*S, (Math.random()-0.5)*sk*S); c.clearRect(-20, -20, SV_W+40, SV_H+40);
   const bg = svImg('assets/battle_plains.webp'); if(bg.complete && bg.naturalWidth){ const k = Math.max(SV_W/bg.naturalWidth, SV_H/bg.naturalHeight), bw = bg.naturalWidth*k, bh = bg.naturalHeight*k; c.globalAlpha = 0.5; c.drawImage(bg, (SV_W-bw)/2, (SV_H-bh)/2, bw, bh); c.globalAlpha = 1; }
   { const vg = c.createRadialGradient(SV_W/2, SV_H/2, 120, SV_W/2, SV_H/2, 420); vg.addColorStop(0, '#0b0d2600'); vg.addColorStop(1, '#0b0d26cc'); c.fillStyle = vg; c.fillRect(0, 0, SV_W, SV_H); }
-  G.pools.forEach(o=>{ const g = c.createRadialGradient(o.x, o.y, 2, o.x, o.y, o.R); g.addColorStop(0, o.col+'77'); g.addColorStop(1, o.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill(); });
+  G.pools.forEach(o=>{ const g = c.createRadialGradient(o.x, o.y, 2, o.x, o.y, o.R); g.addColorStop(0, o.col+(o.pull ? 'cc' : '77')); g.addColorStop(1, o.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill();
+    if(o.web){ c.save(); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; for(let k=0;k<6;k++){ const a = k*1.047; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x + Math.cos(a)*o.R, o.y + Math.sin(a)*o.R); c.stroke(); } [0.4, 0.75].forEach(f=>{ c.beginPath(); c.arc(o.x, o.y, o.R*f, 0, 6.283); c.stroke(); }); c.restore(); }
+    if(o.pull){ c.save(); c.strokeStyle = '#c9a6ff'; c.lineWidth = 2; for(let k=0;k<3;k++){ c.beginPath(); c.arc(o.x, o.y, o.R*(0.35 + k*0.25), G.t*6 + k*2, G.t*6 + k*2 + 2.2); c.stroke(); } c.restore(); } });
   G.gems.forEach(g=>{ c.save(); c.translate(g.x, g.y); c.rotate(0.785); const s = g.big ? 5 : 3.2; c.fillStyle = g.big ? '#c9a6ff' : '#7ae0ff'; c.shadowColor = c.fillStyle; c.shadowBlur = 6; c.fillRect(-s/2, -s/2, s, s); c.restore(); });
   // 상자 · 룬 · 골드 · 회복
   G.loot.forEach(o=>{ c.save(); c.translate(o.x, o.y);
@@ -12683,13 +12820,14 @@ function svDraw(){
     else { c.font = '14px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(o.k==='gold' ? '💰' : o.k==='heal' ? '🍖' : '🧲', 0, 0); }
     c.restore(); });
   G.en.forEach(e=>{ const z = e.r*2.5; c.save(); c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.fillStyle = '#2a1f3f'; c.fill(); const im = svImg(e.art); if(im.complete && im.naturalWidth){ c.clip(); c.drawImage(im, e.x-z/2, e.y-z/2+1, z, z); }
-    if(e.fl > 0){ c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.frz > 0){ c.fillStyle = 'rgba(160,230,255,.45)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } c.restore();
+    if(e.fl > 0){ c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.frz > 0){ c.fillStyle = 'rgba(160,230,255,.45)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.burn > 0){ c.fillStyle = 'rgba(255,120,40,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.web > 0){ c.fillStyle = 'rgba(230,240,220,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } c.restore();
+    if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
     c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.lineWidth = e.kind==='boss' ? 3 : 1.6; c.strokeStyle = e.slow>0 ? '#9fe6ff' : (e.kind==='boss' ? '#ff3a3a' : e.kind==='elite' ? '#c9a6ff' : '#ff6a6a'); c.stroke();
     if(e.kind==='boss' || e.kind==='elite' || e.r >= 16){ const w = e.kind==='boss' ? 90 : e.r*2, h = Math.max(0, e.hp/e.max); c.fillStyle = '#0009'; c.fillRect(e.x-w/2, e.y-e.r-8, w, 4); c.fillStyle = e.kind==='boss' ? '#ff5a5a' : '#ffd557'; c.fillRect(e.x-w/2, e.y-e.r-8, w*h, 4); } });
   G.players.forEach((p,i)=>{ const pc = SV_PCOL[i];
     if(i===G.me){ c.beginPath(); c.arc(p.x, p.y, p.mag*(1+0.25*svPasLv(p,'greed')), 0, 6.283); c.strokeStyle = '#7ae0ff14'; c.lineWidth = 1; c.stroke(); }
     // 얼음 고리
-    p.wp.forEach(w=>{ if(w.line!=='water_b') return; const n = 2 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), rad = (52 + w.lv*3)*(1+0.12*svPasLv(p,'area'));
+    p.wp.forEach(w=>{ if(w.id!=='water_b_2') return; const { n, rad } = svOrbit(p, w);
       for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); c.restore(); } });
     // 따라다니는 무기 정령 (대표 정령 = 기본 무기는 몸으로)
     const sub = p.wp.slice(1); sub.forEach((w,k)=>{ const a = (w.a||0)*0.6 + k*6.283/Math.max(1, sub.length), rx = p.x + Math.cos(a)*32, ry = p.y + Math.sin(a)*24 - 6; let x = rx, y = ry;
@@ -12703,11 +12841,13 @@ function svDraw(){
     if(p.inv > 0.7 || p.buff > 0){ c.shadowColor = p.buff > 0 ? '#ffd04a' : '#ffffff'; c.shadowBlur = 16; }
     if(body.complete && body.naturalWidth){ if(p.face[0] < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
     c.restore();
+    { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
     const hw = 34, hp = Math.max(0, p.hp/p.maxHp); c.fillStyle = '#000a'; c.fillRect(p.x-hw/2, p.y+20, hw, 4); c.fillStyle = hp > 0.3 ? '#7ce07c' : '#ff5a5a'; c.fillRect(p.x-hw/2, p.y+20, hw*hp, 4);
     if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : '친구', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.fillText('💤', p.x, p.y-24); } });
-  G.pr.forEach(b=>{ c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 8; c.beginPath(); c.arc(b.x, b.y, b.kind==='ebul' ? 5 : b.kind==='boom' ? 5 : 3, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); } c.restore(); });
+  G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
+    c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 8; c.beginPath(); c.arc(b.x, b.y, b.kind==='ebul' ? 5 : b.kind==='boom' ? 5 : 3, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); } c.restore(); });
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
   G.fx.forEach(f=>{ const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 10; c.stroke(); }
@@ -19252,7 +19392,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 473, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 474, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
