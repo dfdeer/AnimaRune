@@ -12263,11 +12263,9 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 편의(사용자 10/25 「메커니즘 확인하기 좋게」): 정령을 누르면 정보·사거리 · 일시정지 · 1/2/3배속 · 끝나면 계열별 피해 비율
 const WD_W = 360, WD_H = 560, WD_BAR_Y = 318; // (사용자 10/25: 적 공간이 좁고 정령이 너무 큼 → 발판을 아래로 모으고 정령·적 크기를 비슷하게)
 const WD_PADS = [ // x, y(발 위치), 성격 — 앞줄 3 · 가운데 2 · 뒤 3
-  { x:70,  y:384, k:'fire' }, { x:180, y:378, k:'light' }, { x:290, y:384, k:'water' },
-  { x:125, y:444, k:'haste' }, { x:235, y:444, k:'dark' },
-  { x:70,  y:508, k:null }, { x:180, y:504, k:'wood' }, { x:290, y:508, k:null } ];
-const WD_PAD_NM = { fire:'🔥 화염', water:'💧 물결', wood:'🌿 숲결', light:'✦ 빛', dark:'🌑 그림자', haste:'⚡ 가속' };
-const WD_PAD_D = { fire:'화염 정령 공격력 +30%', water:'물결 정령 공격력 +30%', wood:'숲결 정령 공격력 +30%', light:'빛 정령 공격력 +30%', dark:'그림자 정령 공격력 +30%', haste:'공격 속도 +25%' };
+  { x:70,  y:384 }, { x:180, y:378 }, { x:290, y:384 },
+  { x:125, y:444 }, { x:235, y:444 },
+  { x:70,  y:508 }, { x:180, y:504 }, { x:290, y:508 } ]; // (사용자 10/25: 발판 속성은 별로 → 뺌 · 자리 의미는 앞 발판 = 근접 닿음만)
 const WD_EC = { fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#a46bff', haste:'#9fe6ff' };
 const WD_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ff5777'];
 // 계열 — t: 근접(melee) · 원거리(shot) · 지원(aura) / dmg: 커먼 피해 · iv: 공격 간격(초)
@@ -12289,6 +12287,8 @@ const WD_FORM_NM = { rain:'흩뿌림', row:'가로줄', col:'세로줄', wedge:'
 let wd = null;
 function wdKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[r]+'_'+k[1]; }
 function wdName(u){ return SPIRITS[wdKey(u.line, u.r)].name; }
+const WD_STAR_MAX = 7; // (사용자 10/25: 랜다처럼 합치면 늘 덱 5종 중 무작위 · 별 하나 위) 별 1~5 = 커먼~신화 그림 · 6·7성은 신화 그림 + 각성(aw)으로 셈
+function wdStar(u){ return u.r + 1 + (u.aw||0); }
 function wdImg(src){ wd.imgs = wd.imgs || {}; if(!wd.imgs[src]){ const im = new Image(); im.src = src; wd.imgs[src] = im; } return wd.imgs[src]; }
 function showWard(){
   if(!adminOn()){ toast('관리자 모드에서만'); return; }
@@ -12302,7 +12302,7 @@ function wdRenderPick(){
   const lines = ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v)), d = wd.deck, tl = { melee:'근접', shot:'원거리', aura:'지원' };
   wd.el.innerHTML = '<div class="wd-top"><button class="wd-btn" data-wd="exit">← 나가기</button><b>🛡️ 정령 결계 <small>시험판</small></b><span class="wd-best">최고 '+(state.wardBest||0)+'웨이브</span></div>'
     + '<div class="wd-pick"><div class="wd-ptl">정령 5종으로 덱 짜기</div>'
-    + '<div class="wd-how"><div><b>1</b>적은 위에서 내려와 <em>결계</em>를 때림 · 결계가 깨지면 끝</div><div><b>2</b>기운 ⚡으로 <em>소환</em> → 빈 발판에 커먼이 나옴</div><div><b>3</b>같은 정령 · 같은 별끼리 <em>끌어서 합치기</em> → 그 발판에 별 하나 위 (덱 중 무작위)</div><div><b>4</b><em>근접</em>은 앞 발판에서만 닿음 · 발판 속성과 같은 정령은 공격 +30%</div></div>'
+    + '<div class="wd-how"><div><b>1</b>적은 위에서 내려와 <em>결계</em>를 때림 · 결계가 깨지면 끝</div><div><b>2</b>기운 ⚡으로 <em>소환</em> → 빈 발판에 커먼이 나옴</div><div><b>3</b>같은 정령 · 같은 별끼리 <em>끌어서 합치기</em> → 그 발판에 별 하나 위 (덱 5종 중 무작위 · 최대 7성)</div><div><b>4</b><em>근접</em>은 앞 발판(맨 윗줄)에서만 적에게 닿음</div></div>'
     + '<div class="wd-plist">'+lines.map(l=>{ const L = WD_LINES[l], on = d.includes(l);
         return '<button class="wd-pc'+(on?' on':'')+'" data-wl="'+l+'" style="--ec:'+WD_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+wdKey(l,4)+'.webp" alt=""><b>'+SPIRITS[wdKey(l,4)].name+'</b><span>'+tl[L.t]+' · '+L.role+'</span><small>'+L.d+'</small>'+(on?'<i>'+(d.indexOf(l)+1)+'</i>':'')+'</button>'; }).join('')+'</div>'
     + '<button class="wd-btn wd-go" data-wd="start" '+(d.length===5?'':'disabled')+'>'+(d.length===5 ? '⚔️ 시작' : '정령 '+(5-d.length)+'종 더 고르기')+'</button></div>';
@@ -12363,11 +12363,11 @@ function wdInfo(soft){ // 고른 정령 · 발판 정보 (캔버스 위 작은 �
   if(i<0){ box.classList.remove('on'); return; }
   let h = '';
   if(u){ const L = WD_LINES[u.line], st = wdStats(i), tl = { melee:'근접 (앞 발판에서만)', shot:'원거리 (어디서나)', aw:'', aura:'지원 (둘레 정령)' };
-    h = '<img src="assets/spirits/'+wdKey(u.line,u.r)+'.webp" alt=""><div><b>'+wdName(u)+' <em style="color:'+WD_RC[u.r]+';">'+'★'.repeat(u.r+1)+(u.aw?' +'+u.aw:'')+'</em></b>'
+    h = '<img src="assets/spirits/'+wdKey(u.line,u.r)+'.webp" alt=""><div><b>'+wdName(u)+' <em style="color:'+WD_RC[u.r]+';">'+'★'.repeat(wdStar(u))+'</em></b>'
       + '<small>'+L.role+' · '+tl[L.t]+'</small><small>'+L.d+'</small>'
-      + '<small>피해 '+Math.round(st.dmg)+' · '+(1/st.iv).toFixed(1)+'회/초'+(q.k ? ' · 발판 '+WD_PAD_NM[q.k]+(q.k===u.line.split('_')[0] || q.k==='haste' ? ' ✓' : '') : '')+'</small>'
+      + '<small>피해 '+Math.round(st.dmg)+' · '+(1/st.iv).toFixed(1)+'회/초'+'</small>'
       + '<small>이번 판 준 피해 '+fmtHp(wd.dmgBy[u.line]||0)+' (계열 합)</small></div>';
-  }else h = '<div><b>빈 발판'+(q.k ? ' · '+WD_PAD_NM[q.k] : '')+'</b><small>'+(q.k ? WD_PAD_D[q.k] : '효과 없음')+'</small><small>'+(i<3 ? '앞 발판 — 근접 정령도 닿음' : '뒤쪽 발판 — 원거리 · 지원 정령 자리')+'</small></div>';
+  }else h = '<div><b>빈 발판</b><small>'+(i<3 ? '앞 발판 — 근접 정령도 닿음' : '뒤쪽 발판 — 원거리 · 지원 정령 자리')+'</small></div>';
   box.innerHTML = h; box.classList.add('on');
 }
 function wdSummon(free){
@@ -12379,17 +12379,17 @@ function wdSummon(free){
   if(!free) try{ sfx('click'); }catch(e){}
   wdHud(); return true;
 }
-function wdCanMerge(a, b){ return a && b && a.line===b.line && a.r===b.r && (a.aw||0)===(b.aw||0) && !(a.r>=4 && (a.aw||0)>=5); }
+function wdCanMerge(a, b){ return a && b && a.line===b.line && wdStar(a)===wdStar(b) && wdStar(a) < WD_STAR_MAX; }
 function wdMerge(a, b){
   const A = wd.pads[a], B = wd.pads[b];
   if(!B){ wd.pads[b] = A; wd.pads[a] = null; return; } // 빈 발판으로 옮기기
   if(!wdCanMerge(A, B)){ const q = WD_PADS[b]; wd.fx.push({ k:'text', x:q.x, y:q.y-50, t:0, d:0.9, s:'같은 정령 · 같은 별만', col:'#ff8a8a', sz:11 }); return; }
   wd.pads[a] = null;
-  const nu = A.r < 4 ? { line: wd.deck[Math.floor(Math.random()*5)], r: A.r+1, aw:0, cd:0.2, pop:0.6 } : { line:A.line, r:4, aw:(A.aw||0)+1, cd:0.2, pop:0.6 };
+  const ns = wdStar(A) + 1, nu = { line: wd.deck[Math.floor(Math.random()*5)], r: Math.min(4, ns-1), aw: Math.max(0, ns-5), cd:0.2, pop:0.6 };
   wd.pads[b] = nu;
   const q = WD_PADS[b], col = WD_RC[nu.r];
   wd.fx.push({ k:'ring', x:q.x, y:q.y-20, t:0, d:0.5, col, r:40 }); wd.fx.push({ k:'beam', x:q.x, y:q.y, t:0, d:0.6, col });
-  wd.fx.push({ k:'text', x:q.x, y:q.y-58, t:0, d:1.1, s: nu.aw ? '각성 +'+nu.aw+'!' : RARITY_INFO[RARITY_ORDER[nu.r]].name+'!', col, sz: nu.r>=3 ? 15 : 12 });
+  wd.fx.push({ k:'text', x:q.x, y:q.y-58, t:0, d:1.1, s: nu.aw ? (nu.r+1+nu.aw)+'성!' : RARITY_INFO[RARITY_ORDER[nu.r]].name+'!', col, sz: nu.r>=3 ? 15 : 12 });
   for(let k=0;k<(nu.r>=3 ? 18 : 10);k++){ const a = Math.random()*Math.PI*2, v = 40 + Math.random()*70; wdPart(q.x, q.y-20, Math.cos(a)*v, Math.sin(a)*v - 30, col, 0.7, 2.5); }
   try{ sfx(nu.r >= 4 ? 'summonLegend' : 'enhance'); }catch(e){}
   wdHud();
@@ -12429,7 +12429,6 @@ function wdStats(i){
   const u = wd.pads[i], L = WD_LINES[u.line], q = WD_PADS[i]; let atk = 1, spd = 1;
   wd.pads.forEach((v,j)=>{ if(!v || j===i) return; const o = WD_PADS[j]; if(Math.hypot(o.x-q.x, o.y-q.y) > WD_AURA_R) return;
     if(v.line==='light_a') atk += 0.12*(v.r+1); if(v.line==='light_b') spd += 0.08*(v.r+1); });
-  if(q.k && q.k===u.line.split('_')[0]) atk *= 1.3; if(q.k==='haste') spd *= 1.25;
   if(u.frz > 0) spd *= 0.0001; if(u.burn > 0) spd *= 0.5;
   return { dmg: L.dmg * WD_RM[u.r] * Math.pow(1.3, u.aw||0) * (1 + 0.25*wd.lv[u.line]) * atk, iv: L.iv / spd };
 }
@@ -12526,7 +12525,7 @@ function wdDrawSpirit(c, u, x, y, alpha, i){
     c.drawImage(im, x - w/2, y - w + 2 + ly, w, w); c.filter = 'none'; }
   if(u.frz>0){ c.fillStyle = '#9fe6ff55'; c.beginPath(); c.ellipse(x, y-20, 22, 24, 0, 0, Math.PI*2); c.fill(); }
   c.font = 'bold 8px sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd557'; c.strokeStyle = '#000a'; c.lineWidth = 2.5;
-  const s = '★'.repeat(u.r+1) + (u.aw ? ' +'+u.aw : ''); c.strokeText(s, x, y+8); c.fillText(s, x, y+8);
+  const s = '★'.repeat(wdStar(u)); c.strokeText(s, x, y+8); c.fillText(s, x, y+8);
   c.restore();
 }
 function wdDraw(){
@@ -12554,10 +12553,9 @@ function wdDraw(){
     else if(L.t==='aura'){ c.strokeStyle = '#ffe08aaa'; c.fillStyle = '#ffe08a12'; c.beginPath(); c.arc(q.x, q.y-18, WD_AURA_R, 0, Math.PI*2); c.fill(); c.stroke(); }
     c.restore(); }
   // 발판
-  WD_PADS.forEach((q,i)=>{ const col = q.k ? WD_EC[q.k] : '#ffffff', u = wd.pads[i], to = drag && wd.drag.to===i && i!==wd.drag.i, ok = drag && i!==wd.drag.i && (!u || wdCanMerge(drag, u)), sel = wd.sel===i;
-    c.save(); c.beginPath(); c.ellipse(q.x, q.y, 30, 11, 0, 0, Math.PI*2); const rg = c.createRadialGradient(q.x, q.y, 2, q.x, q.y, 30); rg.addColorStop(0, col+(q.k ? '99' : '44')); rg.addColorStop(1, col+'00'); c.fillStyle = rg; c.fill();
-    c.lineWidth = ok || sel ? 2.5 : 1.5; c.strokeStyle = ok ? (u ? '#ffe08a' : '#ffffffcc') : sel ? '#fff' : col+(q.k ? 'cc' : '55'); c.shadowColor = ok ? '#ffe08a' : col; c.shadowBlur = q.k || ok ? 8 + (ok ? Math.sin(wd.t*8)*4 : 0) : 0; c.stroke(); c.restore();
-    if(q.k){ c.font = 'bold 7.5px sans-serif'; c.textAlign = 'center'; const t = WD_PAD_NM[q.k], tw = c.measureText(t).width + 8; c.fillStyle = '#000a'; c.fillRect(q.x - tw/2, q.y + 12, tw, 11); c.fillStyle = '#fff'; c.fillText(t, q.x, q.y + 20.5); }
+  WD_PADS.forEach((q,i)=>{ const col = i<3 ? '#ffd8a8' : '#cfe0ff', u = wd.pads[i], to = drag && wd.drag.to===i && i!==wd.drag.i, ok = drag && i!==wd.drag.i && (!u || wdCanMerge(drag, u)), sel = wd.sel===i;
+    c.save(); c.beginPath(); c.ellipse(q.x, q.y, 30, 11, 0, 0, Math.PI*2); const rg = c.createRadialGradient(q.x, q.y, 2, q.x, q.y, 30); rg.addColorStop(0, col+'66'); rg.addColorStop(1, col+'00'); c.fillStyle = rg; c.fill();
+    c.lineWidth = ok || sel ? 2.5 : 1.5; c.strokeStyle = ok ? (u ? '#ffe08a' : '#ffffffcc') : sel ? '#fff' : col+'99'; c.shadowColor = ok ? '#ffe08a' : col; c.shadowBlur = ok ? 8 + (ok ? Math.sin(wd.t*8)*4 : 0) : 0; c.stroke(); c.restore();
     if(to){ c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const t = !u ? '옮기기' : wdCanMerge(drag, u) ? '합치기 ✓' : '안 됨', tw = c.measureText(t).width + 12; c.fillStyle = !u ? '#334' : wdCanMerge(drag, u) ? '#7a5a00' : '#5a1f1f'; c.fillRect(q.x - tw/2, q.y - 66, tw, 16); c.fillStyle = '#fff'; c.fillText(t, q.x, q.y - 54); } });
   WD_PADS.forEach((q,i)=>{ const u = wd.pads[i]; if(u && !(drag && wd.drag.i===i)) wdDrawSpirit(c, u, q.x, q.y, 1, i); });
   // 적
