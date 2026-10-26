@@ -8963,7 +8963,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bGi:0.9, bDebuff:0.50,
-  svClaw:0.75, svShot:0.88, svHit:0.29, // (build 492) 정령 서바이벌 — 같은 방식으로 잼 (발톱 0.04 · 쏘기 0.028 · 맞음 0.025 — 자주 나서 낮게)
+  svClaw:0.52, svShot:1.02, svHit:0.54, // (build 493) 정령 서바이벌 — 같은 방식으로 잼 (발톱 0.045 · 쏘기 0.028 · 맞음 0.025 — 자주 나서 낮게)
   bSk_fire:0.55, bBoom:0.155, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
@@ -8991,9 +8991,9 @@ function sfxPlay(name){
   else if(name==='claim'){ sGlock(1319,0,0.08,B); sGlock(1760,0.06,0.08,B); sMusicBox(2637,0.12,0.04,0.6,B); } // 짜랑
   else if(name==='battleStart'){ sWood(880,0,0.14,B); sWood(1175,0.1,0.14,B); sPluck(196,0.2,0.12,0.3,true,B); }
   // (v332) 전투 효과음
-  else if(name==='svClaw'){ sNoise(0,0.12,0.6,B,'bandpass',4200,900,1.4,0.008); sNoise(0.035,0.09,0.35,B,'bandpass',3000,700,1.6,0.006); } // (build 492) 정령 서바이벌 — 발톱 긁기(바람 가르는 소리 두 번)
-  else if(name==='svShot'){ sNoise(0,0.06,0.4,B,'bandpass',2600,1200,1.2,0.004); sSlide(700,420,0,0.05,0.12,B,'triangle'); } // 서바이벌 — 다른 무기 쏘기
-  else if(name==='svHit'){ sNoise(0,0.05,0.45,B,'lowpass',1600,500); sBoop(0,0.3,B,200,80,0.06); } // 서바이벌 — 적이 맞음
+  else if(name==='svClaw'){ sNoise(0,0.17,0.7,B,'bandpass',800,3600,0.9,0.045); sNoise(0.07,0.15,0.5,B,'bandpass',3600,600,0.9,0.012); sNoise(0.03,0.16,0.22,B,'highpass',6500,2800,0.7,0.02); } // (build 493) 정령 서바이벌 — 발톱이 공기를 가르는 소리(차오르다 빠짐 · 불꽃 바스락) · 492는 짧고 딱딱해서 버튼 소리 같았음
+  else if(name==='svShot'){ sNoise(0,0.08,0.45,B,'bandpass',2200,800,0.9,0.01); } // 서바이벌 — 다른 무기 쏘기 (음정 없는 짧은 바람)
+  else if(name==='svHit'){ sNoise(0,0.07,0.55,B,'lowpass',1400,280,0.8,0.002); sBoop(0,0.12,B,110,55,0.05); } // 서바이벌 — 적이 맞음 (둔탁하게)
   else if(name==='bHit'){ sNoise(0,0.07,0.5,B,'lowpass',1400,500); sBoop(0,0.35,B,170,70,0.09); }
   else if(name==='bCrit'){ sNoise(0,0.14,0.55,B,'bandpass',3200,900,0.9); sBoop(0,0.45,B,220,55,0.16); sGlock(1568,0.03,0.12,B); }
   else if(name==='bStrong') sSlide(1100,2100,0,0.09,0.12,B);
@@ -12480,6 +12480,11 @@ function svClawIn(w, dx, dy, er, a0, a1){ // 적이 발톱 그림(앞으로 옮�
   const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, u = lx - w.R*SV_CLAW.D, v = ly/SV_CLAW.K, th = Math.atan2(v, u);
   return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.43 + er*1.3 && th >= a0 && th <= a1;
 }
+function svGlow(col, a0){ // (build 493) 미리 그려 둔 둥근 빛 (가운데 col → 바깥 투명) — 그림자 흐림 대신
+  sv.glows = sv.glows || {}; const k = col + (a0||''); if(sv.glows[k]) return sv.glows[k];
+  const oc = document.createElement('canvas'); oc.width = oc.height = 64; const x = oc.getContext('2d'), g = x.createRadialGradient(32, 32, 1, 32, 32, 32); g.addColorStop(0, col + (a0||'')); g.addColorStop(1, col.slice(0, 7) + '00'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); sv.glows[k] = oc; return oc;
+}
+function svGS(c, w){ const a = c.globalAlpha, lw = c.lineWidth; c.globalAlpha = a*0.3; c.lineWidth = lw + w; c.stroke(); c.globalAlpha = a; c.lineWidth = lw; c.stroke(); } // 선 + 둘레에 넓고 옅은 선 (빛 번짐 대신)
 function svClawE(f){ return 1 - Math.pow(1 - f, 3); } // 불꽃 발톱이 긁는 속도 — 처음 빠르고 끝에 느려짐 (그림·판정 같이 씀)
 function svDrawGround(c, cam){ // (build 491) 바닥 — 화면 배율에 맞춰 한 번 그려 둔 조각을 그대로 찍음 (전엔 무늬 채우기를 매 프레임 확대해 그려 전체화면에서 느렸음)
   const src = sv.patSrc && sv.patSrc.naturalWidth ? sv.patSrc : sv.patOc, T = sv.patImg ? 512 : 256; if(!src) return;
@@ -12512,8 +12517,8 @@ function svDrawObstacles(c, G, cam){
   map.ob.forEach(b=>{ if(b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
     { const has = im.complete && im.naturalWidth, rx = b.r*(has ? SV_OBSH[b.k] : 1), ry = rx*0.32, cy = b.y + b.r*0.55 - ry*0.55; // 밑동 바로 밑에 붙는 부드러운 그림자 (전엔 그림 아래로 삐져나와 떠 보였음)
-      const g = c.createRadialGradient(b.x, cy, 0, b.x, cy, rx); g.addColorStop(0, '#0000004d'); g.addColorStop(0.65, '#00000026'); g.addColorStop(1, '#00000000');
-      c.save(); c.translate(b.x, cy); c.scale(1, ry/rx); c.translate(-b.x, -cy); c.fillStyle = g; c.beginPath(); c.arc(b.x, cy, rx, 0, 6.283); c.fill(); c.restore(); }
+      if(!sv.obShC){ const oc = document.createElement('canvas'); oc.width = oc.height = 64; const x = oc.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, '#0000004d'); g.addColorStop(0.65, '#00000026'); g.addColorStop(1, '#00000000'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); sv.obShC = oc; } // (build 493) 미리 그린 그림자 (전엔 장애물마다 매 프레임 그라디언트)
+      c.drawImage(sv.obShC, b.x - rx, cy - ry, rx*2, ry*2); }
     if(im.complete && im.naturalWidth){ const s = b.r*SV_OBS[b.k]*(b.sc||1); c.translate(b.x, 0); if(b.fl) c.scale(-1, 1); c.drawImage(im, -s/2, b.y + b.r*0.55 - s, s, s); } // 크기 조금씩 · 좌우 뒤집기 // 그림은 밑동이 아래쪽에 맞춰져 있음
     else { const tall = b.k % 2 === 0; c.fillStyle = M.col[2]; c.strokeStyle = '#0008'; c.lineWidth = 2;
       if(tall){ c.beginPath(); c.arc(b.x, b.y - b.r*0.5, b.r*1.05, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = M.col[1]; c.beginPath(); c.arc(b.x - b.r*0.3, b.y - b.r*0.8, b.r*0.45, 0, 6.283); c.fill(); }
@@ -12719,7 +12724,7 @@ function svStart(role){
   sv.el.classList.add('sv-game');
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill"></span><button class="sv-btn sv-ic" data-sv="pause">'+uiIc('rest')+'</button></div>'
     + '<div class="sv-cv"><canvas></canvas><i class="sv-vig"></i><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><button class="sv-aim" data-sv="aim"><img alt=""></button><em class="sv-key" data-k="ult">Space</em><em class="sv-key" data-k="aim">Q</em><div class="sv-wasd"><i>W</i><i>A</i><i>S</i><i>D</i><b>이동</b></div><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
-  const cv = sv.el.querySelector('canvas'); sv.cv = cv; sv.ctx = cv.getContext('2d', { alpha:false }); // (build 492) 불투명 캔버스 — 뒤 화면과 섞는 일을 안 해서 전체화면이 훨씬 가벼움 (헤드리스 1920×1080 22→43fps)
+  const cv = sv.el.querySelector('canvas'); sv.cv = cv; sv.ctx = cv.getContext('2d', { alpha:false }); try{ Object.defineProperty(sv.ctx, 'shadowBlur', { get(){ return 0; }, set(){} }); }catch(e){} // (build 493) 그림자 흐림(빛 번짐)은 그릴 때마다 흐림 처리를 해서 무거움 — 끄고 미리 그린 빛(svGlow)·겹친 선(svGS)으로 대신 // (build 492) 불투명 캔버스 — 뒤 화면과 섞는 일을 안 해서 전체화면이 훨씬 가벼움 (헤드리스 1920×1080 22→43fps)
   const fit = ()=>{ if(!sv || !sv.cv) return; // (build 489) 사용자 결정 10/26: 틀 없이 화면 전체 · 위 HUD·아래 스킬 줄은 게임 화면 위에 겹쳐 놓음
     const box = sv.el.querySelector('.sv-cv'), bw = box.clientWidth, bh = box.clientHeight; if(!(bw > 0 && bh > 0)) return;
     if(bw/bh >= 0.6){ SV_H = 600; SV_W = Math.min(1400, Math.round(600*bw/bh)); } else { SV_W = 360; SV_H = Math.min(900, Math.round(360*bh/bw)); }
@@ -12987,12 +12992,13 @@ function svCardHtml(me, c, i){ // (build 489) 사용자 10/26: 필요한 정보�
 function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+';"><img src="'+svSkIc(w.id)+'" alt=""><i>'+(w.evo ? uiIc('awaken') : w.lv)+'</i></span>'; }
 function svHud(){
   const G = sv.game, q = s=>sv.el.querySelector(s); if(!q('.sv-time')) return;
-  q('.sv-time').textContent = ((G.stage||0)+1)+'단계 · '+svFmtT(G.t) + (G.t < SV_T_END ? ' / 10:00' : ' · 최종 보스');
-  q('.sv-xp i').style.width = Math.min(100, G.xp/G.xpNext*100)+'%'; q('.sv-lv').textContent = 'Lv'+G.lvl; { const kk = G.kills+'/'+G.gold, ke = q('.sv-kill'); if(ke.dataset.k !== kk){ ke.dataset.k = kk; ke.innerHTML = uiIc('skull')+G.kills+' · '+uiIc('gold')+G.gold; } }
+  const set = (el, k, v, f)=>{ if(el && el['_'+k] !== v){ el['_'+k] = v; f(el, v); } }; // (build 493) 바뀐 것만 고침 — 매 프레임 글자·폭을 다시 쓰면 화면을 다시 배치해서 렉
+  set(q('.sv-time'), 't', ((G.stage||0)+1)+'단계 · '+svFmtT(G.t) + (G.t < SV_T_END ? ' / 10:00' : ' · 최종 보스'), (el, v)=>{ el.textContent = v; });
+  set(q('.sv-xp i'), 'w', Math.round(Math.min(100, G.xp/G.xpNext*100)*2)/2, (el, v)=>{ el.style.width = v+'%'; }); set(q('.sv-lv'), 't', 'Lv'+G.lvl, (el, v)=>{ el.textContent = v; }); { const kk = G.kills+'/'+G.gold, ke = q('.sv-kill'); if(ke.dataset.k !== kk){ ke.dataset.k = kk; ke.innerHTML = uiIc('skull')+G.kills+' · '+uiIc('gold')+G.gold; } }
   const me = G.players[G.me], box = q('.sv-pick'); { const wd = q('.sv-wasd'); if(wd && wd.classList.contains('on') !== !!sv.pc) wd.classList.toggle('on', !!sv.pc); }
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
-    ub.querySelector('i').style.height = (cd/SV_ULT_CD*100)+'%'; ub.querySelector('b').textContent = cd > 0 ? Math.ceil(cd) : ''; // 준비되면 글자 없이 빛남 (사용자 10/26)
-    const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const src = 'assets/ui/'+(state.svAim==='mouse' ? 'ic_target' : 'ic_auto')+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src){ im.setAttribute('src', src); ab.title = '조준: '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'); } } ub.classList.toggle('ready', cd <= 0 && !me.down); }
+    set(ub.querySelector('i'), 'h', Math.round(cd/SV_ULT_CD*200)/2, (el, v)=>{ el.style.height = v+'%'; }); set(ub.querySelector('b'), 't', cd > 0 ? ''+Math.ceil(cd) : '', (el, v)=>{ el.textContent = v; }); // 준비되면 글자 없이 빛남 (사용자 10/26)
+    const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const src = 'assets/ui/'+(state.svAim==='mouse' ? 'ic_target' : 'ic_auto')+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src){ im.setAttribute('src', src); ab.title = '조준: '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'); } } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
       box.innerHTML = '<div class="sv-ptl">레벨 '+G.lvl+'! 하나 고르기</div>' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('');
@@ -13101,7 +13107,7 @@ function svDraw(){
   const cam = sv.cam, off = (o, m)=> o.x < cam.x - m || o.x > cam.x + SV_W + m || o.y < cam.y - m || o.y > cam.y + SV_H + m;
   c.save(); c.translate(-cam.x, -cam.y);
   if(G.map){ svDrawMap(c, G, cam); svDrawObstacles(c, G, cam); }
-  G.pools.forEach(o=>{ const g = c.createRadialGradient(o.x, o.y, 2, o.x, o.y, o.R); g.addColorStop(0, o.col+(o.pull ? 'cc' : '77')); g.addColorStop(1, o.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill();
+  G.pools.forEach(o=>{ c.drawImage(svGlow(o.col, o.pull ? 'cc' : '77'), o.x - o.R, o.y - o.R, o.R*2, o.R*2); // (build 493) 미리 그린 빛 (전엔 매 프레임 그라디언트)
     if(o.web){ c.save(); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; for(let k=0;k<6;k++){ const a = k*1.047; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x + Math.cos(a)*o.R, o.y + Math.sin(a)*o.R); c.stroke(); } [0.4, 0.75].forEach(f=>{ c.beginPath(); c.arc(o.x, o.y, o.R*f, 0, 6.283); c.stroke(); }); c.restore(); }
     if(o.pull){ c.save(); c.strokeStyle = '#c9a6ff'; c.lineWidth = 2; for(let k=0;k<3;k++){ c.beginPath(); c.arc(o.x, o.y, o.R*(0.35 + k*0.25), G.t*6 + k*2, G.t*6 + k*2 + 2.2); c.stroke(); } c.restore(); } });
   const gi = [svImg('assets/survival/gem_s.webp'), svImg('assets/survival/gem_b.webp')];
@@ -13109,7 +13115,7 @@ function svDraw(){
   // 상자 · 룬 · 골드 · 회복
   G.loot.forEach(o=>{ if(off(o, 20)) return; c.save(); c.translate(o.x, o.y); // 그림: 상자 ic_box · 진화의 룬 ic_runestone · 골드 ic_gold · 생명의 샘 rl_spring · 바람 나침반 rl_compass
     const ic = { pod:'ic_box', rune:'ic_runestone', gold:'ic_gold', heal:'rl_spring', mag:'rl_compass' }[o.k], sz = o.k==='pod' ? 28 : o.k==='rune' ? 26 : o.k==='gold' ? 16 : 22, nw = (o.k==='pod' || o.k==='rune') ? svImg('assets/survival/'+o.k+'.webp') : null, im = nw && nw.complete && nw.naturalWidth ? nw : svImg('assets/ui/'+ic+'.webp'); // 새 그림(survival/pod·rune)이 있으면 그것
-    if(o.k==='rune'){ const k = 1 + Math.sin(G.t*5)*0.12; c.scale(k, k); c.shadowColor = '#ff5777'; c.shadowBlur = 14; }
+    if(o.k==='rune'){ const k = 1 + Math.sin(G.t*5)*0.12; c.scale(k, k); c.drawImage(svGlow('#ff5777', 'cc'), -sz, -sz, sz*2, sz*2); }
     if(im.complete && im.naturalWidth) c.drawImage(im, -sz/2, -sz/2, sz, sz);
     c.restore(); });
   G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const mi = e.mob && svImg(e.mob);
@@ -13137,12 +13143,12 @@ function svDraw(){
       const sz = 22 + Math.min(4, w.lv)*1.5 + (w.evo ? 6 : 0), im = svImg('assets/spirits/'+svWArt(w)+'.webp'); c.save(); if(p.down) c.globalAlpha = 0.35;
       if(w.evo){ c.shadowColor = '#ff5777'; c.shadowBlur = 10; } if(w.kick > 0.16){ c.shadowColor = SV_EC[w.id.split('_')[0]]; c.shadowBlur = 14; }
       if(im.complete && im.naturalWidth){ c.translate(x, y); if(svFlipFor(svWArt(w), w.kick > 0 ? Math.cos(w.kdir||0) : (p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]))) c.scale(-1, 1); /* 따라다니는 정령도 가는 쪽을 봄 */ c.scale(sq, 2 - sq); c.drawImage(im, -sz/2, -sz/2, sz, sz); } c.restore();
-      if(w.kick > 0.18){ const col = SV_EC[w.id.split('_')[0]], f = (w.kick-0.18)/0.06; c.save(); c.globalAlpha = f*0.8; c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12; c.beginPath(); c.arc(x + Math.cos(w.kdir)*sz*0.55, y + Math.sin(w.kdir)*sz*0.55, 4 + (1-f)*6, 0, 6.283); c.fill(); c.restore(); } }); // 발사 섬광
+      if(w.kick > 0.18){ const col = SV_EC[w.id.split('_')[0]], f = (w.kick-0.18)/0.06; c.save(); c.globalAlpha = f*0.8; c.fillStyle = col; { const fx = x + Math.cos(w.kdir)*sz*0.55, fy = y + Math.sin(w.kdir)*sz*0.55, fr = 4 + (1-f)*6; c.drawImage(svGlow(col, 'cc'), fx - fr*2.5, fy - fr*2.5, fr*5, fr*5); c.beginPath(); c.arc(fx, fy, fr, 0, 6.283); c.fill(); } c.restore(); } }); // 발사 섬광
     // 대표 정령 (내가 조종하는 몸)
     const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1))+'.webp'), bs = 40, bob = p.mv ? Math.sin(G.t*14)*2 : Math.sin(G.t*3)*1;
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
-    if(p.inv > 0.7 || p.buff > 0){ c.shadowColor = p.buff > 0 ? '#ffd04a' : '#ffffff'; c.shadowBlur = 16; }
+    if(p.inv > 0.7 || p.buff > 0){ c.drawImage(svGlow(p.buff > 0 ? '#ffd04a' : '#ffffff', 'aa'), p.x - 30, p.y - 32, 60, 60); }
     if(body.complete && body.naturalWidth){ if(svFlipFor(svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1)), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0])){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
@@ -13154,19 +13160,19 @@ function svDraw(){
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
     if(b.kind!=='ebul' && b.tr.length >= 4){ c.save(); c.lineCap = 'round'; for(let i=2;i<b.tr.length;i+=2){ const f = i/b.tr.length; c.globalAlpha = f*0.6; c.strokeStyle = b.col; c.lineWidth = (b.kind==='boom' ? 7 : 4)*f; c.beginPath(); c.moveTo(b.tr[i-2], b.tr[i-1]); c.lineTo(b.tr[i], b.tr[i+1]); c.stroke(); } c.restore(); }
-    const br = b.kind==='ebul' ? 5 : b.kind==='boom' ? 6 : 3.5; c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 10; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.fill(); c.fillStyle = '#ffffffcc'; c.beginPath(); c.arc(b.x, b.y, br*0.45, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.stroke(); } c.restore(); });
+    const br = b.kind==='ebul' ? 5 : b.kind==='boom' ? 6 : 3.5; c.save(); c.drawImage(svGlow(b.col, 'aa'), b.x - br*3, b.y - br*3, br*6, br*6); c.fillStyle = b.col; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.fill(); c.fillStyle = '#ffffffcc'; c.beginPath(); c.arc(b.x, b.y, br*0.45, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.stroke(); } c.restore(); });
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
-    if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 10; c.stroke(); }
+    if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; svGS(c, 6); }
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
-    else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = sw + 0.14, fade = f.t > hold ? Math.max(0, 1 - (f.t - hold)/Math.max(0.01, f.d - hold)) : 1;
+    else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = sw + 0.14, fade = f.t > hold ? Math.pow(Math.max(0, 1 - (f.t - hold)/Math.max(0.01, f.d - hold)), 1.6) : 1;
       const im = svImg('assets/survival/fx_claw.webp'); c.globalAlpha = fade;
       if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*SV_CLAW.D, 0); c.scale(1, SV_CLAW.K); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
-        // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 492) 다 긁은 뒤 잠깐 남았다가(0.14초) 사라짐 (사용자: 금방 사라지는 느낌)
-        const A0 = -2.04, SPAN = 4.0, TAIL = 2.6, T = 6.2832, lead = SPAN*svClawE(prog), tail = prog < 1 ? lead - TAIL : lead - TAIL - (SPAN - TAIL)*Math.min(1, (f.t - sw)/0.08), grow = 0.92 + 0.08*svClawE(prog);
+        // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 493) 다 긁은 모양 그대로 잠깐 남았다가(0.14초) 부드럽게 사라짐 — 492는 긁은 뒤 꼬리를 다시 채워서 잔상이 새로 생기는 것처럼 보였음 (사용자 10/26)
+        const A0 = -2.04, SPAN = 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = lead - TAIL, grow = 0.92 + 0.08*svClawE(prog);
         if(c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(im, 0, 0, N, N);
           x.globalCompositeOperation = 'destination-in'; const g = x.createConicGradient(A0, N/2, N/2), cl = v=>Math.max(0, Math.min(1, v)), la = cl(lead/T), ta = cl(tail/T), ma = cl((tail + lead)/2/T), al = v=>'rgba(0,0,0,'+v+')';
-          const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(prog < 1 ? tv*0.6 : 1)); g.addColorStop(ta, al(prog < 1 ? 0 : 1)); if(ma > ta && ma < la) g.addColorStop(ma, al(prog < 1 ? 0.45 : 1)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
+          const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(0.15 + tv*0.6)); g.addColorStop(ta, al(0.15)); if(ma > ta && ma < la) g.addColorStop(ma, al(0.8)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
           x.fillStyle = g; x.fillRect(0, 0, N, N); c.globalAlpha = fade; c.drawImage(oc, -sz*grow/2, -sz*grow/2, sz*grow, sz*grow); }
         else { c.globalAlpha = fade*(prog < 1 ? 0.5 + prog*0.5 : 1); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
         c.restore();
@@ -13179,9 +13185,9 @@ function svDraw(){
       else if(f.el==='wood'){ for(let k=0;k<4;k++){ const a = f.rot + k*1.57, dd = f.r*(0.2 + pr*0.9); c.save(); c.translate(f.x + Math.cos(a)*dd, f.y + Math.sin(a)*dd); c.rotate(a + pr*4); c.fillStyle = k%2 ? '#7ad85a' : '#3fae4a'; c.beginPath(); c.ellipse(0, 0, 4.5, 2.2, 0, 0, 6.283); c.fill(); c.restore(); } }
       else if(f.el==='light'){ const L = f.r*(0.5 + pr*0.7); c.translate(f.x, f.y); c.rotate(f.rot*0.3); c.fillStyle = '#fff6c0'; c.shadowColor = '#ffd04a'; c.shadowBlur = 10; c.beginPath(); for(let k=0;k<8;k++){ const a = k*0.785, rr = k%2 ? L*0.28 : L; c.lineTo(Math.cos(a)*rr, Math.sin(a)*rr); } c.closePath(); c.fill(); }
       else { c.fillStyle = '#7a3cffaa'; for(let k=0;k<3;k++){ const a = f.rot + k*2.1; c.beginPath(); c.arc(f.x + Math.cos(a)*f.r*0.35*(1+pr), f.y + Math.sin(a)*f.r*0.35*(1+pr) - pr*8, f.r*(0.25 + pr*0.35), 0, 6.283); c.fill(); } } }
-    else if(f.k==='slash'){ const R0 = f.r||16, a0 = -2.6 + f.t*9; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 10; c.strokeStyle = f.col; c.lineWidth = 7; c.beginPath(); c.arc(f.x, f.y, R0, a0, a0 + 2); c.stroke(); c.shadowBlur = 0; c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.arc(f.x, f.y, R0, a0 + 0.3, a0 + 1.8); c.stroke(); } // 두꺼운 초승달 + 흰 속
-    else if(f.k==='scythe'){ const a0 = f.t*14; c.lineCap = 'round'; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 14; for(let k=0;k<3;k++){ c.globalAlpha = Math.max(0, a)*(1 - k*0.3); c.lineWidth = 9 - k*2.5; c.beginPath(); c.arc(f.x, f.y, f.r, a0 - k*0.35, a0 + 2.2 - k*0.35); c.stroke(); } c.shadowBlur = 0; c.globalAlpha = Math.max(0, a); c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(f.x, f.y, f.r, a0 + 0.4, a0 + 2); c.stroke(); } // 잔상 셋
-    else if(f.k==='beam'){ c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x2, f.y2); c.lineWidth = 6*a + 1; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 12; c.stroke(); }
+    else if(f.k==='slash'){ const R0 = f.r||16, a0 = -2.6 + f.t*9; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 10; c.strokeStyle = f.col; c.lineWidth = 7; c.beginPath(); c.arc(f.x, f.y, R0, a0, a0 + 2); svGS(c, 8); c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.arc(f.x, f.y, R0, a0 + 0.3, a0 + 1.8); c.stroke(); } // 두꺼운 초승달 + 흰 속
+    else if(f.k==='scythe'){ const a0 = f.t*14; c.lineCap = 'round'; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 14; for(let k=0;k<3;k++){ c.globalAlpha = Math.max(0, a)*(1 - k*0.3); c.lineWidth = 9 - k*2.5; c.beginPath(); c.arc(f.x, f.y, f.r, a0 - k*0.35, a0 + 2.2 - k*0.35); if(k===0) svGS(c, 10); else c.stroke(); } c.shadowBlur = 0; c.globalAlpha = Math.max(0, a); c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(f.x, f.y, f.r, a0 + 0.4, a0 + 2); c.stroke(); } // 잔상 셋
+    else if(f.k==='beam'){ c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x2, f.y2); c.lineWidth = 6*a + 1; c.strokeStyle = f.col; svGS(c, 8); }
     else if(f.k==='pillar'){ const gg = c.createLinearGradient(0, f.y-80, 0, f.y); gg.addColorStop(0, f.col+'00'); gg.addColorStop(1, f.col+'dd'); c.fillStyle = gg; c.fillRect(f.x-7, f.y-80, 14, 80); }
     else if(f.k==='flash'){ c.globalAlpha = a*0.35; c.fillStyle = f.col; c.fillRect(0, 0, SV_W, SV_H); }
     else if(f.k==='num'){ c.fillStyle = f.col; c.font = 'bold '+(f.sz||9)+'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.5; c.strokeStyle = '#000a'; c.strokeText(f.s, f.x, f.y - f.t*13); c.fillText(f.s, f.x, f.y - f.t*13); }
@@ -19720,7 +19726,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 492, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 493, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
