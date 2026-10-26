@@ -12367,6 +12367,7 @@ const SV_MAPS = [
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
   { id:'shadow', nm:'그림자 심연', el:'dark', mid:'shadowLord', fin:'abyssEye', col:['#1c1533','#271d44','#120d24'], gim:'dark', ob:['수정','뒤틀린 나무'], d:'어두워 시야가 좁음 · 순간이동 문으로 건너뜀' }
 ];
+const SV_OBS = [3.4, 2.5, 2.7, 2.5]; // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
 const SV_STK = [1, 1.12, 1.25, 1.4, 1.6], SV_STD = [1, 1.05, 1.1, 1.18, 1.25]; // 단계별 적 체력 · 주는 피해 배율
 const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', frostGiant:'서리거인', frostTyrant:'혹한의 룬', lavaLord:'용암군주', infernoDrake:'겁화의 룬', ruinGuardian:'유적파수꾼', dawnJudge:'심판의 룬', shadowLord:'그림자 군주', abyssEye:'심연의 룬' };
 function svStageOpen(i){ return i===0 || (state.svClear||[]).includes(i-1); }
@@ -12440,11 +12441,17 @@ function svDrawObstacles(c, G, cam){
   map.ob.forEach(b=>{ if(b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
     c.fillStyle = '#0005'; c.beginPath(); c.ellipse(b.x, b.y + b.r*0.55, b.r*1.05, b.r*0.45, 0, 0, 6.283); c.fill();
-    if(im.complete && im.naturalWidth){ const s = b.r*2.6; c.drawImage(im, b.x - s/2, b.y - s*0.68, s, s); }
+    if(im.complete && im.naturalWidth){ const s = b.r*SV_OBS[b.k]; c.drawImage(im, b.x - s/2, b.y + b.r*0.55 - s, s, s); } // 그림은 밑동이 아래쪽에 맞춰져 있음
     else { const tall = b.k % 2 === 0; c.fillStyle = M.col[2]; c.strokeStyle = '#0008'; c.lineWidth = 2;
       if(tall){ c.beginPath(); c.arc(b.x, b.y - b.r*0.5, b.r*1.05, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = M.col[1]; c.beginPath(); c.arc(b.x - b.r*0.3, b.y - b.r*0.8, b.r*0.45, 0, 6.283); c.fill(); }
       else { c.beginPath(); c.ellipse(b.x, b.y - b.r*0.15, b.r, b.r*0.8, 0, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#ffffff22'; c.beginPath(); c.ellipse(b.x - b.r*0.3, b.y - b.r*0.4, b.r*0.35, b.r*0.22, -0.5, 0, 6.283); c.fill(); } }
     c.restore(); });
+}
+function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있으면 장애물을 반투명하게 다시 그려 가려지는 느낌
+  const map = G.map, M = SV_MAPS[map.stage];
+  map.ob.forEach(b=>{ const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); if(!(im.complete && im.naturalWidth)) return; const s = b.r*SV_OBS[b.k], top = b.y + b.r*0.55 - s;
+    if(!G.players.some(p=>Math.abs(p.x-b.x) < s*0.42 && p.y < b.y && p.y + 14 > top)) return;
+    c.save(); c.globalAlpha = 0.55; c.drawImage(im, b.x - s/2, top, s, s); c.restore(); });
 }
 function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도
   const w = 54, h = 90, x0 = 8, y0 = 8, k = w / SV_MW; c.save(); c.globalAlpha = 0.85; c.fillStyle = '#0b0d26cc'; c.fillRect(x0, y0, w, h); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; c.strokeRect(x0, y0, w, h);
@@ -13004,6 +13011,7 @@ function svDraw(){
     const hw = 34, hp = Math.max(0, p.hp/p.maxHp); c.fillStyle = '#000a'; c.fillRect(p.x-hw/2, p.y+20, hw, 4); c.fillStyle = hp > 0.3 ? '#7ce07c' : '#ff5a5a'; c.fillRect(p.x-hw/2, p.y+20, hw*hp, 4);
     if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : '친구', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
+  if(G.map) svDrawOverlap(c, G, cam);
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 8; c.beginPath(); c.arc(b.x, b.y, b.kind==='ebul' ? 5 : b.kind==='boom' ? 5 : 3, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); } c.restore(); });
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
@@ -19551,7 +19559,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 478, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 479, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
