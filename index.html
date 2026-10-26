@@ -12290,7 +12290,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 const SV_W = 360, SV_H = 600, SV_T_MID = 300, SV_T_END = 600, SV_MAX_W = 5, SV_MAX_P = 4, SV_ULT_CD = 45;
 const SV_LINE_IDS = ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v));
 const SV_SK = { // 스킬 20개 — cd: 간격(초) · pair: 진화에 필요한 짝 능력 (이름은 LINE_KITS 그대로)
-  fire_a_1:{ d:'내 둘레를 불꽃 발톱이 계속 휩쓺 · 치명타가 잘 터짐', cd:0, pair:'crit' },
+  fire_a_1:{ nm:'불꽃 발톱', d:'일정 시간마다 발톱으로 앞쪽을 넓게 휩쓺 · 치명타가 잘 터짐', cd:0.9, pair:'crit' },
   fire_a_2:{ d:'내 둘레가 터져 큰 범위 피해 · 화상', cd:2.6, pair:'area' },
   fire_b_1:{ d:'앞쪽으로 불티 여러 발 · 화상', cd:1.3, pair:'haste' },
   fire_b_2:{ d:'떨어진 적 자리에서 폭발 · 화상', cd:1.6, pair:'might' },
@@ -12347,7 +12347,7 @@ const SV_PCOL = ['#ffd557', '#7ae0ff']; // 1P · 2P
 let SV_HPK = 1, SV_SPAWN = 1, SV_CONTACT = 0.5, SV_GROW = 80, SV_XPK = 2, SV_DMGK = 1.3; // 세기 (let — 시뮬)
 let sv = null;
 function svSkLine(id){ return id.slice(0, -2); }
-function svSkNm(id){ const k = LINE_KITS[svSkLine(id)]; return k ? k['s'+id.slice(-1)].name : id; }
+function svSkNm(id){ if(SV_SK[id] && SV_SK[id].nm) return SV_SK[id].nm; const k = LINE_KITS[svSkLine(id)]; return k ? k['s'+id.slice(-1)].name : id; } // 서바이벌 동작에 안 맞는 이름은 SV_SK.nm으로 바꿈
 function svSkIc(id){ return 'assets/ui/sk_'+id+'.webp'; }
 function svLpNm(l){ return LINE_KITS[l].passive.name; }
 function svKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[Math.min(4, r)]+'_'+k[1]; }
@@ -12753,12 +12753,6 @@ function svAttack(p, w, dt){
   const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
   const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?2:1), col, c); };
   const inR = (R, x, y)=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-(x==null ? p.x : x), e.y-(y==null ? p.y : y)) < R + e.r);
-  if(id==='fire_a_1'){ // (build 485) 불꽃 돌진 — 사용자 결정 10/26: 대상을 골라 때리지 않고, 내 둘레를 불꽃 발톱이 계속 휩쓺 (지나가는 자리의 적을 모두 벰)
-    const R0 = (62 + lv*5)*ar, spd = (5.2 + (ev ? 1.6 : 0)) / svCdK(p, w), arcs = ev ? 2 : 1, prev = w.sw || 0; w.sw = prev + spd*dt;
-    G.en.forEach(e=>{ if(e.hp<=0) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > R0 + e.r || d < 8) return; const ea = Math.atan2(dy, dx);
-      for(let k=0;k<arcs;k++){ const off = k*Math.PI, t0 = prev + off, t1 = w.sw + off, rel = ((ea - t0) % 6.283 + 6.283) % 6.283; if(rel <= t1 - t0){ const c = Math.random() < 0.25 + cr; svHitBy(p, e, 15*m*(c?2:1), col, c); if(ev) svBurn(e, 4*m, 2); } } });
-    return;
-  }
   if(id==='water_b_2'){ // 빙결 — 둘레를 도는 얼음 (간격 없이 계속)
     const o = svOrbit(p, w); w.a += dt * (2.6 + (ev ? 1.2 : 0));
     for(let k=0;k<o.n;k++){ const a = w.a + k*6.283/o.n, x = p.x + Math.cos(a)*o.rad, y = p.y + Math.sin(a)*o.rad;
@@ -12766,7 +12760,13 @@ function svAttack(p, w, dt){
     return;
   }
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
-  if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
+  if(id==='fire_a_1'){ // (build 486) 불꽃 발톱 — 사용자 결정 10/26: 일정 시간마다 발톱으로 근처를 휩쓺 (대상을 고르지 않음 · 바라보는 쪽 넓은 부채꼴 · 번갈아 좌우로)
+    const R0 = (66 + lv*5)*ar, d0 = Math.atan2(p.face[1], p.face[0]), half = 1.75; w.alt = -(w.alt || 1);
+    [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{
+      G.en.forEach(e=>{ if(e.hp<=0) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > R0 + e.r) return; const da = Math.atan2(Math.sin(Math.atan2(dy, dx)-dir), Math.cos(Math.atan2(dy, dx)-dir)); if(Math.abs(da) > half && d > e.r + 14) return;
+        const c = Math.random() < 0.25 + cr; svHitBy(p, e, 28*m*(c?2:1), col, c); if(ev) svBurn(e, 4*m, 2); });
+      svFx({ k:'claw', x:p.x, y:p.y, t:0, d:0.26, col, r:R0, a:dir, s:w.alt }); }); }
+  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
   else if(id==='fire_b_1'){ const e = svNear(p.x, p.y, 220), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : Math.atan2(p.face[1], p.face[0]), n = 3 + Math.floor(lv/2) + (ev ? 3 : 0);
     for(let k=0;k<n;k++){ const a = a0 + (n > 1 ? (k/(n-1) - 0.5) : 0)*0.9; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*330, vy:Math.sin(a)*330, kind:'spark', life:0.75, dmg:10*m, burn:3*m, pierce: ev ? 2 : 1, hitS:[], col, p, crit:cr }); } }
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } for(let k=0;k<(ev ? 3 : 1);k++){ const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p }); } }
@@ -12879,7 +12879,7 @@ function svTick(dt){
   if(G.xp >= G.xpNext && !G.pickWait) svLevelUp();
 }
 function svFxTick(dt){ const G = sv.game; if(!G) return; G.fx.forEach(f=>f.t += dt); G.fx = G.fx.filter(f=>f.t < f.d); G.pt.forEach(p=>{ p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.94; p.vy *= 0.94; }); G.pt = G.pt.filter(p=>p.t < p.d); if(G.shake > 0) G.shake -= dt;
-  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.kick > 0) w.kick -= dt; if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; if(w.id==='fire_a_1' && sv.net.role==='guest') w.sw = (w.sw||0) + dt*5.2; })); }
+  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.kick > 0) w.kick -= dt; if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
 function svCardHtml(me, c, i){
   if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, S = SV_SK[c.id], pr = SV_PAS[S.pair], evoReady = lv===5 && svPasLv(me, S.pair) > 0;
     return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="'+svSkIc(c.id)+'" alt=""><b>'+svSkNm(c.id)+' <small>'+SPIRITS[svKey(svSkLine(c.id),0)].name+'</small></b><span>'+(w ? '스킬 Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 스킬')+'</span><small>'+S.d+' · 진화 짝 '+svPI(S.pair)+pr.nm+(evoReady ? ' '+uiIc('check') : '')+'</small></button>'; }
@@ -13029,10 +13029,6 @@ function svDraw(){
   G.players.forEach((p,i)=>{ const pc = SV_PCOL[i];
     if(i===G.me){ c.beginPath(); c.arc(p.x, p.y, p.mag*(1+0.25*svPasLv(p,'greed')), 0, 6.283); c.strokeStyle = '#7ae0ff14'; c.lineWidth = 1; c.stroke(); }
     // 얼음 고리
-    p.wp.forEach(w=>{ if(w.id!=='fire_a_1' || p.down) return; const R0 = (62 + w.lv*5)*(1+0.12*svPasLv(p,'area')), col = SV_EC.fire; // 휩쓰는 불꽃 발톱 (꼬리가 길게 남는 초승달)
-      for(let k=0;k<(w.evo ? 2 : 1);k++){ const a = (w.sw||0) + k*Math.PI; c.save(); c.lineCap = 'round'; c.shadowColor = col; c.shadowBlur = 12;
-        for(let j=0;j<5;j++){ c.globalAlpha = 0.75 - j*0.14; c.strokeStyle = j ? col : '#ffe2a0'; c.lineWidth = (w.evo ? 10 : 8) - j*1.3; c.beginPath(); c.arc(p.x, p.y, R0 - 6, a - 0.22 - j*0.2, a - j*0.2); c.stroke(); }
-        c.globalAlpha = 0.9; c.fillStyle = '#fff4d0'; c.beginPath(); c.arc(p.x + Math.cos(a)*(R0-6), p.y + Math.sin(a)*(R0-6), 3.5, 0, 6.283); c.fill(); c.restore(); } });
     p.wp.forEach(w=>{ if(w.id!=='water_b_2') return; const { n, rad } = svOrbit(p, w);
       for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); c.restore(); } });
     // 따라다니는 무기 정령 (대표 정령 = 기본 무기는 몸으로)
@@ -13064,6 +13060,8 @@ function svDraw(){
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 10; c.stroke(); }
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
+    else if(f.k==='claw'){ const pr = Math.min(1, f.t/(f.d*0.6)), half = 1.75, st = f.a - half*f.s, en = st + 2*half*f.s*pr; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 12;
+      for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(f.x, f.y, rr, Math.max(st, en - 1.6), en); else c.arc(f.x, f.y, rr, en, Math.min(st, en + 1.6)); c.stroke(); } } // 발톱 자국 셋
     else if(f.k==='slash'){ const R0 = f.r||16, a0 = -2.6 + f.t*9; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 10; c.strokeStyle = f.col; c.lineWidth = 7; c.beginPath(); c.arc(f.x, f.y, R0, a0, a0 + 2); c.stroke(); c.shadowBlur = 0; c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.arc(f.x, f.y, R0, a0 + 0.3, a0 + 1.8); c.stroke(); } // 두꺼운 초승달 + 흰 속
     else if(f.k==='scythe'){ const a0 = f.t*14; c.lineCap = 'round'; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 14; for(let k=0;k<3;k++){ c.globalAlpha = Math.max(0, a)*(1 - k*0.3); c.lineWidth = 9 - k*2.5; c.beginPath(); c.arc(f.x, f.y, f.r, a0 - k*0.35, a0 + 2.2 - k*0.35); c.stroke(); } c.shadowBlur = 0; c.globalAlpha = Math.max(0, a); c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(f.x, f.y, f.r, a0 + 0.4, a0 + 2); c.stroke(); } // 잔상 셋
     else if(f.k==='beam'){ c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x2, f.y2); c.lineWidth = 6*a + 1; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 12; c.stroke(); }
@@ -19605,7 +19603,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 485, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 486, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
