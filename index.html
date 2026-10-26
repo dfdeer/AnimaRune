@@ -12411,18 +12411,18 @@ function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
 }
 function svGroundPat(c, map){ // 바닥 무늬 — 그림이 있으면 그림, 없으면 임시 무늬
   const M = SV_MAPS[map.stage], im = svImg('assets/survival/'+M.id+'_ground.webp');
-  if(im.complete && im.naturalWidth){ if(sv.patSrc !== im){ sv.patSrc = im; sv.pat = c.createPattern(im, 'repeat'); sv.patK = 512 / im.naturalWidth; } return sv.pat; }
+  if(im.complete && im.naturalWidth){ if(sv.patSrc !== im){ sv.patSrc = im; sv.pat = c.createPattern(im, 'repeat'); sv.patK = 512 / im.naturalWidth; sv.patImg = true; } return sv.pat; }
   if(sv.patSrc !== M.id){ const oc = document.createElement('canvas'); oc.width = oc.height = 256; const x = oc.getContext('2d'), R = svRng(map.seed + 7);
     x.fillStyle = M.col[0]; x.fillRect(0, 0, 256, 256);
     for(let k=0;k<70;k++){ const px = R()*256, py = R()*256, r = 6 + R()*26; x.fillStyle = (k%2 ? M.col[1] : M.col[2]) + '66'; x.beginPath(); x.arc(px, py, r, 0, 6.283); x.fill(); x.beginPath(); x.arc(px-256, py, r, 0, 6.283); x.arc(px, py-256, r, 0, 6.283); x.fill(); }
-    sv.patSrc = M.id; sv.pat = c.createPattern(oc, 'repeat'); sv.patK = 1; }
+    sv.patSrc = M.id; sv.pat = c.createPattern(oc, 'repeat'); sv.patK = 1; sv.patImg = false; }
   return sv.pat;
 }
 function svDrawMap(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage], vis = o=>o.x > cam.x - 80 && o.x < cam.x + SV_W + 80 && o.y > cam.y - 80 && o.y < cam.y + SV_H + 80;
   const pat = svGroundPat(c, map); c.save(); if(sv.patK !== 1) c.scale(sv.patK, sv.patK); c.fillStyle = pat; c.fillRect(cam.x/sv.patK - 4, cam.y/sv.patK - 4, (SV_W+8)/sv.patK, (SV_H+8)/sv.patK); c.restore();
   c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); // 맵 끝
-  map.deco.forEach(d=>{ if(!vis(d)) return; const im = svImg('assets/survival/'+M.id+'_deco'+(d.k+1)+'.webp'); if(im.complete && im.naturalWidth){ const s = 26*d.s; c.drawImage(im, d.x-s/2, d.y-s/2, s, s); } else { c.fillStyle = M.col[2]+'aa'; c.beginPath(); c.arc(d.x, d.y, 3*d.s, 0, 6.283); c.fill(); } });
+  map.deco.forEach(d=>{ if(!vis(d)) return; const im = svImg('assets/survival/'+M.id+'_deco'+(d.k+1)+'.webp'); if(im.complete && im.naturalWidth){ const s = 26*d.s; c.drawImage(im, d.x-s/2, d.y-s/2, s, s); } else if(!sv.patImg){ c.fillStyle = M.col[2]+'aa'; c.beginPath(); c.arc(d.x, d.y, 3*d.s, 0, 6.283); c.fill(); } }); // 바닥 그림이 오면 임시 점은 안 그림
   map.zones.forEach(z=>{ if(!vis(z)) return; const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
     if(z.kind==='trap'){ const st = svTrapState(z, G.t); if(has) c.drawImage(im, z.x-z.r, z.y-z.r, z.r*2, z.r*2); else { c.fillStyle = '#4a4033'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); c.strokeStyle = '#2b2419'; c.lineWidth = 2; c.strokeRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
       if(st >= 1){ c.fillStyle = st===2 ? '#ffd04acc' : '#ff6a6a55'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
@@ -19551,7 +19551,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 477, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 478, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
