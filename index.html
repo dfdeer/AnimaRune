@@ -992,6 +992,7 @@
   .sv-st.on{border-color:#ffd557; box-shadow:0 0 0 1px #ffd557, 0 0 12px #ffd55788;} .sv-st.lock{filter:grayscale(.85) brightness(.5);} .sv-st i{position:absolute; top:3px; right:3px; font-style:normal;}
   .sv-sti{display:flex; flex-direction:column; gap:4px; padding:8px 10px; border-radius:12px; background:#ffffff0b; border:1px solid #ffffff1a;} .sv-sti > b{font-size:14px;} .sv-sti small{font-size:11px; color:#c9d2ff; line-height:1.4;}
   .sv-sti > div{display:flex; align-items:center; gap:6px;} .sv-sti > div img{width:44px; height:44px; object-fit:contain; flex:none;} .sv-sti > div span{flex:1; font-size:10px; color:#9aa6e0; line-height:1.3; min-width:0;} .sv-sti > div span b{font-size:12px; color:#fff;}
+  .sv-grow{display:flex; align-items:center; gap:2px; margin-top:3px;} .sv-grow span{display:flex; flex-direction:column; align-items:center; min-width:0;} .sv-grow img{width:30px; height:30px; object-fit:contain;} .sv-grow i{font-style:normal; font-size:8.5px; color:#9aa6e0;} .sv-grow b{font-size:11px; color:#9aa6e0;} /* (build 483) 대표 정령이 판 안에서 자라는 순서 */
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
@@ -12351,6 +12352,10 @@ function svSkIc(id){ return 'assets/ui/sk_'+id+'.webp'; }
 function svLpNm(l){ return LINE_KITS[l].passive.name; }
 function svKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[Math.min(4, r)]+'_'+k[1]; }
 function svWArt(w){ return svKey(svSkLine(w.id), w.evo ? 4 : Math.min(3, w.lv-1)); } // 따라다니는 정령 그림 — Lv1 커먼 … Lv4·5 전설 · 각성 = 신화
+function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본 (맞을 때 번쩍 · 얼음 · 화상) — 한 번 만들어 둠
+  sv.tints = sv.tints || {}; const k = im.src + col; if(sv.tints[k]) return sv.tints[k];
+  const oc = document.createElement('canvas'); oc.width = im.naturalWidth; oc.height = im.naturalHeight; const x = oc.getContext('2d'); x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, oc.width, oc.height); sv.tints[k] = oc; return oc;
+}
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svRand(a){ return a[Math.floor(Math.random()*a.length)]; }
 function svFmtT(s){ s = Math.floor(s||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
@@ -12367,7 +12372,7 @@ const SV_MAPS = [
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
   { id:'shadow', nm:'그림자 심연', el:'dark', mid:'shadowLord', fin:'abyssEye', col:['#1c1533','#271d44','#120d24'], gim:'dark', ob:['수정','뒤틀린 나무'], d:'어두워 시야가 좁음 · 순간이동 문으로 건너뜀' }
 ];
-const SV_OBS = [3.4, 2.5, 2.7, 2.5]; // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
+const SV_OBS = [3.4, 2.5, 2.7, 2.5], SV_OBSH = [0.85, 1.15, 1.2, 1.1]; // SV_OBSH: 그림자 가로 반지름 (원 반지름의 몇 배 · 나무는 밑동이 좁아 작게) // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
 const SV_STK = [1, 1.12, 1.25, 1.4, 1.6], SV_STD = [1, 1.05, 1.1, 1.18, 1.25]; // 단계별 적 체력 · 주는 피해 배율
 const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', frostGiant:'서리거인', frostTyrant:'혹한의 룬', lavaLord:'용암군주', infernoDrake:'겁화의 룬', ruinGuardian:'유적파수꾼', dawnJudge:'심판의 룬', shadowLord:'그림자 군주', abyssEye:'심연의 룬' };
 let SV_STAGE_READY = 1; // (build 481) 사용자 결정 10/26: 일단 숲만 — 그림이 다 오면 이 숫자를 늘려 다음 단계를 엶 (2~5단계는 「준비 중」)
@@ -12441,7 +12446,9 @@ function svDrawObstacles(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage];
   map.ob.forEach(b=>{ if(b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
-    c.fillStyle = '#0005'; c.beginPath(); c.ellipse(b.x, b.y + b.r*0.55, b.r*1.05, b.r*0.45, 0, 0, 6.283); c.fill();
+    { const has = im.complete && im.naturalWidth, rx = b.r*(has ? SV_OBSH[b.k] : 1), ry = rx*0.32, cy = b.y + b.r*0.55 - ry*0.55; // 밑동 바로 밑에 붙는 부드러운 그림자 (전엔 그림 아래로 삐져나와 떠 보였음)
+      const g = c.createRadialGradient(b.x, cy, 0, b.x, cy, rx); g.addColorStop(0, '#0000004d'); g.addColorStop(0.65, '#00000026'); g.addColorStop(1, '#00000000');
+      c.save(); c.translate(b.x, cy); c.scale(1, ry/rx); c.translate(-b.x, -cy); c.fillStyle = g; c.beginPath(); c.arc(b.x, cy, rx, 0, 6.283); c.fill(); c.restore(); }
     if(im.complete && im.naturalWidth){ const s = b.r*SV_OBS[b.k]; c.drawImage(im, b.x - s/2, b.y + b.r*0.55 - s, s, s); } // 그림은 밑동이 아래쪽에 맞춰져 있음
     else { const tall = b.k % 2 === 0; c.fillStyle = M.col[2]; c.strokeStyle = '#0008'; c.lineWidth = 2;
       if(tall){ c.beginPath(); c.arc(b.x, b.y - b.r*0.5, b.r*1.05, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = M.col[1]; c.beginPath(); c.arc(b.x - b.r*0.3, b.y - b.r*0.8, b.r*0.45, 0, 6.283); c.fill(); }
@@ -12454,13 +12461,25 @@ function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있
     if(!G.players.some(p=>Math.abs(p.x-b.x) < s*0.42 && p.y < b.y && p.y + 14 > top)) return;
     c.save(); c.globalAlpha = 0.55; c.drawImage(im, b.x - s/2, top, s, s); c.restore(); });
 }
-function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도
-  const w = 54, h = 90, x0 = 8, y0 = 8, k = w / SV_MW; c.save(); c.globalAlpha = 0.85; c.fillStyle = '#0b0d26cc'; c.fillRect(x0, y0, w, h); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; c.strokeRect(x0, y0, w, h);
-  c.strokeStyle = '#ffffff99'; c.strokeRect(x0 + cam.x*k, y0 + cam.y*k, SV_W*k, SV_H*k);
-  const dot = (x, y, col, r)=>{ c.fillStyle = col; c.beginPath(); c.arc(x0 + x*k, y0 + y*k, r, 0, 6.283); c.fill(); };
-  G.loot.forEach(o=>{ if(o.k==='pod') dot(o.x, o.y, '#ffd557', 1.4); else if(o.k==='rune') dot(o.x, o.y, '#ff5777', 2); });
-  G.en.forEach(e=>{ if(e.kind==='boss') dot(e.x, e.y, '#ff3a3a', 3); else if(e.kind==='elite') dot(e.x, e.y, '#c9a6ff', 2); });
-  G.players.forEach((p,i)=>dot(p.x, p.y, SV_PCOL[i], 2.2)); c.restore();
+function svMiniBase(map){ // 작은 지도 바탕 — 맵마다 한 번만 그려 둠 (바닥색 · 장애물 · 기믹 자리)
+  if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 128, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
+  const g = x.createRadialGradient(W/2, H/2, 10, W/2, H/2, H*0.7); g.addColorStop(0, M.col[1]); g.addColorStop(1, M.col[2]); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  map.zones.forEach(z=>{ x.fillStyle = { spring:'#7ae0ffcc', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
+  map.ob.forEach(o=>{ x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
+  sv.miniFor = map; sv.miniC = oc; return oc;
+}
+function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도 — 둥근 틀 · 실제 맵 모양 · 내 위치 · 보스 · 룬 · 상자
+  const w = 62, h = Math.round(w*SV_MH/SV_MW), x0 = 10, y0 = 10, k = w / SV_MW, rr = 9, me = G.players[G.me];
+  const box = ()=>{ c.beginPath(); c.moveTo(x0+rr, y0); c.arcTo(x0+w, y0, x0+w, y0+h, rr); c.arcTo(x0+w, y0+h, x0, y0+h, rr); c.arcTo(x0, y0+h, x0, y0, rr); c.arcTo(x0, y0, x0+w, y0, rr); c.closePath(); };
+  c.save(); c.shadowColor = '#000a'; c.shadowBlur = 8; box(); c.fillStyle = '#0b0d26'; c.fill(); c.restore();
+  c.save(); box(); c.clip(); c.globalAlpha = 0.92; c.drawImage(svMiniBase(G.map), x0, y0, w, h); c.globalAlpha = 1;
+  c.fillStyle = '#ffffff1f'; c.strokeStyle = '#ffffffcc'; c.lineWidth = 1; c.fillRect(x0 + cam.x*k, y0 + cam.y*k, SV_W*k, SV_H*k); c.strokeRect(x0 + cam.x*k + 0.5, y0 + cam.y*k + 0.5, SV_W*k - 1, SV_H*k - 1); // 지금 보이는 곳
+  const P = (o)=>[x0 + o.x*k, y0 + o.y*k];
+  G.loot.forEach(o=>{ if(o.k==='pod'){ const [x, y] = P(o); c.fillStyle = '#ffd557'; c.strokeStyle = '#5a3a00'; c.lineWidth = 0.8; c.fillRect(x-1.8, y-1.5, 3.6, 3); c.strokeRect(x-1.8, y-1.5, 3.6, 3); }
+    else if(o.k==='rune'){ const [x, y] = P(o); c.fillStyle = '#ff5777'; c.beginPath(); c.moveTo(x, y-3); c.lineTo(x+2.4, y); c.lineTo(x, y+3); c.lineTo(x-2.4, y); c.closePath(); c.fill(); } });
+  G.en.forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite') return; const [x, y] = P(e); if(e.kind==='boss'){ const pr = 3.2 + Math.sin(G.t*6)*0.8; c.strokeStyle = '#ff3a3a'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, pr + 2, 0, 6.283); c.stroke(); c.fillStyle = '#ff3a3a'; c.beginPath(); c.arc(x, y, 2.6, 0, 6.283); c.fill(); } else { c.fillStyle = '#c9a6ff'; c.beginPath(); c.arc(x, y, 1.8, 0, 6.283); c.fill(); } });
+  G.players.forEach((p,i)=>{ const [x, y] = P(p); c.fillStyle = '#000a'; c.beginPath(); c.arc(x, y, 3.4, 0, 6.283); c.fill(); c.fillStyle = p===me ? '#ffffff' : SV_PCOL[i]; c.beginPath(); c.arc(x, y, 2.4, 0, 6.283); c.fill(); if(p===me){ c.strokeStyle = SV_PCOL[i]; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, 3.6, 0, 6.283); c.stroke(); } });
+  c.restore(); c.save(); box(); c.strokeStyle = '#ffffff66'; c.lineWidth = 1.2; c.stroke(); c.restore();
 }
 // ---------- 화면 · 로비 ----------
 function showSurvival(){
@@ -12495,7 +12514,7 @@ function svLobby(msg){
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
       + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
       + '<small><img src="'+svSkIc(sk1)+'" alt="">시작 스킬 · '+svSkNm(sk1)+' — '+SV_SK[sk1].d+' (진화 짝 '+svPI(SV_SK[sk1].pair)+P.nm+')</small>'
-      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small></div></div>'
+      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small><div class="sv-grow" title="판 안에서 자람">'+[0,1,2,3,4].map(r=>'<span><img src="assets/spirits/'+svKey(V,r)+'.webp" alt=""><i>'+['Lv1','Lv2','Lv3','Lv4·5','각성'][r]+'</i></span>').join('<b>›</b>')+'</div></div></div>'
     + '<div class="sv-ltl">스킬 <em>'+u.sk.length+'/20</em> <small>레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? SV_SK[skv].d+' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
@@ -12644,7 +12663,7 @@ function svStart(role){
   let last = performance.now();
   const loop = now=>{ if(!sv || !sv.cv) return; let dt = Math.min(0.05, (now-last)/1000); last = now; if(document.hidden && role==='solo') dt = 0;
     svInput(dt);
-    if(role!=='guest' && !G.over && !G.paused && !G.pickWait) svTick(dt);
+    if(G.hsCd > 0) G.hsCd -= dt; if(G.hitStop > 0){ G.hitStop -= dt; } else if(role!=='guest' && !G.over && !G.paused && !G.pickWait) svTick(dt);
     if(role==='guest') svGuestLerp(dt);
     svFxTick(dt); svDraw(); svHud(); sv.unlT = (sv.unlT||0) + dt; if(sv.unlT > 1){ sv.unlT = 0; svCheckUnl(); } sv.raf = requestAnimationFrame(loop); };
   sv.raf = requestAnimationFrame(loop);
@@ -12685,7 +12704,7 @@ function svSpawn(kind){
   const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * (G.players.length > 1 ? 1.6 : 1) * SV_STK[G.stage||0];
   const el = Math.random() < 0.6 ? SV_MAPS[G.stage||0].el : svRand(ELEMENTS), v = Math.random()<0.5 ? 'a' : 'b';
   const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:20, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
-  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', fl:0 });
+  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
 }
 function svSpawnBoss(g, final){
   const G = sv.game, st = G.stage||0, hp = (final ? 16000 : 6000) * SV_HPK * (G.players.length > 1 ? 1.7 : 1) * (1 + G.t/300) * SV_STK[st];
@@ -12695,12 +12714,15 @@ function svSpawnBoss(g, final){
 }
 function svNear(x, y, r, pred){ let best = null, bd = r; sv.game.en.forEach(e=>{ if(e.hp<=0 || (pred && !pred(e))) return; const d = Math.hypot(e.x-x, e.y-y) - e.r; if(d < bd){ bd = d; best = e; } }); return best; }
 function svHit(e, v, col, crit){
-  if(e.hp<=0) return; if(e.curse > 0) v *= 1.25; e.hp -= v; e.fl = 0.1;
+  if(e.hp<=0) return; if(e.curse > 0) v *= 1.25; e.hp -= v; e.fl = 0.12; const G = sv.game;
+  if(G.pt.length < 200 && Math.random() < (crit ? 1 : 0.35)) for(let k=0;k<(crit ? 5 : 2);k++){ const a = Math.random()*6.283, s = 70 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*s, Math.sin(a)*s, k%2 ? '#ffffff' : (col||'#fff'), 0.28, crit ? 3 : 2); } // 맞은 자리 불꽃
+  if((crit && v > e.max*0.25) || (e.kind!=='normal' && e.kind!=='fast' && e.hp <= 0)){ if(!(G.hsCd > 0)){ G.hitStop = e.kind==='boss' || e.kind==='elite' ? 0.09 : 0.035; G.hsCd = 0.3; G.shake = Math.max(G.shake||0, 0.12); } } // 큰 한 방: 짧게 멈칫
   if(sv.game.fx.length < 90 && (crit || Math.random() < 0.3)) svFx({ k:'num', x:e.x + Math.random()*10-5, y:e.y-e.r-4, t:0, d:0.5, s:Math.round(v)+(crit?'!':''), col: crit ? '#ffb02e' : '#fff', sz: crit ? 11 : 9 });
   if(e.hp<=0) svKill(e, col);
 }
 function svHitBy(p, e, v, col, crit){ // 대표 패시브가 붙는 피해
   if(!e || e.hp<=0) return; const L = p && p.leader;
+  if(p && e.kind!=='boss'){ const d = Math.hypot(e.x-p.x, e.y-p.y)||1, kb = (e.kind==='elite' ? 1.5 : 4) * (crit ? 2 : 1); e.x += (e.x-p.x)/d*kb; e.y += (e.y-p.y)/d*kb; } // 밀림
   if(L==='fire_a' && p.hp <= p.maxHp*0.5) v *= 1.3;
   if(L==='dark_a') v *= 1 + 0.4*Math.max(0, 1 - e.hp/e.max);
   if(p){ const P = k=>p.ps[k] || 0; if(P('hunter') && (e.kind==='elite' || e.kind==='boss')) v *= 1 + 0.15*P('hunter'); if(P('axe') && e.hp/e.max < 0.3) v *= 1 + 0.2*P('axe'); if(P('frost') && (e.slow > 0 || e.frz > 0 || e.web > 0)) v *= 1 + 0.12*P('frost');
@@ -12738,6 +12760,7 @@ function svAttack(p, w, dt){
     return;
   }
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
+  { const t0 = svNear(p.x, p.y, 320); w.kick = 0.24; w.kdir = t0 ? Math.atan2(t0.y-p.y, t0.x-p.x) : Math.atan2(p.face[1], p.face[0]); } // (build 484) 공격 모션: 쓸 때마다 정령이 대상 쪽으로 튀어나갔다 돌아옴
   if(id==='fire_a_1'){ const e = svNear(p.x, p.y, 95*ar); if(!e){ w.cd = 0.2; return; } const c = Math.random() < 0.25 + cr; svHitBy(p, e, 30*m*(c?2:1), col, c); svFx({ k:'slash', x:e.x, y:e.y, t:0, d:0.22, col, r:e.r+8 });
     if(ev){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col, r:40 }); inR(40, e.x, e.y).forEach(o=>{ if(o!==e){ hit(o, 15*m); svBurn(o, 4*m, 2); } }); } w.dash = [e.x, e.y, 0.18]; }
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
@@ -12797,6 +12820,7 @@ function svTick(dt){
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
     const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
     if(d > 700 && e.kind!=='boss'){ const q = svSpawnPos(); e.x = q.x; e.y = q.y; return; } // 너무 멀어진 적은 다시 곁으로
+    if(dx < -2) e.lf = 1; else if(dx > 2) e.lf = 0; // 바라보는 쪽
     if(d > e.r + 8){ e.x += dx/d*sp*dt; e.y += dy/d*sp*dt; if(e.kind!=='boss') svCollide(e, e.r); }
     if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
       const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, 25*svWM(tg, th), '#9be07a'); } // 가시 갑옷 반사
@@ -12851,7 +12875,7 @@ function svTick(dt){
   if(G.xp >= G.xpNext && !G.pickWait) svLevelUp();
 }
 function svFxTick(dt){ const G = sv.game; if(!G) return; G.fx.forEach(f=>f.t += dt); G.fx = G.fx.filter(f=>f.t < f.d); G.pt.forEach(p=>{ p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.94; p.vy *= 0.94; }); G.pt = G.pt.filter(p=>p.t < p.d); if(G.shake > 0) G.shake -= dt;
-  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
+  G.players.forEach(p=>p.wp.forEach(w=>{ if(w.kick > 0) w.kick -= dt; if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
 function svCardHtml(me, c, i){
   if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, S = SV_SK[c.id], pr = SV_PAS[S.pair], evoReady = lv===5 && svPasLv(me, S.pair) > 0;
     return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="'+svSkIc(c.id)+'" alt=""><b>'+svSkNm(c.id)+' <small>'+SPIRITS[svKey(svSkLine(c.id),0)].name+'</small></b><span>'+(w ? '스킬 Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 스킬')+'</span><small>'+S.d+' · 진화 짝 '+svPI(S.pair)+pr.nm+(evoReady ? ' '+uiIc('check') : '')+'</small></button>'; }
@@ -12985,7 +13009,15 @@ function svDraw(){
     if(o.k==='rune'){ const k = 1 + Math.sin(G.t*5)*0.12; c.scale(k, k); c.shadowColor = '#ff5777'; c.shadowBlur = 14; }
     if(im.complete && im.naturalWidth) c.drawImage(im, -sz/2, -sz/2, sz, sz);
     c.restore(); });
-  G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const z = e.r*2.5; c.save(); c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.fillStyle = '#2a1f3f'; c.fill(); const im = svImg(e.art); if(im.complete && im.naturalWidth){ c.clip(); c.drawImage(im, e.x-z/2, e.y-z/2+1, z, z); }
+  G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const mi = e.mob && svImg(e.mob);
+    if(mi && mi.complete && mi.naturalWidth){ const sz = e.r*3.3, hop = Math.abs(Math.sin(G.t*9 + e.x*0.05))*2.5; // 몬스터 그림: 통통 튀며 걷기 · 바라보는 쪽으로 뒤집기
+      c.save(); c.fillStyle = '#00000040'; c.beginPath(); c.ellipse(e.x, e.y + e.r*0.8, e.r*0.95, e.r*0.32, 0, 0, 6.283); c.fill();
+      c.translate(e.x, e.y + e.r*0.85); if(e.lf) c.scale(-1, 1); c.drawImage(mi, -sz/2, -sz - hop, sz, sz);
+      if(e.fl > 0 || e.frz > 0 || e.burn > 0 || e.web > 0){ c.globalAlpha = e.fl > 0 ? 0.65 : 0.4; c.drawImage(svTint(mi, e.fl > 0 ? '#ffffff' : e.frz > 0 ? '#a0e6ff' : e.burn > 0 ? '#ff7828' : '#e6f0dc'), -sz/2, -sz - hop, sz, sz); } // 그림 모양대로만 물듦
+      c.restore(); if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
+      if(e.kind==='elite' || e.r >= 16){ const w = e.r*2, h = Math.max(0, e.hp/e.max); c.fillStyle = '#0009'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w, 4); c.fillStyle = '#ffd557'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w*h, 4); }
+      return; }
+    const z = e.r*2.5; c.save(); c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.fillStyle = '#2a1f3f'; c.fill(); const im = svImg(e.art); if(im.complete && im.naturalWidth){ c.clip(); c.drawImage(im, e.x-z/2, e.y-z/2+1, z, z); }
     if(e.fl > 0){ c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.frz > 0){ c.fillStyle = 'rgba(160,230,255,.45)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.burn > 0){ c.fillStyle = 'rgba(255,120,40,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.web > 0){ c.fillStyle = 'rgba(230,240,220,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } c.restore();
     if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
     c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.lineWidth = e.kind==='boss' ? 3 : 1.6; c.strokeStyle = e.slow>0 ? '#9fe6ff' : (e.kind==='boss' ? '#ff3a3a' : e.kind==='elite' ? '#c9a6ff' : '#ff6a6a'); c.stroke();
@@ -12998,14 +13030,17 @@ function svDraw(){
     // 따라다니는 무기 정령 (대표 정령 = 기본 무기는 몸으로)
     const sub = p.wp.slice(1); sub.forEach((w,k)=>{ const a = (w.a||0)*0.6 + k*6.283/Math.max(1, sub.length), rx = p.x + Math.cos(a)*32, ry = p.y + Math.sin(a)*24 - 6; let x = rx, y = ry;
       if(w.dash){ const f = w.dash[2]/0.18; x = rx + (w.dash[0]-rx)*f*0.8; y = ry + (w.dash[1]-ry)*f*0.8; }
+      let sq = 1; if(w.kick > 0){ const f = w.kick/0.24, out = Math.sin((1-f)*Math.PI); x += Math.cos(w.kdir||0)*out*16; y += Math.sin(w.kdir||0)*out*16; sq = 1 + out*0.25; } // 튀어나감 · 늘어남
       const sz = 22 + Math.min(4, w.lv)*1.5 + (w.evo ? 6 : 0), im = svImg('assets/spirits/'+svWArt(w)+'.webp'); c.save(); if(p.down) c.globalAlpha = 0.35;
-      if(w.evo){ c.shadowColor = '#ff5777'; c.shadowBlur = 10; } if(im.complete && im.naturalWidth) c.drawImage(im, x-sz/2, y-sz/2, sz, sz); c.restore(); });
+      if(w.evo){ c.shadowColor = '#ff5777'; c.shadowBlur = 10; } if(w.kick > 0.16){ c.shadowColor = SV_EC[w.id.split('_')[0]]; c.shadowBlur = 14; }
+      if(im.complete && im.naturalWidth){ c.translate(x, y); if(Math.cos(w.kdir||0) < -0.2 && w.kick > 0) c.scale(-1, 1); c.scale(sq, 2 - sq); c.drawImage(im, -sz/2, -sz/2, sz, sz); } c.restore();
+      if(w.kick > 0.18){ const col = SV_EC[w.id.split('_')[0]], f = (w.kick-0.18)/0.06; c.save(); c.globalAlpha = f*0.8; c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12; c.beginPath(); c.arc(x + Math.cos(w.kdir)*sz*0.55, y + Math.sin(w.kdir)*sz*0.55, 4 + (1-f)*6, 0, 6.283); c.fill(); c.restore(); } }); // 발사 섬광
     // 대표 정령 (내가 조종하는 몸)
     const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1))+'.webp'), bs = 40, bob = p.mv ? Math.sin(G.t*14)*2 : Math.sin(G.t*3)*1;
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
     if(p.inv > 0.7 || p.buff > 0){ c.shadowColor = p.buff > 0 ? '#ffd04a' : '#ffffff'; c.shadowBlur = 16; }
-    if(body.complete && body.naturalWidth){ if(p.face[0] < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
+    if(body.complete && body.naturalWidth){ if(p.face[0] < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
@@ -13014,13 +13049,15 @@ function svDraw(){
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
   if(G.map) svDrawOverlap(c, G, cam);
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
-    c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 8; c.beginPath(); c.arc(b.x, b.y, b.kind==='ebul' ? 5 : b.kind==='boom' ? 5 : 3, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.stroke(); } c.restore(); });
+    b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
+    if(b.kind!=='ebul' && b.tr.length >= 4){ c.save(); c.lineCap = 'round'; for(let i=2;i<b.tr.length;i+=2){ const f = i/b.tr.length; c.globalAlpha = f*0.6; c.strokeStyle = b.col; c.lineWidth = (b.kind==='boom' ? 7 : 4)*f; c.beginPath(); c.moveTo(b.tr[i-2], b.tr[i-1]); c.lineTo(b.tr[i], b.tr[i+1]); c.stroke(); } c.restore(); }
+    const br = b.kind==='ebul' ? 5 : b.kind==='boom' ? 6 : 3.5; c.save(); c.fillStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 10; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.fill(); c.fillStyle = '#ffffffcc'; c.beginPath(); c.arc(b.x, b.y, br*0.45, 0, 6.283); c.fill(); if(b.kind==='ebul'){ c.strokeStyle = '#fff'; c.lineWidth = 1.2; c.beginPath(); c.arc(b.x, b.y, br, 0, 6.283); c.stroke(); } c.restore(); });
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 10; c.stroke(); }
-    else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); }
-    else if(f.k==='slash'){ c.beginPath(); c.arc(f.x, f.y, f.r||16, -2.6 + f.t*9, -0.6 + f.t*9); c.lineWidth = 4; c.lineCap = 'round'; c.strokeStyle = f.col; c.stroke(); }
-    else if(f.k==='scythe'){ c.beginPath(); c.arc(f.x, f.y, f.r, f.t*14, f.t*14 + 2.4); c.lineWidth = 6; c.lineCap = 'round'; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 12; c.stroke(); }
+    else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
+    else if(f.k==='slash'){ const R0 = f.r||16, a0 = -2.6 + f.t*9; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 10; c.strokeStyle = f.col; c.lineWidth = 7; c.beginPath(); c.arc(f.x, f.y, R0, a0, a0 + 2); c.stroke(); c.shadowBlur = 0; c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.arc(f.x, f.y, R0, a0 + 0.3, a0 + 1.8); c.stroke(); } // 두꺼운 초승달 + 흰 속
+    else if(f.k==='scythe'){ const a0 = f.t*14; c.lineCap = 'round'; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 14; for(let k=0;k<3;k++){ c.globalAlpha = Math.max(0, a)*(1 - k*0.3); c.lineWidth = 9 - k*2.5; c.beginPath(); c.arc(f.x, f.y, f.r, a0 - k*0.35, a0 + 2.2 - k*0.35); c.stroke(); } c.shadowBlur = 0; c.globalAlpha = Math.max(0, a); c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(f.x, f.y, f.r, a0 + 0.4, a0 + 2); c.stroke(); } // 잔상 셋
     else if(f.k==='beam'){ c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x2, f.y2); c.lineWidth = 6*a + 1; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 12; c.stroke(); }
     else if(f.k==='pillar'){ const gg = c.createLinearGradient(0, f.y-80, 0, f.y); gg.addColorStop(0, f.col+'00'); gg.addColorStop(1, f.col+'dd'); c.fillStyle = gg; c.fillRect(f.x-7, f.y-80, 14, 80); }
     else if(f.k==='flash'){ c.globalAlpha = a*0.35; c.fillStyle = f.col; c.fillRect(0, 0, SV_W, SV_H); }
@@ -19560,7 +19597,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 481, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 484, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
