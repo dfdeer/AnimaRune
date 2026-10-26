@@ -12493,7 +12493,7 @@ function showSurvival(){
 function svClose(){
   if(!sv) return; const s = sv; sv = null;
   if(s.raf) cancelAnimationFrame(s.raf); if(s.netT) clearInterval(s.netT); (s.unsubs||[]).forEach(u=>{ try{ u(); }catch(e){} });
-  if(s.fit) window.removeEventListener('resize', s.fit);
+  if(s.fit) window.removeEventListener('resize', s.fit); if(s.keyOff) s.keyOff();
   if(s.net && s.net.code) svNetLeave(s);
   if(s.el) s.el.remove();
 }
@@ -12582,6 +12582,9 @@ function svNetLeave(s){
 // ---------- 게임 ----------
 function svNewPlayer(i, leader, unl){ return { i, leader, unl: unl || [], x: SV_MW/2 + (i ? 40 : -40), y: SV_MH/2 + 60, hp:100, maxHp:100, spd:120, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
 function svPasLv(p, k){ return p.ps[k] || 0; }
+function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조준이면 마우스 쪽 (컴퓨터)
+  const G = sv.game; if(p===G.players[G.me] && state.svAim==='mouse' && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); return Math.atan2(p.face[1], p.face[0]);
+}
 function svOath(){ return sv.game.players.some(q=>q.leader==='light_b'); } // 서약: 나와 친구 모두
 function svSpd(p){ return p.spd * (1 + 0.08*svPasLv(p, 'swift')) * (svOath() ? 1.12 : 1) * (p.spdB > 0 ? 1.3 : 1); }
 function svCdK(p, w){ return Math.pow(0.92, svPasLv(p, 'haste')) * (w.evo ? 0.8 : 1) * (svOath() ? 0.92 : 1) * (p.rush > 0 ? 0.7 : 1); }
@@ -12648,7 +12651,8 @@ function svStart(role){
     + '<div class="sv-cv"><canvas></canvas><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
   const cv = sv.el.querySelector('canvas'); sv.cv = cv; sv.ctx = cv.getContext('2d');
   const fit = ()=>{ if(!sv || !sv.cv) return; const box = sv.el.querySelector('.sv-cv'); const w = Math.min(box.clientWidth, box.clientHeight * SV_W / SV_H), dpr = Math.min(2, window.devicePixelRatio || 1);
-    cv.style.width = w+'px'; cv.style.height = (w*SV_H/SV_W)+'px'; cv.width = Math.round(w*dpr); cv.height = Math.round(w*SV_H/SV_W*dpr); sv.scale = w / SV_W; sv.dpr = dpr; };
+    cv.style.width = w+'px'; cv.style.height = (w*SV_H/SV_W)+'px'; cv.width = Math.round(w*dpr); cv.height = Math.round(w*SV_H/SV_W*dpr); sv.scale = w / SV_W; sv.dpr = dpr;
+    const ub = sv.el.querySelector('.sv-ult'); if(ub){ ub.style.right = ((box.clientWidth - w)/2 + 12)+'px'; ub.style.bottom = ((box.clientHeight - w*SV_H/SV_W)/2 + 12)+'px'; } }; // 궁극기 버튼은 게임 화면 오른쪽 아래에 붙게 (컴퓨터처럼 넓은 화면)
   fit(); sv.fit = fit; window.addEventListener('resize', fit);
   sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '둘이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
   sv.el.querySelector('[data-sv="pause"]').addEventListener('click', e=>{ if(role!=='solo'){ toast('둘이 할 땐 멈출 수 없음'); return; } G.paused = !G.paused; e.currentTarget.innerHTML = G.paused ? '계속' : uiIc('rest'); });
@@ -12656,7 +12660,15 @@ function svStart(role){
   const pt = e=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left)/sv.scale, y:(e.clientY - r.top)/sv.scale }; };
   const box = sv.el.querySelector('.sv-cv');
   box.addEventListener('pointerdown', e=>{ if(e.target.closest('.sv-pick') || e.target.closest('.sv-end') || e.target.closest('.sv-ult')) return; sv.joy = { o: pt(e), c: pt(e), id:e.pointerId }; try{ box.setPointerCapture(e.pointerId); }catch(x){} });
-  box.addEventListener('pointermove', e=>{ if(sv.joy && sv.joy.id===e.pointerId) sv.joy.c = pt(e); });
+  box.addEventListener('pointermove', e=>{ if(e.pointerType==='mouse'){ sv.mouse = pt(e); if(!sv.pc && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) sv.pc = true; } if(sv.joy && sv.joy.id===e.pointerId) sv.joy.c = pt(e); });
+  // (build 487) 컴퓨터: WASD·방향키 이동 · Space 궁극기 · Q 조준 방식(이동 방향 ↔ 마우스 방향)
+  sv.keys = {}; const KMAP = { KeyW:'u', ArrowUp:'u', KeyS:'d', ArrowDown:'d', KeyA:'l', ArrowLeft:'l', KeyD:'r', ArrowRight:'r' };
+  const kd = e=>{ if(!sv || !sv.game || e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return; const k = KMAP[e.code];
+    if(k){ sv.keys[k] = true; sv.pc = true; e.preventDefault(); }
+    else if(e.code==='Space' && !e.repeat){ e.preventDefault(); const ub = sv.el.querySelector('[data-sv="ult"]'); if(ub) ub.click(); }
+    else if(e.code==='KeyQ' && !e.repeat){ state.svAim = state.svAim==='mouse' ? 'move' : 'mouse'; save(); sv.pc = true; const G2 = sv.game; if(G2.fx.length < 140) G2.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, t:0, d:1.4, s:'조준 — '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'), col:'#c9e2ff', sz:14, scr:1 }); } };
+  const ku = e=>{ const k = KMAP[e.code]; if(k && sv && sv.keys) sv.keys[k] = false; };
+  window.addEventListener('keydown', kd); window.addEventListener('keyup', ku); sv.keyOff = ()=>{ window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); };
   const end = e=>{ if(sv && sv.joy && sv.joy.id===e.pointerId) sv.joy = null; };
   box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   if(role!=='solo') svNetStart();
@@ -12672,6 +12684,7 @@ function svInput(dt){
   const G = sv.game, p = G.players[G.me]; if(!p || G.over) return;
   let vx = 0, vy = 0;
   if(sv.joy){ const dx = sv.joy.c.x - sv.joy.o.x, dy = sv.joy.c.y - sv.joy.o.y, d = Math.hypot(dx, dy); if(d > 4){ const k = Math.min(1, d/40); vx = dx/d*k; vy = dy/d*k; } }
+  if(sv.keys){ const kx = (sv.keys.r ? 1 : 0) - (sv.keys.l ? 1 : 0), ky = (sv.keys.d ? 1 : 0) - (sv.keys.u ? 1 : 0); if(kx || ky){ const d = Math.hypot(kx, ky); vx = kx/d; vy = ky/d; } } // 키보드
   const stop = p.down || G.pickWait || G.paused; if(stop) vx = vy = 0;
   const sp = svSpd(p) * (svBlizzard(G) ? 0.85 : 1);
   if(!stop && G.map && svZoneAt(p, 'ice')){ const k = Math.min(1, dt*2.2); p.vx = (p.vx||0) + (vx*sp - (p.vx||0))*k; p.vy = (p.vy||0) + (vy*sp - (p.vy||0))*k; } // 얼음: 미끄러짐
@@ -12761,7 +12774,7 @@ function svAttack(p, w, dt){
   }
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
   if(id==='fire_a_1'){ // (build 486) 불꽃 발톱 — 사용자 결정 10/26: 일정 시간마다 발톱으로 근처를 휩쓺 (대상을 고르지 않음 · 바라보는 쪽 넓은 부채꼴 · 번갈아 좌우로)
-    const R0 = (66 + lv*5)*ar, d0 = Math.atan2(p.face[1], p.face[0]), half = 1.75; w.alt = -(w.alt || 1);
+    const R0 = (66 + lv*5)*ar, d0 = svAimDir(p), half = 1.75; w.alt = -(w.alt || 1);
     [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{
       G.en.forEach(e=>{ if(e.hp<=0) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > R0 + e.r) return; const da = Math.atan2(Math.sin(Math.atan2(dy, dx)-dir), Math.cos(Math.atan2(dy, dx)-dir)); if(Math.abs(da) > half && d > e.r + 14) return;
         const c = Math.random() < 0.25 + cr; svHitBy(p, e, 28*m*(c?2:1), col, c); if(ev) svBurn(e, 4*m, 2); });
@@ -12993,6 +13006,7 @@ function svDrawScreen(c, G, cam){ // 카메라와 상관없는 화면 위 — �
       c.save(); c.translate(x, y); c.rotate(a); c.fillStyle = col; c.strokeStyle = '#000a'; c.lineWidth = 2; c.beginPath(); c.moveTo(10, 0); c.lineTo(-6, -7); c.lineTo(-6, 7); c.closePath(); c.stroke(); c.fill(); c.restore(); };
     G.loot.forEach(o=>{ if(o.k==='rune') arrow(o, '#ff5777'); }); G.en.forEach(e=>{ if(e.kind==='boss') arrow(e, '#ff3a3a'); }); }
   if(G.map) svDrawMini(c, G, cam);
+  if(sv.pc){ c.save(); c.font = 'bold 10px sans-serif'; c.textAlign = 'left'; c.textBaseline = 'bottom'; c.fillStyle = '#0b0d26aa'; const t = 'WASD 이동 · Space 궁극기 · Q 조준: '+(state.svAim==='mouse' ? '마우스' : '이동 방향'); c.fillRect(8, SV_H-24, c.measureText(t).width + 12, 17); c.fillStyle = '#d6dcff'; c.fillText(t, 14, SV_H-11); c.restore(); } // 컴퓨터 조작 안내
 }
 function svDraw(){
   const G = sv.game, c = sv.ctx; if(!c || !sv.cv) return; const sk = G.shake > 0 ? G.shake*10 : 0, S = sv.scale*sv.dpr;
@@ -13044,7 +13058,7 @@ function svDraw(){
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
     if(p.inv > 0.7 || p.buff > 0){ c.shadowColor = p.buff > 0 ? '#ffd04a' : '#ffffff'; c.shadowBlur = 16; }
-    if(body.complete && body.naturalWidth){ if(p.face[0] < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
+    if(body.complete && body.naturalWidth){ if((p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]) < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
@@ -13060,6 +13074,7 @@ function svDraw(){
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 10; c.stroke(); }
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
+    else if(f.k==='claw' && svImg('assets/survival/fx_claw.webp').naturalWidth){ const im = svImg('assets/survival/fx_claw.webp'), pr = Math.min(1, f.t/(f.d*0.5)), sz = f.r*2.3*(0.85 + 0.2*pr); c.globalAlpha = Math.max(0, f.t < f.d*0.55 ? 1 : 1 - (f.t - f.d*0.55)/(f.d*0.45)); c.translate(f.x, f.y); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.drawImage(im, -sz/2, -sz/2, sz, sz); } // 그림: 가운데 = 정령 · 오른쪽 반에 발톱 자국
     else if(f.k==='claw'){ const pr = Math.min(1, f.t/(f.d*0.6)), half = 1.75, st = f.a - half*f.s, en = st + 2*half*f.s*pr; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 12;
       for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(f.x, f.y, rr, Math.max(st, en - 1.6), en); else c.arc(f.x, f.y, rr, en, Math.min(st, en + 1.6)); c.stroke(); } } // 발톱 자국 셋
     else if(f.k==='slash'){ const R0 = f.r||16, a0 = -2.6 + f.t*9; c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 10; c.strokeStyle = f.col; c.lineWidth = 7; c.beginPath(); c.arc(f.x, f.y, R0, a0, a0 + 2); c.stroke(); c.shadowBlur = 0; c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.beginPath(); c.arc(f.x, f.y, R0, a0 + 0.3, a0 + 1.8); c.stroke(); } // 두꺼운 초승달 + 흰 속
@@ -19603,7 +19618,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 486, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 487, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
