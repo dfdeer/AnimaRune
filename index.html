@@ -12459,6 +12459,25 @@ function svCollide(o, r){ // 장애물 · 맵 끝에서 밀어냄
   map.ob.forEach(b=>{ const dx = o.x-b.x, dy = o.y-b.y, d = Math.hypot(dx, dy), m = b.r + r; if(d < m){ if(d < 0.01){ o.x += m; return; } o.x = b.x + dx/d*m; o.y = b.y + dy/d*m; } });
   o.x = Math.max(r, Math.min(SV_MW-r, o.x)); o.y = Math.max(r, Math.min(SV_MH-r, o.y));
 }
+// (build 498) 길찾기 — 사용자 10/26 「장애물에 막혀 못 오는 애가 있음」: 곧장 오다 장애물에 밀리기만 해서 뭉친 장애물 사이에 갇혔음
+// 맵을 30칸으로 나눠 살아 있는 정령들에서부터 거리를 매겨 두고(정령이 다른 칸으로 옮길 때만 다시), 앞이 막힌 적은 거리가 줄어드는 옆 칸으로 감
+const SV_FG = 30, SV_NB = [[1,0,10],[-1,0,10],[0,1,10],[0,-1,10],[1,1,14],[1,-1,14],[-1,1,14],[-1,-1,14]];
+function svFlowBlk(map){ if(map.blk) return map.blk; const W = Math.ceil(SV_MW/SV_FG), H = Math.ceil(SV_MH/SV_FG), b = new Uint8Array(W*H);
+  for(let j=0;j<H;j++) for(let i=0;i<W;i++){ const x = (i+0.5)*SV_FG, y = (j+0.5)*SV_FG; if(map.ob.some(o=>Math.hypot(o.x-x, o.y-y) < o.r + 12)) b[j*W+i] = 1; }
+  map.fw = W; map.fh = H; return (map.blk = b); }
+function svFlow(G){ const map = G.map; if(!map) return null; const blk = svFlowBlk(map), W = map.fw, H = map.fh, al = G.players.filter(p=>!p.down); if(!al.length) return null;
+  const cell = p=>[Math.max(0, Math.min(W-1, Math.floor(p.x/SV_FG))), Math.max(0, Math.min(H-1, Math.floor(p.y/SV_FG)))], key = al.map(p=>cell(p).join(',')).join('|');
+  if(G.flow && G.flow.key === key) return G.flow;
+  const dist = new Int32Array(W*H).fill(1e9), bk = [], push = (k, c)=>{ (bk[c] || (bk[c] = [])).push(k); };
+  al.forEach(p=>{ const [i, j] = cell(p), k = j*W + i; dist[k] = 0; push(k, 0); });
+  for(let c=0;c<bk.length;c++){ const q = bk[c]; if(!q) continue; for(let n=0;n<q.length;n++){ const k = q[n]; if(dist[k] !== c) continue; const i = k % W, j = (k - i)/W;
+    for(const [di, dj, w] of SV_NB){ const ii = i + di, jj = j + dj; if(ii < 0 || jj < 0 || ii >= W || jj >= H) continue; const kk = jj*W + ii; if(blk[kk] || (di && dj && (blk[j*W + ii] || blk[jj*W + i]))) continue; if(c + w < dist[kk]){ dist[kk] = c + w; push(kk, c + w); } } } }
+  return (G.flow = { key, dist, W, H }); }
+function svFlowDir(G, x, y){ const f = svFlow(G); if(!f) return null; const blk = G.map.blk, W = f.W, H = f.H, i = Math.max(0, Math.min(W-1, Math.floor(x/SV_FG))), j = Math.max(0, Math.min(H-1, Math.floor(y/SV_FG)));
+  let best = f.dist[j*W + i], bi = -1, bj = -1; for(const [di, dj] of SV_NB){ const ii = i + di, jj = j + dj; if(ii < 0 || jj < 0 || ii >= W || jj >= H) continue; const kk = jj*W + ii; if(blk[kk] || (di && dj && (blk[j*W + ii] || blk[jj*W + i]))) continue; if(f.dist[kk] < best){ best = f.dist[kk]; bi = ii; bj = jj; } }
+  if(bi < 0) return null; const vx = (bi + 0.5)*SV_FG - x, vy = (bj + 0.5)*SV_FG - y, d = Math.hypot(vx, vy) || 1; return [vx/d, vy/d]; }
+function svLos(G, x0, y0, x1, y1){ const blk = svFlowBlk(G.map), W = G.map.fw, H = G.map.fh, d = Math.hypot(x1-x0, y1-y0), n = Math.ceil(d/15); // 둘 사이에 막힌 칸이 없나
+  for(let k=1;k<n;k++){ const x = x0 + (x1-x0)*k/n, y = y0 + (y1-y0)*k/n, i = Math.floor(x/SV_FG), j = Math.floor(y/SV_FG); if(i >= 0 && j >= 0 && i < W && j < H && blk[j*W + i]) return false; } return true; }
 function svZoneAt(p, kind){ const map = sv.game.map; return map ? map.zones.find(z=>z.kind===kind && Math.hypot(z.x-p.x, z.y-p.y) < z.r) : null; }
 function svTrapState(z, t){ const f = ((t + z.ph) % 6) / 6; return f > 0.85 ? 2 : f > 0.68 ? 1 : 0; } // 0 쉼 · 1 곧 솟음(빛남) · 2 솟음
 function svBlizzard(G){ return G.map && SV_MAPS[G.map.stage].gim==='ice' && (G.t % 60) > 40 && (G.t % 60) < 55; }
@@ -12490,7 +12509,7 @@ function svGroundPat(c, map){ // 바닥 무늬 — 그림이 있으면 그림, �
 const SV_CLAW = { SZ:2.2, D:0.05, K:0.9, W:1.0, ROT:0.55, L:0.25 }; // 불꽃 발톱 그림 — 크기(범위의 배) · 앞으로 옮김 · 앞뒤·옆 배율 · 비스듬히 돌림(라디안) · 긋는 동안 앞으로 밀려 나가는 거리 (build 497 사용자가 모양 고르기 페이지 2차 5번 「비스듬히 + 밀어치기 · 한쪽으로만」을 고름 10/26 — 492~496은 반원·납작한 부채꼴이라 할퀴는 느낌이 안 났음)
 function svClawIn(w, dx, dy, er, a0, a1){ // 적이 발톱 그림(앞으로 옮기고 누른 모양) 안, 이번에 긁은 각도(그림 기준 a0~a1) 안에 있나
   const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, x0 = lx - w.R*SV_CLAW.D, cr = Math.cos(SV_CLAW.ROT), sr = Math.sin(SV_CLAW.ROT), u = (x0*cr + ly*sr)/SV_CLAW.K, v = (-x0*sr + ly*cr)/SV_CLAW.W, th = Math.atan2(v, u); // 비스듬히 돌린 만큼 되돌려서 그림 기준으로
-  return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.43 + er*1.3 && th >= a0 && th <= a1;
+  return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.55 + er*1.5 && th >= a0 - 0.1 && th <= a1 + 0.1; // (build 498) 그림보다 조금 넓게 (사용자 10/26: 범위가 살짝 안 맞음) — 전엔 그림 반지름(0.43)·적 크기 1.3배·각도 ±0.15
 }
 function svGlow(col, a0){ // (build 493) 미리 그려 둔 둥근 빛 (가운데 col → 바깥 투명) — 그림자 흐림 대신
   sv.glows = sv.glows || {}; const k = col + (a0||''); if(sv.glows[k]) return sv.glows[k];
@@ -12936,7 +12955,8 @@ function svTick(dt){
     const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
     if(d > Math.max(700, SV_W/2 + 260, SV_H/2 + 260) && e.kind!=='boss' && e.kind!=='pod'){ const q = svSpawnPos(); e.x = q.x; e.y = q.y; return; } // 너무 멀어진 적은 다시 곁으로
     if(dx < -2) e.lf = 1; else if(dx > 2) e.lf = 0; // 바라보는 쪽
-    if(d > e.r + 8){ e.x += dx/d*sp*dt; e.y += dy/d*sp*dt; if(e.kind!=='boss') svCollide(e, e.r); }
+    let mx = dx/d, my = dy/d; if(G.map && e.kind!=='boss'){ e.losT = (e.losT||0) - dt; if(e.losT <= 0){ e.losT = 0.25 + Math.random()*0.1; e.los = svLos(G, e.x, e.y, tg.x, tg.y); } if(!e.los){ const v = svFlowDir(G, e.x, e.y); if(v){ mx = v[0]; my = v[1]; } } } // (build 498) 앞이 막히면 길찾기로 돌아옴
+    if(d > e.r + 8){ e.x += mx*sp*dt; e.y += my*sp*dt; if(e.kind!=='boss') svCollide(e, e.r); }
     if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
       const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, 25*svWM(tg, th), '#9be07a'); } // 가시 갑옷 반사
     if(e.kind==='boss'){ e.skT -= dt; if(e.skT <= 0){ e.skT = e.final ? 2.4 : 3.2; const n = e.final ? 14 : 10; for(let k=0;k<n;k++){ const a = k*6.283/n + G.t; G.pr.push({ x:e.x, y:e.y, vx:Math.cos(a)*110, vy:Math.sin(a)*110, kind:'ebul', t:0, col: SV_EC[SV_MAPS[G.stage||0].el], dmg:12*SV_STD[G.stage||0] }); } } }
@@ -12972,7 +12992,7 @@ function svTick(dt){
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
   (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), L0 = -2.04 + 4.0*svClawE(f0), L1 = -2.04 + 4.0*svClawE(f1); // (build 491) 발톱 끝이 지나가는 각도와 같게(처음 빠르고 끝에 느려짐) — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R*1.4 + e.r) return;
-      const close = d < e.r + 12 || (d < w.R*0.45 + e.r && dx*Math.cos(w.dir) + dy*Math.sin(w.dir) > -e.r); if(!svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
+      const close = d < e.r + 12 || (d < w.R*0.55 + e.r && dx*Math.cos(w.dir) + dy*Math.sin(w.dir) > -e.r); if(!svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
       w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?2:1), w.col, c); if(w.ev) svBurn(e, 4*w.m, 2); }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
   G.pools = G.pools.filter(o=>o.t < o.d);
@@ -19738,7 +19758,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 497, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 498, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
