@@ -992,6 +992,7 @@
   .sv-st.on{border-color:#ffd557; box-shadow:0 0 0 1px #ffd557, 0 0 12px #ffd55788;} .sv-st.lock{filter:grayscale(.85) brightness(.5);} .sv-st i{position:absolute; top:3px; right:3px; font-style:normal;}
   .sv-sti{display:flex; flex-direction:column; gap:4px; padding:8px 10px; border-radius:12px; background:#ffffff0b; border:1px solid #ffffff1a;} .sv-sti > b{font-size:14px;} .sv-sti small{font-size:11px; color:#c9d2ff; line-height:1.4;}
   .sv-sti > div{display:flex; align-items:center; gap:6px;} .sv-sti > div img{width:44px; height:44px; object-fit:contain; flex:none;} .sv-sti > div span{flex:1; font-size:10px; color:#9aa6e0; line-height:1.3; min-width:0;} .sv-sti > div span b{font-size:12px; color:#fff;}
+  .sv-grow{display:flex; align-items:center; gap:2px; margin-top:3px;} .sv-grow span{display:flex; flex-direction:column; align-items:center; min-width:0;} .sv-grow img{width:30px; height:30px; object-fit:contain;} .sv-grow i{font-style:normal; font-size:8.5px; color:#9aa6e0;} .sv-grow b{font-size:11px; color:#9aa6e0;} /* (build 483) 대표 정령이 판 안에서 자라는 순서 */
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
@@ -12509,7 +12510,7 @@ function svLobby(msg){
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
       + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
       + '<small><img src="'+svSkIc(sk1)+'" alt="">시작 스킬 · '+svSkNm(sk1)+' — '+SV_SK[sk1].d+' (진화 짝 '+svPI(SV_SK[sk1].pair)+P.nm+')</small>'
-      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small></div></div>'
+      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small><div class="sv-grow" title="판 안에서 자람">'+[0,1,2,3,4].map(r=>'<span><img src="assets/spirits/'+svKey(V,r)+'.webp" alt=""><i>'+['Lv1','Lv2','Lv3','Lv4·5','각성'][r]+'</i></span>').join('<b>›</b>')+'</div></div></div>'
     + '<div class="sv-ltl">스킬 <em>'+u.sk.length+'/20</em> <small>레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? SV_SK[skv].d+' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
@@ -12699,7 +12700,7 @@ function svSpawn(kind){
   const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * (G.players.length > 1 ? 1.6 : 1) * SV_STK[G.stage||0];
   const el = Math.random() < 0.6 ? SV_MAPS[G.stage||0].el : svRand(ELEMENTS), v = Math.random()<0.5 ? 'a' : 'b';
   const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:20, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
-  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', fl:0 });
+  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
 }
 function svSpawnBoss(g, final){
   const G = sv.game, st = G.stage||0, hp = (final ? 16000 : 6000) * SV_HPK * (G.players.length > 1 ? 1.7 : 1) * (1 + G.t/300) * SV_STK[st];
@@ -12811,6 +12812,7 @@ function svTick(dt){
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
     const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
     if(d > 700 && e.kind!=='boss'){ const q = svSpawnPos(); e.x = q.x; e.y = q.y; return; } // 너무 멀어진 적은 다시 곁으로
+    if(dx < -2) e.lf = 1; else if(dx > 2) e.lf = 0; // 바라보는 쪽
     if(d > e.r + 8){ e.x += dx/d*sp*dt; e.y += dy/d*sp*dt; if(e.kind!=='boss') svCollide(e, e.r); }
     if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
       const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, 25*svWM(tg, th), '#9be07a'); } // 가시 갑옷 반사
@@ -12999,7 +13001,15 @@ function svDraw(){
     if(o.k==='rune'){ const k = 1 + Math.sin(G.t*5)*0.12; c.scale(k, k); c.shadowColor = '#ff5777'; c.shadowBlur = 14; }
     if(im.complete && im.naturalWidth) c.drawImage(im, -sz/2, -sz/2, sz, sz);
     c.restore(); });
-  G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const z = e.r*2.5; c.save(); c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.fillStyle = '#2a1f3f'; c.fill(); const im = svImg(e.art); if(im.complete && im.naturalWidth){ c.clip(); c.drawImage(im, e.x-z/2, e.y-z/2+1, z, z); }
+  G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const mi = e.mob && svImg(e.mob);
+    if(mi && mi.complete && mi.naturalWidth){ const sz = e.r*3.3, hop = Math.abs(Math.sin(G.t*9 + e.x*0.05))*2.5; // 몬스터 그림: 통통 튀며 걷기 · 바라보는 쪽으로 뒤집기
+      c.save(); c.fillStyle = '#00000040'; c.beginPath(); c.ellipse(e.x, e.y + e.r*0.8, e.r*0.95, e.r*0.32, 0, 0, 6.283); c.fill();
+      c.translate(e.x, e.y + e.r*0.85); if(e.lf) c.scale(-1, 1); c.drawImage(mi, -sz/2, -sz - hop, sz, sz);
+      if(e.fl > 0 || e.frz > 0 || e.burn > 0 || e.web > 0){ c.globalCompositeOperation = 'source-atop'; c.globalAlpha = e.fl > 0 ? 0.6 : 0.35; c.fillStyle = e.fl > 0 ? '#fff' : e.frz > 0 ? '#a0e6ff' : e.burn > 0 ? '#ff7828' : '#e6f0dc'; c.fillRect(-sz/2, -sz - hop, sz, sz); }
+      c.restore(); if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
+      if(e.kind==='elite' || e.r >= 16){ const w = e.r*2, h = Math.max(0, e.hp/e.max); c.fillStyle = '#0009'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w, 4); c.fillStyle = '#ffd557'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w*h, 4); }
+      return; }
+    const z = e.r*2.5; c.save(); c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.fillStyle = '#2a1f3f'; c.fill(); const im = svImg(e.art); if(im.complete && im.naturalWidth){ c.clip(); c.drawImage(im, e.x-z/2, e.y-z/2+1, z, z); }
     if(e.fl > 0){ c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.frz > 0){ c.fillStyle = 'rgba(160,230,255,.45)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.burn > 0){ c.fillStyle = 'rgba(255,120,40,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } if(e.web > 0){ c.fillStyle = 'rgba(230,240,220,.3)'; c.fillRect(e.x-e.r, e.y-e.r, e.r*2, e.r*2); } c.restore();
     if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
     c.beginPath(); c.arc(e.x, e.y, e.r, 0, 6.283); c.lineWidth = e.kind==='boss' ? 3 : 1.6; c.strokeStyle = e.slow>0 ? '#9fe6ff' : (e.kind==='boss' ? '#ff3a3a' : e.kind==='elite' ? '#c9a6ff' : '#ff6a6a'); c.stroke();
@@ -19574,7 +19584,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 482, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 483, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
