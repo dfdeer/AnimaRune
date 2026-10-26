@@ -1000,6 +1000,7 @@
   .sv.sv-game .sv-hud{position:absolute; left:0; right:0; top:0; z-index:4; padding-top:calc(8px + env(safe-area-inset-top)); background:linear-gradient(#0b0d26d9, #0b0d2600); pointer-events:none;} .sv.sv-game .sv-hud button{pointer-events:auto;}
   .sv.sv-game .sv-bar{position:absolute; left:0; right:0; bottom:0; z-index:4; background:linear-gradient(#0b0d2600, #0b0d26d9); pointer-events:none;}
   .sv.sv-game{padding-top:0;} .sv-ult, .sv-aim, .sv-key{z-index:5;} .sv-pick, .sv-end{z-index:6;}
+  .sv-card > b, .sv-card > span, .sv-card > small{grid-column:2;} .sv-card > img, .sv-card > i{grid-row:1 / 6;} .sv-card .sv-st2{color:#d6dcff;} .sv-card .sv-st2 i{font-style:normal; color:#9aa6e0;} .sv-card .sv-st2 em{font-style:normal; color:#ffd557; font-weight:800;} .sv-card .sv-evo{color:#9aa6e0; font-size:10px;} /* (build 489) 카드 수치 · 바뀌는 값 노랗게 */
   .gi-chip{display:inline-flex; align-items:baseline; gap:1px; font-size:11px; font-weight:800; color:#ffcf3a; white-space:nowrap;} .gi-chip small{font-size:9px; color:#ffe9a8; font-weight:700; margin-left:1px;} .gi-chip b{margin-left:4px; font-size:10px; padding:0 5px; border-radius:6px; background:#ffcf3a; color:#3a2a00;} .gi-chip.go{text-shadow:0 0 6px #ffcf3a88;} /* (v10.5.0) 기세 숫자 */
   .ud-gi{margin-top:6px; font-size:11px; color:var(--sub);} .ud-gi .gi-why{margin-left:6px;} .ud-gi .gi-why.go{color:#e0a400; font-weight:800;} .ud-gi .gi-chip{font-size:12px; color:#e0a400;} .ud-gi .gi-chip small{color:#c08a00;}
   .bu-float.gi{font-size:20px; color:#ffae00; text-shadow:0 1px 0 #fff,0 0 6px #fff,0 0 12px #ffd557;} /* (v10.5.0) 기세 */
@@ -12299,27 +12300,55 @@ let SV_H = 600; // (build 489) 보이는 높이 — 폰 세로는 폭 360에 맞
 const SV_T_MID = 300, SV_T_END = 600, SV_MAX_W = 5, SV_MAX_P = 4, SV_ULT_CD = 45;
 const SV_LINE_IDS = ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v));
 const SV_SK = { // 스킬 20개 — cd: 간격(초) · pair: 진화에 필요한 짝 능력 (이름은 LINE_KITS 그대로)
-  fire_a_1:{ nm:'불꽃 발톱', d:'일정 시간마다 발톱으로 앞쪽을 넓게 휩쓺 · 치명타가 잘 터짐', cd:0.9, pair:'crit' },
-  fire_a_2:{ d:'내 둘레가 터져 큰 범위 피해 · 화상', cd:2.6, pair:'area' },
+  fire_a_1:{ nm:'불꽃 발톱', d:'앞쪽을 넓게 할큄', cd:0.9, pair:'crit' },
+  fire_a_2:{ d:'내 둘레 폭발 · 화상', cd:2.6, pair:'area' },
   fire_b_1:{ d:'앞쪽으로 불티 여러 발 · 화상', cd:1.3, pair:'haste' },
-  fire_b_2:{ d:'떨어진 적 자리에서 폭발 · 화상', cd:1.6, pair:'might' },
-  water_a_1:{ d:'물결이 퍼져 둘레 적 피해 · 나와 친구 회복', cd:2.4, pair:'vital' },
-  water_a_2:{ d:'물의 벽이 밀고 나가며 적을 밀쳐냄', cd:3.2, pair:'swift' },
-  water_b_1:{ d:'가까운 적에게 서리 화살을 빠르게 · 느려짐', cd:0.42, pair:'haste' },
-  water_b_2:{ d:'둘레를 도는 얼음 · 맞으면 느려짐', cd:0, pair:'swift' },
+  fire_b_2:{ d:'적 자리에 화염구 폭발 · 화상', cd:1.6, pair:'might' },
+  water_a_1:{ d:'둘레에 물결 · 나와 친구 회복', cd:2.4, pair:'vital' },
+  water_a_2:{ d:'물의 벽이 적을 밀어냄', cd:3.2, pair:'swift' },
+  water_b_1:{ d:'가까운 적에게 서리 화살 · 느려짐', cd:0.42, pair:'haste' },
+  water_b_2:{ d:'둘레를 도는 얼음 · 느려짐', cd:0, pair:'swift' },
   wood_a_1:{ d:'보호막 + 둘레 적 밀쳐냄', cd:5, pair:'vital' },
-  wood_a_2:{ d:'몸 둘레 가시 · 부딪힌 적에게 반사 피해', cd:0.5, pair:'might' },
+  wood_a_2:{ d:'몸 둘레 가시 · 부딪힌 적에게 반사', cd:0.5, pair:'might' },
   wood_b_1:{ d:'적 발밑에 독 장판', cd:2.2, pair:'greed' },
   wood_b_2:{ d:'적이 모인 곳에 거미줄 · 크게 느려짐', cd:3.5, pair:'area' },
   light_a_1:{ d:'적 여럿에 빛기둥 · 나와 친구 회복', cd:3.5, pair:'greed' },
-  light_a_2:{ d:'나와 친구에게 보호막 + 빛 폭발', cd:6, pair:'crit' },
-  light_b_1:{ d:'별빛이 일직선으로 꿰뚫음 · 잠깐 빨라짐', cd:1.4, pair:'swift' },
+  light_a_2:{ d:'나와 친구 보호막 + 빛 폭발', cd:6, pair:'crit' },
+  light_b_1:{ d:'일직선으로 꿰뚫는 별빛 · 잠깐 빨라짐', cd:1.4, pair:'swift' },
   light_b_2:{ d:'화면 곳곳의 적에게 빛이 떨어짐', cd:2.8, pair:'might' },
-  dark_a_1:{ d:'가까운 적의 생명을 빨아 내 체력 회복', cd:0.9, pair:'vital' },
-  dark_a_2:{ d:'둘레를 크게 벰 · 약한 적은 바로 처치', cd:2.0, pair:'haste' },
-  dark_b_1:{ d:'적을 쫓는 저주 · 저주 걸린 적은 피해 +25%', cd:1.2, pair:'crit' },
-  dark_b_2:{ d:'적이 모인 곳에 악몽 — 빨아들인 뒤 터짐', cd:4, pair:'area' }
+  dark_a_1:{ d:'가까운 적 생명을 빨아 회복', cd:0.9, pair:'vital' },
+  dark_a_2:{ d:'둘레를 벰 · 약한 적 즉사', cd:2.0, pair:'haste' },
+  dark_b_1:{ d:'적을 쫓는 저주 · 받는 피해 +25%', cd:1.2, pair:'crit' },
+  dark_b_2:{ d:'적을 빨아들인 뒤 터짐', cd:4, pair:'area' }
 };
+const SV_SKS = (()=>{ const m = l=>SV_LVM[l-1]*SV_DMGK, D = (b)=>l=>Math.round(b*m(l)), F = (f)=>l=>f(l); return { // (build 489) 스킬 수치표 — [이름, 레벨→값, 붙는 글자] (카드에 바뀌는 것만 노랗게 · 사용자 10/26)
+  fire_a_1:[['피해', D(28)], ['범위', F(l=>66+5*l)], ['치명타', F(()=>25), '%']],
+  fire_a_2:[['피해', D(24)], ['범위', F(l=>60+6*l)], ['화상', D(4), '/초']],
+  fire_b_1:[['발', F(l=>3+Math.floor(l/2))], ['피해', D(10)], ['화상', D(3), '/초']],
+  fire_b_2:[['피해', D(22)], ['폭발', F(l=>44+4*l)], ['화상', D(5), '/초']],
+  water_a_1:[['피해', D(12)], ['회복', F(l=>2+l)], ['범위', F(l=>80+6*l)]],
+  water_a_2:[['피해', D(20)], ['폭', F(l=>70+6*l)]],
+  water_b_1:[['피해', D(8)], ['간격', F(()=>0.42), '초']],
+  water_b_2:[['얼음', F(l=>3+Math.floor(l/2)), '개'], ['피해', D(14)], ['반지름', F(l=>52+3*l)]],
+  wood_a_1:[['보호막', D(15)], ['피해', D(10)]],
+  wood_a_2:[['피해', D(7), '/0.5초'], ['범위', F(l=>34+3*l)], ['반사', D(25)]],
+  wood_b_1:[['피해', D(10), '/초'], ['범위', F(l=>34+5*l)]],
+  wood_b_2:[['피해', D(5), '/초'], ['범위', F(l=>46+6*l)]],
+  light_a_1:[['대상', F(l=>2+l), '명'], ['피해', D(18)], ['회복', F(l=>4+2*l)]],
+  light_a_2:[['보호막', F(l=>10+5*l)], ['피해', D(16)], ['범위', F(l=>80+5*l)]],
+  light_b_1:[['피해', D(16)]],
+  light_b_2:[['개수', F(l=>2+l), '개'], ['피해', D(20)]],
+  dark_a_1:[['피해', D(16)], ['회복', F(l=>Math.round((1+l*0.4)*10)/10)]],
+  dark_a_2:[['피해', D(20)], ['즉사', F(l=>12+3*l), '% 이하'], ['범위', F(l=>72+5*l)]],
+  dark_b_1:[['발', F(l=>1+l)], ['피해', D(12)]],
+  dark_b_2:[['피해', D(8), '/초'], ['터짐', D(30)], ['범위', F(l=>50+5*l)]] }; })();
+const SV_PASS = { // 유물 수치 — Lv마다
+  might:[['공격력', l=>12*l, '%', '+'], ['받는 피해', l=>3*l, '%', '+']], haste:[['스킬 간격', l=>Math.round((1-Math.pow(0.92,l))*100), '%', '−']], area:[['범위', l=>12*l, '%', '+']],
+  vital:[['최대 체력', l=>20*l, '', '+'], ['회복', l=>Math.round(0.25*l*100)/100, '/초', '+']], swift:[['이동 속도', l=>8*l, '%', '+']], greed:[['경험치·골드', l=>12*l, '%', '+'], ['줍는 범위', l=>25*l, '%', '+']], crit:[['치명타', l=>7*l, '%', '+']],
+  hunter:[['정예·보스 피해', l=>15*l, '%', '+']], axe:[['체력 30% 이하 적 피해', l=>20*l, '%', '+']], tinder:[['화상 확률', l=>6*l, '%', '']], fang:[['처치마다 회복', l=>Math.round(0.4*l*10)/10, '', '+']],
+  rampart:[['받는 피해', l=>6*l, '%', '−']], frost:[['느려진·언 적 피해', l=>12*l, '%', '+']]
+};
+function svStatLine(rows, from, to, pre){ return rows.map(r=>{ const f = r[1], suf = r[2]||'', sg = pre ? (r[3]||'') : '', b = sg+f(to)+suf; if(!from) return '<i>'+r[0]+'</i> '+b; const a = sg+f(from)+suf; return a===b ? '<i>'+r[0]+'</i> '+b : '<i>'+r[0]+'</i> '+a+' → <em>'+b+'</em>'; }).join(' · '); } // 바뀌는 값은 노랗게
 const SV_PAS = { // 능력 — 균열 유물 그림·이름 그대로 (사용자 결정 10/25: 기본 아이콘 대신 뽑아 둔 그림) · Lv마다 · 앞 7개는 스킬 진화 짝
   might:{ nm:'유리 대포', ic:'rl_glass', d:'공격력 +12% · 받는 피해 +3%' }, haste:{ nm:'제비 깃', ic:'rl_swallow', d:'스킬 간격 −8%' }, area:{ nm:'메아리 북', ic:'rl_drum', d:'공격 범위 +12%' },
   vital:{ nm:'재생 이끼', ic:'rl_moss', d:'최대 체력 +20 · 조금씩 회복' }, swift:{ nm:'질풍 장화', ic:'rl_boots', d:'이동 속도 +8%' }, greed:{ nm:'금화 주머니', ic:'rl_purse', d:'경험치·골드 +12% · 줍는 범위 +25%' }, crit:{ nm:'숫돌', ic:'rl_whet', d:'치명타 확률 +7%' },
@@ -12601,6 +12630,7 @@ function svNetLeave(s){
 function svNewPlayer(i, leader, unl){ return { i, leader, unl: unl || [], x: SV_MW/2 + (i ? 40 : -40), y: SV_MH/2 + 60, hp:100, maxHp:100, spd:120, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
 function svPasLv(p, k){ return p.ps[k] || 0; }
 function svAimToggle(){ state.svAim = state.svAim==='mouse' ? 'move' : 'mouse'; save(); const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s:'조준 — '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'), col:'#c9e2ff', sz:14, scr:1 }); }
+function svFlipFor(key, dx){ const f = ART_FACE[key]; return f==='L' ? dx > 0.2 : dx < -0.2; } // (build 489) 그림마다 원래 보는 쪽이 달라서(ART_FACE · 스콜 등은 왼쪽) — 가는 쪽을 보게 뒤집을지
 function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조준이면 마우스 쪽 (컴퓨터)
   const G = sv.game; if(p===G.players[G.me] && state.svAim==='mouse' && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); return Math.atan2(p.face[1], p.face[0]);
 }
@@ -12743,7 +12773,7 @@ function svSpawn(kind){
   const G = sv.game, sp = svSpawnPos(); let x = sp.x, y = sp.y;
   const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * (G.players.length > 1 ? 1.6 : 1) * SV_STK[G.stage||0];
   const el = Math.random() < 0.6 ? SV_MAPS[G.stage||0].el : svRand(ELEMENTS), v = Math.random()<0.5 ? 'a' : 'b';
-  const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:20, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
+  const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:27, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
   G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
 }
 function svSpawnBoss(g, final){
@@ -12783,7 +12813,7 @@ function svKill(e, col){
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
   if(e.kind==='boss'){ svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:1.6, s:'보스 처치!', col:'#ffe08a', sz:26, scr:1 }); G.shake = 0.5; try{ sfx('claim'); }catch(x){} if(e.final){ G.over = 'win'; svShowEnd(); } }
 }
-function svFx(f){ const G = sv.game; if(G.fx.length < 140) G.fx.push(f); if(sv.net.role==='host' && f.k!=='num'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) })); } } // 친구 화면에도 효과 (피해 숫자는 빼고)
+function svFx(f){ const G = sv.game; if(f.k==='num') f.d *= 1.8; /* (build 489) 피해 숫자 1.8배 오래 (사용자 10/26) */ if(G.fx.length < 140) G.fx.push(f); if(sv.net.role==='host' && f.k!=='num'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) })); } } // 친구 화면에도 효과 (피해 숫자는 빼고)
 function svPart(x, y, vx, vy, col, d, s){ const G = sv.game; if(G.pt.length < 260) G.pt.push({ x, y, vx, vy, col, t:0, d, s }); }
 function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄)
   const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
@@ -12924,12 +12954,12 @@ function svTick(dt){
 }
 function svFxTick(dt){ const G = sv.game; if(!G) return; G.fx.forEach(f=>f.t += dt); G.fx = G.fx.filter(f=>f.t < f.d); G.pt.forEach(p=>{ p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.94; p.vy *= 0.94; }); G.pt = G.pt.filter(p=>p.t < p.d); if(G.shake > 0) G.shake -= dt;
   G.players.forEach(p=>p.wp.forEach(w=>{ if(w.kick > 0) w.kick -= dt; if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
-function svCardHtml(me, c, i){
+function svCardHtml(me, c, i){ // (build 489) 사용자 10/26: 필요한 정보만 · 레벨이 오르면 바뀌는 수치를 노랗게
   if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, S = SV_SK[c.id], pr = SV_PAS[S.pair], evoReady = lv===5 && svPasLv(me, S.pair) > 0;
-    return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="'+svSkIc(c.id)+'" alt=""><b>'+svSkNm(c.id)+' <small>'+SPIRITS[svKey(svSkLine(c.id),0)].name+'</small></b><span>'+(w ? '스킬 Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 스킬')+'</span><small>'+S.d+' · 진화 짝 '+svPI(S.pair)+pr.nm+(evoReady ? ' '+uiIc('check') : '')+'</small></button>'; }
+    return '<button class="sv-card" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+';"><img src="'+svSkIc(c.id)+'" alt=""><b>'+svSkNm(c.id)+'</b><span>'+(w ? 'Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 스킬')+'</span><small>'+S.d+'</small><small class="sv-st2">'+svStatLine(SV_SKS[c.id], w ? w.lv : 0, lv)+'</small><small class="sv-evo">진화: '+svPI(S.pair)+pr.nm+(evoReady ? ' '+uiIc('check') : '')+'</small></button>'; }
   if(c.k==='p'){ const P = SV_PAS[c.pas], lv = svPasLv(me, c.pas)+1, pairs = me.wp.filter(w=>SV_SK[w.id].pair===c.pas).map(w=>svSkNm(w.id));
-    return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+P.ic+'.webp" alt=""><b>'+P.nm+'</b><span>'+(lv>1 ? '유물 Lv'+(lv-1)+' → '+lv : uiIc('star')+' 새 유물')+'</span><small>'+P.d+(pairs.length ? ' · 진화 짝: '+pairs.join(', ') : '')+'</small></button>'; }
-  return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+(c.k==='heal' ? 'rl_spring' : 'ic_gold')+'.webp" alt=""><b>'+(c.k==='heal' ? '생명의 샘 — 체력 모두 회복' : '골드 30')+'</b><small>모두 최대 레벨</small></button>';
+    return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+P.ic+'.webp" alt=""><b>'+P.nm+'</b><span>'+(lv>1 ? 'Lv'+(lv-1)+' → '+lv : uiIc('star')+' 새 유물')+'</span><small class="sv-st2">'+svStatLine(SV_PASS[c.pas], lv > 1 ? lv-1 : 0, lv, true)+'</small>'+(pairs.length ? '<small class="sv-evo">진화 짝: '+pairs.join(', ')+'</small>' : '')+'</button>'; }
+  return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+(c.k==='heal' ? 'rl_spring' : 'ic_gold')+'.webp" alt=""><b>'+(c.k==='heal' ? '생명의 샘' : '골드 30')+'</b><small>'+(c.k==='heal' ? '체력 모두 회복' : '모두 최대 레벨')+'</small></button>';
 }
 function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+';"><img src="'+svSkIc(w.id)+'" alt=""><i>'+(w.evo ? uiIc('awaken') : w.lv)+'</i></span>'; }
 function svHud(){
@@ -13083,14 +13113,14 @@ function svDraw(){
       let sq = 1; if(w.kick > 0){ const f = w.kick/0.24, out = Math.sin((1-f)*Math.PI); x += Math.cos(w.kdir||0)*out*16; y += Math.sin(w.kdir||0)*out*16; sq = 1 + out*0.25; } // 튀어나감 · 늘어남
       const sz = 22 + Math.min(4, w.lv)*1.5 + (w.evo ? 6 : 0), im = svImg('assets/spirits/'+svWArt(w)+'.webp'); c.save(); if(p.down) c.globalAlpha = 0.35;
       if(w.evo){ c.shadowColor = '#ff5777'; c.shadowBlur = 10; } if(w.kick > 0.16){ c.shadowColor = SV_EC[w.id.split('_')[0]]; c.shadowBlur = 14; }
-      if(im.complete && im.naturalWidth){ c.translate(x, y); if(Math.cos(w.kdir||0) < -0.2 && w.kick > 0) c.scale(-1, 1); c.scale(sq, 2 - sq); c.drawImage(im, -sz/2, -sz/2, sz, sz); } c.restore();
+      if(im.complete && im.naturalWidth){ c.translate(x, y); if(svFlipFor(svWArt(w), w.kick > 0 ? Math.cos(w.kdir||0) : (p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]))) c.scale(-1, 1); /* 따라다니는 정령도 가는 쪽을 봄 */ c.scale(sq, 2 - sq); c.drawImage(im, -sz/2, -sz/2, sz, sz); } c.restore();
       if(w.kick > 0.18){ const col = SV_EC[w.id.split('_')[0]], f = (w.kick-0.18)/0.06; c.save(); c.globalAlpha = f*0.8; c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 12; c.beginPath(); c.arc(x + Math.cos(w.kdir)*sz*0.55, y + Math.sin(w.kdir)*sz*0.55, 4 + (1-f)*6, 0, 6.283); c.fill(); c.restore(); } }); // 발사 섬광
     // 대표 정령 (내가 조종하는 몸)
     const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1))+'.webp'), bs = 40, bob = p.mv ? Math.sin(G.t*14)*2 : Math.sin(G.t*3)*1;
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
     if(p.inv > 0.7 || p.buff > 0){ c.shadowColor = p.buff > 0 ? '#ffd04a' : '#ffffff'; c.shadowBlur = 16; }
-    if(body.complete && body.naturalWidth){ if((p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]) < -0.2){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
+    if(body.complete && body.naturalWidth){ if(svFlipFor(svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1)), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0])){ c.translate(p.x, 0); c.scale(-1, 1); c.translate(-p.x, 0); } const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0, kx = lk ? Math.cos(lw.kdir||0)*lk*6*(p.face[0] < -0.2 ? -1 : 1) : 0, ky = lk ? Math.sin(lw.kdir||0)*lk*6 : 0; c.translate(p.x + kx, p.y + ky); c.scale(1 + lk*0.12, 1 - lk*0.1); c.translate(-p.x, -p.y); c.drawImage(body, p.x-bs/2, p.y-bs/2-4+bob, bs, bs); }
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
@@ -13124,7 +13154,7 @@ function svDraw(){
     else if(f.k==='beam'){ c.beginPath(); c.moveTo(f.x, f.y); c.lineTo(f.x2, f.y2); c.lineWidth = 6*a + 1; c.strokeStyle = f.col; c.shadowColor = f.col; c.shadowBlur = 12; c.stroke(); }
     else if(f.k==='pillar'){ const gg = c.createLinearGradient(0, f.y-80, 0, f.y); gg.addColorStop(0, f.col+'00'); gg.addColorStop(1, f.col+'dd'); c.fillStyle = gg; c.fillRect(f.x-7, f.y-80, 14, 80); }
     else if(f.k==='flash'){ c.globalAlpha = a*0.35; c.fillStyle = f.col; c.fillRect(0, 0, SV_W, SV_H); }
-    else if(f.k==='num'){ c.fillStyle = f.col; c.font = 'bold '+(f.sz||9)+'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.5; c.strokeStyle = '#000a'; c.strokeText(f.s, f.x, f.y - f.t*22); c.fillText(f.s, f.x, f.y - f.t*22); }
+    else if(f.k==='num'){ c.fillStyle = f.col; c.font = 'bold '+(f.sz||9)+'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.5; c.strokeStyle = '#000a'; c.strokeText(f.s, f.x, f.y - f.t*13); c.fillText(f.s, f.x, f.y - f.t*13); }
     else if(f.k==='text'){ const sc = f.t < 0.12 ? 0.7 + f.t*2.5 : 1; c.translate(f.x, f.y + (f.uy ? (sv.uiTop||0) : 0) - (f.ub ? (sv.uiBot||0) : 0)); c.scale(sc, sc); c.fillStyle = f.col; c.font = 'bold '+(f.sz||20)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(f.s, 0, 0); c.fillText(f.s, 0, 0); }
     c.restore(); });
   c.restore(); svDrawScreen(c, G, cam);
