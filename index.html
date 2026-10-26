@@ -12930,9 +12930,9 @@ function svTick(dt){
       if(o.pull && d < o.R*1.6 && d > 4 && e.kind!=='boss'){ e.x += (o.x-e.x)/d*90*dt; e.y += (o.y-e.y)/d*90*dt; }
       if(d < o.R + e.r){ e.hp -= o.dps*dt*(e.curse > 0 ? 1.25 : 1); e.fl = Math.max(e.fl, 0.03); if(o.web) e.web = Math.max(e.web||0, 0.3); if(e.hp<=0) svKill(e, o.col); } });
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
-  (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), st = w.dir - w.half*w.s, a0 = st + 2*w.half*w.s*f0, a1 = st + 2*w.half*w.s*f1; // 이번 틱에 발톱이 지난 각도
+  (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), L0 = -2.04 + 4.0*f0, L1 = -2.04 + 4.0*f1; // (build 490) 발톱 그림이 드러나는 속도와 같게 — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R + e.r) return;
-      let rel = Math.atan2(dy, dx) - a0; rel = Math.atan2(Math.sin(rel), Math.cos(rel)) * w.s; const span = Math.abs(a1 - a0); if(d > e.r + 12 && (rel < -0.12 || rel > span + 0.12)) return;
+      let rr = Math.atan2(dy, dx) - w.dir; rr = Math.atan2(Math.sin(rr), Math.cos(rr)) * w.s; const close = d < e.r + 12; if(!close && (Math.abs(rr) > w.half || rr < L0 - 0.12 || rr > L1 + 0.12)) return; if(close && f1 < 0.5) return;
       w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?2:1), w.col, c); if(w.ev) svBurn(e, 4*w.m, 2); }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
   G.pools = G.pools.filter(o=>o.t < o.d);
@@ -13138,9 +13138,14 @@ function svDraw(){
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
     else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, prog = Math.min(1, f.t/(f.sw || f.d*0.6)), st = f.a - hf*f.s, lead = st + 2*hf*f.s*prog, fade = f.t > (f.sw||0.22) ? Math.max(0, 1 - (f.t - (f.sw||0.22))/(f.d - (f.sw||0.22))) : 1;
       const im = svImg('assets/survival/fx_claw.webp'); c.globalAlpha = fade;
-      if(im.naturalWidth){ const sz = f.r*2.5; c.save(); c.beginPath(); c.moveTo(cx, cy); if(f.s > 0) c.arc(cx, cy, sz, st - 0.05, lead + 0.05); else c.arc(cx, cy, sz, lead - 0.05, st + 0.05); c.closePath(); c.clip(); // 발톱이 지나간 만큼만 보임
-        c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.drawImage(im, -sz/2, -sz/2, sz, sz); c.restore();
-        c.save(); c.globalAlpha = fade*(1 - prog*0.3); c.shadowColor = f.col; c.shadowBlur = 16; c.fillStyle = '#fff4d0'; c.beginPath(); c.arc(cx + Math.cos(lead)*f.r*0.82, cy + Math.sin(lead)*f.r*0.82, prog < 1 ? 5 : 0, 0, 6.283); c.fill(); c.restore(); } // 발톱 끝 빛
+      if(im.naturalWidth){ const sz = f.r*2.5; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); // (build 490) 그림 전체(가운데서 −117°~+112°)를 부드러운 경계로 차례로 드러냄 — 전엔 ±80°에서 잘리고 경계가 직선으로 잘려 보였음
+        const A0 = -2.04, SPAN = 4.0, FE = 0.45, shown = SPAN*prog;
+        if(prog < 1 && c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(im, 0, 0, N, N);
+          x.globalCompositeOperation = 'destination-in'; const g = x.createConicGradient(A0, N/2, N/2), T = 6.2832, a1 = Math.min(0.999, shown/T), a2 = Math.min(1, (shown + FE)/T); g.addColorStop(0, '#000'); g.addColorStop(a1, '#000'); g.addColorStop(a2, '#0000'); if(a2 < 1) g.addColorStop(1, '#0000'); x.fillStyle = g; x.fillRect(0, 0, N, N);
+          c.globalAlpha = fade; c.drawImage(oc, -sz/2, -sz/2, sz, sz); }
+        else { c.globalAlpha = fade*(prog < 1 ? prog : 1); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
+        c.restore();
+        const la = f.a + (A0 + Math.min(shown, SPAN - 0.3))*f.s; c.save(); c.globalAlpha = fade*(1 - prog*0.3); c.shadowColor = f.col; c.shadowBlur = 16; c.fillStyle = '#fff4d0'; c.beginPath(); c.arc(cx + Math.cos(la)*f.r*0.82, cy + Math.sin(la)*f.r*0.82, prog < 1 ? 5 : 0, 0, 6.283); c.fill(); c.restore(); } // 발톱 끝 빛 (드러나는 경계를 따라감)
       else { c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 12; for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(cx, cy, rr, Math.max(st, lead - 1.6), lead); else c.arc(cx, cy, rr, lead, Math.min(st, lead + 1.6)); c.stroke(); } } }
     else if(f.k==='hit'){ const pr = f.t/f.d, im = svImg('assets/survival/hit_'+f.el+'.webp'); c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
       if(im.naturalWidth){ const sz = f.r*(1.6 + pr*1.2); c.translate(f.x, f.y); c.rotate(f.rot); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
@@ -19690,7 +19695,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 489, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 490, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
