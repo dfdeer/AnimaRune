@@ -13306,14 +13306,7 @@ function svDraw(){
     // 얼음 고리
     p.wp.forEach(w=>{ if(w.id!=='water_b_2') return; const { n, rad } = svOrbit(p, w);
       for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); c.restore(); } });
-    // 따라다니는 무기 정령 (대표 정령 = 기본 무기는 몸으로)
-    const sub = p.wp.slice(1); sub.forEach((w,k)=>{ const a = (w.a||0)*0.6 + k*6.283/Math.max(1, sub.length), rx = p.x + Math.cos(a)*32, ry = p.y + Math.sin(a)*24 - 6; let x = rx, y = ry;
-      if(w.dash){ const f = w.dash[2]/0.18; x = rx + (w.dash[0]-rx)*f*0.8; y = ry + (w.dash[1]-ry)*f*0.8; }
-      let sq = 1; if(w.kick > 0){ const f = w.kick/0.24, out = Math.sin((1-f)*Math.PI); x += Math.cos(w.kdir||0)*out*16; y += Math.sin(w.kdir||0)*out*16; sq = 1 + out*0.25; } // 튀어나감 · 늘어남
-      const sz = 22 + Math.min(4, w.lv)*1.5 + (w.evo ? 6 : 0), im = svImg('assets/spirits/'+svWArt(w)+'.webp'); c.save(); if(p.down) c.globalAlpha = 0.35;
-      if(w.evo){ c.shadowColor = '#ff5777'; c.shadowBlur = 10; } if(w.kick > 0.16){ c.shadowColor = SV_EC[w.id.split('_')[0]]; c.shadowBlur = 14; }
-      if(im.complete && im.naturalWidth){ c.translate(x, y); if(svFlipFor(svWArt(w), w.kick > 0 ? Math.cos(w.kdir||0) : (p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]))) c.scale(-1, 1); /* 따라다니는 정령도 가는 쪽을 봄 */ c.scale(sq, 2 - sq); c.drawImage(im, -sz/2, -sz/2, sz, sz); } c.restore();
-      if(w.kick > 0.18){ const col = SV_EC[w.id.split('_')[0]], f = (w.kick-0.18)/0.06; c.save(); c.globalAlpha = f*0.8; c.fillStyle = col; { const fx = x + Math.cos(w.kdir)*sz*0.55, fy = y + Math.sin(w.kdir)*sz*0.55, fr = 4 + (1-f)*6; c.drawImage(svGlow(col, 'cc'), fx - fr*2.5, fy - fr*2.5, fr*5, fr*5); c.beginPath(); c.arc(fx, fy, fr, 0, 6.283); c.fill(); } c.restore(); } }); // 발사 섬광
+    // (build 506) 스킬마다 내 둘레를 따라다니던 작은 정령 그림은 뺌 (사용자 10/26: 없어도 됨)
     // 대표 정령 (내가 조종하는 몸)
     const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1))+'.webp'), bs = 40, bob = p.mv ? Math.sin(G.t*14)*2 : Math.sin(G.t*3)*1;
     c.save(); if(p.down) c.globalAlpha = 0.45;
@@ -13340,11 +13333,13 @@ function svDraw(){
       if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*(SV_CLAW.D + SV_CLAW.L*svClawE(prog)), 0); c.rotate(SV_CLAW.ROT); c.scale(SV_CLAW.K, SV_CLAW.W); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
         // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 493) 다 긁은 모양 그대로 잠깐 남았다가(0.14초) 부드럽게 사라짐 — 492는 긁은 뒤 꼬리를 다시 채워서 잔상이 새로 생기는 것처럼 보였음 (사용자 10/26)
         const A0 = -2.04, SPAN = 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = Math.min(lead, SPAN*ret*ret*(3 - 2*ret)), grow = 0.92 + 0.08*svClawE(prog);
-        if(c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(svClawTex(im), 0, 0, N, N);
-          x.globalCompositeOperation = 'destination-in'; const g = x.createConicGradient(A0, N/2, N/2), cl = v=>Math.max(0, Math.min(1, v)), la = cl(lead/T), ta = cl(tail/T), ma = cl((tail + lead)/2/T), al = v=>'rgba(0,0,0,'+v+')';
-          const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(tv*0.8)); g.addColorStop(ta, al(0)); if(ma > ta && ma < la) g.addColorStop(ma, al(0.8)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
-          x.fillStyle = g; x.fillRect(0, 0, N, N); c.globalAlpha = fade; c.drawImage(oc, -sz*grow/2, -sz*grow/2, sz*grow, sz*grow); }
-        else { c.globalAlpha = fade*(prog < 1 ? 0.5 + prog*0.5 : 1); c.drawImage(svClawTex(im), -sz/2, -sz/2, sz, sz); }
+        { const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')), mk = sv.clawM || (sv.clawM = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; mk.width = mk.height = N; } const x = oc.getContext('2d'), m = mk.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(svClawTex(im), 0, 0, N, N);
+          // (build 506) 꼬리 가림을 부채꼴 조각으로 직접 그림 — 원뿔 그라디언트(createConicGradient)가 휴대폰(사파리 등)에서 안 되거나 다르게 그려져 발톱이 안 보일 수 있어서 (사용자 10/26: 모바일에서 불꽃 발톱이 안 보임)
+          const cl = v=>Math.max(0, Math.min(1, v)), la = cl(lead/T), ta = cl(tail/T), ma = cl((tail + lead)/2/T), tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0, st = [[0, tv*0.8], [ta, 0]].concat(ma > ta && ma < la ? [[ma, 0.8]] : [], [[la, 1], [Math.min(1, la + 0.012), 0], [1, 0]]);
+          const alf = f=>{ let v = 0; for(let q=0; q<st.length-1; q++){ const [p0, a0] = st[q], [p1, a1] = st[q+1]; if(p1 > p0 && f >= p0 && f <= p1) v = a0 + (a1 - a0)*(f - p0)/(p1 - p0); } return v; }, M = 180, hN = N/2;
+          m.setTransform(1, 0, 0, 1, 0, 0); m.globalAlpha = 1; m.clearRect(0, 0, N, N); m.fillStyle = '#000';
+          for(let k=0; k<M; k++){ const f0 = k/M, f1 = (k + 1)/M; if(f0 > la + 0.013) break; const v = alf((f0 + f1)/2); if(v <= 0.004) continue; m.globalAlpha = v; m.beginPath(); m.moveTo(hN, hN); m.arc(hN, hN, N, A0 + f0*T, A0 + f1*T + 0.004); m.closePath(); m.fill(); }
+          x.globalCompositeOperation = 'destination-in'; x.drawImage(mk, 0, 0); x.globalCompositeOperation = 'source-over'; c.globalAlpha = fade; c.drawImage(oc, -sz*grow/2, -sz*grow/2, sz*grow, sz*grow); }
         c.restore();
         }
       else if(im.complete){ c.lineCap = 'round'; /* 그림을 못 불러온 때만 임시 선 (불러오는 중엔 안 그림) */ c.shadowColor = f.col; c.shadowBlur = 12; for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(cx, cy, rr, Math.max(st, lead0 - 1.6), lead0); else c.arc(cx, cy, rr, lead0, Math.min(st, lead0 + 1.6)); c.stroke(); } } }
@@ -19903,7 +19898,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 505, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 506, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
