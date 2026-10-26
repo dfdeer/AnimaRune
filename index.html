@@ -12506,7 +12506,12 @@ function svGroundPat(c, map){ // 바닥 무늬 — 그림이 있으면 그림, �
     sv.patSrc = M.id; sv.patOc = oc; sv.pat = c.createPattern(oc, 'repeat'); sv.patK = 1; sv.patImg = false; }
   return sv.pat;
 }
-const SV_CLAW = { SZ:2.2, D:0.05, K:0.9, W:1.0, ROT:0.55, L:0.25 }; // 불꽃 발톱 그림 — 크기(범위의 배) · 앞으로 옮김 · 앞뒤·옆 배율 · 비스듬히 돌림(라디안) · 긋는 동안 앞으로 밀려 나가는 거리 (build 497 사용자가 모양 고르기 페이지 2차 5번 「비스듬히 + 밀어치기 · 한쪽으로만」을 고름 10/26 — 492~496은 반원·납작한 부채꼴이라 할퀴는 느낌이 안 났음)
+const SV_CLAW = { SZ:2.5, D:0.05, K:0.9, W:1.0, ROT:0, L:0.25, TH:0.04 }; // 불꽃 발톱 그림 — 크기(범위의 배) · 앞으로 옮김 · 앞뒤·옆 배율 · 비스듬히 돌림(라디안) · 긋는 동안 앞으로 밀려 나가는 거리 (build 497 사용자가 모양 고르기 페이지 2차 5번 「비스듬히 + 밀어치기 · 한쪽으로만」을 고름 10/26 — 492~496은 반원·납작한 부채꼴이라 할퀴는 느낌이 안 났음) · (build 499) 모양 고르기 6차 3번: 정중앙 + 크게 + 가운데 줄기 조금 두껍게(TH — svClawTex)
+function svClawTex(im){ // (build 499) 가운데 줄기만 조금 두껍게 — 그림을 가운데 기준으로 아주 촘촘히(0.8%씩) 조금 크게 겹치되 정면(그림 기준 0°)에서만 보이고 양 끝으로 갈수록 원래 두께 (사용자 10/26: 너무 얇아 보임 · 간격이 크면 여러 줄로 보여 과했음) · 한 번만 만들어 둠
+  if(sv.clawTex && sv.clawTex.src === im) return sv.clawTex; const N = 512, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'); x.drawImage(im, 0, 0, N, N);
+  const t = document.createElement('canvas'); t.width = t.height = N; const y = t.getContext('2d'); for(let k = 1.008; k <= 1 + SV_CLAW.TH + 0.0001; k += 0.008) y.drawImage(im, N/2 - N*k/2, N/2 - N*k/2, N*k, N*k);
+  y.globalCompositeOperation = 'destination-in'; const g = y.createConicGradient ? y.createConicGradient(0, N/2, N/2) : null; if(g){ g.addColorStop(0, '#000'); g.addColorStop(0.07, '#000'); g.addColorStop(0.22, '#0000'); g.addColorStop(0.78, '#0000'); g.addColorStop(0.93, '#000'); g.addColorStop(1, '#000'); y.fillStyle = g; y.fillRect(0, 0, N, N); x.drawImage(t, 0, 0); }
+  c.src = im; return (sv.clawTex = c); }
 function svClawIn(w, dx, dy, er, a0, a1){ // 적이 발톱 그림(앞으로 옮기고 누른 모양) 안, 이번에 긁은 각도(그림 기준 a0~a1) 안에 있나
   const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, x0 = lx - w.R*SV_CLAW.D, cr = Math.cos(SV_CLAW.ROT), sr = Math.sin(SV_CLAW.ROT), u = (x0*cr + ly*sr)/SV_CLAW.K, v = (-x0*sr + ly*cr)/SV_CLAW.W, th = Math.atan2(v, u); // 비스듬히 돌린 만큼 되돌려서 그림 기준으로
   return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.55 + er*1.5 && th >= a0 - 0.1 && th <= a1 + 0.1; // (build 498) 그림보다 조금 넓게 (사용자 10/26: 범위가 살짝 안 맞음) — 전엔 그림 반지름(0.43)·적 크기 1.3배·각도 ±0.15
@@ -13202,11 +13207,11 @@ function svDraw(){
       if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*(SV_CLAW.D + SV_CLAW.L*svClawE(prog)), 0); c.rotate(SV_CLAW.ROT); c.scale(SV_CLAW.K, SV_CLAW.W); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
         // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 493) 다 긁은 모양 그대로 잠깐 남았다가(0.14초) 부드럽게 사라짐 — 492는 긁은 뒤 꼬리를 다시 채워서 잔상이 새로 생기는 것처럼 보였음 (사용자 10/26)
         const A0 = -2.04, SPAN = 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = lead - TAIL*(1 - ret*ret*(3 - 2*ret)), grow = 0.92 + 0.08*svClawE(prog);
-        if(c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(im, 0, 0, N, N);
+        if(c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(svClawTex(im), 0, 0, N, N);
           x.globalCompositeOperation = 'destination-in'; const g = x.createConicGradient(A0, N/2, N/2), cl = v=>Math.max(0, Math.min(1, v)), la = cl(lead/T), ta = cl(tail/T), ma = cl((tail + lead)/2/T), al = v=>'rgba(0,0,0,'+v+')';
           const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(tv*0.8)); g.addColorStop(ta, al(0)); if(ma > ta && ma < la) g.addColorStop(ma, al(0.8)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
           x.fillStyle = g; x.fillRect(0, 0, N, N); c.globalAlpha = fade; c.drawImage(oc, -sz*grow/2, -sz*grow/2, sz*grow, sz*grow); }
-        else { c.globalAlpha = fade*(prog < 1 ? 0.5 + prog*0.5 : 1); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
+        else { c.globalAlpha = fade*(prog < 1 ? 0.5 + prog*0.5 : 1); c.drawImage(svClawTex(im), -sz/2, -sz/2, sz, sz); }
         c.restore();
         }
       else { c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 12; for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(cx, cy, rr, Math.max(st, lead0 - 1.6), lead0); else c.arc(cx, cy, rr, lead0, Math.min(st, lead0 + 1.6)); c.stroke(); } } }
@@ -19758,7 +19763,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 498, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 499, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
