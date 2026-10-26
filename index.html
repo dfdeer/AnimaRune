@@ -12367,7 +12367,7 @@ const SV_MAPS = [
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
   { id:'shadow', nm:'그림자 심연', el:'dark', mid:'shadowLord', fin:'abyssEye', col:['#1c1533','#271d44','#120d24'], gim:'dark', ob:['수정','뒤틀린 나무'], d:'어두워 시야가 좁음 · 순간이동 문으로 건너뜀' }
 ];
-const SV_OBS = [3.4, 2.5, 2.7, 2.5]; // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
+const SV_OBS = [3.4, 2.5, 2.7, 2.5], SV_OBSH = [0.85, 1.15, 1.2, 1.1]; // SV_OBSH: 그림자 가로 반지름 (원 반지름의 몇 배 · 나무는 밑동이 좁아 작게) // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
 const SV_STK = [1, 1.12, 1.25, 1.4, 1.6], SV_STD = [1, 1.05, 1.1, 1.18, 1.25]; // 단계별 적 체력 · 주는 피해 배율
 const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', frostGiant:'서리거인', frostTyrant:'혹한의 룬', lavaLord:'용암군주', infernoDrake:'겁화의 룬', ruinGuardian:'유적파수꾼', dawnJudge:'심판의 룬', shadowLord:'그림자 군주', abyssEye:'심연의 룬' };
 let SV_STAGE_READY = 1; // (build 481) 사용자 결정 10/26: 일단 숲만 — 그림이 다 오면 이 숫자를 늘려 다음 단계를 엶 (2~5단계는 「준비 중」)
@@ -12441,7 +12441,9 @@ function svDrawObstacles(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage];
   map.ob.forEach(b=>{ if(b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
-    c.fillStyle = '#0005'; c.beginPath(); c.ellipse(b.x, b.y + b.r*0.55, b.r*1.05, b.r*0.45, 0, 0, 6.283); c.fill();
+    { const has = im.complete && im.naturalWidth, rx = b.r*(has ? SV_OBSH[b.k] : 1), ry = rx*0.32, cy = b.y + b.r*0.55 - ry*0.55; // 밑동 바로 밑에 붙는 부드러운 그림자 (전엔 그림 아래로 삐져나와 떠 보였음)
+      const g = c.createRadialGradient(b.x, cy, 0, b.x, cy, rx); g.addColorStop(0, '#0000004d'); g.addColorStop(0.65, '#00000026'); g.addColorStop(1, '#00000000');
+      c.save(); c.translate(b.x, cy); c.scale(1, ry/rx); c.translate(-b.x, -cy); c.fillStyle = g; c.beginPath(); c.arc(b.x, cy, rx, 0, 6.283); c.fill(); c.restore(); }
     if(im.complete && im.naturalWidth){ const s = b.r*SV_OBS[b.k]; c.drawImage(im, b.x - s/2, b.y + b.r*0.55 - s, s, s); } // 그림은 밑동이 아래쪽에 맞춰져 있음
     else { const tall = b.k % 2 === 0; c.fillStyle = M.col[2]; c.strokeStyle = '#0008'; c.lineWidth = 2;
       if(tall){ c.beginPath(); c.arc(b.x, b.y - b.r*0.5, b.r*1.05, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = M.col[1]; c.beginPath(); c.arc(b.x - b.r*0.3, b.y - b.r*0.8, b.r*0.45, 0, 6.283); c.fill(); }
@@ -12454,13 +12456,25 @@ function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있
     if(!G.players.some(p=>Math.abs(p.x-b.x) < s*0.42 && p.y < b.y && p.y + 14 > top)) return;
     c.save(); c.globalAlpha = 0.55; c.drawImage(im, b.x - s/2, top, s, s); c.restore(); });
 }
-function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도
-  const w = 54, h = 90, x0 = 8, y0 = 8, k = w / SV_MW; c.save(); c.globalAlpha = 0.85; c.fillStyle = '#0b0d26cc'; c.fillRect(x0, y0, w, h); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; c.strokeRect(x0, y0, w, h);
-  c.strokeStyle = '#ffffff99'; c.strokeRect(x0 + cam.x*k, y0 + cam.y*k, SV_W*k, SV_H*k);
-  const dot = (x, y, col, r)=>{ c.fillStyle = col; c.beginPath(); c.arc(x0 + x*k, y0 + y*k, r, 0, 6.283); c.fill(); };
-  G.loot.forEach(o=>{ if(o.k==='pod') dot(o.x, o.y, '#ffd557', 1.4); else if(o.k==='rune') dot(o.x, o.y, '#ff5777', 2); });
-  G.en.forEach(e=>{ if(e.kind==='boss') dot(e.x, e.y, '#ff3a3a', 3); else if(e.kind==='elite') dot(e.x, e.y, '#c9a6ff', 2); });
-  G.players.forEach((p,i)=>dot(p.x, p.y, SV_PCOL[i], 2.2)); c.restore();
+function svMiniBase(map){ // 작은 지도 바탕 — 맵마다 한 번만 그려 둠 (바닥색 · 장애물 · 기믹 자리)
+  if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 128, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
+  const g = x.createRadialGradient(W/2, H/2, 10, W/2, H/2, H*0.7); g.addColorStop(0, M.col[1]); g.addColorStop(1, M.col[2]); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  map.zones.forEach(z=>{ x.fillStyle = { spring:'#7ae0ffcc', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
+  map.ob.forEach(o=>{ x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
+  sv.miniFor = map; sv.miniC = oc; return oc;
+}
+function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도 — 둥근 틀 · 실제 맵 모양 · 내 위치 · 보스 · 룬 · 상자
+  const w = 62, h = Math.round(w*SV_MH/SV_MW), x0 = 10, y0 = 10, k = w / SV_MW, rr = 9, me = G.players[G.me];
+  const box = ()=>{ c.beginPath(); c.moveTo(x0+rr, y0); c.arcTo(x0+w, y0, x0+w, y0+h, rr); c.arcTo(x0+w, y0+h, x0, y0+h, rr); c.arcTo(x0, y0+h, x0, y0, rr); c.arcTo(x0, y0, x0+w, y0, rr); c.closePath(); };
+  c.save(); c.shadowColor = '#000a'; c.shadowBlur = 8; box(); c.fillStyle = '#0b0d26'; c.fill(); c.restore();
+  c.save(); box(); c.clip(); c.globalAlpha = 0.92; c.drawImage(svMiniBase(G.map), x0, y0, w, h); c.globalAlpha = 1;
+  c.fillStyle = '#ffffff1f'; c.strokeStyle = '#ffffffcc'; c.lineWidth = 1; c.fillRect(x0 + cam.x*k, y0 + cam.y*k, SV_W*k, SV_H*k); c.strokeRect(x0 + cam.x*k + 0.5, y0 + cam.y*k + 0.5, SV_W*k - 1, SV_H*k - 1); // 지금 보이는 곳
+  const P = (o)=>[x0 + o.x*k, y0 + o.y*k];
+  G.loot.forEach(o=>{ if(o.k==='pod'){ const [x, y] = P(o); c.fillStyle = '#ffd557'; c.strokeStyle = '#5a3a00'; c.lineWidth = 0.8; c.fillRect(x-1.8, y-1.5, 3.6, 3); c.strokeRect(x-1.8, y-1.5, 3.6, 3); }
+    else if(o.k==='rune'){ const [x, y] = P(o); c.fillStyle = '#ff5777'; c.beginPath(); c.moveTo(x, y-3); c.lineTo(x+2.4, y); c.lineTo(x, y+3); c.lineTo(x-2.4, y); c.closePath(); c.fill(); } });
+  G.en.forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite') return; const [x, y] = P(e); if(e.kind==='boss'){ const pr = 3.2 + Math.sin(G.t*6)*0.8; c.strokeStyle = '#ff3a3a'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, pr + 2, 0, 6.283); c.stroke(); c.fillStyle = '#ff3a3a'; c.beginPath(); c.arc(x, y, 2.6, 0, 6.283); c.fill(); } else { c.fillStyle = '#c9a6ff'; c.beginPath(); c.arc(x, y, 1.8, 0, 6.283); c.fill(); } });
+  G.players.forEach((p,i)=>{ const [x, y] = P(p); c.fillStyle = '#000a'; c.beginPath(); c.arc(x, y, 3.4, 0, 6.283); c.fill(); c.fillStyle = p===me ? '#ffffff' : SV_PCOL[i]; c.beginPath(); c.arc(x, y, 2.4, 0, 6.283); c.fill(); if(p===me){ c.strokeStyle = SV_PCOL[i]; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, 3.6, 0, 6.283); c.stroke(); } });
+  c.restore(); c.save(); box(); c.strokeStyle = '#ffffff66'; c.lineWidth = 1.2; c.stroke(); c.restore();
 }
 // ---------- 화면 · 로비 ----------
 function showSurvival(){
@@ -19560,7 +19574,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 481, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 482, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
