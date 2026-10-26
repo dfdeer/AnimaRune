@@ -12475,9 +12475,9 @@ function svGroundPat(c, map){ // 바닥 무늬 — 그림이 있으면 그림, �
     sv.patSrc = M.id; sv.patOc = oc; sv.pat = c.createPattern(oc, 'repeat'); sv.patK = 1; sv.patImg = false; }
   return sv.pat;
 }
-const SV_CLAW = { SZ:2.5, D:0.25, K:0.68 }; // (build 492) 불꽃 발톱 그림 — 크기(범위의 배) · 앞으로 옮김(범위의 배) · 옆으로 누름 → 반원이 아니라 앞쪽 부채꼴
+const SV_CLAW = { SZ:2.7, D:0.3, K:0.6 }; // 불꽃 발톱 그림 — 크기(범위의 배) · 앞으로 옮김(범위의 배) · 앞뒤로 누름 → 반원이 아니라 넓고 얕은 앞쪽 부채꼴 (build 494 사용자 10/26: 492~493은 옆으로 눌러 길쭉했음 — 앞뒤로 눌러야 함)
 function svClawIn(w, dx, dy, er, a0, a1){ // 적이 발톱 그림(앞으로 옮기고 누른 모양) 안, 이번에 긁은 각도(그림 기준 a0~a1) 안에 있나
-  const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, u = lx - w.R*SV_CLAW.D, v = ly/SV_CLAW.K, th = Math.atan2(v, u);
+  const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, u = (lx - w.R*SV_CLAW.D)/SV_CLAW.K, v = ly, th = Math.atan2(v, u);
   return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.43 + er*1.3 && th >= a0 && th <= a1;
 }
 function svGlow(col, a0){ // (build 493) 미리 그려 둔 둥근 빛 (가운데 col → 바깥 투명) — 그림자 흐림 대신
@@ -12863,7 +12863,7 @@ function svAttack(p, w, dt){
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
   if(id==='fire_a_1'){ // 불꽃 발톱 — (build 489) 사용자 결정 10/26: 즉발이 아니라 할퀴는 동안(0.22초) 발톱이 지나간 자리에 닿은 적만 맞음 · 대상 안 고름 · 좌우 번갈아
     const R0 = (66 + lv*5)*ar, d0 = svAimDir(p), half = 1.35; w.alt = -(w.alt || 1); G.sweeps = G.sweeps || [];
-    [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{ G.sweeps.push({ p, dir, s:w.alt, half, R:R0, t:0, d:0.13, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:0.5, sw:0.13, col, r:R0, a:dir, s:w.alt, half }); }); }
+    [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{ G.sweeps.push({ p, dir, s:w.alt, half, R:R0, t:0, d:0.13, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:0.39, sw:0.13, col, r:R0, a:dir, s:w.alt, half }); }); }
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
   else if(id==='fire_b_1'){ const e = svNear(p.x, p.y, 220), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : Math.atan2(p.face[1], p.face[0]), n = 3 + Math.floor(lv/2) + (ev ? 3 : 0);
     for(let k=0;k<n;k++){ const a = a0 + (n > 1 ? (k/(n-1) - 0.5) : 0)*0.9; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*330, vy:Math.sin(a)*330, kind:'spark', life:0.75, dmg:10*m, burn:3*m, pierce: ev ? 2 : 1, hitS:[], col, p, crit:cr }); } }
@@ -12960,7 +12960,7 @@ function svTick(dt){
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
   (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), L0 = -2.04 + 4.0*svClawE(f0), L1 = -2.04 + 4.0*svClawE(f1); // (build 491) 발톱 끝이 지나가는 각도와 같게(처음 빠르고 끝에 느려짐) — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R*1.4 + e.r) return;
-      const close = d < e.r + 12; if(!close && !svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15)) return; if(close && f1 < 0.5) return;
+      const close = d < e.r + 12 || (d < w.R*0.45 + e.r && dx*Math.cos(w.dir) + dy*Math.sin(w.dir) > -e.r); if(!svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
       w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?2:1), w.col, c); if(w.ev) svBurn(e, 4*w.m, 2); }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
   G.pools = G.pools.filter(o=>o.t < o.d);
@@ -13165,14 +13165,14 @@ function svDraw(){
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = 3; c.strokeStyle = f.col; svGS(c, 6); }
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
-    else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = sw + 0.14, fade = f.t > hold ? Math.pow(Math.max(0, 1 - (f.t - hold)/Math.max(0.01, f.d - hold)), 1.6) : 1;
+    else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = sw + 0.06, ret = f.t > hold ? Math.min(1, (f.t - hold)/Math.max(0.01, f.d - hold)) : 0, fade = 1 - ret*ret*0.5; // (build 494) 다 긁고 0.06초 뒤 꼬리부터 지나온 길을 따라 차례로 사라짐 (사용자 10/26: 잔상이 너무 오래 남음)
       const im = svImg('assets/survival/fx_claw.webp'); c.globalAlpha = fade;
-      if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*SV_CLAW.D, 0); c.scale(1, SV_CLAW.K); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
+      if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*SV_CLAW.D, 0); c.scale(SV_CLAW.K, 1); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
         // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 493) 다 긁은 모양 그대로 잠깐 남았다가(0.14초) 부드럽게 사라짐 — 492는 긁은 뒤 꼬리를 다시 채워서 잔상이 새로 생기는 것처럼 보였음 (사용자 10/26)
-        const A0 = -2.04, SPAN = 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = lead - TAIL, grow = 0.92 + 0.08*svClawE(prog);
+        const A0 = -2.04, SPAN = 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = lead - TAIL*(1 - svClawE(ret)), grow = 0.92 + 0.08*svClawE(prog);
         if(c.createConicGradient){ const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(im, 0, 0, N, N);
           x.globalCompositeOperation = 'destination-in'; const g = x.createConicGradient(A0, N/2, N/2), cl = v=>Math.max(0, Math.min(1, v)), la = cl(lead/T), ta = cl(tail/T), ma = cl((tail + lead)/2/T), al = v=>'rgba(0,0,0,'+v+')';
-          const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(0.15 + tv*0.6)); g.addColorStop(ta, al(0.15)); if(ma > ta && ma < la) g.addColorStop(ma, al(0.8)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
+          const tv = tail < 0 ? Math.min(1, -tail/Math.max(0.01, lead - tail)) : 0; g.addColorStop(0, al(tv*0.8)); g.addColorStop(ta, al(0)); if(ma > ta && ma < la) g.addColorStop(ma, al(0.8)); g.addColorStop(la, al(1)); g.addColorStop(Math.min(1, la + 0.012), al(0)); g.addColorStop(1, al(0));
           x.fillStyle = g; x.fillRect(0, 0, N, N); c.globalAlpha = fade; c.drawImage(oc, -sz*grow/2, -sz*grow/2, sz*grow, sz*grow); }
         else { c.globalAlpha = fade*(prog < 1 ? 0.5 + prog*0.5 : 1); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
         c.restore();
@@ -19726,7 +19726,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 493, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 494, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
