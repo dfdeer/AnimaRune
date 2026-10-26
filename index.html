@@ -8956,6 +8956,18 @@ function sBoop(off, peak, bus, f1, f2, dur){ const t0 = aT(off), o = audioCtx.cr
 let noiseBufCache = null;
 function noiseBuf(){ if(noiseBufCache && noiseBufCache.ctx===audioCtx) return noiseBufCache.buf; const len = Math.floor(audioCtx.sampleRate), buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0); let x = 12345; for(let i=0;i<len;i++){ x = (x*16807)%2147483647; d[i] = (x/2147483647)*2-1; } noiseBufCache = { ctx:audioCtx, buf }; return buf; }
 function sNoise(off, dur, peak, bus, ftype, f1, f2, q, atk){ const t0 = aT(off), src = audioCtx.createBufferSource(), fl = audioCtx.createBiquadFilter(), g = audioCtx.createGain(); src.buffer = noiseBuf(); fl.type = ftype||'lowpass'; fl.Q.value = q||0.8; fl.frequency.setValueAtTime(f1, t0); if(f2) fl.frequency.exponentialRampToValueAtTime(f2, t0+dur); envG(g, t0, peak, atk||0.003, dur); src.connect(fl); fl.connect(g); g.connect(bus); src.start(t0); src.stop(t0+dur+0.05); }
+// (build 496) 정령 서바이벌 발톱 소리 — 배경음처럼 짧은 울림·압축 · 부드럽게 차올랐다 빠지는 바람 · 두 겹으로 살짝 어긋난 낮은 몸통 (사용자가 소리 고르기 페이지 2차 7번 「묵직하고 긴 휙」을 고름 10/26)
+let sfxIrCache = null;
+function sfxVerbBus(B, wetV, len){ const k = audioCtx.sampleRate, n = Math.floor(k*len);
+  if(!sfxIrCache || sfxIrCache.ctx !== audioCtx || sfxIrCache.n !== n){ const ir = audioCtx.createBuffer(2, n, k); let x = 777; for(let ch=0;ch<2;ch++){ const d = ir.getChannelData(ch); for(let i=0;i<n;i++){ x = (x*16807)%2147483647; d[i] = ((x/2147483647)*2-1)*Math.pow(1 - i/n, 3); } } sfxIrCache = { ctx:audioCtx, n, ir }; }
+  const inp = audioCtx.createGain(), conv = audioCtx.createConvolver(), wet = audioCtx.createGain(), comp = audioCtx.createDynamicsCompressor(); conv.buffer = sfxIrCache.ir; wet.gain.value = wetV; comp.threshold.value = -16; comp.ratio.value = 3;
+  inp.connect(comp); inp.connect(conv); conv.connect(wet); wet.connect(comp); comp.connect(B); return inp; }
+function sWhoosh(off, dur, peak, B, ftype, f1, fm, f2, q, atk){ const t0 = aT(off), src = audioCtx.createBufferSource(), fl = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  src.buffer = noiseBuf(); fl.type = ftype; fl.Q.value = q; fl.frequency.setValueAtTime(f1, t0); fl.frequency.exponentialRampToValueAtTime(fm, t0+atk); fl.frequency.exponentialRampToValueAtTime(f2, t0+dur);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(peak, t0+atk); g.gain.setTargetAtTime(0, t0+atk, (dur-atk)/3.5); src.connect(fl); fl.connect(g); g.connect(B); src.start(t0); src.stop(t0+dur+0.3); }
+function sBody(off, dur, peak, B, f1, f2){ const t0 = aT(off); [0.995, 1.005].forEach(dt=>{ const o = audioCtx.createOscillator(), lp = audioCtx.createBiquadFilter(), g = audioCtx.createGain();
+  o.type = 'triangle'; o.frequency.setValueAtTime(f1*dt, t0); o.frequency.exponentialRampToValueAtTime(f2*dt, t0+dur); lp.type = 'lowpass'; lp.frequency.value = 500;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(peak, t0+dur*0.3); g.gain.setTargetAtTime(0, t0+dur*0.3, dur/4); o.connect(lp); lp.connect(g); g.connect(B); o.start(t0); o.stop(t0+dur+0.3); }); }
 function sWobble(f1, f2, off, dur, peak, bus, rate, depth){ const t0 = aT(off), o = audioCtx.createOscillator(), l = audioCtx.createOscillator(), lg = audioCtx.createGain(), g = audioCtx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(f1, t0); o.frequency.exponentialRampToValueAtTime(f2, t0+dur); l.frequency.value = rate; lg.gain.value = depth; l.connect(lg); lg.connect(o.frequency); envG(g, t0, peak, 0.01, dur); o.connect(g); g.connect(bus); o.start(t0); l.start(t0); o.stop(t0+dur+0.05); l.stop(t0+dur+0.05); }
 // (v2.10.2) 효과음마다 크기를 재서(가장 큰 0.05초 구간의 RMS) 맞춘 배율 — 측정값: 버튼 0.017 ~ 승리 0.141로 8배 차이였음
 // 목표: 모두 0.05 · 승리·에픽·전설 소환만 0.06 (다시 재려면 OfflineAudioContext로 sfxPlay를 렌더링해서 같은 방식으로)
@@ -8963,7 +8975,7 @@ const SFX_GAIN = { click:2.9, navClick:2.4, summon:0.67, summonRare:0.64, summon
   fail:1.29, fuse:1.15, enhance:0.78, win:0.43, lose:0.74, claim:0.86, battleStart:0.88,
   // (v332) 전투 효과음 — 같은 방식으로 잼 · 자주 나는 타격·지속 피해는 목표를 조금 낮게(0.028~0.035)
   bHit:0.30, bCrit:0.28, bStrong:0.96, bWeak:0.47, bDot:0.58, bFall:0.53, bHeal:0.56, bShield:0.78, bBuff:0.94, bGi:0.9, bDebuff:0.50,
-  svClaw:0.52, svShot:1.02, svHit:0.54, // (build 493) 정령 서바이벌 — 같은 방식으로 잼 (발톱 0.045 · 쏘기 0.028 · 맞음 0.025 — 자주 나서 낮게)
+  svClaw:0.27, svShot:1.02, svHit:0.54, // (build 496 발톱 다시 잼) (build 493) 정령 서바이벌 — 같은 방식으로 잼 (발톱 0.045 · 쏘기 0.028 · 맞음 0.025 — 자주 나서 낮게)
   bSk_fire:0.55, bBoom:0.155, bSk_water:0.88, bSk_wood:0.64, bSk_light:0.82, bSk_dark:0.61,
   mTap:1.6, mBreak:1.6, mOre:0.85, mStone:0.9, mRare:0.75 }; // (v7.0.0) 광산 — 자주 나는 소리라 0.03~0.035
 let sfxNameNode = {};
@@ -8991,7 +9003,7 @@ function sfxPlay(name){
   else if(name==='claim'){ sGlock(1319,0,0.08,B); sGlock(1760,0.06,0.08,B); sMusicBox(2637,0.12,0.04,0.6,B); } // 짜랑
   else if(name==='battleStart'){ sWood(880,0,0.14,B); sWood(1175,0.1,0.14,B); sPluck(196,0.2,0.12,0.3,true,B); }
   // (v332) 전투 효과음
-  else if(name==='svClaw'){ sNoise(0,0.17,0.7,B,'bandpass',800,3600,0.9,0.045); sNoise(0.07,0.15,0.5,B,'bandpass',3600,600,0.9,0.012); sNoise(0.03,0.16,0.22,B,'highpass',6500,2800,0.7,0.02); } // (build 493) 정령 서바이벌 — 발톱이 공기를 가르는 소리(차오르다 빠짐 · 불꽃 바스락) · 492는 짧고 딱딱해서 버튼 소리 같았음
+  else if(name==='svClaw'){ const R = sfxVerbBus(B, 0.38, 0.7); sWhoosh(0,0.34,0.85,R,'lowpass',250,1400,300,1,0.11); sBody(0,0.3,0.16,R,110,45); } // (build 496) 정령 서바이벌 — 발톱 「묵직하고 긴 휙」 (사용자가 고름)
   else if(name==='svShot'){ sNoise(0,0.08,0.45,B,'bandpass',2200,800,0.9,0.01); } // 서바이벌 — 다른 무기 쏘기 (음정 없는 짧은 바람)
   else if(name==='svHit'){ sNoise(0,0.07,0.55,B,'lowpass',1400,280,0.8,0.002); sBoop(0,0.12,B,110,55,0.05); } // 서바이벌 — 적이 맞음 (둔탁하게)
   else if(name==='bHit'){ sNoise(0,0.07,0.5,B,'lowpass',1400,500); sBoop(0,0.35,B,170,70,0.09); }
@@ -19726,7 +19738,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 495, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 496, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
