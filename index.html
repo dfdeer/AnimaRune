@@ -12522,6 +12522,27 @@ function svGlow(col, a0){ // (build 493) 미리 그려 둔 둥근 빛 (가운데
   const oc = document.createElement('canvas'); oc.width = oc.height = 64; const x = oc.getContext('2d'), g = x.createRadialGradient(32, 32, 1, 32, 32, 32); g.addColorStop(0, col + (a0||'')); g.addColorStop(1, col.slice(0, 7) + '00'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); sv.glows[k] = oc; return oc;
 }
 function svGS(c, w){ const a = c.globalAlpha, lw = c.lineWidth; c.globalAlpha = a*0.3; c.lineWidth = lw + w; c.stroke(); c.globalAlpha = a; c.lineWidth = lw; c.stroke(); } // 선 + 둘레에 넓고 옅은 선 (빛 번짐 대신)
+const SV_WAVE = { T0:0.07, EX:0.32, FRONT:0.78 }; // (build 502) 물결 — 모으기 · 퍼지는 시간 · 그림에서 물마루 바깥 끝(반지름 비율)
+function svWaveParts(){ if(sv.waveP) return sv.waveP; // 물방울(눈물 모양 — 둥근 머리가 앞) · 거품 · 물마루용 캔버스 — 한 번만 만듦
+  const d = document.createElement('canvas'); d.width = 32; d.height = 48; let x = d.getContext('2d'); x.translate(16, 28); const tear = ()=>{ x.beginPath(); x.moveTo(0, -24); x.bezierCurveTo(10, -8, 13, 2, 13, 8); x.arc(0, 8, 13, 0, Math.PI); x.bezierCurveTo(-13, 2, -10, -8, 0, -24); };
+  x.fillStyle = '#2f8ee8'; tear(); x.fill(); x.fillStyle = '#7fd0ff'; x.beginPath(); x.arc(0, 8, 9.5, 0, 6.283); x.fill(); x.fillStyle = 'rgba(255,255,255,0.9)'; x.beginPath(); x.ellipse(-4, 3, 3, 5, -0.4, 0, 6.283); x.fill(); x.strokeStyle = '#1b5fae'; x.lineWidth = 2; tear(); x.stroke();
+  const f = document.createElement('canvas'); f.width = f.height = 40; x = f.getContext('2d'); [[20,22,11],[11,24,8],[29,24,8],[16,15,7],[26,15,6]].forEach(([a,b,r])=>{ x.fillStyle = '#e9f7ff'; x.beginPath(); x.arc(a, b, r, 0, 6.283); x.fill(); });
+  return (sv.waveP = { drop:d, foam:f, oc:document.createElement('canvas') }); }
+function svDrawWave(c, f){ // 물결 그리기 — 바닥 물자국 · 발밑 고임 · 물마루(안쪽은 지워 바깥 끝만) · 물방울 · 거품
+  const W = SV_WAVE, P = svWaveParts(), im = svImg('assets/survival/fx_wave.webp'), R = f.r, ft = f.t, E = svClawE, done = ft > W.T0 + W.EX, after = ft - W.T0 - W.EX, fr = ft < W.T0 ? 0 : R*(0.15 + 0.85*E(Math.min(1, (ft - W.T0)/W.EX)));
+  let s = f.sd || 1; const rnd = ()=>{ s = (s*16807) % 2147483647; return s/2147483647; }; c.save(); c.translate(f.x, f.y);
+  [0.09, 0.18].forEach((lag, k)=>{ const tt = ft - W.T0 - lag; if(tt <= 0 || tt > W.EX + 0.2) return; const r = R*(0.12 + 0.95*E(Math.min(1, tt/(W.EX + 0.1)))); c.globalAlpha = (1 - Math.min(1, tt/(W.EX + 0.2)))*(0.5 - k*0.15); c.strokeStyle = '#bfe8ff'; c.lineWidth = 2.2 - k*0.6; c.beginPath(); c.ellipse(0, 4, r, r*0.92, 0, 0, 6.283); c.stroke(); });
+  if(ft < W.T0 + 0.12){ const k = ft < W.T0 ? ft/W.T0 : 1 - (ft - W.T0)/0.12; c.globalAlpha = 0.55*k; c.fillStyle = '#5ab8ff'; c.beginPath(); c.ellipse(0, 6, 22*k + 6, 9*k + 3, 0, 0, 6.283); c.fill(); }
+  if(ft > W.T0 && im.naturalWidth){ const tt = ft - W.T0, a = !done ? Math.min(1, tt/0.05) : Math.max(0, 1 - after/0.08), keep = 0.42 - 0.24*E(Math.min(1, tt/W.EX)), wob = Math.sin(tt*30)*0.03*(1 - Math.min(1, tt/W.EX));
+    if(a > 0){ const r2 = fr*(1 + wob) + (done ? 6*E(Math.min(1, after/0.08)) : 0), S = 2*r2/W.FRONT, N = Math.max(64, Math.min(640, Math.ceil(S*sv.scale*sv.dpr))), oc = P.oc; if(oc.width !== N){ oc.width = oc.height = N; } const x = oc.getContext('2d');
+      x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.save(); x.translate(N/2, N/2); x.rotate(0.6*E(Math.min(1, tt/(W.EX + 0.08)))); x.drawImage(im, -N/2, -N/2, N, N); x.restore();
+      x.globalCompositeOperation = 'destination-in'; const g = x.createRadialGradient(N/2, N/2, 0, N/2, N/2, N/2), inner = Math.max(0, W.FRONT - keep); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(inner*0.92, 'rgba(0,0,0,0)'); g.addColorStop(Math.min(0.99, inner + keep*0.55), '#000'); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, N, N);
+      c.globalAlpha = a; c.drawImage(oc, -S/2, -S/2, S, S); } }
+  for(let i=0;i<26;i++){ const an = rnd()*6.283, at = 0.55 + rnd()*0.4, sp = 40 + rnd()*70, up = 18 + rnd()*26, life = 0.22 + rnd()*0.13, sz = 0.35 + rnd()*0.4; const born = W.T0 + W.EX*at*0.85, t = ft - born; if(t < 0 || t > life) continue;
+    const k = t/life, r = R*(0.15 + 0.85*E(at*0.85)) + sp*t, z = up*Math.sin(k*Math.PI)*(1 - k*0.3); c.save(); c.globalAlpha = k > 0.7 ? (1 - k)/0.3 : 1; c.translate(Math.cos(an)*r, Math.sin(an)*r*0.92 - z); c.rotate(Math.atan2(Math.sin(an)*0.92*sp - up*Math.cos(k*Math.PI)*3, Math.cos(an)*sp) - Math.PI/2); const sc = sz*(1 - k*0.4); c.drawImage(P.drop, -8*sc, -12*sc, 16*sc, 24*sc); c.restore(); } // 둥근 머리가 날아가는 쪽
+  for(let i=0;i<14;i++){ const an = rnd()*6.283, at = 0.35 + rnd()*0.6, life = 0.2 + rnd()*0.15, sz = 0.5 + rnd()*0.5, t = ft - (W.T0 + W.EX*at); if(t < 0 || t > life) continue; const k = t/life, r = R*(0.15 + 0.85*E(at)) + 6*k, sc = sz*(0.6 + 0.6*Math.sin(Math.min(1, k*1.4)*Math.PI/2))*(1 - k*k);
+    c.globalAlpha = (1 - k)*0.9; c.drawImage(P.foam, Math.cos(an)*r - 10*sc, Math.sin(an)*r*0.92 - 10*sc, 20*sc, 20*sc); }
+  c.restore(); }
 function svClawE(f){ return 1 - Math.pow(1 - f, 3); } // 불꽃 발톱이 긁는 속도 — 처음 빠르고 끝에 느려짐 (그림·판정 같이 씀)
 function svDrawGround(c, cam){ // (build 491) 바닥 — 화면 배율에 맞춰 한 번 그려 둔 조각을 그대로 찍음 (전엔 무늬 채우기를 매 프레임 확대해 그려 전체화면에서 느렸음)
   const src = sv.patSrc && sv.patSrc.naturalWidth ? sv.patSrc : sv.patOc, T = sv.patImg ? 512 : 256; if(!src) return;
@@ -12905,7 +12926,7 @@ function svAttack(p, w, dt){
   else if(id==='fire_b_1'){ const e = svNear(p.x, p.y, 220), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : Math.atan2(p.face[1], p.face[0]), n = 3 + Math.floor(lv/2) + (ev ? 3 : 0);
     for(let k=0;k<n;k++){ const a = a0 + (n > 1 ? (k/(n-1) - 0.5) : 0)*0.9; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*330, vy:Math.sin(a)*330, kind:'spark', life:0.75, dmg:10*m, burn:3*m, pierce: ev ? 2 : 1, hitS:[], col, p, crit:cr }); } }
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } for(let k=0;k<(ev ? 3 : 1);k++){ const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p }); } }
-  else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); inR(R).forEach(e=>hit(e, 12*m)); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.45, col, r:R });
+  else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); // (build 502) 물결 — 모았다가 물마루가 퍼지며 닿는 적부터 맞고 밀려남 (사용자 10/26: 그림만 키우면 맛이 안 남 · 미리보기 시제품대로)
     G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R){ const h = (2 + lv)*(ev ? 2 : 1); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
   else if(id==='water_a_2'){ const e = svNear(p.x, p.y, 240); if(!e){ w.cd = 0.4; return; } const d = Math.hypot(e.x-p.x, e.y-p.y)||1, ux = (e.x-p.x)/d, uy = (e.y-p.y)/d;
     [1].concat(ev ? [-1] : []).forEach(s=>G.pr.push({ x:p.x, y:p.y, vx:ux*s*200, vy:uy*s*200, kind:'wave', life:1.3, w:(70 + lv*6)*ar, dmg:20*m, hitS:[], col, p, crit:cr })); }
@@ -12956,6 +12977,7 @@ function svTick(dt){
   const alive = G.players.filter(p=>!p.down);
   G.en.forEach(e=>{ if(e.hp<=0) return; if(e.kind==='pod'){ if(e.fl>0) e.fl -= dt; return; } if(e.fl>0) e.fl -= dt; if(e.iceT>0) e.iceT -= dt; if(e.slow>0) e.slow -= dt; if(e.web>0) e.web -= dt; if(e.curse>0) e.curse -= dt;
     if(e.burn > 0){ e.burn -= dt; e.hp -= e.bdps*dt; if(e.hp<=0){ svKill(e, SV_EC.fire); return; } }
+    if(e.sqT > 0) e.sqT -= dt; if(e.kvx || e.kvy){ e.x += e.kvx*dt; e.y += e.kvy*dt; const dm = Math.exp(-14*dt); e.kvx *= dm; e.kvy *= dm; if(Math.abs(e.kvx) + Math.abs(e.kvy) < 6) e.kvx = e.kvy = 0; svCollide(e, e.r); } // (build 502) 물결에 밀려남
     if(e.frz>0){ e.frz -= dt; return; }
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
     const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
@@ -13001,6 +13023,10 @@ function svTick(dt){
       const close = d < e.r + 12 || (d < w.R*0.55 + e.r && dx*Math.cos(w.dir) + dy*Math.sin(w.dir) > -e.r); if(!svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
       w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?2:1), w.col, c); if(w.ev) svBurn(e, 4*w.m, 2); }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
+  (G.waves||[]).forEach(w=>{ w.t += dt; const tt = w.t - SV_WAVE.T0; if(tt <= 0) return; const fr = w.R*(0.15 + 0.85*svClawE(Math.min(1, tt/SV_WAVE.EX))); // 물마루 바깥 끝이 닿은 적부터
+    G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const d = Math.hypot(e.x-w.x, e.y-w.y); if(d - e.r > fr || d > w.R + e.r) return; w.hit.push(e); const c = Math.random() < w.cr; svHitBy(w.p, e, w.dmg*(c?2:1), w.col, c);
+      if(e.kind!=='boss' && e.kind!=='pod'){ const k = 200/(d||1); e.kvx = (e.x-w.x)*k; e.kvy = (e.y-w.y)*k; e.sqT = 0.16; } if(!w.shook){ w.shook = 1; G.shake = Math.max(G.shake||0, 0.1); } }); });
+  G.waves = (G.waves||[]).filter(w=>w.t < SV_WAVE.T0 + SV_WAVE.EX + 0.02);
   G.pools = G.pools.filter(o=>o.t < o.d);
   G.en = G.en.filter(e=>e.hp>0);
   // 상자 · 룬 · 골드
@@ -13159,7 +13185,7 @@ function svDraw(){
   G.en.forEach(e=>{ if(off(e, e.r + 10)) return; const mi = e.mob && svImg(e.mob);
     if(mi && mi.complete && mi.naturalWidth){ const sz = e.r*3.3, hop = e.kind==='pod' ? 0 : Math.abs(Math.sin(G.t*9 + e.x*0.05))*2.5; // 몬스터 그림: 통통 튀며 걷기 · 바라보는 쪽으로 뒤집기
       c.save(); { const rx = e.r*(e.kind==='elite' || e.kind==='big' ? 1.25 : 1.05)*(1 - hop*0.03), ry = rx*0.3, fy = e.y + e.r*0.85; c.drawImage(svSoftSh(), e.x - rx, fy - ry*1.3, rx*2, ry*2); } // (build 501) 발밑에 붙는 부드러운 그림자 · 뛸 때 작아짐 (사용자 10/26: 그림자가 붕 떠 보임 — 전엔 진한 타원이 발보다 아래로 내려가 있었음)
-      c.translate(e.x, e.y + e.r*0.85); if(e.lf) c.scale(-1, 1); c.drawImage(mi, -sz/2, -sz - hop, sz, sz);
+      c.translate(e.x, e.y + e.r*0.85); if(e.lf) c.scale(-1, 1); if(e.sqT > 0){ const q = 1 - 0.28*Math.sin((1 - e.sqT/0.16)*Math.PI); c.scale(1 + (1 - q)*0.8, q); } /* 맞아 찌그러짐 */ c.drawImage(mi, -sz/2, -sz - hop, sz, sz);
       if(e.fl > 0 || e.frz > 0 || e.burn > 0 || e.web > 0){ c.globalAlpha = e.fl > 0 ? 0.65 : 0.4; c.drawImage(svTint(mi, e.fl > 0 ? '#ffffff' : e.frz > 0 ? '#a0e6ff' : e.burn > 0 ? '#ff7828' : '#e6f0dc'), -sz/2, -sz - hop, sz, sz); } // 그림 모양대로만 물듦
       c.restore(); if(e.curse > 0){ c.save(); c.strokeStyle = '#c56bff'; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath(); c.arc(e.x, e.y, e.r + 4, G.t*3, G.t*3 + 6.283); c.stroke(); c.restore(); }
       if(e.kind==='elite' || e.r >= 16 || (e.kind==='pod' && e.hp < e.max)){ const w = e.r*2, h = Math.max(0, e.hp/e.max); c.fillStyle = '#0009'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w, 4); c.fillStyle = '#ffd557'; c.fillRect(e.x-w/2, e.y-e.r*2.4, w*h, 4); }
@@ -13216,6 +13242,7 @@ function svDraw(){
         c.restore();
         }
       else { c.lineCap = 'round'; c.shadowColor = f.col; c.shadowBlur = 12; for(let j=0;j<3;j++){ const rr = f.r*(0.62 + j*0.17); c.strokeStyle = j===1 ? '#fff2d0' : f.col; c.lineWidth = j===1 ? 4 : 6; c.beginPath(); if(f.s > 0) c.arc(cx, cy, rr, Math.max(st, lead0 - 1.6), lead0); else c.arc(cx, cy, rr, lead0, Math.min(st, lead0 + 1.6)); c.stroke(); } } }
+    else if(f.k==='wave'){ c.restore(); svDrawWave(c, f); c.save(); }
     else if(f.k==='hit'){ const pr = f.t/f.d, im = svImg('assets/survival/hit_'+f.el+'.webp'); c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
       if(im.naturalWidth){ const sz = f.r*(1.6 + pr*1.2); c.translate(f.x, f.y); c.rotate(f.rot); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
       else if(f.el==='fire'){ c.translate(f.x, f.y); c.rotate(f.rot); for(let k=0;k<6;k++){ const a = k*1.047, L = f.r*(0.5 + pr*0.9); c.fillStyle = k%2 ? '#ffd27a' : '#ff6a2a'; c.beginPath(); c.moveTo(Math.cos(a-0.25)*f.r*0.25, Math.sin(a-0.25)*f.r*0.25); c.lineTo(Math.cos(a)*L, Math.sin(a)*L); c.lineTo(Math.cos(a+0.25)*f.r*0.25, Math.sin(a+0.25)*f.r*0.25); c.fill(); } }
@@ -19764,7 +19791,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 501, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 502, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
