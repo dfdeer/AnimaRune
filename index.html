@@ -12436,6 +12436,8 @@ function svLpNm(l){ return LINE_KITS[l].passive.name; }
 function svKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[Math.min(4, r)]+'_'+k[1]; }
 function svWArt(w){ return svKey(svSkLine(w.id), w.evo ? 4 : Math.min(3, w.lv-1)); } // 따라다니는 정령 그림 — Lv1 커먼 … Lv4·5 전설 · 각성 = 신화
 function svHasInk(cv){ try{ const t = document.createElement('canvas'); t.width = t.height = 12; const x = t.getContext('2d'); x.drawImage(cv, 0, 0, 12, 12); const d = x.getImageData(0, 0, 12, 12).data; for(let i=3;i<d.length;i+=4) if(d[i] > 0) return true; return false; }catch(e){ return true; } } // (build 518) 그림을 미리 그려 둔 캔버스가 비었는지 — 폰에서 그림을 다 풀기 전에 그리면 빈 캔버스가 남아 끝까지 안 보였음 (사용자 10/27: 껐다 켜면 발톱이 안 보임)
+function svDropCaches(){ if(typeof sv === 'undefined' || !sv) return; ['clawTex','jetC','softSh','waveP','gTile','obShC'].forEach(k=>{ sv[k] = null; }); sv.glows = {}; sv.tints = {}; } // (build 519) 미리 그려 둔 캔버스를 버리고 다시 만듦 — 안드로이드 크롬은 앱을 내렸다 올리면 캔버스 내용이 비워질 수 있음 (사용자 10/27: 크롬 · 껐다 켜면 발톱 안 보임)
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') svDropCaches(); });
 function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본 (맞을 때 번쩍 · 얼음 · 화상) — 한 번 만들어 둠
   sv.tints = sv.tints || {}; const k = im.src + col; if(sv.tints[k]) return sv.tints[k];
   const oc = document.createElement('canvas'); oc.width = im.naturalWidth; oc.height = im.naturalHeight; const x = oc.getContext('2d'); x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, oc.width, oc.height); if(svHasInk(oc)) sv.tints[k] = oc; return oc;
@@ -19938,7 +19940,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 518, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 519, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
