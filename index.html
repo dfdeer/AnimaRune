@@ -12575,7 +12575,7 @@ function svDrawWave(c, f){ // 물결 그리기 — 바닥 물자국 · 발밑 �
   c.restore(); }
 function svClawE(f){ return 1 - Math.pow(1 - f, 3); } // 불꽃 발톱이 긁는 속도 — 처음 빠르고 끝에 느려짐 (그림·판정 같이 씀)
 // ---------- (build 504) 대표 정령 새 공격 — 금오 깃털 부메랑 · 요르문간드 물줄기 · 현무 3타 · 아난시 거미줄 덫 · 광명 빛의 창 (사용자 10/26: 미리보기 확정본 그대로 · 새 게임이라 예전 스킬은 안 따름) ----------
-const SV_GO = { 1:{ n:1, sp:0, v:1, c:0 }, 2:{ n:3, sp:0.14, v:1, c:0 }, 3:{ n:3, sp:0.14, v:2, c:0 }, 4:{ n:5, sp:0.26, v:2, c:0.35 }, 5:{ n:5, sp:0.26, v:3, c:0.35, big:1.3, fast:0.8 }, OUT:0.34, BACK:0.32, EVO:0.8 }; // 금오 — 레벨별 [개수, 퍼짐, 연달아 던지는 횟수, 휨] · 2·4레벨은 좁게 모아 (사용자 10/26) · 5레벨은 셋 연달아 + 크고 빠르게 (사용자 10/26 A안)
+const SV_GO = { 1:{ n:1, sp:0, v:1, c:0 }, 2:{ n:3, sp:0.28, v:1, c:0 }, 3:{ n:3, sp:0.28, v:2, c:0 }, 4:{ n:5, sp:0.45, v:2, c:0.35 }, 5:{ n:5, sp:0.45, v:3, c:0.35, big:1.3, fast:0.8 }, /* (build 516) 퍼짐을 거의 두 배로 (사용자 10/27: 너무 좁아 별로) */ OUT:0.34, BACK:0.32, EVO:0.8 }; // 금오 — 레벨별 [개수, 퍼짐, 연달아 던지는 횟수, 휨] · 2·4레벨은 좁게 모아 (사용자 10/26) · 5레벨은 셋 연달아 + 크고 빠르게 (사용자 10/26 A안)
 const SV_JET = { CH:0.14, EXT:0.09, HOLD:0.14, THIN:0.16, MX:14 }; // 요르문간드 — 모으기 · 뻗기 · 버팀 · 터짐 (초) · 입 앞 거리
 const SV_HM = { STEP:0.6, GATH:0.14, LIFE:0.42, PT:28, PD:0.035 }; // 현무 — 1·2타 사이 · 3타 웅크림 · 잎 날아가는 시간 · 땅 터지는 간격(px)·시차(초)
 const SV_LS = { SIG:0.12, FALL:0.08, STUCK:0.16, FADE:0.3, STAG:0.07 }; // 광명 — 문양 · 창 떨어짐 · 꽂혀 있음 · 사라짐 · 대상마다 시차
@@ -13028,7 +13028,7 @@ function svAttack(p, w, dt){
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
   else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
     const e = svNear(p.x, p.y, 240), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : svAimDir(p), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
-    if(ev){ w.cd = SV_SK[id].cd*0.5 * svCdK(p, w); for(let v=0; v<3; v++) for(let i=0;i<5;i++){ const a = (i/4 - 0.5)*0.52; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:0.35, dl:v*0.14, D, big:1.3, fast:0.65 }); } } // (build 508) 진화 — 사방 소용돌이 대신 쉬지 않고 던짐 (짝 제비 깃 = 간격 줄이기와 맞게 · 사용자 10/27)
+    if(ev){ w.cd = SV_SK[id].cd*0.5 * svCdK(p, w); for(let v=0; v<3; v++) for(let i=0;i<5;i++){ const a = (i/4 - 0.5)*0.9; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:0.35, dl:v*0.14, D, big:1.3, fast:0.65 }); } } // (build 508) 진화 — 사방 소용돌이 대신 쉬지 않고 던짐 (짝 제비 깃 = 간격 줄이기와 맞게 · 사용자 10/27)
     else for(let v=0; v<cf.v; v++) for(let i=0;i<cf.n;i++){ const a = cf.n === 1 ? 0 : (i/(cf.n-1) - 0.5)*cf.sp*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1 }); }
     G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f); G.goF.push({ p, f, t:-f.dl, tot, hit:new Map(), dmg:10*m, cr, col }); svFx(Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f)); }); }
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } { const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m*(ev ? 1.6 : 1), burn:5*m, col, R:(44 + lv*4)*ar*(ev ? 1.5 : 1), p }); } /* (build 509) 진화 — 커다란 화염구 하나 (짝: 유리 대포) */ }
@@ -19935,7 +19935,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 515, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 516, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
