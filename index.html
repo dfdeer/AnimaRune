@@ -12311,7 +12311,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 사용자 결정 10/25: 무기 대신 아니마룬 스킬 — 대표 정령(기본 10계열)을 고르면 그 계열 스킬1 = 시작 스킬 · 스킬2 = 궁극기 · 계열 패시브 = 대표 패시브
 // 카드로 뽑는 스킬 = 10계열 스킬1·스킬2 20개 (자동으로 씀 · 대표 정령의 스킬2는 궁극기라 안 나옴) · 능력 최대 3 · 각각 Lv5까지
 // 사용자 결정 10/25: 해금 방식 — 처음엔 대표 정령 2 · 스킬 5만 · 판에서 조건을 채우면 해금(`SV_UNL`) · 성좌 계열은 나중에
-// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(정령의 선물 · 경험치 3배) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
+// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(정령의 선물 · 경험치 보석 3개) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
 // 둘이 하기: 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기 · 해금 목록만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드> · raidActs/<코드> (규칙 추가 없음)
 let SV_W = 360; // (build 488) 보이는 폭 — 폰 세로는 360 · 컴퓨터처럼 넓은 화면은 높이 600에 맞춰 16:9(1067)까지 넓힘 (사용자 결정 10/26: 컴퓨터는 화면을 꽉 채움)
 let SV_H = 600; // (build 489) 보이는 높이 — 폰 세로는 폭 360에 맞춰 길어짐 (화면을 꽉 채움)
@@ -13002,7 +13002,7 @@ function svKill(e, col){
   if(e.kind==='pod'){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col:'#ffd557', r:28 }); for(let k=0;k<10;k++){ const a = Math.random()*6.28, v = 60 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#c98a4a' : '#ffd557', 0.5, 3); } // 상자 부서짐 → 보상이 흩어짐 (경험치처럼 끌어와 주움)
     const r = Math.random(), drop = [{ k:'gold', v:15 }, { k:'gold', v:15 }, { k: r < 0.45 ? 'heal' : r < 0.75 ? 'mag' : 'gold', v:15 }]; drop.forEach((o,i)=>{ const a = i*2.1 + Math.random(); G.loot.push(Object.assign({ x: e.x + Math.cos(a)*16, y: e.y + Math.sin(a)*16 }, o)); }); try{ sfx('claim'); }catch(x){} return; }
   G.kills++; if(e.kind==='boss' && !e.final) G.midKilled = true;
-  G.gems.push({ x:e.x, y:e.y, v:e.xp*SV_XPK*(e.kind==='elite' ? 3 : 1), big: e.xp >= 4 }); // (build 520) 정예 경험치 3배 (사용자 10/27)
+  for(let k=0;k<(e.kind==='elite' ? 3 : 1);k++) G.gems.push({ x:e.x + (k ? Math.random()*40-20 : 0), y:e.y + (k ? Math.random()*40-20 : 0), v:e.xp*SV_XPK, big: e.xp >= 4 }); // (build 521) 정예는 경험치 보석을 3개 떨굼 — 값을 3배로 하지 않고 떨구는 양을 늘림 (사용자 10/27)
   if(e.kind==='elite' || e.kind==='boss'){ const n0 = G.loot.length; for(let k=0;k<(e.kind==='boss' ? 2 : 1);k++) G.loot.push({ x:e.x + k*24, y:e.y, k:'rune' }); /* (build 520) 「정령의 선물」 — 주우면 카드 3장 중 하나 고르기 */ for(let k=0;k<5;k++) G.loot.push({ x:e.x + Math.random()*50-25, y:e.y + Math.random()*50-25, k:'gold', v:10 }); G.loot.slice(n0).forEach(o=>svCollide(o, 14)); } // 장애물 속에 떨어지지 않게
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
   if(e.kind==='boss'){ svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:1.6, s:'보스 처치!', col:'#ffe08a', sz:26, scr:1 }); G.shake = 0.5; try{ sfx('claim'); }catch(x){} if(e.final){ G.over = 'win'; svShowEnd(); } }
@@ -19941,7 +19941,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 520, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 521, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
