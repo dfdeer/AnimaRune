@@ -12382,14 +12382,14 @@ const SV_SKT = { // (build 514) 룬 설명 — 수치를 문장 안에 넣어 �
   dark_b_1:'적을 쫓는 저주 {0} — {1} 피해 · 맞은 적은 받는 피해 +25%',
   dark_b_2:'반지름 {2} 안의 적을 빨아들이며 {0} 피해 · 끝에 터지며 {1} 피해'
 };
-function svSkDesc(id, from, to){ const rows = SV_SKS[id], t = SV_SKT[id]; if(!rows || !t) return SV_SK[id].d; return t.replace(/\{(\d)\}/g, (_, k)=>{ const r = rows[+k]; if(!r) return ''; const suf = r[2]||'', b = r[1](to)+suf; if(!from) return '<u>'+b+'</u>'; const a = r[1](from)+suf; return a===b ? '<u>'+b+'</u>' : '<u>'+a+'</u> → <em>'+b+'</em>'; }); } // 바뀌는 값은 노랗게
+function svSkDesc(id, from, to){ const rows = SV_SKS[id], t = SV_SKT[id]; if(!rows || !t) return SV_SK[id].d; return t.replace(/\{(\d)\}/g, (_, k)=>{ const r = rows[+k]; if(!r) return ''; const suf = r[2]||'', v1 = r[1](to); if(!from) return '<u>'+v1+suf+'</u>'; const v0 = r[1](from), dv = Math.round((v1 - v0)*10)/10; return dv ? '<u>'+v0+suf+'</u><em>(+'+dv+(suf.charAt(0)==='%' ? '%' : '')+')</em>' : '<u>'+v1+suf+'</u>'; }); } // 지금 값은 하얗게 · 늘어나는 만큼은 노랗게 (+n) (build 515 · 사용자 10/27: 50 → 55 대신 50(+5))
 const SV_PASS = { // 유물 수치 — Lv마다
   might:[['공격력', l=>12*l, '%', '+'], ['받는 피해', l=>3*l, '%', '+']], haste:[['스킬 간격', l=>Math.round((1-Math.pow(0.92,l))*100), '%', '−']], area:[['범위', l=>12*l, '%', '+']],
   vital:[['최대 체력', l=>20*l, '', '+'], ['회복', l=>Math.round(0.25*l*100)/100, '/초', '+']], swift:[['이동 속도', l=>8*l, '%', '+']], greed:[['경험치·골드', l=>12*l, '%', '+'], ['줍는 범위', l=>25*l, '%', '+']], crit:[['치명타', l=>7*l, '%', '+']],
   hunter:[['정예·보스 피해', l=>15*l, '%', '+']], axe:[['체력 30% 이하 적 피해', l=>20*l, '%', '+']], tinder:[['화상 확률', l=>6*l, '%', '']], fang:[['처치마다 회복', l=>Math.round(0.4*l*10)/10, '', '+']],
   rampart:[['받는 피해', l=>6*l, '%', '−']], frost:[['느려진·언 적 피해', l=>12*l, '%', '+']]
 };
-function svStatLine(rows, from, to, pre){ return rows.map(r=>{ const f = r[1], suf = r[2]||'', sg = pre ? (r[3]||'') : '', b = sg+f(to)+suf; if(!from) return '<i>'+r[0]+'</i> '+b; const a = sg+f(from)+suf; return a===b ? '<i>'+r[0]+'</i> '+b : '<i>'+r[0]+'</i> '+a+' → <em>'+b+'</em>'; }).join(' · '); } // 바뀌는 값은 노랗게
+function svStatLine(rows, from, to, pre){ return rows.map(r=>{ const f = r[1], suf = r[2]||'', sg = pre ? (r[3]||'') : '', b = sg+f(to)+suf; if(!from) return '<i>'+r[0]+'</i> '+b; const a = sg+f(from)+suf, dv = Math.round((f(to) - f(from))*100)/100; return a===b ? '<i>'+r[0]+'</i> '+b : '<i>'+r[0]+'</i> '+a+'<em>('+(r[3]==='−' ? '−' : '+')+Math.abs(dv)+(suf.charAt(0)==='%' ? '%' : '')+')</em>'; }).join(' · '); } // 지금 값 + 늘어나는 만큼 노랗게 (build 515 · 사용자 10/27)
 const SV_PAS = { // 능력 — 균열 유물 그림·이름 그대로 (사용자 결정 10/25: 기본 아이콘 대신 뽑아 둔 그림) · Lv마다 · 스킬 진화 짝은 SV_SK의 pair (build 507부터 앞 7개 말고도 씀)
   might:{ nm:'유리 대포', ic:'rl_glass', d:'공격력 +12% · 받는 피해 +3%' }, haste:{ nm:'제비 깃', ic:'rl_swallow', d:'스킬 간격 −8%' }, area:{ nm:'메아리 북', ic:'rl_drum', d:'공격 범위 +12%' },
   vital:{ nm:'재생 이끼', ic:'rl_moss', d:'최대 체력 +20 · 조금씩 회복' }, swift:{ nm:'질풍 장화', ic:'rl_boots', d:'이동 속도 +8%' }, greed:{ nm:'금화 주머니', ic:'rl_purse', d:'경험치·골드 +12% · 줍는 범위 +25%' }, crit:{ nm:'숫돌', ic:'rl_whet', d:'치명타 확률 +7%' },
@@ -19935,7 +19935,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 514, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 515, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
