@@ -12581,7 +12581,7 @@ function svDrawWave(c, f){ // 물결 그리기 — 바닥 물자국 · 발밑 �
 function svClawE(f){ return 1 - Math.pow(1 - f, 3); } // 불꽃 발톱이 긁는 속도 — 처음 빠르고 끝에 느려짐 (그림·판정 같이 씀)
 // ---------- (build 504) 대표 정령 새 공격 — 금오 깃털 부메랑 · 요르문간드 물줄기 · 현무 3타 · 아난시 거미줄 덫 · 광명 빛의 창 (사용자 10/26: 미리보기 확정본 그대로 · 새 게임이라 예전 스킬은 안 따름) ----------
 const SV_GO = { 1:{ n:1, sp:0, v:1, c:0 }, 2:{ n:3, sp:0.28, v:1, c:0 }, 3:{ n:3, sp:0.28, v:2, c:0 }, 4:{ n:5, sp:0.45, v:2, c:0.35 }, 5:{ n:5, sp:0.45, v:3, c:0.35, big:1.3, fast:0.8 }, /* (build 516) 퍼짐을 거의 두 배로 (사용자 10/27: 너무 좁아 별로) */ OUT:0.34, BACK:0.32, EVO:0.8 }; // 금오 — 레벨별 [개수, 퍼짐, 연달아 던지는 횟수, 휨] · 2·4레벨은 좁게 모아 (사용자 10/26) · 5레벨은 셋 연달아 + 크고 빠르게 (사용자 10/26 A안)
-const SV_JET = { CH:0.14, EXT:0.09, HOLD:0.14, THIN:0.16, FLY:0.24, MX:14 }; // (build 522) FLY — 물줄기 덩이가 끝까지 날아가는 시간 // 요르문간드 — 모으기 · 뻗기 · 버팀 · 터짐 (초) · 입 앞 거리
+const SV_JET = { CH:0.14, EXT:0.12, HOLD:0.14, RUN:0.26, MX:14 }; // (build 523) 모으기 · 뻗기 · 버팀 · 다 쏟아져 나가며 사라짐 (초) · 입 앞 거리 // 요르문간드 — 모으기 · 뻗기 · 버팀 · 터짐 (초) · 입 앞 거리
 const SV_HM = { STEP:0.6, GATH:0.14, LIFE:0.42, PT:28, PD:0.035 }; // 현무 — 1·2타 사이 · 3타 웅크림 · 잎 날아가는 시간 · 땅 터지는 간격(px)·시차(초)
 const SV_LS = { SIG:0.12, FALL:0.08, STUCK:0.16, FADE:0.3, STAG:0.07 }; // 광명 — 문양 · 창 떨어짐 · 꽂혀 있음 · 사라짐 · 대상마다 시차
 function svRng(seed){ let s = (Math.abs(seed|0) % 2147483646) + 1; return ()=>{ s = (s*16807) % 2147483647; return s/2147483647; }; }
@@ -12602,19 +12602,24 @@ function svJetCircleTex(){ if(sv.jetC) return sv.jetC; const S = 160, oc = docum
   x.fillStyle = '#e8f8ff'; for(let i=0; i<6; i++){ const a = i/6*6.283 + Math.PI/6; x.save(); x.translate(Math.cos(a)*66, Math.sin(a)*66); x.rotate(a + Math.PI/2); x.beginPath(); x.moveTo(0, -6); x.quadraticCurveTo(4, 0, 0, 5); x.quadraticCurveTo(-4, 0, 0, -6); x.fill(); x.restore(); }
   x.save(); x.scale(1.6, 1.6); x.translate(0, 1); x.beginPath(); x.moveTo(0, -12); x.bezierCurveTo(5, -4, 6.5, 1, 6.5, 4); x.arc(0, 4, 6.5, 0, Math.PI); x.bezierCurveTo(-6.5, 1, -5, -4, 0, -12); x.fillStyle = 'rgba(200,240,255,0.95)'; x.fill(); x.restore();
   return (sv.jetC = oc); }
-function svDrawJet(c, f, cx, cy){ // 요르문간드 — 물방울이 입 앞으로 모임 → 마법진이 착 펼쳐짐 → (build 522) 물줄기 한 덩이가 떨어져 나와 앞으로 쏟아져 나감(입까지 이어지는 빔이 아님 · 사용자 10/27: 빔은 레이저 같음) · S자로 출렁 · 앞에 물보라 · 끝에서 철썩
-  const J = SV_JET, ft = f.t - (f.dl||0); if(ft < 0) return; const s = ft - J.CH, FLY = J.FLY, MX = J.MX, L = f.L, z = f.ev ? 1.3 : 1, E = svClawE, cl = v=>Math.max(0, Math.min(1, v)), jet = svImg('assets/survival/fx_jet.webp');
+function svDrawJet(c, f, cx, cy){ // 요르문간드 물줄기 — (build 523) 일직선으로 되돌림 (사용자 10/27: 물뱀 머리 없이 · 레이저처럼 툭 끊기지 않고 자연스럽게 · 지직거리지 않게)
+  // 물방울이 입 앞으로 모임 → 마법진 → 물줄기가 앞으로 뻗음(앞머리는 물보라) → 잠깐 버팀 → 입 쪽부터 물이 끊겨 끝까지 쏟아져 나가며 가늘어지고 아래로 뚝뚝 떨어짐
+  // 지직거림 없게: 그림을 타일로 이어 붙여 흘리지 않고 한 장을 길이에 맞게 늘려 그림 · 굵기 떨림·흰 줄 없음 · 출렁임은 느리고 작게
+  const J = SV_JET, ft = f.t - (f.dl||0); if(ft < 0) return; const s = ft - J.CH, MX = J.MX, L = f.L, z = f.ev ? 1.3 : 1, E = svClawE, cl = v=>Math.max(0, Math.min(1, v)), jet = svImg('assets/survival/fx_jet.webp'), T1 = J.EXT + J.HOLD;
   c.save(); c.globalAlpha = 1; c.translate(cx, cy - 6); c.rotate(f.a); if(Math.cos(f.a) < 0) c.scale(1, -1);
   if(ft < J.CH + 0.03){ for(let i=0;i<10;i++){ const an = i*2.399 + 0.7, d0 = 24 + (i*7)%16, dl = (i*0.013)%0.05, k = cl((ft - dl)/(J.CH - dl)); if(k <= 0 || k >= 1) continue; const d = d0*(1 - E(k)); c.save(); c.globalAlpha = 0.9*k; c.translate(MX + Math.cos(an)*d, Math.sin(an)*d); c.rotate(an + Math.PI/2); svDrop(c, 0.35); c.restore(); }
     const r0 = 3 + 7*E(cl(ft/J.CH)); c.drawImage(svGlow('#5ab4ff', 'ee'), MX - r0*1.8, -r0*1.8, r0*3.6, r0*3.6); }
-  if(s >= 0 && s <= FLY + 0.35){ const fk = cl(s/FLY), hx = MX + (L - MX)*E(fk), flying = s < FLY;
-    if(jet.naturalWidth){ const iw = jet.naturalWidth, ih = jet.naturalHeight, tl = (flying ? Math.min(hx - MX, 150) : 150*(1 - cl((s - FLY)/0.12)))*z, N = 24; if(tl > 2) for(let k=0;k<N;k++){ const u0 = k/N, x1 = hx - tl + tl*u0, w = tl/N + 0.8, wav = Math.sin(u0*6 - s*32)*5*z*(1 - u0*0.6), hh = 38*z*(0.55 + 0.45*Math.sin(Math.PI*Math.min(1, u0*1.4))); c.globalAlpha = 0.35 + 0.65*Math.min(1, u0*1.8); c.drawImage(jet, iw*u0, 0, iw/N + 1, ih, x1, wav - hh/2, w, hh); } c.globalAlpha = 1;
-      if(flying) for(let q=0;q<6;q++){ const an = -1.2 + q*0.48 + Math.sin(s*40 + q)*0.2, d = 6 + ((s*90 + q*7) % 16); c.save(); c.globalAlpha = 0.85; c.translate(hx + Math.cos(an)*d, Math.sin(an)*d*0.9); c.rotate(an - Math.PI/2); svDrop(c, 0.35); c.restore(); } }
-    for(let k=0;k<14;k++){ const tk = k/14*FLY, q = (s - tk)/0.35; if(q < 0 || q > 1) continue; const x0 = MX + (L - MX)*E(tk/FLY), sd = k%2 ? 1 : -1; c.save(); c.globalAlpha = 1 - q; c.translate(x0 + 10*q, sd*(8 + 20*q) + 16*q*q); c.rotate(sd > 0 ? 0.6 + q : Math.PI - 0.6 - q); svDrop(c, 0.4); c.restore(); }
+  if(s >= 0 && s <= T1 + J.RUN + 0.3){ const xf = MX + (L - MX)*E(cl(s/J.EXT)), rk = cl((s - T1)/J.RUN), xb = MX + (L - MX)*rk*rk, th = 1 - 0.55*rk, Hh = 34*z*th, len = xf - xb;
+    if(jet.naturalWidth && len > 2 && rk < 1){ const iw = jet.naturalWidth, ih = jet.naturalHeight, N = Math.max(8, Math.min(40, Math.round(len/8))), u0s = 0.06, u1s = 0.94;
+      c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5*th; const gg = c.createLinearGradient(0, -Hh, 0, Hh); gg.addColorStop(0, 'rgba(40,140,255,0)'); gg.addColorStop(0.5, 'rgba(80,170,255,0.5)'); gg.addColorStop(1, 'rgba(40,140,255,0)'); c.fillStyle = gg; c.fillRect(xb, -Hh, len, Hh*2); c.restore(); /* 둘레 푸른 빛 (가장자리 부드럽게) */
+      for(let k=0;k<N;k++){ const u = k/N, x1 = xb + len*u, w = len/N + 0.8, sy = Math.sin(u*7 - s*9)*2*z, back = xb > MX + 1 ? Math.min(1, u*4) : 1; c.globalAlpha = (0.55 + 0.45*th)*back; c.drawImage(jet, iw*(u0s + (u1s - u0s)*u), 0, iw*(u1s - u0s)/N + 1, ih, x1, sy - Hh/2, w, Hh); } c.globalAlpha = 1;
+      if(rk < 0.9) for(let q=0;q<5;q++){ const an = -1.1 + q*0.55 + Math.sin(s*14 + q)*0.15, d = 5 + ((s*60 + q*5) % 10); c.save(); c.globalAlpha = 0.85*(1 - rk); c.translate(xf + Math.cos(an)*d, Math.sin(an)*d*0.9); c.rotate(an - Math.PI/2); svDrop(c, 0.38); c.restore(); } // 앞머리 물보라
+      if(rk > 0) for(let q=0;q<6;q++){ const ph = (s*3.2 + q/6) % 1, x0 = xb + len*((q*0.37) % 1); c.save(); c.globalAlpha = 0.9*(1 - ph); c.translate(x0, Hh*0.3 + 26*ph*ph); c.rotate(Math.PI); svDrop(c, 0.32); c.restore(); } } // 끊긴 물이 아래로 뚝뚝
     if(s < 0.22){ const k = s/0.22; c.save(); c.globalAlpha = 1 - k; for(let d=0; d<7; d++){ const an = -1.1 + d*0.37; c.save(); c.translate(MX + Math.cos(an)*(8 + 30*E(k)), Math.sin(an)*(8 + 30*E(k))); c.rotate(an - Math.PI/2); svDrop(c, 0.5); c.restore(); } c.restore(); }
-    const se = s - FLY; if(se > 0 && se < 0.3){ const k = se/0.3; c.save(); c.globalAlpha = 1 - k; for(let d=0; d<8; d++){ const an = -1.4 + d*0.4; c.save(); c.translate(L + 10 + Math.cos(an)*(6 + 30*E(k)), Math.sin(an)*(6 + 30*E(k)) - 10*Math.sin(k*Math.PI)); c.rotate(an - Math.PI/2); svDrop(c, 0.55); c.restore(); } c.restore(); } }
-  { const o = cl((ft - J.CH*0.35)/0.07); let sx = 0.42*(o < 1 ? 1 + 0.25*Math.sin(o*Math.PI)*o : 1), sy = 1, fl = 1 - o, gone = o <= 0; // 마법진 — 착 펼쳐짐 → 물줄기가 떠나면 0.08초 만에 접힘
-    if(s > 0.12){ const q = (s - 0.12)/0.08; if(q >= 1) gone = true; sx *= 1 - q; sy = 1 + 0.1*q; fl = q*0.8; }
+    const se = s - J.EXT; if(se > 0 && se < 0.3){ const k = se/0.3; c.save(); c.globalAlpha = 1 - k; for(let d=0; d<8; d++){ const an = -1.4 + d*0.4; c.save(); c.translate(L + 10 + Math.cos(an)*(6 + 26*E(k)), Math.sin(an)*(6 + 26*E(k)) - 8*Math.sin(k*Math.PI)); c.rotate(an - Math.PI/2); svDrop(c, 0.5); c.restore(); } c.restore(); }
+    const sr = s - T1 - J.RUN; if(sr > 0 && sr < 0.3){ const k = sr/0.3; c.save(); c.globalAlpha = 0.8*(1 - k); for(let d=0; d<6; d++){ const an = -1.2 + d*0.48; c.save(); c.translate(L + Math.cos(an)*(4 + 18*E(k)), Math.sin(an)*(4 + 18*E(k)) + 10*k*k); c.rotate(an - Math.PI/2); svDrop(c, 0.42); c.restore(); } c.restore(); } } // 마지막 물이 끝에서 흩어짐
+  { const o = cl((ft - J.CH*0.35)/0.07); let sx = 0.42*(o < 1 ? 1 + 0.25*Math.sin(o*Math.PI)*o : 1), sy = 1, fl = 1 - o, gone = o <= 0; // 마법진 — 착 펼쳐짐 → 물이 입에서 끊길 때 0.08초 만에 접힘
+    if(s > T1){ const q = (s - T1)/0.08; if(q >= 1) gone = true; sx *= 1 - q; sy = 1 + 0.1*q; fl = q*0.8; }
     if(!gone){ const R = 25*z*(s > 0 && s < 0.1 ? 1 + 0.1*Math.sin(s/0.1*Math.PI) : 1), C = svJetCircleTex(); c.save(); c.translate(MX + 4, 0); c.scale(sx, sy); c.rotate(ft*3); c.drawImage(C, -R, -R, R*2, R*2); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.35 + 0.65*fl; c.drawImage(C, -R, -R, R*2, R*2); c.restore(); } }
   c.restore(); }
 function svDrawGoFe(c, f, px, py){ const s = f.t - (f.dl||0); if(s < 0) return; const im = svImg('assets/survival/fx_firefeather.webp'), z = (f.big || 1)*(f.ev ? 1.15 : 1); c.save(); // 금오 깃털 — 빙빙 돌며 (사용자 10/26: 도는 쪽이 임팩트가 좋음) · 뒤에 불티 꼬리
@@ -13040,7 +13045,7 @@ function svAttack(p, w, dt){
     [1].forEach(s=>G.pr.push({ x:p.x, y:p.y, vx:ux*s*200, vy:uy*s*200, kind:'wave', life:1.3, w:(70 + lv*6)*ar*(ev ? 1.6 : 1) /* (build 509) 진화 폭 ×1.6 (짝: 메아리 북) */, dmg:20*m, hitS:[], col, p, crit:cr })); }
   else if(id==='water_b_1'){ // (build 504) 요르문간드 — 모았다가 물 마법진에서 꿰뚫는 물줄기 · 맞은 적은 느려지고 밀려남 (사용자 10/26)
     const L = (210 + lv*10)*ar, e = svNear(p.x, p.y, L*0.85); if(!e){ w.cd = 0.15; return; } const dir = Math.atan2(e.y-p.y, e.x-p.x);
-    [0].concat(ev ? [0.3] : []).forEach(dl=>{ (G.jets = G.jets || []).push({ p, dir, L, W:(ev ? 20 : 15)*ar, t:-dl, dmg:22*m, cr, col, hit:[] }); svFx({ k:'jet', pi:p.i, x:p.x, y:p.y, a:dir, L, dl, t:0, d:dl + SV_JET.CH + SV_JET.FLY + 0.4 }); }); } // (build 507) 진화 — 연달아 두 번 (짝: 제비 깃)
+    [0].concat(ev ? [0.3] : []).forEach(dl=>{ (G.jets = G.jets || []).push({ p, dir, L, W:(ev ? 20 : 15)*ar, t:-dl, dmg:22*m, cr, col, hit:[] }); svFx({ k:'jet', pi:p.i, x:p.x, y:p.y, a:dir, L, dl, t:0, d:dl + SV_JET.CH + SV_JET.EXT + SV_JET.HOLD + SV_JET.RUN + 0.35 }); }); } // (build 507) 진화 — 연달아 두 번 (짝: 제비 깃)
   else if(id==='wood_a_1'){ // (build 504) 현무 — 3타: 잎 셋 → 잎 다섯 → 웅크렸다가 앞으로 땅 가르기 (사용자 10/26 · 아래 표시는 없음)
     const st = (w.combo|0) % 3, e = svNear(p.x, p.y, 260); if(!e && st === 0){ w.cd = 0.3; return; } w.combo = st + 1; const dir = e ? Math.atan2(e.y-p.y, e.x-p.x) : svAimDir(p);
     if(st < 2){ w.cd = SV_HM.STEP * svCdK(p, w); const n = (st ? 5 : 3) + (ev ? 2 : 0), spread = st ? 0.75 : 0.45, sp0 = (st ? 660 : 600)*ar; G.leaves = G.leaves || [];
@@ -13145,9 +13150,9 @@ function svTick(dt){
   (G.goF||[]).forEach(o=>{ o.t += dt; const q = svGoPos(o.f, o.t, o.p.x, o.p.y); if(!q) return; const R = 15*(o.f.big||1); // 금오 깃털 — 지나가며 맞음 · 같은 적은 0.25초 지나야 다시 (나갈 때·돌아올 때 두 번)
     G.en.forEach(e=>{ if(e.hp<=0 || Math.hypot(e.x-q[0], e.y-q[1]) > R + e.r) return; const lt = o.hit.get(e); if(lt != null && o.t - lt < 0.25) return; o.hit.set(e, o.t); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?2:1), o.col, c); }); });
   G.goF = (G.goF||[]).filter(o=>o.t < o.tot);
-  (G.jets||[]).forEach(j=>{ j.t += dt; const s = j.t - SV_JET.CH; if(s <= 0) return; const head = SV_JET.MX + (j.L - SV_JET.MX)*svClawE(Math.min(1, s/SV_JET.FLY)), /* (build 522) 물줄기 덩이 앞머리가 지나간 적부터 */ ux = Math.cos(j.dir), uy = Math.sin(j.dir), p = j.p; // 요르문간드 — 물줄기 머리가 지나간 적부터 (꿰뚫음)
+  (G.jets||[]).forEach(j=>{ j.t += dt; const s = j.t - SV_JET.CH; if(s <= 0) return; const head = SV_JET.MX + (j.L - SV_JET.MX)*svClawE(Math.min(1, s/SV_JET.EXT)), /* 물줄기 앞머리가 지나간 적부터 */ ux = Math.cos(j.dir), uy = Math.sin(j.dir), p = j.p; // 요르문간드 — 물줄기 머리가 지나간 적부터 (꿰뚫음)
     G.en.forEach(e=>{ if(e.hp<=0 || j.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-(p.y-6), t = dx*ux + dy*uy; if(t < 0 || t > head + e.r || Math.abs(dx*uy - dy*ux) > j.W + e.r) return; j.hit.push(e); const c = Math.random() < j.cr; svHitBy(p, e, j.dmg*(c?2:1), j.col, c); e.slow = Math.max(e.slow||0, 1.2); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = ux*130; e.kvy = uy*130; e.sqT = 0.16; } }); });
-  G.jets = (G.jets||[]).filter(j=>j.t < SV_JET.CH + SV_JET.FLY + 0.02);
+  G.jets = (G.jets||[]).filter(j=>j.t < SV_JET.CH + SV_JET.EXT + SV_JET.HOLD);
   (G.leaves||[]).forEach(o=>{ o.t += dt; if(o.t < 0 || o.done) return; if(o.t > SV_HM.LIFE){ o.done = 1; return; } const q = svLeafPos(o.f, o.t); // 현무 잎 — 둘까지 꿰뚫고 셋째에서 멈춤
     for(const e of G.en){ if(e.hp<=0 || o.hit.includes(e) || Math.hypot(e.x-q[0], e.y-q[1]) > 11 + e.r) continue; o.hit.push(e); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?2:1), o.col, c); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = Math.cos(o.f.a)*70; e.kvy = Math.sin(o.f.a)*70; } if(o.pierce-- <= 0){ o.done = 1; o.fx.d = Math.min(o.fx.d, o.fx.t + 0.06); break; } } });
   G.leaves = (G.leaves||[]).filter(o=>!o.done);
@@ -19937,7 +19942,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 522, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 523, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
