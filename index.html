@@ -12320,7 +12320,7 @@ const SV_LINE_IDS = ELEMENTS.flatMap(e=>['a','b'].map(v=>e+'_'+v));
 const SV_SK = { // 스킬 20개 — cd: 간격(초) · pair: 진화에 필요한 짝 능력 · ev: 진화하면 (이름은 LINE_KITS 그대로) · (build 507) 짝을 진화 모양과 이어지게 다시 고름 — 숫돌=발톱·저주(치명타) · 제비 깃=깃털·물줄기 연사(간격) · 성벽 돌=현무·가시·보호막 · 서리 결정=얼음·거미줄(느려진 적) · 사냥꾼의 표식=덫 · 흡혈 송곳니=생명 흡수 · 처형인의 도끼=처형 (사용자 10/27)
   fire_a_1:{ nm:'불꽃 발톱', d:'앞쪽을 넓게 할큄', cd:0.9, pair:'crit', ev:'앞뒤로 동시에 할큄 · 치명타가 나면 불이 붙음' },
   fire_a_2:{ d:'내 둘레 폭발 · 화상', cd:2.6, pair:'area', ev:'폭발 범위 ×1.35 · 화상 강화' },
-  fire_b_1:{ d:'불꽃 깃털이 갔다 돌아오는 부메랑 · 레벨마다 늘어남', cd:1.3, pair:'haste', ev:'깃털 여섯이 내 둘레로 소용돌이쳤다 돌아옴' },
+  fire_b_1:{ d:'불꽃 깃털이 갔다 돌아오는 부메랑 · 레벨마다 늘어남', cd:1.3, pair:'haste', ev:'쉬지 않고 던짐 — 간격 절반 · 깃털이 더 빨리 날아감' },
   fire_b_2:{ d:'적 자리에 화염구 폭발 · 화상', cd:1.6, pair:'might', ev:'화염구 3개를 한꺼번에' },
   water_a_1:{ d:'둘레에 물결 · 나와 친구 회복', cd:2.4, pair:'vital', ev:'물결 범위 ×1.3 · 회복 ×2' },
   water_a_2:{ d:'물의 벽이 적을 밀어냄', cd:3.2, pair:'area', ev:'앞뒤로 물의 벽 · 폭 ×1.3' },
@@ -13000,9 +13000,10 @@ function svAttack(p, w, dt){
     const R0 = (66 + lv*5)*ar, d0 = svAimDir(p), half = 1.35; w.alt = 1; /* (build 497) 번갈지 않고 늘 같은 쪽에서 앞으로 그음 (사용자 10/26) */ G.sweeps = G.sweeps || [];
     [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{ G.sweeps.push({ p, dir, s:w.alt, half, R:R0, t:0, d:0.13, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:0.27, sw:0.13, col, r:R0, a:dir, s:w.alt, half }); }); }
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); if(!tg.length){ w.cd = 0.3; return; } tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
-  else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 여섯이 내 둘레로 소용돌이 (사용자 10/26)
+  else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
     const e = svNear(p.x, p.y, 240), a0 = e ? Math.atan2(e.y-p.y, e.x-p.x) : svAimDir(p), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
-    if(ev) for(let i=0;i<6;i++) list.push({ evo:1, a0:a0 + i/6*6.283, dl:0, D, big:1.2 }); else for(let v=0; v<cf.v; v++) for(let i=0;i<cf.n;i++){ const a = cf.n === 1 ? 0 : (i/(cf.n-1) - 0.5)*cf.sp*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1 }); }
+    if(ev){ w.cd = SV_SK[id].cd*0.5 * svCdK(p, w); for(let v=0; v<3; v++) for(let i=0;i<5;i++){ const a = (i/4 - 0.5)*0.52; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:0.35, dl:v*0.14, D, big:1.3, fast:0.65 }); } } // (build 508) 진화 — 사방 소용돌이 대신 쉬지 않고 던짐 (짝 제비 깃 = 간격 줄이기와 맞게 · 사용자 10/27)
+    else for(let v=0; v<cf.v; v++) for(let i=0;i<cf.n;i++){ const a = cf.n === 1 ? 0 : (i/(cf.n-1) - 0.5)*cf.sp*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1 }); }
     G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f); G.goF.push({ p, f, t:-f.dl, tot, hit:new Map(), dmg:10*m, cr, col }); svFx(Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f)); }); }
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); if(!tg.length){ w.cd = 0.3; return; } for(let k=0;k<(ev ? 3 : 1);k++){ const e = svRand(tg); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p }); } }
   else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); // (build 502) 물결 — 모았다가 물마루가 퍼지며 닿는 적부터 맞고 밀려남 (사용자 10/26: 그림만 키우면 맛이 안 남 · 미리보기 시제품대로)
@@ -19898,7 +19899,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 507, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 508, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
