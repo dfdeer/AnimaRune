@@ -12311,7 +12311,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 사용자 결정 10/25: 무기 대신 아니마룬 스킬 — 대표 정령(기본 10계열)을 고르면 그 계열 스킬1 = 시작 스킬 · 스킬2 = 궁극기 · 계열 패시브 = 대표 패시브
 // 카드로 뽑는 스킬 = 10계열 스킬1·스킬2 20개 (자동으로 씀 · 대표 정령의 스킬2는 궁극기라 안 나옴) · 능력 최대 3 · 각각 Lv5까지
 // 사용자 결정 10/25: 해금 방식 — 처음엔 대표 정령 2 · 스킬 5만 · 판에서 조건을 채우면 해금(`SV_UNL`) · 성좌 계열은 나중에
-// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(각성석) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
+// 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(정령의 선물 · 경험치 3배) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
 // 둘이 하기: 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기 · 해금 목록만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드> · raidActs/<코드> (규칙 추가 없음)
 let SV_W = 360; // (build 488) 보이는 폭 — 폰 세로는 360 · 컴퓨터처럼 넓은 화면은 높이 600에 맞춰 16:9(1067)까지 넓힘 (사용자 결정 10/26: 컴퓨터는 화면을 꽉 채움)
 let SV_H = 600; // (build 489) 보이는 높이 — 폰 세로는 폭 360에 맞춰 길어짐 (화면을 꽉 채움)
@@ -12754,7 +12754,7 @@ function svLobby(msg){
     + '<div class="sv-ltl">룬 <em>'+u.sk.length+'/20</em> <small>정령의 힘이 새겨진 돌 · 레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 진화 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
-    + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(고유 기술 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬·기술 Lv5 + 짝 유물 + 정예가 떨군 「각성석」</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
+    + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(고유 기술 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬·기술 Lv5 + 짝 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
     + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><small>'+(n.role==='host' ? (n.guest ? uiIc('check')+' 친구 들어옴 — 시작!' : '친구에게 코드를 알려 줘 · 기다리는 중…') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
     + (n.code ? (n.role==='host' ? '<button class="sv-btn sv-go" data-sv="start" '+(n.guest?'':'disabled')+'>'+uiIc('party')+' 둘이 시작</button>' : '') + '<button class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
@@ -12846,9 +12846,10 @@ function svApplyPick(p, c){
   else if(c.k==='p'){ p.ps[c.pas] = (p.ps[c.pas]||0) + 1; if(c.pas==='vital'){ p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 30); } svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:SV_PAS[c.pas].nm+' Lv'+p.ps[c.pas], col:'#c9e2ff', sz:12 }); }
   else if(c.k==='heal') p.hp = p.maxHp;
   else if(c.k==='gold') sv.game.gold += 30;
+  for(let g=0; g<5 && p.wp.some(x=>svCanEvo(p, x)); g++) svEvolve(p); // (build 520) 룬 Lv5 + 짝 유물을 갖추는 순간 바로 각성 — 어느 쪽을 나중에 얻어도 (사용자 10/27: 스웜처럼 · 각성석 없음)
 }
 function svCanEvo(p, w){ return !w.evo && w.lv >= 5 && svPasLv(p, SV_SK[w.id].pair) > 0; }
-function svEvolve(p){ // 「각성석」을 주움 — 진화할 스킬이 있으면 각성, 없으면 스킬·능력 하나 +1
+function svEvolve(p){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 갖추는 순간 svApplyPick에서 부름
   const w = p.wp.find(x=>svCanEvo(p, x));
   if(w){ w.evo = true; const col = '#ff5777', G = sv.game; if(p.i === G.me) svMarkEvo(w.id); /* (build 517) 짝 알게 됨 */
     // (build 510) 진화 순간 — 화면이 어두워지며 빛줄기 · 「각성!」 큰 글자 · 둘레 적을 크게 밀쳐내며 피해 (사용자 10/27: 스웜처럼 임팩트 있게) · (build 511) 세상이 느려지는 건 뺌 — 둘이 할 때 친구까지 느려져서 (사용자 10/27)
@@ -12858,7 +12859,7 @@ function svEvolve(p){ // 「각성석」을 주움 — 진화할 스킬이 있�
     G.shake = 0.45; try{ sfx('summonLegend'); }catch(e){} return; }
   const up = p.wp.filter(x=>x.lv < 5).map(x=>({ k:'w', id:x.id })).concat(Object.keys(p.ps).filter(k=>p.ps[k] < 5).map(k=>({ k:'p', pas:k })));
   if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
-  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'각성석 — 아직 각성할 룬·기술 없음 (Lv5 + 짝 유물)', col:'#c9a6ff', sz:10 });
+  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'아직 각성할 룬·기술 없음 (Lv5 + 짝 유물)', col:'#c9a6ff', sz:10 });
 }
 function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
 function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
@@ -12953,7 +12954,7 @@ function svLevelUp(){
 function svDoPick(pi, idx){
   const G = sv.game, p = G.players[pi]; if(!p || !p.pick) return;
   svApplyPick(p, p.pick[idx]); p.pick = null;
-  if(G.players.every(q=>!q.pick)){ G.pickWait = false; if(G.xp >= G.xpNext) svLevelUp(); }
+  if(G.players.every(q=>!q.pick)){ G.pickWait = false; G.pickGift = 0; if(G.xp >= G.xpNext) svLevelUp(); }
 }
 function svSpawnPos(){ // 살아 있는 사람 하나의 화면 바로 밖 (맵 안에서)
   const G = sv.game, alive = G.players.filter(q=>!q.down), tp = alive.length ? svRand(alive) : G.players[0]; let best = null;
@@ -13001,8 +13002,8 @@ function svKill(e, col){
   if(e.kind==='pod'){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col:'#ffd557', r:28 }); for(let k=0;k<10;k++){ const a = Math.random()*6.28, v = 60 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#c98a4a' : '#ffd557', 0.5, 3); } // 상자 부서짐 → 보상이 흩어짐 (경험치처럼 끌어와 주움)
     const r = Math.random(), drop = [{ k:'gold', v:15 }, { k:'gold', v:15 }, { k: r < 0.45 ? 'heal' : r < 0.75 ? 'mag' : 'gold', v:15 }]; drop.forEach((o,i)=>{ const a = i*2.1 + Math.random(); G.loot.push(Object.assign({ x: e.x + Math.cos(a)*16, y: e.y + Math.sin(a)*16 }, o)); }); try{ sfx('claim'); }catch(x){} return; }
   G.kills++; if(e.kind==='boss' && !e.final) G.midKilled = true;
-  G.gems.push({ x:e.x, y:e.y, v:e.xp*SV_XPK, big: e.xp >= 4 });
-  if(e.kind==='elite' || e.kind==='boss'){ const n0 = G.loot.length; for(let k=0;k<(e.kind==='boss' ? 2 : 1);k++) G.loot.push({ x:e.x + k*24, y:e.y, k:'rune' }); for(let k=0;k<5;k++) G.loot.push({ x:e.x + Math.random()*50-25, y:e.y + Math.random()*50-25, k:'gold', v:10 }); G.loot.slice(n0).forEach(o=>svCollide(o, 14)); } // 장애물 속에 떨어지지 않게
+  G.gems.push({ x:e.x, y:e.y, v:e.xp*SV_XPK*(e.kind==='elite' ? 3 : 1), big: e.xp >= 4 }); // (build 520) 정예 경험치 3배 (사용자 10/27)
+  if(e.kind==='elite' || e.kind==='boss'){ const n0 = G.loot.length; for(let k=0;k<(e.kind==='boss' ? 2 : 1);k++) G.loot.push({ x:e.x + k*24, y:e.y, k:'rune' }); /* (build 520) 「정령의 선물」 — 주우면 카드 3장 중 하나 고르기 */ for(let k=0;k<5;k++) G.loot.push({ x:e.x + Math.random()*50-25, y:e.y + Math.random()*50-25, k:'gold', v:10 }); G.loot.slice(n0).forEach(o=>svCollide(o, 14)); } // 장애물 속에 떨어지지 않게
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
   if(e.kind==='boss'){ svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:1.6, s:'보스 처치!', col:'#ffe08a', sz:26, scr:1 }); G.shake = 0.5; try{ sfx('claim'); }catch(x){} if(e.final){ G.over = 'win'; svShowEnd(); } }
 }
@@ -13088,7 +13089,7 @@ function svTick(dt){
   const G = sv.game; G.t += dt;
   G.spawnT -= dt; const rate = Math.max(0.1, (G.t < 30 ? 1.3 : 1.15 - G.t/480) / SV_SPAWN / (G.players.length > 1 ? 1.4 : 1)); // 처음 30초는 느슨하게
   if(G.spawnT <= 0 && G.en.length < 140){ G.spawnT = rate; const r = Math.random(); svSpawn(G.t > 40 && r < 0.18 ? 'fast' : G.t > 70 && r < 0.3 ? 'big' : 'normal'); }
-  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; svSpawn('elite'); svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장 — 잡으면 각성석', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
+  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; svSpawn('elite'); svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장 — 잡으면 정령의 선물', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
   G.podT -= dt; if(G.podT <= 0){ G.podT = 12; if(G.en.filter(o=>o.kind==='pod').length < 6){ const f = svFreeSpot(), hp = 40 * (1 + G.t/120); G.en.push({ x: f.x, y: f.y, r:13, spd:0, hp, max:hp, dmg:0, xp:0, kind:'pod', art:'assets/survival/pod.webp', mob:'assets/survival/pod.webp', fl:0 }); } } // (build 489) 상자는 때려서 부숨 (사용자 10/26) · 맵 곳곳
   svMapTick(dt);
   if(!G.mid && G.t >= SV_T_MID){ G.mid = true; svSpawnBoss(SV_MAPS[G.stage||0].mid, false); }
@@ -13167,11 +13168,11 @@ function svTick(dt){
   G.loot.forEach(o=>{
     const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-o.x, b.y-o.y) < Math.hypot(a.x-o.x, a.y-o.y) ? b : a, null); if(!p) return;
     const d = Math.hypot(p.x-o.x, p.y-o.y), pull = o.k==='rune' ? 70 : p.mag * (1 + 0.25*svPasLv(p, 'greed')); if(d < pull){ o.x += (p.x-o.x)/d*Math.min(d, 380*dt); o.y += (p.y-o.y)/d*Math.min(d, 380*dt); } // 골드·회복·자석도 경험치처럼 끌려옴
-    if(d < 16){ o.done = true;
+    if(d < 16){ if(o.k==='rune' && G.pickWait) return; /* 고르는 중이면 끝난 뒤에 */ o.done = true;
       if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed'))))); G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
       else if(o.k==='heal'){ p.hp = Math.min(p.maxHp, p.hp + 30); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+30', col:'#7ce07c', sz:11 }); }
       else if(o.k==='mag'){ G.gems.forEach(g=>{ g.pull = true; }); svFx({ k:'text', x:p.x, y:p.y-40, t:0, d:1, s:'바람 나침반 — 모두 끌어당김', col:'#7ae0ff', sz:12 }); }
-      else if(o.k==='rune') svEvolve(p); } });
+      else if(o.k==='rune'){ G.pickWait = true; G.pickAt = Date.now(); G.pickGift = 1; p.pick = svChoices(p); if(!p.pick || !p.pick.length){ p.pick = null; G.pickWait = false; G.pickGift = 0; } svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col:'#ffd557', r:70 }); try{ sfx('enhance'); }catch(e){} } } }); // (build 520) 정령의 선물 — 카드 3장
   G.loot = G.loot.filter(o=>!o.done);
   G.gems.forEach(g=>{ const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-g.x, b.y-g.y) < Math.hypot(a.x-g.x, a.y-g.y) ? b : a, null); if(!p) return; const d = Math.hypot(p.x-g.x, p.y-g.y), mag = p.mag * (1 + 0.25*svPasLv(p, 'greed'));
     if(d < mag || g.pull){ const v = g.pull ? 520 : 380; g.x += (p.x-g.x)/d*Math.min(d, v*dt); g.y += (p.y-g.y)/d*Math.min(d, v*dt); } if(d < 12){ g.done = true; G.xp += g.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))); } });
@@ -13203,7 +13204,7 @@ function svHud(){
     const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const src = 'assets/ui/'+(state.svAim==='mouse' ? 'ic_target' : 'ic_auto')+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src){ im.setAttribute('src', src); ab.title = '조준: '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'); } } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
-      box.innerHTML = '<div class="sv-ptl">레벨 '+G.lvl+'! 하나 고르기</div>' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('');
+      box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 '+G.lvl+'!')+' 하나 고르기</div>' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('');
       { const cs = [...box.querySelectorAll('.sv-card')], h = Math.max(...cs.map(x=>x.offsetHeight)); if(h > 0) cs.forEach(x=>x.style.height = h+'px'); } // (build 513) 카드 높이 맞춤
       box.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.pk; if(sv.net.role==='guest'){ sv.myPick = { i, k: key }; svGuestSend(); box.dataset.k = 'sent'; box.innerHTML = '<div class="sv-ptl">친구 기다리는 중…</div>'; } else svDoPick(G.me, i); })); } }
   else if(G.pickWait && !G.over){ if(box.dataset.k !== 'wait' && box.dataset.k !== 'sent'){ box.dataset.k = 'wait'; box.innerHTML = '<div class="sv-ptl">친구가 고르는 중…</div>'; box.classList.add('on'); } }
@@ -13325,7 +13326,7 @@ function svDraw(){
   const gi = [svImg('assets/survival/gem_s.webp'), svImg('assets/survival/gem_b.webp')];
   G.gems.forEach(g=>{ if(off(g, 10)) return; const im = gi[g.big ? 1 : 0]; if(im.complete && im.naturalWidth){ const s = g.big ? 18 : 13; c.drawImage(im, g.x-s/2, g.y-s/2, s, s); return; } c.save(); c.translate(g.x, g.y); c.rotate(0.785); const s = g.big ? 5 : 3.2; c.fillStyle = g.big ? '#c9a6ff' : '#7ae0ff'; c.shadowColor = c.fillStyle; c.shadowBlur = 6; c.fillRect(-s/2, -s/2, s, s); c.restore(); });
   // 상자 · 룬 · 골드 · 회복
-  G.loot.forEach(o=>{ if(off(o, 20)) return; c.save(); c.translate(o.x, o.y); // 그림: 상자 ic_box · 각성석 ic_runestone · 골드 ic_gold · 생명의 샘 rl_spring · 바람 나침반 rl_compass
+  G.loot.forEach(o=>{ if(off(o, 20)) return; c.save(); c.translate(o.x, o.y); // 그림: 상자 ic_box · 정령의 선물 ic_runestone · 골드 ic_gold · 생명의 샘 rl_spring · 바람 나침반 rl_compass
     const ic = { pod:'ic_box', rune:'ic_runestone', gold:'ic_gold', heal:'rl_spring', mag:'rl_compass' }[o.k], sz = o.k==='pod' ? 28 : o.k==='rune' ? 26 : o.k==='gold' ? 16 : 22, nw = (o.k==='pod' || o.k==='rune') ? svImg('assets/survival/'+o.k+'.webp') : null, im = nw && nw.complete && nw.naturalWidth ? nw : svImg('assets/ui/'+ic+'.webp'); // 새 그림(survival/pod·rune)이 있으면 그것
     if(o.k==='rune'){ const k = 1 + Math.sin(G.t*5)*0.12; c.scale(k, k); c.drawImage(svGlow('#ff5777', 'cc'), -sz, -sz, sz*2, sz*2); }
     if(im.complete && im.naturalWidth) c.drawImage(im, -sz/2, -sz/2, sz, sz);
@@ -19940,7 +19941,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 519, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 520, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
