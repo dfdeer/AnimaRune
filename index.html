@@ -12610,12 +12610,12 @@ function svDrawJet(c, f, cx, cy){ // 요르문간드 물줄기 — (build 523) �
   c.save(); c.globalAlpha = 1; c.translate(cx, cy - 6); c.rotate(f.a); if(Math.cos(f.a) < 0) c.scale(1, -1);
   if(ft < J.CH + 0.03){ for(let i=0;i<10;i++){ const an = i*2.399 + 0.7, d0 = 24 + (i*7)%16, dl = (i*0.013)%0.05, k = cl((ft - dl)/(J.CH - dl)); if(k <= 0 || k >= 1) continue; const d = d0*(1 - E(k)); c.save(); c.globalAlpha = 0.9*k; c.translate(MX + Math.cos(an)*d, Math.sin(an)*d); c.rotate(an + Math.PI/2); svDrop(c, 0.35); c.restore(); }
     const r0 = 3 + 7*E(cl(ft/J.CH)); c.drawImage(svGlow('#5ab4ff', 'ee'), MX - r0*1.8, -r0*1.8, r0*3.6, r0*3.6); }
-  if(s >= 0 && s <= T1 + J.RUN + 0.3){ const xf = MX + (L - MX)*E(cl(s/J.EXT)), rk = cl((s - T1)/J.RUN), xb = MX + (L - MX)*rk*rk, th = 1 - 0.55*rk, Hh = 34*z*th, len = xf - xb;
+  if(s >= 0 && s <= T1 + J.RUN + 0.3){ const xf = MX + (L - MX)*E(cl(s/J.EXT)), rk = cl((s - T1)/J.RUN), xb = MX + (L - MX)*rk*rk, th = 1 - Math.pow(Math.max(0, (rk - 0.35)/0.65), 1.5), Hh = 34*z, /* (build 525) 사라질 때 굵기는 그대로 두고 옅어지기만 (사용자 10/27: 작아지는 게 눈에 보여 어색) */ len = xf - xb;
     if(jet.naturalWidth && len > 2 && rk < 1){ 
       c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5*th; const gg = c.createLinearGradient(0, -Hh, 0, Hh); gg.addColorStop(0, 'rgba(40,140,255,0)'); gg.addColorStop(0.5, 'rgba(80,170,255,0.5)'); gg.addColorStop(1, 'rgba(40,140,255,0)'); c.fillStyle = gg; c.fillRect(xb, -Hh, len, Hh*2); c.restore(); /* 둘레 푸른 빛 (가장자리 부드럽게) */
-      { const T = svJetTile(jet), TL = 230*z, off = (s*280) % TL; c.save(); c.beginPath(); c.rect(xb, -Hh, len, Hh*2); c.clip(); c.globalAlpha = 0.6 + 0.4*th; for(let x = xb - TL + off - ((xb - MX) % TL); x < xf; x += TL) c.drawImage(T, 0, 0, T.width, T.height, x, -Hh/2, TL + 1, Hh); c.restore(); } // (build 524) 물 무늬가 앞으로 흘러 뿜어져 나가는 느낌 — 가운데 부분을 거울로 이어 붙인 이음새 없는 무늬라 지직거리지 않음 (사용자 10/27: 고정돼 있어 이상함)
+      { const T = svJetTile(jet), TL = 230*z, off = (s*280) % TL; const FD = xb > MX + 1 ? Math.min(40*z, len) : 0, SL = 8; for(let k=0;k<=SL;k++){ const a0 = k < SL ? xb + FD*k/SL : xb + FD, a1 = k < SL ? xb + FD*(k + 1)/SL : xf; if(a1 <= a0) continue; c.save(); c.beginPath(); c.rect(a0, -Hh, a1 - a0 + 0.5, Hh*2); c.clip(); c.globalAlpha = th*(k < SL ? (k + 0.5)/SL : 1); for(let x = xb - TL + off - ((xb - MX) % TL); x < xf; x += TL) c.drawImage(T, 0, 0, T.width, T.height, x, -Hh/2, TL + 1, Hh); c.restore(); } } // 입에서 끊긴 뒤쪽 끝은 40만큼 점점 옅게 (뚝 잘린 모서리 없게) // (build 524) 물 무늬가 앞으로 흘러 뿜어져 나가는 느낌 — 가운데 부분을 거울로 이어 붙인 이음새 없는 무늬라 지직거리지 않음 (사용자 10/27: 고정돼 있어 이상함)
       c.globalAlpha = 1;
-      for(let q=0;q<9;q++){ const v = ((s*520 + q*61) % Math.max(20, len)), x0 = xb + v, yy = Math.sin(q*2.1)*Hh*0.28; if(x0 > xf - 6) continue; c.save(); c.globalAlpha = 0.55*th*Math.min(1, v/20); c.fillStyle = '#ffffff'; c.beginPath(); c.ellipse(x0, yy, 7*z, 1.6*z, 0, 0, 6.283); c.fill(); c.restore(); } // 물살 — 흰 줄이 빠르게 앞으로
+      for(let q=0;q<9;q++){ const v = ((s*520 + q*61) % Math.max(20, len)), x0 = xb + v, yy = Math.sin(q*2.1)*Hh*0.28; if(x0 > xf - 6) continue; c.save(); c.globalAlpha = 0.55*th*Math.min(1, v/20); c.fillStyle = '#ffffff'; /* 물살 */ c.beginPath(); c.ellipse(x0, yy, 7*z, 1.6*z, 0, 0, 6.283); c.fill(); c.restore(); } // 물살 — 흰 줄이 빠르게 앞으로
       if(rk < 0.9) for(let q=0;q<5;q++){ const an = -1.1 + q*0.55 + Math.sin(s*14 + q)*0.15, d = 5 + ((s*60 + q*5) % 10); c.save(); c.globalAlpha = 0.85*(1 - rk); c.translate(xf + Math.cos(an)*d, Math.sin(an)*d*0.9); c.rotate(an - Math.PI/2); svDrop(c, 0.38); c.restore(); } // 앞머리 물보라
       if(rk > 0) for(let q=0;q<6;q++){ const ph = (s*3.2 + q/6) % 1, x0 = xb + len*((q*0.37) % 1); c.save(); c.globalAlpha = 0.9*(1 - ph); c.translate(x0, Hh*0.3 + 26*ph*ph); c.rotate(Math.PI); svDrop(c, 0.32); c.restore(); } } // 끊긴 물이 아래로 뚝뚝
     if(s < 0.22){ const k = s/0.22; c.save(); c.globalAlpha = 1 - k; for(let d=0; d<7; d++){ const an = -1.1 + d*0.37; c.save(); c.translate(MX + Math.cos(an)*(8 + 30*E(k)), Math.sin(an)*(8 + 30*E(k))); c.rotate(an - Math.PI/2); svDrop(c, 0.5); c.restore(); } c.restore(); }
@@ -19945,7 +19945,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 524, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 525, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
