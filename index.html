@@ -12397,27 +12397,27 @@ const SV_COEF = { light_b_1:'이동 속도 비례', light_b_2:'이동 속도 비
 function svSkDesc(id, from, to){ return svSkDesc0(id, from, to) + (SV_COEF[id] ? ' <i class="sv-cf">('+SV_COEF[id]+')</i>' : ''); }
 function svSkDesc0(id, from, to){ const rows = SV_SKS[id], t = SV_SKT[id]; if(!rows || !t) return SV_SK[id].d; return t.replace(/\{(\d)\}/g, (_, k)=>{ const r = rows[+k]; if(!r) return ''; const suf = r[2]||'', v1 = r[1](to); if(!from) return '<u>'+v1+suf+'</u>'; const v0 = r[1](from), dv = Math.round((v1 - v0)*10)/10; return dv ? '<u>'+v0+suf+'</u><em>(+'+dv+(suf.charAt(0)==='%' ? '%' : '')+')</em>' : '<u>'+v1+suf+'</u>'; }); } // 지금 값은 하얗게 · 늘어나는 만큼은 노랗게 (+n) (build 515 · 사용자 10/27: 50 → 55 대신 50(+5))
 const SV_PASS = { // 유물 수치 — Lv마다
-  might:[['공격력', l=>12*l, '%', '+'], ['받는 피해', l=>3*l, '%', '+']], haste:[['스킬 간격', l=>Math.round((1-Math.pow(0.92,l))*100), '%', '−']], area:[['범위', l=>12*l, '%', '+']],
-  vital:[['최대 체력', l=>20*l, '', '+'], ['회복', l=>Math.round(0.25*l*100)/100, '/초', '+']], swift:[['이동 속도', l=>8*l, '%', '+']], greed:[['경험치·골드', l=>12*l, '%', '+'], ['줍는 범위', l=>25*l, '%', '+']], crit:[['치명타', l=>7*l, '%', '+']],
+  might:[['공격력', l=>12*l, '%', '+'], ['받는 피해', l=>3*l, '%', '+']], haste:[['쿨타임 감소', l=>Math.round((1-Math.pow(0.92,l))*100), '%', '+']], area:[['공격 범위', l=>12*l, '%', '+']],
+  vital:[['최대 체력', l=>20*l, '', '+'], ['회복', l=>Math.round(0.25*l*100)/100, '/초', '+']], swift:[['이동 속도', l=>8*l, '%', '+']], greed:[['경험치·골드', l=>12*l, '%', '+'], ['획득 범위', l=>25*l, '%', '+']], crit:[['치명타 확률', l=>7*l, '%', '+']],
   hunter:[['정예·보스 피해', l=>15*l, '%', '+']], axe:[['체력 30% 이하 적 피해', l=>20*l, '%', '+']], tinder:[['화상 확률', l=>6*l, '%', '']], fang:[['처치마다 회복', l=>Math.round(0.4*l*10)/10, '', '+']],
   rampart:[['받는 피해', l=>6*l, '%', '−']], frost:[['느려진·언 적 피해', l=>12*l, '%', '+']]
 };
 function svStatLine(rows, from, to, pre){ return rows.map(r=>{ const f = r[1], suf = r[2]||'', sg = pre ? (r[3]||'') : '', b = sg+f(to)+suf; if(!from) return '<i>'+r[0]+'</i> '+b; const a = sg+f(from)+suf, dv = Math.round((f(to) - f(from))*100)/100; return a===b ? '<i>'+r[0]+'</i> '+b : '<i>'+r[0]+'</i> '+a+'<em>('+(r[3]==='−' ? '−' : '+')+Math.abs(dv)+(suf.charAt(0)==='%' ? '%' : '')+')</em>'; }).join(' · '); } // 지금 값 + 늘어나는 만큼 노랗게 (build 515 · 사용자 10/27)
 const SV_PAS = { // 능력 — 균열 유물 그림·이름 그대로 (사용자 결정 10/25: 기본 아이콘 대신 뽑아 둔 그림) · Lv마다 · 스킬 진화 짝은 SV_SK의 pair (build 507부터 앞 7개 말고도 씀)
-  might:{ nm:'유리 대포', ic:'rl_glass', d:'공격력 +12% · 받는 피해 +3%' }, haste:{ nm:'제비 깃', ic:'rl_swallow', d:'스킬 간격 −8%' }, area:{ nm:'메아리 북', ic:'rl_drum', d:'공격 범위 +12%' },
-  vital:{ nm:'재생 이끼', ic:'rl_moss', d:'최대 체력 +20 · 조금씩 회복' }, swift:{ nm:'질풍 장화', ic:'rl_boots', d:'이동 속도 +8%' }, greed:{ nm:'금화 주머니', ic:'rl_purse', d:'경험치·골드 +12% · 줍는 범위 +25%' }, crit:{ nm:'숫돌', ic:'rl_whet', d:'치명타 확률 +7%' },
+  might:{ nm:'유리 대포', ic:'rl_glass', d:'공격력 +12% · 받는 피해 +3%' }, haste:{ nm:'제비 깃', ic:'rl_swallow', d:'쿨타임 −8%' }, area:{ nm:'메아리 북', ic:'rl_drum', d:'공격 범위 +12%' },
+  vital:{ nm:'재생 이끼', ic:'rl_moss', d:'최대 체력 +20 · 조금씩 회복' }, swift:{ nm:'질풍 장화', ic:'rl_boots', d:'이동 속도 +8%' }, greed:{ nm:'금화 주머니', ic:'rl_purse', d:'경험치·골드 +12% · 획득 범위 +25%' }, crit:{ nm:'숫돌', ic:'rl_whet', d:'치명타 확률 +7%' },
   hunter:{ nm:'사냥꾼의 표식', ic:'rl_hunter', d:'정예·보스에게 피해 +15%' }, axe:{ nm:'처형인의 도끼', ic:'rl_axe', d:'체력 30% 이하 적에게 피해 +20%' }, tinder:{ nm:'부싯돌', ic:'rl_tinder', d:'공격이 맞으면 6% 확률로 화상' },
   fang:{ nm:'흡혈 송곳니', ic:'rl_fang', d:'적을 처치하면 체력 +0.4' }, rampart:{ nm:'성벽 돌', ic:'rl_rampart', d:'받는 피해 −6%' }, frost:{ nm:'서리 결정', ic:'rl_frost', d:'느려지거나 얼어 있는 적에게 피해 +12%' }
 };
 function svPI(k){ return '<img class="sv-pi" src="assets/ui/'+SV_PAS[k].ic+'.webp" alt="">'; }
 const SV_LP = { // 대표 패시브 (계열 패시브 이름 그대로)
   fire_a:'체력 50% 이하면 공격력 +30%', fire_b:'내 공격이 화상을 남김 (3초)', water_a:'4초마다 아군 중 체력 비율이 가장 낮은 아군을 최대 체력 8% 회복', water_b:'내 공격에 맞은 적 느려짐',
-  wood_a:'받는 피해 −25%', wood_b:'처치한 적 25% 확률로 독 장판', light_a:'10초마다 보호막 (최대 체력 20%)', light_b:'모든 아군 이동 속도 +12% · 스킬 간격 −8%',
+  wood_a:'받는 피해 −25%', wood_b:'처치한 적 25% 확률로 독 장판', light_a:'10초마다 보호막 (최대 체력 20%)', light_b:'모든 아군 이동 속도 +12% · 쿨타임 −8%',
   dark_a:'적이 잃은 체력만큼 피해 증가 (최대 +40%)', dark_b:'치명타 확률 +12%'
 };
 const SV_ULT = { // 궁극기 = 대표 정령의 스킬2 (쿨타임 45초)
   fire_a:'둘레가 연달아 터짐 · 큰 피해 + 화상', fire_b:'화면의 모든 적에 큰 화상', water_a:'모든 아군 체력 50% 회복 · 둘레 적 밀쳐냄', water_b:'모든 적 3초 얼림 + 피해',
-  wood_a:'5초 무적 · 둘레 적 큰 피해 + 밀쳐냄', wood_b:'모든 적 6초 크게 느려짐 + 독', light_a:'모든 아군 큰 보호막 + 3초 무적', light_b:'8초 동안 모든 아군 공격력 +50% · 스킬 간격 −30%',
+  wood_a:'5초 무적 · 둘레 적 큰 피해 + 밀쳐냄', wood_b:'모든 적 6초 크게 느려짐 + 독', light_a:'모든 아군 큰 보호막 + 3초 무적', light_b:'8초 동안 모든 아군 공격력 +50% · 쿨타임 −30%',
   dark_a:'둘레 체력 50% 이하 적 처치 + 큰 피해', dark_b:'화면의 모든 적 큰 피해 · 처치한 만큼 회복'
 };
 // 해금 — 처음: 대표 정령 2 · 스킬 5 (Swarm도 처음엔 무기 5개) · 대표 정령을 열면 그 스킬1도 열림 · 스킬2는 같은 계열 스킬1을 각성시키면
@@ -12478,7 +12478,7 @@ function svHas(kind, id){ return svUnl()[kind].includes(id); }
 // 그림 자리: assets/survival/<맵>_ground.webp (위에서 본 이음새 없는 바닥) · <맵>_ob1~4.webp (장애물) · <맵>_deco1~3.webp (장식) · <맵>_<기믹>.webp
 const SV_MW = 2400, SV_MH = 1350; // (build 557) 숲 구성 그림에 맞춰 가로로 긴 맵 (넓이는 1800×1800과 같음) // (build 488) 넓은 화면에서도 돌아다닐 맛이 나게 정사각형으로 키움 (전엔 1080×1800) // 맵 크기 (화면 3×3)
 const SV_MAPS = [
-  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 세계수 — 뿌리 둘레에 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 정령 석상 둘레에 서면 축복 · 개울은 다리로만' },
+  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 세계수 — 뿌리 둘레에 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 정령 석상 둘레에 서면 축복을 받음 · 개울은 다리로만 건널 수 있음' },
   { id:'snow', nm:'얼어붙은 설원', el:'water', mid:'frostGiant', fin:'frostTyrant', col:['#b9d3e6','#d7e8f4','#93b5cf'], gim:'ice', ob:['얼음 기둥','눈 덮인 바위'], d:'얼음 바닥은 미끄러움 · 1분마다 눈보라 (시야가 좁아지고 느려짐)' },
   { id:'volcano', nm:'불타는 화산', el:'fire', mid:'lavaLord', fin:'infernoDrake', col:['#3a1e17','#4b261c','#271310'], gim:'lava', ob:['용암 바위','검은 돌기둥'], d:'용암 웅덩이는 밟으면 아픔 · 20초마다 분화 (빨간 원을 피하기)' },
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
@@ -12579,7 +12579,7 @@ function svZoneAt(p, kind){ const map = sv.game.map; return map ? map.zones.find
 function svTrapState(z, t){ const f = ((t + z.ph) % 6) / 6; return f > 0.85 ? 2 : f > 0.68 ? 1 : 0; } // 0 쉼 · 1 곧 솟음(빛남) · 2 솟음
 function svBlizzard(G){ return G.map && SV_MAPS[G.map.stage].gim==='ice' && (G.t % 60) > 40 && (G.t % 60) < 55; }
 // (build 556) 숲 기믹 — 사용자 10/29 「기믹 여러 개 있으면 재밌고 좋지」: ① 정령 석상 넷 — 둘레에 서 있으면 차지(혼자 6초 · 둘 4초 · 셋 3초 · 넷 2.5초) → 모두에게 정령의 축복 하나 45초 · 그 석상은 90초 쉼 · (밤·반딧불 등불도 만들었다가 뺌 — 사용자 10/29 「그림자 심연이 어두운 맵이라 겹침」)
-const SV_BLESS = { atk:'공격력 +25%', spd:'이동 속도 +20%', xp:'경험치 +40%', cd:'스킬 간격 −20%' };
+const SV_BLESS = { atk:'공격력 +25%', spd:'이동 속도 +20%', xp:'경험치 +40%', cd:'쿨타임 −20%' };
 function svBless(k){ const G = sv && sv.game; return !!(G && G.bless && G.bless.k===k); }
 function svForestTick(G, alive, dt){ const map = G.map;
   map.zones.forEach(z=>{
@@ -12807,8 +12807,8 @@ function svLoadTick(G, now){ // (build 563) 들어가는 중 — 숲 그림 · �
 function svGimGuide(G){ // (build 563) 시작할 때 오른쪽에 이 맵 기믹 안내 · (build 564) 12초 뒤(또는 누르면) 오른쪽으로 쏙 들어가고 「맵 정보」 탭을 누르면 다시 나옴 (사용자 10/29)
   if(!G.map || !G.map.fo || !sv.el) return; const b = 'assets/survival/forest/', d = document.createElement('div'); d.className = 'sv-gim';
   d.innerHTML = '<button class="tab" type="button">맵<br>정보</button><b>'+SV_MAPS[G.stage].nm+'</b>'
-    + '<p><img src="'+b+'worldtree.webp" alt=""><span><em>세계수 샘</em>뿌리 둘레에 서 있으면 차오름 · 다 차면 모두 체력 50% 회복 + 보호막 · 같이 서면 빨리</span></p>'
-    + '<p><img src="'+b+'shrine.webp" alt=""><span><em>정령 석상</em>둘레에 서 있으면 차오름 · 다 차면 45초 정령의 축복 · 석상 둘</span></p>'
+    + '<p><img src="'+b+'worldtree.webp" alt=""><span><em>세계수 샘</em>뿌리 둘레에 서 있으면 차오름 · 다 차면 모두 체력 50% 회복 + 보호막 · 같이 서면 더 빨리 참</span></p>'
+    + '<p><img src="'+b+'shrine.webp" alt=""><span><em>정령 석상</em>둘레에 서 있으면 차오름 · 다 차면 45초 동안 정령의 축복 · 맵에 석상 2개</span></p>'
     + '<p><img src="'+b+'bridge.webp" alt=""><span><em>개울</em>다리로만 건널 수 있음</span></p><small>누르면 접힘</small>';
   let tm = setTimeout(()=>d.classList.add('tuck'), 12000);
   d.addEventListener('pointerdown', e=>{ e.stopPropagation(); clearTimeout(tm); d.classList.toggle('tuck'); }); sv.el.appendChild(d); }
@@ -12864,15 +12864,21 @@ function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있
     c.save(); c.globalAlpha = 0.55; c.translate(b.x, 0); if(b.fl) c.scale(-1, 1); c.drawImage(im, -s/2, top, s, s); c.restore(); });
 }
 function svMiniBase(map){ // 작은 지도 바탕 — 맵마다 한 번만 그려 둠 (바닥색 · 장애물 · 기믹 자리)
-  if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 128, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
+  if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 280, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
   const g = x.createRadialGradient(W/2, H/2, 10, W/2, H/2, H*0.7); g.addColorStop(0, M.col[1]); g.addColorStop(1, M.col[2]); x.fillStyle = g; x.fillRect(0, 0, W, H);
   if(map.fo && !svFoMini(oc, W, H)) return oc; // (build 557) 숲 — 바닥 마스크로 (아직 안 불렀으면 다음에 다시)
   if(!map.fo) map.zones.forEach(z=>{ if(z.kind==='swamp') return; x.fillStyle = { spring:'#7ae0ffcc', well:'#7ae0ff', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
   map.ob.forEach(o=>{ if(o.hid) return; x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
   sv.miniFor = map; sv.miniC = oc; return oc;
 }
-function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도 — 둥근 틀 · 실제 맵 모양 · 내 위치 · 보스 · 룬 · 상자
-  const w = 62, h = Math.round(w*SV_MH/SV_MW), x0 = 10, y0 = 10 + (sv.uiTop||0), k = w / SV_MW, rr = 9, me = G.players[G.me];
+// (build 569) 작은 지도 크기·자리 — 옆 버튼으로 바꿈 (사용자 10/29 「미니맵 너무 작음」) · 크기 3단계 · 왼쪽 위 ↔ 왼쪽 아래
+const SV_MINI_W = [62, 100, 140];
+function svMiniBox(){ const w = SV_MINI_W[state.svMiniK|0] || 62, h = Math.round(w*SV_MH/SV_MW), bot = state.svMiniPos==='bl';
+  const y0 = bot ? SV_H - (sv.uiBot||0) - h - (sv.pc ? (12 + 43*(sv.uk||1))/(sv.scale||1) + 10 : 14) : 10 + (sv.uiTop||0); return { x0:10, y0, w, h, bot }; }
+function svMiniHit(q){ const B = sv.miniBtn; if(!B) return null; const b = B.find(o=>Math.hypot(q.x - o.x, q.y - o.y) < o.r + 4); return b ? b.k : null; }
+function svMiniTap(k){ if(k==='size') state.svMiniK = ((state.svMiniK|0) + 1) % SV_MINI_W.length; else state.svMiniPos = state.svMiniPos==='bl' ? 'tl' : 'bl'; save(); if(sv.fit) sv.fit(); }
+function svDrawMini(c, G, cam){ // 작은 지도 — 둥근 틀 · 실제 맵 모양 · 내 위치 · 보스 · 룬 · 상자
+  const { x0, y0, w, h } = svMiniBox(), k = w / SV_MW, rr = 9, me = G.players[G.me];
   const box = ()=>{ c.beginPath(); c.moveTo(x0+rr, y0); c.arcTo(x0+w, y0, x0+w, y0+h, rr); c.arcTo(x0+w, y0+h, x0, y0+h, rr); c.arcTo(x0, y0+h, x0, y0, rr); c.arcTo(x0, y0, x0+w, y0, rr); c.closePath(); };
   c.save(); c.shadowColor = '#000a'; c.shadowBlur = 8; box(); c.fillStyle = '#0b0d26'; c.fill(); c.restore();
   c.save(); box(); c.clip(); c.globalAlpha = 0.92; c.drawImage(svMiniBase(G.map), x0, y0, w, h); c.globalAlpha = 1;
@@ -12885,6 +12891,11 @@ function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도 — 둥근 틀 · �
   G.en.forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite') return; const [x, y] = P(e); if(e.kind==='boss'){ const pr = 3.2 + Math.sin(G.t*6)*0.8; c.strokeStyle = '#ff3a3a'; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, pr + 2, 0, 6.283); c.stroke(); c.fillStyle = '#ff3a3a'; c.beginPath(); c.arc(x, y, 2.6, 0, 6.283); c.fill(); } else { c.fillStyle = '#c9a6ff'; c.beginPath(); c.arc(x, y, 1.8, 0, 6.283); c.fill(); } });
   G.players.forEach((p,i)=>{ const [x, y] = P(p); c.fillStyle = '#000a'; c.beginPath(); c.arc(x, y, 3.4, 0, 6.283); c.fill(); c.fillStyle = p===me ? '#ffffff' : SV_PCOL[i]; c.beginPath(); c.arc(x, y, 2.4, 0, 6.283); c.fill(); if(p===me){ c.strokeStyle = SV_PCOL[i]; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, 3.6, 0, 6.283); c.stroke(); } });
   c.restore(); c.save(); box(); c.strokeStyle = '#ffffff66'; c.lineWidth = 1.2; c.stroke(); c.restore();
+  const br = 10, bx = x0 + w + br + 5; sv.miniBtn = [{ k:'size', x:bx, y:y0 + br, r:br }, { k:'pos', x:bx, y:y0 + br*3 + 5, r:br }]; /* (build 569) 크기 · 자리 버튼 */
+  c.save(); sv.miniBtn.forEach(b=>{ c.fillStyle = '#0b0d26c8'; c.strokeStyle = '#ffffff66'; c.lineWidth = 1.2; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 6.283); c.fill(); c.stroke(); c.strokeStyle = '#eef0ff'; c.lineWidth = 1.6; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath();
+    if(b.k==='size'){ const big = (state.svMiniK|0) < SV_MINI_W.length - 1, d = 4.2; if(big){ c.moveTo(b.x - d, b.y + d); c.lineTo(b.x + d, b.y - d); c.moveTo(b.x + 0.5, b.y - d); c.lineTo(b.x + d, b.y - d); c.lineTo(b.x + d, b.y - 0.5); c.moveTo(b.x - d, b.y + 0.5); c.lineTo(b.x - d, b.y + d); c.lineTo(b.x - 0.5, b.y + d); } else { c.moveTo(b.x - d, b.y + d); c.lineTo(b.x + d, b.y - d); c.moveTo(b.x - d, b.y + 0.2); c.lineTo(b.x - 0.2, b.y + 0.2); c.lineTo(b.x - 0.2, b.y + d); c.moveTo(b.x + 0.2, b.y - d); c.lineTo(b.x + 0.2, b.y - 0.2); c.lineTo(b.x + d, b.y - 0.2); } }
+    else { const up = state.svMiniPos==='bl', s = up ? -1 : 1; c.moveTo(b.x, b.y - 4.5*s); c.lineTo(b.x, b.y + 4.5*s); c.moveTo(b.x - 3.5, b.y + 1*s); c.lineTo(b.x, b.y + 4.5*s); c.lineTo(b.x + 3.5, b.y + 1*s); }
+    c.stroke(); }); c.restore();
 }
 // ---------- 화면 · 로비 ----------
 // (build 533) 서바이벌을 할 수 있는 사람 — 관리자 모드 + 시험해 볼 사람 친구 코드 (사용자 10/29: 여자친구도 하게)
@@ -12913,7 +12924,7 @@ function svClose(){
 }
 function svStageHtml(){
   const S = sv.stage||0, M = SV_MAPS[S], cl = state.svClear||[], bi = g=>'<img src="assets/boss/'+g+'.webp" alt="">';
-  return '<div class="sv-ltl">단계 <em>'+cl.length+'/'+SV_STAGE_READY+'</em> <small>앞 단계 최종 보스를 잡으면 다음 단계</small></div>'
+  return '<div class="sv-ltl">단계 <em>'+cl.length+'/'+SV_STAGE_READY+'</em> <small>앞 단계 최종 보스를 잡으면 다음 단계가 열림</small></div>'
     + '<div class="sv-stg">'+SV_MAPS.map((m,i)=>{ const op = svStageOpen(i); return '<button class="sv-st'+(i===S?' on':'')+(op?'':' lock')+(cl.includes(i)?' clr':'')+'" data-st="'+i+'" style="--c0:'+m.col[0]+'; --c1:'+m.col[1]+'; --c2:'+m.col[2]+';"><img class="sv-stb" src="assets/survival/'+m.id+'_thumb.webp" alt="" onerror="this.remove()"><b>'+(i+1)+'단계</b><span>'+(op ? m.nm : i >= SV_STAGE_READY ? '준비 중' : uiIc('lock'))+'</span>'+(cl.includes(i) ? '<i>'+uiIc('check')+'</i>' : '')+'</button>'; }).join('')+'</div>'
     + '<div class="sv-sti"><b>'+(S+1)+'단계 · '+M.nm+'</b><small>'+M.d+'</small><div>'+bi(M.mid)+'<span>5분 중간 보스<br><b>'+SV_BOSS_NM[M.mid]+'</b></span>'+bi(M.fin)+'<span>10분 최종 보스<br><b>'+SV_BOSS_NM[M.fin]+'</b></span></div></div>';
 }
@@ -13026,14 +13037,14 @@ function svNewPlayer(i, leader, unl){ const B = svBase(leader), S0 = (sv.game &&
 function svPasLv(p, k){ return p.ps[k] || 0; }
 // (build 566) 조작 — 사용자 10/29: Q 겨누기 = 바라보는 방향(늘 쏨) ↔ 가장 가까운 적(사거리 안에 적이 있을 때만 그쪽으로) · C 쏘기(컴퓨터) = 자동 ↔ 수동(시작 룬만 마우스를 누를 때 마우스 쪽으로)
 // 수동은 겨눠 쏘는 시작 룬만 — 적 자리에 바로 생기거나 둘레로 퍼지는 룬(빛의 창·맑은 파도·피의 갈증·저주 깃털)은 늘 자동이라 수동으로 못 바꿈
-const SV_AIM_NM = { near:'가장 가까운 적', face:'바라보는 방향' }, SV_FIRE_NM = { auto:'자동 공격', manual:'수동 공격 (시작 룬 · 마우스를 눌러서)' };
+const SV_AIM_NM = { near:'가장 가까운 적', face:'바라보는 방향' }, SV_FIRE_NM = { auto:'자동 공격', manual:'수동 공격 (마우스를 누르는 동안 시작 룬 발사)' };
 const SV_MANUAL = { fire_a_1:1, fire_b_1:1, water_b_1:1, wood_a_1:1, wood_b_1:1, light_b_1:1 }; // 수동으로 쏠 수 있는 시작 룬
 const SV_DIRW = { fire_a_1:1, fire_b_1:1, water_b_1:1, wood_a_1:1, wood_b_1:1, light_b_1:1, water_a_2:1, fire_b_2:1 }; // 적이 없으면 바라보는 쪽으로 나가는 룬 — 「가장 가까운 적」이면 사거리 안에 적이 있을 때만
 function svAimMode(){ const m = state.svAim; return m==='face' || m==='move' ? 'face' : 'near'; } // 예전 값(auto·mouse·move)도 받아 줌
 function svStartRune(p){ return p && p.wp && p.wp[0] ? p.wp[0].id : ''; }
 function svFireMode(p){ return sv.pc && state.svFire==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'; }
 function svAimToggle(){ state.svAim = svAimMode()==='near' ? 'face' : 'near'; save(); svCtlFx('겨누기 — '+SV_AIM_NM[state.svAim]); }
-function svFireToggle(){ const G = sv && sv.game, me = G && G.players[G.me]; if(!sv.pc) return; if(!SV_MANUAL[svStartRune(me)]){ svCtlFx('이 시작 룬은 자동 공격만'); return; } state.svFire = state.svFire==='manual' ? 'auto' : 'manual'; save(); svCtlFx('쏘기 — '+SV_FIRE_NM[state.svFire]); }
+function svFireToggle(){ const G = sv && sv.game, me = G && G.players[G.me]; if(!sv.pc) return; if(!SV_MANUAL[svStartRune(me)]){ svCtlFx('이 시작 룬은 자동 공격만 사용 가능'); return; } state.svFire = state.svFire==='manual' ? 'auto' : 'manual'; save(); svCtlFx('쏘기 — '+SV_FIRE_NM[state.svFire]); }
 function svPAim(p){ const G = sv.game; return p===G.players[G.me] ? svAimMode() : (p.am || 'face'); } // (build 567) 친구 것도 — 친구가 보낸 조작(p.am·p.fm·p.ma·p.md)대로 방장이 쏨 · 예전 버전 친구는 바라보는 방향
 function svPFire(p){ const G = sv.game; return p===G.players[G.me] ? svFireMode(p) : (p.fm==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'); }
 function svCtlFx(s){ const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s, col:'#c9e2ff', sz:14, scr:1 }); }
@@ -13184,7 +13195,7 @@ function svStart(role){
     const top = sv.el.querySelector('.sv-hud'), bar = sv.el.querySelector('.sv-bar'), th = top ? top.getBoundingClientRect().height : 0, bb = bar ? bar.getBoundingClientRect().height : 0, rx = (bw - w)/2, by = (bh - h)/2;
     sv.uiTop = Math.max(0, th - by) / sv.scale; sv.uiBot = Math.max(0, bb - by) / sv.scale; // 겹친 HUD 높이 (게임 좌표) — 작은 지도·글자를 그만큼 비켜 그림
     const set = (el, r, b)=>{ if(el){ el.style.right = (r/uk)+'px'; el.style.bottom = (b/uk)+'px'; } }, ub0 = Math.max(by, bb) + 22;
-    set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); set(sv.el.querySelector('.sv-fire'), rx + 136, ub0); set(sv.el.querySelector('[data-k="fire"]'), rx + 156, ub0 - 18); const ob = sv.el.querySelector('.sv-obj'); if(ob){ ob.style.right = ((rx + 10)/uk)+'px'; ob.style.top = ((by + ((sv.uiTop||0) + 10)*sv.scale)/uk)+'px'; } const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = ((rx + 10*sv.scale)/uk)+'px'; stt.style.top = ((by + ((sv.uiTop||0) + 80)*sv.scale)/uk)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = ((rx + 10)/uk)+'px'; wd.style.bottom = ((Math.max(by, bb) + 12)/uk)+'px'; } };
+    set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); set(sv.el.querySelector('.sv-fire'), rx + 136, ub0); set(sv.el.querySelector('[data-k="fire"]'), rx + 156, ub0 - 18); const ob = sv.el.querySelector('.sv-obj'); if(ob){ ob.style.right = ((rx + 10)/uk)+'px'; ob.style.top = ((by + ((sv.uiTop||0) + 10)*sv.scale)/uk)+'px'; } const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = ((rx + 10*sv.scale)/uk)+'px'; const mb = svMiniBox(); stt.style.top = ((by + (mb.bot ? (sv.uiTop||0) + 10 : mb.y0 + mb.h + 12)*sv.scale)/uk)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 · (build 569) 지도가 아래로 가면 왼쪽 위 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = ((rx + 10)/uk)+'px'; wd.style.bottom = ((Math.max(by, bb) + 12)/uk)+'px'; } };
   fit(); sv.fit = fit; window.addEventListener('resize', fit);
   if(G.map && G.map.fo){ G.loading = performance.now(); const ld = document.createElement('div'); ld.className = 'sv-load'; ld.innerHTML = '<b>'+SV_MAPS[G.stage].nm+'</b><span>들어가는 중</span><i><u></u></i>'; sv.el.appendChild(ld); } // (build 563) 맵 그림·바닥을 다 불러올 때까지 가림 (사용자 10/29)
   sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '같이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
@@ -13194,7 +13205,7 @@ function svStart(role){
   sv.el.querySelector('[data-sv="ult"]').addEventListener('click', e=>{ e.stopPropagation(); if(role==='guest'){ sv.ultReq = (sv.ultReq||0) + 1; svGuestSend(); } else svUlt(G.players[0]); });
   const pt = e=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left)/sv.scale, y:(e.clientY - r.top)/sv.scale }; };
   const box = sv.el.querySelector('.sv-cv');
-  box.addEventListener('pointerdown', e=>{ if(e.target.closest('.sv-pick') || e.target.closest('.sv-end') || e.target.closest('.sv-ult') || e.target.closest('.sv-aim')) return; if(e.pointerType==='mouse' && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches){ sv.pc = true; return; } /* 컴퓨터는 클릭해도 이동 조이스틱 없음 (WASD) */ sv.joy = { o: pt(e), c: pt(e), id:e.pointerId }; try{ box.setPointerCapture(e.pointerId); }catch(x){} });
+  box.addEventListener('pointerdown', e=>{ if(e.target===cv){ const mk = svMiniHit(pt(e)); if(mk){ e.stopImmediatePropagation(); svMiniTap(mk); return; } } /* (build 569) 작은 지도 버튼 */ if(e.target.closest('.sv-pick') || e.target.closest('.sv-end') || e.target.closest('.sv-ult') || e.target.closest('.sv-aim')) return; if(e.pointerType==='mouse' && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches){ sv.pc = true; return; } /* 컴퓨터는 클릭해도 이동 조이스틱 없음 (WASD) */ sv.joy = { o: pt(e), c: pt(e), id:e.pointerId }; try{ box.setPointerCapture(e.pointerId); }catch(x){} });
   box.addEventListener('pointermove', e=>{ if(e.pointerType==='mouse'){ sv.mouse = pt(e); if(!sv.pc && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) sv.pc = true; } if(sv.joy && sv.joy.id===e.pointerId) sv.joy.c = pt(e); });
   // (build 487) 컴퓨터: WASD·방향키 이동 · Space 궁극기 · Q 조준 방식(이동 방향 ↔ 마우스 방향)
   sv.keys = {}; const KMAP = { KeyW:'u', ArrowUp:'u', KeyS:'d', ArrowDown:'d', KeyA:'l', ArrowLeft:'l', KeyD:'r', ArrowRight:'r' };
@@ -13318,12 +13329,13 @@ function svStGold(p){ return 0.12*svPasLv(p, 'greed'); }
 function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? 2.2 : 1) * (1 + 0.12*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK * svAtkK(p) * (SV_SPDW[w.id] ? svSpd(p)/120 : 1) * svCoK(p) * (svBless('atk') ? 1.25 : 1); } // (build 543) 공격력 · 백록 무기는 이동 속도(120 기준)도
 const SV_SPDW = { light_b_1:1, light_b_2:1 }; // 이동 속도가 피해에 들어가는 무기
 function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), rad: (52 + w.lv*3) * (1 + 0.12*svPasLv(p, 'area')) }; }
+function svStCritDmg(p){ return 2; } // (build 569) 치명타 피해 — 기본 200% · 늘리는 룬·유물이 생기면 여기에 더함
 function svAttack(p, w, dt){
   { const G0 = sv.game, me = p===G0.players[G0.me], fm = svPFire(p); sv.curW = w; if(w===p.wp[0] && fm==='manual' && !(me ? sv.mDown : p.md)){ w.cd = Math.max(0, w.cd - dt); return; } /* 수동 — 누를 때만 */
       if(SV_DIRW[w.id] && svPAim(p)==='near' && !(w===p.wp[0] && fm==='manual') && !svNear(p.x, p.y, 320, o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
   const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
   const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
-  const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?2:1), col, c); };
+  const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?svStCritDmg(p):1), col, c); };
   const inR = (R, x, y)=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-(x==null ? p.x : x), e.y-(y==null ? p.y : y)) < R + e.r);
   const ahead = (d, da)=>{ const a = svAimDir(p) + (da||0); return { x:p.x + Math.cos(a)*d, y:p.y + Math.sin(a)*d, r:0, hp:1 }; }; // (build 540) 무기는 적이 없어도 자동으로 나감 (사용자 10/29) — 날아가는 무기는 바라보는 쪽으로 · (build 541) 적 자리에 바로 생기는 무기(빛의 창·빛 세례·끈끈이 그물·검은 소용돌이·생명 흡수)는 예외로 적이 있을 때만
   if(id==='water_b_2'){ // 빙결 — 둘레를 도는 얼음 (간격 없이 계속)
@@ -13443,10 +13455,10 @@ function svTick(dt){
       const wv = b.kind==='wave', sp = Math.hypot(b.vx, b.vy)||1, ux = b.vx/sp, uy = b.vy/sp;
       G.en.forEach(e=>{ if(b.done || e.hp<=0 || b.hitS.includes(e)) return;
         const near = wv ? (Math.abs((e.x-b.x)*ux + (e.y-b.y)*uy) < e.r + 8 && Math.abs((e.x-b.x)*uy - (e.y-b.y)*ux) < b.w/2) : Math.hypot(e.x-b.x, e.y-b.y) < e.r + 4;
-        if(!near) return; b.hitS.push(e); const c = Math.random() < (b.crit||0); svHitBy(b.p, e, b.dmg*(c?2:1), b.col, c);
+        if(!near) return; b.hitS.push(e); const c = Math.random() < (b.crit||0); svHitBy(b.p, e, b.dmg*(c?svStCritDmg(b.p):1), b.col, c);
         if(wv){ if(e.kind!=='boss'){ e.x += ux*36; e.y += uy*36; } } else { if(b.burn) svBurn(e, b.burn, 3); if(--b.pierce <= 0) b.done = true; } });
       if(b.hitS.length > 60) b.hitS = b.hitS.slice(-60); return; }
-    const dmgC = ()=>{ const c = Math.random() < (b.crit||0); svHitBy(b.p, b.e, b.dmg*(c?2:1), b.col, c); if(b.slow) b.e.slow = Math.max(b.e.slow||0, b.slow); if(b.curse) b.e.curse = b.curse; };
+    const dmgC = ()=>{ const c = Math.random() < (b.crit||0); svHitBy(b.p, b.e, b.dmg*(c?svStCritDmg(b.p):1), b.col, c); if(b.slow) b.e.slow = Math.max(b.e.slow||0, b.slow); if(b.curse) b.e.curse = b.curse; };
     if(b.kind==='home'){ if(!b.e || b.e.hp<=0){ b.e = svNear(b.x, b.y, 300); if(!b.e){ b.x += b.vx*dt; b.y += b.vy*dt; b.life = (b.life||0) + dt; if(b.life > 1.6) b.done = true; return; } } const dx = b.e.x-b.x, dy = b.e.y-b.y, d = Math.hypot(dx, dy)||1; b.vx += dx/d*900*dt; b.vy += dy/d*900*dt; const v = Math.hypot(b.vx, b.vy); if(v > b.sp){ b.vx *= b.sp/v; b.vy *= b.sp/v; } b.x += b.vx*dt; b.y += b.vy*dt; if(d < b.e.r + 4){ b.done = true; dmgC(); } b.life = (b.life||0) + dt; if(b.life > 3) b.done = true; return; }
     if(!b.e || b.e.hp<=0){ b.done = true; return; } const dx = b.e.x-b.x, dy = b.e.y-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st + b.e.r){ b.done = true; dmgC(); } else { b.x += dx/d*st; b.y += dy/d*st; } });
   G.pr = G.pr.filter(b=>!b.done);
@@ -13459,23 +13471,23 @@ function svTick(dt){
   (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), L0 = -2.04 + 4.0*svClawE(f0), L1 = -2.04 + 4.0*svClawE(f1); // (build 491) 발톱 끝이 지나가는 각도와 같게(처음 빠르고 끝에 느려짐) — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R*1.4 + e.r) return;
       const close = d < e.r + 12 || (d < w.R*0.55 + e.r && dx*Math.cos(w.dir) + dy*Math.sin(w.dir) > -e.r); if(!svClawIn(w, dx, dy, e.r, L0 - 0.15, L1 + 0.15) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
-      w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?2:1), w.col, c); if(w.ev && c) svBurn(e, 8*w.m, 2); /* (build 507) 진화 — 치명타가 나면 불붙음 (짝: 숫돌) */ }); });
+      w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?svStCritDmg(p):1), w.col, c); if(w.ev && c) svBurn(e, 8*w.m, 2); /* (build 507) 진화 — 치명타가 나면 불붙음 (짝: 숫돌) */ }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
   (G.later||[]).forEach(o=>{ o.t -= dt; if(o.t <= 0 && !o.done){ o.done = 1; o.f(); } }); G.later = (G.later||[]).filter(o=>!o.done); // (build 504) 조금 뒤에 맞는 공격 (광명 창)
   (G.goF||[]).forEach(o=>{ o.t += dt; const q = svGoPos(o.f, o.t, o.p.x, o.p.y); if(!q) return; const R = 15*(o.f.big||1); // 금오 깃털 — 지나가며 맞음 · 같은 적은 0.25초 지나야 다시 (나갈 때·돌아올 때 두 번)
-    G.en.forEach(e=>{ if(e.hp<=0 || Math.hypot(e.x-q[0], e.y-q[1]) > R + e.r) return; const lt = o.hit.get(e); if(lt != null && o.t - lt < 0.25) return; o.hit.set(e, o.t); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?2:1), o.col, c); }); });
+    G.en.forEach(e=>{ if(e.hp<=0 || Math.hypot(e.x-q[0], e.y-q[1]) > R + e.r) return; const lt = o.hit.get(e); if(lt != null && o.t - lt < 0.25) return; o.hit.set(e, o.t); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?svStCritDmg(o.p):1), o.col, c); }); });
   G.goF = (G.goF||[]).filter(o=>o.t < o.tot);
   (G.jets||[]).forEach(j=>{ j.t += dt; const s = j.t - SV_JET.CH; if(s <= 0) return; const head = SV_JET.MX + (j.L - SV_JET.MX)*svClawE(Math.min(1, s/SV_JET.EXT)), /* 물줄기 앞머리가 지나간 적부터 */ ux = Math.cos(j.dir), uy = Math.sin(j.dir), p = j.p; // 요르문간드 — 물줄기 머리가 지나간 적부터 (꿰뚫음)
-    G.en.forEach(e=>{ if(e.hp<=0 || j.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-(p.y-6), t = dx*ux + dy*uy; if(t < 0 || t > head + e.r || Math.abs(dx*uy - dy*ux) > j.W + e.r) return; j.hit.push(e); const c = Math.random() < j.cr; svHitBy(p, e, j.dmg*(c?2:1), j.col, c); e.slow = Math.max(e.slow||0, 1.2); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = ux*130; e.kvy = uy*130; e.sqT = 0.16; } }); });
+    G.en.forEach(e=>{ if(e.hp<=0 || j.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-(p.y-6), t = dx*ux + dy*uy; if(t < 0 || t > head + e.r || Math.abs(dx*uy - dy*ux) > j.W + e.r) return; j.hit.push(e); const c = Math.random() < j.cr; svHitBy(p, e, j.dmg*(c?svStCritDmg(p):1), j.col, c); e.slow = Math.max(e.slow||0, 1.2); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = ux*130; e.kvy = uy*130; e.sqT = 0.16; } }); });
   G.jets = (G.jets||[]).filter(j=>j.t < SV_JET.CH + SV_JET.EXT + SV_JET.HOLD);
   (G.leaves||[]).forEach(o=>{ o.t += dt; if(o.t < 0 || o.done) return; if(o.t > SV_HM.LIFE){ o.done = 1; return; } const q = svLeafPos(o.f, o.t); // 현무 잎 — 둘까지 꿰뚫고 셋째에서 멈춤
-    for(const e of G.en){ if(e.hp<=0 || o.hit.includes(e) || Math.hypot(e.x-q[0], e.y-q[1]) > 11 + e.r) continue; o.hit.push(e); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?2:1), o.col, c); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = Math.cos(o.f.a)*70; e.kvy = Math.sin(o.f.a)*70; } if(o.pierce-- <= 0){ o.done = 1; o.fx.d = Math.min(o.fx.d, o.fx.t + 0.06); break; } } });
+    for(const e of G.en){ if(e.hp<=0 || o.hit.includes(e) || Math.hypot(e.x-q[0], e.y-q[1]) > 11 + e.r) continue; o.hit.push(e); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?svStCritDmg(o.p):1), o.col, c); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = Math.cos(o.f.a)*70; e.kvy = Math.sin(o.f.a)*70; } if(o.pierce-- <= 0){ o.done = 1; o.fx.d = Math.min(o.fx.d, o.fx.t + 0.06); break; } } });
   G.leaves = (G.leaves||[]).filter(o=>!o.done);
   (G.quakes||[]).forEach(q=>{ q.t += dt; const s = q.t - SV_HM.GATH; if(s <= 0) return; if(!q.sh){ q.sh = 1; G.shake = Math.max(G.shake||0, 0.14); } const reach = 36 + s/SV_HM.PD*SV_HM.PT, ux = Math.cos(q.dir), uy = Math.sin(q.dir); // 현무 3타 — 땅이 앞으로 터져 나가며 닿은 적부터 (튀어 오름)
-    G.en.forEach(e=>{ if(e.hp<=0 || q.hit.includes(e)) return; const dx = e.x-q.x, dy = e.y-q.y, t = dx*ux + dy*uy; if(t < -e.r || t > Math.min(reach, q.L) + e.r || Math.abs(dx*uy - dy*ux) > q.W + e.r) return; q.hit.push(e); const c = Math.random() < q.cr; svHitBy(q.p, e, q.dmg*(c?2:1), q.col, c); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = ux*110; e.kvy = uy*110; e.sqT = 0.2; } }); });
+    G.en.forEach(e=>{ if(e.hp<=0 || q.hit.includes(e)) return; const dx = e.x-q.x, dy = e.y-q.y, t = dx*ux + dy*uy; if(t < -e.r || t > Math.min(reach, q.L) + e.r || Math.abs(dx*uy - dy*ux) > q.W + e.r) return; q.hit.push(e); const c = Math.random() < q.cr; svHitBy(q.p, e, q.dmg*(c?svStCritDmg(q.p):1), q.col, c); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = ux*110; e.kvy = uy*110; e.sqT = 0.2; } }); });
   G.quakes = (G.quakes||[]).filter(q=>q.t < SV_HM.GATH + (q.L/SV_HM.PT)*SV_HM.PD + 0.05);
   (G.waves||[]).forEach(w=>{ w.t += dt; const tt = w.t - SV_WAVE.T0; if(tt <= 0) return; const fr = w.R*(0.15 + 0.85*svClawE(Math.min(1, tt/SV_WAVE.EX))); // 물마루 바깥 끝이 닿은 적부터
-    G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const d = Math.hypot(e.x-w.x, e.y-w.y); if(d - e.r > fr || d > w.R + e.r) return; w.hit.push(e); const c = Math.random() < w.cr; svHitBy(w.p, e, w.dmg*(c?2:1), w.col, c);
+    G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const d = Math.hypot(e.x-w.x, e.y-w.y); if(d - e.r > fr || d > w.R + e.r) return; w.hit.push(e); const c = Math.random() < w.cr; svHitBy(w.p, e, w.dmg*(c?svStCritDmg(w.p):1), w.col, c);
       if(e.kind!=='boss' && e.kind!=='pod'){ const k = 200/(d||1); e.kvx = (e.x-w.x)*k; e.kvy = (e.y-w.y)*k; e.sqT = 0.16; } if(!w.shook){ w.shook = 1; G.shake = Math.max(G.shake||0, 0.1); } }); });
   G.waves = (G.waves||[]).filter(w=>w.t < SV_WAVE.T0 + SV_WAVE.EX + 0.02);
   G.pools = G.pools.filter(o=>o.t < o.d);
@@ -13514,13 +13526,13 @@ function svHud(){
   { const st = q('.sv-stat'); if(st && me){ const P = k=>svPasLv(me, k), pc = v=>Math.round(v*100), sg = v=>(v > 0 ? '+' : v < 0 ? '−' : '')+Math.abs(v)+'%', row = (nm, v, good)=>'<span>'+nm+'</span><b class="'+(v === 0 ? '' : (good ? 'up' : 'dn'))+'">'+sg(v)+'</b>'; // (build 503) 사용자 10/26: 내 스탯 늘 보이게
     const atk = pc((1 + 0.12*P('might'))*(me.buff > 0 ? 1.5 : 1)*(me.leader==='fire_a' && me.hp <= me.maxHp*0.5 ? 1.3 : 1) - 1), cr = 7*P('crit') + (me.leader==='dark_b' ? 12 : 0), cd = pc(1 - svCdK(me, {})), ar = 12*P('area'), mv = pc(svSpd(me)/me.spd - 1), tk = pc((me.leader==='wood_a' ? 0.75 : 1)*(1 + 0.03*P('might'))*(1 - 0.06*P('rampart')) - 1), pk = 25*P('greed');
     const B = svBase(me.leader), atkV = Math.round((me.atk||100)*(1 + atk/100)), spdV = Math.round(svSpd(me)), val = (nm, v, b)=>'<span>'+nm+'</span><b class="'+(v > b ? 'up' : v < b ? 'dn' : '')+'">'+v+'</b>'; /* (build 543) 실제 값 */
-    const h = '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>' + val('공격력', atkV, B.atk) + val('방어력', svDef(me), B.def) + val('이동 속도', spdV, B.spd) + '<span>치명타</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + row('스킬 간격', -cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('받는 피해', tk, tk < 0) + row('줍는 범위', pk, pk > 0) + (svStLs(me) ? row('피해 흡혈', pc(svStLs(me)), true) : '') + (svStKill(me) ? '<span>처치 시 회복</span><b class="up">+'+(Math.round(svStKill(me)*10)/10)+'</b>' : '') + (svStRegen(me) ? '<span>초당 회복</span><b class="up">+'+(Math.round(svStRegen(me)*100)/100)+'</b>' : '') + (svStXp(me) ? row('경험치', pc(svStXp(me)), true) : '') + (svStGold(me) ? row('골드', pc(svStGold(me)), true) : ''); /* (build 566) 0이면 안 보임 */
+    const h = '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>' + val('공격력', atkV, B.atk) + val('방어력', svDef(me), B.def) + val('이동 속도', spdV, B.spd) + '<span>치명타 확률</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + '<span>치명타 피해</span><b class="'+(svStCritDmg(me) > 2 ? 'up' : '')+'">'+Math.round(svStCritDmg(me)*100)+'%</b>' + row('쿨타임 감소', cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('받는 피해', tk, tk < 0) + row('획득 범위', pk, pk > 0) + (svStLs(me) ? row('피해 흡혈', pc(svStLs(me)), true) : '') + (svStKill(me) ? '<span>처치 시 회복</span><b class="up">+'+(Math.round(svStKill(me)*10)/10)+'</b>' : '') + (svStRegen(me) ? '<span>초당 회복</span><b class="up">+'+(Math.round(svStRegen(me)*100)/100)+'</b>' : '') + (svStXp(me) ? row('경험치', pc(svStXp(me)), true) : '') + (svStGold(me) ? row('골드', pc(svStGold(me)), true) : ''); /* (build 566) 0이면 안 보임 */
     if(st._h !== h){ st._h = h; st.innerHTML = h; } } } { const wd = q('.sv-wasd'); if(wd && wd.classList.contains('on') !== !!sv.pc) wd.classList.toggle('on', !!sv.pc); }
   { const oe = q('.sv-obj'); if(oe){ const h = (G.bless ? '<span class="bl">정령의 축복 · '+SV_BLESS[G.bless.k]+' <i>'+Math.ceil(G.bless.t)+'초</i></span>' : '') + (G.obj ? '<b>목표</b>'+G.obj.map(o=>'<span class="'+(o.ok ? 'ok' : o.no ? 'no' : '')+'">'+SV_OBJ[o.k].s+' <i>'+(o.k==='safe' ? svFmtT(o.c)+'/5:00' : Math.floor(o.c)+'/'+SV_OBJ[o.k].n)+'</i></span>').join('') : ''); if(oe._h !== h){ oe._h = h; oe.innerHTML = h; oe.style.display = h ? '' : 'none'; } } } // (build 551) 판 안 목표
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
     set(ub.querySelector('i'), 'h', Math.round(cd/SV_ULT_CD*200)/2, (el, v)=>{ el.style.height = v+'%'; }); set(ub.querySelector('b'), 't', cd > 0 ? ''+Math.ceil(cd) : '', (el, v)=>{ el.textContent = v; }); // 준비되면 글자 없이 빛남 (사용자 10/26)
     const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const am = svAimMode(), src = 'assets/ui/'+(am==='face' ? 'ic_auto' : 'ic_target')+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src || ab.dataset.m !== am){ im.setAttribute('src', src); ab.dataset.m = am; ab.title = '겨누기: '+SV_AIM_NM[am]; const lb = ab.querySelector('b'); if(lb) lb.textContent = { near:'가까운 적', face:'바라보는 쪽' }[am]; }
-      const fb = q('.sv-fire'); if(fb){ const fm = svFireMode(me), ok = !!SV_MANUAL[svStartRune(me)], k = fm + (ok ? '' : 'x'); if(fb.dataset.m !== k){ fb.dataset.m = k; fb.classList.toggle('lock', !ok); fb.querySelector('b').textContent = fm==='manual' ? '수동' : '자동'; fb.title = ok ? '쏘기: '+SV_FIRE_NM[fm] : '이 시작 룬은 자동 공격만'; } } } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
+      const fb = q('.sv-fire'); if(fb){ const fm = svFireMode(me), ok = !!SV_MANUAL[svStartRune(me)], k = fm + (ok ? '' : 'x'); if(fb.dataset.m !== k){ fb.dataset.m = k; fb.classList.toggle('lock', !ok); fb.querySelector('b').textContent = fm==='manual' ? '수동' : '자동'; fb.title = ok ? '쏘기: '+SV_FIRE_NM[fm] : '이 시작 룬은 자동 공격만 사용 가능'; } } } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
       box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 '+G.lvl+'!')+' 하나 고르기</div>' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('');
@@ -20260,7 +20272,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 568, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 569, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
