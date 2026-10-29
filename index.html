@@ -12473,7 +12473,7 @@ function svHas(kind, id){ return svUnl()[kind].includes(id); }
 // ---------- (build 476) 단계 · 큰 맵 · 장애물 · 기믹 ----------
 // 사용자 결정 10/26: Swarm처럼 맵이 커서 돌아다니며 봄 · 맵마다 장애물·기믹 · 단계 5개(10분씩) · 중간 보스 = 챕터 보스 · 최종 보스 = 레이드 보스 · 그림은 나중에 (없으면 임시로 그림)
 // 그림 자리: assets/survival/<맵>_ground.webp (위에서 본 이음새 없는 바닥) · <맵>_ob1~4.webp (장애물) · <맵>_deco1~3.webp (장식) · <맵>_<기믹>.webp
-const SV_MW = 1800, SV_MH = 1800; // (build 488) 넓은 화면에서도 돌아다닐 맛이 나게 정사각형으로 키움 (전엔 1080×1800) // 맵 크기 (화면 3×3)
+const SV_MW = 2400, SV_MH = 1350; // (build 557) 숲 구성 그림에 맞춰 가로로 긴 맵 (넓이는 1800×1800과 같음) // (build 488) 넓은 화면에서도 돌아다닐 맛이 나게 정사각형으로 키움 (전엔 1080×1800) // 맵 크기 (화면 3×3)
 const SV_MAPS = [
   { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 고대 샘 — 둘레 돌바닥에 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 개울은 다리로만 · 연못은 느려짐' },
   { id:'snow', nm:'얼어붙은 설원', el:'water', mid:'frostGiant', fin:'frostTyrant', col:['#b9d3e6','#d7e8f4','#93b5cf'], gim:'ice', ob:['얼음 기둥','눈 덮인 바위'], d:'얼음 바닥은 미끄러움 · 1분마다 눈보라 (시야가 좁아지고 느려짐)' },
@@ -12487,27 +12487,49 @@ const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', fros
 let SV_STAGE_READY = 1; // (build 481) 사용자 결정 10/26: 일단 숲만 — 그림이 다 오면 이 숫자를 늘려 다음 단계를 엶 (2~5단계는 「준비 중」)
 function svStageOpen(i){ return i < SV_STAGE_READY && (i===0 || (state.svClear||[]).includes(i-1)); }
 function svRng(seed){ let a = seed >>> 0; return ()=>{ a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-// (build 555) 숲 = 사용자가 받아 온 맵 그림 한 장(assets/survival/forest_map.webp, 1254px) 위에 판정만 얹음 (사용자 10/29 「맵 전체 그림을 받고 거기에 맞게 배치」)
-// 좌표는 그림 픽셀 기준(SV_FI) → 게임 좌표는 ×SV_MW/1254 · walk = 다닐 수 있는 바깥 경계(밖은 숲) · creek = 개울 가운데 줄(다리 자리 bridges만 비움) · rocks = 바위·돌기둥(안 보이는 원) · swamp = 연못(느려짐) · well = 샘과 돌바닥(충전 범위)
-const SV_FI = { size:1254,
-  walk:[[60,330],[90,250],[150,170],[250,100],[440,75],[600,40],[660,40],[800,75],[970,90],[985,40],[1060,40],[1100,110],[1160,180],[1205,260],[1195,470],[1210,620],[1190,800],[1150,920],[1110,1010],[1060,1100],[990,1150],[800,1140],[690,1165],[660,1220],[560,1220],[470,1140],[300,1110],[160,1090],[95,1010],[75,800],[70,600]],
-  creek:[[1012,40],[1035,120],[1060,190],[1085,250],[1095,310],[1105,390],[1120,460],[1140,530],[1140,600],[1120,670],[1090,730],[1070,800],[1085,870],[1070,940],[1045,1010],[1030,1080],[1020,1150],[1015,1254]], creekR:26, bridges:[[252,300],[570,626]],
-  rocks:[[345,140,72],[805,180,78],[255,950,100],[878,1080,52],[1003,770,32],[555,490,16],[690,490,16],[545,640,16],[688,648,16],[580,1150,16],[705,1110,18],[520,1065,12],[212,465,12]],
-  swamp:[[180,430,95],[185,560,105],[205,665,70]], well:[628,573,182,0.88], water:72,
-  shrines:[[330,330],[900,420],[330,820],[860,880]], // (build 556) 정령 석상 넷
-  pods:[[190,220],[470,175],[905,290],[1150,420],[1150,720],[125,800],[420,1060],[780,1070],[330,320],[930,960],[1000,450],[470,820],[800,820]] };
+// (build 557) 숲 = 사용자가 ChatGPT로 받아 온 구성 그림(1672×941)을 따라 받아 둔 조각(assets/survival/forest/)으로 다시 짬 (사용자 10/29 「구성은 챗지피티한테」 → 2번 그림 · 다리 하나 + 건너편 빈터 · 가로로 긴 맵)
+// 좌표는 그림 픽셀 기준 → 게임 좌표는 ×SV_MW/1672 · 조각 [x, 밑동 y, 폭] · walk = 다닐 수 있는 경계(밖은 숲) · creek = 개울 가운데 줄(다리 bridge만 비움) · 바닥(길·물·숲 바닥 어둡게)은 ground.webp 마스크(R 길 · G 숲 바닥 · B 물)
+const SV_FO = { size:1672,
+  walk:[[95,300],[110,230],[150,150],[220,80],[300,45],[450,40],[560,55],[700,60],[850,50],[960,55],[1050,70],[1150,80],[1260,95],[1310,120],[1380,165],[1440,215],[1490,300],[1490,370],[1458,410],[1462,440],[1560,440],[1580,400],[1640,385],[1700,395],[1700,530],[1610,545],[1570,505],[1560,472],[1462,472],[1440,492],[1330,505],[1240,505],[1150,540],[1080,590],[1030,650],[1010,720],[1030,780],[1100,805],[1180,810],[1230,770],[1240,700],[1290,660],[1350,670],[1375,740],[1345,795],[1330,830],[1250,850],[1150,862],[1050,855],[950,832],[860,818],[760,832],[650,842],[500,850],[400,842],[300,822],[220,800],[140,775],[80,720],[62,640],[68,560],[80,480],[90,400]],
+  creek:[[940,30],[980,38],[1040,48],[1100,60],[1180,75],[1250,90],[1300,108],[1350,130],[1400,160],[1440,185],[1465,215],[1495,245],[1524,270],[1547,290],[1565,320],[1570,345],[1547,370],[1527,390],[1503,415],[1500,440],[1505,455],[1513,470],[1519,490],[1538,510],[1555,530],[1591,550],[1618,570],[1640,600],[1665,630],[1700,660]], creekR:26, bridge:[1450,436,1570,476],
+  tree:[805,562,400], // 세계수 — 뿌리 밑 샘이 고대 샘(충전 자리)
+  shrines:[[352,232],[1225,268],[272,744],[1305,765]], // 정령 석상 넷 — 바위 언덕 · 꽃밭 · 연못 · 나무 숲
+  rocks:[[205,240,95],[262,190,110],[290,128,100],[372,108,90],[445,160,120],[505,205,85],[432,232,58],[548,196,45],[140,256,50],[298,264,46],[596,190,38],[590,494,40],[1052,502,42],[648,186,34],[1300,340,40],[728,702,42],[962,722,46],[300,388,42],[120,346,40],[1395,560,0]].filter(r=>r[2]),
+  swamp:[[150,575,65],[260,575,60],[370,620,62],[450,690,50],[200,640,40]],
+  bank:[[110,648,85],[440,632,75],[350,572,55],[232,560,42],[140,705,46],[490,742,40]], reed:[[105,516,45],[175,526,50],[395,586,48],[495,616,42],[150,668,48],[335,714,40],[500,706,44],[425,744,36],[60,560,40]], lily:[[240,602,40],[320,578,34],[205,642,30],[400,668,36],[455,700,30],[165,602,28]],
+  mush:[[1130,166,105],[1292,252,32],[1062,132,40]], bush:[[528,300,52],[352,454,58],[1395,412,40],[1420,272,45],[700,690,0]].filter(r=>r[2]), flower:[[720,832,45],[770,824,52],[815,834,42],[662,838,36]],
+  meadow:[[1080,188,190,82],[1265,250,70,40]], // 꽃밭 (가운데 · 가로 · 세로 반지름)
+  pods:[[230,330],[640,250],[700,130],[1010,150],[1300,420],[1615,468],[900,700],[560,690],[420,800],[1120,830],[160,450],[600,400],[1100,330],[960,300]] };
 function svInPoly(x, y, P){ let c = false; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[i], b = P[j]; if((a[1] > y) !== (b[1] > y) && x < (b[0]-a[0])*(y-a[1])/(b[1]-a[1]) + a[0]) c = !c; } return c; }
 function svSegD(x, y, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0; return Math.hypot(x - a[0] - dx*t, y - a[1] - dy*t); }
 function svPolyNear(x, y, P){ let bd = 1e9, bx = x, by = y; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[j], b = P[i], dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0, px = a[0] + dx*t, py = a[1] + dy*t, d = Math.hypot(x-px, y-py); if(d < bd){ bd = d; bx = px; by = py; } } return [bd, bx, by]; }
+const SV_FOPC = { worldtree:0.66, tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.5, shrine:0.62, mush:0.4 }; // 위에서부터 이만큼은 정령·몬스터 위에 한 번 더 그림 (뒤로 가면 가려지게)
 function svMakeForest(stage, seed){
-  const F = SV_FI, K = SV_MW/F.size, S = v=>v*K, ob = [], zones = [];
-  const walk = F.walk.map(([x, y])=>[S(x), S(y)]);
-  for(let i=1;i<F.creek.length;i++){ const a = F.creek[i-1], b = F.creek[i], n = Math.ceil(Math.hypot(b[0]-a[0], b[1]-a[1])/14); for(let k=0;k<n;k++){ const t = k/n, x = a[0] + (b[0]-a[0])*t, y = a[1] + (b[1]-a[1])*t; if(F.bridges.some(([y0, y1])=>y > y0 && y < y1)) continue; ob.push({ x:S(x), y:S(y), r:S(F.creekR), k:0, hid:1 }); } }
-  F.rocks.forEach(([x, y, r])=>ob.push({ x:S(x), y:S(y), r:S(r), k:1, hid:1 }));
+  const F = SV_FO, K = SV_MW/F.size, S = v=>v*K, ob = [], zones = [], pcs = [], R = svRng(5570), B = F.bridge;
+  const walk = F.walk.map(([x, y])=>[S(x), S(y)]), creek = F.creek.map(([x, y])=>[S(x), S(y)]), CR = S(F.creekR);
+  const pc = (t, x, y, w, o)=>pcs.push(Object.assign({ t, x, y, w, cut: SV_FOPC[t] || 0, fl: R() < 0.5 }, o||{}));
+  const creekD = (x, y)=>{ let d = 1e9; for(let i=1;i<creek.length;i++) d = Math.min(d, svSegD(x, y, creek[i-1], creek[i])); return d; };
+  for(let i=1;i<F.creek.length;i++){ const a = F.creek[i-1], b = F.creek[i], n = Math.ceil(Math.hypot(b[0]-a[0], b[1]-a[1])/12); for(let k=0;k<n;k++){ const t = k/n, x = a[0] + (b[0]-a[0])*t, y = a[1] + (b[1]-a[1])*t; if(x > B[0] && x < B[2] && y > B[1] && y < B[3]) continue; ob.push({ x:S(x), y:S(y), r:CR, k:0, hid:1 }); } } // 개울 — 다리 자리만 비움
+  const [tx, ty, tw] = F.tree.map(S); pc('worldtree', tx, ty, tw, { fl:false }); ob.push({ x:tx + tw*0.02, y:ty - tw*0.38, r:tw*0.12, k:1, hid:1 }); // 세계수 줄기
+  const well = { kind:'well', x:tx, y:ty - tw*0.21, r:tw*0.17, ty:0.6, wr:tw*0.07, ch:0, cd:0 }; zones.push(well); // 뿌리 밑 샘
+  F.shrines.forEach(([x0, y0])=>{ const x = S(x0), y = S(y0), w = S(62); pc('shrine', x, y, w, { fl:false }); ob.push({ x, y:y - w*0.75, r:w*0.22, k:1, hid:1 }); zones.push({ kind:'shrine', x, y:y - w*0.4, r:S(48), ty:0.7, cap:0, cd:0 }); });
+  F.rocks.forEach(([x, y, w])=>{ pc('rock', S(x), S(y), S(w)); ob.push({ x:S(x), y:S(y - w*0.3), r:S(w*0.36), k:1, hid:1 }); });
+  F.mush.forEach(([x, y, w], i)=>{ pc('mush', S(x), S(y), S(w)); if(!i) ob.push({ x:S(x), y:S(y - w*0.25), r:S(w*0.2), k:1, hid:1 }); });
   F.swamp.forEach(([x, y, r])=>zones.push({ kind:'swamp', x:S(x), y:S(y), r:S(r) }));
-  const well = { kind:'well', x:S(F.well[0]), y:S(F.well[1]), r:S(F.well[2]), ty:F.well[3], wr:S(F.water), ch:0, cd:0 }; zones.push(well);
-  F.shrines.forEach(([x, y])=>zones.push({ kind:'shrine', x:S(x), y:S(y), r:S(46), cap:0, cd:0 }));
-  return { stage, seed, ob, zones, deco:[], well, walk, forest:1, img:'assets/survival/forest_map.webp', podSpots: F.pods.map(([x, y])=>[S(x), S(y)]) };
+  F.bank.forEach(([x, y, w])=>pc('bankstone', S(x), S(y), S(w))); F.reed.forEach(([x, y, w])=>pc('reed', S(x), S(y), S(w))); F.lily.forEach(([x, y, w])=>pc('lily', S(x), S(y), S(w))); F.bush.forEach(([x, y, w])=>pc('bush', S(x), S(y), S(w))); F.flower.forEach(([x, y, w])=>pc('flower', S(x), S(y), S(w)));
+  pc('bridge', S((B[0] + B[2])/2), S(B[3] + 22), S(125), { r:0.3, fl:false });
+  const far = (x, y, L, d)=>L.every(q=>Math.hypot(q[0]-x, q[1]-y) > d);
+  F.meadow.forEach(([cx, cy, rx, ry])=>{ for(let n = Math.round(rx*ry*Math.PI/1750), t=0; n > 0 && t < 400; t++){ const a = R()*6.283, d = Math.sqrt(R()), x = cx + Math.cos(a)*rx*d, y = cy + Math.sin(a)*ry*d; if(!far(x, y, F.shrines, 46) || !far(x, y, F.mush, 40)) continue; pc('flower', S(x), S(y), S(28 + R()*14)); n--; } }); // 꽃밭
+  for(let i=0;i<F.walk.length;i++){ const a = F.walk[i], b = F.walk[(i+1) % F.walk.length], L = Math.hypot(b[0]-a[0], b[1]-a[1]), nx = -(b[1]-a[1])/L, ny = (b[0]-a[0])/L; // 숲 가장자리 덤불
+    for(let s = 30; s < L; s += 70){ if(R() > 0.55) continue; const o = 10 + R()*16; let x = a[0] + (b[0]-a[0])*s/L, y = a[1] + (b[1]-a[1])*s/L; x += nx*o; y += ny*o; if(!svInPoly(S(x), S(y), walk)){ x -= nx*o*2; y -= ny*o*2; } if(!svInPoly(S(x), S(y), walk) || creekD(S(x), S(y)) < CR + 20 || !far(x, y, F.shrines, 60) || !far(x, y, F.pods, 40)) continue; pc('bush', S(x), S(y + 10), S(36 + R()*20)); } }
+  for(let i=1;i<F.creek.length;i++){ const a = F.creek[i-1], b = F.creek[i], L = Math.hypot(b[0]-a[0], b[1]-a[1]), nx = -(b[1]-a[1])/L, ny = (b[0]-a[0])/L; // 개울가 돌
+    for(let s = R()*40; s < L; s += 46){ if(R() > 0.5) continue; const sd = R() < 0.5 ? -1 : 1, x = a[0] + (b[0]-a[0])*s/L + nx*sd*(F.creekR + 4), y = a[1] + (b[1]-a[1])*s/L + ny*sd*(F.creekR + 4); if(x > B[0] - 20 && x < B[2] + 20 && y > B[1] - 30 && y < B[3] + 30) continue; pc('bankstone', S(x), S(y + 8), S(30 + R()*18)); } }
+  for(let gy = -20, row = 0; gy < SV_MH + 150; gy += 50, row++) for(let gx = -50 + (row % 2)*34; gx < SV_MW + 60; gx += 68){ // 숲 — 다닐 수 있는 곳 밖을 나무로 빽빽하게 (밑동·나뭇잎 가운데가 다 밖이어야)
+    const x = gx + (R()-0.5)*36, y = gy + (R()-0.5)*28, w = 140*(0.9 + R()*0.28), t = 'tree_' + 'abc'[Math.floor(R()*3)], fl = R() < 0.5;
+    if(svInPoly(x, y - 15, walk) || svInPoly(x, y - w*0.78, walk) || svPolyNear(x, y - 15, walk)[0] < 8 || creekD(x, y - 10) < CR + 16) continue;
+    pc(t, x, y, w, { fl }); }
+  pcs.sort((a, b)=>a.y - b.y);
+  return { stage, seed, ob, zones, deco:[], well, walk, forest:1, fo:1, pcs, podSpots: F.pods.map(([x, y])=>[S(x), S(y)]) };
 }
 function svMakeMap(stage, seed){ // 같은 seed면 방장·친구 화면이 같은 맵
   if(SV_MAPS[stage] && SV_MAPS[stage].id==='forest') return svMakeForest(stage, seed);
@@ -12721,26 +12743,60 @@ function svDrawGround(c, cam){ // (build 491) 바닥 — 화면 배율에 맞춰
   for(let i=i0;i<=i1;i++){ const x0 = Math.round(m.e + i*T*S), x1 = Math.round(m.e + (i+1)*T*S); for(let j=j0;j<=j1;j++){ const y0 = Math.round(m.f + j*T*S), y1 = Math.round(m.f + (j+1)*T*S); c.drawImage(sv.gTile, x0, y0, x1 - x0, y1 - y0); } }
   c.restore();
 }
-function svDrawForestImg(c, map, cam){ // (build 555) 숲 맵 그림 — 보이는 부분만 잘라 그림
-  const im = svImg(map.img); if(!(im.complete && im.naturalWidth)) return false; const k = im.naturalWidth/SV_MW; c.save(); c.imageSmoothingQuality = 'high'; c.drawImage(im, cam.x*k, cam.y*k, SV_W*k, SV_H*k, cam.x, cam.y, SV_W, SV_H); c.restore(); return true; }
+// (build 557) 숲 바닥 — 풀밭 무늬 위에 마스크대로 숲 바닥(어둡게) · 길 · 물을 얹어 300칸씩 화면 배율로 한 번 그려 둠 (전엔 그림 한 장을 늘려 흐렸음)
+const SV_FCH = 300;
+function svFoImg(n){ return svImg('assets/survival/forest/'+n+'.webp'); }
+function svFoMask(){ if(sv.foM) return sv.foM; const im = svFoImg('ground'); if(!(im.complete && im.naturalWidth)) return null;
+  const w = im.naturalWidth, h = im.naturalHeight, oc = document.createElement('canvas'); oc.width = w; oc.height = h; const x = oc.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, w, h).data;
+  const mk = ch=>{ const c = document.createElement('canvas'); c.width = w; c.height = h; const cx = c.getContext('2d'), id = cx.createImageData(w, h); for(let i=0;i<w*h;i++){ id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = 255; id.data[i*4+3] = d[i*4+ch]; } cx.putImageData(id, 0, 0); return c; };
+  return (sv.foM = { path: mk(0), dark: mk(1), water: mk(2), w, h, d }); }
+function svFoChunk(i, j, s){ const M = svFoMask(), T = ['grass', 'path', 'water'].map(svFoImg); if(!M || T.some(t=>!(t.complete && t.naturalWidth))) return null;
+  const N = Math.ceil(SV_FCH*s), X0 = i*SV_FCH, Y0 = j*SV_FCH, cv = document.createElement('canvas'); cv.width = cv.height = N; const x = cv.getContext('2d');
+  const tmp = sv.foTmp || (sv.foTmp = document.createElement('canvas')); if(tmp.width !== N){ tmp.width = tmp.height = N; } const t = tmp.getContext('2d');
+  const W = (ctx)=>ctx.setTransform(s, 0, 0, s, -X0*s, -Y0*s), pat = (ctx, im, sz)=>{ const p = ctx.createPattern(im, 'repeat'), k = sz/im.naturalWidth; if(p.setTransform) p.setTransform(new DOMMatrix([k, 0, 0, k, 0, 0])); return p; };
+  const layer = (fill, mask, dy, a)=>{ t.setTransform(1, 0, 0, 1, 0, 0); t.globalCompositeOperation = 'source-over'; t.clearRect(0, 0, N, N); W(t); t.fillStyle = typeof fill === 'string' ? fill : pat(t, fill[0], fill[1]); t.fillRect(X0, Y0, SV_FCH, SV_FCH);
+    t.globalCompositeOperation = 'destination-in'; t.imageSmoothingQuality = 'high'; t.drawImage(mask, 0, dy, SV_MW, SV_MH); t.globalCompositeOperation = 'source-over'; x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = a; x.drawImage(tmp, 0, 0); x.globalAlpha = 1; };
+  W(x); x.fillStyle = pat(x, T[0], 420); x.fillRect(X0, Y0, SV_FCH, SV_FCH);
+  layer('#0e2310', M.dark, 0, 0.78); layer('#5a4426', M.path, 3, 0.35); layer([T[1], 300], M.path, 0, 1); layer('#24331c', M.water, 7, 0.9); layer([T[2], 300], M.water, 0, 1);
+  return cv; }
+function svFoGround(c, cam){ const m = c.getTransform(), s = Math.min(2, Math.round(m.a*4)/4); if(sv.foS !== s){ sv.foS = s; sv.foCh = new Map(); }
+  const C = sv.foCh, i0 = Math.floor(cam.x/SV_FCH), i1 = Math.floor((cam.x + SV_W)/SV_FCH), j0 = Math.floor(cam.y/SV_FCH), j1 = Math.floor((cam.y + SV_H)/SV_FCH); let made = 0;
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const k = i+','+j; let ch = C.get(k); if(ch){ C.delete(k); C.set(k, ch); } else if(made < 4){ ch = svFoChunk(i, j, s); made++; if(ch){ C.set(k, ch); if(C.size > 30) C.delete(C.keys().next().value); } }
+    const x0 = Math.round(m.e + i*SV_FCH*m.a), y0 = Math.round(m.f + j*SV_FCH*m.d), x1 = Math.round(m.e + (i+1)*SV_FCH*m.a), y1 = Math.round(m.f + (j+1)*SV_FCH*m.d);
+    if(ch) c.drawImage(ch, x0, y0, x1 - x0, y1 - y0); else { c.fillStyle = '#3c6d34'; c.fillRect(x0, y0, x1 - x0, y1 - y0); } }
+  c.restore(); }
+function svFoPc(c, p, top, a){ const im = svFoImg(p.t); if(!(im.complete && im.naturalWidth)) return; const w = p.w, h = p.h || (p.h = w*im.naturalHeight/im.naturalWidth), f = top ? p.cut : 1;
+  if(a != null) c.globalAlpha = a;
+  if(!p.fl && !p.r){ c.drawImage(im, 0, 0, im.naturalWidth, im.naturalHeight*f, p.x - w/2, p.y - h, w, h*f); }
+  else { c.save(); c.translate(p.x, p.y - h/2); if(p.r) c.rotate(p.r); if(p.fl) c.scale(-1, 1); c.drawImage(im, 0, 0, im.naturalWidth, im.naturalHeight*f, -w/2, -h/2, w, h*f); c.restore(); }
+  if(a != null) c.globalAlpha = 1; }
+function svFoVis(p, cam){ const h = p.h || p.w*1.4; return p.x + p.w/2 > cam.x && p.x - p.w/2 < cam.x + SV_W && p.y > cam.y && p.y - h < cam.y + SV_H; }
+function svFoPieces(c, G, cam){ G.map.pcs.forEach(p=>{ if(svFoVis(p, cam)) svFoPc(c, p, false); }); }
+function svFoCanopy(c, G, cam){ // 나무·바위·석상 윗부분을 한 번 더 — 뒤(위쪽)에 있는 정령·몬스터가 가려짐 · 정령이 뒤에 있으면 반투명하게
+  G.map.pcs.forEach(p=>{ if(!p.cut || !svFoVis(p, cam) || !p.h) return; const top = p.y - p.h, cut = top + p.h*p.cut;
+    const hid = G.players.some(q=>Math.abs(q.x - p.x) < p.w*0.42 && q.y < p.y - 4 && q.y > top - 6 && q.y - 44 < cut); svFoPc(c, p, true, hid ? 0.45 : null); }); }
+function svFoMini(oc, W, H){ const M = svFoMask(); if(!M) return false; const x = oc.getContext('2d'), id = x.createImageData(W, H), mw = M.w, mh = M.h;
+  for(let j=0;j<H;j++) for(let i=0;i<W;i++){ const q = (Math.floor(j*mh/H)*mw + Math.floor(i*mw/W))*4, pa = M.d[q]/255, da = M.d[q+1]/255, wa = M.d[q+2]/255, o = (j*W + i)*4;
+    let r = 86, g = 150, b = 64; r += (22 - r)*da*0.85; g += (58 - g)*da*0.85; b += (26 - b)*da*0.85; r += (205 - r)*pa; g += (168 - g)*pa; b += (108 - b)*pa; r += (74 - r)*wa; g += (168 - g)*wa; b += (216 - b)*wa; id.data[o] = r; id.data[o+1] = g; id.data[o+2] = b; id.data[o+3] = 255; }
+  x.putImageData(id, 0, 0); return true; }
 function svDrawWell(c, z, G){ // (build 555) 고대 샘 — 그림 위에 충전 고리만 · 쓴 뒤엔 물이 어두워지고 남은 초
   const on = !(z.cd > 0), T = z.ty||1; c.save();
   if(on){ if(z.ch > 0){ c.globalAlpha = 0.5 + 0.5*z.ch; c.drawImage(svGlow('#7ae0ff', 'aa'), z.x - z.wr*1.8, z.y - z.wr*1.8*T, z.wr*3.6, z.wr*3.6*T); c.globalAlpha = 1; c.strokeStyle = '#ffffff'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, -1.57, -1.57 + 6.283*z.ch); c.stroke(); }
     else { c.strokeStyle = '#ffffff44'; c.lineWidth = 2; c.setLineDash([10, 10]); c.lineDashOffset = -G.t*20; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); } }
   else { c.fillStyle = '#05102099'; c.beginPath(); c.ellipse(z.x, z.y, z.wr, z.wr*T, 0, 0, 6.283); c.fill(); c.font = 'bold 18px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y); c.fillStyle = '#e8f6ff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y); }
   c.restore(); }
-function svDrawShrine(c, z, G){ // (build 556) 정령 석상 — 바닥 문양 + 돌기둥 (그림이 오면 바꿈) · 차지하는 만큼 금빛 고리
-  const on = !(z.cd > 0), T = 0.8; c.save();
-  c.fillStyle = on ? '#ffd04a22' : '#00000022'; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.fill(); c.strokeStyle = on ? '#ffd04a99' : '#ffffff33'; c.lineWidth = 2; c.setLineDash([8, 7]); c.lineDashOffset = -G.t*12; c.stroke(); c.setLineDash([]);
+function svDrawShrine(c, z, G){ // (build 557) 정령 석상 — 조각 그림(svFoPieces)은 따로 · 바닥에 고리만 · 차지하는 만큼 금빛 · 쉬는 동안 남은 초 (build 556 임시 돌기둥은 뺌)
+  const on = !(z.cd > 0), T = z.ty || 0.8; c.save();
+  if(on) c.drawImage(svGlow('#ffd04a', z.cap > 0 ? '77' : '33'), z.x - z.r*1.3, z.y - z.r*1.3*T, z.r*2.6, z.r*2.6*T);
+  c.strokeStyle = on ? '#ffd04aaa' : '#ffffff33'; c.lineWidth = 2; c.setLineDash([8, 7]); c.lineDashOffset = -G.t*12; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.setLineDash([]);
   if(on && z.cap > 0){ c.strokeStyle = '#ffe08a'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, -1.57, -1.57 + 6.283*z.cap); c.stroke(); }
-  const h = 46, w = 18; c.fillStyle = '#00000033'; c.beginPath(); c.ellipse(z.x, z.y + 2, 16, 6, 0, 0, 6.283); c.fill(); c.fillStyle = on ? '#b9b3a2' : '#8a857a'; c.beginPath(); c.moveTo(z.x - w/2, z.y); c.lineTo(z.x - w/2 + 2, z.y - h); c.lineTo(z.x, z.y - h - 8); c.lineTo(z.x + w/2 - 2, z.y - h); c.lineTo(z.x + w/2, z.y); c.closePath(); c.fill(); c.strokeStyle = '#5d584f'; c.lineWidth = 2; c.stroke();
-  c.fillStyle = on ? '#ffe08a' : '#ffffff44'; c.beginPath(); c.arc(z.x, z.y - h*0.55, 4 + (on ? Math.sin(G.t*4) : 0), 0, 6.283); c.fill(); if(on) c.drawImage(svGlow('#ffd04a', '88'), z.x - 18, z.y - h*0.55 - 18, 36, 36);
   if(!on){ c.font = 'bold 12px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); c.fillStyle = '#fff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); }
   c.restore(); }
 function svDrawMap(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage], vis = o=>o.x > cam.x - 80 && o.x < cam.x + SV_W + 80 && o.y > cam.y - 80 && o.y < cam.y + SV_H + 80;
-  if(!(map.img && svDrawForestImg(c, map, cam))){ svGroundPat(c, map); svDrawGround(c, cam); }
-  if(!map.img){ c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); } // 맵 끝 (숲은 나무 벽)
+  if(map.fo) svFoGround(c, cam); else { svGroundPat(c, map); svDrawGround(c, cam); }
+  if(!map.fo){ c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); } // 맵 끝 (숲은 나무 벽)
   map.deco.forEach(d=>{ if(!vis(d)) return; const im = svImg('assets/survival/'+M.id+'_deco'+(d.k+1)+'.webp'); if(im.complete && im.naturalWidth){ const s = 26*d.s; if(d.fl){ c.save(); c.translate(d.x, 0); c.scale(-1, 1); c.drawImage(im, -s/2, d.y-s/2, s, s); c.restore(); } else c.drawImage(im, d.x-s/2, d.y-s/2, s, s); } else if(!sv.patImg){ c.fillStyle = M.col[2]+'aa'; c.beginPath(); c.arc(d.x, d.y, 3*d.s, 0, 6.283); c.fill(); } }); // 바닥 그림이 오면 임시 점은 안 그림
   map.zones.forEach(z=>{ if(!vis(z) || z.kind==='swamp') return; if(z.kind==='well'){ svDrawWell(c, z, G); return; } if(z.kind==='shrine'){ svDrawShrine(c, z, G); return; } const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
     if(z.kind==='trap'){ const st = svTrapState(z, G.t); if(has) c.drawImage(im, z.x-z.r, z.y-z.r, z.r*2, z.r*2); else { c.fillStyle = '#4a4033'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); c.strokeStyle = '#2b2419'; c.lineWidth = 2; c.strokeRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
@@ -12755,7 +12811,7 @@ function svDrawMap(c, G, cam){
   (G.hz||[]).forEach(h=>{ const f = Math.min(1, h.t/h.d); c.save(); c.fillStyle = 'rgba(255,60,30,'+(0.15 + f*0.25)+')'; c.strokeStyle = '#ff5a3a'; c.lineWidth = 2; c.beginPath(); c.arc(h.x, h.y, h.r, 0, 6.283); c.fill(); c.stroke(); c.beginPath(); c.arc(h.x, h.y, h.r*f, 0, 6.283); c.stroke(); c.restore(); });
 }
 function svDrawObstacles(c, G, cam){
-  const map = G.map, M = SV_MAPS[map.stage];
+  const map = G.map, M = SV_MAPS[map.stage]; if(map.fo){ svFoPieces(c, G, cam); return; }
   map.ob.forEach(b=>{ if(b.hid || b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
     { const has = im.complete && im.naturalWidth, rx = b.r*(has ? SV_OBSH[b.k] : 1), ry = rx*0.32, cy = b.y + b.r*0.55 - ry*0.55; // 밑동 바로 밑에 붙는 부드러운 그림자 (전엔 그림 아래로 삐져나와 떠 보였음)
@@ -12776,8 +12832,8 @@ function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있
 function svMiniBase(map){ // 작은 지도 바탕 — 맵마다 한 번만 그려 둠 (바닥색 · 장애물 · 기믹 자리)
   if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 128, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
   const g = x.createRadialGradient(W/2, H/2, 10, W/2, H/2, H*0.7); g.addColorStop(0, M.col[1]); g.addColorStop(1, M.col[2]); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  if(map.img){ const im = svImg(map.img); if(im.complete && im.naturalWidth) x.drawImage(im, 0, 0, W, H); else return oc; } // (build 555) 숲 — 맵 그림 그대로 (아직 안 불렀으면 다음에 다시)
-  if(!map.img) map.zones.forEach(z=>{ if(z.kind==='swamp') return; x.fillStyle = { spring:'#7ae0ffcc', well:'#7ae0ff', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
+  if(map.fo && !svFoMini(oc, W, H)) return oc; // (build 557) 숲 — 바닥 마스크로 (아직 안 불렀으면 다음에 다시)
+  if(!map.fo) map.zones.forEach(z=>{ if(z.kind==='swamp') return; x.fillStyle = { spring:'#7ae0ffcc', well:'#7ae0ff', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
   map.ob.forEach(o=>{ if(o.hid) return; x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
   sv.miniFor = map; sv.miniC = oc; return oc;
 }
@@ -13562,7 +13618,7 @@ function svDraw(){
     const hw = 34, hp = Math.max(0, p.hp/p.maxHp); c.fillStyle = '#000a'; c.fillRect(p.x-hw/2, p.y+20, hw, 4); c.fillStyle = hp > 0.3 ? '#7ce07c' : '#ff5a5a'; c.fillRect(p.x-hw/2, p.y+20, hw*hp, 4);
     if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
-  if(G.map) svDrawOverlap(c, G, cam);
+  if(G.map){ if(G.map.fo) svFoCanopy(c, G, cam); else svDrawOverlap(c, G, cam); }
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
     if(b.kind!=='ebul' && b.tr.length >= 4){ c.save(); c.lineCap = 'round'; for(let i=2;i<b.tr.length;i+=2){ const f = i/b.tr.length; c.globalAlpha = f*0.6; c.strokeStyle = b.col; c.lineWidth = (b.kind==='boom' ? 7 : 4)*f*(b.ev ? 1.6 : 1); c.beginPath(); c.moveTo(b.tr[i-2], b.tr[i-1]); c.lineTo(b.tr[i], b.tr[i+1]); c.stroke(); } c.restore(); }
@@ -20142,7 +20198,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 556, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 557, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
