@@ -998,6 +998,8 @@
   .sv-aim{position:absolute; width:40px; height:40px; border-radius:50%; padding:6px; border:1.5px solid #ffffff55; background:#0b0d26cc; cursor:pointer; display:none;} .sv-cv.pc .sv-aim{display:block;} .sv-aim img{width:100%; height:100%; object-fit:contain; display:block;} /* (build 488) 컴퓨터: 단축키 표시 · 조준 전환 버튼 */
   /* (build 489) 게임 화면은 틀 없이 꽉 채움 · HUD·스킬 줄은 위에 겹침 */
   .sv-card.co{border-color:#ff9ad0aa;} .sv-cot{font-style:normal; font-size:10px; color:#ff9ad0; margin-left:4px;} .sv-coi{position:relative; display:inline-flex; width:30px; height:30px; border-radius:50%; border:2px solid #ff9ad0; background:#2a1630; align-items:center; justify-content:center;} .sv-coi img{width:22px; height:22px;} .sv-coi i{position:absolute; right:-4px; bottom:-4px; font-style:normal; font-size:9px; background:#ff9ad0; color:#2a1630; border-radius:6px; padding:0 3px; font-weight:800;}
+  .sv-load{position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:radial-gradient(circle at 50% 45%, #1d3a24, #070b14 75%); color:#e8f6e8; transition:opacity .45s;} .sv-load b{font-size:22px; letter-spacing:2px; color:#bff0b0;} .sv-load span{font-size:12px; color:#9fb8a8;} .sv-load i{width:180px; height:5px; border-radius:3px; background:#ffffff1a; overflow:hidden;} .sv-load u{display:block; height:100%; width:0; background:linear-gradient(90deg, #7ae07c, #c8ff9a); transition:width .2s;} .sv-load.out{opacity:0; pointer-events:none;}
+  .sv-gim{position:absolute; right:10px; top:38%; z-index:6; width:min(250px, 62vw); background:#0b0d26d9; border:1px solid #ffffff2a; border-radius:10px; padding:8px 10px; color:#dfe6ff; font-size:11px; line-height:1.4; animation:svGimIn .4s ease-out; transition:opacity .4s, transform .4s;} .sv-gim.out{opacity:0; transform:translateX(20px);} .sv-gim b{display:block; color:#bff0b0; font-size:12.5px; margin-bottom:5px;} .sv-gim p{display:flex; gap:8px; align-items:center; margin:4px 0;} .sv-gim img{width:34px; height:34px; object-fit:contain; flex:none;} .sv-gim em{display:block; font-style:normal; font-weight:700; color:#ffe08a;} .sv-gim small{display:block; text-align:right; color:#8890b0; font-size:9.5px; margin-top:2px;} @media (max-width:520px){ .sv-gim{top:142px; width:205px; font-size:10px; padding:6px 8px;} .sv-gim img{width:26px; height:26px;} .sv-gim b{font-size:11.5px; margin-bottom:3px;} .sv-gim p{margin:2px 0;} } /* 폰은 목표 아래 위쪽에 작게 — 가운데 정령을 가리지 않게 */ @keyframes svGimIn{from{opacity:0; transform:translateX(24px);} to{opacity:1; transform:none;}}
   .sv-obj{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 8px; display:flex; flex-direction:column; gap:1px; font-size:10.5px; line-height:1.45; color:#c9d0f5; text-align:right;} .sv-obj b{color:#ffe08a; font-size:10px; letter-spacing:.5px;} .sv-obj span i{font-style:normal; color:#fff; font-weight:700; margin-left:4px;} .sv-obj span.ok{color:#9be07a;} .sv-obj span.bl{color:#ffd04a; margin-bottom:2px;} .sv-obj span.bl i{color:#ffd04a;} .sv-obj span.ok i{color:#9be07a;} .sv-obj span.no{color:#ffffff55; text-decoration:line-through;} .sv-obj span.no i{color:#ffffff55;}
   .sv-stat{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 7px; display:grid; grid-template-columns:auto auto; gap:0 9px; font-size:10.5px; line-height:1.4; color:#c9d0f5;} .sv-stat b{font-weight:700; color:#fff; text-align:right; font-variant-numeric:tabular-nums;} .sv-stat b.up{color:#8fe68a;} .sv-stat b.dn{color:#ff9a8a;} .sv-stat:empty{display:none;}
   .sv-wasd{position:absolute; display:none; grid-template-columns:repeat(3, 20px) auto; grid-template-rows:20px 20px; gap:3px; align-items:center; pointer-events:none; z-index:5;} .sv-wasd.on{display:grid;} .sv-wasd i{font-style:normal; font-size:10px; font-weight:800; color:#22264a; background:#eef0ff; border:1px solid #8e96c8; box-shadow:0 2px 0 #5a6296; border-radius:4px; display:flex; align-items:center; justify-content:center; height:18px;} .sv-wasd i:nth-child(1){grid-column:2; grid-row:1;} .sv-wasd i:nth-child(2){grid-column:1; grid-row:2;} .sv-wasd i:nth-child(3){grid-column:2; grid-row:2;} .sv-wasd i:nth-child(4){grid-column:3; grid-row:2;} .sv-wasd b{grid-column:4; grid-row:2; margin-left:4px; font-size:11px; color:#eef0ff; text-shadow:0 1px 2px #000, 0 0 3px #0b0d26;}
@@ -12496,20 +12498,22 @@ function svSegD(x, y, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + d
 function svPolyNear(x, y, P){ let bd = 1e9, bx = x, by = y; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[j], b = P[i], dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0, px = a[0] + dx*t, py = a[1] + dy*t, d = Math.hypot(x-px, y-py); if(d < bd){ bd = d; bx = px; by = py; } } return [bd, bx, by]; }
 const SV_FOPC = { worldtree:0.66, tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.5, shrine:0.62, mush:0.4 }; // 위에서부터 이만큼은 정령·몬스터 위에 한 번 더 그림 (뒤로 가면 가려지게)
 const SV_FOSH = { worldtree:[0.36, 0.1], tree_a:[0.4, 0.13], tree_b:[0.4, 0.13], tree_c:[0.4, 0.13], rock:[0.46, 0.15], shrine:[0.5, 0.17], mush:[0.38, 0.12], bush:[0.42, 0.13], bankstone:[0.4, 0.12], reed:[0.3, 0.1] }; // (build 558) 바닥 그림자 (가로·세로 반지름 = 폭의 몇 배) — 바닥 조각에 미리 그려 둠
+const SV_SPAWN_OFF = [[-45, 0], [45, 0], [-100, 34], [100, 34]]; // (build 563) 넷까지 시작 자리 (겹치지 않게)
 function svMakeForest(stage, seed){
   const F = SV_FO, zones = [], pcs = [], ob = []; let well = null;
   F.pcs.forEach(([t, x, y, w, f, r])=>{ pcs.push({ t, x, y, w, fl: !!f, r: r ? r*Math.PI/180 : 0, cut: SV_FOPC[t] || 0, sh: SV_FOSH[t] || null });
     // (build 559) 사용자 10/29 「석상·세계수 판정이 개판」 — 격자 한 칸만 막혀 받침돌·계단 위를 지나다녔음 → 그림 밑동 모양대로 원 여러 개
     const C = (dx, dy, r)=>ob.push({ x:x + dx*w, y:y + dy*w, r:r*w, k:1, hid:1 });
     if(t==='worldtree'){ C(-0.09, -0.35, 0.08); C(0.01, -0.37, 0.1); C(0.11, -0.35, 0.08); // 줄기 · 뿌리는 15칸 판정 gb에 그림 모양대로 (build 561 — 원 7개로는 뿌리 끝·옆 뿌리가 빠졌음, 사용자 10/29)
-      zones.push(well = { kind:'well', x, y:y - w*0.2, r:w*0.56, ty:0.42, wr:w*0.06, ch:0, cd:0 }); } // 샘 — 뿌리 둘레에 서 있으면 충전 (뿌리 사이 샘엔 못 들어가서)
-    if(t==='shrine'){ C(0, -0.42, 0.26); C(-0.24, -0.3, 0.17); C(0.24, -0.3, 0.17); C(0, -0.2, 0.2); zones.push({ kind:'shrine', x, y:y - w*0.34, r:w*0.45 + 46, ty:0.66, cap:0, cd:0 }); } // 받침돌 전체 · 둘레에 서면 차지
+      zones.push(well = { kind:'well', x, y:y - w*0.2, r:w*0.56 + 70, ty:0.5, wr:w*0.06, ch:0, cd:0 }); } // 샘 — 뿌리 둘레에 서 있으면 충전 (뿌리 사이 샘엔 못 들어가서) · (build 563) 살짝 떨어져 있어도 차게 +70 (사용자 10/29)
+    if(t==='shrine'){ C(0, -0.42, 0.26); C(-0.24, -0.3, 0.17); C(0.24, -0.3, 0.17); C(0, -0.2, 0.2); zones.push({ kind:'shrine', x, y:y - w*0.34, r:w*0.45 + 90, ty:0.66, cap:0, cd:0 }); } /* (build 563) 범위 +44 */ // 받침돌 전체 · 둘레에 서면 차지
     if(t==='rock'){ C(-0.2, -0.17, 0.17); C(0, -0.24, 0.22); C(0.2, -0.17, 0.17); }
     if(t==='mush' && w > 80) C(0, -0.2, 0.17); });
   pcs.sort((a, b)=>a.y - b.y);
   const gb = new Uint8Array(Math.ceil(SV_MW/15)*Math.ceil(SV_MH/15)); let q = 0; F.gb.split(',').forEach(t=>{ const [v, n] = t.split(':').map(Number); gb.fill(v, q, q + n); q += n; });
-  let spawn = null; { const ok = (x, y)=>[-90, -40, 40, 90].every(dx=>{ const i = Math.floor((x + dx)/15), j = Math.floor(y/15), k = Math.floor((y + 30)/15); return !gb[j*160 + i] && !gb[k*160 + i] && ob.every(o=>Math.hypot(o.x - x - dx, o.y - y) > o.r + 16); }) && !(well && svInZ(well, { x, y:y - 40 }));
-    for(let d=0; d<600 && !spawn; d+=15) for(let a=0; a<12 && !spawn; a++){ const x = well.x + Math.sin(a*0.5236)*d, y = well.y + 420 + Math.cos(a*0.5236)*d*0.6; if(ok(x, y)) spawn = [Math.round(x), Math.round(y)]; } } // (build 562) 시작 자리 = 세계수 앞쪽, 샘 충전 범위 밖에서 가장 가까운 빈터
+  let spawn = null; { const free = (x, y)=>{ for(let dy=-15; dy<=15; dy+=15) for(let dx=-15; dx<=15; dx+=15){ const i = Math.floor((x + dx)/15), j = Math.floor((y + dy)/15); if(i < 0 || j < 0 || i >= 160 || j >= 90 || gb[j*160 + i]) return false; } return ob.every(o=>Math.hypot(o.x - x, o.y - y) > o.r + 18) && !svInZ(well, { x, y:y - 30 }); };
+    const ok = (x, y)=>SV_SPAWN_OFF.every(([dx, dy])=>free(x + dx, y + dy));
+    for(let d=0; d<600 && !spawn; d+=15) for(let a=0; a<12 && !spawn; a++){ const x = well.x + Math.sin(a*0.5236)*d, y = well.y + well.r*well.ty + 60 + Math.abs(Math.cos(a*0.5236))*d*0.6; if(ok(x, y)) spawn = [Math.round(x), Math.round(y)]; } } // (build 562) 시작 자리 = 세계수 앞쪽, 샘 충전 범위 밖 가장 가까운 빈터 · (build 563) 범위 바로 아래로 올림 + 넷 자리 각각 빈 곳인지 (사용자 10/29 「너무 아래 · 다인 스폰 꼬임」)
   return { stage, seed, ob, zones, deco:[], well, gb, gc:15, forest:1, fo:1, pcs, spawn, podSpots: F.pods.map(p=>p.slice()) };
 }
 function svMakeMap(stage, seed){ // 같은 seed면 방장·친구 화면이 같은 맵
@@ -12756,7 +12760,7 @@ function svFoGround(c, cam){ const m = c.getTransform(), s = Math.min(2, Math.ro
   const C = sv.foCh, i0 = Math.floor(cam.x/SV_FCH), i1 = Math.floor((cam.x + SV_W)/SV_FCH), j0 = Math.floor(cam.y/SV_FCH), j1 = Math.floor((cam.y + SV_H)/SV_FCH); let made = 0;
   c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
   const mk = (i, j)=>{ const ch = svFoChunk(i, j, s); made++; if(ch){ C.set(i+','+j, ch); if(C.size > 30) C.delete(C.keys().next().value); } return ch; };
-  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const k = i+','+j; let ch = C.get(k); if(ch){ C.delete(k); C.set(k, ch); } else if(!made) ch = mk(i, j); // 한 화면에 하나씩 (몰아 만들면 끊김)
+  for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const k = i+','+j; let ch = C.get(k); if(ch){ C.delete(k); C.set(k, ch); } else if(made < (sv.game && sv.game.loading ? 6 : 1)) ch = mk(i, j); // 한 화면에 하나씩 (몰아 만들면 끊김) · 들어가는 중엔 몰아서
     const x0 = Math.round(m.e + i*SV_FCH*m.a), y0 = Math.round(m.f + j*SV_FCH*m.d), x1 = Math.round(m.e + (i+1)*SV_FCH*m.a), y1 = Math.round(m.f + (j+1)*SV_FCH*m.d);
     if(ch) c.drawImage(ch, x0, y0, x1 - x0, y1 - y0); else { c.fillStyle = '#3c6d34'; c.fillRect(x0, y0, x1 - x0, y1 - y0); } }
   if(!made) for(let j=j0-1;j<=j1+1 && !made;j++) for(let i=i0-1;i<=i1+1 && !made;i++){ if(i < 0 || j < 0 || i*SV_FCH >= SV_MW || j*SV_FCH >= SV_MH || C.has(i+','+j)) continue; mk(i, j); } // 둘레 칸을 하나씩 미리 (움직일 때 한꺼번에 만들며 끊기지 않게)
@@ -12793,6 +12797,25 @@ function svDrawShrine(c, z, G){ // 정령 석상 — 받침돌 둘레 룬 8개 �
     svRuneRing(c, z, z.cap, 8, '#ffd04a', G.t); }
   else { c.strokeStyle = '#ffffff22'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.font = 'bold 12px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); c.fillStyle = '#fff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); }
   c.restore(); }
+function svLoadTick(G, now){ // (build 563) 들어가는 중 — 숲 그림 · 바닥 마스크 · 처음 보이는 바닥 조각이 다 되면 걷음 (최대 8초)
+  const ns = ['ground', 'grass', 'path', 'water'].concat(Array.from(new Set(G.map.pcs.map(p=>p.t)))), ok = ns.filter(n=>{ const im = svFoImg(n); return im.complete && im.naturalWidth; }).length;
+  const cam = sv.cam || { x:0, y:0 }, C = sv.foCh; let need = 0, have = 0; for(let j=Math.floor(cam.y/SV_FCH); j<=Math.floor((cam.y + SV_H)/SV_FCH); j++) for(let i=Math.floor(cam.x/SV_FCH); i<=Math.floor((cam.x + SV_W)/SV_FCH); i++){ need++; if(C && C.has(i+','+j)) have++; }
+  const f = (ok/ns.length)*0.6 + (need ? have/need : 1)*0.4, el = sv.el.querySelector('.sv-load'); if(el){ const u = el.querySelector('u'); if(u) u.style.width = Math.round(f*100)+'%'; }
+  if((f >= 1 && now - G.loading > 500) || now - G.loading > 8000){ G.loading = 0; if(el){ el.classList.add('out'); setTimeout(()=>el.remove(), 450); } svGimGuide(G); } }
+function svGimGuide(G){ // (build 563) 시작할 때 오른쪽에 이 맵 기믹 안내 — 12초 뒤 사라짐 · 누르면 닫힘 (사용자 10/29)
+  if(!G.map || !G.map.fo || !sv.el) return; const b = 'assets/survival/forest/', d = document.createElement('div'); d.className = 'sv-gim';
+  d.innerHTML = '<b>'+SV_MAPS[G.stage].nm+'</b>'
+    + '<p><img src="'+b+'worldtree.webp" alt=""><span><em>세계수 샘</em>뿌리 둘레에 서 있으면 차오름 · 다 차면 모두 체력 50% 회복 + 보호막 · 같이 서면 빨리</span></p>'
+    + '<p><img src="'+b+'shrine.webp" alt=""><span><em>정령 석상</em>둘레에 서 있으면 차오름 · 다 차면 45초 정령의 축복 · 석상 둘</span></p>'
+    + '<p><img src="'+b+'bridge.webp" alt=""><span><em>개울</em>다리로만 건널 수 있음</span></p><small>누르면 닫힘</small>';
+  d.addEventListener('pointerdown', e=>{ e.stopPropagation(); d.classList.add('out'); setTimeout(()=>d.remove(), 400); }); sv.el.appendChild(d); setTimeout(()=>{ if(d.isConnected){ d.classList.add('out'); setTimeout(()=>d.remove(), 400); } }, 12000); }
+function svChargeBadge(c, G){ // (build 563) 내가 충전 범위 안이면 머리 위에 둥근 게이지 + 이름 — 사용자 10/29 「딱 봤을 때 차오르는 걸 알게」
+  const me = G.players[G.me]; if(!me || me.down) return; const z = G.map.zones.find(q=>(q.kind==='well' || q.kind==='shrine') && !(q.cd > 0) && svInZ(q, me)); if(!z) return;
+  const v = z.kind==='well' ? z.ch : z.cap, col = z.kind==='well' ? '#7ae0ff' : '#ffd04a', x = me.x, y = me.y - 62, R = 17, n = G.players.filter(p=>!p.down && svInZ(z, p)).length; c.save();
+  c.drawImage(svGlow(col, '66'), x - R*2.2, y - R*2.2, R*4.4, R*4.4); c.fillStyle = '#0b0d26d9'; c.beginPath(); c.arc(x, y, R, 0, 6.283); c.fill();
+  c.strokeStyle = col + '44'; c.lineWidth = 4; c.beginPath(); c.arc(x, y, R - 2, 0, 6.283); c.stroke(); c.strokeStyle = col; c.lineCap = 'round'; c.beginPath(); c.arc(x, y, R - 2, -1.5708, -1.5708 + 6.283*v); c.stroke();
+  const im = svFoImg(z.kind==='well' ? 'worldtree' : 'shrine'); if(im.complete && im.naturalWidth){ const h = 22, w = h*im.naturalWidth/im.naturalHeight; c.drawImage(im, x - w/2, y - h/2, w, h); }
+  c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = '#000c'; const t = (z.kind==='well' ? '세계수 샘 ' : '정령 석상 ') + Math.floor(v*100) + '%' + (n > 1 ? ' · ×'+n : ''); c.strokeText(t, x, y + R + 9); c.fillStyle = '#fff'; c.fillText(t, x, y + R + 9); c.restore(); }
 function svFoFx(c, G, cam){ // 충전 중 빛 알갱이가 피어오름 + 석상 위 빛기둥 (나무·석상 그림 위에)
   G.map.zones.forEach(z=>{ const v = z.kind==='well' ? z.ch : z.kind==='shrine' ? z.cap : 0; if(!(v > 0) || z.cd > 0 || z.x < cam.x - 300 || z.x > cam.x + SV_W + 300 || z.y < cam.y - 300 || z.y > cam.y + SV_H + 400) return;
     const col = z.kind==='well' ? '#9ff0ff' : '#ffe08a', H = z.kind==='well' ? 260 : 150, n = Math.round(10 + 30*v), T = z.ty || 1; c.save(); c.globalCompositeOperation = 'lighter';
@@ -13129,7 +13152,7 @@ function svStart(role){
   G.newUnl = [];
   if(role==='solo') sv.seed = Math.floor(Math.random()*1e9);
   G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); svObjInit(G); sv.cam = null; sv.patSrc = null;
-  if(G.map.spawn) G.players.forEach((p, i)=>{ p.x = G.map.spawn[0] + [-40, 40, -90, 90][i%4]; p.y = G.map.spawn[1] + (i >= 2 ? 30 : 0); }); // (build 562) 맵 시작 자리로 (정령을 맵보다 먼저 만듦)
+  if(G.map.spawn) G.players.forEach((p, i)=>{ const o = SV_SPAWN_OFF[i%4]; p.x = G.map.spawn[0] + o[0]; p.y = G.map.spawn[1] + o[1]; }); // (build 562) 맵 시작 자리로 (정령을 맵보다 먼저 만듦)
   G.me = role==='guest' ? (N.ix[N.slot] || 1) : 0;
   sv.el.classList.add('sv-game');
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill"></span><button class="sv-btn sv-ic" data-sv="pause">'+uiIc('rest')+'</button></div>'
@@ -13146,6 +13169,7 @@ function svStart(role){
     const set = (el, r, b)=>{ if(el){ el.style.right = r+'px'; el.style.bottom = b+'px'; } }, ub0 = Math.max(by, bb) + 22;
     set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); const ob = sv.el.querySelector('.sv-obj'); if(ob){ ob.style.right = (rx + 10)+'px'; ob.style.top = (by + ((sv.uiTop||0) + 10)*sv.scale)+'px'; } const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = (rx + 10*sv.scale)+'px'; stt.style.top = (by + ((sv.uiTop||0) + 80)*sv.scale)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = (rx + 10)+'px'; wd.style.bottom = (Math.max(by, bb) + 12)+'px'; } };
   fit(); sv.fit = fit; window.addEventListener('resize', fit);
+  if(G.map && G.map.fo){ G.loading = performance.now(); const ld = document.createElement('div'); ld.className = 'sv-load'; ld.innerHTML = '<b>'+SV_MAPS[G.stage].nm+'</b><span>들어가는 중</span><i><u></u></i>'; sv.el.appendChild(ld); } // (build 563) 맵 그림·바닥을 다 불러올 때까지 가림 (사용자 10/29)
   sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '같이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
   sv.el.querySelector('[data-sv="pause"]').addEventListener('click', e=>{ if(role!=='solo'){ toast('같이 할 땐 멈출 수 없음'); return; } G.paused = !G.paused; e.currentTarget.innerHTML = G.paused ? '계속' : uiIc('rest'); });
   sv.el.querySelector('[data-sv="aim"]').addEventListener('click', e=>{ e.stopPropagation(); svAimToggle(); });
@@ -13168,7 +13192,8 @@ function svStart(role){
   let last = performance.now();
   const loop = now=>{ if(!sv || !sv.cv) return; let dt = Math.min(0.05, (now-last)/1000); last = now; if(document.hidden && role==='solo') dt = 0;
     svInput(dt);
-    if(G.hsCd > 0) G.hsCd -= dt; if(G.hitStop > 0){ G.hitStop -= dt; } else if(role!=='guest' && !G.over && !G.paused && !G.pickWait) svTick(dt);
+    if(G.loading) svLoadTick(G, now);
+    if(G.hsCd > 0) G.hsCd -= dt; if(G.hitStop > 0){ G.hitStop -= dt; } else if(role!=='guest' && !G.over && !G.paused && !G.pickWait && !G.loading) svTick(dt);
     if(role==='guest') svGuestLerp(dt);
     svFxTick(dt); svDraw(); svHud(); sv.unlT = (sv.unlT||0) + dt; if(sv.unlT > 1){ sv.unlT = 0; svCheckUnl(); } sv.raf = requestAnimationFrame(loop); };
   sv.raf = requestAnimationFrame(loop);
@@ -13627,7 +13652,7 @@ function svDraw(){
     const hw = 34, hp = Math.max(0, p.hp/p.maxHp); c.fillStyle = '#000a'; c.fillRect(p.x-hw/2, p.y+20, hw, 4); c.fillStyle = hp > 0.3 ? '#7ce07c' : '#ff5a5a'; c.fillRect(p.x-hw/2, p.y+20, hw*hp, 4);
     if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
-  if(G.map){ if(G.map.fo){ svFoCanopy(c, G, cam); svFoFx(c, G, cam); } else svDrawOverlap(c, G, cam); }
+  if(G.map){ if(G.map.fo){ svFoCanopy(c, G, cam); svFoFx(c, G, cam); svChargeBadge(c, G); } else svDrawOverlap(c, G, cam); }
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
     if(b.kind!=='ebul' && b.tr.length >= 4){ c.save(); c.lineCap = 'round'; for(let i=2;i<b.tr.length;i+=2){ const f = i/b.tr.length; c.globalAlpha = f*0.6; c.strokeStyle = b.col; c.lineWidth = (b.kind==='boom' ? 7 : 4)*f*(b.ev ? 1.6 : 1); c.beginPath(); c.moveTo(b.tr[i-2], b.tr[i-1]); c.lineTo(b.tr[i], b.tr[i+1]); c.stroke(); } c.restore(); }
@@ -20207,7 +20232,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 562, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 563, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
