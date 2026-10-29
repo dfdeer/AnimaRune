@@ -12475,7 +12475,7 @@ function svHas(kind, id){ return svUnl()[kind].includes(id); }
 // 그림 자리: assets/survival/<맵>_ground.webp (위에서 본 이음새 없는 바닥) · <맵>_ob1~4.webp (장애물) · <맵>_deco1~3.webp (장식) · <맵>_<기믹>.webp
 const SV_MW = 2400, SV_MH = 1350; // (build 557) 숲 구성 그림에 맞춰 가로로 긴 맵 (넓이는 1800×1800과 같음) // (build 488) 넓은 화면에서도 돌아다닐 맛이 나게 정사각형으로 키움 (전엔 1080×1800) // 맵 크기 (화면 3×3)
 const SV_MAPS = [
-  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 고대 샘 — 둘레 돌바닥에 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 개울은 다리로만 · 연못은 느려짐' },
+  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 세계수 — 뿌리 둘레에 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 정령 석상 둘레에 서면 축복 · 개울은 다리로만' },
   { id:'snow', nm:'얼어붙은 설원', el:'water', mid:'frostGiant', fin:'frostTyrant', col:['#b9d3e6','#d7e8f4','#93b5cf'], gim:'ice', ob:['얼음 기둥','눈 덮인 바위'], d:'얼음 바닥은 미끄러움 · 1분마다 눈보라 (시야가 좁아지고 느려짐)' },
   { id:'volcano', nm:'불타는 화산', el:'fire', mid:'lavaLord', fin:'infernoDrake', col:['#3a1e17','#4b261c','#271310'], gim:'lava', ob:['용암 바위','검은 돌기둥'], d:'용암 웅덩이는 밟으면 아픔 · 20초마다 분화 (빨간 원을 피하기)' },
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
@@ -12501,7 +12501,8 @@ function svMakeForest(stage, seed){
   F.pcs.forEach(([t, x, y, w, f, r])=>{ pcs.push({ t, x, y, w, fl: !!f, r: r ? r*Math.PI/180 : 0, cut: SV_FOPC[t] || 0, sh: SV_FOSH[t] || null });
     // (build 559) 사용자 10/29 「석상·세계수 판정이 개판」 — 격자 한 칸만 막혀 받침돌·계단 위를 지나다녔음 → 그림 밑동 모양대로 원 여러 개
     const C = (dx, dy, r)=>ob.push({ x:x + dx*w, y:y + dy*w, r:r*w, k:1, hid:1 });
-    if(t==='worldtree'){ C(-0.09, -0.35, 0.08); C(0.01, -0.37, 0.1); C(0.11, -0.35, 0.08); zones.push(well = { kind:'well', x, y:y - w*0.2, r:w*0.15, ty:0.55, wr:w*0.06, ch:0, cd:0 }); } // 줄기 · 뿌리 밑 샘
+    if(t==='worldtree'){ C(-0.09, -0.35, 0.08); C(0.01, -0.37, 0.1); C(0.11, -0.35, 0.08); [[-0.36, -0.16, 0.08], [-0.24, -0.18, 0.1], [-0.12, -0.2, 0.11], [0, -0.2, 0.12], [0.12, -0.2, 0.11], [0.24, -0.18, 0.1], [0.36, -0.16, 0.08]].forEach(q=>C(...q)); // 줄기 · 뿌리 (사용자 10/29 「뿌리도 못 다니게」)
+      zones.push(well = { kind:'well', x, y:y - w*0.2, r:w*0.56, ty:0.42, wr:w*0.06, ch:0, cd:0 }); } // 샘 — 뿌리 둘레에 서 있으면 충전 (뿌리 사이 샘엔 못 들어가서)
     if(t==='shrine'){ C(0, -0.42, 0.26); C(-0.24, -0.3, 0.17); C(0.24, -0.3, 0.17); C(0, -0.2, 0.2); zones.push({ kind:'shrine', x, y:y - w*0.34, r:w*0.45 + 46, ty:0.66, cap:0, cd:0 }); } // 받침돌 전체 · 둘레에 서면 차지
     if(t==='rock'){ C(-0.2, -0.17, 0.17); C(0, -0.24, 0.22); C(0.2, -0.17, 0.17); }
     if(t==='mush' && w > 80) C(0, -0.2, 0.17); });
@@ -20190,7 +20191,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 559, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 560, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
