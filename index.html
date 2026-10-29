@@ -12421,9 +12421,9 @@ const SV_UNL = [ // 대표 정령은 정해진 정령으로 하는 조건이 섞
   { ld:'wood_a', txt:'한 판에 3분 버티기', ok:c=>c.t >= 180 },
   { ld:'light_a', txt:'한 판에 레벨 15', ok:c=>c.lvl >= 15 },
   { ld:'fire_b', txt:'「스콜」로 중간 보스 처치', ok:c=>c.ld==='fire_a' && c.mid },
-  { ld:'water_b', txt:'「테티스」로 룬·기술 하나 각성', ok:c=>c.ld==='water_a' && c.me.wp.some(w=>w.evo) },
+  { ld:'water_b', txt:'「테티스」로 룬 하나 각성', ok:c=>c.ld==='water_a' && c.me.wp.some(w=>w.evo) },
   { ld:'dark_a', txt:'「현무」로 한 판에 적 600 처치', ok:c=>c.ld==='wood_a' && c.kills >= 600 },
-  { ld:'wood_b', txt:'「광명」으로 한 판에 룬·기술 3개 각성', ok:c=>c.ld==='light_a' && c.me.wp.filter(w=>w.evo).length >= 3 },
+  { ld:'wood_b', txt:'「광명」으로 한 판에 룬 3개 각성', ok:c=>c.ld==='light_a' && c.me.wp.filter(w=>w.evo).length >= 3 },
   { ld:'light_b', txt:'둘이 하기로 3분 버티기', ok:c=>c.coop && c.t >= 180 },
   { ld:'dark_b', txt:'최종 보스 처치', ok:c=>c.win }
 ].concat(SV_LINE_IDS.map(l=>({ sk:l+'_2', txt:'「'+svSkNm0(l+'_1')+'」·「'+SV_RUNE_NM[l+'_1']+'」 각성시키기', ok:c=>c.me.wp.some(w=>w.id===l+'_1' && w.evo) })));
@@ -12774,17 +12774,17 @@ function svLobby(msg){
   const sk1 = V+'_1', sk2 = V+'_2', P = SV_PAS[SV_SK[sk1].pair], skv = sv.skView;
   sv.el.innerHTML = '<div class="sv-top"><button class="sv-btn" data-sv="exit">← 나가기</button><b>'+uiIc('duel')+' 정령 서바이벌 <small>시험판</small></b><span class="sv-best">최고 '+svFmtT(state.svBest||0)+' · '+uiIc('gold')+(state.svGold||0)+'</span></div>'
     + '<div class="sv-lob">'+svStageHtml()
-    + '<div class="sv-ltl">정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 고유 기술 · 정령 패시브 · 궁극기</small></div>'
+    + '<div class="sv-ltl">정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 시작 룬 · 정령 패시브 · 궁극기</small></div>'
     + '<div class="sv-lead">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button class="sv-lc'+(l===L?' on':'')+(l===V && l!==L?' vw':'')+(op?'':' lock')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+(op ? SPIRITS[svKey(l,4)].name : uiIc('lock'))+'</b></button>'; }).join('')+'</div>'
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
       + (()=>{ const B = svBase(V); return '<small class="sv-bs">체력 <u>'+B.hp+'</u> · 공격력 <u>'+B.atk+'</u> · 방어력 <u>'+B.def+'</u> · 이동 속도 <u>'+B.spd+'</u></small>'; })() // (build 543) 능력치
       + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">정령 패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
-      + '<small><img src="'+svSkIc(sk1)+'" alt="">고유 기술 · '+svSkNm(sk1, { leader:V })+' — '+svSkDesc(sk1, 0, 1)+(svEvoSeen(sk1) ? ' (각성 짝 '+svPI(SV_SK[sk1].pair)+P.nm+' → '+SV_SK[sk1].ev+')' : ' (각성 짝 ?)')+'</small>'
+      + '<small><img src="'+svSkIc(sk1)+'" alt="">시작 룬 · '+svSkNm(sk1, { leader:V })+' — '+svSkDesc(sk1, 0, 1)+(svEvoSeen(sk1) ? ' · 연계 유물 '+svPI(SV_SK[sk1].pair)+P.nm+' → '+SV_SK[sk1].ev : ' · 연계 유물 ?')+'</small>'
       + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svUltNm(V)+' — '+SV_ULT[V]+'</small></div></div>' // (build 529) 판 안에서 자라는 모습 줄은 뺌 — 외형 고정
     + '<div class="sv-ltl">룬 <em>'+u.sk.length+'/20</em> <small>정령의 힘이 새겨진 돌 · 레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
-    + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 각성 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 각성 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
-    + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(고유 기술 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬·기술 Lv5 + 짝 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
+    + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 연계 유물 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 연계 유물 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
+    + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(시작 룬 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬 Lv5 + 연계 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
     + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><div class="sv-mem">'+svMemHtml()+'</div><small>'+(n.role==='host' ? (svCnt() > 1 ? uiIc('check')+' '+svCnt()+'명 — 시작!' : '친구에게 코드를 알려 줘 · 최대 4명') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
     + (n.code ? (n.role==='host' ? '<button class="sv-btn sv-go" data-sv="start" '+(svCnt() > 1 ? '' : 'disabled')+'>'+uiIc('party')+' 같이 시작 ('+svCnt()+'명)</button>' : '') + '<button class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
@@ -12956,7 +12956,7 @@ function svEvolve(p){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 
     G.shake = 0.45; try{ sfx('summonLegend'); }catch(e){} return; }
   const up = p.wp.filter(x=>x.lv < 5).map(x=>({ k:'w', id:x.id })).concat(Object.keys(p.ps).filter(k=>p.ps[k] < 5).map(k=>({ k:'p', pas:k })));
   if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
-  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'아직 각성할 룬·기술 없음 (Lv5 + 짝 유물)', col:'#c9a6ff', sz:10 });
+  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'아직 각성할 룬 없음 (Lv5 + 연계 유물)', col:'#c9a6ff', sz:10 });
 }
 function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
 function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
@@ -13292,9 +13292,9 @@ function svFxTick(dt){ const G = sv.game; if(!G) return; G.fx.forEach(f=>f.t += 
   G.players.forEach(p=>p.wp.forEach(w=>{ if(w.kick > 0) w.kick -= dt; if(w.dash){ w.dash[2] -= dt; if(w.dash[2] <= 0) w.dash = null; } if(w.id!=='water_b_2' || sv.net.role==='guest') w.a = (w.a||0) + dt*1.6; })); }
 function svCardHtml(me, c, i){ // (build 489) 사용자 10/26: 필요한 정보만 · 레벨이 오르면 바뀌는 수치를 노랗게
   if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, S = SV_SK[c.id], pr = SV_PAS[S.pair], evoReady = lv===5 && svPasLv(me, S.pair) > 0;
-    const rn = svIsRune(me, c.id); return '<button class="sv-card'+(rn ? ' rune' : '')+'" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+'; --ec:'+SV_EC[c.id.split('_')[0]]+';">'+(rn ? '<i class="sv-rs"><img src="'+svSkIc(c.id)+'" alt=""></i>' : '<img src="'+svSkIc(c.id)+'" alt="">')+'<b>'+svSkNm(c.id, me)+(rn ? ' 룬' : '')+'</b><span>'+(w ? 'Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 룬')+'</span><small class="sv-st2">'+svSkDesc(c.id, w ? w.lv : 0, lv)+'</small>'+(svEvoSeen(c.id) ? '<em class="sv-pair'+(evoReady ? ' ok' : '')+'" title="각성 짝: '+pr.nm+' → '+S.ev+'">'+svPI(S.pair)+'</em>' : '<em class="sv-pair q" title="각성 짝: 아직 모름 — 한 번 각성시키면 알게 됨">?</em>')+'</button>'; } // (build 513) 각성 짝은 오른쪽 위 작은 아이콘만 — 글 줄이 있으면 카드 높이가 제각각이라 불편 (사용자 10/27)
+    const rn = svIsRune(me, c.id); return '<button class="sv-card'+(rn ? ' rune' : '')+'" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+'; --ec:'+SV_EC[c.id.split('_')[0]]+';">'+(rn ? '<i class="sv-rs"><img src="'+svSkIc(c.id)+'" alt=""></i>' : '<img src="'+svSkIc(c.id)+'" alt="">')+'<b>'+svSkNm(c.id, me)+(rn ? ' 룬' : '')+'</b><span>'+(w ? 'Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 룬')+'</span><small class="sv-st2">'+svSkDesc(c.id, w ? w.lv : 0, lv)+'</small>'+(svEvoSeen(c.id) ? '<em class="sv-pair'+(evoReady ? ' ok' : '')+'" title="연계 유물: '+pr.nm+' → '+S.ev+'">'+svPI(S.pair)+'</em>' : '<em class="sv-pair q" title="연계 유물: 아직 모름 — 한 번 각성시키면 알게 됨">?</em>')+'</button>'; } // (build 513) 각성 짝은 오른쪽 위 작은 아이콘만 — 글 줄이 있으면 카드 높이가 제각각이라 불편 (사용자 10/27)
   if(c.k==='p'){ const P = SV_PAS[c.pas], lv = svPasLv(me, c.pas)+1, pairs = me.wp.filter(w=>SV_SK[w.id].pair===c.pas && svEvoSeen(w.id)).map(w=>svSkNm(w.id, me)+(svIsRune(me, w.id) ? ' 룬' : ''));
-    return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+P.ic+'.webp" alt=""><b>'+P.nm+'</b><span>'+(lv>1 ? 'Lv'+(lv-1)+' → '+lv : uiIc('star')+' 새 유물')+'</span><small class="sv-st2">'+svStatLine(SV_PASS[c.pas], lv > 1 ? lv-1 : 0, lv, true)+'</small>'+(pairs.length ? '<em class="sv-pair" title="각성 짝: '+pairs.join(', ')+'">'+me.wp.filter(w=>SV_SK[w.id].pair===c.pas && svEvoSeen(w.id)).map(w=>'<img src="'+svSkIc(w.id)+'" alt="">').join('')+'</em>' : '')+'</button>'; }
+    return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+P.ic+'.webp" alt=""><b>'+P.nm+'</b><span>'+(lv>1 ? 'Lv'+(lv-1)+' → '+lv : uiIc('star')+' 새 유물')+'</span><small class="sv-st2">'+svStatLine(SV_PASS[c.pas], lv > 1 ? lv-1 : 0, lv, true)+'</small>'+(pairs.length ? '<em class="sv-pair" title="연계 룬: '+pairs.join(', ')+'">'+me.wp.filter(w=>SV_SK[w.id].pair===c.pas && svEvoSeen(w.id)).map(w=>'<img src="'+svSkIc(w.id)+'" alt="">').join('')+'</em>' : '')+'</button>'; }
   return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+(c.k==='heal' ? 'rl_spring' : 'ic_gold')+'.webp" alt=""><b>'+(c.k==='heal' ? '생명의 샘' : '골드 30')+'</b><small>'+(c.k==='heal' ? '체력 모두 회복' : '모두 최대 레벨')+'</small></button>';
 }
 function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+(svIsRune(p, w.id) ? ' rn' : '')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+'; --ec:'+SV_EC[w.id.split('_')[0]]+';">'+(svIsRune(p, w.id) ? '<b class="sv-rs"><img src="'+svSkIc(w.id)+'" alt=""></b>' : '<img src="'+svSkIc(w.id)+'" alt="">')+'<i>'+(w.evo ? uiIc('awaken') : w.lv)+'</i></span>'; }
@@ -20050,7 +20050,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 548, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 549, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
