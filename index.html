@@ -12754,7 +12754,7 @@ function svLobby(msg){
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
       + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
       + '<small><img src="'+svSkIc(sk1)+'" alt="">고유 기술 · '+svSkNm(sk1)+' — '+svSkDesc(sk1, 0, 1)+(svEvoSeen(sk1) ? ' (진화 짝 '+svPI(SV_SK[sk1].pair)+P.nm+' → '+SV_SK[sk1].ev+')' : ' (진화 짝 ?)')+'</small>'
-      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small><div class="sv-grow" title="판 안에서 자람">'+[0,1,2,3,4].map(r=>'<span><img src="assets/spirits/'+svKey(V,r)+'.webp" alt=""><i>'+['Lv1','Lv2','Lv3','Lv4·5','각성'][r]+'</i></span>').join('<b>›</b>')+'</div></div></div>'
+      + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svSkNm(sk2)+' — '+SV_ULT[V]+'</small></div></div>' // (build 529) 판 안에서 자라는 모습 줄은 뺌 — 외형 고정
     + '<div class="sv-ltl">룬 <em>'+u.sk.length+'/20</em> <small>정령의 힘이 새겨진 돌 · 레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 진화 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
@@ -13372,11 +13372,11 @@ function svDraw(){
       for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); c.restore(); } });
     // (build 506) 스킬마다 내 둘레를 따라다니던 작은 정령 그림은 뺌 (사용자 10/26: 없어도 됨)
     // 대표 정령 (내가 조종하는 몸)
-    const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1))+'.webp'), bs = 40;
+    const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, 4)+'.webp'), bs = 40; // (build 529) 외형은 대표 정령(신화) 그림 하나로 고정 — 레벨이 올라도 안 바뀜 (사용자 10/29: 무기 효과가 화려해지니까)
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
     if(p.inv > 0.7 || p.buff > 0){ c.drawImage(svGlow(p.buff > 0 ? '#ffd04a' : '#ffffff', 'aa'), p.x - 30, p.y - 32, 60, 60); }
-    if(body.complete && body.naturalWidth){ const fl = svFlipFor(svKey(p.leader, lw && lw.evo ? 4 : Math.min(3, (lw ? lw.lv : 1)-1)), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]), lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0; svDrawBody(c, body, p.x + (lk ? Math.cos(lw.kdir||0)*lk*6 : 0), p.y + bs/2 - 4 + (lk ? Math.sin(lw.kdir||0)*lk*6 : 0), bs, svBodyAnim(i, p, G.t), G.t, fl, lk); } // (build 527) 몸 움직임 svDrawBody
+    if(body.complete && body.naturalWidth){ const fl = svFlipFor(svKey(p.leader, 4), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]), lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0; svDrawBody(c, body, p.x + (lk ? Math.cos(lw.kdir||0)*lk*6 : 0), p.y + bs/2 - 4 + (lk ? Math.sin(lw.kdir||0)*lk*6 : 0), bs, svBodyAnim(i, p, G.t), G.t, fl, lk); } // (build 527) 몸 움직임 svDrawBody
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
@@ -19962,7 +19962,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 528, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 529, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
