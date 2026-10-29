@@ -41,10 +41,10 @@ cx=(np.arange(BW)+0.5)*BC; cy=(np.arange(BH)+0.5)*BC; X,Y=np.meshgrid(cx,cy)
 def circ(x,y,r): return (X-x)**2+(Y-y)**2 < r*r
 for p in P:
     t,x,y,w,h=p['t'],p['x'],p['y'],p['w'],p['h']
-    if t.startswith('tree'): m=circ(x,y-0.06*h,0.3*w); gb[m]=1; tree|=m
+    if t.startswith('tree'): m=circ(x,y-0.06*h,0.3*w)|(((X-x)/(0.38*w))**2+((Y-(y-0.42*h))/(0.42*h))**2<1); gb[m]=1; tree|=m  # 밑동 + 나뭇잎 아래 (가려지는 곳은 막음 — 사용자 10/29)
     # 바위·석상·세계수·큰 버섯은 게임에서 원으로 정확히 (격자 안 씀)
-    elif t.startswith('root') or t=='edge':  # 뿌리·숲 벽 — 그림 모양(아래쪽 band)대로 막음 (편집기와 같은 규칙)
-        band=1 if t.startswith('root') else 0.62; al=np.array(Image.open(A+t+'.webp').convert('RGBA'))[...,3]; nh,nw=al.shape
+    elif t.startswith('root') or t in ('edge','worldtree','bankstone'):  # 뿌리·숲 벽·세계수 뿌리 — 그림 모양(아래쪽 band)대로 막음 (편집기와 같은 규칙)
+        band=1 if t.startswith('root') else 0.42 if t=='worldtree' else 0.6 if t=='bankstone' else 0.62; al=np.array(Image.open(A+t+'.webp').convert('RGBA'))[...,3]; nh,nw=al.shape
         a=math.radians(p.get('r',0)); ca,sa=math.cos(a),math.sin(a); R=math.hypot(w,h)
         m=(np.abs(X-x)<R)&(np.abs(Y-y)<R); wx=X[m]-x; wy=Y[m]-y; lx=wx*ca+wy*sa; ly=-wx*sa+wy*ca
         if p.get('f'): lx=-lx
@@ -58,7 +58,8 @@ for p in P:
     m=(np.abs(lx)<w*0.38)&(ly<-h*0.12)&(ly>-h*0.78); gb[m&(gb==2)]=0
 # 세계수 샘에서 갈 수 있는 곳만 남기기 (갇힌 빈칸은 막음 = 숲 속)
 wt=[p for p in P if p['t']=='worldtree'][0]
-sx,sy=int(wt['x']//BC),int((wt['y']-0.21*wt['w'])//BC)
+sx,sy=int(wt['x']//BC),int((wt['y']+20)//BC)  # 세계수 바로 앞 (뿌리가 막혀 있어 샘 자리는 못 씀)
+assert gb[sy,sx]==0, '세계수 앞이 막혀 있음'
 seen=np.zeros_like(gb,bool); st=[(sy,sx)]; seen[sy,sx]=True
 while st:
     j,i=st.pop()
