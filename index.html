@@ -958,6 +958,7 @@
   .sv-go{padding:14px; font-size:17px; background:linear-gradient(180deg,#ffe07a,#f0a400); color:#2a1a00; border:none; box-shadow:0 4px 0 #9a6400;} .sv-sub{padding:11px;}
   .sv-row{display:flex; gap:6px;} .sv-row .sv-btn{flex:none;} .sv-in{flex:1; min-width:0; border-radius:10px; border:1px solid #ffffff33; background:#0006; color:#fff; font-size:15px; text-align:center; letter-spacing:3px; text-transform:uppercase; padding:8px;}
   .sv-room{text-align:center; padding:12px; border-radius:12px; background:#ffd55714; border:1px solid #ffd55766;} .sv-room b{display:block; font-size:30px; letter-spacing:6px; color:#ffd557;} .sv-room small{color:#c9d2ff;}
+  .sv-mem{display:flex; justify-content:center; gap:8px; margin:8px 0 6px;} .sv-mem i{display:flex; flex-direction:column; align-items:center; gap:2px; width:62px; padding:6px 0 4px; border-radius:10px; border:1px dashed #ffffff33; opacity:.5; font-style:normal;} .sv-mem i.on{opacity:1; border:1px solid var(--pc); background:#0003;} .sv-mem i.me{box-shadow:0 0 0 2px var(--pc) inset;} .sv-mem img{width:40px; height:40px; object-fit:contain;} .sv-mem u{width:40px; height:40px;} .sv-mem i b{display:block; font-size:11px; letter-spacing:0; color:var(--pc);}
   .sv-msg{text-align:center; color:#ff9a9a; font-size:12px;}
   .sv-hud{gap:8px;} .sv-hc{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;} .sv-time{font-size:15px;} .sv-xp{position:relative; width:100%; max-width:220px; height:12px; border-radius:6px; background:#0008; border:1px solid #ffffff22; overflow:hidden;} .sv-xp i{position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#7ae0ff,#c9a6ff);} .sv-lv{position:relative; display:block; text-align:center; font-size:9px; line-height:12px; font-weight:900;} .sv-kill{font-size:12px; color:#ffb0b0; min-width:46px; text-align:right;}
   .sv-cv{position:relative; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; touch-action:none;} .sv-cv canvas{display:block; border-radius:14px; box-shadow:0 0 0 1px #ffffff1a;}
@@ -12316,7 +12317,7 @@ function accountLvClaim(L){ const lv = accountLevel(); state.lvClaimed = state.l
 // 카드로 뽑는 스킬 = 10계열 스킬1·스킬2 20개 (자동으로 씀 · 대표 정령의 스킬2는 궁극기라 안 나옴) · 능력 최대 3 · 각각 Lv5까지
 // 사용자 결정 10/25: 해금 방식 — 처음엔 대표 정령 2 · 스킬 5만 · 판에서 조건을 채우면 해금(`SV_UNL`) · 성좌 계열은 나중에
 // 10분을 버티면 최종 보스 · 5분에 중간 보스 · 1분마다 정예(정령의 선물 · 경험치 보석 3개) · 상자 = 골드 · 회복 · 자석 (골드 상점 = 영구 강화는 기획 승인 뒤) · 둘이 하면 쓰러진 친구 곁에서 부활
-// 둘이 하기: 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기 · 해금 목록만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드> · raidActs/<코드> (규칙 추가 없음)
+// 같이 하기(build 544~ 넷까지): 방장 폰이 계산 · 0.1초마다 상태 전송 · 친구는 위치 · 카드 · 궁극기 · 해금 목록만 보냄 · Firebase 경로는 레이드와 같은 raids/<코드>(자리 guest·g2·g3) · raidActs/<코드>/p1~p3 — g2·g3는 docs/firebase_database_rules.json 규칙을 콘솔에 넣어야 열림
 let SV_W = 360; // (build 488) 보이는 폭 — 폰 세로는 360 · 컴퓨터처럼 넓은 화면은 높이 600에 맞춰 16:9(1067)까지 넓힘 (사용자 결정 10/26: 컴퓨터는 화면을 꽉 채움)
 let SV_H = 600; // (build 489) 보이는 높이 — 폰 세로는 폭 360에 맞춰 길어짐 (화면을 꽉 채움)
 const SV_T_MID = 300, SV_T_END = 600, SV_MAX_W = 5, SV_MAX_P = 4, SV_ULT_CD = 45;
@@ -12429,7 +12430,11 @@ const SV_EC = { fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a'
 const SV_ECR = Object.fromEntries(Object.entries(SV_EC).map(([k,v])=>[v,k])); // 색 → 속성 (맞는 효과 고르기)
 const SV_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ffc857', '#ff5777']; // 스킬 Lv1~5 · 각성
 const SV_LVM = [1, 1.35, 1.75, 2.2, 2.7]; // 스킬 레벨별 피해 배율 · 각성은 ×2.2
-const SV_PCOL = ['#ffd557', '#7ae0ff']; // 1P · 2P
+const SV_PCOL = ['#ffd557', '#7ae0ff', '#ff8ad8', '#9be07a']; // 1P · 2P · 3P · 4P (build 544 넷까지)
+const SV_SLOT = ['guest', 'g2', 'g3']; // (build 544) 방 자리 1~3 = raids/<코드>/guest · g2 · g3 (1번은 레이드와 같은 guest) · 행동은 raidActs/<코드>/p1~p3
+// (build 544) 인원수 난이도 (사용자 10/29 「4명 · 인원수에 따라 몹 수·나오는 위치(+위치 수)·몹 스탯」) — n 몹 나오는 빠르기 · hp 몹 체력 · dmg 몹 피해 · boss 보스 체력 · pack 적 무리가 한 번에 몰려오는 곳 수(혼자는 없음) · elite 1분마다 정예 수
+const SV_COOP = [null, { n:1, hp:1, dmg:1, boss:1, pack:0, elite:1 }, { n:1.5, hp:1.3, dmg:1.05, boss:1.7, pack:1, elite:1 }, { n:1.95, hp:1.55, dmg:1.1, boss:2.3, pack:2, elite:2 }, { n:2.4, hp:1.8, dmg:1.15, boss:2.9, pack:3, elite:2 }];
+function svCoop(G){ return SV_COOP[Math.min(4, Math.max(1, G.players.length))]; }
 let SV_HPK = 1, SV_SPAWN = 1, SV_CONTACT = 0.5, SV_GROW = 80, SV_XPK = 2, SV_DMGK = 1.3; // 세기 (let — 시뮬)
 let sv = null;
 function svSkLine(id){ return id.slice(0, -2); }
@@ -12777,15 +12782,15 @@ function svLobby(msg){
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 진화 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
     + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(고유 기술 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬·기술 Lv5 + 짝 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
-    + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><small>'+(n.role==='host' ? (n.guest ? uiIc('check')+' 친구 들어옴 — 시작!' : '친구에게 코드를 알려 줘 · 기다리는 중…') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
+    + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><div class="sv-mem">'+svMemHtml()+'</div><small>'+(n.role==='host' ? (svCnt() > 1 ? uiIc('check')+' '+svCnt()+'명 — 시작!' : '친구에게 코드를 알려 줘 · 최대 4명') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
-    + (n.code ? (n.role==='host' ? '<button class="sv-btn sv-go" data-sv="start" '+(n.guest?'':'disabled')+'>'+uiIc('party')+' 둘이 시작</button>' : '') + '<button class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
+    + (n.code ? (n.role==='host' ? '<button class="sv-btn sv-go" data-sv="start" '+(svCnt() > 1 ? '' : 'disabled')+'>'+uiIc('party')+' 같이 시작 ('+svCnt()+'명)</button>' : '') + '<button class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
       : '<button class="sv-btn sv-go" data-sv="solo">'+uiIc('duel')+' 혼자 하기</button><div class="sv-row"><button class="sv-btn sv-sub" data-sv="host">'+uiIc('invite')+' 방 만들기</button><input class="sv-in" maxlength="6" placeholder="방 코드"><button class="sv-btn sv-sub" data-sv="join">참가</button></div>')
     + '</div>';
   const Q = s=>sv.el.querySelector(s), on = (s, f)=>{ const b = Q(s); if(b) b.addEventListener('click', f); };
   const keep = ()=>{ const lob = Q('.sv-lob'); return lob ? lob.scrollTop : 0; }, re = top=>{ svLobby(msg); const lob = Q('.sv-lob'); if(lob) lob.scrollTop = top; };
   sv.el.querySelectorAll('[data-ld]').forEach(b=>b.addEventListener('click', ()=>{ const l = b.dataset.ld, top = keep(); sv.view = l;
-    if(svHas('ld', l)){ sv.leader = l; state.svLeader = l; save(); if(sv.net.role==='guest') svGuestSend(); } re(top); }));
+    if(svHas('ld', l)){ sv.leader = l; state.svLeader = l; save(); if(sv.net.role==='guest') svGuestSend(); else if(sv.net.role==='host' && sv.net.code && raidNet.fb) raidNet.fb.update(raidNet.fb.ref(raidNet.fb.rtdb, 'raids/'+sv.net.code), { hl: l }).catch(()=>{}); } re(top); }));
   sv.el.querySelectorAll('[data-st]').forEach(b=>b.addEventListener('click', ()=>{ const i = +b.dataset.st, top = keep(); if(!svStageOpen(i)){ toast(i >= SV_STAGE_READY ? '준비 중' : (i)+'단계 최종 보스를 잡으면 열림'); return; } if(sv.net.role==='guest'){ toast('단계는 방장이 고름'); return; } sv.stage = i; state.svStageSel = i; save(); re(top); }));
   sv.el.querySelectorAll('[data-skv]').forEach(b=>b.addEventListener('click', ()=>{ const top = keep(); sv.skView = sv.skView===b.dataset.skv ? null : b.dataset.skv; re(top); }));
   on('[data-sv="exit"]', svClose);
@@ -12793,8 +12798,23 @@ function svLobby(msg){
   on('[data-sv="host"]', svHost);
   on('[data-sv="join"]', ()=>svJoin(Q('.sv-in').value));
   on('[data-sv="leave"]', ()=>{ svNetLeave(sv); sv.net = { role:'solo' }; svLobby(); });
-  on('[data-sv="start"]', ()=>{ if(!sv.net.guest) return; const fb = raidNet.fb; sv.seed = Math.floor(Math.random()*1e9); fb.update(fb.ref(fb.rtdb, 'raids/'+sv.net.code), { go: { t: Date.now(), st: sv.stage||0, sd: sv.seed } }).catch(()=>{}); svStart('host'); });
+  on('[data-sv="start"]', ()=>{ if(svCnt() < 2) return; const fb = raidNet.fb; sv.seed = Math.floor(Math.random()*1e9); sv.net.go = [1, 2, 3].filter(s=>sv.net.sl[s]); fb.update(fb.ref(fb.rtdb, 'raids/'+sv.net.code), { go: { t: Date.now(), st: sv.stage||0, sd: sv.seed, sl: sv.net.go } }).catch(()=>{}); svStart('host'); });
 }
+function svCnt(){ const n = sv.net; return 1 + [1, 2, 3].filter(s=>n.sl && n.sl[s]).length; } // (build 544) 방 인원 (방장 포함)
+function svMemHtml(){ const n = sv.net, me = n.role==='host' ? 0 : n.slot; // 방 자리 4칸 — 대표 정령 그림
+  return [0, 1, 2, 3].map(s=>{ const on = s===0 || !!(n.sl && n.sl[s]), L = s===me ? sv.leader : s===0 ? n.hl : (n.gl && n.gl[s]);
+    return '<i class="'+(on ? 'on' : '')+(s===me ? ' me' : '')+'" style="--pc:'+SV_PCOL[s]+';">'+(on && L && SV_BASE[L] ? '<img src="assets/spirits/'+svKey(L,4)+'.webp" alt="">' : '<u></u>')+'<b>'+(s===0 ? '방장' : !on ? '빈 자리' : s===me ? '나' : (s+1)+'P')+'</b></i>'; }).join(''); }
+function svLobbyRe(){ if(!sv || sv.game || !sv.el) return; const l0 = sv.el.querySelector('.sv-lob'), top = l0 ? l0.scrollTop : 0; svLobby(); const l1 = sv.el.querySelector('.sv-lob'); if(l1) l1.scrollTop = top; }
+function svHostActs(v){ // (build 544) 방장: 친구들 행동(raidActs/<코드>/p1~p3) — 준비 화면에선 대표 정령·해금 룬 · 판에선 위치·궁극기·카드
+  if(!sv || !v) return; const n = sv.net, G = sv.game; let ch = false;
+  [1, 2, 3].forEach(s=>{ const a = v['p'+s]; if(!a) return;
+    if(!G){ if(n.gl[s] !== a.ld){ n.gl[s] = a.ld; ch = true; } n.gs[s] = Array.isArray(a.sk) ? a.sk.filter(id=>SV_SK[id]) : null; return; }
+    const i = n.ix && n.ix[s], p = i && G.players[i]; if(!p || (a.t||0) === p.actT) return; p.actT = a.t; p.lastAct = Date.now(); // 다른 친구가 보낸 때도 불리므로 보낸 시각으로 새것만
+    if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy];
+    if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
+    if((a.u||0) > (p.ultSeq||0)){ p.ultSeq = a.u; svUlt(p); }
+    if(a.pk && p.pick && a.pk.k === p.pick.map(svCardKey).join('|')) svDoPick(i, a.pk.i); });
+  if(ch) svLobbyRe(); }
 // ---------- 둘이 하기: 방 ----------
 async function svHost(){
   if(!raidNet.ready || !raidNet.fb){ svLobby('서버 연결 안 됨 — 혼자 하기만 가능'); return; }
@@ -12802,13 +12822,12 @@ async function svHost(){
   try{
     let code = null;
     for(let t=0; t<5 && !code; t++){ const c = raidNewCode(), r = fb.ref(fb.rtdb, 'raids/'+c), s = await fb.get(r); if(s.exists()) continue;
-      await fb.set(r, { code:c, kind:'survival', host: raidNet.uid, status:'survival', createdAt: Date.now() }); code = c; } // status를 lobby가 아니게 — 레이드 「코드로 참가」에 잘못 들어가지 않게
+      await fb.set(r, { code:c, kind:'survival', host: raidNet.uid, status:'survival', createdAt: Date.now(), hl: sv.leader }); code = c; } // status를 lobby가 아니게 — 레이드 「코드로 참가」에 잘못 들어가지 않게
     if(!code){ svLobby('방 만들기 실패 — 다시'); return; }
-    sv.net = { role:'host', code, guest:null };
+    sv.net = { role:'host', code, sl:{}, gl:{}, gs:{} };
     sv.unsubs = sv.unsubs || [];
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/guest'), s=>{ if(!sv || sv.net.code!==code) return; const g = s.val(); const was = sv.net.guest; sv.net.guest = g || null; if(!sv.game && was!==sv.net.guest) svLobby(); }));
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code+'/ld'), s=>{ if(sv) sv.net.gLeader = s.val() || null; }));
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code+'/sk'), s=>{ if(sv){ const v = s.val(); sv.net.gSk = Array.isArray(v) ? v.filter(id=>SV_SK[id]) : null; } })); // 친구가 해금한 스킬
+    SV_SLOT.forEach((key, k)=>{ const s = k+1; sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/'+key), x=>{ if(!sv || sv.net.code!==code) return; const g = x.val() || null, was = sv.net.sl[s] || null; sv.net.sl[s] = g; if(!g){ delete sv.net.gl[s]; delete sv.net.gs[s]; } if(!sv.game && was!==g) svLobbyRe(); })); }); // (build 544) 자리 셋
+    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code), x=>{ if(sv && sv.net.code===code) svHostActs(x.val() || {}); })); // 친구들 대표 정령·해금 룬 · 판에선 조작
     svLobby();
   }catch(e){ svLobby('방 만들기 실패: '+(e && e.code || e)); }
 }
@@ -12820,21 +12839,26 @@ async function svJoin(input){
   try{
     const s = await fb.get(r), d = s.val();
     if(!d || d.kind!=='survival'){ svLobby('없는 방'); return; }
-    if(d.guest && d.guest!==raidNet.uid){ svLobby('방이 꽉 참 (2/2)'); return; }
     if(d.go){ svLobby('이미 시작된 방'); return; }
-    await fb.update(r, { guest: raidNet.uid });
-    sv.net = { role:'guest', code }; sv.unsubs = sv.unsubs || [];
+    let slot = SV_SLOT.findIndex(k=>d[k]===raidNet.uid) + 1, denied = false; // (build 544) 빈 자리(1~3) 중 앞에서부터 — 동시에 들어오면 규칙(빈 자리만)에 막히므로 다시 읽어 확인
+    for(let k=0; k<3 && !slot; k++){ const key = SV_SLOT[k]; if(d[key]) continue;
+      try{ await fb.update(r, { [key]: raidNet.uid }); if((await fb.get(fb.ref(fb.rtdb, 'raids/'+code+'/'+key))).val()===raidNet.uid) slot = k+1; }catch(e){ if(k > 0) denied = true; } }
+    if(!slot){ svLobby(denied ? '3·4번째 자리는 아직 못 열림 (서버 규칙 업데이트 필요)' : '방이 꽉 참 (4/4)'); return; }
+    sv.net = { role:'guest', code, slot, sl:{}, gl:{}, hl: d.hl || null }; sv.unsubs = sv.unsubs || []; sv.lobUnsubs = [];
     svGuestSend();
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/go'), x=>{ const v = x.val(); if(v && sv && !sv.game){ if(typeof v==='object'){ sv.stage = v.st|0; sv.seed = v.sd|0; } svStart('guest'); } }));
+    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/go'), x=>{ const v = x.val(); if(v && sv && !sv.game){ if(typeof v==='object'){ sv.stage = v.st|0; sv.seed = v.sd|0; sv.net.go = Array.isArray(v.sl) && v.sl.length ? v.sl.map(Number) : [1]; } else sv.net.go = [1]; svStart('guest'); } }));
+    SV_SLOT.forEach((key, k)=>sv.lobUnsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/'+key), x=>{ if(!sv || sv.net.code!==code) return; const g = x.val() || null; if(sv.net.sl[k+1] !== g){ sv.net.sl[k+1] = g; svLobbyRe(); } }))); // 준비 화면 자리 표시 (판이 시작되면 끔)
+    sv.lobUnsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/hl'), x=>{ if(sv && sv.net.code===code && sv.net.hl !== x.val()){ sv.net.hl = x.val(); svLobbyRe(); } }));
+    sv.lobUnsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code), x=>{ if(!sv || sv.net.code!==code || sv.game) return; const v = x.val() || {}; let ch = false; [1, 2, 3].forEach(s=>{ const l = (v['p'+s] && v['p'+s].ld) || null; if(sv.net.gl[s] !== l){ sv.net.gl[s] = l; ch = true; } }); if(ch) svLobbyRe(); }));
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/host'), x=>{ /* 방 전체를 들으면 상태(0.1초마다)까지 두 번 받음 — 방장 칸만 */ if(sv && sv.net.code===code && !x.exists()){ if(sv.game && !sv.game.over){ sv.game.over = 'lost'; svShowEnd(); } else if(!sv.game){ sv.net = { role:'solo' }; svLobby('방장이 방을 닫음'); } } }));
     svLobby();
   }catch(e){ svLobby('참가 실패: '+(e && e.code || e)); }
 }
 function svNetLeave(s){
   const n = s.net, fb = raidNet.fb; if(!n || !n.code || !fb) return;
-  (s.unsubs||[]).forEach(u=>{ try{ u(); }catch(e){} }); s.unsubs = [];
+  (s.unsubs||[]).concat(s.lobUnsubs||[]).forEach(u=>{ try{ u(); }catch(e){} }); s.unsubs = []; s.lobUnsubs = [];
   if(n.role==='host'){ fb.remove(fb.ref(fb.rtdb, 'raidActs/'+n.code)).catch(()=>{}).then(()=>fb.remove(fb.ref(fb.rtdb, 'raids/'+n.code)).catch(()=>{})); }
-  else fb.update(fb.ref(fb.rtdb, 'raids/'+n.code), { guest: null }).catch(()=>{});
+  else if(n.slot){ const code = n.code; fb.remove(fb.ref(fb.rtdb, 'raidActs/'+code+'/p'+n.slot)).catch(()=>{}).then(()=>fb.update(fb.ref(fb.rtdb, 'raids/'+code), { [SV_SLOT[n.slot-1]]: null }).catch(()=>{})); }
   n.code = null;
 }
 // ---------- 게임 ----------
@@ -12845,7 +12869,7 @@ const SV_BASE = { fire_a:{ hp:110, atk:110, def:10, spd:120 }, fire_b:{ hp:90, a
 function svBase(L){ return SV_BASE[L] || { hp:100, atk:100, def:0, spd:120 }; }
 function svAtkK(p){ return (p.atk||100)/100; } // 공격력 배율
 function svDef(p){ return p.def||0; }
-function svNewPlayer(i, leader, unl){ const B = svBase(leader); return { i, leader, unl: unl || [], x: SV_MW/2 + (i ? 40 : -40), y: SV_MH/2 + 60, hp:B.hp, maxHp:B.hp, spd:B.spd, atk:B.atk, def:B.def, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
+function svNewPlayer(i, leader, unl){ const B = svBase(leader); return { i, leader, unl: unl || [], x: SV_MW/2 + [-40, 40, -90, 90][i%4], y: SV_MH/2 + 60 + (i >= 2 ? 30 : 0), hp:B.hp, maxHp:B.hp, spd:B.spd, atk:B.atk, def:B.def, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
 function svPasLv(p, k){ return p.ps[k] || 0; }
 function svAimToggle(){ state.svAim = state.svAim==='mouse' ? 'move' : 'mouse'; save(); const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s:'조준 — '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'), col:'#c9e2ff', sz:14, scr:1 }); }
 function svFlipFor(key, dx){ const f = ART_FACE[key]; return f==='L' ? dx > 0.2 : dx < -0.2; } // (build 489) 그림마다 원래 보는 쪽이 달라서(ART_FACE · 스콜 등은 왼쪽) — 가는 쪽을 보게 뒤집을지
@@ -12952,12 +12976,14 @@ function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
 function svStart(role){
   sv.net.role = role; svPreload(sv.stage||0);
   const G = sv.game = { t:0, over:null, players:[], en:[], gems:[], pr:[], pools:[], fx:[], pt:[], loot:[], lvl:1, xp:0, xpNext:4, kills:0, gold:0, spawnT:0, eliteT:60, podT:12, mid:false, end:false, paused:false, pickWait:false };
-  G.players.push(svNewPlayer(0, role==='guest' ? 'fire_a' : sv.leader, role==='guest' ? [] : svUnl().sk));
-  if(role!=='solo') G.players.push(svNewPlayer(1, role==='guest' ? sv.leader : (sv.net.gLeader || 'water_a'), role==='guest' ? svUnl().sk : (sv.net.gSk || SV_UNL0.sk)));
+  const N = sv.net, sl = role==='solo' ? [] : (N.go || [1]); (sv.lobUnsubs||[]).forEach(u=>{ try{ u(); }catch(e){} }); sv.lobUnsubs = []; sv.ultReq = 0; // (build 544) 넷까지 — 방장 0 · 친구는 자리(1~3) 순서대로 1, 2, 3
+  G.players.push(svNewPlayer(0, role==='guest' ? (N.hl || 'fire_a') : sv.leader, role==='guest' ? [] : svUnl().sk));
+  N.ix = {}; sl.forEach((s, k)=>{ const mine = role==='guest' && s===N.slot, L = mine ? sv.leader : role==='host' ? (N.gl[s] || 'water_a') : ((N.gl && N.gl[s]) || 'fire_a'); N.ix[s] = k+1;
+    const q = svNewPlayer(k+1, L, mine ? svUnl().sk : role==='host' ? (N.gs[s] || SV_UNL0.sk) : []); q.slot = s; G.players.push(q); });
   G.newUnl = [];
   if(role==='solo') sv.seed = Math.floor(Math.random()*1e9);
   G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); sv.cam = null; sv.patSrc = null;
-  G.me = role==='guest' ? 1 : 0;
+  G.me = role==='guest' ? (N.ix[N.slot] || 1) : 0;
   sv.el.classList.add('sv-game');
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill"></span><button class="sv-btn sv-ic" data-sv="pause">'+uiIc('rest')+'</button></div>'
     + '<div class="sv-cv"><canvas></canvas><i class="sv-vig"></i><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><button class="sv-aim" data-sv="aim"><img alt=""></button><em class="sv-key" data-k="ult">Space</em><em class="sv-key" data-k="aim">Q</em><div class="sv-stat"></div><div class="sv-wasd"><i>W</i><i>A</i><i>S</i><i>D</i><b>이동</b></div><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
@@ -12973,8 +12999,8 @@ function svStart(role){
     const set = (el, r, b)=>{ if(el){ el.style.right = r+'px'; el.style.bottom = b+'px'; } }, ub0 = Math.max(by, bb) + 22;
     set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = (rx + 10*sv.scale)+'px'; stt.style.top = (by + ((sv.uiTop||0) + 80)*sv.scale)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = (rx + 10)+'px'; wd.style.bottom = (Math.max(by, bb) + 12)+'px'; } };
   fit(); sv.fit = fit; window.addEventListener('resize', fit);
-  sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '둘이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
-  sv.el.querySelector('[data-sv="pause"]').addEventListener('click', e=>{ if(role!=='solo'){ toast('둘이 할 땐 멈출 수 없음'); return; } G.paused = !G.paused; e.currentTarget.innerHTML = G.paused ? '계속' : uiIc('rest'); });
+  sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '같이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
+  sv.el.querySelector('[data-sv="pause"]').addEventListener('click', e=>{ if(role!=='solo'){ toast('같이 할 땐 멈출 수 없음'); return; } G.paused = !G.paused; e.currentTarget.innerHTML = G.paused ? '계속' : uiIc('rest'); });
   sv.el.querySelector('[data-sv="aim"]').addEventListener('click', e=>{ e.stopPropagation(); svAimToggle(); });
   sv.el.querySelector('[data-sv="ult"]').addEventListener('click', e=>{ e.stopPropagation(); if(role==='guest'){ sv.ultReq = (sv.ultReq||0) + 1; svGuestSend(); } else svUlt(G.players[0]); });
   const pt = e=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left)/sv.scale, y:(e.clientY - r.top)/sv.scale }; };
@@ -13023,26 +13049,26 @@ function svLevelUp(){
 }
 function svDoPick(pi, idx){
   const G = sv.game, p = G.players[pi]; if(!p || !p.pick) return;
-  svApplyPick(p, p.pick[idx]); p.pick = null;
-  if(G.players.every(q=>!q.pick)){ G.pickWait = false; G.pickGift = 0; if(G.xp >= G.xpNext) svLevelUp(); }
+  svApplyPick(p, p.pick[idx]); p.pick = null; svPickDone(G);
 }
-function svSpawnPos(){ // 살아 있는 사람 하나의 화면 바로 밖 (맵 안에서)
-  const G = sv.game, alive = G.players.filter(q=>!q.down), tp = alive.length ? svRand(alive) : G.players[0]; let best = null;
+function svPickDone(G){ if(G.players.every(q=>!q.pick)){ G.pickWait = false; G.pickGift = 0; if(G.xp >= G.xpNext) svLevelUp(); } }
+function svSpawnPos(tp){ // 살아 있는 사람 하나의 화면 바로 밖 (맵 안에서) · (build 544) 사람을 돌아가며 — 여럿이면 몹이 나오는 곳도 사람 수만큼 갈라짐
+  const G = sv.game, alive = G.players.filter(q=>!q.down); tp = tp || (alive.length ? alive[(G.spRR = (G.spRR||0) + 1) % alive.length] : G.players[0]); let best = null;
   for(let t=0;t<8;t++){ const a = Math.random()*6.283, x = tp.x + Math.cos(a)*(SV_W/2 + 60), y = tp.y + Math.sin(a)*(SV_H/2 + 80); /* 화면 바로 밖 (넓은 화면이면 옆으로 더 멀리) */ if(x > 10 && x < SV_MW-10 && y > 10 && y < SV_MH-10){ best = { x, y }; break; } }
   return best || { x: Math.max(10, Math.min(SV_MW-10, tp.x + (Math.random()<0.5 ? -1 : 1)*(SV_W/2 + 60))), y: Math.max(10, Math.min(SV_MH-10, tp.y + (Math.random()<0.5 ? -1 : 1)*(SV_H/2 + 80))) };
 }
 function svFreeSpot(){ const map = sv.game.map; for(let t=0;t<30;t++){ const x = 40 + Math.random()*(SV_MW-80), y = 40 + Math.random()*(SV_MH-80); if(!map || (map.ob.every(b=>Math.hypot(b.x-x, b.y-y) > b.r + 20) && map.zones.every(z=>Math.hypot(z.x-x, z.y-y) > z.r + 10))) return { x, y }; } return { x: SV_MW/2, y: SV_MH/2 }; }
-function svSpawn(kind){
-  const G = sv.game, sp = svSpawnPos(); let x = sp.x, y = sp.y;
-  const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * (G.players.length > 1 ? 1.6 : 1) * SV_STK[G.stage||0];
+function svSpawn(kind, at){
+  const G = sv.game, C = svCoop(G), sp = at || svSpawnPos(); let x = sp.x, y = sp.y;
+  const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * C.hp * SV_STK[G.stage||0];
   const el = Math.random() < 0.6 ? SV_MAPS[G.stage||0].el : svRand(ELEMENTS), v = Math.random()<0.5 ? 'a' : 'b';
   const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:27, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
-  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0], xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
+  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0]*C.dmg, xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
 }
 function svSpawnBoss(g, final){
-  const G = sv.game, st = G.stage||0, hp = (final ? 16000 : 6000) * SV_HPK * (G.players.length > 1 ? 1.7 : 1) * (1 + G.t/300) * SV_STK[st];
+  const G = sv.game, st = G.stage||0, hp = (final ? 16000 : 6000) * SV_HPK * svCoop(G).boss * (1 + G.t/300) * SV_STK[st];
   const tp = G.players.find(q=>!q.down) || G.players[0], by = tp.y - 300 > 40 ? tp.y - 300 : tp.y + 300;
-  G.en.push({ x: Math.max(40, Math.min(SV_MW-40, tp.x)), y: Math.max(40, Math.min(SV_MH-40, by)), r:34, spd:30, hp, max:hp, dmg:30*SV_STD[st], xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', fl:0, skT:3 });
+  G.en.push({ x: Math.max(40, Math.min(SV_MW-40, tp.x)), y: Math.max(40, Math.min(SV_MH-40, by)), r:34, spd:30, hp, max:hp, dmg:30*SV_STD[st]*svCoop(G).dmg, xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', fl:0, skT:3 });
   svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:2.2, s:(final ? '최종 보스 — ' : '중간 보스 — ')+(SV_BOSS_NM[g]||''), col:'#ff6a6a', sz:22, scr:1 }); try{ sfx('battleStart'); }catch(e){}
 }
 function svNear(x, y, r, pred){ let best = null, bd = r; sv.game.en.forEach(e=>{ if(e.hp<=0 || (pred && !pred(e))) return; const d = Math.hypot(e.x-x, e.y-y) - e.r; if(d < bd){ bd = d; best = e; } }); return best; }
@@ -13162,9 +13188,14 @@ function svCheckUnl(){ // 판 안에서 조건을 채우면 바로 해금 (내 �
 }
 function svTick(dt){
   const G = sv.game; G.t += dt;
-  G.spawnT -= dt; const rate = Math.max(0.1, (G.t < 30 ? 1.3 : 1.15 - G.t/480) / SV_SPAWN / (G.players.length > 1 ? 1.4 : 1)); // 처음 30초는 느슨하게
-  if(G.spawnT <= 0 && G.en.length < 140){ G.spawnT = rate; const r = Math.random(); svSpawn(G.t > 40 && r < 0.18 ? 'fast' : G.t > 70 && r < 0.3 ? 'big' : 'normal'); }
-  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; svSpawn('elite'); svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장 — 잡으면 정령의 선물', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
+  const C = svCoop(G), cap = G.players.length >= 3 ? 150 : 140; // (build 544) 인원수 난이도
+  G.spawnT -= dt; const rate = Math.max(0.1, (G.t < 30 ? 1.3 : 1.15 - G.t/480) / SV_SPAWN / C.n); // 처음 30초는 느슨하게
+  if(G.spawnT <= 0 && G.en.length < cap){ G.spawnT = rate; const r = Math.random(); svSpawn(G.t > 40 && r < 0.18 ? 'fast' : G.t > 70 && r < 0.3 ? 'big' : 'normal'); }
+  if(C.pack && G.t > 45){ G.packT = (G.packT == null ? 20 : G.packT) - dt; if(G.packT <= 0 && G.en.length < cap - 10){ G.packT = 26 - 4*C.pack; // 적 무리 — 여럿일 때만 · 사람 수에 따라 1~3곳에서 한꺼번에 (서로 다른 사람 쪽)
+    const alive = G.players.filter(q=>!q.down).sort(()=>Math.random() - 0.5), m = Math.min(alive.length, C.pack), sz = 5 + C.pack;
+    for(let j=0;j<m;j++){ const o = svSpawnPos(alive[j]); for(let k=0;k<sz;k++){ const a = Math.random()*6.283, d = Math.random()*34; svSpawn(G.t > 120 && k%3===0 ? 'fast' : 'normal', { x: Math.max(10, Math.min(SV_MW-10, o.x + Math.cos(a)*d)), y: Math.max(10, Math.min(SV_MH-10, o.y + Math.sin(a)*d)) }); } }
+    if(m) svFx({ k:'text', x:SV_W/2, y:110, t:0, d:1.3, s:'적 무리 — '+m+'곳', col:'#ff9a6a', sz:13, scr:1, uy:1 }); } }
+  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; { const al = G.players.filter(q=>!q.down); for(let j=0;j<C.elite;j++) svSpawn('elite', al.length ? svSpawnPos(al[j % al.length]) : null); } svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장 — 잡으면 정령의 선물', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
   G.podT -= dt; if(G.podT <= 0){ G.podT = 12; if(G.en.filter(o=>o.kind==='pod').length < 6){ const f = svFreeSpot(), hp = 40 * (1 + G.t/120); G.en.push({ x: f.x, y: f.y, r:13, spd:0, hp, max:hp, dmg:0, xp:0, kind:'pod', art:'assets/survival/pod.webp', mob:'assets/survival/pod.webp', fl:0 }); } } // (build 489) 상자는 때려서 부숨 (사용자 10/26) · 맵 곳곳
   svMapTick(dt);
   if(!G.mid && G.t >= SV_T_MID){ G.mid = true; svSpawnBoss(SV_MAPS[G.stage||0].mid, false); }
@@ -13286,7 +13317,7 @@ function svHud(){
   else if(G.pickWait && !G.over){ if(box.dataset.k !== 'wait' && box.dataset.k !== 'sent'){ box.dataset.k = 'wait'; box.innerHTML = '<div class="sv-ptl">친구가 고르는 중…</div>'; box.classList.add('on'); } }
   else if(box.classList.contains('on') && box.dataset.k){ box.classList.remove('on'); box.dataset.k = ''; box.innerHTML = ''; }
   const bar = q('.sv-bar'); if(bar){ const k = G.players.map(p=>p.wp.map(w=>w.id+w.lv+(w.evo?'e':'')+(svCanEvo(p,w)?'r':'')).join(',')+JSON.stringify(p.ps)+(p.down?'d':'')).join('/'); if(bar.dataset.k !== k){ bar.dataset.k = k;
-    bar.innerHTML = G.players.map((p,i)=>'<div class="sv-pb'+(i===G.me?' me':'')+'" style="--pc:'+SV_PCOL[i]+';"><em>'+(G.players.length>1 ? (i===G.me ? '나' : '친구') : '룬')+'</em>'
+    bar.innerHTML = G.players.map((p,i)=>'<div class="sv-pb'+(i===G.me?' me':'')+'" style="--pc:'+SV_PCOL[i]+';"><em>'+(G.players.length>1 ? (i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P') : '룬')+'</em>'
       + p.wp.map(w=>svWIc(p, w)).join('') + '<u></u>' + Object.keys(p.ps).map(k=>'<span class="ps">'+svPI(k)+'<i>'+p.ps[k]+'</i></span>').join('')+'</div>').join(''); } }
 }
 function svRecord(){ const G = sv && sv.game; if(!G || G.recorded) return; G.recorded = true; svCheckUnl();
@@ -13311,15 +13342,11 @@ function svNetStart(){
   const fb = raidNet.fb, code = sv.net.code; if(!fb || !code) return;
   sv.unsubs = sv.unsubs || [];
   if(sv.net.role==='host'){
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raidActs/'+code), s=>{ const a = s.val(); if(!a || !sv || !sv.game) return; const G = sv.game, p = G.players[1]; if(!p) return; sv.gLast = Date.now();
-      if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy];
-      if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
-      if((a.u||0) > (sv.gUlt||0)){ sv.gUlt = a.u; svUlt(p); }
-      if(a.pk && p.pick && a.pk.k === p.pick.map(svCardKey).join('|')) svDoPick(1, a.pk.i); }));
-    sv.gLast = Date.now(); sv.gUlt = 0;
-    sv.netT = setInterval(()=>{ if(!sv || !sv.game) return; svHostSend(); const G = sv.game;
-      if(Date.now() - sv.gLast > 12000 && G.players[1] && !G.over){ const p = G.players[1]; p.down = true; p.hp = 0; p.pick = null; if(G.pickWait && !G.players[0].pick) G.pickWait = false; }
-      if(G.pickWait && G.players[1] && G.players[1].pick && Date.now() - G.pickAt > 20000) svDoPick(1, 0); }, 100); // 친구가 20초 안에 안 고르면 첫 카드
+    { const G = sv.game, t0 = Date.now(); G.players.forEach((p,i)=>{ if(i){ p.lastAct = t0; p.ultSeq = 0; } }); } // 친구들 조작은 svHost에서 듣는 raidActs → svHostActs
+    sv.netT = setInterval(()=>{ if(!sv || !sv.game) return; svHostSend(); const G = sv.game, now = Date.now();
+      G.players.forEach((p,i)=>{ if(!i || G.over) return;
+        if(now - (p.lastAct||0) > 12000){ p.down = true; p.hp = 0; if(p.pick){ p.pick = null; svPickDone(G); } } // 12초 동안 소식이 없으면 쓰러짐
+        if(G.pickWait && p.pick && now - G.pickAt > 20000) svDoPick(i, 0); }); }, 100); // 친구가 20초 안에 안 고르면 첫 카드
   }else{
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/s'), s=>{ const v = s.val(); if(v && sv && sv.game) svGuestApply(v); }));
     sv.netT = setInterval(()=>svGuestSend(), 100);
@@ -13330,7 +13357,7 @@ function svHostSend(){
   const R = Math.round;
   const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
     p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo ? 1 : 0]), ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0 })),
-    e: G.en.slice(0, 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
+    e: G.en.slice(0, G.players.length >= 3 ? 150 : 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
     g: G.gems.slice(0, 150).map(g=>[R(g.x), R(g.y), g.big ? 1 : 0]),
     l: G.loot.slice(0, 40).map(o=>[R(o.x), R(o.y), o.k]),
     b: G.pr.slice(0, 80).map(b=>[R(b.x), R(b.y), b.col, b.kind==='ebul' ? 1 : b.kind==='wave' ? 2 : b.kind==='spark' ? 3 : 0, b.kind==='wave' ? R(Math.atan2(b.vy, b.vx)*100)/100 : 0, b.kind==='wave' ? R(b.w) : 0]),
@@ -13340,18 +13367,18 @@ function svHostSend(){
   fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), snap).catch(()=>{});
 }
 function svGuestSend(){
-  const fb = raidNet.fb; if(!sv || !fb || !sv.net.code) return; const G = sv.game, p = G && G.players[1];
+  const fb = raidNet.fb; if(!sv || !fb || !sv.net.code || !sv.net.slot) return; const G = sv.game, p = G && G.players[G.me];
   const a = { ld: sv.leader, sk: svUnl().sk, t: Date.now(), u: sv.ultReq || 0 };
   if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; }
-  fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code), a).catch(()=>{});
+  fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), a).catch(()=>{}); // (build 544) 자리마다 따로
 }
 function svGuestApply(v){
   const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk; G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
   (v.p||[]).forEach((q,i)=>{ const p = G.players[i] || (G.players[i] = svNewPlayer(i, q.ld));
-    if(i!==1 || q.d){ p.tx = q.x; p.ty = q.y; if(Math.hypot((p.x||0)-q.x, (p.y||0)-q.y) > 80){ p.x = q.x; p.y = q.y; } }
+    if(i!==G.me || q.d){ p.tx = q.x; p.ty = q.y; if(Math.hypot((p.x||0)-q.x, (p.y||0)-q.y) > 80){ p.x = q.x; p.y = q.y; } }
     p.leader = q.ld || p.leader; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {};
     p.wp = (q.w||[]).map((a,k)=>{ const o = (p.wp||[])[k] || {}; if(i === G.me && a[2]) svMarkEvo(a[0]); /* (build 517) 친구 화면 — 내 룬이 각성하면 짝 알게 됨 */ return { id:a[0], lv:a[1], evo: !!a[2], a: o.a || Math.random()*6 }; });
-    if(i===1){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' ? { k, id:x } : k==='p' ? { k, pas:x } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
+    if(i===G.me){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' ? { k, id:x } : k==='p' ? { k, pas:x } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
   G.en = (v.e||[]).map(a=>({ x:a[0], y:a[1], r:a[2], hp:a[3], max:100, art:a[4], fl: a[5]&1 ? 0.1 : 0, burn: a[5]&2 ? 1 : 0, curse: a[5]&4 ? 1 : 0, frz: a[5]&8 ? 1 : 0, web: a[5]&16 ? 1 : 0, kind: a[6]===1 ? 'boss' : a[6]===2 ? 'elite' : '' }));
   G.gems = (v.g||[]).map(a=>({ x:a[0], y:a[1], big:!!a[2] }));
   G.loot = (v.l||[]).map(a=>({ x:a[0], y:a[1], k:a[2] }));
@@ -13438,7 +13465,7 @@ function svDraw(){
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
     const hw = 34, hp = Math.max(0, p.hp/p.maxHp); c.fillStyle = '#000a'; c.fillRect(p.x-hw/2, p.y+20, hw, 4); c.fillStyle = hp > 0.3 ? '#7ce07c' : '#ff5a5a'; c.fillRect(p.x-hw/2, p.y+20, hw*hp, 4);
-    if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : '친구', p.x, p.y+34); }
+    if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
   if(G.map) svDrawOverlap(c, G, cam);
   G.pr.forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
@@ -20020,7 +20047,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 543, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 544, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
