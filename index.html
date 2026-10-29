@@ -12962,7 +12962,7 @@ function svHostActs(v){ // (build 544) 방장: 친구들 행동(raidActs/<코드
   [1, 2, 3].forEach(s=>{ const a = v['p'+s]; if(!a) return;
     if(!G){ if(n.gl[s] !== a.ld){ n.gl[s] = a.ld; ch = true; } n.gs[s] = Array.isArray(a.sk) ? a.sk.filter(id=>SV_SK[id]) : null; return; }
     const i = n.ix && n.ix[s], p = i && G.players[i]; if(!p || (a.t||0) === p.actT) return; p.actT = a.t; p.lastAct = Date.now(); // 다른 친구가 보낸 때도 불리므로 보낸 시각으로 새것만
-    if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy];
+    if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy]; if(a.am) p.am = a.am==='f' ? 'face' : 'near'; p.fm = a.fm==='m' ? 'manual' : 'auto'; p.md = !!a.md; p.ma = Number.isFinite(a.ma) ? a.ma : null;
     if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
     if((a.u||0) > (p.ultSeq||0)){ p.ultSeq = a.u; svUlt(p); }
     if(a.pk && p.pick && a.pk.k === p.pick.map(svCardKey).join('|')) svDoPick(i, a.pk.i); });
@@ -13033,6 +13033,8 @@ function svStartRune(p){ return p && p.wp && p.wp[0] ? p.wp[0].id : ''; }
 function svFireMode(p){ return sv.pc && state.svFire==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'; }
 function svAimToggle(){ state.svAim = svAimMode()==='near' ? 'face' : 'near'; save(); svCtlFx('겨누기 — '+SV_AIM_NM[state.svAim]); }
 function svFireToggle(){ const G = sv && sv.game, me = G && G.players[G.me]; if(!sv.pc) return; if(!SV_MANUAL[svStartRune(me)]){ svCtlFx('이 시작 룬은 자동 공격만'); return; } state.svFire = state.svFire==='manual' ? 'auto' : 'manual'; save(); svCtlFx('쏘기 — '+SV_FIRE_NM[state.svFire]); }
+function svPAim(p){ const G = sv.game; return p===G.players[G.me] ? svAimMode() : (p.am || 'face'); } // (build 567) 친구 것도 — 친구가 보낸 조작(p.am·p.fm·p.ma·p.md)대로 방장이 쏨 · 예전 버전 친구는 바라보는 방향
+function svPFire(p){ const G = sv.game; return p===G.players[G.me] ? svFireMode(p) : (p.fm==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'); }
 function svCtlFx(s){ const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s, col:'#c9e2ff', sz:14, scr:1 }); }
 function svFlipFor(key, dx){ const f = ART_FACE[key]; return f==='L' ? dx > 0.2 : dx < -0.2; } // (build 489) 그림마다 원래 보는 쪽이 달라서(ART_FACE · 스콜 등은 왼쪽) — 가는 쪽을 보게 뒤집을지
 // (build 531) 스콜 조각 동작 — 사용자가 조각 맞추기 편집기(https://claude.ai/artifact/TaSk82hkJ6usUE5p7E85ts)에서 맞춘 자리 그대로 · 조각은 지우기·흐리게·먼 다리 어둡게까지 미리 구워 둠(assets/survival/body/skoll_*.webp)
@@ -13077,8 +13079,8 @@ function svDrawRig(c, L, p, a, t){ const R = SV_RIG[L], w = a.w, ph = a.ph, A = 
   for(const q of R.parts){ c.save(); c.translate(q.x, q.y + (ly[q.n]||0)); c.rotate(q.rot*Math.PI/180 + (r[q.n]||0)); c.drawImage(svRigTint(svRigImg(L, q.n), fl), -q.px, -q.py); c.restore(); }
   c.restore(); }
 function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조준이면 마우스 쪽 (컴퓨터)
-  const G = sv.game, me = p===G.players[G.me]; if(me && sv.curW && sv.curW===p.wp[0] && svFireMode(p)==='manual' && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); // 수동 = 시작 룬은 마우스 쪽
-  if(me && svAimMode()==='near'){ const e = svNear(p.x, p.y, 420, o=>o.kind!=='pod'); if(e) return Math.atan2(e.y - p.y, e.x - p.x); } return Math.atan2(p.face[1], p.face[0]); // 자동 = 가까운 적 (없으면 바라보는 쪽)
+  const G = sv.game, me = p===G.players[G.me]; if(sv.curW && sv.curW===p.wp[0] && svPFire(p)==='manual'){ if(me && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); if(!me && Number.isFinite(p.ma)) return p.ma; } // 수동 = 시작 룬은 마우스 쪽
+  if(svPAim(p)==='near'){ const e = svNear(p.x, p.y, 420, o=>o.kind!=='pod'); if(e) return Math.atan2(e.y - p.y, e.x - p.x); } return Math.atan2(p.face[1], p.face[0]); // 자동 = 가까운 적 (없으면 바라보는 쪽)
 }
 function svOath(){ return sv.game.players.some(q=>q.leader==='light_b'); } // 서약: 나와 친구 모두
 function svSpd(p){ return p.spd * (1 + 0.08*svPasLv(p, 'swift')) * (svOath() ? 1.12 : 1) * (p.spdB > 0 ? 1.3 : 1) * (svBless('spd') ? 1.2 : 1); }
@@ -13316,8 +13318,8 @@ function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? 2.2 : 1) * (1 + 0.12*svPas
 const SV_SPDW = { light_b_1:1, light_b_2:1 }; // 이동 속도가 피해에 들어가는 무기
 function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), rad: (52 + w.lv*3) * (1 + 0.12*svPasLv(p, 'area')) }; }
 function svAttack(p, w, dt){
-  { const G0 = sv.game; if(p===G0.players[G0.me]){ sv.curW = w; if(w===p.wp[0] && svFireMode(p)==='manual' && !sv.mDown){ w.cd = Math.max(0, w.cd - dt); return; } /* 수동 — 누를 때만 */
-      if(SV_DIRW[w.id] && svAimMode()==='near' && !(w===p.wp[0] && svFireMode(p)==='manual') && !svNear(p.x, p.y, 320, o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } else sv.curW = null; } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
+  { const G0 = sv.game, me = p===G0.players[G0.me], fm = svPFire(p); sv.curW = w; if(w===p.wp[0] && fm==='manual' && !(me ? sv.mDown : p.md)){ w.cd = Math.max(0, w.cd - dt); return; } /* 수동 — 누를 때만 */
+      if(SV_DIRW[w.id] && svPAim(p)==='near' && !(w===p.wp[0] && fm==='manual') && !svNear(p.x, p.y, 320, o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
   const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
   const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
   const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?2:1), col, c); };
@@ -13578,7 +13580,7 @@ function svHostSend(){
 function svGuestSend(){
   const fb = raidNet.fb; if(!sv || !fb || !sv.net.code || !sv.net.slot) return; const G = sv.game, p = G && G.players[G.me];
   const a = { ld: sv.leader, sk: svUnl().sk, t: Date.now(), u: sv.ultReq || 0 };
-  if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; }
+  if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; a.am = svAimMode()==='face' ? 'f' : 'n'; if(svFireMode(p)==='manual'){ a.fm = 'm'; a.md = sv.mDown ? 1 : 0; if(sv.mouse && sv.cam) a.ma = Math.round(Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x)*100)/100; } } // (build 567) 내 조작도 보냄
   fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), a).catch(()=>{}); // (build 544) 자리마다 따로
 }
 function svGuestApply(v){
@@ -20257,7 +20259,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 566, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 567, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
