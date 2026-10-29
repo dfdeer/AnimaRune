@@ -12473,7 +12473,7 @@ function svHas(kind, id){ return svUnl()[kind].includes(id); }
 // 그림 자리: assets/survival/<맵>_ground.webp (위에서 본 이음새 없는 바닥) · <맵>_ob1~4.webp (장애물) · <맵>_deco1~3.webp (장식) · <맵>_<기믹>.webp
 const SV_MW = 1800, SV_MH = 1800; // (build 488) 넓은 화면에서도 돌아다닐 맛이 나게 정사각형으로 키움 (전엔 1080×1800) // 맵 크기 (화면 3×3)
 const SV_MAPS = [
-  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'나무·바위가 길을 막음 · 치유의 샘 위에 서 있으면 회복' },
+  { id:'forest', nm:'속삭이는 숲', el:'wood', mid:'ancientTree', fin:'eldertree', col:['#2e5a2b','#3c6d34','#1f4220'], gim:'spring', ob:['나무','바위'], d:'가운데 고대 샘 — 같이 서 있으면 빨리 차고, 다 차면 모두 회복 · 개울은 다리로만 · 늪은 느려짐' },
   { id:'snow', nm:'얼어붙은 설원', el:'water', mid:'frostGiant', fin:'frostTyrant', col:['#b9d3e6','#d7e8f4','#93b5cf'], gim:'ice', ob:['얼음 기둥','눈 덮인 바위'], d:'얼음 바닥은 미끄러움 · 1분마다 눈보라 (시야가 좁아지고 느려짐)' },
   { id:'volcano', nm:'불타는 화산', el:'fire', mid:'lavaLord', fin:'infernoDrake', col:['#3a1e17','#4b261c','#271310'], gim:'lava', ob:['용암 바위','검은 돌기둥'], d:'용암 웅덩이는 밟으면 아픔 · 20초마다 분화 (빨간 원을 피하기)' },
   { id:'ruin', nm:'잊힌 유적', el:'light', mid:'ruinGuardian', fin:'dawnJudge', col:['#857653','#9a8a66','#6a5d42'], gim:'trap', ob:['무너진 기둥','석상'], d:'가시 함정이 차례로 솟음 (빛나면 비키기)' },
@@ -12485,7 +12485,52 @@ const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', fros
 let SV_STAGE_READY = 1; // (build 481) 사용자 결정 10/26: 일단 숲만 — 그림이 다 오면 이 숫자를 늘려 다음 단계를 엶 (2~5단계는 「준비 중」)
 function svStageOpen(i){ return i < SV_STAGE_READY && (i===0 || (state.svClear||[]).includes(i-1)); }
 function svRng(seed){ let a = seed >>> 0; return ()=>{ a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// (build 550) 숲 새 배치 — 사용자 10/29 「맵 되게 맘에 든다」: 설계도(https://claude.ai/artifact/KqY53aiDetFpZw9Kj9iYUh) 그대로 · 가운데 고대 샘 광장 · 북 고목 숲(좁은 길 셋) · 동 개울(다리 둘)과 꽃밭 · 서 바위 언덕 · 남 늪지 · 가장자리 나무 벽
+// 장애물 k: 0 나무 · 1 바위 · 2 버섯 그루터기 · 3 열매 덤불 · hid = 안 보이는 벽(개울) · 그림은 지금 있는 숲 조각 그대로 (나중에 큰 그림이 오면 바닥만 바꿈)
+const SV_FOREST = { paths:[ [[900,900],[900,520]], [[900,900],[1660,900]], [[900,900],[360,920]], [[900,900],[895,1150],[840,1350],[760,1560]], [[1180,580],[1240,450],[1335,300],[1600,300]] ],
+  pathW:[120, 120, 120, 110, 70], creek:[[1300,0],[1360,300],[1310,600],[1370,900],[1320,1200],[1380,1500],[1330,1800]], bridges:[300, 900],
+  swamps:[[520,1400,95],[860,1490,120],[1150,1380,90],[690,1650,95],[1040,1660,85]], lanes:[560, 900, 1180] };
+SV_FOREST.lanes.forEach(l=>{ const P = []; for(let y=90;y<=640;y+=30) P.push([l + Math.sin(y/90)*40, y]); SV_FOREST.paths.push(P); SV_FOREST.pathW.push(56); }); // (build 550) 고목 숲 오솔길 셋 — 그려야 길이 보임
+function svCreekX(y){ const C = SV_FOREST.creek; for(let i=1;i<C.length;i++) if(y <= C[i][1]){ const a = C[i-1], b = C[i], t = (y - a[1])/(b[1] - a[1]); return a[0] + (b[0] - a[0])*t; } return C[C.length-1][0]; }
+function svSegD(x, y, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0; return Math.hypot(x - a[0] - dx*t, y - a[1] - dy*t); }
+function svOnPath(x, y, pad){ return SV_FOREST.paths.some((P, k)=>{ for(let i=1;i<P.length;i++) if(svSegD(x, y, P[i-1], P[i]) < SV_FOREST.pathW[k]/2 + pad) return true; return false; }); }
+function svMakeForest(stage, seed){
+  const R = svRng(seed), ob = [], zones = [], deco = [], cx = 900, cy = 900, F = SV_FOREST;
+  const put = (x, y, k, r, o)=>{ ob.push(Object.assign({ x, y, r, k, fl: R() < 0.5, sc: 0.85 + R()*0.3 }, o||{})); };
+  const near = (x, y, r)=> ob.some(o=>!o.hid && Math.hypot(o.x-x, o.y-y) < o.r + r);
+  const okAt = (x, y, r, pad)=> Math.hypot(x-cx, y-cy) > 250 + r && !svOnPath(x, y, r + (pad||6)) && Math.abs(x - svCreekX(y)) > 60 + r && !near(x, y, r*0.8);
+  // 가장자리 나무 벽 (두 줄 · 지나갈 수 없음)
+  for(let a=0;a<=1800;a+=52){ [[a, 22 + R()*14], [a, 1778 - R()*14], [22 + R()*14, a], [1778 - R()*14, a]].forEach(([x, y])=>put(x, y, 0, 32 + R()*6, { wall:1 })); }
+  for(let a=40;a<=1760;a+=90){ [[a, 75 + R()*20], [a, 1725 - R()*20], [75 + R()*20, a], [1725 - R()*20, a]].forEach(([x, y])=>{ if(R() < 0.55 && !svOnPath(x, y, 30) && Math.abs(x - svCreekX(y)) > 70) put(x, y, R() < 0.8 ? 0 : 3, 22 + R()*8, { wall:1 }); }); }
+  // 개울 — 안 보이는 벽 (다리 자리만 비움)
+  for(let y=-20;y<=1820;y+=28){ if(F.bridges.some(b=>Math.abs(y - b) < 88)) continue; put(svCreekX(y), y, 0, 40, { hid:1 }); }
+  // 북 고목 숲 — 좁은 길 셋만 남기고 빽빽하게
+  for(let y=130;y<=600;y+=58) for(let x=150;x<=1250;x+=60){ const jx = x + (R()-0.5)*18, jy = y + (R()-0.5)*18; if(F.lanes.some(l=>Math.abs(jx - (l + Math.sin(jy/90)*40)) < 78)) continue; if(R() < 0.88 && okAt(jx, jy, 22, 0)) put(jx, jy, R() < 0.9 ? 0 : 2, 27 + R()*9); }
+  // 서 바위 언덕 — 바위 무더기
+  [[200,620],[380,700],[170,860],[230,1100],[440,1150],[470,1250],[140,1300],[330,1270]].forEach(([qx, qy])=>{ for(let k=0;k<5;k++){ const x = qx + (R()-0.5)*130, y = qy + (R()-0.5)*100, r = 16 + R()*16; if(okAt(x, y, r)) put(x, y, R() < 0.85 ? 1 : 3, r); } });
+  // 남 늪지 — 늪(느려짐) · 버섯 그루터기
+  F.swamps.forEach(([x, y, r])=>zones.push({ kind:'swamp', x, y, r, ph: R()*6 }));
+  for(let k=0;k<14;k++){ const x = 330 + R()*950, y = 1290 + R()*420, r = 18 + R()*10; if(okAt(x, y, r) && zones.every(z=>Math.hypot(z.x-x, z.y-y) > z.r + r)) put(x, y, R() < 0.6 ? 2 : 0, r); }
+  // 동 꽃밭 — 탁 트인 평지 · 덤불 조금
+  for(let k=0;k<7;k++){ const x = 1450 + R()*270, y = 520 + R()*860, r = 18 + R()*8; if(okAt(x, y, r)) put(x, y, 3, r); }
+  // 광장 둘레 — 길 사이에 덤불 (광장 테두리)
+  for(let k=0;k<8;k++){ const a = (k + 0.5)*Math.PI/4 + (R()-0.5)*0.2, x = cx + Math.cos(a)*275, y = cy + Math.sin(a)*275; if(!svOnPath(x, y, 24)) put(x, y, 3, 20 + R()*6); }
+  // 그 밖 빈 곳 — 나무·덤불 조금
+  for(let n=0, t=0; n<26 && t<500; t++){ const x = 120 + R()*1560, y = 620 + R()*640, r = 20 + R()*14; if(okAt(x, y, r, 20)){ put(x, y, R() < 0.6 ? 0 : 3, r); n++; } }
+  // 고대 샘 (가운데)
+  const well = { kind:'well', x:cx, y:cy, r:62, ch:0, cd:0 }; zones.push(well);
+  // 장식 — 북 고사리 · 동 꽃 · 남 버섯
+  const dec = (x, y, k)=>deco.push({ x, y, k, s: 0.6 + R()*0.7, fl: R() < 0.5 });
+  for(let k=0;k<70;k++) dec(1430 + R()*320, 480 + R()*960, 0);
+  for(let k=0;k<40;k++) dec(150 + R()*1100, 100 + R()*520, 2);
+  for(let k=0;k<35;k++) dec(320 + R()*960, 1280 + R()*440, 1);
+  for(let k=0;k<40;k++) dec(100 + R()*1600, 100 + R()*1600, Math.floor(R()*3));
+  // 상자 자리 — 북 길 끝 · 꽃밭 · 모서리 · 바위 언덕
+  const pods = []; F.lanes.forEach(l=>{ for(let k=0;k<3;k++) pods.push([l + Math.sin(150/90)*40 + (R()-0.5)*50, 140 + R()*60]); }); for(let k=0;k<8;k++) pods.push([1460 + R()*260, 540 + R()*820]); [[120,120],[1680,120],[120,1680],[1680,1680]].forEach(q=>pods.push(q)); for(let k=0;k<4;k++) pods.push([160 + R()*360, 640 + R()*620]);
+  return { stage, seed, ob, zones, deco, well, forest:1, podSpots: pods.filter(([x, y])=>!near(x, y, 16)) };
+}
 function svMakeMap(stage, seed){ // 같은 seed면 방장·친구 화면이 같은 맵
+  if(SV_MAPS[stage] && SV_MAPS[stage].id==='forest') return svMakeForest(stage, seed);
   const M = SV_MAPS[stage], R = svRng(seed), ob = [], zones = [], deco = [], cx = SV_MW/2, cy = SV_MH/2;
   const free = (x, y, r, pad)=> Math.hypot(x-cx, y-cy) > 140 + r && ob.every(o=>Math.hypot(o.x-x, o.y-y) > o.r + r + pad) && zones.every(z=>Math.hypot(z.x-x, z.y-y) > z.r + r + pad);
   // (build 489) 사용자 지적 10/26 「구조물이 똑같이 생겨 어색함」 — 무더기로 모아 놓기(나무 숲·바위 무더기·덤불 밭) · 좌우 뒤집기 · 크기 조금씩 다르게 · 혼자 선 것도 조금
@@ -12507,7 +12552,9 @@ function svMakeMap(stage, seed){ // 같은 seed면 방장·친구 화면이 같�
 function svInView(p, e, mx, my){ return Math.abs(e.x-p.x) < (mx||SV_W/2+30) && Math.abs(e.y-p.y) < (my||SV_H/2+30); }
 function svCollide(o, r){ // 장애물 · 맵 끝에서 밀어냄
   const map = sv.game.map; if(!map) return; r = r || 12;
-  map.ob.forEach(b=>{ const dx = o.x-b.x, dy = o.y-b.y, d = Math.hypot(dx, dy), m = b.r + r; if(d < m){ if(d < 0.01){ o.x += m; return; } o.x = b.x + dx/d*m; o.y = b.y + dy/d*m; } });
+  if(!map.og){ const g = map.og = {}; map.ob.forEach(b=>{ const k = Math.floor(b.x/150)+','+Math.floor(b.y/150); (g[k] || (g[k] = [])).push(b); }); } // (build 550) 장애물이 많아져서 근처 칸만 봄
+  const gi = Math.floor(o.x/150), gj = Math.floor(o.y/150), nb = []; for(let di=-1;di<=1;di++) for(let dj=-1;dj<=1;dj++){ const l = map.og[(gi+di)+','+(gj+dj)]; if(l) nb.push(...l); }
+  nb.forEach(b=>{ const dx = o.x-b.x, dy = o.y-b.y, d = Math.hypot(dx, dy), m = b.r + r; if(d < m){ if(d < 0.01){ o.x += m; return; } o.x = b.x + dx/d*m; o.y = b.y + dy/d*m; } });
   o.x = Math.max(r, Math.min(SV_MW-r, o.x)); o.y = Math.max(r, Math.min(SV_MH-r, o.y));
 }
 // (build 498) 길찾기 — 사용자 10/26 「장애물에 막혀 못 오는 애가 있음」: 곧장 오다 장애물에 밀리기만 해서 뭉친 장애물 사이에 갇혔음
@@ -12534,6 +12581,10 @@ function svTrapState(z, t){ const f = ((t + z.ph) % 6) / 6; return f > 0.85 ? 2 
 function svBlizzard(G){ return G.map && SV_MAPS[G.map.stage].gim==='ice' && (G.t % 60) > 40 && (G.t % 60) < 55; }
 function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
   const G = sv.game, map = G.map; if(!map) return; const M = SV_MAPS[map.stage], alive = G.players.filter(p=>!p.down);
+  { const W = map.well; if(W){ if(W.cd > 0) W.cd = Math.max(0, W.cd - dt); else { const n = alive.filter(p=>Math.hypot(p.x-W.x, p.y-W.y) < W.r).length; // (build 550) 고대 샘 — 서 있으면 충전 · 같이 서면 빨리 (혼자 20초 · 둘 12초 · 셋 9초 · 넷 7초) · 다 차면 모든 아군 체력 50% + 보호막 20% · 90초 뒤 다시
+    if(n) W.ch = Math.min(1, W.ch + dt/[0, 20, 12, 9, 7][Math.min(4, n)]); else W.ch = Math.max(0, W.ch - dt/40);
+    if(W.ch >= 1){ W.ch = 0; W.cd = 90; alive.forEach(p=>{ const h = Math.round(p.maxHp*0.5); p.hp = Math.min(p.maxHp, p.hp + h); p.shield = Math.max(p.shield, p.maxHp*0.2); svFx({ k:'num', x:p.x, y:p.y-24, t:0, d:0.9, s:'+'+h, col:'#7ce07c', sz:13 }); });
+      svFx({ k:'ring', x:W.x, y:W.y, t:0, d:0.9, col:'#7ae0ff', r:260 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.6, s:'고대 샘 — 모두 회복!', col:'#7ae0ff', sz:17, scr:1 }); try{ sfx('claim'); }catch(e){} } } } }
   if(M.gim==='spring') alive.forEach(p=>{ if(svZoneAt(p, 'spring') && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + 5*dt); });
   if(M.gim==='lava') alive.forEach(p=>{ if(svZoneAt(p, 'lava') && !(p.inv > 0.7)){ p.lavaT = (p.lavaT||0) + dt; if(p.lavaT > 0.5){ p.lavaT = 0; svHurt(p, 5*SV_STD[map.stage]); svFx({ k:'num', x:p.x, y:p.y-22, t:0, d:0.5, s:'용암', col:'#ff7a45', sz:10 }); } } });
   if(M.gim==='trap') map.zones.forEach(z=>{ if(z.kind!=='trap') return; const st = svTrapState(z, G.t); if(st===2 && !z.hit){ z.hit = true;
@@ -12679,12 +12730,34 @@ function svDrawGround(c, cam){ // (build 491) 바닥 — 화면 배율에 맞춰
   for(let i=i0;i<=i1;i++){ const x0 = Math.round(m.e + i*T*S), x1 = Math.round(m.e + (i+1)*T*S); for(let j=j0;j<=j1;j++){ const y0 = Math.round(m.f + j*T*S), y1 = Math.round(m.f + (j+1)*T*S); c.drawImage(sv.gTile, x0, y0, x1 - x0, y1 - y0); } }
   c.restore();
 }
+function svDrawForestGround(c, G, cam){ // (build 550) 숲 바닥 — 흙길 · 광장 · 늪 · 개울 · 다리 (그림 대신 그려서 · 큰 맵 그림이 오면 바꿈)
+  const F = SV_FOREST, line = (P)=>{ c.beginPath(); P.forEach((q, i)=>i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1])); };
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  F.paths.forEach((P, k)=>{ line(P); c.strokeStyle = '#6e5a3455'; c.lineWidth = F.pathW[k] + 18; c.stroke(); c.strokeStyle = '#b8955e'; c.lineWidth = F.pathW[k]; c.stroke(); c.strokeStyle = '#c9a874'; c.lineWidth = F.pathW[k]*0.55; c.stroke(); });
+  c.fillStyle = '#6e5a3455'; c.beginPath(); c.arc(900, 900, 252, 0, 6.283); c.fill(); c.fillStyle = '#c9a874'; c.beginPath(); c.arc(900, 900, 240, 0, 6.283); c.fill();
+  c.strokeStyle = '#a88a58'; c.lineWidth = 3; c.setLineDash([14, 10]); c.beginPath(); c.arc(900, 900, 200, 0, 6.283); c.stroke(); c.setLineDash([]);
+  F.swamps.forEach(([x, y, r], i)=>{ if(x + r < cam.x || x - r > cam.x + SV_W || y + r < cam.y || y - r > cam.y + SV_H) return; c.fillStyle = '#2f3d1a99'; c.beginPath(); c.ellipse(x, y, r*1.08, r*0.92, i, 0, 6.283); c.fill(); c.fillStyle = '#4a5e26'; c.beginPath(); c.ellipse(x, y, r, r*0.84, i, 0, 6.283); c.fill(); c.fillStyle = '#62782f'; c.beginPath(); c.ellipse(x - r*0.15, y - r*0.12, r*0.55, r*0.4, i, 0, 6.283); c.fill();
+    c.strokeStyle = '#8fa85a99'; c.lineWidth = 1.5; for(let k=0;k<3;k++){ const f = (G.t*0.5 + k/3 + i*0.37) % 1, a = k*2.1 + i, bx = x + Math.cos(a)*r*0.5, by = y + Math.sin(a)*r*0.4; c.globalAlpha = 1 - f; c.beginPath(); c.arc(bx, by, 2 + f*7, 0, 6.283); c.stroke(); } c.globalAlpha = 1; });
+  line(F.creek); c.strokeStyle = '#5b4a2a88'; c.lineWidth = 104; c.stroke(); c.strokeStyle = '#3d8fb8'; c.lineWidth = 86; c.stroke(); c.strokeStyle = '#5fb2db'; c.lineWidth = 64; c.stroke();
+  c.strokeStyle = '#d8f2ff88'; c.lineWidth = 3; c.setLineDash([18, 46]); c.lineDashOffset = -G.t*40; [-16, 6, 22].forEach(o=>{ c.save(); c.translate(o, 0); line(F.creek); c.stroke(); c.restore(); }); c.setLineDash([]); c.lineDashOffset = 0;
+  F.bridges.forEach(by=>{ const bx = svCreekX(by); c.fillStyle = '#00000044'; c.fillRect(bx - 74, by - 46, 152, 100); c.fillStyle = '#9a6a38'; c.fillRect(bx - 78, by - 52, 156, 100); c.strokeStyle = '#5c3a1a'; c.lineWidth = 3; for(let k=0;k<6;k++){ const yy = by - 52 + k*100/6; c.beginPath(); c.moveTo(bx - 78, yy); c.lineTo(bx + 78, yy); c.stroke(); } c.lineWidth = 5; c.strokeRect(bx - 78, by - 52, 156, 100); c.fillStyle = '#6e4622'; [-1, 1].forEach(s=>{ c.fillRect(bx - 82, by + s*50 - 4, 164, 8); }); });
+  c.restore(); }
+function svDrawWell(c, z, G){ // (build 550) 고대 샘 — 차는 만큼 둘레가 빛남 · 쓴 뒤엔 어두워지고 남은 초
+  const im = svImg('assets/survival/forest_spring.webp'), on = !(z.cd > 0); c.save();
+  c.fillStyle = '#7d6f58'; c.beginPath(); c.arc(z.x, z.y, z.r + 14, 0, 6.283); c.fill(); c.strokeStyle = '#5a4f3e'; c.lineWidth = 4; c.stroke();
+  for(let k=0;k<12;k++){ const a = k/12*6.283; c.fillStyle = k%2 ? '#968872' : '#a99a80'; c.beginPath(); c.arc(z.x + Math.cos(a)*(z.r + 7), z.y + Math.sin(a)*(z.r + 7), 7, 0, 6.283); c.fill(); }
+  if(!on) c.globalAlpha = 0.45; if(im.complete && im.naturalWidth) c.drawImage(im, z.x - z.r, z.y - z.r, z.r*2, z.r*2); else { c.fillStyle = '#7ae0ff'; c.beginPath(); c.arc(z.x, z.y, z.r, 0, 6.283); c.fill(); }
+  c.globalAlpha = 1;
+  if(on){ if(z.ch > 0){ c.drawImage(svGlow('#7ae0ff', 'aa'), z.x - z.r*1.6, z.y - z.r*1.6, z.r*3.2, z.r*3.2); c.strokeStyle = '#ffffff'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath(); c.arc(z.x, z.y, z.r + 22, -1.57, -1.57 + 6.283*z.ch); c.stroke(); }
+    else { c.strokeStyle = '#ffffff55'; c.lineWidth = 2; c.beginPath(); c.arc(z.x, z.y, z.r + 22 + 3*Math.sin(G.t*3), 0, 6.283); c.stroke(); } }
+  else { c.font = 'bold 16px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y); c.fillStyle = '#e8f6ff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y); }
+  c.restore(); }
 function svDrawMap(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage], vis = o=>o.x > cam.x - 80 && o.x < cam.x + SV_W + 80 && o.y > cam.y - 80 && o.y < cam.y + SV_H + 80;
   svGroundPat(c, map); svDrawGround(c, cam);
-  c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); // 맵 끝
+  if(map.forest) svDrawForestGround(c, G, cam); else { c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); } // 맵 끝 (숲은 나무 벽)
   map.deco.forEach(d=>{ if(!vis(d)) return; const im = svImg('assets/survival/'+M.id+'_deco'+(d.k+1)+'.webp'); if(im.complete && im.naturalWidth){ const s = 26*d.s; if(d.fl){ c.save(); c.translate(d.x, 0); c.scale(-1, 1); c.drawImage(im, -s/2, d.y-s/2, s, s); c.restore(); } else c.drawImage(im, d.x-s/2, d.y-s/2, s, s); } else if(!sv.patImg){ c.fillStyle = M.col[2]+'aa'; c.beginPath(); c.arc(d.x, d.y, 3*d.s, 0, 6.283); c.fill(); } }); // 바닥 그림이 오면 임시 점은 안 그림
-  map.zones.forEach(z=>{ if(!vis(z)) return; const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
+  map.zones.forEach(z=>{ if(!vis(z) || z.kind==='swamp') return; if(z.kind==='well'){ svDrawWell(c, z, G); return; } const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
     if(z.kind==='trap'){ const st = svTrapState(z, G.t); if(has) c.drawImage(im, z.x-z.r, z.y-z.r, z.r*2, z.r*2); else { c.fillStyle = '#4a4033'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); c.strokeStyle = '#2b2419'; c.lineWidth = 2; c.strokeRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
       if(st >= 1){ c.fillStyle = st===2 ? '#ffd04acc' : '#ff6a6a55'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
       if(st===2){ c.fillStyle = '#e8e2d0'; for(let i=0;i<3;i++) for(let j=0;j<3;j++){ const px = z.x - z.r + 10 + i*20, py = z.y - z.r + 10 + j*20; c.beginPath(); c.moveTo(px-6, py+6); c.lineTo(px, py-8); c.lineTo(px+6, py+6); c.fill(); } } }
@@ -12698,7 +12771,7 @@ function svDrawMap(c, G, cam){
 }
 function svDrawObstacles(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage];
-  map.ob.forEach(b=>{ if(b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
+  map.ob.forEach(b=>{ if(b.hid || b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
     const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); c.save();
     { const has = im.complete && im.naturalWidth, rx = b.r*(has ? SV_OBSH[b.k] : 1), ry = rx*0.32, cy = b.y + b.r*0.55 - ry*0.55; // 밑동 바로 밑에 붙는 부드러운 그림자 (전엔 그림 아래로 삐져나와 떠 보였음)
       if(!sv.obShC){ const oc = document.createElement('canvas'); oc.width = oc.height = 64; const x = oc.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, '#0000004d'); g.addColorStop(0.65, '#00000026'); g.addColorStop(1, '#00000000'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); sv.obShC = oc; } // (build 493) 미리 그린 그림자 (전엔 장애물마다 매 프레임 그라디언트)
@@ -12711,15 +12784,19 @@ function svDrawObstacles(c, G, cam){
 }
 function svDrawOverlap(c, G, cam){ // 내 정령이 장애물 뒤(위쪽)에 있으면 장애물을 반투명하게 다시 그려 가려지는 느낌
   const map = G.map, M = SV_MAPS[map.stage];
-  map.ob.forEach(b=>{ const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); if(!(im.complete && im.naturalWidth)) return; const s = b.r*SV_OBS[b.k]*(b.sc||1), top = b.y + b.r*0.55 - s;
+  map.ob.forEach(b=>{ if(b.hid) return; const im = svImg('assets/survival/'+M.id+'_ob'+(b.k+1)+'.webp'); if(!(im.complete && im.naturalWidth)) return; const s = b.r*SV_OBS[b.k]*(b.sc||1), top = b.y + b.r*0.55 - s;
     if(!G.players.some(p=>Math.abs(p.x-b.x) < s*0.42 && p.y < b.y && p.y + 14 > top)) return;
     c.save(); c.globalAlpha = 0.55; c.translate(b.x, 0); if(b.fl) c.scale(-1, 1); c.drawImage(im, -s/2, top, s, s); c.restore(); });
 }
 function svMiniBase(map){ // 작은 지도 바탕 — 맵마다 한 번만 그려 둠 (바닥색 · 장애물 · 기믹 자리)
   if(sv.miniFor === map) return sv.miniC; const M = SV_MAPS[map.stage], W = 128, H = Math.round(W*SV_MH/SV_MW), k = W/SV_MW, oc = document.createElement('canvas'); oc.width = W; oc.height = H; const x = oc.getContext('2d');
   const g = x.createRadialGradient(W/2, H/2, 10, W/2, H/2, H*0.7); g.addColorStop(0, M.col[1]); g.addColorStop(1, M.col[2]); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  map.zones.forEach(z=>{ x.fillStyle = { spring:'#7ae0ffcc', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
-  map.ob.forEach(o=>{ x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
+  if(map.forest){ const F = SV_FOREST, ln = P=>{ x.beginPath(); P.forEach((q, i)=>i ? x.lineTo(q[0]*k, q[1]*k) : x.moveTo(q[0]*k, q[1]*k)); }; x.lineCap = 'round'; x.lineJoin = 'round'; // (build 550) 숲 — 길 · 광장 · 개울 · 다리
+    F.paths.forEach((P, i)=>{ ln(P); x.strokeStyle = '#c9a874'; x.lineWidth = F.pathW[i]*k; x.stroke(); }); x.fillStyle = '#c9a874'; x.beginPath(); x.arc(900*k, 900*k, 240*k, 0, 6.283); x.fill();
+    ln(F.creek); x.strokeStyle = '#5fb2db'; x.lineWidth = 70*k; x.stroke(); F.bridges.forEach(by=>{ x.fillStyle = '#9a6a38'; x.fillRect((svCreekX(by) - 78)*k, (by - 52)*k, 156*k, 100*k); });
+    F.swamps.forEach(([sx, sy, r])=>{ x.fillStyle = '#4a5e26'; x.beginPath(); x.arc(sx*k, sy*k, r*k, 0, 6.283); x.fill(); }); }
+  map.zones.forEach(z=>{ if(z.kind==='swamp') return; x.fillStyle = { spring:'#7ae0ffcc', well:'#7ae0ff', ice:'#e8f6ff99', lava:'#ff6a2acc', trap:'#ffd04a88', portal:'#c9a6ffcc' }[z.kind] || '#fff8'; x.beginPath(); x.arc(z.x*k, z.y*k, Math.max(2, z.r*k), 0, 6.283); x.fill(); });
+  map.ob.forEach(o=>{ if(o.hid) return; x.fillStyle = '#00000059'; x.beginPath(); x.arc(o.x*k, o.y*k + 1, Math.max(1.6, o.r*k*1.1), 0, 6.283); x.fill(); x.fillStyle = M.col[2]; x.beginPath(); x.arc(o.x*k, o.y*k, Math.max(1.4, o.r*k), 0, 6.283); x.fill(); });
   sv.miniFor = map; sv.miniC = oc; return oc;
 }
 function svDrawMini(c, G, cam){ // 왼쪽 위 작은 지도 — 둥근 틀 · 실제 맵 모양 · 내 위치 · 보스 · 룬 · 상자
@@ -13035,7 +13112,7 @@ function svInput(dt){
   if(sv.joy){ const dx = sv.joy.c.x - sv.joy.o.x, dy = sv.joy.c.y - sv.joy.o.y, d = Math.hypot(dx, dy); if(d > 4){ const k = Math.min(1, d/40); vx = dx/d*k; vy = dy/d*k; } }
   if(sv.keys){ const kx = (sv.keys.r ? 1 : 0) - (sv.keys.l ? 1 : 0), ky = (sv.keys.d ? 1 : 0) - (sv.keys.u ? 1 : 0); if(kx || ky){ const d = Math.hypot(kx, ky); vx = kx/d; vy = ky/d; } } // 키보드
   const stop = p.down || G.pickWait || G.paused; if(stop) vx = vy = 0;
-  const sp = svSpd(p) * (svBlizzard(G) ? 0.85 : 1);
+  const sp = svSpd(p) * (svBlizzard(G) ? 0.85 : 1) * (G.map && G.map.forest && svZoneAt(p, 'swamp') ? 0.6 : 1); // (build 550) 늪은 느려짐
   if(!stop && G.map && svZoneAt(p, 'ice')){ const k = Math.min(1, dt*2.2); p.vx = (p.vx||0) + (vx*sp - (p.vx||0))*k; p.vy = (p.vy||0) + (vy*sp - (p.vy||0))*k; } // 얼음: 미끄러짐
   else { p.vx = vx*sp; p.vy = vy*sp; }
   p.x += p.vx*dt; p.y += p.vy*dt; svCollide(p, 12);
@@ -13055,9 +13132,10 @@ function svDoPick(pi, idx){
   svApplyPick(p, p.pick[idx]); p.pick = null; svPickDone(G);
 }
 function svPickDone(G){ if(G.players.every(q=>!q.pick)){ G.pickWait = false; G.pickGift = 0; if(G.xp >= G.xpNext) svLevelUp(); } }
+function svBlockedAt(x, y){ const map = sv.game.map; if(!map) return false; const b = svFlowBlk(map), i = Math.floor(x/SV_FG), j = Math.floor(y/SV_FG); return i < 0 || j < 0 || i >= map.fw || j >= map.fh || !!b[j*map.fw + i]; } // (build 550) 나무 벽·개울 안에선 안 나오게
 function svSpawnPos(tp){ // 살아 있는 사람 하나의 화면 바로 밖 (맵 안에서) · (build 544) 사람을 돌아가며 — 여럿이면 몹이 나오는 곳도 사람 수만큼 갈라짐
   const G = sv.game, alive = G.players.filter(q=>!q.down); tp = tp || (alive.length ? alive[(G.spRR = (G.spRR||0) + 1) % alive.length] : G.players[0]); let best = null;
-  for(let t=0;t<8;t++){ const a = Math.random()*6.283, x = tp.x + Math.cos(a)*(SV_W/2 + 60), y = tp.y + Math.sin(a)*(SV_H/2 + 80); /* 화면 바로 밖 (넓은 화면이면 옆으로 더 멀리) */ if(x > 10 && x < SV_MW-10 && y > 10 && y < SV_MH-10){ best = { x, y }; break; } }
+  for(let t=0;t<14;t++){ const a = Math.random()*6.283, x = tp.x + Math.cos(a)*(SV_W/2 + 60), y = tp.y + Math.sin(a)*(SV_H/2 + 80); /* 화면 바로 밖 (넓은 화면이면 옆으로 더 멀리) */ if(x > 10 && x < SV_MW-10 && y > 10 && y < SV_MH-10 && !svBlockedAt(x, y)){ best = { x, y }; break; } }
   return best || { x: Math.max(10, Math.min(SV_MW-10, tp.x + (Math.random()<0.5 ? -1 : 1)*(SV_W/2 + 60))), y: Math.max(10, Math.min(SV_MH-10, tp.y + (Math.random()<0.5 ? -1 : 1)*(SV_H/2 + 80))) };
 }
 function svFreeSpot(){ const map = sv.game.map; for(let t=0;t<30;t++){ const x = 40 + Math.random()*(SV_MW-80), y = 40 + Math.random()*(SV_MH-80); if(!map || (map.ob.every(b=>Math.hypot(b.x-x, b.y-y) > b.r + 20) && map.zones.every(z=>Math.hypot(z.x-x, z.y-y) > z.r + 10))) return { x, y }; } return { x: SV_MW/2, y: SV_MH/2 }; }
@@ -13199,7 +13277,7 @@ function svTick(dt){
     for(let j=0;j<m;j++){ const o = svSpawnPos(alive[j]); for(let k=0;k<sz;k++){ const a = Math.random()*6.283, d = Math.random()*34; svSpawn(G.t > 120 && k%3===0 ? 'fast' : 'normal', { x: Math.max(10, Math.min(SV_MW-10, o.x + Math.cos(a)*d)), y: Math.max(10, Math.min(SV_MH-10, o.y + Math.sin(a)*d)) }); } }
     if(m) svFx({ k:'text', x:SV_W/2, y:110, t:0, d:1.3, s:'적 무리 — '+m+'곳', col:'#ff9a6a', sz:13, scr:1, uy:1 }); } }
   G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; { const al = G.players.filter(q=>!q.down); for(let j=0;j<C.elite;j++) svSpawn('elite', al.length ? svSpawnPos(al[j % al.length]) : null); } svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장 — 잡으면 정령의 선물', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
-  G.podT -= dt; if(G.podT <= 0){ G.podT = 12; if(G.en.filter(o=>o.kind==='pod').length < 6){ const f = svFreeSpot(), hp = 40 * (1 + G.t/120); G.en.push({ x: f.x, y: f.y, r:13, spd:0, hp, max:hp, dmg:0, xp:0, kind:'pod', art:'assets/survival/pod.webp', mob:'assets/survival/pod.webp', fl:0 }); } } // (build 489) 상자는 때려서 부숨 (사용자 10/26) · 맵 곳곳
+  G.podT -= dt; if(G.podT <= 0){ G.podT = 12; if(G.en.filter(o=>o.kind==='pod').length < 6){ const sp = G.map && G.map.podSpots, fs = sp && sp.filter(q=>!G.en.some(o=>o.kind==='pod' && Math.hypot(o.x-q[0], o.y-q[1]) < 40)), f = fs && fs.length ? (q=>({ x:q[0], y:q[1] }))(svRand(fs)) : svFreeSpot(), hp = 40 * (1 + G.t/120); G.en.push({ x: f.x, y: f.y, r:13, spd:0, hp, max:hp, dmg:0, xp:0, kind:'pod', art:'assets/survival/pod.webp', mob:'assets/survival/pod.webp', fl:0 }); } } // (build 489) 상자는 때려서 부숨 (사용자 10/26) · 맵 곳곳
   svMapTick(dt);
   if(!G.mid && G.t >= SV_T_MID){ G.mid = true; svSpawnBoss(SV_MAPS[G.stage||0].mid, false); }
   if(!G.end && G.t >= SV_T_END){ G.end = true; svSpawnBoss(SV_MAPS[G.stage||0].fin, true); }
@@ -13209,7 +13287,7 @@ function svTick(dt){
     if(e.sqT > 0) e.sqT -= dt; if(e.kvx || e.kvy){ e.x += e.kvx*dt; e.y += e.kvy*dt; const dm = Math.exp(-14*dt); e.kvx *= dm; e.kvy *= dm; if(Math.abs(e.kvx) + Math.abs(e.kvy) < 6) e.kvx = e.kvy = 0; svCollide(e, e.r); } // (build 502) 물결에 밀려남
     if(e.frz>0){ e.frz -= dt; return; } if(e.root>0){ e.root -= dt; return; } // (build 504) 거미줄 덫에 묶임
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
-    const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1);
+    const dx = tg.x-e.x, dy = tg.y-e.y, d = Math.hypot(dx, dy)||1, sp = e.spd * (e.web>0 ? 0.3 : e.slow>0 ? 0.55 : 1) * (G.map.forest && e.kind!=='boss' && svZoneAt(e, 'swamp') ? 0.6 : 1);
     if(d > Math.max(700, SV_W/2 + 260, SV_H/2 + 260) && e.kind!=='boss' && e.kind!=='pod'){ const q = svSpawnPos(); e.x = q.x; e.y = q.y; return; } // 너무 멀어진 적은 다시 곁으로
     if(dx < -2) e.lf = 1; else if(dx > 2) e.lf = 0; // 바라보는 쪽
     let mx = dx/d, my = dy/d; if(G.map && e.kind!=='boss'){ e.losT = (e.losT||0) - dt; if(e.losT <= 0){ e.losT = 0.25 + Math.random()*0.1; e.los = svLos(G, e.x, e.y, tg.x, tg.y); } if(!e.los){ const v = svFlowDir(G, e.x, e.y); if(v){ mx = v[0]; my = v[1]; } } } // (build 498) 앞이 막히면 길찾기로 돌아옴
@@ -13358,7 +13436,7 @@ function svNetStart(){
 function svHostSend(){
   const G = sv.game, fb = raidNet.fb, n = sv.net; if(!fb || !n.code) return;
   const R = Math.round;
-  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
+  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, wl: G.map && G.map.well ? [Math.round(G.map.well.ch*100), Math.ceil(G.map.well.cd)] : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
     p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo ? 1 : 0]), ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0 })),
     e: G.en.slice(0, G.players.length >= 3 ? 150 : 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
     g: G.gems.slice(0, 150).map(g=>[R(g.x), R(g.y), g.big ? 1 : 0]),
@@ -13376,7 +13454,7 @@ function svGuestSend(){
   fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), a).catch(()=>{}); // (build 544) 자리마다 따로
 }
 function svGuestApply(v){
-  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk; G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
+  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk; if(v.wl && G.map && G.map.well){ G.map.well.ch = v.wl[0]/100; G.map.well.cd = v.wl[1]; } G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
   (v.p||[]).forEach((q,i)=>{ const p = G.players[i] || (G.players[i] = svNewPlayer(i, q.ld));
     if(i!==G.me || q.d){ p.tx = q.x; p.ty = q.y; if(Math.hypot((p.x||0)-q.x, (p.y||0)-q.y) > 80){ p.x = q.x; p.y = q.y; } }
     p.leader = q.ld || p.leader; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {};
@@ -20050,7 +20128,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 549, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 550, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
