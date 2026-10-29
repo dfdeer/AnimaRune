@@ -13115,7 +13115,10 @@ function svAttack(p, w, dt){
   else if(id==='wood_b_1'){ // (build 504) 아난시 — 지나간 자리에 거미줄 덫 · 밟은 적은 묶였다가 0.5초 뒤 독으로 터짐 (사용자 10/26)
     const mx = 2 + Math.floor(lv/2) + (ev ? 2 : 0), my = G.pools.filter(o=>o.trap && o.p === p && o.trig < 0); if(my.length >= mx) my[0].t = my[0].d;
     G.pools.push({ x:Math.round(p.x), y:Math.round(p.y), R:18*ar, t:0, d:9, trap:1, trig:-1, ev: ev ? 1 : 0, dps:0, br:(40 + lv*5)*ar*(ev ? 1.4 : 1), bd:26*m, col:'#8ce65a', p }); }
-  else if(id==='wood_b_2'){ const e = svDense(p, 230); if(!e){ w.cd = 0.4; return; } G.pools.push({ x:e.x, y:e.y, R:(46 + lv*6)*ar*(ev ? 1.2 : 1), t:0, d:4, dps:5*m, web:true, wev: ev ? 1 : 0, col:'#d8e8c8', p }); }
+  else if(id==='wood_b_2'){ const e = svDense(p, 230); if(!e){ w.cd = 0.4; return; } // (build 542) 하얀 거미줄 덩어리를 쏴서 떨어진 자리에 그물 — 날아가는 동안 적이 다가올 곳을 예상해서 (사용자 10/29)
+    const sp = 420, es = (e.frz > 0 || e.root > 0) ? 0 : (e.spd||0)*(e.web > 0 ? 0.3 : e.slow > 0 ? 0.55 : 1); let tx = e.x, ty = e.y;
+    for(let k=0; k<2; k++){ const T = Math.hypot(tx - p.x, ty - p.y)/sp, dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy)||1, mv = Math.min(es*T, Math.max(0, d - (e.r||0) - 8)); tx = e.x + dx/d*mv; ty = e.y + dy/d*mv; }
+    G.pr.push({ x:p.x, y:p.y, tx, ty, sp, kind:'boom', web:{ R:(46 + lv*6)*ar*(ev ? 1.2 : 1), d:4, dps:5*m, wev: ev ? 1 : 0 }, col:'#f4f8ff', R:0, dmg:0, p }); }
   else if(id==='light_a_1'){ let al = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 260).sort(()=>Math.random()-0.5).slice(0, 2 + lv); if(!al.length){ w.cd = 0.3; return; } // (build 504) 광명 — 적 자리에 문양 → 빛의 창이 꽂힘 (대상마다 조금씩 늦게) (사용자 10/26)
     al.forEach((e, i)=>{ const x = Math.round(e.x), y = Math.round(e.y), dl = i*SV_LS.STAG; svFx({ k:'spear', x, y, dl, sd:1 + Math.floor(Math.random()*9999), t:0, d:dl + SV_LS.SIG + SV_LS.FALL + SV_LS.STUCK + SV_LS.FADE + 0.05 }); (G.later = G.later || []).push({ t:dl + SV_LS.SIG + SV_LS.FALL, f:()=>{ G.en.forEach(o=>{ if(o.hp>0 && Math.hypot(o.x-x, o.y-y) < 22*ar + o.r) hit(o, 18*m); }); } }); });
     G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < (ev ? 210 : 140)){ const h = (4 + 2*lv)*(ev ? 2 : 1); /* (build 509) 진화 회복 ×2 · 범위 ×1.5 (짝: 재생 이끼) */ q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
@@ -13183,7 +13186,7 @@ function svTick(dt){
   G.pr.forEach(b=>{
     if(b.kind==='ebul'){ b.x += b.vx*dt; b.y += b.vy*dt; b.t += dt; if(b.t > 6){ b.done = true; return; }
       G.players.forEach(p=>{ if(!b.done && !p.down && p.inv <= 0 && Math.hypot(p.x-b.x, p.y-b.y) < 12){ svHurt(p, b.dmg); p.inv = 0.4; b.done = true; } }); return; }
-    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; svFx({ k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
+    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; if(b.web){ G.pools.push({ x:b.tx, y:b.ty, R:b.web.R, t:0, d:b.web.d, dps:b.web.dps, web:true, wev:b.web.wev, col:'#d8e8c8', p:b.p }); svFx({ k:'ring', x:b.tx, y:b.ty, t:0, d:0.35, col:'#ffffff', r:b.web.R*0.8 }); return; } svFx({ k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
     if(b.kind==='spark' || b.kind==='wave'){ b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if(b.life <= 0){ b.done = true; return; }
       const wv = b.kind==='wave', sp = Math.hypot(b.vx, b.vy)||1, ux = b.vx/sp, uy = b.vy/sp;
       G.en.forEach(e=>{ if(b.done || e.hp<=0 || b.hitS.includes(e)) return;
@@ -20005,7 +20008,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 541, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 542, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
