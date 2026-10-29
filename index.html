@@ -12771,16 +12771,16 @@ function svLobby(msg){
   const sk1 = V+'_1', sk2 = V+'_2', P = SV_PAS[SV_SK[sk1].pair], skv = sv.skView;
   sv.el.innerHTML = '<div class="sv-top"><button class="sv-btn" data-sv="exit">← 나가기</button><b>'+uiIc('duel')+' 정령 서바이벌 <small>시험판</small></b><span class="sv-best">최고 '+svFmtT(state.svBest||0)+' · '+uiIc('gold')+(state.svGold||0)+'</span></div>'
     + '<div class="sv-lob">'+svStageHtml()
-    + '<div class="sv-ltl">대표 정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 고유 기술 · 패시브 · 궁극기</small></div>'
+    + '<div class="sv-ltl">정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 고유 기술 · 정령 패시브 · 궁극기</small></div>'
     + '<div class="sv-lead">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button class="sv-lc'+(l===L?' on':'')+(l===V && l!==L?' vw':'')+(op?'':' lock')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+(op ? SPIRITS[svKey(l,4)].name : uiIc('lock'))+'</b></button>'; }).join('')+'</div>'
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
       + (()=>{ const B = svBase(V); return '<small class="sv-bs">체력 <u>'+B.hp+'</u> · 공격력 <u>'+B.atk+'</u> · 방어력 <u>'+B.def+'</u> · 이동 속도 <u>'+B.spd+'</u></small>'; })() // (build 543) 능력치
-      + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
+      + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">정령 패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
       + '<small><img src="'+svSkIc(sk1)+'" alt="">고유 기술 · '+svSkNm(sk1)+' — '+svSkDesc(sk1, 0, 1)+(svEvoSeen(sk1) ? ' (진화 짝 '+svPI(SV_SK[sk1].pair)+P.nm+' → '+SV_SK[sk1].ev+')' : ' (진화 짝 ?)')+'</small>'
       + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svUltNm(V)+' — '+SV_ULT[V]+'</small></div></div>' // (build 529) 판 안에서 자라는 모습 줄은 뺌 — 외형 고정
     + '<div class="sv-ltl">룬 <em>'+u.sk.length+'/20</em> <small>정령의 힘이 새겨진 돌 · 레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
-    + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 진화 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '대표 정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
+    + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+(svEvoSeen(skv) ? ' · 진화 짝 '+svPI(SV_SK[skv].pair)+SV_PAS[SV_SK[skv].pair].nm+' → '+SV_SK[skv].ev : ' · 진화 짝 ?') : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
     + '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(고유 기술 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬·기술 Lv5 + 짝 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>'
     + (n.code ? '<div class="sv-room"><div>방 코드</div><b>'+n.code+'</b><div class="sv-mem">'+svMemHtml()+'</div><small>'+(n.role==='host' ? (svCnt() > 1 ? uiIc('check')+' '+svCnt()+'명 — 시작!' : '친구에게 코드를 알려 줘 · 최대 4명') : '방장이 시작하길 기다리는 중…')+'</small></div>' : '')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
@@ -13182,7 +13182,7 @@ function svCheckUnl(){ // 판 안에서 조건을 채우면 바로 해금 (내 �
   let got = false;
   SV_UNL.forEach(x=>{ const kind = x.ld ? 'ld' : 'sk', id = x.ld || x.sk; if(u[kind].includes(id) || !x.ok(c)) return;
     u[kind].push(id); if(kind==='ld' && !u.sk.includes(id+'_1')) u.sk.push(id+'_1'); got = true;
-    const nm = kind==='ld' ? '대표 정령 '+SPIRITS[svKey(id,4)].name : svSkNm(id)+' 룬'; (G.newUnl = G.newUnl || []).push(nm);
+    const nm = kind==='ld' ? '정령 '+SPIRITS[svKey(id,4)].name : svSkNm(id)+' 룬'; (G.newUnl = G.newUnl || []).push(nm);
     if(G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:130 + (G.newUnl.length % 3)*26, uy:1, t:0, d:2.4, s:'해금 — '+nm, col:'#ffe08a', sz:15, scr:1 }); try{ sfx('claim'); }catch(e){} });
   if(got) save();
 }
@@ -13330,7 +13330,7 @@ function svShowEnd(){
     + '<div class="sv-ew">'+(me ? me.wp.map(w=>svWIc(me, w)).join('') : '')+'</div>'
     + (nu.length ? '<div class="sv-enu"><b>'+uiIc('unlock')+' 새로 해금</b>'+nu.map(s=>'<span>'+s+'</span>').join('')+'</div>' : '')
     + '<small>최고 '+svFmtT(state.svBest||0)+'</small>'
-    + '<div class="sv-erow">'+(sv.net.role==='solo' ? '<button class="sv-btn" data-sv="again">다시</button><button class="sv-btn" data-sv="lobby">대표 정령 바꾸기</button>' : '')+'<button class="sv-btn" data-sv="out">나가기</button></div></div>';
+    + '<div class="sv-erow">'+(sv.net.role==='solo' ? '<button class="sv-btn" data-sv="again">다시</button><button class="sv-btn" data-sv="lobby">정령 바꾸기</button>' : '')+'<button class="sv-btn" data-sv="out">나가기</button></div></div>';
   box.classList.add('on');
   const reset = ()=>{ cancelAnimationFrame(sv.raf); window.removeEventListener('resize', sv.fit); sv.game = null; sv.cv = null; };
   const a = box.querySelector('[data-sv="again"]'); if(a) a.addEventListener('click', ()=>{ reset(); svStart('solo'); });
@@ -20047,7 +20047,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 546, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 547, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
