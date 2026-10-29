@@ -12447,6 +12447,7 @@ function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 
   const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather'].forEach(n=>svImg(b+n+'.webp'));
   if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
+  Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); // (build 531) 조각 동작 그림
   Object.values(sv.imgs).forEach(im=>{ if(im.decode) im.decode().catch(()=>{}); }); }
 function svRand(a){ return a[Math.floor(Math.random()*a.length)]; }
 function svFmtT(s){ s = Math.floor(s||0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
@@ -12824,6 +12825,36 @@ function svNewPlayer(i, leader, unl){ return { i, leader, unl: unl || [], x: SV_
 function svPasLv(p, k){ return p.ps[k] || 0; }
 function svAimToggle(){ state.svAim = state.svAim==='mouse' ? 'move' : 'mouse'; save(); const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s:'조준 — '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'), col:'#c9e2ff', sz:14, scr:1 }); }
 function svFlipFor(key, dx){ const f = ART_FACE[key]; return f==='L' ? dx > 0.2 : dx < -0.2; } // (build 489) 그림마다 원래 보는 쪽이 달라서(ART_FACE · 스콜 등은 왼쪽) — 가는 쪽을 보게 뒤집을지
+// (build 531) 스콜 조각 동작 — 사용자가 조각 맞추기 편집기(https://claude.ai/artifact/TaSk82hkJ6usUE5p7E85ts)에서 맞춘 자리 그대로 · 조각은 지우기·흐리게·먼 다리 어둡게까지 미리 구워 둠(assets/survival/body/skoll_*.webp)
+// x·y = 관절 점 자리(몸통 그림 기준) · px·py = 조각 그림 안 관절 점 · rot = 기본 기울기(도) · role = 걷기 짝(NH 가까운 뒷다리 · FH 먼 뒷다리 · NF 가까운 앞다리 · FF 먼 앞다리) · 그리는 순서 = 배열 순서
+// cx·foot = 몸 가운데·발바닥 높이 · k = 판 안 크기 배율(40px 남짓) · amp = 다리 가동 범위(도) · bob = 걸을 때 통통 튀는 높이
+const SV_RIG = { fire_a: { cx:72, foot:278, k:0.088, amp:12, bob:4, parts:[
+  { n:'tail', x:30, y:80, px:193, py:181, rot:0 },
+  { n:'legB', x:100, y:118, px:66.5, py:51, rot:-4, role:'FH' },
+  { n:'legC', x:194, y:117, px:41, py:29.5, rot:3, role:'FF' },
+  { n:'body', x:0, y:0, px:0.5, py:0.5, rot:0 },
+  { n:'legA', x:54, y:109, px:84, py:27, rot:-1, role:'NH' },
+  { n:'legD', x:154, y:121, px:43, py:22, rot:5, role:'NF' },
+  { n:'head', x:220, y:35, px:153.5, py:221, rot:0 },
+] } };
+function svRigImg(L, n){ return svImg('assets/survival/body/'+({ fire_a:'skoll' })[L]+'_'+n+'.webp'); }
+function svRigReady(L){ return SV_RIG[L].parts.every(q=>{ const im = svRigImg(L, q.n); return im.complete && im.naturalWidth; }); }
+function svRigAnim(i, p, t, dir){ const A = sv.pa || (sv.pa = []), a = A[i] || (A[i] = { t, x:p.x, y:p.y, ph:0, w:0, hit:0, hp:p.hp, f:1 });
+  const dt = Math.min(0.05, Math.max(0, t - a.t)), mv = !p.down && (p.mv || Math.hypot(p.x - a.x, p.y - a.y) > 0.3); a.t = t; a.x = p.x; a.y = p.y; // 친구는 mv가 안 와서 움직인 거리로
+  if(p.hp < a.hp - 0.5) a.hit = 0.3; a.hp = p.hp; a.hit = Math.max(0, a.hit - dt);
+  a.w += ((mv ? 1 : 0) - a.w)*Math.min(1, dt*8); if(a.w > 0.02) a.ph += dt*9;
+  if(Math.abs(dir) > 0.2) a.f = dir < 0 ? -1 : 1; // 그림은 오른쪽을 봄 · 위아래로만 움직이면 보던 쪽 그대로
+  return a; }
+function svDrawRig(c, L, p, a, t, lk){ const R = SV_RIG[L], w = a.w, s = Math.sin(a.ph), A = R.amp*Math.PI/180, b = Math.abs(Math.cos(a.ph))*R.bob*w, br = Math.sin(t*2.4)*(1 - w), h = a.hit/0.3;
+  const leg = { NH:s*A*w, FF:s*A*0.9*w, FH:-s*A*w, NF:-s*A*0.9*w };
+  const dx = 30*lk + (h > 0 ? Math.sin(t*70)*3*h - 14*h : 0), dy = -b + br*1.5 - 8*lk;
+  c.save(); c.translate(p.x, p.y + 14); if(a.f < 0) c.scale(-1, 1); c.scale(R.k*(1 + 0.1*h), R.k*(1 - 0.1*h)); c.translate(-R.cx, -R.foot);
+  for(const q of R.parts){ let r = q.rot*Math.PI/180;
+    if(q.role){ r += leg[q.role] + (q.role[1]==='F' ? -0.7*lk : 0.25*lk); }
+    else if(q.n==='head') r += Math.sin(a.ph*2 + 0.6)*0.035*w + Math.sin(t*1.3)*0.03*(1 - w) - 0.15*lk + 0.2*h;
+    else if(q.n==='tail') r += Math.sin(a.ph + 1)*0.22*w + Math.sin(t*2.2)*0.15*(1 - w);
+    c.save(); c.translate(q.x + dx, q.y + dy); c.rotate(r); c.drawImage(svRigImg(L, q.n), -q.px, -q.py); c.restore(); }
+  c.restore(); }
 function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조준이면 마우스 쪽 (컴퓨터)
   const G = sv.game; if(p===G.players[G.me] && state.svAim==='mouse' && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); return Math.atan2(p.face[1], p.face[0]);
 }
@@ -13359,7 +13390,9 @@ function svDraw(){
     c.save(); if(p.down) c.globalAlpha = 0.45;
     c.beginPath(); c.ellipse(p.x, p.y+14, 15, 5, 0, 0, 6.283); c.fillStyle = pc+'66'; c.fill(); c.strokeStyle = pc; c.lineWidth = 2; c.stroke();
     if(p.inv > 0.7 || p.buff > 0){ c.drawImage(svGlow(p.buff > 0 ? '#ffd04a' : '#ffffff', 'aa'), p.x - 30, p.y - 32, 60, 60); }
-    if(body.complete && body.naturalWidth){ const fl = svFlipFor(svKey(p.leader, 4), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]), lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0; c.translate(p.x + (lk ? Math.cos(lw.kdir||0)*lk*6 : 0), p.y + (lk ? Math.sin(lw.kdir||0)*lk*6 : 0)); if(fl) c.scale(-1, 1); c.scale(1 + lk*0.12, 1 - lk*0.1); c.drawImage(body, -bs/2, -bs/2-4+bob, bs, bs); } // (build 530) 조각·몸 움직임(build 527)은 뺌 — 위아래 흔들림만 (사용자 10/29: 짜침 · 조각 동작은 접음) · 공격 튀어나감은 화면 기준 방향
+    const rdir = p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0];
+    if(SV_RIG[p.leader] && svRigReady(p.leader)){ const lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0; svDrawRig(c, p.leader, p, svRigAnim(i, p, G.t, rdir), G.t, lk); } // (build 531) 조각 동작
+    else if(body.complete && body.naturalWidth){ const fl = svFlipFor(svKey(p.leader, 4), p===me && state.svAim==='mouse' && sv.mouse ? Math.cos(svAimDir(p)) : p.face[0]), lk = lw && lw.kick > 0 ? Math.sin((1 - lw.kick/0.24)*Math.PI) : 0; c.translate(p.x + (lk ? Math.cos(lw.kdir||0)*lk*6 : 0), p.y + (lk ? Math.sin(lw.kdir||0)*lk*6 : 0)); if(fl) c.scale(-1, 1); c.scale(1 + lk*0.12, 1 - lk*0.1); c.drawImage(body, -bs/2, -bs/2-4+bob, bs, bs); } // (build 530) 조각·몸 움직임(build 527)은 뺌 — 위아래 흔들림만 (사용자 10/29: 짜침 · 조각 동작은 접음) · 공격 튀어나감은 화면 기준 방향
     c.restore();
     { const th = p.wp.find(w=>w.id==='wood_a_2'); if(th && !p.down){ const R = (34 + th.lv*3)*(1+0.12*svPasLv(p,'area'))*(th.evo ? 1.5 : 1); c.save(); c.strokeStyle = '#9be07a66'; c.lineWidth = 2; c.setLineDash([2, 5]); c.beginPath(); c.arc(p.x, p.y, R, -G.t, -G.t + 6.283); c.stroke(); c.restore(); } }
     if(p.shield > 0){ c.strokeStyle = '#7ce07c'; c.lineWidth = 2.5; c.beginPath(); c.arc(p.x, p.y-2, 23, 0, 6.283); c.stroke(); }
@@ -19945,7 +19978,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 530, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 531, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
