@@ -12498,7 +12498,7 @@ function svInPoly(x, y, P){ let c = false; for(let i=0, j=P.length-1; i<P.length
 function svSegD(x, y, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0; return Math.hypot(x - a[0] - dx*t, y - a[1] - dy*t); }
 function svPolyNear(x, y, P){ let bd = 1e9, bx = x, by = y; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[j], b = P[i], dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0, px = a[0] + dx*t, py = a[1] + dy*t, d = Math.hypot(x-px, y-py); if(d < bd){ bd = d; bx = px; by = py; } } return [bd, bx, by]; }
 const SV_FOPC = { worldtree:0.66, tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.5, shrine:0.62, mush:0.4 }; // 위에서부터 이만큼은 정령·몬스터 위에 한 번 더 그림 (뒤로 가면 가려지게)
-const SV_FOSH = { worldtree:[0.36, 0.1], tree_a:[0.4, 0.13], tree_b:[0.4, 0.13], tree_c:[0.4, 0.13], rock:[0.46, 0.15], shrine:[0.5, 0.17], mush:[0.38, 0.12], bush:[0.42, 0.13], bankstone:[0.4, 0.12], reed:[0.3, 0.1] }; // (build 558) 바닥 그림자 (가로·세로 반지름 = 폭의 몇 배) — 바닥 조각에 미리 그려 둠
+const SV_FOSH = { worldtree:[0.36, 0.1], tree_a:[0.4, 0.13], tree_b:[0.4, 0.13], tree_c:[0.4, 0.13], rock:[0.46, 0.15], shrine:[0.5, 0.17], mush:[0.38, 0.12], bush:[0.42, 0.13] }; /* (build 565) 물가 돌·갈대는 물 위라 그림자 뺌 */ // (build 558) 바닥 그림자 (가로·세로 반지름 = 폭의 몇 배) — 바닥 조각에 미리 그려 둠
 const SV_SPAWN_OFF = [[-45, 0], [45, 0], [-100, 34], [100, 34]]; // (build 563) 넷까지 시작 자리 (겹치지 않게)
 function svMakeForest(stage, seed){
   const F = SV_FO, zones = [], pcs = [], ob = []; let well = null;
@@ -12751,7 +12751,7 @@ function svFoChunk(i, j, s){ const M = svFoMask(), T = ['grass', 'path', 'water'
   const layer = (fill, mask, dy, a)=>{ t.setTransform(1, 0, 0, 1, 0, 0); t.globalCompositeOperation = 'source-over'; t.clearRect(0, 0, N, N); W(t); t.fillStyle = typeof fill === 'string' ? fill : pat(t, fill[0], fill[1]); t.fillRect(X0, Y0, SV_FCH, SV_FCH);
     t.globalCompositeOperation = 'destination-in'; t.imageSmoothingQuality = 'high'; svFoMaskPart(t, mask, X0, Y0 - dy, dy); t.globalCompositeOperation = 'source-over'; x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = a; x.drawImage(tmp, 0, 0); x.globalAlpha = 1; };
   W(x); x.fillStyle = pat(x, T[0], 420); x.fillRect(X0, Y0, SV_FCH, SV_FCH);
-  layer('#0e2310', M.dark, 0, 0.78); layer('#5a4426', M.path, 3, 0.35); layer([T[1], 300], M.path, 0, 1); layer('#24331c', M.water, 7, 0.9); layer([T[2], 300], M.water, 0, 1);
+  layer('#0e2310', M.dark, 0, 0.78); layer('#5a4426', M.path, 3, 0.35); layer([T[1], 300], M.path, 0, 1); layer([T[2], 300], M.water, 0, 1); /* (build 565) 물 아래 어두운 그림자 띠는 뺌 (사용자 10/29 「필요 없음」) */
   { const sh = svSoftSh(), G = sv.game; W(x); x.globalAlpha = 0.85; if(G && G.map && G.map.pcs) G.map.pcs.forEach(p=>{ if(!p.sh) return; const rx = p.w*p.sh[0], ry = p.w*p.sh[1], cx = p.x + p.w*0.07, cy = p.y - ry*0.35; // (build 558) 바닥 그림자 — 해가 왼쪽 위라 오른쪽 아래로 살짝
     if(cx + rx < X0 || cx - rx > X0 + SV_FCH || cy + ry < Y0 || cy - ry > Y0 + SV_FCH) return; x.drawImage(sh, cx - rx, cy - ry, rx*2, ry*2); }); x.globalAlpha = 1; }
   return cv; }
@@ -12781,21 +12781,21 @@ function svFoMini(oc, W, H){ const M = svFoMask(); if(!M) return false; const x 
     let r = 86, g = 150, b = 64; r += (22 - r)*da*0.85; g += (58 - g)*da*0.85; b += (26 - b)*da*0.85; r += (205 - r)*pa; g += (168 - g)*pa; b += (108 - b)*pa; r += (74 - r)*wa; g += (168 - g)*wa; b += (216 - b)*wa; id.data[o] = r; id.data[o+1] = g; id.data[o+2] = b; id.data[o+3] = 255; }
   x.putImageData(id, 0, 0); return true; }
 // (build 562) 충전 표시 — 사용자 10/29 「게이지 차는 게 짜침」: 하얀 호 대신 둘레의 룬 빛이 하나씩 켜지고, 빛 알갱이가 피어오름(svFoFx) · 다 차면 터짐
-function svRuneRing(c, z, v, n, col, t){ const T = z.ty || 1; for(let k=0;k<n;k++){ const a = 1.5708 + (k%2 ? 1 : -1)*Math.ceil(k/2)/n*6.2832, x = z.x + Math.cos(a)*z.r, y = z.y + Math.sin(a)*z.r*T, lit = Math.max(0, Math.min(1, v*n - k));
-    c.globalAlpha = 0.35; c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y, 2.2, 0, 6.283); c.fill();
-    if(lit > 0){ const p = 1 + 0.15*Math.sin(t*6 + k), g = 34*lit*p; c.globalAlpha = lit; c.drawImage(svGlow(col, 'cc'), x - g, y - g*0.8, g*2, g*1.6); c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y, 4.5*lit, 0, 6.283); c.fill(); } } c.globalAlpha = 1; } /* 앞(아래)부터 양쪽으로 하나씩 켜짐 */
+function svRuneRing(c, z, v, n, col, t){ const T = z.ty || 1; n = Math.max(n, Math.round(Math.PI*z.r*(1 + T)/30)); /* (build 565) 둘레 길이에 맞춰 약 30마다 하나 (사용자 10/29 「더 촘촘히」) */ for(let k=0;k<n;k++){ const a = 1.5708 + (k%2 ? 1 : -1)*Math.ceil(k/2)/n*6.2832, x = z.x + Math.cos(a)*z.r, y = z.y + Math.sin(a)*z.r*T, lit = Math.max(0, Math.min(1, v*n - k));
+    c.globalAlpha = 0.5; c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y, 2.6, 0, 6.283); c.fill();
+    if(lit > 0){ const p = 1 + 0.15*Math.sin(t*6 + k), g = (n > 20 ? 26 : 30)*lit*p; c.globalAlpha = lit; c.drawImage(svGlow(col, 'cc'), x - g, y - g*0.8, g*2, g*1.6); c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y, 4.5*lit, 0, 6.283); c.fill(); } } c.globalAlpha = 1; } /* 앞(아래)부터 양쪽으로 하나씩 켜짐 */
 function svDrawWell(c, z, G){ // 고대 샘 — 뿌리 둘레 룬 12개 · 쓴 뒤엔 어둡게 + 남은 초
   const on = !(z.cd > 0), T = z.ty||1; c.save();
   if(on){ if(z.ch > 0){ c.globalAlpha = 0.25 + 0.45*z.ch; c.drawImage(svGlow('#7ae0ff', '88'), z.x - z.r*1.1, z.y - z.r*1.1*T, z.r*2.2, z.r*2.2*T); c.globalAlpha = 1; }
     c.strokeStyle = '#bff4ff33'; c.lineWidth = 1.5; c.setLineDash([3, 9]); c.lineDashOffset = -G.t*12; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.setLineDash([]);
-    svRuneRing(c, z, z.ch, 12, '#7ae0ff', G.t); }
+    svRuneRing(c, z, z.ch, 28, '#7ae0ff', G.t); } /* (build 565) 룬 점 촘촘히 12 → 28 (사용자 10/29) */
   else { c.strokeStyle = '#ffffff22'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.font = 'bold 16px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 14); c.fillStyle = '#e8f6ff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 14); }
   c.restore(); }
 function svDrawShrine(c, z, G){ // 정령 석상 — 받침돌 둘레 룬 8개 · 쉬는 동안 남은 초
   const on = !(z.cd > 0), T = z.ty || 0.8; c.save();
   if(on){ if(z.cap > 0){ c.globalAlpha = 0.25 + 0.45*z.cap; c.drawImage(svGlow('#ffd04a', '88'), z.x - z.r*1.1, z.y - z.r*1.1*T, z.r*2.2, z.r*2.2*T); c.globalAlpha = 1; }
     c.strokeStyle = '#ffe08a33'; c.lineWidth = 1.5; c.setLineDash([3, 9]); c.lineDashOffset = -G.t*12; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.setLineDash([]);
-    svRuneRing(c, z, z.cap, 8, '#ffd04a', G.t); }
+    svRuneRing(c, z, z.cap, 16, '#ffd04a', G.t); } /* 8 → 16 */
   else { c.strokeStyle = '#ffffff22'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(z.x, z.y, z.r, z.r*T, 0, 0, 6.283); c.stroke(); c.font = 'bold 12px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; c.strokeText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); c.fillStyle = '#fff'; c.fillText(Math.ceil(z.cd)+'초', z.x, z.y + z.r*T + 12); }
   c.restore(); }
 function svLoadTick(G, now){ // (build 563) 들어가는 중 — 숲 그림 · 바닥 마스크 · 처음 보이는 바닥 조각이 다 되면 걷음 (최대 8초)
@@ -20238,7 +20238,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 564, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 565, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
