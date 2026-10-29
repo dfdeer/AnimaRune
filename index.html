@@ -309,7 +309,7 @@
   #main.pu-tight .pu-topbar{margin-top:2px;} #main.pu-tight .pu-card{padding-top:0; padding-bottom:2px;} #main.pu-tight .pu-rar{margin-top:0; font-size:13px;} #main.pu-tight .pu-nm{font-size:20px; margin-top:0;} #main.pu-tight .pu-pick{margin-top:4px;} #main.pu-tight .pu-th .spimg{width:26px; height:26px;} #main.pu-tight .pu-th{--av:26px; --nmw:74px;} #main.pu-tight .pu-sel{margin-top:4px;} #main.pu-tight .pu-pity{margin-top:6px; padding:6px 10px;} #main.pu-tight .pu-off{margin-top:6px;} #main.pu-tight .pu-btns{margin-top:8px;} #main.pu-tight .pu-rate{margin-top:4px; font-size:10px; line-height:1.4;} /* (v339) 작은 화면 */
   .pu-btns{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;} .pu-btns .btn{margin:0; white-space:nowrap;}
   .home-ic{position:relative; width:52px; height:56px; border-radius:14px; background:#1a1540dd; border:1px solid #8a74e066; color:var(--text); font-size:22px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; box-shadow:0 4px 10px #0006;}
-  .home-ic small{font-size:10px; font-weight:800; color:#d8ccff;} .home-ic.rf{border-color:#ffcf4a88; background:linear-gradient(160deg,#3a2c6edd,#1a1540dd);} .home-ic.sc{border-color:#c9b8ffaa; background:linear-gradient(160deg,#2c2a6edd,#141238dd);} .home-ic.svb{border-color:#ff8a5a99; background:linear-gradient(160deg,#5a2a3add,#1a1540dd);} /* (build 533) 서바이벌 */ .home-ic.rf .uic{filter:drop-shadow(0 0 6px #b48cff88);} .home-ic.rf small{color:#ffe38a;} /* (v321) 별빛 균열 — 홈 픽업 아래 */
+  .home-ic small{font-size:10px; font-weight:800; color:#d8ccff;} .home-ic.rf{border-color:#ffcf4a88; background:linear-gradient(160deg,#3a2c6edd,#1a1540dd);} .home-ic.sc{border-color:#c9b8ffaa; background:linear-gradient(160deg,#2c2a6edd,#141238dd);} .home-ic.svb{border-color:#ff8a5a99; background:linear-gradient(160deg,#5a2a3add,#1a1540dd);} .sv-ldi small.sv-bs{color:#c9d2ff;} .sv-ldi small.sv-bs u{text-decoration:none; font-weight:800; color:#fff;} i.sv-cf{font-style:normal; color:#9be0ff;} /* (build 543) 능력치 줄 · 무기 계수 */ /* (build 533) 서바이벌 */ .home-ic.rf .uic{filter:drop-shadow(0 0 6px #b48cff88);} .home-ic.rf small{color:#ffe38a;} /* (v321) 별빛 균열 — 홈 픽업 아래 */
   .home-dot{position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:#ff5757; box-shadow:0 0 6px #ff5757;}
   /* (v196) 대표 정령은 홈 배경의 '받침(소환진)' 위에 섬 — 발끝 높이는 fitHome()이 배경 그림(1024×1536, 받침 중심 세로 74.9%) 기준으로 계산해 --hero-foot에 넣음 */
   .home-hero{position:absolute; z-index:2; left:50%; top:var(--hero-foot, 72%); transform:translateX(-50%); width:72%; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer;}
@@ -12386,7 +12386,9 @@ const SV_SKT = { // (build 514) 룬 설명 — 수치를 문장 안에 넣어 �
   dark_b_1:'적을 쫓아가는 저주 {0} 날려 {1} 피해를 주고, 맞은 적은 받는 피해가 25% 늘어남',
   dark_b_2:'반지름 {2} 안의 적을 빨아들이며 초당 {0} 피해를 주고, 마지막에 터지며 {1} 피해를 줌'
 };
-function svSkDesc(id, from, to){ const rows = SV_SKS[id], t = SV_SKT[id]; if(!rows || !t) return SV_SK[id].d; return t.replace(/\{(\d)\}/g, (_, k)=>{ const r = rows[+k]; if(!r) return ''; const suf = r[2]||'', v1 = r[1](to); if(!from) return '<u>'+v1+suf+'</u>'; const v0 = r[1](from), dv = Math.round((v1 - v0)*10)/10; return dv ? '<u>'+v0+suf+'</u><em>(+'+dv+(suf.charAt(0)==='%' ? '%' : '')+')</em>' : '<u>'+v1+suf+'</u>'; }); } // 지금 값은 하얗게 · 늘어나는 만큼은 노랗게 (+n) (build 515 · 사용자 10/27: 50 → 55 대신 50(+5))
+const SV_COEF = { light_b_1:'이동 속도 비례', light_b_2:'이동 속도 비례', wood_a_1:'3타마다 최대 체력·방어력 비례 보호막 · 3타 피해에 최대 체력', wood_a_2:'방어력 비례 피해 추가', water_a_1:'회복은 최대 체력 비례', light_a_1:'회복은 최대 체력 비례', light_a_2:'보호막은 최대 체력·방어력 비례', dark_a_1:'회복은 공격력 비례' }; // (build 543) 공격력 말고도 들어가는 능력치
+function svSkDesc(id, from, to){ return svSkDesc0(id, from, to) + (SV_COEF[id] ? ' <i class="sv-cf">('+SV_COEF[id]+')</i>' : ''); }
+function svSkDesc0(id, from, to){ const rows = SV_SKS[id], t = SV_SKT[id]; if(!rows || !t) return SV_SK[id].d; return t.replace(/\{(\d)\}/g, (_, k)=>{ const r = rows[+k]; if(!r) return ''; const suf = r[2]||'', v1 = r[1](to); if(!from) return '<u>'+v1+suf+'</u>'; const v0 = r[1](from), dv = Math.round((v1 - v0)*10)/10; return dv ? '<u>'+v0+suf+'</u><em>(+'+dv+(suf.charAt(0)==='%' ? '%' : '')+')</em>' : '<u>'+v1+suf+'</u>'; }); } // 지금 값은 하얗게 · 늘어나는 만큼은 노랗게 (+n) (build 515 · 사용자 10/27: 50 → 55 대신 50(+5))
 const SV_PASS = { // 유물 수치 — Lv마다
   might:[['공격력', l=>12*l, '%', '+'], ['받는 피해', l=>3*l, '%', '+']], haste:[['스킬 간격', l=>Math.round((1-Math.pow(0.92,l))*100), '%', '−']], area:[['범위', l=>12*l, '%', '+']],
   vital:[['최대 체력', l=>20*l, '', '+'], ['회복', l=>Math.round(0.25*l*100)/100, '/초', '+']], swift:[['이동 속도', l=>8*l, '%', '+']], greed:[['경험치·골드', l=>12*l, '%', '+'], ['줍는 범위', l=>25*l, '%', '+']], crit:[['치명타', l=>7*l, '%', '+']],
@@ -12767,6 +12769,7 @@ function svLobby(msg){
     + '<div class="sv-ltl">대표 정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 고유 기술 · 패시브 · 궁극기</small></div>'
     + '<div class="sv-lead">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button class="sv-lc'+(l===L?' on':'')+(l===V && l!==L?' vw':'')+(op?'':' lock')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+(op ? SPIRITS[svKey(l,4)].name : uiIc('lock'))+'</b></button>'; }).join('')+'</div>'
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
+      + (()=>{ const B = svBase(V); return '<small class="sv-bs">체력 <u>'+B.hp+'</u> · 공격력 <u>'+B.atk+'</u> · 방어력 <u>'+B.def+'</u> · 이동 속도 <u>'+B.spd+'</u></small>'; })() // (build 543) 능력치
       + '<small><img src="assets/ui/pv_'+V+'.webp" alt="">패시브 · '+svLpNm(V)+' — '+SV_LP[V]+'</small>'
       + '<small><img src="'+svSkIc(sk1)+'" alt="">고유 기술 · '+svSkNm(sk1)+' — '+svSkDesc(sk1, 0, 1)+(svEvoSeen(sk1) ? ' (진화 짝 '+svPI(SV_SK[sk1].pair)+P.nm+' → '+SV_SK[sk1].ev+')' : ' (진화 짝 ?)')+'</small>'
       + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svUltNm(V)+' — '+SV_ULT[V]+'</small></div></div>' // (build 529) 판 안에서 자라는 모습 줄은 뺌 — 외형 고정
@@ -12835,7 +12838,14 @@ function svNetLeave(s){
   n.code = null;
 }
 // ---------- 게임 ----------
-function svNewPlayer(i, leader, unl){ return { i, leader, unl: unl || [], x: SV_MW/2 + (i ? 40 : -40), y: SV_MH/2 + 60, hp:100, maxHp:100, spd:120, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
+// (build 543) 대표 정령 능력치 (사용자 10/29: 정령마다 다르게 · 「알아서 재밌게」) — hp 최대 체력 · atk 공격력(100 = 예전 세기, 피해에 atk/100) · def 방어력(받는 피해 ×100/(100+def)) · spd 이동 속도
+// 불사귀·칠흑조·금오 = 세고 약한 몸 · 현무 = 단단하고 느림(패시브 받는 피해 −25%가 있어 방어력 25) · 백록 = 빠름(백록 무기는 이동 속도도 피해에) · 테티스·광명 = 지원(회복·보호막이 최대 체력 비례)
+const SV_BASE = { fire_a:{ hp:110, atk:110, def:10, spd:120 }, fire_b:{ hp:90, atk:115, def:5, spd:125 }, water_a:{ hp:105, atk:85, def:12, spd:120 }, water_b:{ hp:110, atk:100, def:15, spd:110 }, wood_a:{ hp:150, atk:80, def:25, spd:100 },
+  wood_b:{ hp:95, atk:100, def:10, spd:125 }, light_a:{ hp:100, atk:90, def:15, spd:115 }, light_b:{ hp:90, atk:95, def:8, spd:150 }, dark_a:{ hp:80, atk:125, def:3, spd:120 }, dark_b:{ hp:85, atk:120, def:5, spd:130 } };
+function svBase(L){ return SV_BASE[L] || { hp:100, atk:100, def:0, spd:120 }; }
+function svAtkK(p){ return (p.atk||100)/100; } // 공격력 배율
+function svDef(p){ return p.def||0; }
+function svNewPlayer(i, leader, unl){ const B = svBase(leader); return { i, leader, unl: unl || [], x: SV_MW/2 + (i ? 40 : -40), y: SV_MH/2 + 60, hp:B.hp, maxHp:B.hp, spd:B.spd, atk:B.atk, def:B.def, mag:40, down:false, rev:0, shield:0, wp:[{ id:leader+'_1', lv:1, evo:false, cd:0.3, a:0 }], ps:{}, face:[0,-1], pick:null, inv:0, ultCd:20, buff:0, rush:0, spdB:0, lpT:0, mv:0 }; }
 function svPasLv(p, k){ return p.ps[k] || 0; }
 function svAimToggle(){ state.svAim = state.svAim==='mouse' ? 'move' : 'mouse'; save(); const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s:'조준 — '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'), col:'#c9e2ff', sz:14, scr:1 }); }
 function svFlipFor(key, dx){ const f = ART_FACE[key]; return f==='L' ? dx > 0.2 : dx < -0.2; } // (build 489) 그림마다 원래 보는 쪽이 달라서(ART_FACE · 스콜 등은 왼쪽) — 가는 쪽을 보게 뒤집을지
@@ -12924,7 +12934,7 @@ function svEvolve(p){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 
 function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
 function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
   const G = sv.game; if(!p || p.down || p.ultCd > 0 || G.over || G.pickWait) return;
-  const L = p.leader, col = SV_EC[L.split('_')[0]], k = (1 + G.t/120) * SV_DMGK; p.ultCd = SV_ULT_CD;
+  const L = p.leader, col = SV_EC[L.split('_')[0]], k = (1 + G.t/120) * SV_DMGK * svAtkK(p); p.ultCd = SV_ULT_CD;
   svFx({ k:'text', x:p.x, y:p.y-50, t:0, d:1.4, s:svUltNm(L)+'!', col, sz:18 }); G.shake = 0.35; try{ sfx('battleStart'); }catch(e){}
   const near = R=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < R + e.r), push = (e, v)=>{ if(e.kind==='boss') return; const d = Math.hypot(e.x-p.x, e.y-p.y)||1; e.x += (e.x-p.x)/d*v; e.y += (e.y-p.y)/d*v; };
   const allies = G.players.filter(q=>!q.down), inV = G.en.filter(e=>e.hp>0 && svInView(p, e, SV_W/2 + 40, SV_H/2 + 40));
@@ -12932,7 +12942,7 @@ function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
   else if(L==='fire_b'){ inV.forEach(e=>{ svHitBy(p, e, 40*k, col); svBurn(e, 30*k, 5); svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.35, col, r:22 }); }); svFx({ k:'flash', t:0, d:0.35, col }); }
   else if(L==='water_a'){ allies.forEach(q=>{ q.hp = Math.min(q.maxHp, q.hp + q.maxHp*0.5); }); near(170).forEach(e=>{ svHitBy(p, e, 40*k, col); push(e, 90); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:170 }); }
   else if(L==='water_b'){ inV.forEach(e=>{ e.frz = e.kind==='boss' ? 1.2 : 3; svHitBy(p, e, 60*k, col); }); svFx({ k:'flash', t:0, d:0.35, col }); }
-  else if(L==='wood_a'){ p.inv = 5; near(150).forEach(e=>{ svHitBy(p, e, 90*k, col); push(e, 80); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col, r:150 }); }
+  else if(L==='wood_a'){ p.inv = 5; near(150).forEach(e=>{ svHitBy(p, e, 90*k + p.maxHp*0.4, col); push(e, 80); }); /* (build 543) 최대 체력도 피해에 */ svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col, r:150 }); }
   else if(L==='wood_b'){ inV.forEach(e=>{ e.web = e.kind==='boss' ? 2 : 6; svBurn(e, 14*k, 6); }); svFx({ k:'flash', t:0, d:0.35, col }); }
   else if(L==='light_a'){ allies.forEach(q=>{ q.shield = Math.max(q.shield, q.maxHp*0.6); q.inv = Math.max(q.inv, 3); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
   else if(L==='light_b'){ allies.forEach(q=>{ q.buff = 8; q.rush = 8; }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
@@ -13073,8 +13083,9 @@ function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄
   const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
   let best = null, bn = -1; c.slice(0, 25).forEach(e=>{ let n = 0; c.forEach(o=>{ if(Math.hypot(o.x-e.x, o.y-e.y) < 55) n++; }); if(n > bn){ bn = n; best = e; } }); return best;
 }
-function svHurt(p, dmg){ if(p.leader==='wood_a') dmg *= 0.75; dmg *= (1 + 0.03*svPasLv(p, 'might')) * (1 - 0.06*svPasLv(p, 'rampart')); if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; return dmg; }
-function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? 2.2 : 1) * (1 + 0.12*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK; }
+function svHurt(p, dmg){ if(p.leader==='wood_a') dmg *= 0.75; dmg *= 100/(100 + svDef(p)); /* (build 543) 방어력 */ dmg *= (1 + 0.03*svPasLv(p, 'might')) * (1 - 0.06*svPasLv(p, 'rampart')); if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; return dmg; }
+function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? 2.2 : 1) * (1 + 0.12*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK * svAtkK(p) * (SV_SPDW[w.id] ? svSpd(p)/120 : 1); } // (build 543) 공격력 · 백록 무기는 이동 속도(120 기준)도
+const SV_SPDW = { light_b_1:1, light_b_2:1 }; // 이동 속도가 피해에 들어가는 무기
 function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), rad: (52 + w.lv*3) * (1 + 0.12*svPasLv(p, 'area')) }; }
 function svAttack(p, w, dt){
   const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
@@ -13100,7 +13111,7 @@ function svAttack(p, w, dt){
     G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f); G.goF.push({ p, f, t:-f.dl, tot, hit:new Map(), dmg:10*m, cr, col }); svFx(Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f)); }); }
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240); { const e = tg.length ? svRand(tg) : ahead(150); G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m*(ev ? 1.6 : 1), burn:5*m, col, R:(44 + lv*4)*ar*(ev ? 1.5 : 1), p }); } /* (build 509) 진화 — 커다란 화염구 하나 (짝: 유리 대포) */ }
   else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); // (build 502) 물결 — 모았다가 물마루가 퍼지며 닿는 적부터 맞고 밀려남 (사용자 10/26: 그림만 키우면 맛이 안 남 · 미리보기 시제품대로)
-    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R){ const h = (2 + lv)*(ev ? 2 : 1); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
+    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R){ const h = Math.round((2 + lv)*(ev ? 2 : 1)*p.maxHp/100*10)/10; q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
   else if(id==='water_a_2'){ const e = svNear(p.x, p.y, 240) || ahead(100); const d = Math.hypot(e.x-p.x, e.y-p.y)||1, ux = (e.x-p.x)/d, uy = (e.y-p.y)/d;
     [1].forEach(s=>G.pr.push({ x:p.x, y:p.y, vx:ux*s*200, vy:uy*s*200, kind:'wave', life:1.3, w:(70 + lv*6)*ar*(ev ? 1.6 : 1) /* (build 509) 진화 폭 ×1.6 (짝: 메아리 북) */, dmg:20*m, hitS:[], col, p, crit:cr })); }
   else if(id==='water_b_1'){ // (build 504) 요르문간드 — 모았다가 물 마법진에서 꿰뚫는 물줄기 · 맞은 적은 느려지고 밀려남 (사용자 10/26)
@@ -13110,8 +13121,8 @@ function svAttack(p, w, dt){
     const st = (w.combo|0) % 3, e = svNear(p.x, p.y, 260); w.combo = st + 1; const dir = e ? Math.atan2(e.y-p.y, e.x-p.x) : svAimDir(p);
     if(st < 2){ w.cd = SV_HM.STEP * svCdK(p, w); const n = (st ? 5 : 3) + (ev ? 2 : 0), spread = st ? 0.75 : 0.45, sp0 = (st ? 660 : 600)*ar; G.leaves = G.leaves || [];
       for(let i=0;i<n;i++){ const f = { x0:Math.round(p.x), y0:Math.round(p.y), a:dir + (i/(n-1) - 0.5)*spread, dl:i*0.025, sp:sp0*(0.95 + Math.random()*0.1), curve:(Math.random() - 0.5)*1.2, spin:9 + Math.random()*5 }, fx = Object.assign({ k:'leaf', t:0, d:f.dl + SV_HM.LIFE }, f); svFx(fx); G.leaves.push({ p, f, fx, t:-f.dl, pierce: ev ? 3 : 2, hit:[], dmg:9*m, cr, col }); } }
-    else { const L = (220 + lv*8)*ar*(ev ? 1.3 : 1); if(ev) p.shield = Math.max(p.shield, p.maxHp*0.15); /* (build 507) 진화 — 땅 가르기마다 보호막 (짝: 성벽 돌) */ (G.quakes = G.quakes || []).push({ p, x:p.x, y:p.y, dir, L, W:26*ar*(ev ? 1.3 : 1), t:0, dmg:30*m, cr, col, hit:[] }); svFx({ k:'quake', x:Math.round(p.x), y:Math.round(p.y), a:dir, L, sd:1 + Math.floor(Math.random()*9999), t:0, d:SV_HM.GATH + 0.9 }); } }
-  else if(id==='wood_a_2'){ const R = (34 + lv*3)*ar*(ev ? 1.5 : 1), tg = inR(R); tg.forEach(e=>hit(e, 7*m)); if(tg.length) svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.25, col:'#9be07a', r:R }); }
+    else { const L = (220 + lv*8)*ar*(ev ? 1.3 : 1); p.shield = Math.max(p.shield, p.maxHp*(ev ? 0.15 : 0.06) + svDef(p)*(ev ? 1 : 0.6)); /* (build 507) 진화 보호막 · (build 543) 진화 전에도 3타마다 보호막 — 최대 체력·방어력 비례 */ (G.quakes = G.quakes || []).push({ p, x:p.x, y:p.y, dir, L, W:26*ar*(ev ? 1.3 : 1), t:0, dmg:30*m + p.maxHp*0.08, cr, col, hit:[] }); /* (build 543) 3타 피해에 최대 체력 */ svFx({ k:'quake', x:Math.round(p.x), y:Math.round(p.y), a:dir, L, sd:1 + Math.floor(Math.random()*9999), t:0, d:SV_HM.GATH + 0.9 }); } }
+  else if(id==='wood_a_2'){ const R = (34 + lv*3)*ar*(ev ? 1.5 : 1), tg = inR(R); tg.forEach(e=>hit(e, 7*m + svDef(p)*0.15)); if(tg.length) svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.25, col:'#9be07a', r:R }); } /* (build 543) 방어력도 피해에 */
   else if(id==='wood_b_1'){ // (build 504) 아난시 — 지나간 자리에 거미줄 덫 · 밟은 적은 묶였다가 0.5초 뒤 독으로 터짐 (사용자 10/26)
     const mx = 2 + Math.floor(lv/2) + (ev ? 2 : 0), my = G.pools.filter(o=>o.trap && o.p === p && o.trig < 0); if(my.length >= mx) my[0].t = my[0].d;
     G.pools.push({ x:Math.round(p.x), y:Math.round(p.y), R:18*ar, t:0, d:9, trap:1, trig:-1, ev: ev ? 1 : 0, dps:0, br:(40 + lv*5)*ar*(ev ? 1.4 : 1), bd:26*m, col:'#8ce65a', p }); }
@@ -13121,8 +13132,8 @@ function svAttack(p, w, dt){
     G.pr.push({ x:p.x, y:p.y, tx, ty, sp, kind:'boom', web:{ R:(46 + lv*6)*ar*(ev ? 1.2 : 1), d:4, dps:5*m, wev: ev ? 1 : 0 }, col:'#f4f8ff', R:0, dmg:0, p }); }
   else if(id==='light_a_1'){ let al = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 260).sort(()=>Math.random()-0.5).slice(0, 2 + lv); if(!al.length){ w.cd = 0.3; return; } // (build 504) 광명 — 적 자리에 문양 → 빛의 창이 꽂힘 (대상마다 조금씩 늦게) (사용자 10/26)
     al.forEach((e, i)=>{ const x = Math.round(e.x), y = Math.round(e.y), dl = i*SV_LS.STAG; svFx({ k:'spear', x, y, dl, sd:1 + Math.floor(Math.random()*9999), t:0, d:dl + SV_LS.SIG + SV_LS.FALL + SV_LS.STUCK + SV_LS.FADE + 0.05 }); (G.later = G.later || []).push({ t:dl + SV_LS.SIG + SV_LS.FALL, f:()=>{ G.en.forEach(o=>{ if(o.hp>0 && Math.hypot(o.x-x, o.y-y) < 22*ar + o.r) hit(o, 18*m); }); } }); });
-    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < (ev ? 210 : 140)){ const h = (4 + 2*lv)*(ev ? 2 : 1); /* (build 509) 진화 회복 ×2 · 범위 ×1.5 (짝: 재생 이끼) */ q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
-  else if(id==='light_a_2'){ const amt = (10 + lv*5)*(ev ? 2 : 1), R = (80 + lv*5)*ar; G.players.forEach(q=>{ if(!q.down && Math.hypot(q.x-p.x, q.y-p.y) < 160) q.shield = Math.max(q.shield, amt); });
+    G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < (ev ? 210 : 140)){ const h = Math.round((4 + 2*lv)*(ev ? 2 : 1)*p.maxHp/100*10)/10; /* (build 509) 진화 회복 ×2 · 범위 ×1.5 (짝: 재생 이끼) · (build 543) 최대 체력 비례 */ q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
+  else if(id==='light_a_2'){ const amt = ((10 + lv*5)*p.maxHp/100 + svDef(p)*0.5)*(ev ? 2 : 1), /* (build 543) 최대 체력·방어력 비례 */ R = (80 + lv*5)*ar; G.players.forEach(q=>{ if(!q.down && Math.hypot(q.x-p.x, q.y-p.y) < 160) q.shield = Math.max(q.shield, amt); });
     inR(R).forEach(e=>hit(e, 16*m)); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.5, col, r:R }); }
   else if(id==='light_b_1'){ const e = svNear(p.x, p.y, 260), dirs = 1; const bx = e ? e.x-p.x : p.face[0], by = e ? e.y-p.y : p.face[1], b0 = Math.atan2(by, bx), L2 = 280*ar*(ev ? 1.5 : 1); p.spdB = ev ? 2 : 1; /* (build 509) 진화 — 세 방향 대신 길게 · 빨라지는 시간 2배 (짝: 질풍 장화) */
     for(let k=0;k<dirs;k++){ const a = b0 + (k - (dirs-1)/2)*0.35, ux = Math.cos(a), uy = Math.sin(a);
@@ -13131,7 +13142,7 @@ function svAttack(p, w, dt){
   else if(id==='light_b_2'){ const tg = G.en.filter(o=>o.hp>0 && svInView(p, o)).sort(()=>Math.random()-0.5).slice(0, 2 + lv); if(!tg.length){ w.cd = 0.3; return; }
     tg.forEach(e=>G.pr.push({ x:e.x, y:e.y-140, tx:e.x, ty:e.y, sp:520, kind:'boom', dmg:20*m*(ev ? 1.6 : 1), col, R:28*ar*(ev ? 1.5 : 1), p })); } /* (build 509) 진화 — 굵은 빛 (짝: 유리 대포) */
   else if(id==='dark_a_1'){ const tg = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < 160).sort((a,b)=>Math.hypot(a.x-p.x, a.y-p.y) - Math.hypot(b.x-p.x, b.y-p.y)).slice(0, ev ? 3 : 1); if(!tg.length){ w.cd = 0.2; return; }
-    tg.forEach(e=>{ hit(e, 16*m); svFx({ k:'beam', x:p.x, y:p.y, x2:e.x, y2:e.y, t:0, d:0.2, col:'#ff4a6a' }); }); const h = (1 + lv*0.4)*(ev ? 1.5 : 1)*tg.length; p.hp = Math.min(p.maxHp, p.hp + h); }
+    tg.forEach(e=>{ hit(e, 16*m); svFx({ k:'beam', x:p.x, y:p.y, x2:e.x, y2:e.y, t:0, d:0.2, col:'#ff4a6a' }); }); const h = (1 + lv*0.4)*(ev ? 1.5 : 1)*tg.length*svAtkK(p); p.hp = Math.min(p.maxHp, p.hp + h); /* (build 543) 공격력 비례 */ }
   else if(id==='dark_a_2'){ const R = (72 + lv*5)*ar*(ev ? 1.3 : 1); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.3, col, r:R });
     inR(R).forEach(e=>{ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*lv + (ev ? 0.1 : 0)) svHit(e, e.hp+1, col, true); else hit(e, 20*m); }); }
   else if(id==='dark_b_1'){ const n = 1 + lv + (ev ? 4 : 0); for(let k=0;k<n;k++){ const e = svRand(G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280)) || null, a = e ? Math.random()*6.28 : svAimDir(p) + (Math.random() - 0.5)*1.2; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, e, sp:300, kind:'home', dmg:12*m, curse:4, col, crit:cr + (ev ? 0.5 : 0), p }); /* (build 509) 진화 치명타 +50% (짝: 숫돌) */ } }
@@ -13170,7 +13181,7 @@ function svTick(dt){
     let mx = dx/d, my = dy/d; if(G.map && e.kind!=='boss'){ e.losT = (e.losT||0) - dt; if(e.losT <= 0){ e.losT = 0.25 + Math.random()*0.1; e.los = svLos(G, e.x, e.y, tg.x, tg.y); } if(!e.los){ const v = svFlowDir(G, e.x, e.y); if(v){ mx = v[0]; my = v[1]; } } } // (build 498) 앞이 막히면 길찾기로 돌아옴
     if(d > e.r + 8){ e.x += mx*sp*dt; e.y += my*sp*dt; if(e.kind!=='boss') svCollide(e, e.r); }
     if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
-      const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, 25*svWM(tg, th)*(th.evo ? 2 : 1), '#9be07a'); } /* (build 509) 진화 반사 ×2 (짝: 성벽 돌) */ // 가시 갑옷 반사
+      const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, (25*svWM(tg, th) + svDef(tg)*0.5)*(th.evo ? 2 : 1), '#9be07a'); } /* (build 509) 진화 반사 ×2 (짝: 성벽 돌) */ // 가시 갑옷 반사
     if(e.kind==='boss'){ e.skT -= dt; if(e.skT <= 0){ e.skT = e.final ? 2.4 : 3.2; const n = e.final ? 14 : 10; for(let k=0;k<n;k++){ const a = k*6.283/n + G.t; G.pr.push({ x:e.x, y:e.y, vx:Math.cos(a)*110, vy:Math.sin(a)*110, kind:'ebul', t:0, col: SV_EC[SV_MAPS[G.stage||0].el], dmg:12*SV_STD[G.stage||0] }); } } }
   });
   for(let i=0;i<G.en.length;i+=2){ const a = G.en[i], b = G.en[(i+7) % G.en.length]; if(!b || a===b || a.kind==='pod' || b.kind==='pod') continue; const dx = a.x-b.x, dy = a.y-b.y, d = Math.hypot(dx, dy), m = a.r + b.r; if(d > 0 && d < m){ const k = (m-d)/d*0.5; a.x += dx*k; a.y += dy*k; b.x -= dx*k; b.y -= dy*k; } }
@@ -13261,7 +13272,8 @@ function svHud(){
   const me = G.players[G.me], box = q('.sv-pick');
   { const st = q('.sv-stat'); if(st && me){ const P = k=>svPasLv(me, k), pc = v=>Math.round(v*100), sg = v=>(v > 0 ? '+' : v < 0 ? '−' : '')+Math.abs(v)+'%', row = (nm, v, good)=>'<span>'+nm+'</span><b class="'+(v === 0 ? '' : (good ? 'up' : 'dn'))+'">'+sg(v)+'</b>'; // (build 503) 사용자 10/26: 내 스탯 늘 보이게
     const atk = pc((1 + 0.12*P('might'))*(me.buff > 0 ? 1.5 : 1)*(me.leader==='fire_a' && me.hp <= me.maxHp*0.5 ? 1.3 : 1) - 1), cr = 7*P('crit') + (me.leader==='dark_b' ? 12 : 0), cd = pc(1 - svCdK(me, {})), ar = 12*P('area'), mv = pc(svSpd(me)/me.spd - 1), tk = pc((me.leader==='wood_a' ? 0.75 : 1)*(1 + 0.03*P('might'))*(1 - 0.06*P('rampart')) - 1), pk = 25*P('greed');
-    const h = '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>' + row('공격력', atk, atk > 0) + '<span>치명타</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + row('스킬 간격', -cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('이동 속도', mv, mv > 0) + row('받는 피해', tk, tk < 0) + row('줍는 범위', pk, pk > 0);
+    const B = svBase(me.leader), atkV = Math.round((me.atk||100)*(1 + atk/100)), spdV = Math.round(svSpd(me)), val = (nm, v, b)=>'<span>'+nm+'</span><b class="'+(v > b ? 'up' : v < b ? 'dn' : '')+'">'+v+'</b>'; /* (build 543) 실제 값 */
+    const h = '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>' + val('공격력', atkV, B.atk) + val('방어력', svDef(me), B.def) + val('이동 속도', spdV, B.spd) + '<span>치명타</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + row('스킬 간격', -cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('받는 피해', tk, tk < 0) + row('줍는 범위', pk, pk > 0);
     if(st._h !== h){ st._h = h; st.innerHTML = h; } } } { const wd = q('.sv-wasd'); if(wd && wd.classList.contains('on') !== !!sv.pc) wd.classList.toggle('on', !!sv.pc); }
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
     set(ub.querySelector('i'), 'h', Math.round(cd/SV_ULT_CD*200)/2, (el, v)=>{ el.style.height = v+'%'; }); set(ub.querySelector('b'), 't', cd > 0 ? ''+Math.ceil(cd) : '', (el, v)=>{ el.textContent = v; }); // 준비되면 글자 없이 빛남 (사용자 10/26)
@@ -20008,7 +20020,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 542, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 543, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
