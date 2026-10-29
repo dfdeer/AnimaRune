@@ -5226,12 +5226,16 @@ window.addEventListener('resize', relayoutScreens);
 window.addEventListener('orientationchange', ()=>setTimeout(relayoutScreens, 250));
 window.addEventListener('pageshow', relayoutScreens);
 window.addEventListener('load', relayoutScreens);
-/* 시작 화면: 다 불러오면 막대를 채우고 「터치해서 시작」 → 누르면 걷힘 (늦어도 8초 뒤엔 누를 수 있게) */
+/* 시작 화면: 다 불러오고 계정 연결까지 끝나면 막대를 채우고 「터치해서 시작」 → 누르면 걷힘 (늦어도 8초 뒤엔 누를 수 있게) */
 (function(){ const sp = document.getElementById('splash'); if(!sp) return; const t0 = Date.now(); let ready = false, gone = false;
   const go = ()=>{ if(!ready || gone) return; gone = true; sp.classList.add('out'); setTimeout(()=>sp.remove(), 500); };
   const ok = ()=>{ if(ready) return; sp.classList.add('done'); setTimeout(()=>{ ready = true; sp.classList.add('ready'); }, Math.max(300, 900-(Date.now()-t0))); };
   sp.addEventListener('click', go);
-  if(document.readyState==='complete') ok(); else window.addEventListener('load', ok); setTimeout(ok, 8000); })();
+  // (build 538) 계정·친구 서버 연결까지 기다림 — 들어간 뒤에 관리자·시험 계정 버튼(서바이벌 등)이 뒤늦게 생기지 않게 (사용자 10/29) · 연결 실패·오프라인이면 바로 · 늦어도 8초
+  const netDone = ()=>(typeof friendNet!=='undefined' && friendNet.on) || (typeof raidNet!=='undefined' && (raidNet.failed || (raidNet.ready && raidNet.backend!=='firebase')));
+  let loaded = document.readyState==='complete'; const tryOk = ()=>{ if(loaded && netDone()) ok(); };
+  if(!loaded) window.addEventListener('load', ()=>{ loaded = true; tryOk(); });
+  const iv = setInterval(()=>{ if(ready || gone){ clearInterval(iv); return; } tryOk(); }, 150); tryOk(); setTimeout(ok, 8000); })();
 if(window.visualViewport) window.visualViewport.addEventListener('resize', relayoutScreens);
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(relayoutScreens).catch(()=>{});
 if(window.ResizeObserver){ const ro = new ResizeObserver(relayoutScreens); ['header','#levelBar','nav','#main'].forEach(sel=>{ const e = document.querySelector(sel); if(e) ro.observe(e, {box:'border-box'}); }); ro.observe(document.body, {box:'border-box'}); } // 여백(안전 영역) 변화까지 잡으려고 border-box 기준
@@ -19999,7 +20003,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 537, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 538, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
