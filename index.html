@@ -997,6 +997,7 @@
   .sv-key{position:absolute; transform:translateX(50%); font-style:normal; font-size:9.5px; font-weight:800; color:#22264a; background:#eef0ff; border:1px solid #8e96c8; box-shadow:0 2px 0 #5a6296; border-radius:4px; padding:0 5px; line-height:14px; white-space:nowrap; display:none; pointer-events:none;} .sv-cv.pc .sv-key{display:block;}
   .sv-aim{position:absolute; width:40px; height:40px; border-radius:50%; padding:6px; border:1.5px solid #ffffff55; background:#0b0d26cc; cursor:pointer; display:none;} .sv-cv.pc .sv-aim{display:block;} .sv-aim img{width:100%; height:100%; object-fit:contain; display:block;} /* (build 488) 컴퓨터: 단축키 표시 · 조준 전환 버튼 */
   /* (build 489) 게임 화면은 틀 없이 꽉 채움 · HUD·스킬 줄은 위에 겹침 */
+  .sv-obj{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 8px; display:flex; flex-direction:column; gap:1px; font-size:10.5px; line-height:1.45; color:#c9d0f5; text-align:right;} .sv-obj b{color:#ffe08a; font-size:10px; letter-spacing:.5px;} .sv-obj span i{font-style:normal; color:#fff; font-weight:700; margin-left:4px;} .sv-obj span.ok{color:#9be07a;} .sv-obj span.ok i{color:#9be07a;} .sv-obj span.no{color:#ffffff55; text-decoration:line-through;} .sv-obj span.no i{color:#ffffff55;}
   .sv-stat{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 7px; display:grid; grid-template-columns:auto auto; gap:0 9px; font-size:10.5px; line-height:1.4; color:#c9d0f5;} .sv-stat b{font-weight:700; color:#fff; text-align:right; font-variant-numeric:tabular-nums;} .sv-stat b.up{color:#8fe68a;} .sv-stat b.dn{color:#ff9a8a;} .sv-stat:empty{display:none;}
   .sv-wasd{position:absolute; display:none; grid-template-columns:repeat(3, 20px) auto; grid-template-rows:20px 20px; gap:3px; align-items:center; pointer-events:none; z-index:5;} .sv-wasd.on{display:grid;} .sv-wasd i{font-style:normal; font-size:10px; font-weight:800; color:#22264a; background:#eef0ff; border:1px solid #8e96c8; box-shadow:0 2px 0 #5a6296; border-radius:4px; display:flex; align-items:center; justify-content:center; height:18px;} .sv-wasd i:nth-child(1){grid-column:2; grid-row:1;} .sv-wasd i:nth-child(2){grid-column:1; grid-row:2;} .sv-wasd i:nth-child(3){grid-column:2; grid-row:2;} .sv-wasd i:nth-child(4){grid-column:3; grid-row:2;} .sv-wasd b{grid-column:4; grid-row:2; margin-left:4px; font-size:11px; color:#eef0ff; text-shadow:0 1px 2px #000, 0 0 3px #0b0d26;}
   .sv-vig{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none;} .sv.sv-game .sv-cv{position:absolute; inset:0;} .sv.sv-game .sv-cv canvas{border-radius:0; box-shadow:none;}
@@ -12584,7 +12585,7 @@ function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
   { const W = map.well; if(W){ if(W.cd > 0) W.cd = Math.max(0, W.cd - dt); else { const n = alive.filter(p=>Math.hypot(p.x-W.x, p.y-W.y) < W.r).length; // (build 550) 고대 샘 — 서 있으면 충전 · 같이 서면 빨리 (혼자 20초 · 둘 12초 · 셋 9초 · 넷 7초) · 다 차면 모든 아군 체력 50% + 보호막 20% · 90초 뒤 다시
     if(n) W.ch = Math.min(1, W.ch + dt/[0, 20, 12, 9, 7][Math.min(4, n)]); else W.ch = Math.max(0, W.ch - dt/40);
     if(W.ch >= 1){ W.ch = 0; W.cd = 90; alive.forEach(p=>{ const h = Math.round(p.maxHp*0.5); p.hp = Math.min(p.maxHp, p.hp + h); p.shield = Math.max(p.shield, p.maxHp*0.2); svFx({ k:'num', x:p.x, y:p.y-24, t:0, d:0.9, s:'+'+h, col:'#7ce07c', sz:13 }); });
-      svFx({ k:'ring', x:W.x, y:W.y, t:0, d:0.9, col:'#7ae0ff', r:260 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.6, s:'고대 샘 — 모두 회복!', col:'#7ae0ff', sz:17, scr:1 }); try{ sfx('claim'); }catch(e){} } } } }
+      svObjAdd('well'); svFx({ k:'ring', x:W.x, y:W.y, t:0, d:0.9, col:'#7ae0ff', r:260 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.6, s:'고대 샘 — 모두 회복!', col:'#7ae0ff', sz:17, scr:1 }); try{ sfx('claim'); }catch(e){} } } } }
   if(M.gim==='spring') alive.forEach(p=>{ if(svZoneAt(p, 'spring') && p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + 5*dt); });
   if(M.gim==='lava') alive.forEach(p=>{ if(svZoneAt(p, 'lava') && !(p.inv > 0.7)){ p.lavaT = (p.lavaT||0) + dt; if(p.lavaT > 0.5){ p.lavaT = 0; svHurt(p, 5*SV_STD[map.stage]); svFx({ k:'num', x:p.x, y:p.y-22, t:0, d:0.5, s:'용암', col:'#ff7a45', sz:10 }); } } });
   if(M.gim==='trap') map.zones.forEach(z=>{ if(z.kind!=='trap') return; const st = svTrapState(z, G.t); if(st===2 && !z.hit){ z.hit = true;
@@ -13062,11 +13063,11 @@ function svStart(role){
     const q = svNewPlayer(k+1, L, mine ? svUnl().sk : role==='host' ? (N.gs[s] || SV_UNL0.sk) : []); q.slot = s; G.players.push(q); });
   G.newUnl = [];
   if(role==='solo') sv.seed = Math.floor(Math.random()*1e9);
-  G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); sv.cam = null; sv.patSrc = null;
+  G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); svObjInit(G); sv.cam = null; sv.patSrc = null;
   G.me = role==='guest' ? (N.ix[N.slot] || 1) : 0;
   sv.el.classList.add('sv-game');
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill"></span><button class="sv-btn sv-ic" data-sv="pause">'+uiIc('rest')+'</button></div>'
-    + '<div class="sv-cv"><canvas></canvas><i class="sv-vig"></i><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><button class="sv-aim" data-sv="aim"><img alt=""></button><em class="sv-key" data-k="ult">Space</em><em class="sv-key" data-k="aim">Q</em><div class="sv-stat"></div><div class="sv-wasd"><i>W</i><i>A</i><i>S</i><i>D</i><b>이동</b></div><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
+    + '<div class="sv-cv"><canvas></canvas><i class="sv-vig"></i><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><button class="sv-aim" data-sv="aim"><img alt=""></button><em class="sv-key" data-k="ult">Space</em><em class="sv-key" data-k="aim">Q</em><div class="sv-stat"></div><div class="sv-obj"></div><div class="sv-wasd"><i>W</i><i>A</i><i>S</i><i>D</i><b>이동</b></div><div class="sv-pick"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
   const cv = sv.el.querySelector('canvas'); sv.cv = cv; sv.ctx = cv.getContext('2d', { alpha:false }); try{ Object.defineProperty(sv.ctx, 'shadowBlur', { get(){ return 0; }, set(){} }); }catch(e){} // (build 493) 그림자 흐림(빛 번짐)은 그릴 때마다 흐림 처리를 해서 무거움 — 끄고 미리 그린 빛(svGlow)·겹친 선(svGS)으로 대신 // (build 492) 불투명 캔버스 — 뒤 화면과 섞는 일을 안 해서 전체화면이 훨씬 가벼움 (헤드리스 1920×1080 22→43fps)
   const fit = ()=>{ if(!sv || !sv.cv) return; // (build 489) 사용자 결정 10/26: 틀 없이 화면 전체 · 위 HUD·아래 스킬 줄은 게임 화면 위에 겹쳐 놓음
     const box = sv.el.querySelector('.sv-cv'), bw = box.clientWidth, bh = box.clientHeight; if(!(bw > 0 && bh > 0)) return;
@@ -13077,7 +13078,7 @@ function svStart(role){
     const top = sv.el.querySelector('.sv-hud'), bar = sv.el.querySelector('.sv-bar'), th = top ? top.offsetHeight : 0, bb = bar ? bar.offsetHeight : 0, rx = (bw - w)/2, by = (bh - h)/2;
     sv.uiTop = Math.max(0, th - by) / sv.scale; sv.uiBot = Math.max(0, bb - by) / sv.scale; // 겹친 HUD 높이 (게임 좌표) — 작은 지도·글자를 그만큼 비켜 그림
     const set = (el, r, b)=>{ if(el){ el.style.right = r+'px'; el.style.bottom = b+'px'; } }, ub0 = Math.max(by, bb) + 22;
-    set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = (rx + 10*sv.scale)+'px'; stt.style.top = (by + ((sv.uiTop||0) + 80)*sv.scale)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = (rx + 10)+'px'; wd.style.bottom = (Math.max(by, bb) + 12)+'px'; } };
+    set(sv.el.querySelector('.sv-ult'), rx + 12, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43, ub0 - 18); set(sv.el.querySelector('[data-k="aim"]'), rx + 104, ub0 - 18); const ob = sv.el.querySelector('.sv-obj'); if(ob){ ob.style.right = (rx + 10)+'px'; ob.style.top = (by + ((sv.uiTop||0) + 10)*sv.scale)+'px'; } const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = (rx + 10*sv.scale)+'px'; stt.style.top = (by + ((sv.uiTop||0) + 80)*sv.scale)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ wd.style.left = (rx + 10)+'px'; wd.style.bottom = (Math.max(by, bb) + 12)+'px'; } };
   fit(); sv.fit = fit; window.addEventListener('resize', fit);
   sv.el.querySelector('[data-sv="quit"]').addEventListener('click', ()=>{ if(G.over) return svClose(); if(role==='solo') G.paused = true; confirmBox('정령 서바이벌 나가기', role==='solo' ? '이번 판이 끝남' : '같이 하기가 끝남', '나가기', ()=>{ svRecord(); svClose(); }, { danger:true }); });
   sv.el.querySelector('[data-sv="pause"]').addEventListener('click', e=>{ if(role!=='solo'){ toast('같이 할 땐 멈출 수 없음'); return; } G.paused = !G.paused; e.currentTarget.innerHTML = G.paused ? '계속' : uiIc('rest'); });
@@ -13174,11 +13175,18 @@ function svHitBy(p, e, v, col, crit){ // 대표 패시브가 붙는 피해
   if(L==='water_b') e.slow = Math.max(e.slow||0, 1);
   if(L==='wood_b' && e.hp<=0 && Math.random() < 0.25){ const G = sv.game; if(G.pools.length < 30) G.pools.push({ x:e.x, y:e.y, R:28, t:0, d:2.5, dps:8*(1 + G.t/150)*SV_DMGK, col:SV_EC.wood, p }); }
 }
+// (build 551) 판 안 목표 — 숲은 판마다 셋(seed로 같게) · 다 채우면 정령의 선물 + 골드 30 (사용자 10/29 맵 설계: 스웜처럼 판 안 목표) · 함께 채움
+const SV_OBJ = { box:{ s:'상자 부수기', n:8 }, well:{ s:'고대 샘 켜기', n:2 }, elite:{ s:'정예 처치', n:3 }, swamp:{ s:'늪 속 적 처치', n:40 }, safe:{ s:'5분까지 아무도 안 쓰러지기', n:300 } };
+function svObjInit(G){ G.obj = null; if(!G.map || !G.map.forest) return; const R = svRng((sv.seed||1) + 99), pool = Object.keys(SV_OBJ); G.obj = []; while(G.obj.length < 3) G.obj.push({ k: pool.splice(Math.floor(R()*pool.length), 1)[0], c:0, ok:0, no:0 }); }
+function svObjAdd(k, v){ const G = sv.game; if(!G || !G.obj || sv.net.role==='guest') return;
+  G.obj.forEach(o=>{ if(o.k!==k || o.ok || o.no) return; const n = SV_OBJ[k].n; o.c = Math.min(n, k==='safe' ? v : o.c + (v||1)); if(o.c < n) return; o.ok = 1; G.gold += 30;
+    const al = G.players.filter(q=>!q.down), p = al.length ? svRand(al) : G.players[0]; G.loot.push({ x:p.x + 22, y:p.y - 10, k:'rune' }); svCollide(G.loot[G.loot.length-1], 10);
+    svFx({ k:'text', x:SV_W/2, y:130, uy:1, t:0, d:2, s:'목표 달성 — '+SV_OBJ[k].s+'!', col:'#9be07a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} }); }
 function svKill(e, col){
   const G = sv.game;
   if(e.kind==='pod'){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col:'#ffd557', r:28 }); for(let k=0;k<10;k++){ const a = Math.random()*6.28, v = 60 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#c98a4a' : '#ffd557', 0.5, 3); } // 상자 부서짐 → 보상이 흩어짐 (경험치처럼 끌어와 주움)
-    const r = Math.random(), drop = [{ k:'gold', v:15 }, { k:'gold', v:15 }, { k: r < 0.45 ? 'heal' : r < 0.75 ? 'mag' : 'gold', v:15 }]; drop.forEach((o,i)=>{ const a = i*2.1 + Math.random(); G.loot.push(Object.assign({ x: e.x + Math.cos(a)*16, y: e.y + Math.sin(a)*16 }, o)); }); try{ sfx('claim'); }catch(x){} return; }
-  G.kills++; if(e.kind==='boss' && !e.final) G.midKilled = true;
+    svObjAdd('box'); const r = Math.random(), drop = [{ k:'gold', v:15 }, { k:'gold', v:15 }, { k: r < 0.45 ? 'heal' : r < 0.75 ? 'mag' : 'gold', v:15 }]; drop.forEach((o,i)=>{ const a = i*2.1 + Math.random(); G.loot.push(Object.assign({ x: e.x + Math.cos(a)*16, y: e.y + Math.sin(a)*16 }, o)); }); try{ sfx('claim'); }catch(x){} return; }
+  G.kills++; if(e.kind==='boss' && !e.final) G.midKilled = true; if(e.kind==='elite') svObjAdd('elite'); if(G.map && G.map.forest && svZoneAt(e, 'swamp')) svObjAdd('swamp');
   for(let k=0;k<(e.kind==='elite' ? 3 : 1);k++) G.gems.push({ x:e.x + (k ? Math.random()*40-20 : 0), y:e.y + (k ? Math.random()*40-20 : 0), v:e.xp*SV_XPK, big: e.xp >= 4 }); // (build 521) 정예는 경험치 보석을 3개 떨굼 — 값을 3배로 하지 않고 떨구는 양을 늘림 (사용자 10/27)
   if(e.kind==='elite' || e.kind==='boss'){ const n0 = G.loot.length; for(let k=0;k<(e.kind==='boss' ? 2 : 1);k++) G.loot.push({ x:e.x + k*24, y:e.y, k:'rune' }); /* (build 520) 「정령의 선물」 — 주우면 카드 3장 중 하나 고르기 */ for(let k=0;k<5;k++) G.loot.push({ x:e.x + Math.random()*50-25, y:e.y + Math.random()*50-25, k:'gold', v:10 }); G.loot.slice(n0).forEach(o=>svCollide(o, 14)); } // 장애물 속에 떨어지지 않게
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
@@ -13305,6 +13313,7 @@ function svTick(dt){
     if(p.leader==='water_a' && p.lpT >= 4){ p.lpT = 0; const q = alive.reduce((a,b)=> b.hp/b.maxHp < a.hp/a.maxHp ? b : a, p); if(q.hp < q.maxHp){ const h = Math.round(q.maxHp*0.08); q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }
     if(p.leader==='light_a' && p.lpT >= 10){ p.lpT = 0; p.shield = Math.max(p.shield, p.maxHp*0.2); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.4, col:SV_EC.light, r:30 }); }
     p.wp.forEach(w=>{ const n0 = G.pr.length, f0 = G.fx.length, o0 = G.pools.length, x0 = (G.netFx||[]).length; svAttack(p, w, dt); if(w.evo){ for(let i=n0;i<G.pr.length;i++) G.pr[i].ev = 1; for(let i=f0;i<G.fx.length;i++) if(G.fx[i].k!=='num') G.fx[i].ev = 1; for(let i=o0;i<G.pools.length;i++) G.pools[i].ev = 1; for(let i=x0;i<(G.netFx||[]).length;i++) G.netFx[i].ev = 1; } }); }); // (build 510) 진화한 스킬이 만든 것은 ev — 그림을 크게·화려하게 (사용자 10/27: 스웜처럼 진화 임팩트)
+  if(G.obj){ if(G.players.some(p=>p.down)) G.obj.forEach(o=>{ if(o.k==='safe' && !o.ok) o.no = 1; }); else svObjAdd('safe', G.t); }
   if(G.players.every(p=>p.down)){ G.over = 'lost'; svShowEnd(); return; }
   G.pr.forEach(b=>{
     if(b.kind==='ebul'){ b.x += b.vx*dt; b.y += b.vy*dt; b.t += dt; if(b.t > 6){ b.done = true; return; }
@@ -13387,6 +13396,7 @@ function svHud(){
     const B = svBase(me.leader), atkV = Math.round((me.atk||100)*(1 + atk/100)), spdV = Math.round(svSpd(me)), val = (nm, v, b)=>'<span>'+nm+'</span><b class="'+(v > b ? 'up' : v < b ? 'dn' : '')+'">'+v+'</b>'; /* (build 543) 실제 값 */
     const h = '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>' + val('공격력', atkV, B.atk) + val('방어력', svDef(me), B.def) + val('이동 속도', spdV, B.spd) + '<span>치명타</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + row('스킬 간격', -cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('받는 피해', tk, tk < 0) + row('줍는 범위', pk, pk > 0);
     if(st._h !== h){ st._h = h; st.innerHTML = h; } } } { const wd = q('.sv-wasd'); if(wd && wd.classList.contains('on') !== !!sv.pc) wd.classList.toggle('on', !!sv.pc); }
+  { const oe = q('.sv-obj'); if(oe){ const h = G.obj ? '<b>목표</b>'+G.obj.map(o=>'<span class="'+(o.ok ? 'ok' : o.no ? 'no' : '')+'">'+SV_OBJ[o.k].s+' <i>'+(o.k==='safe' ? svFmtT(o.c)+'/5:00' : Math.floor(o.c)+'/'+SV_OBJ[o.k].n)+'</i></span>').join('') : ''; if(oe._h !== h){ oe._h = h; oe.innerHTML = h; oe.style.display = h ? '' : 'none'; } } } // (build 551) 판 안 목표
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
     set(ub.querySelector('i'), 'h', Math.round(cd/SV_ULT_CD*200)/2, (el, v)=>{ el.style.height = v+'%'; }); set(ub.querySelector('b'), 't', cd > 0 ? ''+Math.ceil(cd) : '', (el, v)=>{ el.textContent = v; }); // 준비되면 글자 없이 빛남 (사용자 10/26)
     const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const src = 'assets/ui/'+(state.svAim==='mouse' ? 'ic_target' : 'ic_auto')+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src){ im.setAttribute('src', src); ab.title = '조준: '+(state.svAim==='mouse' ? '마우스 방향' : '이동 방향'); } } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
@@ -13436,7 +13446,7 @@ function svNetStart(){
 function svHostSend(){
   const G = sv.game, fb = raidNet.fb, n = sv.net; if(!fb || !n.code) return;
   const R = Math.round;
-  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, wl: G.map && G.map.well ? [Math.round(G.map.well.ch*100), Math.ceil(G.map.well.cd)] : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
+  const snap = { t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, ob: G.obj ? G.obj.map(o=>[o.k, Math.floor(o.c), o.ok ? 1 : o.no ? 2 : 0]) : 0, wl: G.map && G.map.well ? [Math.round(G.map.well.ch*100), Math.ceil(G.map.well.cd)] : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
     p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo ? 1 : 0]), ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0 })),
     e: G.en.slice(0, G.players.length >= 3 ? 150 : 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : 0]),
     g: G.gems.slice(0, 150).map(g=>[R(g.x), R(g.y), g.big ? 1 : 0]),
@@ -13454,7 +13464,7 @@ function svGuestSend(){
   fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), a).catch(()=>{}); // (build 544) 자리마다 따로
 }
 function svGuestApply(v){
-  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk; if(v.wl && G.map && G.map.well){ G.map.well.ch = v.wl[0]/100; G.map.well.cd = v.wl[1]; } G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
+  const G = sv.game; G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.midKilled = !!v.mk; if(Array.isArray(v.ob)) G.obj = v.ob.filter(a=>SV_OBJ[a[0]]).map(a=>({ k:a[0], c:a[1], ok: a[2]===1 ? 1 : 0, no: a[2]===2 ? 1 : 0 })); if(v.wl && G.map && G.map.well){ G.map.well.ch = v.wl[0]/100; G.map.well.cd = v.wl[1]; } G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
   (v.p||[]).forEach((q,i)=>{ const p = G.players[i] || (G.players[i] = svNewPlayer(i, q.ld));
     if(i!==G.me || q.d){ p.tx = q.x; p.ty = q.y; if(Math.hypot((p.x||0)-q.x, (p.y||0)-q.y) > 80){ p.x = q.x; p.y = q.y; } }
     p.leader = q.ld || p.leader; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {};
@@ -20128,7 +20138,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 550, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 551, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
