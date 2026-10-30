@@ -12465,7 +12465,7 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
 }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
-  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns'].forEach(n=>svImg(b+n+'.webp'));
+  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion'].forEach(n=>svImg(b+n+'.webp'));
   if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring', M.id+'_map']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
   Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); Object.keys(SV_SD).forEach(L=>SV_SD[L].parts.forEach(q=>svSdImg(L, q.n))); // (build 531) 조각 동작 그림
@@ -13596,7 +13596,7 @@ function svWeapTick(dt){ const G = sv.game;
   G.pr.forEach(b=>{
     if(b.kind==='ebul'){ b.x += b.vx*dt; b.y += b.vy*dt; b.t += dt; if(b.t > 6){ b.done = true; return; }
       G.players.forEach(p=>{ if(!b.done && !p.down && p.inv <= 0 && Math.hypot(p.x-b.x, p.y-b.y) < 12){ svHurt(p, b.dmg); p.inv = 0.4; b.done = true; } }); return; }
-    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; if(b.web){ G.pools.push({ x:b.tx, y:b.ty, R:b.web.R, t:0, d:b.web.d, dps:b.web.dps, web:true, wev:b.web.wev, col:'#d8e8c8', p:b.p }); svFx({ k:'ring', x:b.tx, y:b.ty, t:0, d:0.35, col:'#ffffff', r:b.web.R*0.8 }); return; } svFx({ k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
+    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; if(b.web){ G.pools.push({ x:b.tx, y:b.ty, R:b.web.R, t:0, d:b.web.d, dps:b.web.dps, web:true, wev:b.web.wev, col:'#d8e8c8', p:b.p }); svFx({ k:'ring', x:b.tx, y:b.ty, t:0, d:0.35, col:'#ffffff', r:b.web.R*0.8 }); return; } svFx(b.burn ? { k:'fexp', x:Math.round(b.tx), y:Math.round(b.ty), t:0, d:0.45, col:b.col, r:Math.round(b.R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 } : { k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); /* (build 587) 화염구 폭발 그림 */ G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
     if(b.kind==='spark' || b.kind==='wave'){ b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if(b.life <= 0){ b.done = true; return; }
       const wv = b.kind==='wave', sp = Math.hypot(b.vx, b.vy)||1, ux = b.vx/sp, uy = b.vy/sp;
       G.en.forEach(e=>{ if(b.done || e.hp<=0 || b.hitS.includes(e)) return;
@@ -13991,6 +13991,7 @@ function svDraw(){
     else if(f.k==='jet'){ const pl = G.players[f.pi]; svDrawJet(c, f, pl ? pl.x : f.x, pl ? pl.y : f.y); }
     else if(f.k==='leaf') svDrawLeaf(c, f);
     else if(f.k==='dash') svDrawDash(c, f);
+    else if(f.k==='fexp'){ const k = f.t/f.d, sz = f.r*2.4*(0.35 + 0.75*svClawE(Math.min(1, k*2.2))); if(!svFxImg(c, 'fx_explosion', f.x, f.y - 6, sz, (f.ro||0) + k*0.3*(f.fl||1), f.fl, k < 0.5 ? 1 : 1 - (k - 0.5)*2)){ c.fillStyle = f.col; c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*k), 0, 6.283); c.fill(); } } // (build 587) 금오 화염구 — 확 커졌다 사라짐
     else if(f.k==='thorn'){ const k = f.t/f.d, sz = f.r*2.3*(0.9 + 0.2*Math.sin(k*Math.PI)); svFxImg(c, 'fx_thorns', f.x, f.y, sz, (f.ro||0) + k*0.5*(f.fl||1), f.fl, 0.9*(1 - k)); } // (build 586) 가시 울타리 — 맞힐 때 가시가 조였다 풀림
     else if(f.k==='lring'){ const k = f.t/f.d, sz = f.r*2*(0.5 + 0.7*svClawE(Math.min(1, k*1.5))); if(!svFxImg(c, 'fx_lightburst', f.x, f.y - 6, sz, (f.ro||0) + k*0.6*(f.fl||1), f.fl, 1 - k*k)){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*k), 0, 6.283); c.lineWidth = 3; c.strokeStyle = '#ffd04a'; c.stroke(); } } // 빛의 보호막
     else if(f.k==='borb') svDrawBorb(c, f, G);
@@ -20548,7 +20549,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 586, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 587, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
