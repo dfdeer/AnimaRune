@@ -13238,7 +13238,7 @@ function svDrawSD(c, L, p, a, t){ const S = SV_SD[L], w = a.w, A = S.amp*Math.PI
 function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조준이면 마우스 쪽 (컴퓨터)
   const G = sv.game, me = p===G.players[G.me]; if(sv.curW && sv.curW===p.wp[0] && svPFire(p)==='manual'){ if(me && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); if(!me && Number.isFinite(p.ma)) return p.ma; } // 수동 = 시작 룬은 마우스 쪽
   const am = svPAim(p); if(am==='mouse'){ if(me && sv.mouse && sv.cam) return Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x); if(!me && Number.isFinite(p.ma)) return p.ma; } /* (build 577) 마우스 조준 = 모든 방향 룬이 커서 쪽 */
-  if(am==='near'){ const e = svNear(p.x, p.y, 420, o=>o.kind!=='pod'); if(e) return Math.atan2(e.y - p.y, e.x - p.x); } return Math.atan2(p.face[1], p.face[0]); // 자동 = 가까운 적 (없으면 바라보는 쪽)
+  if(am==='near'){ const e = svNearT(p.x, p.y, 420); if(e) return Math.atan2(e.y - p.y, e.x - p.x); } return Math.atan2(p.face[1], p.face[0]); // 자동 = 가까운 적 (없으면 바라보는 쪽)
 }
 function svOath(){ return sv.game.players.some(q=>q.leader==='light_b'); } // 서약: 나와 친구 모두
 function svSpd(p){ return p.spd * (1 + 0.08*svPasLv(p, 'swift')) * (svOath() ? 1.12 : 1) * (p.spdB > 0 ? 1.3 : 1) * (svBless('spd') ? 1.2 : 1); }
@@ -13425,6 +13425,7 @@ function svSpawnBoss(g, final){
   G.en.push({ x: Math.max(40, Math.min(SV_MW-40, tp.x)), y: Math.max(40, Math.min(SV_MH-40, by)), r:34, spd:30, hp, max:hp, dmg:30*SV_STD[st]*svCoop(G).dmg, xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', fl:0, skT:3 });
   svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:2.2, s:(final ? '최종 보스 — ' : '중간 보스 — ')+(SV_BOSS_NM[g]||''), col:'#ff6a6a', sz:22, scr:1 }); try{ sfx('battleStart'); }catch(e){}
 }
+function svNearT(x, y, r){ return svNear(x, y, r, o=>o.kind!=='pod') || svNear(x, y, r); } // (build 582) 조준 대상 — 적 먼저, 없으면 상자도 (사용자 10/30: 자동 조준이 상자를 안 때림)
 function svNear(x, y, r, pred){ let best = null, bd = r; sv.game.en.forEach(e=>{ if(e.hp<=0 || (pred && !pred(e))) return; const d = Math.hypot(e.x-x, e.y-y) - e.r; if(d < bd){ bd = d; best = e; } }); return best; }
 function svHit(e, v, col, crit){
   if(e.hp<=0) return; if(e.curse > 0) v *= 1.25; e.hp -= v; e.fl = 0.12; const G = sv.game;
@@ -13483,13 +13484,13 @@ function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), ra
 function svStCritDmg(p){ return 2 + 0.2*svPasLv(p, 'tinder'); } // (build 569) 치명타 피해 — 기본 200% · (build 573) 불꽃 부싯돌 Lv마다 +20% (예전 화상 확률 — 스탯으로 보기 애매해서, 사용자 10/30)
 function svAttack(p, w, dt){
   { const G0 = sv.game, me = p===G0.players[G0.me], fm = svPFire(p); sv.curW = w; if(w===p.wp[0] && fm==='manual' && !(me ? sv.mDown : p.md)){ w.cd = Math.max(0, w.cd - dt); return; } /* 수동 — 누를 때만 */
-      if(SV_DIRW[w.id] && svPAim(p)==='near' && !(w===p.wp[0] && fm==='manual') && !svNear(p.x, p.y, SV_DIRW[w.id](w.lv)*(1 + 0.12*svPasLv(p, 'area'))*(w.evo && w.id==='light_b_1' ? 1.5 : 1), o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
+      if(SV_DIRW[w.id] && (w!==p.wp[0] || (svPAim(p)==='near' && fm!=='manual')) && !svNearT(p.x, p.y, SV_DIRW[w.id](w.lv)*(1 + 0.12*svPasLv(p, 'area'))*(w.evo && w.id==='light_b_1' ? 1.5 : 1))){ /* (build 582) 시작 룬이 아니면 늘 자동 조준 */ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
   const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
   const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
   const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?svStCritDmg(p):1), col, c); };
   const inR = (R, x, y)=>G.en.filter(e=>e.hp>0 && Math.hypot(e.x-(x==null ? p.x : x), e.y-(y==null ? p.y : y)) < R + e.r);
-  const aimTo = r=>{ if(svPAim(p)==='near' && !(w===p.wp[0] && svPFire(p)==='manual')){ const e = svNear(p.x, p.y, r, o=>o.kind!=='pod'); if(e) return Math.atan2(e.y-p.y, e.x-p.x); } return svAimDir(p); }; // (build 580) 방향 룬 — 자동 조준일 때만 그 룬 사거리 안 가까운 적 · 방향 고정·마우스 조준이면 그 방향 (사용자 10/30: 방향 고정·마우스 조준인데 적에게 날아감)
-  const ahead = (d, da)=>{ const a = svAimDir(p) + (da||0); return { x:p.x + Math.cos(a)*d, y:p.y + Math.sin(a)*d, r:0, hp:1 }; }; // (build 540) 무기는 적이 없어도 자동으로 나감 (사용자 10/29) — 날아가는 무기는 바라보는 쪽으로 · (build 541) 적 자리에 바로 생기는 무기(빛의 창·빛 세례·끈끈이 그물·검은 소용돌이·생명 흡수)는 예외로 적이 있을 때만
+  const aimTo = r=>{ if(w!==p.wp[0] || (svPAim(p)==='near' && svPFire(p)!=='manual')){ const e = svNearT(p.x, p.y, r) || svNearT(p.x, p.y, 420); return e ? Math.atan2(e.y-p.y, e.x-p.x) : Math.atan2(p.face[1], p.face[0]); } return svAimDir(p); }; /* (build 582) 시작 룬이 아닌 룬은 조준 방식과 상관없이 늘 자동 (사용자 10/30) */ // (build 580) 방향 룬 — 자동 조준일 때만 그 룬 사거리 안 가까운 적 · 방향 고정·마우스 조준이면 그 방향 (사용자 10/30: 방향 고정·마우스 조준인데 적에게 날아감)
+  const ahead = (d, da)=>{ const a = aimTo(420) + (da||0); return { x:p.x + Math.cos(a)*d, y:p.y + Math.sin(a)*d, r:0, hp:1 }; }; // (build 540) 무기는 적이 없어도 자동으로 나감 (사용자 10/29) — 날아가는 무기는 바라보는 쪽으로 · (build 541) 적 자리에 바로 생기는 무기(빛의 창·빛 세례·끈끈이 그물·검은 소용돌이·생명 흡수)는 예외로 적이 있을 때만
   if(id==='water_b_2'){ // 빙결 — 둘레를 도는 얼음 (간격 없이 계속)
     const o = svOrbit(p, w); w.a += dt * (2.6 + (ev ? 1.2 : 0));
     for(let k=0;k<o.n;k++){ const a = w.a + k*6.283/o.n, x = p.x + Math.cos(a)*o.rad, y = p.y + Math.sin(a)*o.rad;
@@ -13498,7 +13499,7 @@ function svAttack(p, w, dt){
   }
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
   if(id==='fire_a_1'){ // 불꽃 발톱 — (build 489) 사용자 결정 10/26: 즉발이 아니라 할퀴는 동안(0.22초) 발톱이 지나간 자리에 닿은 적만 맞음 · 대상 안 고름 · 좌우 번갈아
-    const R0 = (66 + lv*5)*ar*(ev ? 1.2 : 1), d0 = svAimDir(p), half = 1.35; if(ev) for(let k=0;k<12;k++){ const a = d0 + (Math.random() - 0.5)*2.4, v = 120 + Math.random()*180; svPart(p.x + Math.cos(a)*R0*0.6, p.y + Math.sin(a)*R0*0.6, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#ffd27a' : '#ff6a2a', 0.45, 3); } /* (build 510) 진화 — 크게 · 불티 */ w.alt = 1; /* (build 497) 번갈지 않고 늘 같은 쪽에서 앞으로 그음 (사용자 10/26) */ G.sweeps = G.sweeps || [];
+    const R0 = (66 + lv*5)*ar*(ev ? 1.2 : 1), d0 = aimTo(420), half = 1.35; if(ev) for(let k=0;k<12;k++){ const a = d0 + (Math.random() - 0.5)*2.4, v = 120 + Math.random()*180; svPart(p.x + Math.cos(a)*R0*0.6, p.y + Math.sin(a)*R0*0.6, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#ffd27a' : '#ff6a2a', 0.45, 3); } /* (build 510) 진화 — 크게 · 불티 */ w.alt = 1; /* (build 497) 번갈지 않고 늘 같은 쪽에서 앞으로 그음 (사용자 10/26) */ G.sweeps = G.sweeps || [];
     [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{ G.sweeps.push({ p, dir, s:w.alt, half, R:R0, t:0, d:0.13, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:0.27, sw:0.13, col, r:R0, a:dir, s:w.alt, half }); }); }
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
   else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
@@ -13542,7 +13543,7 @@ function svAttack(p, w, dt){
     tg.forEach(e=>{ hit(e, 16*m); svFx({ k:'beam', x:p.x, y:p.y, x2:e.x, y2:e.y, t:0, d:0.2, col:'#ff4a6a' }); }); const h = (1 + lv*0.4)*(ev ? 1.5 : 1)*tg.length*svAtkK(p); p.hp = Math.min(p.maxHp, p.hp + h); /* (build 543) 공격력 비례 */ }
   else if(id==='dark_a_2'){ const R = (72 + lv*5)*ar*(ev ? 1.3 : 1); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.3, col, r:R });
     inR(R).forEach(e=>{ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*lv + (ev ? 0.1 : 0)) (sv.locOn ? svLocHit(p, e, -1, col, true) : svHit(e, e.hp+1, col, true)); else hit(e, 20*m); }); }
-  else if(id==='dark_b_1'){ const n = 1 + lv + (ev ? 4 : 0); for(let k=0;k<n;k++){ const e = svRand(G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280)) || null, a = e ? Math.random()*6.28 : svAimDir(p) + (Math.random() - 0.5)*1.2; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, e, sp:300, kind:'home', dmg:12*m, curse:4, col, crit:cr + (ev ? 0.5 : 0), p }); /* (build 509) 진화 치명타 +50% (짝: 숫돌) */ } }
+  else if(id==='dark_b_1'){ const n = 1 + lv + (ev ? 4 : 0); for(let k=0;k<n;k++){ const e = svRand(G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280)) || null, a = e ? Math.random()*6.28 : aimTo(420) + (Math.random() - 0.5)*1.2; G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, e, sp:300, kind:'home', dmg:12*m, curse:4, col, crit:cr + (ev ? 0.5 : 0), p }); /* (build 509) 진화 치명타 +50% (짝: 숫돌) */ } }
   else if(id==='dark_b_2'){ const e = svDense(p, 260); if(!e){ w.cd = 0.4; return; } G.pools.push({ x:e.x, y:e.y, R:(50 + lv*5)*ar*(ev ? 1.3 : 1), t:0, d:1.6, dps:8*m, pull:true, end:30*m, col:'#7a3cff', p }); }
   if(p === G.players[G.me]) svSnd(id==='fire_a_1' ? 'svClaw' : 'svShot', id==='fire_a_1' ? 0 : 0.12); // (build 492) 공격 소리 (사용자 10/26) — 내 정령만
   { w.kick = 0.24; w.kdir = aimTo(320); } // (build 484) 공격 모션 — (build 485) 실제로 쓴 때만 (대상이 없어 돌아가면 안 움직임: 전엔 0.2초마다 들썩였음)
@@ -20494,7 +20495,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 581, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 582, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
