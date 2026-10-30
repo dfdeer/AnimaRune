@@ -12549,7 +12549,7 @@ const SV_FOPC = { worldtree:0.66, tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.
 const SV_FOSH = { worldtree:[0.36, 0.1], tree_a:[0.4, 0.13], tree_b:[0.4, 0.13], tree_c:[0.4, 0.13], rock:[0.46, 0.15], shrine:[0.5, 0.17], mush:[0.38, 0.12], bush:[0.42, 0.13], snowman:[0.42, 0.13] }; /* (build 565) 물가 돌·갈대는 물 위라 그림자 뺌 */ // (build 558) 바닥 그림자 (가로·세로 반지름 = 폭의 몇 배) — 바닥 조각에 미리 그려 둠
 // (build 598) 조각으로 짠 맵 — 숲 · 설원 (사용자 편집기 배치) · T = 바닥 그림 [바탕, 길, 물/얼음] · dk/pk = 그늘·길 그림자 색 · mini = 작은 지도 색 [바탕, 그늘, 길, 물]
 const SV_FOMAP = { forest:{ dir:'forest/', mw:2400, mh:1350, T:['grass', 'path', 'water'], dk:['#0e2310', 0.78], pk:'#5a4426', base:'#3c6d34', mini:[[86,150,64],[22,58,26],[205,168,108],[74,168,216]], D:()=>SV_FO },
-  snow:{ dir:'snow/', mw:2600, mh:3600, T:['snow_a', 'path', 'ice'], dk:['#6f88a6', 0.42], pk:'#6f84a0', pt:['#7d93ad', 0.24], base:'#dfe9f2', mini:[[226,236,246],[150,172,196],[196,204,214],[150,206,236]], D:()=>SV_SN } };
+  snow:{ dir:'snow/', mw:2600, mh:3600, T:['snow_a', 'path', 'ice'], dk:['#6f88a6', 0.42], pk:'#8a9db3', /* (build 601) 길 어둡게 한 것 되돌림 (사용자 10/30 「색감 좋았는데 그냥 둬」) */ base:'#dfe9f2', mini:[[226,236,246],[150,172,196],[196,204,214],[150,206,236]], D:()=>SV_SN } };
 function svFoCfg(map){ return SV_FOMAP[(map && map.fom) || 'forest']; }
 const SV_SPAWN_OFF = [[-45, 0], [45, 0], [-100, 34], [100, 34]]; // (build 563) 넷까지 시작 자리 (겹치지 않게)
 function svMakeForest(stage, seed, fom){ fom = fom || 'forest'; const CF = SV_FOMAP[fom], snow = fom==='snow'; svFoUse(fom);
@@ -12859,7 +12859,7 @@ function svFoChunk(i, j, s){ const CF = svFoCfg(sv.game && sv.game.map), M = svF
   const layer = (fill, mask, dy, a)=>{ t.setTransform(1, 0, 0, 1, 0, 0); t.globalCompositeOperation = 'source-over'; t.clearRect(0, 0, N, N); W(t); t.fillStyle = typeof fill === 'string' ? fill : pat(t, fill[0], fill[1]); t.fillRect(X0, Y0, SV_FCH, SV_FCH);
     t.globalCompositeOperation = 'destination-in'; t.imageSmoothingQuality = 'high'; svFoMaskPart(t, mask, X0, Y0 - dy, dy); t.globalCompositeOperation = 'source-over'; x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = a; x.drawImage(tmp, 0, 0); x.globalAlpha = 1; };
   W(x); x.fillStyle = pat(x, T[0], 420); x.fillRect(X0, Y0, SV_FCH, SV_FCH);
-  layer(CF.dk[0], M.dark, 0, CF.dk[1]); layer(CF.pk, M.path, 3, 0.35); layer([T[1], 300], M.path, 0, 1); if(CF.pt) layer(CF.pt[0], M.path, 0, CF.pt[1]); /* (build 600) 설원 길은 눈과 거의 같은 색이라 살짝 어둡게 (사용자 10/30 「길이 잘 안 보임」) */ layer([T[2], 300], M.water, 0, 1); /* (build 565) 물 아래 어두운 그림자 띠는 뺌 (사용자 10/29 「필요 없음」) */
+  layer(CF.dk[0], M.dark, 0, CF.dk[1]); layer(CF.pk, M.path, 3, 0.35); layer([T[1], 300], M.path, 0, 1); layer([T[2], 300], M.water, 0, 1); /* (build 565) 물 아래 어두운 그림자 띠는 뺌 (사용자 10/29 「필요 없음」) */
   { const sh = svSoftSh(), G = sv.game; W(x); x.globalAlpha = 0.85; if(G && G.map && G.map.pcs) G.map.pcs.forEach(p=>{ if(!p.sh) return; const rx = p.w*p.sh[0], ry = p.w*p.sh[1], cx = p.x + p.w*0.07, cy = p.y - ry*0.35; // (build 558) 바닥 그림자 — 해가 왼쪽 위라 오른쪽 아래로 살짝
     if(cx + rx < X0 || cx - rx > X0 + SV_FCH || cy + ry < Y0 || cy - ry > Y0 + SV_FCH) return; x.drawImage(sh, cx - rx, cy - ry, rx*2, ry*2); }); x.globalAlpha = 1;
     if(G && G.map && G.map.pcs){ const L = G.map.pcs.filter(p=>p.bake && p.x + p.w*0.7 > X0 && p.x - p.w*0.7 < X0 + SV_FCH && p.y + 10 > Y0 && p.y - (p.h || p.w*1.7) < Y0 + SV_FCH); /* (build 580) 움직이지 않는 조각도 같이 구움 */
@@ -13488,7 +13488,7 @@ function svStart(role){
     if(bw/bh >= 0.6){ SV_H = 600; SV_W = Math.min(1400, Math.round(600*bw/bh)); } else { SV_W = 360; SV_H = Math.min(900, Math.round(360*bh/bw)); }
     const w = Math.min(bw, bh * SV_W / SV_H), h = w*SV_H/SV_W, dpr = Math.min(2, window.devicePixelRatio || 1, Math.sqrt(2.2e6/(w*h))); // (build 491) 그리는 점 수를 약 220만(1920×1080 정도)까지로 — 큰 화면·고해상도에서 렉
     cv.style.width = w+'px'; cv.style.height = h+'px'; { const W = Math.round(w*dpr), H = Math.round(h*dpr); if(cv.width !== W) cv.width = W; if(cv.height !== H) cv.height = H; } /* (build 580) 크기가 같으면 안 건드림 — 다시 정하면 그림이 지워져 화면이 잠깐 까매졌음 (사용자 10/30) */ sv.scale = w / SV_W; sv.dpr = cv.width / w;
-    const vig = sv.el.querySelector('.sv-vig'); if(vig){ const k = w / SV_W; vig.style.width = w+'px'; vig.style.height = h+'px'; const snw = sv.game && sv.game.map && sv.game.map.snow; vig.style.background = snw ? 'radial-gradient(circle at 50% 50%, #1a2a4a00 '+Math.round(220*k)+'px, #1a2a4a66 '+Math.round(480*k)+'px)' : 'radial-gradient(circle at 50% 50%, #0b0d2600 '+Math.round(160*k)+'px, #0b0d26aa '+Math.round(430*k)+'px)'; } /* (build 600) 설원은 하얀 바닥이라 테두리를 옅게 — 진하면 흐린 안개처럼 보이고 길이 묻힘 */
+    const vig = sv.el.querySelector('.sv-vig'); if(vig){ const k = w / SV_W; vig.style.width = w+'px'; vig.style.height = h+'px'; vig.style.background = 'radial-gradient(circle at 50% 50%, #0b0d2600 '+Math.round(160*k)+'px, #0b0d26aa '+Math.round(430*k)+'px)'; }
     const uk = bw/bh >= 0.6 ? Math.max(1, Math.min(1.7, h/540)) : 1; sv.el.style.setProperty('--uk', uk); sv.uk = uk; // (build 564) 컴퓨터(가로 화면)는 HTML UI를 화면 높이에 맞춰 키움 (사용자 10/29 「UI 너무 작음」) — 위치는 아래에서 uk로 나눠 줌
     const top = sv.el.querySelector('.sv-hud'), bar = sv.el.querySelector('.sv-bar'), th = top ? top.getBoundingClientRect().height : 0, bb = bar ? bar.getBoundingClientRect().height : 0, rx = (bw - w)/2, by = (bh - h)/2;
     sv.uiTop = Math.max(0, th - by) / sv.scale; sv.uiBot = Math.max(0, bb - by) / sv.scale; // 겹친 HUD 높이 (게임 좌표) — 작은 지도·글자를 그만큼 비켜 그림
@@ -20758,7 +20758,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 600, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 601, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
