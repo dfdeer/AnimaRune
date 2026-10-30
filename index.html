@@ -13041,7 +13041,7 @@ function svPasLv(p, k){ return p.ps[k] || 0; }
 // 수동은 겨눠 쏘는 시작 룬만 — 적 자리에 바로 생기거나 둘레로 퍼지는 룬(빛의 창·맑은 파도·피의 갈증·저주 깃털)은 늘 자동이라 수동으로 못 바꿈
 const SV_AIM_NM = { near:'가장 가까운 적', face:'바라보는 방향' }, SV_FIRE_NM = { auto:'자동 공격', manual:'수동 공격 (마우스를 누르는 동안 시작 룬 발사)' };
 const SV_MANUAL = { fire_a_1:1, fire_b_1:1, water_b_1:1, wood_a_1:1, wood_b_1:1, light_b_1:1 }; // 수동으로 쏠 수 있는 시작 룬
-const SV_DIRW = { fire_a_1:1, fire_b_1:1, water_b_1:1, wood_a_1:1, wood_b_1:1, light_b_1:1, water_a_2:1, fire_b_2:1 }; // 적이 없으면 바라보는 쪽으로 나가는 룬 — 「가장 가까운 적」이면 사거리 안에 적이 있을 때만
+const SV_DIRW = { fire_a_1:l=>(66 + l*5)*1.3, fire_b_1:l=>150 + l*6, water_b_1:l=>210 + l*10, wood_a_1:()=>260, wood_b_1:()=>160, light_b_1:()=>280, water_a_2:()=>240, fire_b_2:()=>240 }; // 적이 없으면 바라보는 쪽으로 나가는 룬 — 「가장 가까운 적」이면 그 룬이 닿는 거리(× 공격 범위) 안에 적이 있을 때만 · (build 575) 예전엔 모두 320이라 발톱(약 80)도 화면 밖 적에 헛손질 (사용자 10/30 「폰도 범위 안에 적이 있을 때만」)
 function svAimMode(){ const m = state.svAim; return m==='face' || m==='move' ? 'face' : 'near'; } // 예전 값(auto·mouse·move)도 받아 줌
 function svStartRune(p){ return p && p.wp && p.wp[0] ? p.wp[0].id : ''; }
 function svFireMode(p){ return sv.pc && state.svFire==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'; }
@@ -13339,7 +13339,7 @@ function svOrbit(p, w){ return { n: 3 + Math.floor(w.lv/2) + (w.evo ? 2 : 0), ra
 function svStCritDmg(p){ return 2 + 0.2*svPasLv(p, 'tinder'); } // (build 569) 치명타 피해 — 기본 200% · (build 573) 불꽃 부싯돌 Lv마다 +20% (예전 화상 확률 — 스탯으로 보기 애매해서, 사용자 10/30)
 function svAttack(p, w, dt){
   { const G0 = sv.game, me = p===G0.players[G0.me], fm = svPFire(p); sv.curW = w; if(w===p.wp[0] && fm==='manual' && !(me ? sv.mDown : p.md)){ w.cd = Math.max(0, w.cd - dt); return; } /* 수동 — 누를 때만 */
-      if(SV_DIRW[w.id] && svPAim(p)==='near' && !(w===p.wp[0] && fm==='manual') && !svNear(p.x, p.y, 320, o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
+      if(SV_DIRW[w.id] && svPAim(p)==='near' && !(w===p.wp[0] && fm==='manual') && !svNear(p.x, p.y, SV_DIRW[w.id](w.lv)*(1 + 0.12*svPasLv(p, 'area'))*(w.evo && w.id==='light_b_1' ? 1.5 : 1), o=>o.kind!=='pod')){ w.cd = Math.max(0, w.cd - dt); return; } } // (build 566) 가장 가까운 적 — 사거리 안에 적이 없으면 안 쏨
   const G = sv.game, id = w.id, col = SV_EC[id.split('_')[0]], ev = w.evo, lv = w.lv;
   const m = svWM(p, w), ar = 1 + 0.12*svPasLv(p, 'area'), cr = 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0);
   const hit = (e, v)=>{ const c = Math.random() < cr; svHitBy(p, e, v*(c?svStCritDmg(p):1), col, c); };
@@ -20346,7 +20346,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 574, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 575, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
