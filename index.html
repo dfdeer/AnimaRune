@@ -13054,13 +13054,13 @@ function svPasLv(p, k){ return p.ps[k] || 0; }
 const SV_MANUAL = { fire_a_1:1, fire_b_1:1, water_b_1:1, wood_a_1:1, wood_b_1:1, light_b_1:1 }; // 수동으로 쏠 수 있는 시작 룬
 const SV_DIRW = { fire_a_1:l=>(66 + l*5)*1.3, fire_b_1:l=>150 + l*6, water_b_1:l=>210 + l*10, wood_a_1:()=>260, wood_b_1:()=>160, light_b_1:()=>280, water_a_2:()=>240, fire_b_2:()=>240 }; // 적이 없으면 바라보는 쪽으로 나가는 룬 — 「가장 가까운 적」이면 그 룬이 닿는 거리(× 공격 범위) 안에 적이 있을 때만 · (build 575) 예전엔 모두 320이라 발톱(약 80)도 화면 밖 적에 헛손질 (사용자 10/30 「폰도 범위 안에 적이 있을 때만」)
 // (build 576) 공격 방식 하나로 (사용자 10/30 「설정이 헷갈림」): auto 자동 조준(사거리 안 가장 가까운 적) · dir 방향 고정(바라보는 쪽으로 늘) · mouse 마우스 조준(컴퓨터 — 시작 룬은 누르는 동안 마우스 쪽, 나머지는 자동 조준) · Q 하나로 돌림
-const SV_ATK_NM = { auto:'자동 조준', dir:'방향 고정', mouse:'마우스 조준' }, SV_ATK_IC = { auto:'ic_auto', dir:'ic_atk', mouse:'ic_target' };
+const SV_ATK_NM = { auto:'자동', dir:'수동', mouse:'마우스 방향' }, /* (build 581) 이름 — 사용자 10/30 「조준 방식 자동·수동·마우스 방향」 */ SV_ATK_IC = { auto:'ic_auto', dir:'ic_atk', mouse:'ic_target' };
 function svAtkMode(){ let m = state.svAtk; if(!SV_ATK_NM[m]) m = state.svAtk = state.svFire==='manual' ? 'mouse' : (state.svAim==='face' || state.svAim==='move') ? 'dir' : 'auto'; /* 예전 겨누기·쏘기 설정을 옮김 */ return m==='mouse' && sv && !sv.pc ? 'auto' : m; }
 function svAimMode(){ const m = svAtkMode(); return m==='dir' ? 'face' : m==='mouse' ? 'mouse' : 'near'; } // (build 577) mouse = 커서 쪽으로 (자동 발사가 기본)
 function svStartRune(p){ return p && p.wp && p.wp[0] ? p.wp[0].id : ''; }
 function svFireMode(p){ return svAtkMode()==='mouse' && state.svHold && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'; } // (build 577) 마우스 조준일 때만 고르는 「누를 때만」(시작 룬) — 기본은 자동 발사 (사용자 10/30)
-function svHoldToggle(){ if(!sv.pc || svAtkMode()!=='mouse') return; const G = sv.game, me = G && G.players[G.me]; if(!SV_MANUAL[svStartRune(me)]){ svCtlFx('이 시작 룬은 자동 발사만 사용 가능'); return; } state.svHold = !state.svHold; save(); svCtlFx('마우스 조준 — '+(state.svHold ? '누를 때만 발사 (시작 룬)' : '자동 발사')); }
-function svAimToggle(){ const G = sv && sv.game, me = G && G.players[G.me], L = sv.pc && SV_MANUAL[svStartRune(me)] ? ['auto', 'dir', 'mouse'] : ['auto', 'dir']; /* 폰이나 마우스로 못 쏘는 시작 룬이면 둘만 */ const m = svAtkMode(); state.svAtk = L[(L.indexOf(m) + 1) % L.length]; save(); svCtlFx('공격 방식 — '+SV_ATK_NM[state.svAtk]); }
+function svHoldToggle(){ if(!sv.pc || svAtkMode()!=='mouse') return; const G = sv.game, me = G && G.players[G.me]; if(!SV_MANUAL[svStartRune(me)]){ svCtlFx('이 시작 룬은 자동 발사만 사용 가능'); return; } state.svHold = !state.svHold; save(); svCtlFx('마우스 방향 — '+(state.svHold ? '누를 때만 발사 (시작 룬)' : '자동 발사')); }
+function svAimToggle(){ const G = sv && sv.game, me = G && G.players[G.me], L = sv.pc && SV_MANUAL[svStartRune(me)] ? ['auto', 'dir', 'mouse'] : ['auto', 'dir']; /* 폰이나 마우스로 못 쏘는 시작 룬이면 둘만 */ const m = svAtkMode(); state.svAtk = L[(L.indexOf(m) + 1) % L.length]; save(); svCtlFx('조준 방식 — '+SV_ATK_NM[state.svAtk]); }
 function svPAim(p){ const G = sv.game; return p===G.players[G.me] ? svAimMode() : (p.am==='mouse' && !Number.isFinite(p.ma) ? 'face' : (p.am || 'face')); } // (build 567) 친구 것도 — 친구가 보낸 조작(p.am·p.fm·p.ma·p.md)대로 방장이 쏨 · 예전 버전 친구는 바라보는 방향
 function svPFire(p){ const G = sv.game; return p===G.players[G.me] ? svFireMode(p) : (p.fm==='manual' && SV_MANUAL[svStartRune(p)] ? 'manual' : 'auto'); }
 function svCtlFx(s){ const G = sv && sv.game; if(G && G.fx.length < 140) G.fx.push({ k:'text', x:SV_W/2, y:SV_H-70, ub:1, t:0, d:1.4, s, col:'#c9e2ff', sz:14, scr:1 }); }
@@ -13705,7 +13705,7 @@ function svHud(){
   { const oe = q('.sv-obj'); if(oe){ const h = (G.bless ? '<span class="bl">정령의 축복 · '+SV_BLESS[G.bless.k]+' <i>'+Math.ceil(G.bless.t)+'초</i></span>' : '') + (G.obj ? '<b>목표</b>'+G.obj.map(o=>'<span class="'+(o.ok ? 'ok' : o.no ? 'no' : '')+'">'+SV_OBJ[o.k].s+' <i>'+(o.k==='safe' ? svFmtT(o.c)+'/5:00' : Math.floor(o.c)+'/'+SV_OBJ[o.k].n)+'</i></span>').join('') : ''); if(oe._h !== h){ oe._h = h; oe.innerHTML = h; oe.style.display = h ? '' : 'none'; } } } // (build 551) 판 안 목표
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
     set(ub.querySelector('i'), 'h', Math.round(cd/SV_ULT_CD*200)/2, (el, v)=>{ el.style.height = v+'%'; }); set(ub.querySelector('b'), 't', cd > 0 ? ''+Math.ceil(cd) : '', (el, v)=>{ el.textContent = v; }); // 준비되면 글자 없이 빛남 (사용자 10/26)
-    const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const am = svAtkMode(), src = 'assets/ui/'+SV_ATK_IC[am]+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src || ab.dataset.m !== am){ im.setAttribute('src', src); ab.dataset.m = am; ab.title = '공격 방식: '+SV_ATK_NM[am]+(pc ? ' (Q)' : ''); const lb = ab.querySelector('b'); if(lb) lb.textContent = SV_ATK_NM[am]; }
+    const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc; if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const am = svAtkMode(), src = 'assets/ui/'+SV_ATK_IC[am]+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src || ab.dataset.m !== am){ im.setAttribute('src', src); ab.dataset.m = am; ab.title = '조준 방식: '+SV_ATK_NM[am]+(pc ? ' (Q)' : ''); const lb = ab.querySelector('b'); if(lb) lb.textContent = '조준: '+SV_ATK_NM[am]; }
       { const fb = q('.sv-fire'), fk = q('[data-k="fire"]'), on = am==='mouse', ok = !!SV_MANUAL[svStartRune(me)], hk = (on ? 1 : 0) + (state.svHold && ok ? 'h' : 'a') + (ok ? '' : 'x'); if(fb && fb.dataset.m !== hk){ fb.dataset.m = hk; fb.classList.toggle('off', !on); if(fk) fk.classList.toggle('off', !on); fb.classList.toggle('lock', !ok); fb.querySelector('b').textContent = state.svHold && ok ? '누를 때만' : '자동 발사'; fb.title = ok ? '발사: '+(state.svHold ? '마우스를 누를 때만 (시작 룬)' : '자동')+' (C)' : '이 시작 룬은 자동 발사만 사용 가능'; } }
       } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
@@ -20494,7 +20494,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 580, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 581, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
