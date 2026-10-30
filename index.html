@@ -12354,7 +12354,14 @@ const SV_SK = { // 스킬 20개 — cd: 간격(초) · pair: 진화에 필요한
 // nm: 각성 이름 · ev: 효과 · dm: 피해 배율(기본 ×2.2) · cd: 간격 배율(기본 ×0.8) · 한 룬에 연계 유물이 둘 이상 있으면 먼저 가진 유물로 각성
 const SV_EVO = {
   fire_a_1:{ axe:{ nm:'참수 발톱', ev:'핏빛 발톱으로 바뀜. 체력 30% 이하 적은 할퀴면 바로 쓰러지고(보스 빼고), 쓰러뜨리면 다음 할퀴기가 바로 나감' }, /* (build 592) 메아리 북 → 처형인의 도끼 (사용자 10/30 「도끼가 더 재밌겠다 · 색감도 바꿔서」) */
-    haste:{ nm:'제비 쌍조', ev:'양쪽 대각선에서 안쪽으로 두 번 연달아 할큄', dm:1.6, cd:0.7 } }
+    haste:{ nm:'제비 쌍조', ev:'양쪽 대각선에서 안쪽으로 두 번 연달아 할큄', dm:1.6, cd:0.7 } },
+  // (build 594) 불 계열 확정본 (미리보기 https://claude.ai/artifact/ApuywHGmyPQ4kXG8B3SwLV · 사용자 10/30 「각성은 숫자가 아니라 행동이 바뀌게」 · 유물마다 성격 하나)
+  fire_a_2:{ area:{ nm:'화염 고리', ev:'몸 둘레에서 터지는 대신 불의 고리가 바깥으로 넓게 퍼져 나가며 지나간 적을 태움', dm:1.6 },
+    swift:{ nm:'불길 질주', ev:'폭발 대신 걸어간 자리에 불길이 남아 지나가는 적을 태움 · 많이 움직일수록 불길이 길어짐', cd:0.15 } },
+  fire_b_1:{ might:{ nm:'불사조 강림', ev:'깃털 여럿 대신 거대한 불새 하나가 적을 꿰뚫으며 날아갔다 돌아옴 · 한 방이 큼', dm:2.2 },
+    hunter:{ nm:'추적 깃', ev:'깃털이 돌아오지 않고 가장 센 적을 따라다니며 계속 꿰뚫음', dm:1.6 } },
+  fire_b_2:{ rampart:{ nm:'용암 웅덩이', ev:'떨어진 자리에 용암이 남아 몇 초 동안 들어오는 적을 지짐', dm:1.6 },
+    crit:{ nm:'유성 분열', ev:'화염구가 터지면 작은 화염구 4개로 갈라져 둘레로 튐', dm:1.6 } }
 };
 const SV_EVNM = { fire_a_2:'화산 심장', fire_b_1:'불새 폭풍', fire_b_2:'태양 낙하', water_a_1:'생명의 조수', water_a_2:'해일 장벽', water_b_1:'쌍룡 수류', water_b_2:'빙결 왕관', wood_a_1:'대지 가르기', wood_a_2:'가시 요새', wood_b_1:'거미 여왕의 둥지', wood_b_2:'영원의 고치', light_a_1:'성창 축복', light_a_2:'성역', light_b_1:'혜성 질주', light_b_2:'신의 심판', dark_a_1:'밤의 연회', dark_a_2:'사신의 낫', dark_b_1:'흉조의 깃', dark_b_2:'사건의 지평선' }; // 아직 연계 하나인 룬 — 예전 짝·효과 그대로 이름만
 Object.keys(SV_SK).forEach(id=>{ if(!SV_EVO[id] && SV_SK[id].pair) SV_EVO[id] = { [SV_SK[id].pair]:{ nm:SV_EVNM[id] || '', ev:SV_SK[id].ev || '' } }; });
@@ -12478,7 +12485,7 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
 }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
-  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion'].forEach(n=>svImg(b+n+'.webp'));
+  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_flamepatch'].forEach(n=>svImg(b+n+'.webp'));
   if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring', M.id+'_map']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
   Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); Object.keys(SV_SD).forEach(L=>SV_SD[L].parts.forEach(q=>svSdImg(L, q.n))); // (build 531) 조각 동작 그림
@@ -12679,11 +12686,12 @@ const SV_HM = { STEP:0.6, GATH:0.14, LIFE:0.42, PT:28, PD:0.035 }; // 현무 —
 const SV_LS = { SIG:0.12, FALL:0.08, STUCK:0.16, FADE:0.3, STAG:0.07 }; // 광명 — 문양 · 창 떨어짐 · 꽂혀 있음 · 사라짐 · 대상마다 시차
 function svRng(seed){ let s = (Math.abs(seed|0) % 2147483646) + 1; return ()=>{ s = (s*16807) % 2147483647; return s/2147483647; }; }
 function svGoPos(f, s, px, py){ // 금오 깃털 자리 — 나갈 땐 던진 자리에서 일직선(살짝 휨) · 돌아올 땐 지금 내 자리로 · 진화는 내 둘레 소용돌이
+  if(f.hm){ if(s < 0 || s > f.ht) return null; if(s < 0.3){ const k = svClawE(s/0.3); return [f.x0 + (f.hx - f.x0)*k, f.y0 + (f.hy - f.y0)*k]; } const an = f.ph + (s - 0.3)*7; return [f.hx + Math.cos(an)*30, f.hy + Math.sin(an)*18]; } // (build 594) 추적 깃 — 센 적에게 날아가 둘레를 돌며 계속 꿰뚫음
   if(f.evo){ if(s < 0 || s > SV_GO.EVO) return null; const r = f.D*0.9*Math.sin(Math.PI*s/SV_GO.EVO), an = f.a0 + s*7; return [px + Math.cos(an)*r, py + Math.sin(an)*r*0.9]; }
   s /= f.fast || 1; const O = SV_GO.OUT, B = SV_GO.BACK; if(s < 0 || s > O + B) return null; const ca = Math.cos(f.a), sa = Math.sin(f.a), L = 30*f.side*f.c;
   if(s < O){ const k = svClawE(s/O), d = f.D*k, lat = Math.sin(k*Math.PI*0.5)*L; return [f.x0 + ca*d - sa*lat, f.y0 + sa*d + ca*lat]; }
   const k = Math.pow((s - O)/B, 3), qx = f.x0 + ca*f.D - sa*L, qy = f.y0 + sa*f.D + ca*L; return [qx + (px - qx)*k, qy + (py - qy)*k]; }
-function svGoTot(f){ return f.evo ? SV_GO.EVO : (SV_GO.OUT + SV_GO.BACK)*(f.fast || 1); }
+function svGoTot(f){ return f.hm ? f.ht : f.evo ? SV_GO.EVO : (SV_GO.OUT + SV_GO.BACK)*(f.fast || 1); }
 function svLeafPos(f, s){ const d = f.sp*s*(1 - s*0.6), a = f.a + f.curve*s; return [f.x0 + Math.cos(a)*d, f.y0 + Math.sin(a)*d]; } // 현무 잎 — 빠르게 나가다 느려지며 살짝 휨
 function svDrop(c, s){ c.save(); c.scale(s, s); c.beginPath(); c.moveTo(0, -12); c.bezierCurveTo(5, -4, 6.5, 1, 6.5, 4); c.arc(0, 4, 6.5, 0, Math.PI); c.bezierCurveTo(-6.5, 1, -5, -4, 0, -12); c.fillStyle = '#3fa0ee'; c.fill(); c.strokeStyle = '#1b5fae'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.ellipse(-2, 2, 1.6, 2.6, -0.4, 0, 6.283); c.fill(); c.restore(); } // 물방울 (뾰족한 쪽이 앞)
 function svJetCircleTex(){ if(sv.jetC) return sv.jetC; const S = 160, oc = document.createElement('canvas'); oc.width = oc.height = S; const x = oc.getContext('2d'); x.translate(S/2, S/2); // 물 마법진 정면 모양 — 한 번 그려 둠
@@ -13552,13 +13560,16 @@ function svAttack(p, w, dt){
     if(E==='axe') cut({ exe:1, tint:'#c8102e' }); /* (build 592) 참수 발톱(처형인의 도끼) — 원래 발톱 · 핏빛 · 약한 적 즉사 + 다음 할퀴기 바로 */
     else if(E==='haste'){ cut({ s:1, rot:-0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, cone:1.0 }); cut({ s:-1, rot:0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, dl:0.09, cone:1.0 }); } /* 제비 쌍조(제비 깃) — 양쪽 대각선에서 안쪽으로 X자로 두 번 */
     else cut({}); } /* (build 591) 기본 = 원래 발톱 그대로 (사용자 10/30 「기본 원래대로」 — 45도로 좁힌 것 되돌림) */
-  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'fburst', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.4, col, r:Math.round(R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 }); } /* (build 585) 불 둘레 폭발 그림 */
+  else if(id==='fire_a_2' && w.evo==='area'){ const R = (60 + lv*6)*ar*2.4; (G.frings = G.frings || []).push({ p, x:p.x, y:p.y, R, t:0, d:0.75, dmg:24*m, burn:5*m, col, hit:[] }); svFx({ k:'fring', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.95, r:Math.round(R), ro:Math.round(Math.random()*628)/100 }); } /* (build 594) 화염 고리(메아리 북) — 불의 고리가 바깥으로 퍼짐 */
+  else if(id==='fire_a_2' && w.evo==='swift'){ const L = w.lastP; if(!L || Math.hypot(p.x - L[0], p.y - L[1]) > 16 || !G.pools.some(o=>o.fire && o.p===p && Math.hypot(o.x - p.x, o.y - p.y) < 14)){ w.lastP = [p.x, p.y]; if(G.pools.length < 60) G.pools.push({ x:Math.round(p.x), y:Math.round(p.y + 4), R:24*ar, t:0, d:1.8, dps:16*m, fire:1, ro:Math.round(Math.random()*628)/100, col, p }); } } /* (build 594) 불길 질주(질풍 장화) — 걸어간 자리에 불길 */
+  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar, tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'fburst', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.4, col, r:Math.round(R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 }); } /* (build 585) 불 둘레 폭발 그림 */
   else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
     const a0 = aimTo(240), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
-    if(ev){ w.cd = SV_SK[id].cd*0.5 * svCdK(p, w); const ne = 5 + svProj(p); for(let v=0; v<3; v++) for(let i=0;i<ne;i++){ const a = (i/(ne - 1) - 0.5)*0.9; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:0.35, dl:v*0.14, D, big:1.3, fast:0.65 }); } } // (build 508) 진화 — 사방 소용돌이 대신 쉬지 않고 던짐 (짝 제비 깃 = 간격 줄이기와 맞게 · 사용자 10/27)
+    if(w.evo==='might'){ for(let k=0; k<=svProj(p); k++) list.push({ a:a0 + (k - svProj(p)/2)*0.35, side:0, c:0, dl:k*0.12, D:D*1.25, big:3, fast:1.1, dk:3 }); } /* (build 594) 불사조 강림(유리 대포) — 거대한 불새 하나 · 한 방이 큼 */
+    else if(w.evo==='hunter'){ const tgt = G.en.filter(o=>o.hp>0 && o.kind!=='pod' && Math.hypot(o.x-p.x, o.y-p.y) < 420).sort((a, b)=>(b.max||0) - (a.max||0))[0]; const nn = cf.n + svProj(p); if(!tgt){ w.cd = 0.3; return; } for(let i=0;i<nn;i++) list.push({ hm:1, tg:tgt, hx:tgt.x, hy:tgt.y, ph:i*6.283/nn, ht:2.2, a:a0, side:0, c:0, dl:i*0.06, D }); } /* (build 594) 추적 깃(사냥꾼의 표식) — 가장 센 적을 따라다니며 계속 꿰뚫음 */
     else { const nn = cf.n + svProj(p), spr = nn > cf.n ? Math.max(cf.sp, 0.14*(nn - 1)) : cf.sp; for(let v=0; v<cf.v; v++) for(let i=0;i<nn;i++){ const a = nn === 1 ? 0 : (i/(nn-1) - 0.5)*spr*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1 }); } }
-    G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f); G.goF.push({ p, f, t:-f.dl, tot, hit:new Map(), dmg:10*m, cr, col }); svFx(Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f)); }); }
-  else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240).sort(()=>Math.random()-0.5); for(let k=0; k<=svProj(p); k++){ const e = tg.length ? tg[k % tg.length] : ahead(150 + k*40); /* (build 593) 투사체 수만큼 화염구 */ G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m*(ev ? 1.6 : 1), burn:5*m, col, R:(44 + lv*4)*ar*(ev ? 1.5 : 1), p }); } /* (build 509) 진화 — 커다란 화염구 하나 (짝: 유리 대포) */ }
+    G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f), tg = f.tg; delete f.tg; const fx = Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f); G.goF.push({ p, f: f.hm ? fx : f, tg, t:-f.dl, tot, hit:new Map(), dmg:10*m*(f.dk||1), cr, col }); svFx(fx); }); } /* (build 594) 추적 깃은 그림과 같은 물체를 써서 따라가는 자리를 같이 봄 */
+  else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240).sort(()=>Math.random()-0.5); for(let k=0; k<=svProj(p); k++){ const e = tg.length ? tg[k % tg.length] : ahead(150 + k*40); /* (build 593) 투사체 수만큼 화염구 */ G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p, lava: w.evo==='rampart' ? 1 : 0, split: w.evo==='crit' ? 1 : 0 }); } /* (build 594) 용암 웅덩이(성벽 돌) · 유성 분열(숫돌) — 터질 때 */ }
   else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); // (build 502) 물결 — 모았다가 물마루가 퍼지며 닿는 적부터 맞고 밀려남 (사용자 10/26: 그림만 키우면 맛이 안 남 · 미리보기 시제품대로)
     G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R){ const h = Math.round((2 + lv)*(ev ? 2 : 1)*p.maxHp/100*10)/10; q.hp = Math.min(q.maxHp, q.hp + h); svFx({ k:'num', x:q.x, y:q.y-20, t:0, d:0.7, s:'+'+h, col:'#7ce07c', sz:10 }); } }); }
   else if(id==='water_a_2'){ const a = aimTo(240), ux = Math.cos(a), uy = Math.sin(a);
@@ -13615,7 +13626,9 @@ function svWeapTick(dt){ const G = sv.game;
   G.pr.forEach(b=>{
     if(b.kind==='ebul'){ b.x += b.vx*dt; b.y += b.vy*dt; b.t += dt; if(b.t > 6){ b.done = true; return; }
       G.players.forEach(p=>{ if(!b.done && !p.down && p.inv <= 0 && Math.hypot(p.x-b.x, p.y-b.y) < 12){ svHurt(p, b.dmg); p.inv = 0.4; b.done = true; } }); return; }
-    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; if(b.web){ G.pools.push({ x:b.tx, y:b.ty, R:b.web.R, t:0, d:b.web.d, dps:b.web.dps, web:true, wev:b.web.wev, col:'#d8e8c8', p:b.p }); svFx({ k:'ring', x:b.tx, y:b.ty, t:0, d:0.35, col:'#ffffff', r:b.web.R*0.8 }); return; } svFx(b.burn ? { k:'fexp', x:Math.round(b.tx), y:Math.round(b.ty), t:0, d:0.45, col:b.col, r:Math.round(b.R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 } : { k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); /* (build 587) 화염구 폭발 그림 */ G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } }); } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
+    if(b.kind==='boom'){ const dx = b.tx-b.x, dy = b.ty-b.y, d = Math.hypot(dx, dy), st = b.sp*dt; if(d <= st){ b.done = true; if(b.web){ G.pools.push({ x:b.tx, y:b.ty, R:b.web.R, t:0, d:b.web.d, dps:b.web.dps, web:true, wev:b.web.wev, col:'#d8e8c8', p:b.p }); svFx({ k:'ring', x:b.tx, y:b.ty, t:0, d:0.35, col:'#ffffff', r:b.web.R*0.8 }); return; } svFx(b.burn ? { k:'fexp', x:Math.round(b.tx), y:Math.round(b.ty), t:0, d:0.45, col:b.col, r:Math.round(b.R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 } : { k:'boom', x:b.tx, y:b.ty, t:0, d:0.3, col:b.col, r:b.R }); /* (build 587) 화염구 폭발 그림 */ G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-b.tx, e.y-b.ty) < b.R + e.r){ svHitBy(b.p, e, b.dmg, b.col); if(b.burn) svBurn(e, b.burn, 3); } });
+      if(b.lava && G.pools.length < 60) G.pools.push({ x:Math.round(b.tx), y:Math.round(b.ty), R:b.R*0.9, t:0, d:3, dps:b.dmg*0.55, fire:1, ro:Math.round(Math.random()*628)/100, col:b.col, p:b.p }); /* (build 594) 용암 웅덩이 */
+      if(b.split) [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx, sy])=>G.pr.push({ x:b.tx, y:b.ty, tx:b.tx + sx*b.R*0.95, ty:b.ty + sy*b.R*0.75, sp:260, kind:'boom', dmg:b.dmg*0.5, burn:b.burn*0.5, col:b.col, R:b.R*0.55, p:b.p })); /* (build 594) 유성 분열 — 작은 화염구 넷 (다시 갈라지진 않음) */ } else { b.x += dx/d*st; b.y += dy/d*st; } return; }
     if(b.kind==='spark' || b.kind==='wave'){ b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if(b.life <= 0){ b.done = true; return; }
       const wv = b.kind==='wave', sp = Math.hypot(b.vx, b.vy)||1, ux = b.vx/sp, uy = b.vy/sp;
       G.en.forEach(e=>{ if(b.done || e.hp<=0 || b.hitS.includes(e)) return;
@@ -13648,7 +13661,8 @@ function svWeapTick(dt){ const G = sv.game;
     G.en.forEach(e=>{ if(e.hp<=0 || o.hit.includes(e)) return; if(svSegD(e.x, e.y, [o.lx, o.ly], [p.x, p.y]) < e.r + 16){ o.hit.push(e); const c = Math.random() < o.cr; svHitBy(p, e, o.dmg*(c?svStCritDmg(p):1), o.col, c); } }); o.lx = p.x; o.ly = p.y; });
   G.dashes = (G.dashes||[]).filter(o=>o.t < o.d);
   (G.later||[]).forEach(o=>{ o.t -= dt; if(o.t <= 0 && !o.done){ o.done = 1; o.f(); } }); G.later = (G.later||[]).filter(o=>!o.done); // (build 504) 조금 뒤에 맞는 공격 (광명 창)
-  (G.goF||[]).forEach(o=>{ o.t += dt; const q = svGoPos(o.f, o.t, o.p.x, o.p.y); if(!q) return; const R = 15*(o.f.big||1); // 금오 깃털 — 지나가며 맞음 · 같은 적은 0.25초 지나야 다시 (나갈 때·돌아올 때 두 번)
+  (G.frings||[]).forEach(o=>{ o.t += dt; const r = 20 + (o.R - 20)*svClawE(Math.min(1, o.t/o.d)); G.en.forEach(e=>{ if(e.hp<=0 || o.hit.includes(e)) return; if(Math.abs(Math.hypot(e.x-o.x, e.y-o.y) - r) < 16 + e.r){ o.hit.push(e); svHitBy(o.p, e, o.dmg, o.col); svBurn(e, o.burn, 2); } }); }); G.frings = (G.frings||[]).filter(o=>o.t < o.d); // (build 594) 화염 고리 — 퍼지는 고리에 닿은 적부터
+  (G.goF||[]).forEach(o=>{ o.t += dt; if(o.tg && o.tg.hp > 0){ o.f.hx = o.tg.x; o.f.hy = o.tg.y; } const q = svGoPos(o.f, o.t, o.p.x, o.p.y); if(!q) return; const R = 15*(o.f.big||1); // 금오 깃털 — 지나가며 맞음 · 같은 적은 0.25초 지나야 다시 (나갈 때·돌아올 때 두 번)
     G.en.forEach(e=>{ if(e.hp<=0 || Math.hypot(e.x-q[0], e.y-q[1]) > R + e.r) return; const lt = o.hit.get(e); if(lt != null && o.t - lt < 0.25) return; o.hit.set(e, o.t); const c = Math.random() < o.cr; svHitBy(o.p, e, o.dmg*(c?svStCritDmg(o.p):1), o.col, c); }); });
   G.goF = (G.goF||[]).filter(o=>o.t < o.tot);
   (G.jets||[]).forEach(j=>{ j.t += dt; const s = j.t - SV_JET.CH; if(s <= 0) return; const head = SV_JET.MX + (j.L - SV_JET.MX)*svClawE(Math.min(1, s/SV_JET.EXT)), /* 물줄기 앞머리가 지나간 적부터 */ ux = Math.cos(j.dir), uy = Math.sin(j.dir), p = j.p; // 요르문간드 — 물줄기 머리가 지나간 적부터 (꿰뚫음)
@@ -13931,6 +13945,7 @@ function svDraw(){
   c.save(); c.translate(-cam.x, -cam.y);
   if(G.map){ svDrawMap(c, G, cam); svDrawObstacles(c, G, cam); }
   (G.poR && G.poR.length ? G.pools.concat(G.poR) : G.pools).forEach(o=>{ if(o.trap){ svDrawTrap(c, o, G); return; } c.drawImage(svGlow(o.col, o.pull ? 'cc' : '77'), o.x - o.R, o.y - o.R, o.R*2, o.R*2); // (build 493) 미리 그린 빛 (전엔 매 프레임 그라디언트)
+    if(o.fire) svFxImg(c, 'fx_flamepatch', o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
     if(o.web){ c.save(); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; for(let k=0;k<6;k++){ const a = k*1.047; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x + Math.cos(a)*o.R, o.y + Math.sin(a)*o.R); c.stroke(); } [0.4, 0.75].forEach(f=>{ c.beginPath(); c.arc(o.x, o.y, o.R*f, 0, 6.283); c.stroke(); }); c.restore(); }
     if(o.pull && svFxImg(c, 'fx_vortex', o.x, o.y, o.R*2.2*Math.min(1, 0.4 + o.t*3), (o.ro||0) + (o.sg||1)*o.t*5, o.sg||1, o.t > o.d - 0.25 ? (o.d - o.t)/0.25 : 0.9)){} // (build 586) 검은 소용돌이 그림
     else if(o.pull){ c.save(); c.strokeStyle = '#c9a6ff'; c.lineWidth = 2; for(let k=0;k<3;k++){ c.beginPath(); c.arc(o.x, o.y, o.R*(0.35 + k*0.25), G.t*6 + k*2, G.t*6 + k*2 + 2.2); c.stroke(); } c.restore(); } });
@@ -13988,6 +14003,7 @@ function svDraw(){
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = f.ev ? 6 : 3; c.strokeStyle = f.col; svGS(c, 6); }
+    else if(f.k==='fring'){ const k = Math.min(1, f.t/0.75), r = 20 + (f.r - 20)*svClawE(k), a = f.t > 0.6 ? Math.max(0, 1 - (f.t - 0.6)/0.35) : 1, n = Math.max(10, Math.round(r/9)); for(let i=0;i<n;i++){ const an = (f.ro||0) + i*6.283/n + f.t*0.8; svFxImg(c, 'fx_burst', f.x + Math.cos(an)*r, f.y + Math.sin(an)*r*0.82, 30 + 10*(1 - k), an, 1, a); } } // (build 594) 화염 고리
     else if(f.k==='fburst'){ const k = f.t/f.d, sz = f.r*2*(0.55 + 0.6*svClawE(Math.min(1, k*1.6))); if(!svFxImg(c, 'fx_burst', f.x, f.y - 4, sz, (f.ro||0) + k*0.4*(f.fl||1), f.fl, 1 - k*k)) { c.strokeStyle = f.col; c.lineWidth = 3; c.beginPath(); c.arc(f.x, f.y, sz/2, 0, 6.283); c.stroke(); } } // (build 585) 스콜 불씨 폭발
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
     else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = 0.05, ret = f.t > hold ? Math.min(1, (f.t - hold)/Math.max(0.01, f.d - hold)) : 0, fade = 1 - ret*ret*0.5; /* (build 500) 꼬리는 긋기 시작 0.05초 뒤부터 지나온 길을 따라 사라짐 — 다 긋기 전부터 (사용자 10/26) */ // (build 494) 꼬리부터 지나온 길을 따라 차례로 사라짐 (사용자 10/26: 잔상이 너무 오래 남음) · (build 497) 다 긋자마자 0.16초 동안 (사용자 10/26)
@@ -20568,7 +20584,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 593, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 594, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
