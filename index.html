@@ -12640,8 +12640,8 @@ function svClawTex(im){ // (build 499) 가운데 줄기만 조금 두껍게 — 
   c.src = im; if(!svHasInk(c)) return c; /* (build 518) 비었으면 남겨 두지 않고 다음에 다시 만듦 */ return (sv.clawTex = c); }
 function svSoftSh(){ if(sv.softSh) return sv.softSh; const oc = document.createElement('canvas'); oc.width = oc.height = 64; const x = oc.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, '#00000073'); g.addColorStop(0.55, '#00000040'); g.addColorStop(1, '#00000000'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return (sv.softSh = oc); } // 몬스터 그림자 (미리 그려 둠)
 function svClawIn(w, dx, dy, er, a0, a1){ // 적이 발톱 그림(앞으로 옮기고 누른 모양) 안, 이번에 긁은 각도(그림 기준 a0~a1) 안에 있나
-  const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, x0 = lx - w.R*SV_CLAW.D, cr = Math.cos(SV_CLAW.ROT), sr = Math.sin(SV_CLAW.ROT), u = (x0*cr + ly*sr)/SV_CLAW.K, v = (-x0*sr + ly*cr)/SV_CLAW.W, th = Math.atan2(v, u); // 비스듬히 돌린 만큼 되돌려서 그림 기준으로
-  return Math.hypot(u, v) <= w.R*SV_CLAW.SZ*0.55 + er*1.5 && th >= a0 - 0.1 && th <= a1 + 0.1; // (build 498) 그림보다 조금 넓게 (사용자 10/26: 범위가 살짝 안 맞음) — 전엔 그림 반지름(0.43)·적 크기 1.3배·각도 ±0.15
+  const c = Math.cos(w.dir), s = Math.sin(w.dir), lx = dx*c + dy*s, ly = (-dx*s + dy*c)*w.s, x0 = lx - w.R*(w.dz != null ? w.dz : SV_CLAW.D), cr = Math.cos(SV_CLAW.ROT), sr = Math.sin(SV_CLAW.ROT), u = (x0*cr + ly*sr)/SV_CLAW.K, v = (-x0*sr + ly*cr)/SV_CLAW.W, th = Math.atan2(v, u); // 비스듬히 돌린 만큼 되돌려서 그림 기준으로
+  return Math.hypot(u, v) <= (w.sz ? w.R*w.sz*0.4 + er : w.R*SV_CLAW.SZ*0.55 + er*1.5) /* (build 589) 크기를 정한 발톱은 그림 크기에 맞게 */ && th >= a0 - 0.1 && th <= a1 + 0.1; // (build 498) 그림보다 조금 넓게 (사용자 10/26: 범위가 살짝 안 맞음) — 전엔 그림 반지름(0.43)·적 크기 1.3배·각도 ±0.15
 }
 function svGlow(col, a0){ // (build 493) 미리 그려 둔 둥근 빛 (가운데 col → 바깥 투명) — 그림자 흐림 대신
   sv.glows = sv.glows || {}; const k = col + (a0||''); if(sv.glows[k]) return sv.glows[k];
@@ -13544,11 +13544,11 @@ function svAttack(p, w, dt){
   w.cd -= dt; if(w.cd > 0) return; w.cd = SV_SK[id].cd * svCdK(p, w);
   if(id==='fire_a_1'){ // 불꽃 발톱 — (build 489) 사용자 결정 10/26: 즉발이 아니라 할퀴는 동안(0.22초) 발톱이 지나간 자리에 닿은 적만 맞음 · 대상 안 고름 · 좌우 번갈아
     const E = ev ? w.evo : '', R0 = (66 + lv*5)*ar*(E==='area' ? 1.5 : 1), d0 = aimTo(420), half = 1.35; if(ev) for(let k=0;k<12;k++){ const a = d0 + (Math.random() - 0.5)*2.4, v = 120 + Math.random()*180; svPart(p.x + Math.cos(a)*R0*0.6, p.y + Math.sin(a)*R0*0.6, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#ffd27a' : '#ff6a2a', 0.45, 3); } /* (build 510) 진화 — 불티 */ w.alt = 1; G.sweeps = G.sweeps || [];
-    // (build 588) 기본 = 앞쪽 45도 (사용자 10/30 「범위를 전방 45도로 좁히자」) · a0·sp = 그림 기준 긋기 시작 각도·긋는 폭 · s = 긋는 쪽(−1이면 거울)
-    const cut = (s, a0, sp, d, dl)=>{ const go = ()=>{ G.sweeps.push({ p, dir:d0, s, half, R:R0, t:0, d, a0, sp, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:d + 0.14, sw:d, col, r:R0, a:d0, s, half, a0, sp }); }; if(dl) (G.later = G.later || []).push({ t:dl, f:go }); else go(); };
-    if(E==='area'){ cut(1, 0, 1.57, 0.13); cut(-1, 0, 1.57, 0.13); } /* 반월 업화참(메아리 북) — 가운데에서 양쪽으로 크게 = 앞쪽 180도 */
-    else if(E==='haste'){ cut(1, -1.05, 1.25, 0.1); cut(-1, -1.05, 1.25, 0.1, 0.09); } /* 제비 쌍조(제비 깃) — 양쪽 대각선에서 안쪽으로 샥샥 두 번 */
-    else cut(1, -0.39, 0.78, 0.13); }
+    // (build 589) 그림을 가리개로 자르지 않고 발톱 그림 전체를 그음 (사용자 10/30 「그림이 짤리지 않게」) — 크기(sz: 범위의 배)·앞으로 옮김(dz)·돌림(rot)으로 각도를 맞춤 · cone = 바로 앞 가까운 적 판정 폭(반각)
+    const cut = (o)=>{ const go = ()=>{ const dir = d0 + (o.rot || 0), q = { s:o.s || 1, sz:o.sz, dz:o.dz, pl:o.pl, a0:o.a0, sp:o.sp, cone:o.cone }; G.sweeps.push(Object.assign({ p, dir, half, R:R0, t:0, d:o.d || 0.13, dmg:28*m, cr, ev, col, m, hit:[] }, q)); svFx(Object.assign({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:(o.d || 0.13) + 0.14, sw:o.d || 0.13, col, r:R0, a:dir, half }, q)); }; if(o.dl) (G.later = G.later || []).push({ t:o.dl, f:go }); else go(); };
+    if(E==='area'){ cut({ s:1, a0:0, sp:1.96, sz:1.3, dz:0.21, pl:0.05, cone:1.6 }); cut({ s:-1, a0:0, sp:1.96, sz:1.3, dz:0.21, pl:0.05, cone:1.6 }); } /* 반월 업화참(메아리 북) — 가운데에서 양쪽으로 = 앞쪽 180도 · 그림 끝이 정령 옆(±90도)에 오게 앞으로 옮김 */
+    else if(E==='haste'){ cut({ s:1, rot:-0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, cone:1.0 }); cut({ s:-1, rot:0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, dl:0.09, cone:1.0 }); } /* 제비 쌍조(제비 깃) — 양쪽 대각선에서 안쪽으로 X자로 두 번 */
+    else cut({ sz:0.64, dz:0.72, pl:0.08, cone:0.45 }); } /* 기본 — 작은 발톱을 앞으로 옮겨 앞쪽 45도 안에 그림 전체가 들어옴 */
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'fburst', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.4, col, r:Math.round(R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 }); } /* (build 585) 불 둘레 폭발 그림 */
   else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
     const a0 = aimTo(240), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
@@ -13637,7 +13637,7 @@ function svWeapTick(dt){ const G = sv.game;
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
   (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), A = w.a0 != null ? w.a0 : -2.04, S = w.sp != null ? w.sp : 4.0, L0 = A + S*svClawE(f0), L1 = A + S*svClawE(f1); // (build 491) 발톱 끝이 지나가는 각도와 같게(처음 빠르고 끝에 느려짐) — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R*1.4 + e.r) return;
-      const la = Math.atan2((-dx*Math.sin(w.dir) + dy*Math.cos(w.dir))*w.s, dx*Math.cos(w.dir) + dy*Math.sin(w.dir)), close = d < e.r + 12 || (d < w.R*0.55 + e.r && la > A - 0.12 && la < A + S + 0.12); /* (build 588) 가까운 적도 긋는 폭 안에서만 */ const mg = w.sp != null ? 0.02 : 0.15; if(!svClawIn(w, dx, dy, e.r, L0 - mg, L1 + mg) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
+      const la = Math.atan2((-dx*Math.sin(w.dir) + dy*Math.cos(w.dir))*w.s, dx*Math.cos(w.dir) + dy*Math.sin(w.dir)), close = w.cone ? (d < w.R*0.55 + e.r && Math.abs(la) < w.cone) : (d < e.r + 12 || (d < w.R*0.55 + e.r && la > A - 0.12 && la < A + S + 0.12)); /* (build 588) 가까운 적도 긋는 폭 안에서만 */ const mg = w.sp != null ? 0.02 : 0.15; if(!svClawIn(w, dx, dy, e.r, L0 - mg, L1 + mg) && !(close && f1 >= 0.5)) return; // 바로 옆·앞 가까운 적은 반쯤 긁었을 때 맞음 (부채꼴이 정령 옆까지는 안 닿음)
       w.hit.push(e); const c = Math.random() < 0.25 + w.cr; svHitBy(p, e, w.dmg*(c?svStCritDmg(p):1), w.col, c); /* (build 588) 예전 각성(치명타 불붙음)은 뺌 — 연계가 메아리 북·제비 깃으로 바뀜 */ }); });
   G.sweeps = (G.sweeps||[]).filter(w=>w.t < w.d);
   (G.dashes||[]).forEach(o=>{ const p = o.p; o.t += dt; const k = Math.min(1, o.t/o.d), e2 = 1 - Math.pow(1 - k, 3), tx = o.x0 + o.ux*o.D*e2, ty = o.y0 + o.uy*o.D*e2; // (build 584) 백록 돌진 — 내 정령만 직접 옮김 (친구 정령은 친구 기기가 옮겨서 보냄)
@@ -13989,7 +13989,7 @@ function svDraw(){
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
     else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = 0.05, ret = f.t > hold ? Math.min(1, (f.t - hold)/Math.max(0.01, f.d - hold)) : 0, fade = 1 - ret*ret*0.5; /* (build 500) 꼬리는 긋기 시작 0.05초 뒤부터 지나온 길을 따라 사라짐 — 다 긋기 전부터 (사용자 10/26) */ // (build 494) 꼬리부터 지나온 길을 따라 차례로 사라짐 (사용자 10/26: 잔상이 너무 오래 남음) · (build 497) 다 긋자마자 0.16초 동안 (사용자 10/26)
       const im = svImg('assets/survival/fx_claw.webp'); c.globalAlpha = fade;
-      if(im.naturalWidth){ const sz = f.r*SV_CLAW.SZ; c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*(SV_CLAW.D + SV_CLAW.L*svClawE(prog)), 0); c.rotate(SV_CLAW.ROT); c.scale(SV_CLAW.K, SV_CLAW.W); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
+      if(im.naturalWidth){ const sz = f.r*(f.sz || SV_CLAW.SZ); c.save(); c.translate(cx, cy); c.rotate(f.a); if(f.s < 0) c.scale(1, -1); c.translate(f.r*((f.dz != null ? f.dz : SV_CLAW.D) + (f.pl != null ? f.pl : SV_CLAW.L)*svClawE(prog)), 0); c.rotate(SV_CLAW.ROT); c.scale(SV_CLAW.K, SV_CLAW.W); // (build 492) 사용자 피드백 10/26: 반원 → 앞쪽 부채꼴 — 그림을 앞으로 옮기고 옆으로 눌러 그림 (판정도 같은 모양 svClawIn)
         // (build 491) 긁고 지나가게 — 발톱 끝(앞) 뒤로 꼬리 · (build 493) 다 긁은 모양 그대로 잠깐 남았다가(0.14초) 부드럽게 사라짐 — 492는 긁은 뒤 꼬리를 다시 채워서 잔상이 새로 생기는 것처럼 보였음 (사용자 10/26)
         const A0 = f.a0 != null ? f.a0 : -2.04, SPAN = f.sp != null ? f.sp : 4.0, TAIL = 3.4, T = 6.2832, lead = SPAN*svClawE(prog), tail = Math.min(lead, SPAN*ret*ret*(3 - 2*ret)), grow = 0.92 + 0.08*svClawE(prog);
         { const N = Math.max(64, Math.ceil(sz*sv.scale*sv.dpr)); const oc = sv.clawC || (sv.clawC = document.createElement('canvas')), mk = sv.clawM || (sv.clawM = document.createElement('canvas')); if(oc.width !== N){ oc.width = oc.height = N; mk.width = mk.height = N; } const x = oc.getContext('2d'), m = mk.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, N, N); x.drawImage(svClawTex(im), 0, 0, N, N);
@@ -20565,7 +20565,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 588, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 589, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
