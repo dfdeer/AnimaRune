@@ -12465,7 +12465,7 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
 }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
-  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather'].forEach(n=>svImg(b+n+'.webp'));
+  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall'].forEach(n=>svImg(b+n+'.webp'));
   if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring', M.id+'_map']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
   Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); Object.keys(SV_SD).forEach(L=>SV_SD[L].parts.forEach(q=>svSdImg(L, q.n))); // (build 531) 조각 동작 그림
@@ -13532,7 +13532,7 @@ function svAttack(p, w, dt){
   if(id==='fire_a_1'){ // 불꽃 발톱 — (build 489) 사용자 결정 10/26: 즉발이 아니라 할퀴는 동안(0.22초) 발톱이 지나간 자리에 닿은 적만 맞음 · 대상 안 고름 · 좌우 번갈아
     const R0 = (66 + lv*5)*ar*(ev ? 1.2 : 1), d0 = aimTo(420), half = 1.35; if(ev) for(let k=0;k<12;k++){ const a = d0 + (Math.random() - 0.5)*2.4, v = 120 + Math.random()*180; svPart(p.x + Math.cos(a)*R0*0.6, p.y + Math.sin(a)*R0*0.6, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#ffd27a' : '#ff6a2a', 0.45, 3); } /* (build 510) 진화 — 크게 · 불티 */ w.alt = 1; /* (build 497) 번갈지 않고 늘 같은 쪽에서 앞으로 그음 (사용자 10/26) */ G.sweeps = G.sweeps || [];
     [d0].concat(ev ? [d0 + Math.PI] : []).forEach(dir=>{ G.sweeps.push({ p, dir, s:w.alt, half, R:R0, t:0, d:0.13, dmg:28*m, cr, ev, col, m, hit:[] }); svFx({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:0.27, sw:0.13, col, r:R0, a:dir, s:w.alt, half }); }); }
-  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'boom', x:p.x, y:p.y, t:0, d:0.35, col, r:R }); }
+  else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar*(ev ? 1.35 : 1), tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'fburst', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.4, col, r:Math.round(R) }); } /* (build 585) 불 둘레 폭발 그림 */
   else if(id==='fire_b_1'){ // (build 504) 금오 — 불꽃 깃털 부메랑 · 레벨마다 개수·연달아 던지는 횟수가 늘어남 · 진화는 간격 절반으로 쉬지 않고 던짐 (사용자 10/26 · 10/27)
     const a0 = aimTo(240), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
     if(ev){ w.cd = SV_SK[id].cd*0.5 * svCdK(p, w); for(let v=0; v<3; v++) for(let i=0;i<5;i++){ const a = (i/4 - 0.5)*0.9; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:0.35, dl:v*0.14, D, big:1.3, fast:0.65 }); } } // (build 508) 진화 — 사방 소용돌이 대신 쉬지 않고 던짐 (짝 제비 깃 = 간격 줄이기와 맞게 · 사용자 10/27)
@@ -13938,7 +13938,7 @@ function svDraw(){
     if(i===G.me){ c.beginPath(); c.arc(p.x, p.y, p.mag*(1+0.25*svPasLv(p,'greed')), 0, 6.283); c.strokeStyle = '#7ae0ff14'; c.lineWidth = 1; c.stroke(); }
     // 얼음 고리
     p.wp.forEach(w=>{ if(w.id!=='water_b_2') return; const { n, rad } = svOrbit(p, w);
-      for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); c.restore(); } });
+      for(let k=0;k<n;k++){ const a = (w.a||0) + k*6.283/n; c.save(); c.translate(p.x + Math.cos(a)*rad, p.y + Math.sin(a)*rad); const ic = svImg('assets/survival/fx_iceshard.webp'); if(ic.complete && ic.naturalWidth){ c.rotate(a + 1.2); const z = w.evo ? 24 : 20; c.drawImage(ic, -z/2, -z/2, z, z); } else { c.rotate(G.t*4); c.fillStyle = w.evo ? '#e8fbff' : '#bff4ff'; c.shadowColor = '#7ac8ff'; c.shadowBlur = 8; c.beginPath(); c.moveTo(0,-7); c.lineTo(5,0); c.lineTo(0,7); c.lineTo(-5,0); c.closePath(); c.fill(); } c.restore(); } }); /* (build 585) 얼음 조각 그림 */
     // (build 506) 스킬마다 내 둘레를 따라다니던 작은 정령 그림은 뺌 (사용자 10/26: 없어도 됨)
     // 대표 정령 (내가 조종하는 몸)
     const lw = p.wp[0], body = svImg('assets/spirits/'+svKey(p.leader, 4)+'.webp'), bs = 40, bob = p.mv ? Math.sin(G.t*14)*2 : Math.sin(G.t*3)*1; // (build 529) 외형은 대표 정령(신화) 그림 하나로 고정 — 레벨이 올라도 안 바뀜 (사용자 10/29: 무기 효과가 화려해지니까)
@@ -13958,7 +13958,7 @@ function svDraw(){
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
   svDrawBats(c, G); // (build 584) 불사귀 박쥐 떼
   if(G.map){ if(G.map.fo){ svFoCanopy(c, G, cam); svFoFx(c, G, cam); svChargeBadge(c, G); } else svDrawOverlap(c, G, cam); }
-  (G.prR && G.prR.length ? G.pr.concat(G.prR) : G.pr).forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2; c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
+  (G.prR && G.prR.length ? G.pr.concat(G.prR) : G.pr).forEach(b=>{ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2, wi = svImg('assets/survival/fx_waterwall.webp'); if(wi.complete && wi.naturalWidth){ const S = b.w*1.15; c.save(); c.translate(b.x, b.y); c.rotate(a); c.drawImage(wi, -S*0.75, -S/2, S, S); c.restore(); return; } /* (build 585) 물의 벽 그림 */ c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
     if(b.kind==='bnc'){ svDrawBnc(c, b); return; } // (build 584) 칠흑조 깃털
     if(b.kind!=='ebul' && b.tr.length >= 4){ c.save(); c.lineCap = 'round'; for(let i=2;i<b.tr.length;i+=2){ const f = i/b.tr.length; c.globalAlpha = f*0.6; c.strokeStyle = b.col; c.lineWidth = (b.kind==='boom' ? 7 : 4)*f*(b.ev ? 1.6 : 1); c.beginPath(); c.moveTo(b.tr[i-2], b.tr[i-1]); c.lineTo(b.tr[i], b.tr[i+1]); c.stroke(); } c.restore(); }
@@ -13966,6 +13966,7 @@ function svDraw(){
   G.pt.forEach(p=>{ c.globalAlpha = Math.max(0, 1-p.t/p.d); c.fillStyle = p.col; c.fillRect(p.x-p.s/2, p.y-p.s/2, p.s, p.s); }); c.globalAlpha = 1;
   G.fx.forEach(f=>{ if(f.scr || f.k==='flash') return; const a = 1 - f.t/f.d; c.save(); c.globalAlpha = Math.max(0, a);
     if(f.k==='ring'){ c.beginPath(); c.arc(f.x, f.y, f.r*(0.3+0.7*f.t/f.d), 0, 6.283); c.lineWidth = f.ev ? 6 : 3; c.strokeStyle = f.col; svGS(c, 6); }
+    else if(f.k==='fburst'){ const im = svImg('assets/survival/fx_burst.webp'), k = f.t/f.d, sz = f.r*2*(0.55 + 0.6*svClawE(Math.min(1, k*1.6))); if(im.complete && im.naturalWidth){ c.globalAlpha = Math.max(0, 1 - k*k); c.drawImage(im, f.x - sz/2, f.y - sz/2 - 4, sz, sz); } else { c.strokeStyle = f.col; c.lineWidth = 3; c.beginPath(); c.arc(f.x, f.y, sz/2, 0, 6.283); c.stroke(); } } // (build 585) 스콜 불씨 폭발
     else if(f.k==='boom'){ const rr = f.r*(0.3+0.7*f.t/f.d), g = c.createRadialGradient(f.x, f.y, 1, f.x, f.y, rr); g.addColorStop(0, '#fff2c0'); g.addColorStop(0.4, f.col); g.addColorStop(1, f.col+'00'); c.fillStyle = g; c.beginPath(); c.arc(f.x, f.y, rr, 0, 6.283); c.fill(); c.strokeStyle = f.col; c.lineWidth = 3*(1 - f.t/f.d) + 0.5; c.beginPath(); c.arc(f.x, f.y, f.r*(0.6 + 0.8*f.t/f.d), 0, 6.283); c.stroke(); } // 충격파 고리
     else if(f.k==='claw'){ const pl = G.players[f.pi] || null, cx = pl ? pl.x : f.x, cy = pl ? pl.y : f.y, hf = f.half || 1.35, sw = f.sw || 0.13, prog = Math.min(1, f.t/sw), st = f.a - hf*f.s, lead0 = st + 2*hf*f.s*prog, hold = 0.05, ret = f.t > hold ? Math.min(1, (f.t - hold)/Math.max(0.01, f.d - hold)) : 0, fade = 1 - ret*ret*0.5; /* (build 500) 꼬리는 긋기 시작 0.05초 뒤부터 지나온 길을 따라 사라짐 — 다 긋기 전부터 (사용자 10/26) */ // (build 494) 꼬리부터 지나온 길을 따라 차례로 사라짐 (사용자 10/26: 잔상이 너무 오래 남음) · (build 497) 다 긋자마자 0.16초 동안 (사용자 10/26)
       const im = svImg('assets/survival/fx_claw.webp'); c.globalAlpha = fade;
@@ -20541,7 +20542,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 584, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 585, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
