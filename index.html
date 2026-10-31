@@ -13204,10 +13204,15 @@ const SV_ZOOM = { w:1, n:1.2, c:1.4 };
 function svZoomKey(){ return SV_ZOOM[state.svZoom] ? state.svZoom : (svPhone() ? 'n' : 'w'); }
 function svPhone(){ const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches; return touch && Math.min(window.innerWidth, window.innerHeight) < 600; }
 // (build 612) 폰은 무대 높이를 화면 비율에 맞춰 줄임(1280×560~720) — 옆 검은 띠가 없어지고 UI가 약 20% 커짐 (사용자 10/31 「폰은 UI가 너무 작음」) · 노치를 피해 놓음
-function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches, vv = window.visualViewport, W = vv ? vv.width : window.innerWidth, H = vv ? vv.height : window.innerHeight, rot = touch && H > W, I = svSafe();
+// (build 613) 세로 화면에서 돌려 그리는 방향 — 마지막으로 가로였을 때 폰을 돌린 쪽을 기억해서 같은 쪽으로 (사용자 10/31 「누워서 하면 돌아가 버림」 — 아이폰이 세로로 바꿔도 게임은 폰 기준 그대로) · window.orientation 90 = 왼쪽(반시계)으로 돌림 → 90도 · -90 → -90도 · 설정 「반대」면 뒤집음
+let svLandDir = 1;
+function svOriAng(){ const o = window.orientation; if(typeof o==='number') return o; const a = screen.orientation && screen.orientation.angle; return typeof a==='number' ? (a===270 ? -90 : a) : 0; }
+function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches, vv = window.visualViewport, W = vv ? vv.width : window.innerWidth, H = vv ? vv.height : window.innerHeight, I = svSafe();
+  if(W > H){ const a = svOriAng(); if(a===90) svLandDir = 1; else if(a===-90) svLandDir = -1; }
+  const rot = touch && H > W ? (state.svRotFlip==='1' ? -svLandDir : svLandDir) : 0;
   const aw = Math.max(200, rot ? H - I.t - I.b : W - I.l - I.r), ah = Math.max(150, rot ? W - I.l - I.r : H - I.t - I.b), SH = svPhone() ? Math.max(560, Math.min(720, Math.round(1280*ah/aw))) : 720;
   const k = Math.min(aw/1280, ah/SH), tx = rot ? I.l + (ah - SH*k)/2 : I.l + (aw - 1280*k)/2, ty = rot ? I.t + (aw - 1280*k)/2 : I.t + (ah - SH*k)/2;
-  sv.rot = rot; sv.stk = k; sv.sh = SH; sv.el.style.height = SH+'px'; sv.el.classList.toggle('sv-rot', rot); sv.el.classList.toggle('sv-short', SH < 680); sv.el.style.transform = rot ? 'translate('+(tx + SH*k)+'px,'+ty+'px) rotate(90deg) scale('+k+')' : 'translate('+tx+'px,'+ty+'px) scale('+k+')';
+  sv.rot = rot; sv.stk = k; sv.sh = SH; sv.el.style.height = SH+'px'; sv.el.classList.toggle('sv-rot', rot); sv.el.classList.toggle('sv-short', SH < 680); sv.el.style.transform = rot===1 ? 'translate('+(tx + SH*k)+'px,'+ty+'px) rotate(90deg) scale('+k+')' : rot===-1 ? 'translate('+tx+'px,'+(ty + 1280*k)+'px) rotate(-90deg) scale('+k+')' : 'translate('+tx+'px,'+ty+'px) scale('+k+')';
   if(!document.getElementById('svBack')){ const b = document.createElement('div'); b.id = 'svBack'; document.body.appendChild(b); } }
 // (build 612) 전체 화면 — 컴퓨터는 창 틀·폰(안드로이드)은 상단 바 없이 · 가로로 고정 (사용자 10/31 「진짜 게임처럼」) · 아이폰은 브라우저가 막아서 안 됨 → 폰을 가로로 돌리면 상단 바가 사라짐
 function svFull(){ try{ const d = document, el = d.documentElement; if(!(d.fullscreenElement || d.webkitFullscreenElement)){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if(f){ const r = f.call(el, { navigationUI:'hide' }); if(r && r.then) r.then(svLockLand, ()=>{}); else svLockLand(); return; } } svLockLand(); }catch(e){} }
@@ -13278,7 +13283,7 @@ function svPnlBody(SH, msg){ const u = svUnl(), L = sv.leader;
     let c = '';
     if(T==='snd') c = row('sound', '효과음', '공격·타격·레벨업 소리', '<input type="range" min="0" max="100" value="'+Math.round((st.sfxVolume ?? 0.7)*100)+'" data-rg="sfxVolume" aria-label="효과음"><output>'+Math.round((st.sfxVolume ?? 0.7)*100)+'</output>') + row('music', '배경음', '로비·판 음악', '<input type="range" min="0" max="100" value="'+Math.round((st.bgmVolume ?? 0.5)*100)+'" data-rg="bgmVolume" aria-label="배경음"><output>'+Math.round((st.bgmVolume ?? 0.5)*100)+'</output>');
     else if(T==='ctl') c = row('target', '조준 방식', '자동 = 가까운 적 · 수동 = 가는 방향 · 마우스 = 커서 쪽', seg('svAtk', [['auto', '자동'], ['dir', '수동'], ['mouse', '마우스']], svAtkMode())) + row('atk', '누를 때만 쏘기', '마우스 조준일 때만 · 시작 룬에 따라 안 될 수 있음', tg('svHold', !!state.svHold)) + row('auto', '키보드', 'WASD 이동 · Space 궁극기 · Q 조준 바꾸기 · C 발사 방식 · Tab 전체 현황', '');
-    else if(T==='scr') c = row('target', '시야', '가깝게 할수록 정령·적이 크게 보임 · 폰 기본 = 보통', seg('svZoom', [['w', '넓게'], ['n', '보통'], ['c', '가깝게']], svZoomKey())) + row('map', '작은 지도 크기', '', seg('svMiniK', [[0, '작게'], [1, '보통'], [2, '크게']], state.svMiniK|0)) + row('map', '작은 지도 자리', '', seg('svMiniPos', [['tl', '왼쪽 위'], ['bl', '왼쪽 아래']], state.svMiniPos==='bl' ? 'bl' : 'tl')) + row('power', '피해 숫자', '적 머리 위에 뜨는 숫자', tg('svNoDmg', !state.svNoDmg)) + row('shield', '화면 흔들림', '큰 공격·보스', tg('svNoShake', !state.svNoShake));
+    else if(T==='scr') c = (sv.rot ? row('map', '화면 방향', '폰을 세로로 둔 채 할 때 · 화면이 거꾸로면 「반대」', seg('svRotFlip', [['0', '기본'], ['1', '반대']], state.svRotFlip==='1' ? '1' : '0')) : '') + row('target', '시야', '가깝게 할수록 정령·적이 크게 보임 · 폰 기본 = 보통', seg('svZoom', [['w', '넓게'], ['n', '보통'], ['c', '가깝게']], svZoomKey())) + row('map', '작은 지도 크기', '', seg('svMiniK', [[0, '작게'], [1, '보통'], [2, '크게']], state.svMiniK|0)) + row('map', '작은 지도 자리', '', seg('svMiniPos', [['tl', '왼쪽 위'], ['bl', '왼쪽 아래']], state.svMiniPos==='bl' ? 'bl' : 'tl')) + row('power', '피해 숫자', '적 머리 위에 뜨는 숫자', tg('svNoDmg', !state.svNoDmg)) + row('shield', '화면 흔들림', '큰 공격·보스', tg('svNoShake', !state.svNoShake));
     else c = row('friends', '닉네임', (svNick() ? '「'+escTxt(svNick())+'」 · ' : '')+'파티에서 보이는 이름 · 2~8자', '<button type="button" class="svs-btn" data-nick="1">바꾸기</button>') + row('friends', '친구', '친구 목록 · 친구 추가는 원래 아니마룬 친구 화면에서', '<button type="button" class="svs-btn" data-visit="friends">열기</button>') + row('settings', '계정 · 알림 · 저장', '원래 아니마룬 설정 화면', '<button type="button" class="svs-btn" data-visit="settings">열기</button>');
     return '<div class="svs-vt">'+[['snd', '소리', 'sound'], ['ctl', '조작', 'target'], ['scr', '화면', 'map'], ['acc', '계정', 'friends']].map(([k, nm, ic])=>'<button type="button" data-st2="'+k+'" aria-pressed="'+(T===k)+'">'+uiIc(ic)+nm+'</button>').join('')+'</div><div class="svs-set">'+c+'</div>'; }
   return ''; }
@@ -13293,7 +13298,7 @@ function svApplyUp(p, U){ if(!U) return p; const lv = k=>Math.max(0, Math.min(SV
   p.xpK = 1 + 0.05*lv('xp'); p.goldK = 1 + 0.1*lv('gold'); p.cdK = 1 - 0.02*lv('cd'); p.rr = lv('rr'); p.revs = lv('rev'); return p; }
 function svUpFx(k){ const card = sv.el.querySelector('[data-us="'+k+'"]'), x = SV_UPS.find(q=>q[0]===k); if(!card || !x) return; const lv = (state.svUp||{})[k]||0;
   card.classList.add('pop'); const pip = card.querySelectorAll('.pips i')[lv-1]; if(pip) pip.classList.add('new'); const bb = sv.el.querySelector('[data-buy]'); if(bb) bb.classList.add('pop'); const gp = sv.el.querySelector('.svs-ph .svs-pill'); if(gp) gp.classList.add('dn');
-  const st = sv.el, k0 = sv.stk || 1, sr = st.getBoundingClientRect(), cr = card.getBoundingClientRect(), rot = sv.rot, x0 = rot ? (cr.top - sr.top + cr.height/2)/k0 : (cr.left - sr.left + cr.width/2)/k0, y0 = rot ? (sr.right - cr.right + 30*k0)/k0 : (cr.top - sr.top + 30*k0)/k0;
+  const st = sv.el, k0 = sv.stk || 1, sr = st.getBoundingClientRect(), cr = card.getBoundingClientRect(), rot = sv.rot, x0 = rot===-1 ? (sr.bottom - cr.bottom + cr.height/2)/k0 : rot ? (cr.top - sr.top + cr.height/2)/k0 : (cr.left - sr.left + cr.width/2)/k0, y0 = rot===-1 ? (cr.left - sr.left + 30*k0)/k0 : rot ? (sr.right - cr.right + 30*k0)/k0 : (cr.top - sr.top + 30*k0)/k0;
   const f = document.createElement('div'); f.className = 'svs-flt'; f.style.left = x0+'px'; f.style.top = y0+'px'; f.textContent = svUpTxt(x, 1).replace(/^\+?/, x[4] > 0 ? '+' : ''); st.appendChild(f); setTimeout(()=>f.remove(), 1000);
   for(let i=0;i<14;i++){ const a = i/14*6.283, d = 50 + Math.random()*40, q = document.createElement('i'); q.className = 'svs-spk'; q.style.left = x0+'px'; q.style.top = (y0 + 20)+'px'; q.style.setProperty('--dx', Math.cos(a)*d+'px'); q.style.setProperty('--dy', Math.sin(a)*d+'px'); st.appendChild(q); setTimeout(()=>q.remove(), 700); }
   try{ sfx('claim'); }catch(e){} }
@@ -13380,7 +13385,7 @@ function svLobby(msg){
   sv.el.querySelectorAll('[data-us]').forEach(b=>b.addEventListener('click', ()=>{ sv.upSel = b.dataset.us; svLobby(msg); }));
   on('[data-buy]', ()=>{ const x = SV_UPS.find(q=>q[0]===(sv.upSel || SV_UPS[0][0])), U = state.svUp = state.svUp || {}, lv = U[x[0]]||0, c = svUpCost(x, lv); if(lv >= x[3] || c > (state.svGold||0)) return; state.svGold -= c; U[x[0]] = lv + 1; save(); svLobby(msg); svUpFx(x[0]); });
   sv.el.querySelectorAll('[data-st2]').forEach(b=>b.addEventListener('click', ()=>{ sv.setT = b.dataset.st2; svLobby(msg); }));
-  sv.el.querySelectorAll('[data-sg]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.sg, v = b.dataset.sv2; state[k] = k==='svMiniK' ? +v : v; save(); svLobby(msg); }));
+  sv.el.querySelectorAll('[data-sg]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.sg, v = b.dataset.sv2; state[k] = k==='svMiniK' ? +v : v; save(); svLobby(msg); if(k==='svRotFlip'){ svOrient(); if(sv.fit) sv.fit(); } }));
   sv.el.querySelectorAll('[data-nick]').forEach(b=>b.addEventListener('click', ()=>svNickAsk(0)));
   sv.el.querySelectorAll('[data-tg]').forEach(b=>b.addEventListener('click', ()=>{ const k = b.dataset.tg; state[k] = !state[k]; save(); svLobby(msg); }));
   sv.el.querySelectorAll('[data-rg]').forEach(r=>r.addEventListener('input', ()=>{ const k = r.dataset.rg, v = (+r.value)/100; state.settings[k] = v; try{ if(k==='sfxVolume' && typeof sfxGain!=='undefined' && sfxGain) sfxGain.gain.value = v; if(k==='bgmVolume' && typeof bgmGain!=='undefined' && bgmGain) bgmGain.gain.value = v; }catch(e){} const o = r.nextElementSibling; if(o) o.textContent = r.value; save(); }));
@@ -13775,7 +13780,7 @@ function svStart(role){
   sv.el.querySelector('[data-sv="ult"]').addEventListener('click', e=>{ e.stopPropagation(); if(role==='guest'){ sv.ultReq = (sv.ultReq||0) + 1; svGuestSend(); } else svUlt(G.players[0]); });
   sv.el.querySelector('[data-sv="team"]').addEventListener('click', e=>{ e.stopPropagation(); svTeam(!sv.teamOn); }); sv.el.querySelector('.sv-team').addEventListener('click', e=>{ e.stopPropagation(); svTeam(false); }); // (build 573) 전체 현황 — 휴대폰은 버튼으로 열고 닫음
   sv.el.querySelector('.sv-bar').addEventListener('click', e=>{ const t = e.target.closest('[data-tw],[data-tp],[data-tc]'); if(t){ e.stopPropagation(); svTip(t); } }); // (build 572) 룬·유물을 누르면 간단한 설명
-  const pt = e=>{ const r = cv.getBoundingClientRect(), k = sv.scale*(sv.stk || 1); return sv.rot ? { x:(e.clientY - r.top)/k, y:(r.right - e.clientX)/k } : { x:(e.clientX - r.left)/k, y:(e.clientY - r.top)/k }; }; /* (build 610) 무대 배율도 */ /* (build 608) 90도 돌려 그릴 땐 화면 좌표를 돌려서 */
+  const pt = e=>{ const r = cv.getBoundingClientRect(), k = sv.scale*(sv.stk || 1); return sv.rot===-1 ? { x:(r.bottom - e.clientY)/k, y:(e.clientX - r.left)/k } : sv.rot ? { x:(e.clientY - r.top)/k, y:(r.right - e.clientX)/k } : { x:(e.clientX - r.left)/k, y:(e.clientY - r.top)/k }; }; /* (build 610) 무대 배율도 */ /* (build 608) 90도 돌려 그릴 땐 화면 좌표를 돌려서 */
   const box = sv.el.querySelector('.sv-cv');
   box.addEventListener('pointerdown', e=>{ if(e.target===cv){ const mk = svMiniHit(pt(e)); if(mk){ e.stopImmediatePropagation(); svMiniTap(mk); return; } } /* (build 569) 작은 지도 버튼 */ if(e.target.closest('.sv-pick') || e.target.closest('.sv-end') || e.target.closest('.sv-ult') || e.target.closest('.sv-aim')) return; if(e.pointerType==='mouse' && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches){ sv.pc = true; return; } /* 컴퓨터는 클릭해도 이동 조이스틱 없음 (WASD) */ sv.joy = { o: pt(e), c: pt(e), id:e.pointerId }; try{ box.setPointerCapture(e.pointerId); }catch(x){} });
   box.addEventListener('pointermove', e=>{ if(e.pointerType==='mouse'){ sv.mouse = pt(e); if(!sv.pc && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) sv.pc = true; } if(sv.joy && sv.joy.id===e.pointerId) sv.joy.c = pt(e); });
@@ -21033,7 +21038,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 612, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 613, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
