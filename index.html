@@ -1154,7 +1154,7 @@
   .sv-obj{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 8px; display:flex; flex-direction:column; gap:1px; font-size:10.5px; line-height:1.45; color:#c9d0f5; text-align:right;} .sv-obj b{color:#ffe08a; font-size:10px; letter-spacing:.5px;} .sv-obj span i{font-style:normal; color:#fff; font-weight:700; margin-left:4px;} .sv-obj span.ok{color:#9be07a;} .sv-obj span.bl{color:#ffd04a; margin-bottom:2px;} .sv-obj span.bl i{color:#ffd04a;} .sv-obj span.ok i{color:#9be07a;} .sv-obj span.no{color:#ffffff55; text-decoration:line-through;} .sv-obj span.no i{color:#ffffff55;}
   .sv-stat{position:absolute; z-index:5; pointer-events:none; background:#0b0d26b8; border:1px solid #ffffff22; border-radius:8px; padding:4px 7px; display:grid; grid-template-columns:auto auto; gap:0 9px; font-size:10.5px; line-height:1.4; color:#c9d0f5;} .sv-stat b{font-weight:700; color:#fff; text-align:right; font-variant-numeric:tabular-nums;} .sv-stat b.up{color:#8fe68a;} .sv-stat b.dn{color:#ff9a8a;} .sv-stat:empty{display:none;}
   .sv-wasd{position:absolute; display:none; grid-template-columns:repeat(3, 20px) auto; grid-template-rows:20px 20px; gap:3px; align-items:center; pointer-events:none; z-index:5;} .sv-wasd.on{display:grid;} .sv-wasd i{font-style:normal; font-size:10px; font-weight:800; color:#22264a; background:#eef0ff; border:1px solid #8e96c8; box-shadow:0 2px 0 #5a6296; border-radius:4px; display:flex; align-items:center; justify-content:center; height:18px;} .sv-wasd i:nth-child(1){grid-column:2; grid-row:1;} .sv-wasd i:nth-child(2){grid-column:1; grid-row:2;} .sv-wasd i:nth-child(3){grid-column:2; grid-row:2;} .sv-wasd i:nth-child(4){grid-column:3; grid-row:2;} .sv-wasd b{grid-column:4; grid-row:2; margin-left:4px; font-size:11px; color:#eef0ff; text-shadow:0 1px 2px #000, 0 0 3px #0b0d26;}
-  .sv-vig{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none;} .sv.sv-game .sv-cv{position:absolute; inset:0;} .sv.sv-game .sv-cv canvas{border-radius:0; box-shadow:none;}
+  .sv-vig{position:absolute; z-index:1; left:50%; top:50%; transform:translate(-50%,-50%); pointer-events:none;} /* (build 622) 위 캔버스(z 1) 다음에 와서 정령·몬스터도 같이 어둡게 — 621까지는 테두리 바깥 적이 밝게 보였음 */ .sv img{-webkit-user-drag:none; user-drag:none;} /* (build 622) 그림 끌림 막기 */ .sv.sv-game .sv-cv{position:absolute; inset:0;} .sv.sv-game .sv-cv canvas{border-radius:0; box-shadow:none;}
   .sv.sv-game .sv-hud{position:absolute; left:0; right:0; top:0; z-index:4; padding-top:calc(8px + env(safe-area-inset-top)); background:linear-gradient(#0b0d26d9, #0b0d2600); pointer-events:none;} .sv.sv-game .sv-hud button{pointer-events:auto;}
   .sv.sv-game .sv-bar{position:absolute; left:0; right:0; bottom:0; z-index:4; background:linear-gradient(#0b0d2600, #0b0d26d9); pointer-events:none;}
   .sv.sv-game .sv-hud, .sv.sv-game .sv-bar, .sv-stat, .sv-obj, .sv-gim, .sv-ult, .sv-aim, .sv-fire, .sv-key, .sv-wasd, .sv-pick, .sv-end{zoom:var(--uk, 1);}
@@ -13019,7 +13019,7 @@ function svFoMaskPart(t, mask, X0, Y0, dy){ const k = mask.width/SV_MW, m = 8/k,
   if(x1 > x0 && y1 > y0) t.drawImage(mask, x0*k, y0*k, (x1 - x0)*k, (y1 - y0)*k, x0, y0 + dy, x1 - x0, y1 - y0); }
 // (build 619) 렉 — 바닥을 매 프레임 위 캔버스에 다시 붙이던 것(사용자 10/31 「맵은 계속 그릴 필요 없잖아 · 고치라고」) → 화면보다 둘레 200만큼 넓은 바닥 층(.sv-bgc)에 한 번 그려 두고 매 프레임엔 CSS로 밀기만(그래픽 장치가 처리) · 카메라가 둘레를 벗어나거나 칸이 새로 생기면 그때만 바닥 층을 다시 그림 · 칸 만들기는 그대로 한 프레임에 하나
 function svFoGround(c, cam){ const bg = sv.bgc; if(!bg || !bg.getContext) return svFoGround0(c, cam);
-  const m = c.getTransform(), s = Math.min(1.5, Math.round(m.a*4)/4); if(sv.foS !== s){ sv.foS = s; sv.foCh = new Map(); sv.bgDirty = 1; }
+  const m = c.getTransform(), s = Math.min(svQ().ch, Math.round(m.a*4)/4); if(sv.foS !== s){ sv.foS = s; sv.foCh = new Map(); sv.bgDirty = 1; }
   const C = sv.foCh, F = SV_FCH, MG = 200, B = sv.bgR, ld = sv.game && sv.game.loading;
   const need = !B || sv.bgDirty || B.s !== s || B.vw !== SV_W || B.vh !== SV_H || cam.x < B.x + 4 || cam.y < B.y + 4 || cam.x + SV_W > B.x + B.w - 4 || cam.y + SV_H > B.y + B.h - 4;
   const R = need ? { x:Math.round((cam.x - MG)*s)/s, y:Math.round((cam.y - MG)*s)/s, w:SV_W + MG*2, h:SV_H + MG*2, vw:SV_W, vh:SV_H, s } : B;
@@ -13235,7 +13235,7 @@ function showSurvival(){
   const L = svHas('ld', state.svLeader) ? state.svLeader : 'fire_a';
   const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); // 로비에서부터 미리 불러 둠
   svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); }; })();
-  svFull(); if(!svNick()) svNickAsk(1);
+  svFull(); if(!svNick()) svNickAsk(1); el.addEventListener('dragstart', e=>e.preventDefault()); /* (build 622) 그림·글자가 끌리지 않게 (사용자 10/31) */
   { const s0 = sv, ek = e=>{ if(sv !== s0){ window.removeEventListener('keydown', ek); return; } if(e.code!=='Escape' || sv.game || e.repeat) return; const cf = sv.el.querySelector('.svs-cfw [data-cf="0"]'); if(cf){ e.preventDefault(); cf.click(); return; } const x = sv.el.querySelector('[data-x]'); if(x){ e.preventDefault(); x.click(); } }; window.addEventListener('keydown', ek); } // (build 618) 로비에서 Esc = 열린 창 닫기
 }
 // (build 608) 사용자 10/31 「가로 고정 · 서바이벌 들어가면 자동으로 가로로」 — 폰(터치)이 세로면 서바이벌 화면을 90도 돌려 그림(아이폰 웹 앱은 화면 방향을 바꾸는 기능이 막혀 있음) · 되는 기기는 화면 방향도 가로로 잠금 · 원래 아니마룬은 그대로 세로
@@ -13245,6 +13245,9 @@ function svSafe(){ let p = document.getElementById('svSafeP'); if(!p){ p = docum
 // (build 612) 시야 — 폰은 화면이 길쭉해서 컴보다 넓게 보였음 (사용자 10/31 「폰은 너무 넓게 봄」) · 넓게 = 원래 · 보통 = 1.2배 · 가깝게 = 1.4배
 const SV_ZOOM = { w:1, n:1.2, c:1.4 };
 function svZoomKey(){ return SV_ZOOM[state.svZoom] ? state.svZoom : 'w'; } // (build 614) 기본은 폰도 「넓게」 — 컴과 같은 화면
+// (build 622) 화질 — 캔버스 점 수 · 바닥·나무 칸 해상도 (렉이 심하면 낮춤 · 사용자 10/31 「렉 아직도 심함」) · 기본 보통 (621까지는 높음과 같았음)
+const SV_Q = { h:{ px:2.2e6, ch:1.5 }, m:{ px:1.3e6, ch:1.25 }, l:{ px:0.7e6, ch:1 } };
+function svQ(){ return SV_Q[state.svQ] || SV_Q.m; }
 function svPhone(){ const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches; return touch && Math.min(window.innerWidth, window.innerHeight) < 600; }
 // (build 612) 폰은 무대 높이를 화면 비율에 맞춰 줄임(1280×560~720) — 옆 검은 띠가 없어지고 UI가 약 20% 커짐 (사용자 10/31 「폰은 UI가 너무 작음」) · 노치를 피해 놓음
 // (build 613) 세로 화면에서 돌려 그리는 방향 — 마지막으로 가로였을 때 폰을 돌린 쪽을 기억해서 같은 쪽으로 (사용자 10/31 「누워서 하면 돌아가 버림」 — 아이폰이 세로로 바꿔도 게임은 폰 기준 그대로) · window.orientation 90 = 왼쪽(반시계)으로 돌림 → 90도 · -90 → -90도 · 설정 「반대」면 뒤집음
@@ -13327,7 +13330,7 @@ function svPnlBody(SH, msg){ const u = svUnl(), L = sv.leader;
     let c = '';
     if(T==='snd') c = row('sound', '효과음', '공격·타격·레벨업 소리', '<input type="range" min="0" max="100" value="'+Math.round((st.sfxVolume ?? 0.7)*100)+'" data-rg="sfxVolume" aria-label="효과음"><output>'+Math.round((st.sfxVolume ?? 0.7)*100)+'</output>') + row('music', '배경음', '로비·판 음악', '<input type="range" min="0" max="100" value="'+Math.round((st.bgmVolume ?? 0.5)*100)+'" data-rg="bgmVolume" aria-label="배경음"><output>'+Math.round((st.bgmVolume ?? 0.5)*100)+'</output>');
     else if(T==='ctl') c = row('target', '조준 방식', '자동 = 가까운 적 · 수동 = 가는 방향 · 마우스 = 커서 쪽', seg('svAtk', [['auto', '자동'], ['dir', '수동'], ['mouse', '마우스']], svAtkMode())) + row('atk', '누를 때만 쏘기', '마우스 조준일 때만 · 시작 룬에 따라 안 될 수 있음', tg('svHold', !!state.svHold)) + row('auto', '키보드', 'WASD 이동 · Space 궁극기 · Q 조준 바꾸기 · C 발사 방식 · Tab 전체 현황', '');
-    else if(T==='scr') c = row('target', '성능 표시', '판 아래에 fps·처리 시간 — 렉 원인 찾기용', tg('svPerf', !!state.svPerf)) + (sv.rot ? row('map', '화면 방향', '폰을 세로로 둔 채 할 때 · 화면이 거꾸로면 「반대」', seg('svRotFlip', [['0', '기본'], ['1', '반대']], state.svRotFlip==='1' ? '1' : '0')) : '') + row('target', '시야', '가깝게 할수록 정령·적이 크게 보임 · 기본 = 넓게', seg('svZoom', [['w', '넓게'], ['n', '보통'], ['c', '가깝게']], svZoomKey())) + row('map', '작은 지도 크기', '', seg('svMiniK', [[0, '작게'], [1, '보통'], [2, '크게']], state.svMiniK|0)) + row('map', '작은 지도 자리', '', seg('svMiniPos', [['tl', '왼쪽 위'], ['bl', '왼쪽 아래']], state.svMiniPos==='bl' ? 'bl' : 'tl')) + row('power', '피해 숫자', '적 머리 위에 뜨는 숫자', tg('svNoDmg', !state.svNoDmg)) + row('shield', '화면 흔들림', '큰 공격·보스', tg('svNoShake', !state.svNoShake));
+    else if(T==='scr') c = row('settings', '화질', '렉이 심하면 낮춤 · 낮을수록 가볍고 조금 흐림', seg('svQ', [['h', '높음'], ['m', '보통'], ['l', '낮음']], SV_Q[state.svQ] ? state.svQ : 'm')) + row('target', '성능 표시', '판 아래에 fps·처리 시간 — 렉 원인 찾기용', tg('svPerf', !!state.svPerf)) + (sv.rot ? row('map', '화면 방향', '폰을 세로로 둔 채 할 때 · 화면이 거꾸로면 「반대」', seg('svRotFlip', [['0', '기본'], ['1', '반대']], state.svRotFlip==='1' ? '1' : '0')) : '') + row('target', '시야', '가깝게 할수록 정령·적이 크게 보임 · 기본 = 넓게', seg('svZoom', [['w', '넓게'], ['n', '보통'], ['c', '가깝게']], svZoomKey())) + row('map', '작은 지도 크기', '', seg('svMiniK', [[0, '작게'], [1, '보통'], [2, '크게']], state.svMiniK|0)) + row('map', '작은 지도 자리', '', seg('svMiniPos', [['tl', '왼쪽 위'], ['bl', '왼쪽 아래']], state.svMiniPos==='bl' ? 'bl' : 'tl')) + row('power', '피해 숫자', '적 머리 위에 뜨는 숫자', tg('svNoDmg', !state.svNoDmg)) + row('shield', '화면 흔들림', '큰 공격·보스', tg('svNoShake', !state.svNoShake));
     else c = row('friends', '닉네임', (svNick() ? '「'+escTxt(svNick())+'」 · ' : '')+'파티에서 보이는 이름 · 2~8자', '<button type="button" class="svs-btn" data-nick="1">바꾸기</button>') + row('friends', '친구', '친구 목록 · 친구 추가는 원래 아니마룬 친구 화면에서', '<button type="button" class="svs-btn" data-visit="friends">열기</button>') + row('settings', '계정 · 알림 · 저장', '원래 아니마룬 설정 화면', '<button type="button" class="svs-btn" data-visit="settings">열기</button>');
     return '<div class="svs-vt">'+[['snd', '소리', 'sound'], ['ctl', '조작', 'target'], ['scr', '화면', 'map'], ['acc', '계정', 'friends']].map(([k, nm, ic])=>'<button type="button" data-st2="'+k+'" aria-pressed="'+(T===k)+'">'+uiIc(ic)+nm+'</button>').join('')+'</div><div class="svs-set">'+c+'</div>'; }
   return ''; }
@@ -13807,7 +13810,7 @@ function svStart(role){
   const fit = ()=>{ if(!sv || !sv.cv) return; // (build 489) 사용자 결정 10/26: 틀 없이 화면 전체 · 위 HUD·아래 스킬 줄은 게임 화면 위에 겹쳐 놓음
     const box = sv.el.querySelector('.sv-cv'), bw = box.clientWidth, bh = box.clientHeight; if(!(bw > 0 && bh > 0)) return;
     if(bw/bh >= 0.6){ SV_H = Math.round(600 / SV_ZOOM[svZoomKey()]); SV_W = Math.min(1400, Math.round(SV_H*bw/bh)); } /* (build 612) 시야 */ else { SV_W = 360; SV_H = Math.min(900, Math.round(360*bh/bw)); }
-    const w = Math.min(bw, bh * SV_W / SV_H), h = w*SV_H/SV_W, dpr = Math.min(2.5, (window.devicePixelRatio || 1)*(sv.stk || 1), Math.sqrt(2.2e6/(w*h))); /* (build 610) 무대 배율만큼 더 촘촘히 — 크게 늘려도 안 흐리게 */ // (build 491) 그리는 점 수를 약 220만(1920×1080 정도)까지로 — 큰 화면·고해상도에서 렉
+    const w = Math.min(bw, bh * SV_W / SV_H), h = w*SV_H/SV_W, dpr = Math.min(2.5, (window.devicePixelRatio || 1)*(sv.stk || 1), Math.sqrt(svQ().px/(w*h))); /* (build 622) 화질 설정 */ /* (build 610) 무대 배율만큼 더 촘촘히 — 크게 늘려도 안 흐리게 */ // (build 491) 그리는 점 수를 약 220만(1920×1080 정도)까지로 — 큰 화면·고해상도에서 렉
     cv.style.width = w+'px'; cv.style.height = h+'px'; { const W = Math.round(w*dpr), H = Math.round(h*dpr); if(cv.width !== W) cv.width = W; if(cv.height !== H) cv.height = H; } /* (build 580) 크기가 같으면 안 건드림 — 다시 정하면 그림이 지워져 화면이 잠깐 까매졌음 (사용자 10/30) */ sv.scale = w / SV_W; sv.dpr = cv.width / w; sv.bgDirty = 1;
     const vig = sv.el.querySelector('.sv-vig'); if(vig){ const k = w / SV_W; vig.style.width = w+'px'; vig.style.height = h+'px'; vig.style.background = 'radial-gradient(circle at 50% 50%, #0b0d2600 '+Math.round(160*k)+'px, #0b0d26aa '+Math.round(430*k)+'px)'; }
     const uk = 1; /* (build 610) 무대(1280×720) 기준 크기 그대로 — 무대가 통째로 커지고 작아짐 */ sv.el.style.setProperty('--uk', uk); sv.uk = uk; // (build 564) 컴퓨터(가로 화면)는 HTML UI를 화면 높이에 맞춰 키움 (사용자 10/29 「UI 너무 작음」) — 위치는 아래에서 uk로 나눠 줌
@@ -21091,7 +21094,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 621, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 622, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
