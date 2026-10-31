@@ -983,6 +983,10 @@
   /* (build 605) 출전 대기실 */
   .svl{flex:1; min-height:0; display:flex; flex-direction:column; gap:12px; padding:12px 16px 18px; overflow:auto;} .svl-top{display:flex; align-items:center; gap:8px;} .svl-top b{font-size:17px;} .svl-top span{margin-left:auto; font-size:12px; color:#ffd557; font-weight:800;}
   .svl-slots{display:grid; grid-template-columns:1fr 1fr; gap:10px;} .svl-s{position:relative; aspect-ratio:1 / 1.1; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:#ffffff08; border:2px dashed #ffffff2a; color:#9aa6e0; font-size:12px; font-weight:800;} .svl-s.on{border:2px solid var(--pc); background:radial-gradient(80% 70% at 50% 40%, color-mix(in srgb, var(--pc) 28%, transparent), #0b0d2688); color:#fff;} .svl-s.me{box-shadow:0 0 0 3px #ffd55755, 0 0 18px color-mix(in srgb, var(--pc) 50%, transparent);} .svl-s img{width:72%; height:62%; object-fit:contain; filter:drop-shadow(0 6px 10px #0009);} .svl-s b{font-size:14px;} .svl-s small{font-size:11px; color:#c9d2ff;}
+  .svl-stg{position:relative; display:flex; align-items:center; gap:10px; padding:8px 44px; border-radius:16px; background:linear-gradient(135deg, color-mix(in srgb, var(--c1) 45%, #0b0d26), color-mix(in srgb, var(--c2) 35%, #0b0d26)); border:1px solid #ffffff33;} .svl-stg > img{width:58px; height:58px; border-radius:12px; object-fit:cover; flex:none; border:1px solid #ffffff44;} .svl-stg > img.bs{object-fit:contain; background:#0004;} .svl-stg > i{width:58px; height:58px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:#0006; flex:none;} .svl-stg > div{display:flex; flex-direction:column; min-width:0;} .svl-stg em{font-style:normal; font-size:11px; font-weight:900; color:#ffd557;} .svl-stg b{font-size:17px;} .svl-stg small{font-size:11px; color:#c9d2ff;} .svl-stg .svb-ar{top:50%; transform:translateY(-50%); width:32px; height:48px; font-size:24px;} .svl-stg .svb-ar.l{left:6px;} .svl-stg .svb-ar.r{right:6px;}
+  .svl-s{aspect-ratio:1 / .92 !important;} .svl-s.me{cursor:pointer;} .svl-s.me::after{content:'바꾸기'; position:absolute; top:6px; right:8px; font-size:10px; font-weight:800; color:#ffe38a;}
+  .svl-tools{display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;} .svl-tools .sv-btn{display:flex; flex-direction:column; align-items:center; gap:2px; padding:7px 0 5px;} .svl-tools .uic{width:26px; height:26px;} .svl-tools small{font-size:11px;}
+  .sv-lob.sv-inl{padding:0; overflow:visible;}
   .svl-s.add{cursor:pointer;} .svl-s.add i{font-style:normal; font-size:40px; line-height:1; color:#ffd557;} .svl-s i{font-style:normal;}
   .svl-code{text-align:center; display:flex; flex-direction:column; gap:2px; font-size:12px; color:#c9d2ff;} .svl-code b{font-size:24px; letter-spacing:6px; color:#ffd557;} .svl-code small{font-size:11px; color:#9aa6e0;}
   .svl-go{margin-top:auto; padding:16px; font-size:19px; display:flex; align-items:center; justify-content:center; gap:6px;} .svl-go .uic{width:26px; height:26px;} .svl-wait{margin-top:auto; text-align:center; color:#c9d2ff; font-size:13px;} .svl-join{opacity:.9;}
@@ -13100,14 +13104,18 @@ function svSplash(){ // (build 599) 처음 켤 때와 같은 로딩창 — 별�
 //  자리 넷(나 + 빈 자리 셋) · 빈 자리를 누르면 방을 만들고 친구 초대 창 · 친구가 아니어도 방 코드로 들어옴 · 혼자면 「시작」 = 바로 혼자 하기
 function svLobHtml(msg){ const n = sv.net, M = SV_MAPS[sv.stage||0], me = n.role==='guest' ? n.slot : 0, gst = n.role==='guest';
   const slot = s=>{ const on = s===0 || (n.code && !!(n.sl && n.sl[s])) || (gst && s===me), Ls = s===me ? sv.leader : s===0 ? n.hl : (n.gl && n.gl[s]);
-    if(on) return '<div class="svl-s on'+(s===me ? ' me' : '')+'" style="--pc:'+SV_PCOL[s]+';">'+(Ls && SV_BASE[Ls] ? '<img src="assets/spirits/'+svKey(Ls,4)+'.webp" alt="">' : '<u></u>')+'<b>'+(s===me ? '나' : s===0 ? '방장' : (s+1)+'P')+'</b><small>'+(Ls && SPIRITS[svKey(Ls,4)] ? SPIRITS[svKey(Ls,4)].name : '')+'</small></div>';
+    if(on) return '<div class="svl-s on'+(s===me ? ' me' : '')+'" style="--pc:'+SV_PCOL[s]+';"'+(s===me ? ' data-sheet="pick" role="button"' : '')+'>'+(Ls && SV_BASE[Ls] ? '<img src="assets/spirits/'+svKey(Ls,4)+'.webp" alt="">' : '<u></u>')+'<b>'+(s===me ? '나' : s===0 ? '방장' : (s+1)+'P')+'</b><small>'+(Ls && SPIRITS[svKey(Ls,4)] ? SPIRITS[svKey(Ls,4)].name : '')+'</small></div>';
     return gst ? '<div class="svl-s"><i>빈 자리</i></div>' : '<button type="button" class="svl-s add" data-inv="1"><i>+</i><small>친구 초대</small></button>'; };
-  return '<div class="svl"><div class="svl-top"><button type="button" class="sv-btn sv-ic" data-lobx="1">←</button><b>출전 준비</b><span>'+((sv.stage||0)+1)+'단계 · '+M.nm+'</span></div>'
+  const vs = sv.stv == null ? (sv.stage||0) : sv.stv, VM = SV_MAPS[vs], rd = vs < SV_STAGE_READY, vo = svStageOpen(vs), art = SV_THUMB[VM.id] ? 'assets/survival/'+VM.id+'_thumb.webp' : 'assets/boss/'+VM.mid+'.webp';
+  // (build 606) 사용자 10/31 「롤 스웜은 로비에서 캐릭터도 바꾸고 트리도 열고 맵도 바꿨음 — 참고」 → 대기실에서 단계(맵)·정령·트리·룬을 다 고름 (같이 할 땐 단계는 방장만)
+  return '<div class="svl"><div class="svl-top"><button type="button" class="sv-btn sv-ic" data-lobx="1">←</button><b>출전 준비</b></div>'
+    + '<div class="svl-stg" style="--c1:'+VM.col[1]+'; --c2:'+VM.col[2]+';"><button type="button" class="svb-ar l" data-stg="-1"'+(vs > 0 && !gst ? '' : ' disabled')+'>‹</button>'+(rd ? '<img src="'+art+'" alt=""'+(SV_THUMB[VM.id] ? '' : ' class="bs"')+'>' : '<i>'+uiIc('lock')+'</i>')+'<div><em>'+(vs+1)+'단계</em><b>'+(rd ? VM.nm : '???')+'</b><small>'+(gst ? '단계는 방장이 고름' : !rd ? '잠김' : !vo ? vs+'단계 최종 보스를 잡으면 열림' : '5분 '+SV_BOSS_NM[VM.mid]+' · 10분 '+SV_BOSS_NM[VM.fin])+'</small></div><button type="button" class="svb-ar r" data-stg="1"'+(vs < SV_MAPS.length-1 && !gst ? '' : ' disabled')+'>›</button></div>'
     + '<div class="svl-slots">'+[0, 1, 2, 3].map(slot).join('')+'</div>'
+    + '<div class="svl-tools"><button type="button" class="sv-btn" data-sheet="pick">'+uiIc('spirits')+'<small>정령</small></button><button type="button" class="sv-btn" data-sheet="tree">'+uiIc('awaken')+'<small>트리</small></button><button type="button" class="sv-btn" data-sheet="runes">'+uiIc('runestone')+'<small>룬</small></button><button type="button" class="sv-btn" data-sheet="guide">'+uiIc('guide')+'<small>하는 법</small></button></div>'
     + (n.code ? '<div class="svl-code">방 코드 <b>'+n.code+'</b><small>친구가 아니어도 이 코드로 들어올 수 있음</small></div>' : '<div class="svl-code"><small>빈 자리를 눌러 친구를 부르거나, 혼자면 바로 시작</small></div>')
     + (msg ? '<div class="sv-msg">'+msg+'</div>' : '')
     + (gst ? '<div class="svl-wait">방장이 시작하길 기다리는 중…</div><button type="button" class="sv-btn sv-sub" data-sv="leave">방 나가기</button>'
-      : '<button type="button" class="sv-btn sv-go svl-go" data-lgo="1">'+uiIc('duel')+(n.code && svCnt() > 1 ? ' 같이 시작 ('+svCnt()+'명)' : ' 시작')+'</button>'
+      : '<button type="button" class="sv-btn sv-go svl-go" data-lgo="1"'+(vo ? '' : ' disabled')+'>'+uiIc('duel')+(n.code && svCnt() > 1 ? ' 같이 시작 ('+svCnt()+'명)' : ' 시작')+'</button>'
         + (n.code ? '' : '<div class="sv-row svl-join"><input class="sv-in" maxlength="6" placeholder="방 코드"><button type="button" class="sv-btn sv-sub" data-sv="join">코드로 참가</button></div>'))
     + '</div>'; }
 function svInvHtml(){ const L = (typeof friendList==='function' ? friendList() : []).sort((a, b)=>(friendOnline(b) ? 1 : 0) - (friendOnline(a) ? 1 : 0)), iv = sv.invd || {};
@@ -13146,7 +13154,8 @@ function svLobby(msg){
   const T = sv.tab==='party' ? 'home' : (sv.tab || 'home'), NAV = [['spirit', 'spirits', '정령'], ['rune', 'runestone', '룬'], ['home', 'duel', '출전'], ['tree', 'awaken', '트리'], ['rec', 'trophy', '기록']], /* (build 603) 생존 게임처럼 가운데 탭 = 출전 */ M = SV_MAPS[sv.stage||0], LN = SPIRITS[svKey(L,4)].name;
   if(sv.tab==='party'){ sv.tab = 'home'; sv.lob = 1; } /* (build 605) 같이 하기 = 출전 대기실 */
   let B = '';
-  if(T==='home'){ const vs = sv.stv == null ? (sv.stage||0) : sv.stv, VM = SV_MAPS[vs], vo = svStageOpen(vs), rd = vs < SV_STAGE_READY, cl = (state.svClear||[]).includes(vs), art = SV_THUMB[VM.id] ? 'assets/survival/'+VM.id+'_thumb.webp' : 'assets/boss/'+VM.mid+'.webp';
+  const TT = sv.lob && sv.sheet==='pick' ? 'spirit' : sv.lob && sv.sheet==='runes' ? 'rune' : T; /* (build 606) 대기실 창에서도 정령·룬 화면을 그대로 */
+  if(TT==='home'){ const vs = sv.stv == null ? (sv.stage||0) : sv.stv, VM = SV_MAPS[vs], vo = svStageOpen(vs), rd = vs < SV_STAGE_READY, cl = (state.svClear||[]).includes(vs), art = SV_THUMB[VM.id] ? 'assets/survival/'+VM.id+'_thumb.webp' : 'assets/boss/'+VM.mid+'.webp';
     B = '<div class="svb" style="--c0:'+VM.col[0]+'; --c1:'+VM.col[1]+'; --c2:'+VM.col[2]+';">'+(rd ? '<div class="svb-bg" style="background-image:url('+art+');"></div>' : '')
     + '<div class="svb-card'+(rd ? '' : ' lock')+(SV_THUMB[VM.id] ? '' : ' boss')+'"><button type="button" class="svb-ar l" data-stg="-1"'+(vs > 0 ? '' : ' disabled')+'>‹</button><button type="button" class="svb-ar r" data-stg="1"'+(vs < SV_MAPS.length-1 ? '' : ' disabled')+'>›</button>'
       + (rd ? '<img class="svb-art" src="'+art+'" alt="">' : '<div class="svb-art q">'+uiIc('lock')+'</div>')
@@ -13155,7 +13164,7 @@ function svLobby(msg){
     + (rd && vo ? '<div class="svb-d">'+VM.d+'</div>' : '<div class="svb-d"></div>')
     + '<div class="svb-row"><button type="button" class="svb-ld" data-tab="spirit" style="--ec:'+SV_EC[L.split('_')[0]]+';"><img src="assets/spirits/'+svKey(L,4)+'.webp" alt=""><span><b>'+LN+'</b><small>정령 바꾸기 ›</small></span></button>'
       + '<button type="button" class="sv-btn sv-go svb-go" data-lob="1"'+(vo || n.code ? '' : ' disabled')+'>'+uiIc('duel')+(n.code ? ' 대기실 · '+svCnt()+'명' : ' 출전')+'</button></div></div>'; } /* (build 605) 「같이」 버튼 뺌 — 출전 → 대기실(친구 초대 · 혼자면 시작) (사용자 10/31) */
-  else if(T==='spirit') B = '<div class="sv-lob">'
+  else if(TT==='spirit') B = '<div class="sv-lob">'
     + '<div class="sv-ltl">정령 <em>'+u.ld.length+'/10</em> <small>그 정령이 되어 움직임 · 시작 룬 · 정령 패시브 · 궁극기</small></div>'
     + '<div class="sv-lead">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button class="sv-lc'+(l===L?' on':'')+(l===V && l!==L?' vw':'')+(op?'':' lock')+'" data-ld="'+l+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt=""><b>'+(op ? SPIRITS[svKey(l,4)].name : uiIc('lock'))+'</b></button>'; }).join('')+'</div>'
     + '<div class="sv-ldi'+(vOpen?'':' lock')+'" style="--ec:'+SV_EC[el]+';"><img src="assets/spirits/'+svKey(V,4)+'.webp" alt=""><div><b>'+SPIRITS[svKey(V,4)].name+(vOpen ? '' : ' <i>'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</i>')+'</b>'
@@ -13164,7 +13173,7 @@ function svLobby(msg){
       + '<small><img src="'+svSkIc(sk1)+'" alt="">시작 룬 · '+svSkNm(sk1, { leader:V })+' — '+svSkDesc(sk1, 0, 1)+svLinkTxt(sk1)+'</small>'
       + '<small><img src="'+svSkIc(sk2)+'" alt="">궁극기 · '+svUltNm(V)+' — '+SV_ULT[V]+'</small></div></div>' /* (build 529) 판 안에서 자라는 모습 줄은 뺌 — 외형 고정 */
     + '</div>';
-  else if(T==='rune') B = '<div class="sv-lob">'
+  else if(TT==='rune') B = '<div class="sv-lob">'
     + '<div class="sv-ltl">룬 <em>'+u.sk.length+'/20</em> <small>정령의 힘이 새겨진 돌 · 레벨업 카드로 나옴 · 판에서 조건을 채우면 해금</small></div>'
     + '<div class="sv-skd">'+Object.keys(SV_SK).map(id=>'<button class="sv-sk'+(u.sk.includes(id)?'':' lock')+(id===skv?' on':'')+'" data-skv="'+id+'" style="--ec:'+SV_EC[id.split('_')[0]]+';"><img src="'+svSkIc(id)+'" alt=""></button>').join('')+'</div>'
     + (skv ? '<div class="sv-ski"><b>'+svSkNm(skv)+'</b> '+(u.sk.includes(skv) ? svSkDesc(skv, 0, 1)+svLinkTxt(skv) : uiIc('lock')+' '+(svUnlTxt('sk', skv) || '정령 「'+SPIRITS[svKey(svSkLine(skv),4)].name+'」을 열면 해금'))+'</div>' : '')
@@ -13172,7 +13181,8 @@ function svLobby(msg){
     + '</div>';
   else if(T==='rec') B = '<div class="sv-lob"><div class="sv-ltl">기록</div><div class="sv-rec"><div><small>최고 기록</small><b>'+svFmtT(state.svBest||0)+'</b></div><div><small>깬 단계</small><b>'+(state.svClear||[]).length+' / '+SV_STAGE_READY+'</b></div><div><small>모은 골드</small><b>'+uiIc('gold')+(state.svGold||0)+'</b></div><div><small>정령</small><b>'+u.ld.length+' / 10</b></div><div><small>룬</small><b>'+u.sk.length+' / 20</b></div></div><div class="sv-ltl">하는 법</div><div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(시작 룬 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬 Lv5 + 연계 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('party')+'같이 하면 <em>협동 룬</em>이 카드에 나옴 — 한 사람에 하나 · Lv5까지</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div></div>';
   else B = '<div class="sv-lob"><div class="sv-soon">'+uiIc('awaken')+'<b>성장 트리</b>판에서 모은 골드로 정령을 키우는 곳<br>준비 중</div></div>';
-  const SH = sv.sheet, shT = { inv:'친구 초대', stage:'단계 고르기', party:'같이 하기', guide:'하는 법', rec:'기록', menu:'메뉴' };
+  let SUB = ''; if(sv.lob){ SUB = B.replace(/^<div class="sv-lob">/, '<div class="sv-lob sv-inl">'); B = svLobHtml(msg); }
+  const SH = sv.sheet, shT = { pick:'정령 고르기', runes:'룬 도감', tree:'성장 트리', inv:'친구 초대', stage:'단계 고르기', party:'같이 하기', guide:'하는 법', rec:'기록', menu:'메뉴' };
   let S = '';
   if(SH==='stage') S = svStageHtml();
   else if(SH==='party') S = ''+'<small class="sv-shs">방을 만들고 코드를 알려 주면 넷까지 같이 함</small>'
@@ -13183,8 +13193,9 @@ function svLobby(msg){
   else if(SH==='guide') S = '<div class="sv-how"><div>'+uiIc('auto')+'화면을 끌어 움직임 · 공격은 자동 · 오른쪽 아래 버튼 = 궁극기</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(시작 룬 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<em>각성</em> = 룬 Lv5 + 연계 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</div><div>'+uiIc('party')+'같이 하면 <em>협동 룬</em>이 카드에 나옴 — 한 사람에 하나 · Lv5까지</div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 회복</div></div>';
   else if(SH==='rec') S = '<div class="sv-rec"><div><small>최고 기록</small><b>'+svFmtT(state.svBest||0)+'</b></div><div><small>깬 단계</small><b>'+(state.svClear||[]).length+' / '+SV_STAGE_READY+'</b></div><div><small>모은 골드</small><b>'+uiIc('gold')+(state.svGold||0)+'</b></div><div><small>정령</small><b>'+u.ld.length+' / 10</b></div><div><small>룬</small><b>'+u.sk.length+' / 20</b></div></div>';
   else if(SH==='inv') S = svInvHtml();
+  else if(SH==='pick' || SH==='runes') S = SUB;
+  else if(SH==='tree') S = '<div class="sv-soon">'+uiIc('awaken')+'<b>성장 트리</b>판에서 모은 골드로 정령을 키우는 곳<br>준비 중</div>';
   else if(SH==='menu') S = '<div class="sv-menu"><button data-sheet="guide">'+uiIc('guide')+'하는 법</button><button data-visit="settings">'+uiIc('settings')+'설정</button><button data-visit="friends">'+uiIc('friends')+'친구</button></div>';
-  if(sv.lob) B = svLobHtml(msg);
   sv.el.innerHTML = '<div class="svh-head"><div class="title" data-tab="spirit" role="button"><span class="svh-av"><img src="assets/spirits/'+svKey(L,4)+'.webp" alt=""></span><span><b>아니마룬 <small>Survival</small></b><i>'+uiIc('time')+' 최고 '+svFmtT(state.svBest||0)+'</i></span></div><div class="svh-r"><div class="essence">'+uiIc('gold')+(state.svGold||0)+'</div><button type="button" data-visit="friends" aria-label="친구">'+uiIc('friends')+'</button><button type="button" data-sheet="menu" aria-label="메뉴">'+uiIc('menu')+'</button></div></div>'
     + B
     + (sv.lob ? '' : '<div class="sv-nav2">'+NAV.map(([k, ic, nm])=>'<button type="button" class="'+(k===T ? 'active' : '')+(k==='tree' ? ' locked' : '')+(k==='home' ? ' mid' : '')+'" data-tab="'+k+'"><span class="ico">'+uiIc(ic)+'</span>'+nm+'</button>').join('')+'</div>') /* 전체 nav 스타일(아래 고정)을 안 받게 div · 대기실에선 탭 숨김 */
@@ -20844,7 +20855,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 605, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 606, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
