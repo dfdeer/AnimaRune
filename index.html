@@ -12963,7 +12963,7 @@ function svGimGuide(G){ // (build 563) 시작할 때 오른쪽에 이 맵 기믹
   d.addEventListener('pointerdown', e=>{ e.stopPropagation(); clearTimeout(tm); d.classList.toggle('tuck'); }); sv.el.appendChild(d); }
 function svChargeBadge(c, G){ // (build 563) 내가 충전 범위 안이면 머리 위에 둥근 게이지 + 이름 — 사용자 10/29 「딱 봤을 때 차오르는 걸 알게」
   const me = G.players[G.me]; if(!me || me.down) return; const z = G.map.zones.find(q=>(q.kind==='well' || q.kind==='shrine') && !(q.cd > 0) && svInZ(q, me)); if(!z) return;
-  const v = z.kind==='well' ? z.ch : z.cap, col = z.kind==='well' ? '#7ae0ff' : '#ffd04a', x = me.x, y = me.y - 62, R = 17, n = G.players.filter(p=>!p.down && svInZ(z, p)).length; c.save();
+  const v = z.kind==='well' ? z.ch : z.cap, col = z.kind==='well' ? '#7ae0ff' : '#ffd04a', x = me.x, R = 17, y = (me.y - 62 - R - 14 < (sv.cam ? sv.cam.y : 0) + (sv.uiTop||0) + 8) ? me.y + 54 : me.y - 62 /* (build 603) 화면 위 끝(맵 위쪽)이면 위 막대에 가리지 않게 발밑에 */, n = G.players.filter(p=>!p.down && svInZ(z, p)).length; c.save();
   c.drawImage(svGlow(col, '66'), x - R*2.2, y - R*2.2, R*4.4, R*4.4); c.fillStyle = '#0b0d26d9'; c.beginPath(); c.arc(x, y, R, 0, 6.283); c.fill();
   c.strokeStyle = col + '44'; c.lineWidth = 4; c.beginPath(); c.arc(x, y, R - 2, 0, 6.283); c.stroke(); c.strokeStyle = col; c.lineCap = 'round'; c.beginPath(); c.arc(x, y, R - 2, -1.5708, -1.5708 + 6.283*v); c.stroke();
   const im = svFoImg(z.kind==='well' ? 'worldtree' : 'shrine'); if(im.complete && im.naturalWidth){ const h = 22, w = h*im.naturalWidth/im.naturalHeight; c.drawImage(im, x - w/2, y - h/2, w, h); }
@@ -12981,7 +12981,7 @@ function svDrawMap(c, G, cam){
   if(map.fo) svFoGround(c, cam); else { svGroundPat(c, map); svDrawGround(c, cam); }
   if(!map.fo){ c.strokeStyle = '#000a'; c.lineWidth = 6; c.strokeRect(-3, -3, SV_MW+6, SV_MH+6); } // 맵 끝 (숲은 나무 벽)
   map.deco.forEach(d=>{ if(!vis(d)) return; const im = svImg('assets/survival/'+M.id+'_deco'+(d.k+1)+'.webp'); if(im.complete && im.naturalWidth){ const s = 26*d.s; if(d.fl){ c.save(); c.translate(d.x, 0); c.scale(-1, 1); c.drawImage(im, -s/2, d.y-s/2, s, s); c.restore(); } else c.drawImage(im, d.x-s/2, d.y-s/2, s, s); } else if(!sv.patImg){ c.fillStyle = M.col[2]+'aa'; c.beginPath(); c.arc(d.x, d.y, 3*d.s, 0, 6.283); c.fill(); } }); // 바닥 그림이 오면 임시 점은 안 그림
-  map.zones.forEach(z=>{ if(!vis(z) || z.kind==='swamp') return; if(z.kind==='well'){ svDrawWell(c, z, G); return; } if(z.kind==='warm'){ svDrawWarm(c, z, G); return; } if(z.kind==='snowman'){ svDrawSnowman(c, z, G); return; } if(z.kind==='shrine'){ svDrawShrine(c, z, G); return; } const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
+  map.zones.forEach(z=>{ if(!vis(z) || z.kind==='swamp') return; if(map.fo && SV_ZTOP[z.kind]) return; /* (build 603) 조각 맵은 나무 위에 그림 (svFoZones) */ if(z.kind==='well'){ svDrawWell(c, z, G); return; } if(z.kind==='warm'){ svDrawWarm(c, z, G); return; } if(z.kind==='snowman'){ svDrawSnowman(c, z, G); return; } if(z.kind==='shrine'){ svDrawShrine(c, z, G); return; } const im = svImg('assets/survival/'+M.id+'_'+z.kind+'.webp'), has = im.complete && im.naturalWidth; c.save();
     if(z.kind==='trap'){ const st = svTrapState(z, G.t); if(has) c.drawImage(im, z.x-z.r, z.y-z.r, z.r*2, z.r*2); else { c.fillStyle = '#4a4033'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); c.strokeStyle = '#2b2419'; c.lineWidth = 2; c.strokeRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
       if(st >= 1){ c.fillStyle = st===2 ? '#ffd04acc' : '#ff6a6a55'; c.fillRect(z.x-z.r, z.y-z.r, z.r*2, z.r*2); }
       if(st===2){ c.fillStyle = '#e8e2d0'; for(let i=0;i<3;i++) for(let j=0;j<3;j++){ const px = z.x - z.r + 10 + i*20, py = z.y - z.r + 10 + j*20; c.beginPath(); c.moveTo(px-6, py+6); c.lineTo(px, py-8); c.lineTo(px+6, py+6); c.fill(); } } }
@@ -12993,6 +12993,9 @@ function svDrawMap(c, G, cam){
     c.restore(); });
   (G.hz||[]).forEach(h=>{ const f = Math.min(1, h.t/h.d); c.save(); c.fillStyle = 'rgba(255,60,30,'+(0.15 + f*0.25)+')'; c.strokeStyle = '#ff5a3a'; c.lineWidth = 2; c.beginPath(); c.arc(h.x, h.y, h.r, 0, 6.283); c.fill(); c.stroke(); c.beginPath(); c.arc(h.x, h.y, h.r*f, 0, 6.283); c.stroke(); c.restore(); });
 }
+// (build 603) 사용자 10/31 「범위 안인데 게이지 차오르는 게 안 보이는 구간이 있음」 — 샘·석상·눈사람·온천 표시(룬 고리·범위)를 바닥에 그려서 세계수·나무 조각에 가려졌음 → 조각·나무 윗부분을 다 그린 뒤 위에 그림
+const SV_ZTOP = { well:svDrawWell, shrine:svDrawShrine, warm:svDrawWarm, snowman:svDrawSnowman };
+function svFoZones(c, G, cam){ G.map.zones.forEach(z=>{ const f = SV_ZTOP[z.kind]; if(!f) return; const R = z.r + 60; if(z.x + R < cam.x || z.x - R > cam.x + SV_W || z.y + R < cam.y || z.y - R > cam.y + SV_H) return; f(c, z, G); }); }
 function svDrawObstacles(c, G, cam){
   const map = G.map, M = SV_MAPS[map.stage]; if(map.fo){ svFoPieces(c, G, cam); return; }
   map.ob.forEach(b=>{ if(b.hid || b.x < cam.x - 90 || b.x > cam.x + SV_W + 90 || b.y < cam.y - 110 || b.y > cam.y + SV_H + 90) return;
@@ -14195,7 +14198,7 @@ function svDraw(){
     if(G.players.length > 1){ c.font = 'bold 9px sans-serif'; c.textAlign = 'center'; c.fillStyle = pc; c.fillText(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P', p.x, p.y+34); }
     if(p.down){ c.strokeStyle = '#7ce07c'; c.lineWidth = 3; c.beginPath(); c.arc(p.x, p.y, 26, -1.57, -1.57 + 6.283*Math.min(1, p.rev/2.5)); c.stroke(); c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; const zi = svImg('assets/ui/ic_rest.webp'); if(zi.complete && zi.naturalWidth) c.drawImage(zi, p.x-9, p.y-36, 18, 18); } });
   svDrawBats(c, G); // (build 584) 불사귀 박쥐 떼
-  if(G.map){ if(G.map.fo){ svFoCanopy(c, G, cam); svFoFx(c, G, cam); svChargeBadge(c, G); if(G.map.snow) svSnowFx(c, G, cam); } else svDrawOverlap(c, G, cam); }
+  if(G.map){ if(G.map.fo){ svFoCanopy(c, G, cam); svFoZones(c, G, cam); svFoFx(c, G, cam); svChargeBadge(c, G); if(G.map.snow) svSnowFx(c, G, cam); } else svDrawOverlap(c, G, cam); }
   (G.scys||[]).forEach(o=>{ const q = svScyPos(o); if(q) svFxImg(c, 'fx_scythe', q[0], q[1], 74, o.t*14, 1, 0.95); }); // (build 595) 달그림자 낫
   (G.prR && G.prR.length ? G.pr.concat(G.prR) : G.pr).forEach(b=>{ if(b.ice){ const a = b.vx != null ? Math.atan2(b.vy, b.vx) : Math.atan2(b.ty - b.y, b.tx - b.x); if(svFxImg(c, 'fx_iceshard', b.x, b.y, b.frost ? 32 : 20, a + 0.8, 1, 1)) return; } /* (build 595) 얼음 투사체 */ if(b.kind==='wave'){ const a = b.ang != null && b.vx == null ? b.ang : Math.atan2(b.vy, b.vx), hw = b.w/2, wi = svImg('assets/survival/fx_waterwall.webp'); if(wi.complete && wi.naturalWidth){ const S = b.w*1.15; c.save(); c.translate(b.x, b.y); c.rotate(a); c.drawImage(wi, -S*0.75, -S/2, S, S); c.restore(); return; } /* (build 585) 물의 벽 그림 */ c.save(); c.translate(b.x, b.y); c.rotate(a); c.strokeStyle = b.col; c.shadowColor = b.col; c.shadowBlur = 12; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -hw); c.quadraticCurveTo(10, 0, 0, hw); c.stroke(); c.strokeStyle = '#e8f6ff'; c.lineWidth = 2; c.stroke(); c.restore(); return; }
     b.tr = b.tr || []; b.tr.push(b.x, b.y); if(b.tr.length > 14) b.tr.splice(0, 2); // 꼬리(지난 자리 7개)
@@ -20792,7 +20795,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 602, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 603, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
