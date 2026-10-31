@@ -961,6 +961,8 @@
   .sv-mem{display:flex; justify-content:center; gap:8px; margin:8px 0 6px;} .sv-mem i{display:flex; flex-direction:column; align-items:center; gap:2px; width:62px; padding:6px 0 4px; border-radius:10px; border:1px dashed #ffffff33; opacity:.5; font-style:normal;} .sv-mem i.on{opacity:1; border:1px solid var(--pc); background:#0003;} .sv-mem i.me{box-shadow:0 0 0 2px var(--pc) inset;} .sv-mem img{width:40px; height:40px; object-fit:contain;} .sv-mem u{width:40px; height:40px;} .sv-mem i b{display:block; font-size:11px; letter-spacing:0; color:var(--pc);}
   .sv-msg{text-align:center; color:#ff9a9a; font-size:12px;}
   /* (build 599) 서바이벌 = 별개의 게임 — 들어갈 때 로딩창 · 홈 · 아래 탭 (사용자 10/30 「서바이벌 누르면 새 게임이 열리게 · 뒤로 나가는 버튼 없음」) */
+  .sv-short .svc-sps{flex-wrap:nowrap !important; overflow-x:auto !important;} .sv-short .svc-sp{width:56px !important;} .sv-short .svc-mid{overflow:auto !important; padding-top:2px;} .sv-short .svc-tb{padding:6px 14px 4px;} .sv-short .svc-go{height:50px; font-size:24px;} .sv-short .svc-sb{padding:3px 6px;} .sv-short .svc .svc-sb img.uic{width:24px; height:24px;} .sv-short .svc-d{display:none;} .sv-short .svc-ps{width:46px; height:46px;} /* (build 608) 폰 가로처럼 낮은 화면 */
+  .sv.sv-rot{inset:auto; top:0; left:0; transform-origin:top left; transform:rotate(90deg) translateY(-100%); padding-top:0;} /* (build 608) 폰이 세로면 서바이벌을 가로로 돌려 그림 */
   #svSplash .sp-s{color:#9fe6ff; text-shadow:0 2px 0 #1b3a7a, 0 0 10px #7ad6ff88;}
   /* (build 602) 홈 — 원래 아니마룬 홈과 같은 틀 (머리줄 · 배경 · 양옆 버튼 · 가운데 정령 · 아래 큰 버튼 · 탭) */
   .sv:not(.sv-game){align-items:center;} .sv:not(.sv-game) > :not(.svc):not(.sv-sheet){width:100%; max-width:480px;}
@@ -13109,8 +13111,13 @@ function showSurvival(){
   const el = document.createElement('div'); el.id = 'svScr'; el.className = 'sv'; document.body.appendChild(el);
   const L = svHas('ld', state.svLeader) ? state.svLeader : 'fire_a';
   const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); // 로비에서부터 미리 불러 둠
-  svLobby(); svSplash();
+  svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); }; })();
+  try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}
 }
+// (build 608) 사용자 10/31 「가로 고정 · 서바이벌 들어가면 자동으로 가로로」 — 폰(터치)이 세로면 서바이벌 화면을 90도 돌려 그림(아이폰 웹 앱은 화면 방향을 바꾸는 기능이 막혀 있음) · 되는 기기는 화면 방향도 가로로 잠금 · 원래 아니마룬은 그대로 세로
+function svRH(el){ const r = el.getBoundingClientRect(); return sv && sv.rot ? r.width : r.height; } // (build 608) 화면에 보이는 높이 — 90도 돌려 그릴 땐 너비가 높이
+function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches, W = window.innerWidth, H = window.innerHeight, rot = touch && H > W;
+  sv.rot = rot; sv.el.classList.toggle('sv-rot', rot); sv.el.classList.toggle('sv-short', (rot ? W : H) < 560); sv.el.style.width = rot ? H+'px' : ''; sv.el.style.height = rot ? W+'px' : ''; }
 function svSplash(){ // (build 599) 처음 켤 때와 같은 로딩창 — 별개의 게임처럼 (사용자 10/30) · 그림을 다 부르면 「화면을 터치해서 시작」
   const old = document.getElementById('svSplash'); if(old) old.remove();
   const sp = document.createElement('div'); sp.id = 'svSplash'; sp.innerHTML = '<div class="sp-frame"><div class="sp-t">아니마룬</div><div class="sp-s">Survival</div><div class="sp-bar"><i></i></div><div class="sp-go">화면을 터치해서 시작</div></div>'; document.body.appendChild(sp);
@@ -13174,7 +13181,7 @@ function svToHome(tab){ // (build 599) 판에서 홈으로 (전엔 서바이벌�
 function svClose(){
   if(!sv) return; const s = sv; sv = null;
   if(s.raf) cancelAnimationFrame(s.raf); if(s.netT) clearInterval(s.netT); (s.unsubs||[]).forEach(u=>{ try{ u(); }catch(e){} });
-  if(s.fit) window.removeEventListener('resize', s.fit); if(s.keyOff) s.keyOff();
+  if(s.fit) window.removeEventListener('resize', s.fit); if(s.keyOff) s.keyOff(); if(s.orientOff) s.orientOff(); try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
   if(s.net && s.net.code) svNetLeave(s);
   if(s.el) s.el.remove();
 }
@@ -13608,7 +13615,7 @@ function svStart(role){
     cv.style.width = w+'px'; cv.style.height = h+'px'; { const W = Math.round(w*dpr), H = Math.round(h*dpr); if(cv.width !== W) cv.width = W; if(cv.height !== H) cv.height = H; } /* (build 580) 크기가 같으면 안 건드림 — 다시 정하면 그림이 지워져 화면이 잠깐 까매졌음 (사용자 10/30) */ sv.scale = w / SV_W; sv.dpr = cv.width / w;
     const vig = sv.el.querySelector('.sv-vig'); if(vig){ const k = w / SV_W; vig.style.width = w+'px'; vig.style.height = h+'px'; vig.style.background = 'radial-gradient(circle at 50% 50%, #0b0d2600 '+Math.round(160*k)+'px, #0b0d26aa '+Math.round(430*k)+'px)'; }
     const uk = bw/bh >= 0.6 ? Math.max(1, Math.min(1.7, h/540)) : 1; sv.el.style.setProperty('--uk', uk); sv.uk = uk; // (build 564) 컴퓨터(가로 화면)는 HTML UI를 화면 높이에 맞춰 키움 (사용자 10/29 「UI 너무 작음」) — 위치는 아래에서 uk로 나눠 줌
-    const top = sv.el.querySelector('.sv-hud'), bar = sv.el.querySelector('.sv-bar'), th = top ? top.getBoundingClientRect().height : 0, bb = bar ? bar.getBoundingClientRect().height : 0, rx = (bw - w)/2, by = (bh - h)/2;
+    const top = sv.el.querySelector('.sv-hud'), bar = sv.el.querySelector('.sv-bar'), th = top ? svRH(top) : 0, bb = bar ? svRH(bar) : 0, rx = (bw - w)/2, by = (bh - h)/2;
     sv.uiTop = Math.max(0, th - by) / sv.scale; sv.uiBot = Math.max(0, bb - by) / sv.scale; // 겹친 HUD 높이 (게임 좌표) — 작은 지도·글자를 그만큼 비켜 그림
     const set = (el, r, b)=>{ if(el){ el.style.right = (r/uk)+'px'; el.style.bottom = (b/uk)+'px'; } }, ub0 = Math.max(by, bb) + 22;
     set(sv.el.querySelector('.sv-ult'), rx + 12*uk, ub0); set(sv.el.querySelector('.sv-aim'), rx + 84*uk, ub0); set(sv.el.querySelector('[data-k="ult"]'), rx + 43*uk, ub0 - 18*uk); set(sv.el.querySelector('[data-k="aim"]'), rx + 104*uk, ub0 - 18*uk); set(sv.el.querySelector('.sv-fire'), rx + 150*uk, ub0); set(sv.el.querySelector('[data-k="fire"]'), rx + 170*uk, ub0 - 18*uk); /* (build 579) 간격도 화면 배율(uk)만큼 — 큰 화면에서 조준 버튼이 궁극기와 겹쳤음 (사용자 10/30) */ const ob = sv.el.querySelector('.sv-obj'); if(ob){ ob.style.right = ((rx + 10)/uk)+'px'; ob.style.top = ((by + ((sv.uiTop||0) + 10)*sv.scale)/uk)+'px'; } const stt = sv.el.querySelector('.sv-stat'); if(stt){ stt.style.left = ((rx + 10*sv.scale)/uk)+'px'; const mb = svMiniBox(); stt.style.top = ((by + (mb.bot ? (sv.uiTop||0) + 10 : mb.y0 + mb.h + 12)*sv.scale)/uk)+'px'; } /* (build 503) 내 스탯 — 작은 지도 바로 아래 · (build 569) 지도가 아래로 가면 왼쪽 위 */ const wd = sv.el.querySelector('.sv-wasd'); if(wd){ const fv = sv.el.querySelector('.sv-fire:not(.off)'); wd.style.left = 'auto'; set(wd, rx + (fv ? 198 : 134)*uk, ub0 + 4*uk); } /* (build 579) 이동 안내는 조준 버튼 왼쪽 (사용자 10/30 — 왼쪽 아래에선 유물 칸과 겹침) · 발사 버튼이 보이면 그 왼쪽 */ };
@@ -13621,7 +13628,7 @@ function svStart(role){
   sv.el.querySelector('[data-sv="ult"]').addEventListener('click', e=>{ e.stopPropagation(); if(role==='guest'){ sv.ultReq = (sv.ultReq||0) + 1; svGuestSend(); } else svUlt(G.players[0]); });
   sv.el.querySelector('[data-sv="team"]').addEventListener('click', e=>{ e.stopPropagation(); svTeam(!sv.teamOn); }); sv.el.querySelector('.sv-team').addEventListener('click', e=>{ e.stopPropagation(); svTeam(false); }); // (build 573) 전체 현황 — 휴대폰은 버튼으로 열고 닫음
   sv.el.querySelector('.sv-bar').addEventListener('click', e=>{ const t = e.target.closest('[data-tw],[data-tp],[data-tc]'); if(t){ e.stopPropagation(); svTip(t); } }); // (build 572) 룬·유물을 누르면 간단한 설명
-  const pt = e=>{ const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left)/sv.scale, y:(e.clientY - r.top)/sv.scale }; };
+  const pt = e=>{ const r = cv.getBoundingClientRect(); return sv.rot ? { x:(e.clientY - r.top)/sv.scale, y:(r.right - e.clientX)/sv.scale } : { x:(e.clientX - r.left)/sv.scale, y:(e.clientY - r.top)/sv.scale }; }; /* (build 608) 90도 돌려 그릴 땐 화면 좌표를 돌려서 */
   const box = sv.el.querySelector('.sv-cv');
   box.addEventListener('pointerdown', e=>{ if(e.target===cv){ const mk = svMiniHit(pt(e)); if(mk){ e.stopImmediatePropagation(); svMiniTap(mk); return; } } /* (build 569) 작은 지도 버튼 */ if(e.target.closest('.sv-pick') || e.target.closest('.sv-end') || e.target.closest('.sv-ult') || e.target.closest('.sv-aim')) return; if(e.pointerType==='mouse' && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches){ sv.pc = true; return; } /* 컴퓨터는 클릭해도 이동 조이스틱 없음 (WASD) */ sv.joy = { o: pt(e), c: pt(e), id:e.pointerId }; try{ box.setPointerCapture(e.pointerId); }catch(x){} });
   box.addEventListener('pointermove', e=>{ if(e.pointerType==='mouse'){ sv.mouse = pt(e); if(!sv.pc && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) sv.pc = true; } if(sv.joy && sv.joy.id===e.pointerId) sv.joy.c = pt(e); });
@@ -14046,7 +14053,7 @@ function svTip(t){ const G = sv.game, old = sv.el.querySelector('.sv-tip'), key 
   else if(t.dataset.tp){ const k = t.dataset.tp, P = SV_PAS[k], lv = svPasLv(p, k); if(!P) return; ic = 'assets/ui/'+P.ic+'.webp'; nm = P.nm+' · Lv'+lv; d = (SV_PASS[k]||[]).map(r=>r[0]+' '+(r[3]||'')+r[1](lv)+(r[2]||'')).join(' · ') || P.d; }
   else { const C = p.co && SV_CO[p.co.id]; if(!C) return; ic = 'assets/ui/'+C.ic+'.webp'; nm = C.nm+' · Lv'+p.co.lv; d = C.d(p.co.lv); }
   const el = document.createElement('div'); el.className = 'sv-tip'; el.dataset.k = key + pi; el.innerHTML = '<p><img src="'+ic+'" alt=""><span><em>'+nm+'</em>'+d+'</span></p>';
-  const bar = sv.el.querySelector('.sv-bar'), uk = sv.uk || 1; el.style.bottom = (((bar ? bar.getBoundingClientRect().height : 60) + 8)/uk)+'px';
+  const bar = sv.el.querySelector('.sv-bar'), uk = sv.uk || 1; el.style.bottom = (((bar ? svRH(bar) : 60) + 8)/uk)+'px';
   el.addEventListener('click', e=>{ e.stopPropagation(); el.remove(); }); sv.el.querySelector('.sv-cv').appendChild(el); sv.tipT = setTimeout(()=>{ if(el.isConnected) el.remove(); }, 5000); }
 function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':'')+(svIsRune(p, w.id) ? ' rn' : '')+'" style="--rc:'+SV_RC[w.evo ? 5 : w.lv-1]+'; --ec:'+SV_EC[w.id.split('_')[0]]+';">'+(svIsRune(p, w.id) ? '<b class="sv-rs"><img src="'+svSkIc(w.id)+'" alt=""></b>' : '<img src="'+svSkIc(w.id)+'" alt="">')+'<i>'+(w.evo ? uiIc('awaken') : w.lv)+'</i></span>'; }
 function svHud(){
@@ -20876,7 +20883,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 607, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 608, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
