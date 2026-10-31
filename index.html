@@ -1022,7 +1022,7 @@
   .svs-map{left:48px; top:96px; width:600px;} .svs-card{position:relative; width:600px; height:338px; border-radius:18px; overflow:hidden; border:2px solid #ffd55788; box-shadow:0 14px 30px #0009; background:radial-gradient(circle at 50% 40%, var(--c1), var(--c2));}
   .svs-card > img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;} .svs-card > img.boss{object-fit:contain; padding:16px 0 56px; filter:drop-shadow(0 10px 16px #000a);} .svs-card .lk{position:absolute; inset:0; display:grid; place-items:center; background:#0b0d26;} .svs-card .lk .uic{width:56px; height:56px; opacity:.7;}
   .svs-card .nm{position:absolute; left:0; right:0; bottom:0; padding:34px 16px 14px; background:linear-gradient(180deg,#0b0d2600,#0b0d26ee); text-align:center;} .svs-card .nm b{display:block; font-family:var(--fun,"Jua"),sans-serif; font-weight:400; font-size:28px;} .svs-card .nm small{font-size:13px; color:#c9d2ff;}
-  .svs-ar{position:absolute; top:139px; width:40px; height:60px; border-radius:12px; border:1px solid #ffffff33; background:#0b0d26cc; color:#fff; font-size:26px; font-weight:900; cursor:pointer;} .svs-ar.l{left:10px;} .svs-ar.r{right:10px;} .svs-ar:disabled{opacity:.25; cursor:default;}
+  .svs-ar{position:absolute; z-index:2; top:168px; box-shadow:0 4px 12px #0008; width:40px; height:60px; border-radius:12px; border:1px solid #ffffff33; background:#0b0d26cc; color:#fff; font-size:26px; font-weight:900; cursor:pointer;} .svs-ar.l{left:-18px;} .svs-ar.r{right:-18px;} .svs-ar:disabled{opacity:.25; cursor:default;}
   .svs-dots{display:flex; gap:7px; justify-content:center; margin-top:12px;} .svs-dots i{width:8px; height:8px; border-radius:50%; background:#ffffff33;} .svs-dots i.c{background:#7ce07c99;} .svs-dots i.on{background:#ffd557; box-shadow:0 0 8px #ffd557;}
   .svs-desc{margin-top:8px; font-size:13px; color:#d4daf8; text-align:center; line-height:1.5; text-shadow:0 1px 3px #000, 0 0 8px #0b0d26;}
   .svs-side{left:700px; top:96px; width:532px; display:flex; flex-direction:column; gap:22px;}
@@ -12650,7 +12650,7 @@ const SV_MAPS = [
   { id:'shadow', nm:'그림자 심연', el:'dark', mid:'shadowLord', fin:'abyssEye', col:['#1c1533','#271d44','#120d24'], gim:'dark', ob:['수정','뒤틀린 나무'], d:'어두워 시야가 좁음 · 순간이동 문으로 건너뜀' }
 ];
 const SV_OBS = [3.4, 2.5, 2.7, 2.5], SV_OBSH = [0.85, 1.15, 1.2, 1.1]; // SV_OBSH: 그림자 가로 반지름 (원 반지름의 몇 배 · 나무는 밑동이 좁아 작게) // 장애물 그림 크기 (부딪는 원 반지름의 몇 배) — ob1 큰 나무처럼 키 큰 것은 크게
-const SV_THUMB = { forest:1 }; // 로비 맵 카드 = <맵>_card.webp (1280×720 가로) · 옛 단계 고르기는 <맵>_thumb.webp // (build 603) 단계 카드 그림이 있는 맵 (없으면 중간 보스 그림)
+const SV_THUMB = { forest:1, snow:1 }; /* (build 611) 설원 카드 그림 */ // 로비 맵 카드 = <맵>_card.webp (1280×720 가로) · 옛 단계 고르기는 <맵>_thumb.webp // (build 603) 단계 카드 그림이 있는 맵 (없으면 중간 보스 그림)
 const SV_STK = [1, 1.12, 1.25, 1.4, 1.6], SV_STD = [1, 1.05, 1.1, 1.18, 1.25]; // 단계별 적 체력 · 주는 피해 배율
 const SV_BOSS_NM = { ancientTree:'고대수목', eldertree:'태고의 룬', frostGiant:'서리거인', frostTyrant:'혹한의 룬', lavaLord:'용암군주', infernoDrake:'겁화의 룬', ruinGuardian:'유적파수꾼', dawnJudge:'심판의 룬', shadowLord:'그림자 군주', abyssEye:'심연의 룬' };
 let SV_STAGE_READY = 2; // (build 598) 설원까지 엶 (사용자 10/30 「설원까지만 · 나머진 해금 조건도 숨긴 채 잠금」) // (build 481) 사용자 결정 10/26: 일단 숲만 — 그림이 다 오면 이 숫자를 늘려 다음 단계를 엶 (2~5단계는 「준비 중」)
@@ -13205,7 +13205,7 @@ function svLobC(msg){ const n = sv.net, gst = n.role==='guest', me = gst ? n.slo
   + '<div class="svs-map"><div class="svs-lab">맵 <span>'+(vs+1)+' / '+SV_MAPS.length+'단계'+(cl ? ' · 깸' : '')+'</span></div><div class="svs-card">'
     + (rd ? '<img class="'+(card ? '' : 'boss')+'" src="'+art+'" alt="">' : '<i class="lk">'+uiIc('lock')+'</i>')
     + '<div class="nm"><b>'+(rd ? VM.nm : '???')+'</b><small>'+(gst ? '맵은 방장이 고름' : !rd ? '잠김' : !vo ? vs+'단계 최종 보스를 잡으면 열림' : '5분 '+SV_BOSS_NM[VM.mid]+' · 10분 '+SV_BOSS_NM[VM.fin])+'</small></div>'
-    + '<button type="button" class="svs-ar l" data-stg="-1"'+(vs > 0 && !gst ? '' : ' disabled')+' aria-label="이전 맵">‹</button><button type="button" class="svs-ar r" data-stg="1"'+(vs < SV_MAPS.length-1 && !gst ? '' : ' disabled')+' aria-label="다음 맵">›</button></div>'
+    + '</div><button type="button" class="svs-ar l" data-stg="-1"'+(vs > 0 && !gst ? '' : ' disabled')+' aria-label="이전 맵">‹</button><button type="button" class="svs-ar r" data-stg="1"'+(vs < SV_MAPS.length-1 && !gst ? '' : ' disabled')+' aria-label="다음 맵">›</button>' /* (build 611) 화살표를 카드 밖에 — 카드 둘레에 잘렸음 (사용자 10/31) */
     + '<div class="svs-dots">'+SV_MAPS.map((m, i)=>'<i class="'+(i===vs ? 'on' : '')+((state.svClear||[]).includes(i) ? ' c' : '')+'"></i>').join('')+'</div><div class="svs-desc">'+(rd && vo ? VM.d : '')+'</div></div>'
   + '<div class="svs-side"><div><div class="svs-lab">정령 <span>'+LN+'</span><button type="button" class="svs-more" data-dexsp="1">자세히 ›</button></div><div class="svs-sps">'+SV_LINE_IDS.map(l=>{ const op = u.ld.includes(l); return '<button type="button" class="svs-sp'+(op ? '' : ' lock')+'" data-ld="'+l+'" aria-pressed="'+(l===L)+'" style="--ec:'+SV_EC[l.split('_')[0]]+';"><img src="assets/spirits/'+svKey(l,4)+'.webp" alt="">'+(op ? SPIRITS[svKey(l,4)].name : uiIc('lock'))+'</button>'; }).join('')+'</div>'
       + '<div class="svs-spi">'+(()=>{ const V = sv.view || L; return svHas('ld', V) ? '<b>'+SPIRITS[svKey(V,4)].name+'</b>패시브 「'+svLpNm(V)+'」 · 궁극기 「'+svUltNm(V)+'」 · 체력 '+svBase(V).hp+' · 공격 '+svBase(V).atk : '<b>'+SPIRITS[svKey(V,4)].name+'</b>'+uiIc('lock')+' '+svUnlTxt('ld', V); })()+'</div></div>'
@@ -20992,7 +20992,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 610, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 611, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
