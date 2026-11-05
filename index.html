@@ -13921,7 +13921,9 @@ function svHit(e, v, col, crit){
   if(e.hp<=0) return; if(e.curse > 0) v *= 1.25; e.hp -= v; e.fl = 0.12; const G = sv.game;
   if(G.pt.length < 200 && Math.random() < (crit ? 1 : 0.35)) for(let k=0;k<(crit ? 5 : 2);k++){ const a = Math.random()*6.283, s = 70 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*s, Math.sin(a)*s, k%2 ? '#ffffff' : (col||'#fff'), 0.28, crit ? 3 : 2); } // 맞은 자리 불꽃
   if((crit && v > e.max*0.25) || (e.kind!=='normal' && e.kind!=='fast' && e.hp <= 0)){ if(!(G.hsCd > 0)){ G.hitStop = e.kind==='boss' || e.kind==='elite' ? 0.09 : 0.035; G.hsCd = 0.3; G.shake = Math.max(G.shake||0, 0.12); } } // 큰 한 방: 짧게 멈칫
-  if(!state.svNoDmg && sv.game.fx.length < 90 && (crit || Math.random() < 0.3)) svFx({ k:'num', /* (build 610) 설정 「피해 숫자」 */ x:e.x + Math.random()*10-5, y:e.y-e.r-4, t:0, d:0.5, s:Math.round(v)+(crit?'!':''), col: crit ? '#ffb02e' : '#fff', sz: crit ? 11 : 9 });
+  if(!state.svNoDmg){ const G = sv.game, nf = e._nf; /* (build 624) 피해 숫자를 늘 띄움 — 전엔 치명타가 아니면 30%만 띄우고 효과가 90개 넘으면 안 띄워서 안 뜨는 때가 있었음 (사용자 11/05) · 같은 적에 0.25초 안에 또 맞으면 새로 띄우지 않고 그 숫자에 더함(개수 폭증 방지) */
+    if(nf && nf.t < 0.25 && G.fx.includes(nf)){ nf.v += v; nf.cr = nf.cr || crit; nf.s = Math.round(nf.v)+(nf.cr ? '!' : ''); if(crit){ nf.col = '#ffb02e'; nf.sz = 11; } }
+    else if(G.fx.length < 135){ const f = { k:'num', x:e.x + Math.random()*10-5, y:e.y-e.r-4, t:0, d:0.5, v, cr:crit, s:Math.round(v)+(crit?'!':''), col: crit ? '#ffb02e' : '#fff', sz: crit ? 11 : 9 }; svFx(f); e._nf = f; } }
   if(e.hp<=0) svKill(e, col);
 }
 function svSnd(n, gap){ const now = performance.now(); sv.sndT = sv.sndT || {}; if(gap && now - (sv.sndT[n]||0) < gap*1000) return; sv.sndT[n] = now; try{ sfx(n); }catch(e){} } // (build 492) 서바이벌 효과음 — 자주 나는 건 간격을 둠
@@ -21117,7 +21119,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 624, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 625, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
