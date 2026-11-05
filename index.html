@@ -13479,7 +13479,7 @@ function svHostActs(v){ // (build 544) 방장: 친구들 행동(raidActs/<코드
     n.gv = n.gv || {}; n.gv[s] = a.nv || 1; /* (build 632) 친구 버전 */
     if(!G){ if(n.gl[s] !== a.ld){ n.gl[s] = a.ld; ch = true; } n.gn = n.gn || {}; const nm = svNickOk(a.nm); if(nm && n.gn[s] !== nm){ n.gn[s] = nm; ch = true; } n.gs[s] = Array.isArray(a.sk) ? a.sk.filter(id=>SV_SK[id]) : null; n.gu = n.gu || {}; n.gu[s] = a.up && typeof a.up==='object' ? a.up : null; return; }
     const i = n.ix && n.ix[s], p = i && G.players[i]; if(!p || (a.t||0) === p.actT) return; p.actT = a.t; p.lastAct = Date.now(); // 다른 친구가 보낸 때도 불리므로 보낸 시각으로 새것만
-    if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy]; if(a.am) p.am = a.am==='f' ? 'face' : a.am==='m' ? 'mouse' : 'near'; p.fm = a.fm==='m' ? 'manual' : 'auto'; p.md = !!a.md; p.ma = Number.isFinite(a.ma) ? a.ma : null;
+    if(Number.isFinite(a.x) && !p.down){ const now = performance.now(), dtn = p.actAt ? Math.max(0.05, Math.min(0.3, (now - p.actAt)/1000)) : 0.1; p.actAt = now; if(p.sx != null && Math.hypot(p.sx - a.x, p.sy - a.y) < 120){ p.nvx = (a.x - p.sx)/dtn; p.nvy = (a.y - p.sy)/dtn; } else { p.nvx = p.nvy = 0; p.x = a.x; p.y = a.y; } p.sx = p.tx = a.x; p.sy = p.ty = a.y; } /* (build 633) 방장 화면 — 친구 위치도 받은 곳으로 순간이동하지 않고 예측하며 따라감 (사용자 11/05 「다른 플레이어 움직이는 프레임이 너무 낮음」) */ if(a.fx) p.face = [a.fx, a.fy]; if(a.am) p.am = a.am==='f' ? 'face' : a.am==='m' ? 'mouse' : 'near'; p.fm = a.fm==='m' ? 'manual' : 'auto'; p.md = !!a.md; p.ma = Number.isFinite(a.ma) ? a.ma : null;
     if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
     p.lc = !!a.lc; if(p.lc) svHostLoc(i, p, a); /* (build 570) 친구가 직접 계산한 공격 */
     if((a.u||0) > (p.ultSeq||0)){ p.ultSeq = a.u; svUlt(p); }
@@ -13871,11 +13871,12 @@ function svStart(role){
   box.addEventListener('pointerdown', e=>{ if(e.pointerType==='mouse' && e.button===0) sv.mDown = true; }); const mup = e=>{ if(e.pointerType==='mouse') sv.mDown = false; }; window.addEventListener('pointerup', mup); const ko = sv.keyOff; sv.keyOff = ()=>{ ko && ko(); window.removeEventListener('pointerup', mup); }; // (build 566) 수동 공격 — 마우스 누르는 동안
   if(role!=='solo') svNetStart();
   let last = performance.now();
-  const loop = now=>{ if(!sv || !sv.cv) return; let dt = Math.min(0.05, (now-last)/1000); last = now; if(document.hidden && role==='solo') dt = 0;
+  const loop = now=>{ if(!sv || !sv.cv) return; let dt = Math.min(document.hidden ? 0.12 : 0.05, (now-last)/1000); last = now; if(document.hidden && role==='solo') dt = 0; sv.loopFn = loop;
     svInput(dt);
     if(G.loading) svLoadTick(G, now);
     if(role==='host' && G.prR) G.prR.forEach(b=>{ if(b.vx){ b.x += b.vx*dt; b.y += b.vy*dt; } });
     const P0 = performance.now(); if(G.hsCd > 0) G.hsCd -= dt; if(G.hitStop > 0){ G.hitStop -= dt; } else if(role!=='guest' && !G.over && !G.paused && !G.pickWait && !G.loading) svTick(dt);
+    if(role==='host') svHostLerp(dt);
     if(role==='guest'){ svGuestLerp(dt); if(!(G.hitStop > 0) && !G.over && !G.pickWait && !G.loading) svGuestTick(dt); }
     const P1 = performance.now(); svFxTick(dt); svDraw(); const P2 = performance.now(); svHud(); svPerf(now, P1 - P0, P2 - P1, performance.now() - P2); sv.unlT = (sv.unlT||0) + dt; if(sv.unlT > 1){ sv.unlT = 0; svCheckUnl(); } sv.raf = requestAnimationFrame(loop); };
   sv.raf = requestAnimationFrame(loop);
@@ -14286,7 +14287,7 @@ function svWIc(p, w){ return '<span class="'+(w.evo?'evo':svCanEvo(p,w)?'rdy':''
 // (build 620) 성능 표시 (설정 → 화면) — 렉이 어디서 나는지 실제 기기에서 보려고 · 1초마다 평균·최대
 function svPerf(now, tk, dw, hd){ if(!state.svPerf){ const o = sv.el.querySelector('.sv-perf'); if(o) o.remove(); return; } const P = sv.perf || (sv.perf = { t0:now, n:0, tk:0, dw:0, hd:0, gap:0, last:now, mx:0 }); const gap = now - P.last; P.last = now; P.n++; P.tk += tk; P.dw += dw; P.hd += hd; P.gap = Math.max(P.gap, gap); P.mx = Math.max(P.mx, tk + dw + hd);
   if(now - P.t0 < 1000) return; const G = sv.game, n = P.n, f = v=>(v/n).toFixed(1); let o = sv.el.querySelector('.sv-perf'); if(!o){ o = document.createElement('div'); o.className = 'sv-perf'; sv.el.appendChild(o); }
-  o.textContent = 'fps '+Math.round(n*1000/(now - P.t0))+' · 최대 간격 '+Math.round(P.gap)+'ms | 계산 '+f(P.tk)+' · 그리기 '+f(P.dw)+' · 화면 '+f(P.hd)+' · 최대 '+P.mx.toFixed(0)+'ms | 적 '+G.en.length+' · 투사체 '+(G.pr||[]).length+' · 효과 '+(G.fx||[]).length+' · 보석 '+(G.gems||[]).length+' · 캔버스 '+sv.cv.width+'×'+sv.cv.height+' · '+(svGpu().soft ? 'CPU로 그림' : 'GPU')+' ('+svGpu().r.replace(/^ANGLE \(|\)$/g, '').slice(0, 40)+')';
+  o.textContent = 'fps '+Math.round(n*1000/(now - P.t0))+' · 최대 간격 '+Math.round(P.gap)+'ms | 계산 '+f(P.tk)+' · 그리기 '+f(P.dw)+' · 화면 '+f(P.hd)+' · 최대 '+P.mx.toFixed(0)+'ms | 적 '+G.en.length+' · 투사체 '+(G.pr||[]).length+' · 효과 '+(G.fx||[]).length+' · 보석 '+(G.gems||[]).length+' · 캔버스 '+sv.cv.width+'×'+sv.cv.height+(sv.net && sv.net.role==='guest' ? ' | 방장 소식 '+Math.round(performance.now() - (G.netAt||0))+'ms 전 · 안 보낸 공격 '+((sv.loc && sv.loc.bat.length)||0) : sv.net && sv.net.role==='host' ? ' | 친구 소식 '+G.players.slice(1).map(p=>Math.round(performance.now() - (p.actAt||0))+'ms').join('·') : '')+' · '+(svGpu().soft ? 'CPU로 그림' : 'GPU')+' ('+svGpu().r.replace(/^ANGLE \(|\)$/g, '').slice(0, 40)+')';
   sv.perf = { t0:now, n:0, tk:0, dw:0, hd:0, gap:0, last:now, mx:0 }; }
 // (build 623) 룬·유물 고를 때 효과 — 고른 카드가 커지며 빛나고 아래 룬 칸으로 날아감 · 정령 둘레 빛 고리 (사용자 10/31)
 function svPickFx(card){ try{ const st = sv.el, k0 = sv.stk || 1, sr = st.getBoundingClientRect(), cr = card.getBoundingClientRect(), rot = sv.rot, W = (rot ? cr.height : cr.width)/k0, H = (rot ? cr.width : cr.height)/k0;
@@ -14356,7 +14357,7 @@ function svNetStart(){
   sv.unsubs = sv.unsubs || [];
   if(sv.net.role==='host'){
     { const G = sv.game, t0 = Date.now(); G.players.forEach((p,i)=>{ if(i){ p.lastAct = t0; p.ultSeq = 0; } }); } // 친구들 조작은 svHost에서 듣는 raidActs → svHostActs
-    sv.netT = setInterval(()=>{ if(!sv || !sv.game) return; svHostSend(); const G = sv.game, now = Date.now();
+    sv.netT = setInterval(()=>{ if(!sv || !sv.game) return; if(document.hidden && sv.loopFn){ cancelAnimationFrame(sv.raf); sv.loopFn(performance.now()); } /* (build 633) 방장 창이 가려지거나 다른 창을 보면 브라우저가 화면 갱신을 멈춰 판이 멈췄음(친구 화면에 방장·몹이 그대로) → 0.1초마다 계속 진행 */ svHostSend(); const G = sv.game, now = Date.now();
       G.players.forEach((p,i)=>{ if(!i || G.over) return;
         if(now - (p.lastAct||0) > 12000){ p.down = true; p.hp = 0; if(p.pick){ p.pick = null; svPickDone(G); } } // 12초 동안 소식이 없으면 쓰러짐
         }); if(G.pickWait && !G.over) G.players.forEach((p, i)=>{ if(p.pick && now - G.pickAt > SV_PICK_MS) svDoPick(i, 0); }); }, 100); // (build 573) 스웜처럼 모두 30초 — 안 고르면 첫 카드 (방장 자신도)
@@ -14441,6 +14442,7 @@ function svHostLoc(i, p, a){ const G = sv.game, now = performance.now();
       A(B.fx).forEach(f=>{ if(f && f.k) svFx(Object.assign({}, f, { t:0 })); }); }); } finally { sv.fxOwner = 0; } }
   p.rpr = (a.pr||[]).map(b=>({ x:b[0], y:b[1], col:b[2], k:b[3], kind: ['shot','ebul','wave','spark'][b[3]||0], ang:b[4], w:b[5], vx:b[6], vy:b[7], o:i, rem:1 })); p.rpo = (a.po||[]).map(o=>({ x:o[0], y:o[1], R:o[2], col:o[3], ty:o[4], web: o[4]===1, pull: o[4]===2, trap: o[4] >= 3 ? 1 : 0, trig: o[4]===4 ? 0 : -1, t:0, d:1, o:i }));
   G.prR = [].concat(...G.players.map(q=>q.rpr || [])); G.poR = [].concat(...G.players.map(q=>q.rpo || [])); }
+function svHostLerp(dt){ const G = sv.game, k = Math.min(1, dt*14); G.players.forEach((p, i)=>{ if(!i || p.down || p.tx == null) return; if(performance.now() - (p.actAt||0) < 200){ p.tx += (p.nvx||0)*dt; p.ty += (p.nvy||0)*dt; } p.x += (p.tx - p.x)*k; p.y += (p.ty - p.y)*k; }); }
 function svGuestLerp(dt){ const G = sv.game, age = G.netAt ? (performance.now() - G.netAt)/1000 : 1, pr = age < 0.2 ? dt : 0, k = Math.min(1, dt*14); // (build 630) 친구 화면 — 받은 속도로 다음 위치를 예측(0.2초까지)하고 부드럽게 따라감 (사용자 11/05 「다른 사람 파티에서 렉 · 다른 플레이어 움직임이 끊겨 보임」)
   G.players.forEach((p,i)=>{ if(i===G.me && !p.down) return; if(p.tx!=null){ if(pr){ p.tx += (p.nvx||0)*pr; p.ty += (p.nvy||0)*pr; } p.x += (p.tx-p.x)*k; p.y += (p.ty-p.y)*k; } });
   G.en.forEach(e=>{ if(e.tx == null) return; if(pr && e.kind!=='pod'){ e.tx += (e.nvx||0)*pr; e.ty += (e.nvy||0)*pr; } e.x += (e.tx-e.x)*k; e.y += (e.ty-e.y)*k; }); }
@@ -21136,7 +21138,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 632, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 633, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
