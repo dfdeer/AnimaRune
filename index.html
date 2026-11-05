@@ -1041,6 +1041,7 @@
   .svs-bot{left:48px; right:48px; bottom:30px; height:64px; display:flex; align-items:center; gap:10px;} .svs-sb{position:relative; width:74px; height:58px; border-radius:14px; border:1px solid #ffffff24; background:#0b0d26cc; color:#fff; font-size:11px; font-weight:900; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; white-space:nowrap;} .svs-sb .uic{width:26px; height:26px;} .svs-sb.wide{width:110px; margin-left:0;} .svs-sb .dot{position:absolute; top:5px; right:7px; width:9px; height:9px; border-radius:50%; background:#ff5a6a; box-shadow:0 0 6px #ff5a6a;}
   .svs-go{margin:0 auto; width:340px; height:60px; border:none; border-radius:18px; cursor:pointer; font-family:var(--fun,"Jua"),sans-serif; font-size:26px; color:#2a1a00; background:linear-gradient(180deg,#ffe98a,#f0a400); box-shadow:0 5px 0 #9a6400, 0 0 20px #ffd55766; display:flex; align-items:center; justify-content:center; gap:8px;} .svs-go .uic{width:30px; height:30px;} .svs-go:active{transform:translateY(3px); box-shadow:0 2px 0 #9a6400;} .svs-go:disabled{filter:saturate(.25) brightness(.65); font-size:17px; cursor:default; transform:none;}
   .svs .sv-msg{margin-top:8px; text-align:left;}
+  .sv-wait > *{opacity:0 !important;} .sv-wait::after{content:''; position:absolute; left:50%; top:50%; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; border:3px solid #ffffff2a; border-top-color:#ffd557; animation:svSpin .7s linear infinite; z-index:3;} @keyframes svSpin{to{transform:rotate(360deg);}} /* (build 634) 그림 기다리는 동안 */
   .sv-buff{position:absolute; z-index:5; left:50%; top:66px; transform:translateX(-50%); display:flex; align-items:center; gap:8px; padding:6px 12px 8px 8px; border-radius:14px; background:#2a1f05d9; border:1.5px solid #ffd04a; box-shadow:0 0 16px #ffd04a66; pointer-events:none; animation:svBuffIn .35s cubic-bezier(.2,.9,.3,1.3);} .sv-buff .uic{width:30px; height:30px; filter:drop-shadow(0 0 6px #ffd04a);} .sv-buff span{display:flex; flex-direction:column; line-height:1.2;} .sv-buff b{font-size:12px; color:#ffd04a;} .sv-buff em{font-style:normal; font-size:14px; font-weight:900; color:#fff;} .sv-buff i{position:absolute; left:10px; right:10px; bottom:3px; height:3px; border-radius:2px; background:#ffffff22; overflow:hidden;} .sv-buff u{display:block; height:100%; background:#ffd04a;} .sv-buff.end{animation:svBuffBlink .5s ease-in-out infinite alternate;} @keyframes svBuffIn{from{opacity:0; transform:translate(-50%,-10px) scale(.9);}} @keyframes svBuffBlink{to{opacity:.55;}} /* (build 624) */
   .sv-perf{position:absolute; left:50%; bottom:4px; transform:translateX(-50%); z-index:50; pointer-events:none; font:700 11px/1.3 monospace; color:#9fe6ff; background:#000b; padding:3px 8px; border-radius:6px; white-space:nowrap;}
   /* (build 616) 폰 — 무대 853(+옆)×480 · 글자·버튼은 컴과 같은 px라 실제로 1.5배 · 맵 설명 줄은 숨김 · 파티는 맵 아래 */
@@ -13249,7 +13250,7 @@ function showSurvival(){
   svClose(); svResetOnce();
   const el = document.createElement('div'); el.id = 'svScr'; el.className = 'sv'; document.body.appendChild(el);
   const L = svHas('ld', state.svLeader) ? state.svLeader : 'fire_a';
-  const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); // 로비에서부터 미리 불러 둠
+  const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); svLobbyPreload(); // 로비에서부터 미리 불러 둠
   svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); }; })();
   svFull(); if(!svNick()) svNickAsk(1); if(svGpu().soft && !window.__svGpuT){ window.__svGpuT = 1; setTimeout(()=>toast('그래픽 가속이 꺼져 있어 화질을 낮춤 — 크롬 설정 → 시스템 → 「가능한 경우 그래픽 가속 사용」을 켜면 훨씬 부드러워짐', 6000), 1500); } el.addEventListener('dragstart', e=>e.preventDefault()); /* (build 622) 그림·글자가 끌리지 않게 (사용자 10/31) */
   { const s0 = sv, ek = e=>{ if(sv !== s0){ window.removeEventListener('keydown', ek); return; } if(e.code!=='Escape' || sv.game || e.repeat) return; const cf = sv.el.querySelector('.svs-cfw [data-cf="0"]'); if(cf){ e.preventDefault(); cf.click(); return; } const x = sv.el.querySelector('[data-x]'); if(x){ e.preventDefault(); x.click(); } }; window.addEventListener('keydown', ek); } // (build 618) 로비에서 Esc = 열린 창 닫기
@@ -13285,6 +13286,12 @@ function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia &
 function svFull(){ try{ const d = document, el = d.documentElement; if(!(d.fullscreenElement || d.webkitFullscreenElement)){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if(f){ const r = f.call(el, { navigationUI:'hide' }); if(r && r.then) r.then(svLockLand, ()=>{}); else svLockLand(); return; } } svLockLand(); }catch(e){} }
 function svLockLand(){ try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){} try{ if(navigator.keyboard && navigator.keyboard.lock && (document.fullscreenElement || document.webkitFullscreenElement)) navigator.keyboard.lock(['Escape']).catch(()=>{}); }catch(e){} } // (build 618) 전체 화면에서 Esc를 게임이 받음(크롬·엣지) — 한 번 누르면 나가기 버튼 · 길게 누르면 전체 화면 풀림
 function svUnFull(){ try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){} try{ const d = document; if(d.fullscreenElement && d.exitFullscreen) d.exitFullscreen().catch(()=>{}); else if(d.webkitFullscreenElement && d.webkitExitFullscreen) d.webkitExitFullscreen(); }catch(e){} }
+// (build 634) 그림을 다 불러온 뒤에 보여 줌 — 화면을 보는 도중 그림이 하나씩 그려지지 않게 (사용자 11/05 「모든 화면에 로딩을 둬서 그려지는 게 안 보이게」) · 덜 된 그림이 있으면 그 부분을 가리고 가운데 로딩 표시 · 최대 2.5초
+function svGate(el){ if(!el) return; const im = [...el.querySelectorAll('img')].filter(i=>!(i.complete && i.naturalWidth)); if(!im.length) return; el.classList.add('sv-wait');
+  const done = ()=>el.classList.remove('sv-wait'); Promise.race([Promise.all(im.map(i=>i.decode ? i.decode().catch(()=>{}) : new Promise(r=>{ i.addEventListener('load', r, { once:true }); i.addEventListener('error', r, { once:true }); }))), new Promise(r=>setTimeout(r, 2500))]).then(done); }
+function svLobbyPreload(){ const U = 'assets/ui/', A = []; SV_LINE_IDS.forEach(l=>A.push('assets/spirits/'+svKey(l, 4)+'.webp')); SV_MAPS.forEach((m, i)=>{ if(i < SV_STAGE_READY) A.push(SV_THUMB[m.id] ? 'assets/survival/'+m.id+'_card.webp' : 'assets/boss/'+m.mid+'.webp'); });
+  ['time','gold','friends','settings','lock','dex','achieve','duel','awaken','invite','crown','sound','music','target','map','power','shield','atk','auto','level','party','star','dice'].forEach(n=>A.push(U+'ic_'+n+'.webp')); SV_UPS.forEach(x=>A.push(U+x[1]+'.webp')); Object.keys(SV_SK).forEach(id=>A.push(svSkIc(id))); Object.keys(SV_PAS).forEach(k=>A.push(U+SV_PAS[k].ic+'.webp')); A.push('assets/home_stage.webp');
+  A.forEach(src=>{ const im = svImg(src); if(im.decode) im.decode().catch(()=>{}); }); } // 로비·도감·업그레이드·카드에 쓰는 그림을 로딩창에서 미리 — 로딩창은 sv.imgs가 다 될 때까지 기다림
 function svSplash(){ // (build 599) 처음 켤 때와 같은 로딩창 — 별개의 게임처럼 (사용자 10/30) · 그림을 다 부르면 「화면을 터치해서 시작」
   const old = document.getElementById('svSplash'); if(old) old.remove();
   const sp = document.createElement('div'); sp.id = 'svSplash'; sp.innerHTML = '<div class="sp-frame"><div class="sp-t">아니마룬</div><div class="sp-s">Survival</div><div class="sp-bar"><i></i></div><div class="sp-go">화면을 터치해서 시작</div></div>'; document.body.appendChild(sp);
@@ -13433,7 +13440,7 @@ function svLobby(msg){
   // (build 610) 로비 = 1280×720 무대 위 고정 배치 · 메뉴는 가운데 창 (사용자 10/31 「이대로 올리자」) · 미리보기 https://claude.ai/artifact/2RYvEot2ZD13eMXHVGiD67
   const SH = sv.sheet, still = !!SH && SH === sv.shLast; sv.shLast = SH; /* 같은 창 안에서 다시 그릴 땐 열림 효과 없이 (사용자 10/31) */
   const PT = { dex:['도감', 'dex'], goal:['목표', 'achieve'], up:['업그레이드', 'awaken'], inv:['친구 초대', 'invite'], set:['설정', 'settings'] }[SH];
-  sv.el.innerHTML = svLobC(msg) + (PT ? '<div class="svs-dim'+(still ? ' still' : '')+'" data-x="1"></div><div class="svs-pnl'+(still ? ' still' : '')+'"><div class="svs-ph">'+uiIc(PT[1])+'<b>'+PT[0]+'</b>'+svPnlSub(SH)+'<button type="button" class="svs-x" data-x="1" aria-label="닫기">✕</button></div><div class="svs-pb">'+svPnlBody(SH, msg)+'</div></div>' : '');
+  sv.el.innerHTML = svLobC(msg) + (PT ? '<div class="svs-dim'+(still ? ' still' : '')+'" data-x="1"></div><div class="svs-pnl'+(still ? ' still' : '')+'"><div class="svs-ph">'+uiIc(PT[1])+'<b>'+PT[0]+'</b>'+svPnlSub(SH)+'<button type="button" class="svs-x" data-x="1" aria-label="닫기">✕</button></div><div class="svs-pb">'+svPnlBody(SH, msg)+'</div></div>' : ''); svGate(sv.el.querySelector('.svs-pnl')); svGate(sv.el.querySelector('.svs-card')); svGate(sv.el.querySelector('.svs-side')); /* (build 634) */
   const Q = s=>sv.el.querySelector(s), on = (s, f)=>{ const b = Q(s); if(b) b.addEventListener('click', f); };
   const keep = ()=>{ const lob = Q('.sv-lob'); return lob ? lob.scrollTop : 0; }, re = top=>{ svLobby(msg); const lob = Q('.sv-lob'); if(lob) lob.scrollTop = top; };
   sv.el.querySelectorAll('[data-ld]').forEach(b=>b.addEventListener('click', ()=>{ const l = b.dataset.ld, top = keep(); sv.view = l;
@@ -14336,7 +14343,7 @@ function svHud(){
 }
 function svRecord(){ const G = sv && sv.game; if(!G || G.recorded) return; G.recorded = true; svCheckUnl();
   if(G.over==='win'){ const cl = state.svClear = state.svClear || [], st = G.stage||0; if(!cl.includes(st)){ cl.push(st); if(SV_MAPS[st+1] && st+1 < SV_STAGE_READY) (G.newUnl = G.newUnl || []).push((st+2)+'단계 '+SV_MAPS[st+1].nm); } } const t = G.over==='win' ? Math.max(G.t, SV_T_END) : G.t; state.svBest = Math.max(state.svBest||0, Math.floor(t)); state.svGold = (state.svGold||0) + G.gold; save(); }
-function svShowEnd(){
+function svShowEnd(){ setTimeout(()=>{ if(sv && sv.el) svGate(sv.el.querySelector('.sv-end')); }, 0); /* (build 634) */
   const G = sv.game; svRecord(); const box = sv.el.querySelector('.sv-end'); if(!box) return;
   if(sv.net.role==='host') svHostSend();
   const me = G.players[G.me], nu = G.newUnl || [];
@@ -21138,7 +21145,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 633, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 634, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
