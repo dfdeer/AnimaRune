@@ -12698,7 +12698,7 @@ const SV_SN = { mw:2600, mh:3600, spawn:[521, 1788], pcs:[["tree_b",-20,52,134,1
 function svInPoly(x, y, P){ let c = false; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[i], b = P[j]; if((a[1] > y) !== (b[1] > y) && x < (b[0]-a[0])*(y-a[1])/(b[1]-a[1]) + a[0]) c = !c; } return c; }
 function svSegD(x, y, a, b){ const dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0; return Math.hypot(x - a[0] - dx*t, y - a[1] - dy*t); }
 function svPolyNear(x, y, P){ let bd = 1e9, bx = x, by = y; for(let i=0, j=P.length-1; i<P.length; j=i++){ const a = P[j], b = P[i], dx = b[0]-a[0], dy = b[1]-a[1], L = dx*dx + dy*dy, t = L ? Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/L)) : 0, px = a[0] + dx*t, py = a[1] + dy*t, d = Math.hypot(x-px, y-py); if(d < bd){ bd = d; bx = px; by = py; } } return [bd, bx, by]; }
-const SV_FOPC = { worldtree:0.66, tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.5, shrine:0.62, mush:0.4, snowman:0.62, rim_a:0.45, rim_b:0.45, rim_c:0.45, bankstone:0.35, bankstone2:0.35, bankstone3:0.35, bankstone4:0.35 }; // 위에서부터 이만큼은 정령·몬스터 위에 한 번 더 그림 (뒤로 가면 가려지게)
+const SV_FOPC = { worldtree:0.9, /* (build 628) 0.66 → 0.9 — 둥치가 커서 뒤로 지나가면 둥치 위에 그려졌음 (사용자 11/05 「세계수 뒤쪽 라인 지날 때 안 가려짐」) · 아래 10%(뿌리)만 바닥 */ tree_a:0.72, tree_b:0.72, tree_c:0.72, rock:0.5, shrine:0.62, mush:0.4, snowman:0.62, rim_a:0.45, rim_b:0.45, rim_c:0.45, bankstone:0.35, bankstone2:0.35, bankstone3:0.35, bankstone4:0.35 }; // 위에서부터 이만큼은 정령·몬스터 위에 한 번 더 그림 (뒤로 가면 가려지게)
 const SV_FOSH = { worldtree:[0.36, 0.1], tree_a:[0.4, 0.13], tree_b:[0.4, 0.13], tree_c:[0.4, 0.13], rock:[0.46, 0.15], shrine:[0.5, 0.17], mush:[0.38, 0.12], bush:[0.42, 0.13], snowman:[0.42, 0.13] }; /* (build 565) 물가 돌·갈대는 물 위라 그림자 뺌 */ // (build 558) 바닥 그림자 (가로·세로 반지름 = 폭의 몇 배) — 바닥 조각에 미리 그려 둠
 // (build 598) 조각으로 짠 맵 — 숲 · 설원 (사용자 편집기 배치) · T = 바닥 그림 [바탕, 길, 물/얼음] · dk/pk = 그늘·길 그림자 색 · mini = 작은 지도 색 [바탕, 그늘, 길, 물]
 const SV_FOMAP = { forest:{ dir:'forest/', mw:2400, mh:1350, T:['grass', 'path', 'water'], dk:['#0e2310', 0.78], pk:'#5a4426', base:'#3c6d34', mini:[[86,150,64],[22,58,26],[205,168,108],[74,168,216]], D:()=>SV_FO },
@@ -13044,7 +13044,7 @@ function svFoGround(c, cam){ const bg = sv.bgc; if(!bg || !bg.getContext) return
   else { const vi0 = Math.floor((cam.x - MG)/F) - 1, vi1 = Math.floor((cam.x + SV_W + MG)/F) + 1, vj0 = Math.floor((cam.y - MG)/F) - 1, vj1 = Math.floor((cam.y + SV_H + MG)/F) + 1; // 다음에 쓸 둘레 칸을 하나씩 미리
     for(let j=vj0;j<=vj1 && !made;j++) for(let i=vi0;i<=vi1 && !made;i++){ if(i < 0 || j < 0 || i*F >= SV_MW || j*F >= SV_MH || C.has(i+','+j)) continue; mk(i, j); } }
   const cv = sv.cv, sx = (m.e + cam.x*m.a)/(sv.dpr || 1), sy = (m.f + cam.y*m.d)/(sv.dpr || 1); // 흔들림
-  const tf = 'translate('+(cv.offsetLeft + (R.x - cam.x)*sv.scale + sx)+'px,'+(cv.offsetTop + (R.y - cam.y)*sv.scale + sy)+'px)'; bg.style.transform = tf;
+  const dq = (sv.stk || 1)*(window.devicePixelRatio || 1), rq = v=>Math.round(v*dq)/dq, tf = 'translate('+rq(cv.offsetLeft + (R.x - cam.x)*sv.scale + sx)+'px,'+rq(cv.offsetTop + (R.y - cam.y)*sv.scale + sy)+'px)'; if(bg._tf !== tf){ bg._tf = tf; bg.style.transform = tf; } /* (build 628) 화면 점 단위로 · 같으면 안 씀 */
 }
 function svFoTopChunk(i, j, s){ const G = sv.game; if(!G || !G.map || !G.map.pcs) return null; const F = SV_FCH, X0 = i*F, Y0 = j*F, N = Math.ceil(F*s);
   const L = G.map.pcs.filter(p=>{ if(!p.cut || p.hid) return false; /* (build 623) 세계수도 다시 뒤로 가면 가려짐 — 621에서 뺐던 건 사용자 말을 거꾸로 이해한 것 (사용자 「세계수 밟혀」) */ const im = svFoImg(p.t), h = p.h || (im.naturalWidth ? p.w*im.naturalHeight/im.naturalWidth : p.w*1.7); return p.x + p.w/2 > X0 && p.x - p.w/2 < X0 + F && p.y - h < Y0 + F && p.y - h + h*p.cut > Y0; }); if(!L.length) return null;
@@ -13821,7 +13821,7 @@ function svStart(role){
     const q = svApplyUp(svNewPlayer(k+1, L, mine ? svUnl().sk : role==='host' ? (N.gs[s] || SV_UNL0.sk) : []), mine ? state.svUp : role==='host' ? (N.gu && N.gu[s]) : null); q.slot = s; G.players.push(q); });
   G.newUnl = [];
   if(role==='solo') sv.seed = Math.floor(Math.random()*1e9);
-  G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); svObjInit(G); sv.cam = null; sv.patSrc = null;
+  G.stage = sv.stage||0; G.map = svMakeMap(G.stage, sv.seed||1); svObjInit(G); sv.cam = null; sv.camS = null; sv.patSrc = null;
   if(G.map.spawn) G.players.forEach((p, i)=>{ const o = SV_SPAWN_OFF[i%4]; p.x = G.map.spawn[0] + o[0]; p.y = G.map.spawn[1] + o[1]; }); // (build 562) 맵 시작 자리로 (정령을 맵보다 먼저 만듦)
   G.me = role==='guest' ? (N.ix[N.slot] || 1) : 0;
   sv.el.classList.add('sv-game');
@@ -14470,7 +14470,9 @@ function svDraw(){
   const G = sv.game, c = sv.ctx; if(!c || !sv.cv) return; const sk = G.shake > 0 && !state.svNoShake ? G.shake*10 : 0, /* (build 610) 설정 「화면 흔들림」 */ S = sv.scale*sv.dpr;
   c.setTransform(S, 0, 0, S, (Math.random()-0.5)*sk*S, (Math.random()-0.5)*sk*S); c.clearRect(-20, -20, SV_W+40, SV_H+40);
   const me = G.players[G.me] || G.players[0], tx = Math.max(0, Math.min(SV_MW-SV_W, me.x - SV_W/2)), ty = Math.max(0, Math.min(SV_MH-SV_H, me.y - SV_H/2)); // 카메라 — 내 정령을 따라감
-  if(!sv.cam || Math.hypot(sv.cam.x-tx, sv.cam.y-ty) > 300) sv.cam = { x:tx, y:ty }; else { sv.cam.x += (tx-sv.cam.x)*0.25; sv.cam.y += (ty-sv.cam.y)*0.25; }
+  { const now = performance.now(), cdt = Math.min(0.1, Math.max(0, (now - (sv.camT || now))/1000)); sv.camT = now; // (build 628) 잔렉 — 카메라 따라가기를 프레임 수가 아니라 시간 기준으로(프레임 간격이 들쭉날쭉하거나 120Hz 화면이면 화면이 덜컥였음) · 화면 점 단위로 맞춰 바닥 층과 캐릭터가 어긋나 떨리지 않게 (사용자 11/05 「잔렉」)
+    if(!sv.camS || Math.hypot(sv.camS.x-tx, sv.camS.y-ty) > 300) sv.camS = { x:tx, y:ty }; else { const k = 1 - Math.pow(0.75, cdt*60); sv.camS.x += (tx-sv.camS.x)*k; sv.camS.y += (ty-sv.camS.y)*k; }
+    const ps = (sv.scale || 1)*(sv.dpr || 1); sv.cam = { x:Math.round(sv.camS.x*ps)/ps, y:Math.round(sv.camS.y*ps)/ps }; }
   const cam = sv.cam, off = (o, m)=> o.x < cam.x - m || o.x > cam.x + SV_W + m || o.y < cam.y - m || o.y > cam.y + SV_H + m;
   c.save(); c.translate(-cam.x, -cam.y);
   if(G.map){ svDrawMap(c, G, cam); svDrawObstacles(c, G, cam); }
@@ -21129,7 +21131,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 627, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 628, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
