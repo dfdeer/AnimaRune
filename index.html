@@ -13044,6 +13044,7 @@ function svFoGround(c, cam){ const bg = sv.bgc; if(!bg || !bg.getContext) return
   else { const vi0 = Math.floor((cam.x - MG)/F) - 1, vi1 = Math.floor((cam.x + SV_W + MG)/F) + 1, vj0 = Math.floor((cam.y - MG)/F) - 1, vj1 = Math.floor((cam.y + SV_H + MG)/F) + 1; // 다음에 쓸 둘레 칸을 하나씩 미리
     for(let j=vj0;j<=vj1 && !made;j++) for(let i=vi0;i<=vi1 && !made;i++){ if(i < 0 || j < 0 || i*F >= SV_MW || j*F >= SV_MH || C.has(i+','+j)) continue; mk(i, j); } }
   const cv = sv.cv, sx = (m.e + cam.x*m.a)/(sv.dpr || 1), sy = (m.f + cam.y*m.d)/(sv.dpr || 1); // 흔들림
+  if(sv.oneCv){ const vx = Math.max(R.x, cam.x - 4), vy = Math.max(R.y, cam.y - 4), vw = Math.min(R.x + R.w, cam.x + SV_W + 4) - vx, vh = Math.min(R.y + R.h, cam.y + SV_H + 4) - vy; if(vw > 0 && vh > 0) c.drawImage(bg, (vx - R.x)*s, (vy - R.y)*s, vw*s, vh*s, vx, vy, vw, vh); return; } // (build 631) CPU — 보이는 부분만 한 번 복사
   const dq = (sv.stk || 1)*(window.devicePixelRatio || 1), rq = v=>Math.round(v*dq)/dq, tf = 'translate('+rq(cv.offsetLeft + (R.x - cam.x)*sv.scale + sx)+'px,'+rq(cv.offsetTop + (R.y - cam.y)*sv.scale + sy)+'px)'; if(bg._tf !== tf){ bg._tf = tf; bg.style.transform = tf; } /* (build 628) 화면 점 단위로 · 같으면 안 씀 */
 }
 function svFoTopChunk(i, j, s){ const G = sv.game; if(!G || !G.map || !G.map.pcs) return null; const F = SV_FCH, X0 = i*F, Y0 = j*F, N = Math.ceil(F*s);
@@ -13827,7 +13828,7 @@ function svStart(role){
   sv.el.classList.add('sv-game');
   sv.el.innerHTML = '<div class="sv-top sv-hud"><button class="sv-btn sv-ic" data-sv="quit">←</button><div class="sv-hc"><b class="sv-time">0:00</b><div class="sv-xp"><i></i><span class="sv-lv">Lv1</span></div></div><span class="sv-kill"></span><button class="sv-btn sv-ic" data-sv="team" title="전체 현황 (Tab)" style="display:none">'+uiIc('party')+'</button><button class="sv-btn sv-ic" data-sv="pause">'+uiIc('rest')+'</button></div>'
     + '<div class="sv-cv"><canvas class="sv-mc"></canvas><canvas class="sv-bgc"></canvas><i class="sv-vig"></i><button class="sv-ult" data-sv="ult"><img alt=""><i></i><b></b></button><button class="sv-aim" data-sv="aim"><img alt=""><b></b></button><button class="sv-fire off" data-sv="fire"><i></i><b></b></button><em class="sv-key off" data-k="fire">C</em><em class="sv-key" data-k="ult">Space</em><em class="sv-key" data-k="aim">Q</em><div class="sv-stat"></div><div class="sv-obj"></div><div class="sv-wasd"><i>W</i><i>A</i><i>S</i><i>D</i><b>이동</b></div><div class="sv-pick"></div><div class="sv-pst" style="display:none"></div><div class="sv-team" style="display:none"></div><div class="sv-end"></div></div><div class="sv-bar"></div>';
-  const cv = sv.el.querySelector('canvas.sv-mc'); sv.cv = cv; sv.bgc = sv.el.querySelector('canvas.sv-bgc'); sv.tpc = document.createElement('canvas'); /* (build 621) 나무 윗부분은 화면 밖 캔버스 — 그리는 순서 안에서 한 번에 붙임 (UI·기믹은 그 위) */ sv.bgR = null; const fo = !!SV_FOMAP[(SV_MAPS[sv.stage||0]||{}).id]; /* 맵은 아래에서 만들어짐 — 단계로 판단 */ if(sv.bgc) sv.bgc.style.display = fo ? '' : 'none'; sv.ctx = cv.getContext('2d', { alpha:fo }); /* (build 619) 조각 맵은 바닥을 뒤 층(.sv-bgc)에 — 위 캔버스는 투명 */ try{ Object.defineProperty(sv.ctx, 'shadowBlur', { get(){ return 0; }, set(){} }); }catch(e){} // (build 493) 그림자 흐림(빛 번짐)은 그릴 때마다 흐림 처리를 해서 무거움 — 끄고 미리 그린 빛(svGlow)·겹친 선(svGS)으로 대신 // (build 492) 불투명 캔버스 — 뒤 화면과 섞는 일을 안 해서 전체화면이 훨씬 가벼움 (헤드리스 1920×1080 22→43fps)
+  const cv = sv.el.querySelector('canvas.sv-mc'); sv.cv = cv; sv.bgc = sv.el.querySelector('canvas.sv-bgc'); sv.tpc = document.createElement('canvas'); /* (build 621) 나무 윗부분은 화면 밖 캔버스 — 그리는 순서 안에서 한 번에 붙임 (UI·기믹은 그 위) */ sv.bgR = null; const fo = !!SV_FOMAP[(SV_MAPS[sv.stage||0]||{}).id]; /* 맵은 아래에서 만들어짐 — 단계로 판단 */ const one = fo && svGpu().soft; sv.oneCv = one; if(sv.bgc) sv.bgc.style.display = fo && !one ? '' : 'none'; sv.ctx = cv.getContext('2d', { alpha:fo && !one }); /* (build 631) CPU로 그릴 땐 캔버스 한 장(불투명)에 바닥을 붙임 — 층 두 장을 겹쳐 합치는 일이 CPU에선 더 무거움 (사용자 11/05 「가속은 안 켬 · 멀티에서 렉이 더 심함」) */ /* (build 619) 조각 맵은 바닥을 뒤 층(.sv-bgc)에 — 위 캔버스는 투명 */ try{ Object.defineProperty(sv.ctx, 'shadowBlur', { get(){ return 0; }, set(){} }); }catch(e){} // (build 493) 그림자 흐림(빛 번짐)은 그릴 때마다 흐림 처리를 해서 무거움 — 끄고 미리 그린 빛(svGlow)·겹친 선(svGS)으로 대신 // (build 492) 불투명 캔버스 — 뒤 화면과 섞는 일을 안 해서 전체화면이 훨씬 가벼움 (헤드리스 1920×1080 22→43fps)
   const fit = ()=>{ if(!sv || !sv.cv) return; // (build 489) 사용자 결정 10/26: 틀 없이 화면 전체 · 위 HUD·아래 스킬 줄은 게임 화면 위에 겹쳐 놓음
     const box = sv.el.querySelector('.sv-cv'), bw = box.clientWidth, bh = box.clientHeight; if(!(bw > 0 && bh > 0)) return;
     if(bw/bh >= 0.6){ SV_H = Math.round(600 / SV_ZOOM[svZoomKey()]); SV_W = Math.min(1400, Math.round(SV_H*bw/bh)); } /* (build 612) 시야 */ else { SV_W = 360; SV_H = Math.min(900, Math.round(360*bh/bw)); }
@@ -13969,7 +13970,7 @@ function svKill(e, col){
   if(e.kind==='boss'){ svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:1.6, s:'보스 처치!', col:'#ffe08a', sz:26, scr:1 }); G.shake = 0.5; try{ sfx('claim'); }catch(x){} if(e.final){ G.over = 'win'; svShowEnd(); } }
 }
 function svFx(f){ const G = sv.game; if(f.k==='num') f.d *= 1.8; if(f.k==='text' && f.scr && f.uy){ f.d = Math.max(3.2, f.d*1.8); const n = G.fx.filter(o=>o.k==='text' && o.scr && o.uy && o.t < o.d - 0.3 && Math.abs(o.y - f.y) < 60).length; f.y += n*26; } /* (build 624) 화면 위 안내 글자(정예·석상 등)는 3.2초 이상 · 겹치면 아래로 (사용자 11/05 「너무 빨리 사라짐」) */ /* (build 489) 피해 숫자 1.8배 오래 (사용자 10/26) */ if(G.fx.length < 140) G.fx.push(f); if(f.k==='num') return; if(sv.net.role==='host'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) }, sv.fxOwner ? { o:sv.fxOwner } : null)); } else if(sv.locOn && sv.loc && sv.loc.fx.length < 30) sv.loc.fx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0), t:0 })); } // 친구 화면에도 효과 (피해 숫자는 빼고)
-function svPart(x, y, vx, vy, col, d, s){ const G = sv.game; if(G.pt.length < 260) G.pt.push({ x, y, vx, vy, col, t:0, d, s }); }
+function svPart(x, y, vx, vy, col, d, s){ const G = sv.game; if(sv.oneCv && (G.pt.length > 60 || Math.random() < 0.5)) return; /* (build 631) CPU — 파편 절반·최대 60 */ if(G.pt.length < 260) G.pt.push({ x, y, vx, vy, col, t:0, d, s }); }
 function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄)
   const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
   let best = null, bn = -1; c.slice(0, 25).forEach(e=>{ let n = 0; c.forEach(o=>{ if(Math.hypot(o.x-e.x, o.y-e.y) < 55) n++; }); if(n > bn){ bn = n; best = e; } }); return best;
@@ -14359,7 +14360,7 @@ function svNetStart(){
         if(now - (p.lastAct||0) > 12000){ p.down = true; p.hp = 0; if(p.pick){ p.pick = null; svPickDone(G); } } // 12초 동안 소식이 없으면 쓰러짐
         }); if(G.pickWait && !G.over) G.players.forEach((p, i)=>{ if(p.pick && now - G.pickAt > SV_PICK_MS) svDoPick(i, 0); }); }, 100); // (build 573) 스웜처럼 모두 30초 — 안 고르면 첫 카드 (방장 자신도)
   }else{
-    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/s'), s=>{ const v = s.val(); if(v && sv && sv.game) svGuestApply(v); }));
+    sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/s'), s=>{ let v = s.val(); if(typeof v === 'string'){ try{ v = JSON.parse(v); }catch(e){ v = null; } } if(v && sv && sv.game) svGuestApply(v); })); // (build 631) 글자 한 줄 → 풀어서
     sv.netT = setInterval(()=>svGuestSend(), 100);
   }
 }
@@ -14376,7 +14377,7 @@ function svHostSend(){
     o: G.pools.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.trap ? (o.trig >= 0 ? 4 : 3) : o.web ? 1 : o.pull ? 2 : 0]).concat((G.poR||[]).map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.ty, o.o])),
     f: (G.netFx || []).slice(-40) };
   G.netFx = [];
-  fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), snap).catch(()=>{});
+  fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), JSON.stringify(snap)).catch(()=>{}); /* (build 631) 글자 한 줄로 — 묶음(적 150·보석 150·투사체 …)을 Firebase가 칸 수천 개로 쪼개 저장·전달하느라 방장·친구 모두 0.1초마다 무거웠음 (사용자 11/05 「멀티에서 렉이 더 심함」) */
 }
 function svGuestSend(){
   const fb = raidNet.fb; if(!sv || !fb || !sv.net.code || !sv.net.slot) return; const G = sv.game, p = G && G.players[G.me];
@@ -21134,7 +21135,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 630, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 631, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
