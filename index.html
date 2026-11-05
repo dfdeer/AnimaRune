@@ -13026,11 +13026,11 @@ function svFoMaskPart(t, mask, X0, Y0, dy){ const k = mask.width/SV_MW, m = 8/k,
   if(x1 > x0 && y1 > y0) t.drawImage(mask, x0*k, y0*k, (x1 - x0)*k, (y1 - y0)*k, x0, y0 + dy, x1 - x0, y1 - y0); }
 // (build 619) 렉 — 바닥을 매 프레임 위 캔버스에 다시 붙이던 것(사용자 10/31 「맵은 계속 그릴 필요 없잖아 · 고치라고」) → 화면보다 둘레 200만큼 넓은 바닥 층(.sv-bgc)에 한 번 그려 두고 매 프레임엔 CSS로 밀기만(그래픽 장치가 처리) · 카메라가 둘레를 벗어나거나 칸이 새로 생기면 그때만 바닥 층을 다시 그림 · 칸 만들기는 그대로 한 프레임에 하나
 function svFoGround(c, cam){ const bg = sv.bgc; if(!bg || !bg.getContext) return svFoGround0(c, cam);
-  const m = c.getTransform(), s = Math.min(svQ().ch, Math.round(m.a*4)/4); if(sv.foS !== s){ sv.foS = s; sv.foCh = new Map(); sv.bgDirty = 1; }
+  const m = c.getTransform(), s = Math.min(svQ().ch, Math.round(m.a*4)/4, svFoBudget()); if(sv.foS !== s){ sv.foS = s; sv.foCh = new Map(); sv.bgDirty = 1; }
   const C = sv.foCh, F = SV_FCH, MG = 200, B = sv.bgR, ld = sv.game && sv.game.loading;
   const need = !B || sv.bgDirty || B.s !== s || B.vw !== SV_W || B.vh !== SV_H || cam.x < B.x + 4 || cam.y < B.y + 4 || cam.x + SV_W > B.x + B.w - 4 || cam.y + SV_H > B.y + B.h - 4;
   const R = need ? { x:Math.round((cam.x - MG)*s)/s, y:Math.round((cam.y - MG)*s)/s, w:SV_W + MG*2, h:SV_H + MG*2, vw:SV_W, vh:SV_H, s } : B;
-  const i0 = Math.floor(R.x/F), i1 = Math.floor((R.x + R.w)/F), j0 = Math.floor(R.y/F), j1 = Math.floor((R.y + R.h)/F), cap = svPhone() ? (i1 - i0 + 3)*(j1 - j0 + 3) + 4 : Infinity; let made = 0; /* (build 626) 컴은 맵 전체 칸을 들고 있음(로딩 때 미리 만듦) — 판 중에 칸을 새로 만드는 잔렉 없앰 */
+  const i0 = Math.floor(R.x/F), i1 = Math.floor((R.x + R.w)/F), j0 = Math.floor(R.y/F), j1 = Math.floor((R.y + R.h)/F), cap = Infinity; let made = 0; /* (build 627) 폰도 맵 전체 칸을 들고 있음 — 대신 칸 해상도를 메모리 예산에 맞춤(svFoBudget) */ /* (build 626) 컴은 맵 전체 칸을 들고 있음(로딩 때 미리 만듦) — 판 중에 칸을 새로 만드는 잔렉 없앰 */
   const mk = (i, j)=>{ const ch = svFoChunk(i, j, s); made++; if(ch){ ch.top = svFoTopChunk(i, j, s); C.set(i+','+j, ch); while(C.size > cap) C.delete(C.keys().next().value); } return ch; };
   if(need){ const W = Math.ceil(R.w*s), H = Math.ceil(R.h*s); if(bg.width !== W) bg.width = W; if(bg.height !== H) bg.height = H; const x = bg.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); let miss = false;
     for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ if(i < 0 || j < 0 || i*F >= SV_MW || j*F >= SV_MH){ x.fillStyle = '#0b0d26'; x.fillRect(Math.round((i*F - R.x)*s), Math.round((j*F - R.y)*s), Math.ceil(F*s) + 1, Math.ceil(F*s) + 1); continue; }
@@ -13122,14 +13122,17 @@ function svSnowFx(c, G, cam){ // 온천 김 · 내 추위 (조각 그림 위에)
   c.strokeStyle = '#0b1a2a99'; c.lineWidth = 4; c.beginPath(); c.ellipse(x, y, R, R*0.42, 0, 0, 6.283); c.stroke(); c.strokeStyle = v >= 1 ? '#ffffff' : '#9fdcff'; c.lineCap = 'round'; c.beginPath(); c.ellipse(x, y, R, R*0.42, 0, -1.5708, -1.5708 + 6.283*v); c.stroke();
   if(v >= 1){ c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = '#000c'; c.strokeText('동상', x, y + 14); c.fillStyle = '#dff3ff'; c.fillText('동상', x, y + 14); }
   c.restore(); }
+// (build 627) 바닥·나무 칸 해상도 상한 — 맵 전체 칸(바닥+나무 2장)을 메모리 예산 안에 (폰 약 2,500만 점 · 컴 8,000만 점) · 설원(108칸)은 폰에서 1배, 숲(40칸)은 화질대로 (사용자 11/05 「로딩이 길어도 게임 중 렉 없게 · 폰도」)
+function svFoBudget(){ const F = SV_FCH, N = Math.ceil(SV_MW/F)*Math.ceil(SV_MH/F), B = svPhone() ? 2.5e7 : 8e7; return Math.max(0.75, Math.floor(Math.sqrt(B/(2*N*F*F))*4)/4); }
+function svTintWarm(){ if(sv.tintW) return; sv.tintW = 1; Object.values(sv.imgs||{}).forEach(im=>{ if(!(im.complete && im.naturalWidth) || !/_mob_|\/boss\//.test(im.src)) return; ['#ffffff', '#a0e6ff', '#ff7828', '#e6f0dc'].forEach(col=>{ try{ svTint(im, col); }catch(e){} }); }); } // (build 627) 맞을 때 번쩍이는 색 그림을 로딩 때 미리 — 처음 맞을 때 만들며 멈칫했음
 function svFoPrebuild(n){ const s = sv.foS, C = sv.foCh; if(!s || !C) return 1; const F = SV_FCH, I = Math.ceil(SV_MW/F), J = Math.ceil(SV_MH/F); let left = 0, made = 0; // (build 626) 컴 — 들어가는 중에 맵 전체 바닥·나무 칸을 미리
   for(let j=0;j<J;j++) for(let i=0;i<I;i++){ const k = i+','+j; if(C.has(k)) continue; if(made < n){ const ch = svFoChunk(i, j, s); made++; if(ch){ ch.top = svFoTopChunk(i, j, s); C.set(k, ch); continue; } } left++; }
   return 1 - left/(I*J); }
 function svLoadTick(G, now){ // (build 563) 들어가는 중 — 숲 그림 · 바닥 마스크 · 처음 보이는 바닥 조각이 다 되면 걷음 (최대 8초)
   const ns = ['ground'].concat(svFoCfg(G.map).T, Array.from(new Set(G.map.pcs.map(p=>p.t)))), ok = ns.filter(n=>{ const im = svFoImg(n); return im.complete && im.naturalWidth; }).length;
   const cam = sv.cam || { x:0, y:0 }, C = sv.foCh; let need = 0, have = 0; for(let j=Math.floor(cam.y/SV_FCH); j<=Math.floor((cam.y + SV_H)/SV_FCH); j++) for(let i=Math.floor(cam.x/SV_FCH); i<=Math.floor((cam.x + SV_W)/SV_FCH); i++){ need++; if(C && C.has(i+','+j)) have++; }
-  const pre = !svPhone() && have >= need && ok >= ns.length ? svFoPrebuild(6) : (svPhone() ? 1 : 0), f = (ok/ns.length)*0.5 + (need ? have/need : 1)*0.2 + pre*0.3, el = sv.el.querySelector('.sv-load'); if(el){ const u = el.querySelector('u'); if(u) u.style.width = Math.round(f*100)+'%'; }
-  if((f >= 0.999 && now - G.loading > 500) || now - G.loading > 12000){ G.loading = 0; if(el){ el.classList.add('out'); setTimeout(()=>el.remove(), 450); } svGimGuide(G); } }
+  const pre = have >= need && ok >= ns.length ? svFoPrebuild(svPhone() ? 4 : 6) : 0, f = (ok/ns.length)*0.5 + (need ? have/need : 1)*0.2 + pre*0.3, el = sv.el.querySelector('.sv-load'); if(el){ const u = el.querySelector('u'); if(u) u.style.width = Math.round(f*100)+'%'; }
+  if((f >= 0.999 && now - G.loading > 500) || now - G.loading > 20000){ svTintWarm(); G.loading = 0; if(el){ el.classList.add('out'); setTimeout(()=>el.remove(), 450); } svGimGuide(G); } }
 function svGimGuide(G){ // (build 563) 시작할 때 오른쪽에 이 맵 기믹 안내 · (build 564) 12초 뒤(또는 누르면) 오른쪽으로 쏙 들어가고 「맵 정보」 탭을 누르면 다시 나옴 (사용자 10/29)
   if(!G.map || !G.map.fo || !sv.el) return; const b = 'assets/survival/'+SV_FOD, d = document.createElement('div'); d.className = 'sv-gim';
   d.innerHTML = '<button class="tab" type="button">맵<br>정보</button><b>'+SV_MAPS[G.stage].nm+'</b>'
@@ -21126,7 +21129,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 626, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 627, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
