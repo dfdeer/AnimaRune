@@ -12640,7 +12640,7 @@ let sv = null;
 function svSkLine(id){ return id.slice(0, -2); }
 function svEvoSeen(id, k){ const S = state.svEvoSeen || {}; if(k) return !!(S[id+':'+k] || (S[id] && SV_SK[id].pair===k)); return svLinks(id).some(q=>svEvoSeen(id, q)); } // (build 588) 연계 유물마다 따로 (예전 기록은 예전 짝으로 봄) // (build 517) 한 번이라도 각성시켜 본 룬·기술만 짝을 보여 줌 — 그 전엔 「?」 (사용자 10/27)
 function svMarkEvo(id, k){ const key = k ? id+':'+k : id; state.svEvoSeen = state.svEvoSeen || {}; if(!state.svEvoSeen[key]){ state.svEvoSeen[key] = 1; try{ save(); }catch(e){} } }
-function svLinkTxt(id){ const L = svLinks(id).filter(k=>svEvoSeen(id, k)); return L.length ? ' · 연계 '+L.map(k=>svPI(k)+SV_PAS[k].nm+' → 「'+SV_EVO[id][k].nm+'」 '+SV_EVO[id][k].ev).join(' / ')+(L.length < svLinks(id).length ? ' / ?' : '') : ' · 연계 유물 ?'; } // (build 588) 아는 연계만
+function svLinkTxt(id){ const L = svLinks(id).filter(k=>svEvoSeen(id, k)); return L.length ? ' · 연계 '+L.map(k=>svPI(k)+SV_PAS[k].nm+' → 「'+SV_EVO[id][k].nm+'」 '+SV_EVO[id][k].ev).join(' / ') : ''; } // (build 588) 아는 연계만 · (build 626) 모르는 연계는 「?」도 안 보임 — 각성시켜 봐야 알 수 있음 (사용자 11/05)
 function svIsRune(p, id){ return !p || id !== p.leader+'_1'; } // (build 512) 대표 정령의 시작 스킬 = 고유 기술 · 판에서 줍는 나머지 = 룬 (사용자 10/27: 이름이 아니마룬이라)
 function svUltNm(L){ const k = LINE_KITS[L]; return k ? k.s2.name : svSkNm(L+'_2'); } // (build 540) 궁극기 이름 = 원래 스킬2 이름 · 룬으로 주울 땐 SV_SK.nm (다른 이름)
 // (build 548) 고유 기술이 다른 정령에게 룬으로 나올 땐 다른 이름 (사용자 10/29 「이름 같은 건 다른 이름으로」) — p를 주면 그 정령의 고유 기술이면 원래 이름 · 안 주면 룬 이름
@@ -12807,13 +12807,17 @@ function svSnowTick(G, alive, dt){ const bl = svBlizzard(G);
     else if(z.cd > 0) z.cd = Math.max(0, z.cd - dt);
     else if(alive.some(p=>svInZ(z, p))){ z.aw = SV_SNOW.AW; z.sh = 0.3; svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.7, col:'#bfe8ff', r:160 }); svFx({ k:'text', x:z.x, y:z.y - 90, t:0, d:1.2, s:'눈사람이 깨어남!', col:'#dff3ff', sz:13 }); try{ sfx('claim'); }catch(e){} } }); }
 // (build 556) 숲 기믹 — 사용자 10/29 「기믹 여러 개 있으면 재밌고 좋지」: ① 정령 석상 넷 — 둘레에 서 있으면 차지(혼자 6초 · 둘 4초 · 셋 3초 · 넷 2.5초) → 모두에게 정령의 축복 하나 45초 · 그 석상은 90초 쉼 · (밤·반딧불 등불도 만들었다가 뺌 — 사용자 10/29 「그림자 심연이 어두운 맵이라 겹침」)
-const SV_BLESS = { atk:'공격력 +25%', spd:'이동 속도 +20%', xp:'경험치 +40%', cd:'쿨타임 −20%' };
+const SV_BLESS = { atk:'공격력 +25%', spd:'이동 속도 +20%', xp:'경험치 +40%', cd:'쿨타임 −20%', rage:'폭주 — 공격 속도 2배', mag:'자석 — 보석을 모두 끌어옴 · 획득 범위 ×3', inv:'불사 — 무적 · 닿는 적에게 피해', bolt:'분노한 정령 — 주변 적에게 번개', gold:'황금 시간 — 골드 2배 · 경험치 +30%' }; // (build 626) 새 축복 5개 (사용자 11/05 「석상 효과가 밋밋함 · 추가」)
+const SV_BLESS_T = { rage:20, mag:30, inv:10, bolt:25 }; // 축복 길이 (없으면 45초)
 function svBless(k){ const G = sv && sv.game; return !!(G && G.bless && G.bless.k===k); }
 function svForestTick(G, alive, dt){ const map = G.map;
   map.zones.forEach(z=>{
     if(z.kind==='shrine'){ if(z.cd > 0){ z.cd = Math.max(0, z.cd - dt); return; } const n = alive.filter(p=>svInZ(z, p)).length; z.cap = n ? Math.min(1, z.cap + dt/[0, 6, 4, 3, 2.5][Math.min(4, n)]) : Math.max(0, z.cap - dt/12);
-      if(z.cap >= 1){ z.cap = 0; z.cd = 90; const k = svRand(Object.keys(SV_BLESS)); G.bless = { k, t:45 }; svObjAdd('shrine'); svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.8, col:'#ffd04a', r:200 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.8, s:'정령의 축복 — '+SV_BLESS[k]+' 45초', col:'#ffd04a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} } } });
-  if(G.bless){ G.bless.t -= dt; if(G.bless.t <= 0) G.bless = null; } }
+      if(z.cap >= 1){ z.cap = 0; z.cd = 90; const k = svRand(Object.keys(SV_BLESS)), bd = SV_BLESS_T[k] || 45; G.bless = { k, t:bd, d:bd }; if(k==='mag') G.gems.forEach(g=>{ g.pull = true; }); svObjAdd('shrine'); svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.8, col:'#ffd04a', r:200 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.8, s:'정령의 축복 — '+SV_BLESS[k]+' '+bd+'초', col:'#ffd04a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} } } });
+  if(G.bless){ G.bless.t -= dt; svBlessTick(G, dt, alive); if(G.bless.t <= 0) G.bless = null; } }
+function svBlessTick(G, dt, alive){ const B = G.bless, k = B.k, P = 1 + G.t/120; // (build 626) 움직이는 축복
+  if(k==='bolt'){ B.bt = (B.bt||0) - dt; if(B.bt > 0) return; B.bt = 0.8; alive.forEach(p=>{ G.en.filter(e=>e.hp > 0 && Math.hypot(e.x - p.x, e.y - p.y) < 320).sort((a, b)=>Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 3).forEach(e=>{ svHitBy(p, e, 55*SV_DMGK*P, '#ffe066'); svFx({ k:'pillar', x:e.x, y:e.y, t:0, d:0.35, col:'#ffe066' }); svFx({ k:'ring', x:e.x, y:e.y, t:0, d:0.3, col:'#fff3a0', r:34 }); }); }); try{ sfx('bCrit'); }catch(e){} }
+  else if(k==='inv'){ B.it = (B.it||0) - dt; if(B.it > 0) return; B.it = 0.4; alive.forEach(p=>{ G.en.forEach(e=>{ if(e.hp > 0 && Math.hypot(e.x - p.x, e.y - p.y) < 46 + (e.r||10)) svHitBy(p, e, 30*SV_DMGK*P, '#ffd557'); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.4, col:'#ffd557', r:56 }); }); } }
 function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
   const G = sv.game, map = G.map; if(!map) return; const M = SV_MAPS[map.stage], alive = G.players.filter(p=>!p.down);
   if(map.forest) svForestTick(G, alive, dt);
@@ -13026,7 +13030,7 @@ function svFoGround(c, cam){ const bg = sv.bgc; if(!bg || !bg.getContext) return
   const C = sv.foCh, F = SV_FCH, MG = 200, B = sv.bgR, ld = sv.game && sv.game.loading;
   const need = !B || sv.bgDirty || B.s !== s || B.vw !== SV_W || B.vh !== SV_H || cam.x < B.x + 4 || cam.y < B.y + 4 || cam.x + SV_W > B.x + B.w - 4 || cam.y + SV_H > B.y + B.h - 4;
   const R = need ? { x:Math.round((cam.x - MG)*s)/s, y:Math.round((cam.y - MG)*s)/s, w:SV_W + MG*2, h:SV_H + MG*2, vw:SV_W, vh:SV_H, s } : B;
-  const i0 = Math.floor(R.x/F), i1 = Math.floor((R.x + R.w)/F), j0 = Math.floor(R.y/F), j1 = Math.floor((R.y + R.h)/F), cap = (i1 - i0 + 3)*(j1 - j0 + 3) + 4; let made = 0;
+  const i0 = Math.floor(R.x/F), i1 = Math.floor((R.x + R.w)/F), j0 = Math.floor(R.y/F), j1 = Math.floor((R.y + R.h)/F), cap = svPhone() ? (i1 - i0 + 3)*(j1 - j0 + 3) + 4 : Infinity; let made = 0; /* (build 626) 컴은 맵 전체 칸을 들고 있음(로딩 때 미리 만듦) — 판 중에 칸을 새로 만드는 잔렉 없앰 */
   const mk = (i, j)=>{ const ch = svFoChunk(i, j, s); made++; if(ch){ ch.top = svFoTopChunk(i, j, s); C.set(i+','+j, ch); while(C.size > cap) C.delete(C.keys().next().value); } return ch; };
   if(need){ const W = Math.ceil(R.w*s), H = Math.ceil(R.h*s); if(bg.width !== W) bg.width = W; if(bg.height !== H) bg.height = H; const x = bg.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); let miss = false;
     for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ if(i < 0 || j < 0 || i*F >= SV_MW || j*F >= SV_MH){ x.fillStyle = '#0b0d26'; x.fillRect(Math.round((i*F - R.x)*s), Math.round((j*F - R.y)*s), Math.ceil(F*s) + 1, Math.ceil(F*s) + 1); continue; }
@@ -13118,11 +13122,14 @@ function svSnowFx(c, G, cam){ // 온천 김 · 내 추위 (조각 그림 위에)
   c.strokeStyle = '#0b1a2a99'; c.lineWidth = 4; c.beginPath(); c.ellipse(x, y, R, R*0.42, 0, 0, 6.283); c.stroke(); c.strokeStyle = v >= 1 ? '#ffffff' : '#9fdcff'; c.lineCap = 'round'; c.beginPath(); c.ellipse(x, y, R, R*0.42, 0, -1.5708, -1.5708 + 6.283*v); c.stroke();
   if(v >= 1){ c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = '#000c'; c.strokeText('동상', x, y + 14); c.fillStyle = '#dff3ff'; c.fillText('동상', x, y + 14); }
   c.restore(); }
+function svFoPrebuild(n){ const s = sv.foS, C = sv.foCh; if(!s || !C) return 1; const F = SV_FCH, I = Math.ceil(SV_MW/F), J = Math.ceil(SV_MH/F); let left = 0, made = 0; // (build 626) 컴 — 들어가는 중에 맵 전체 바닥·나무 칸을 미리
+  for(let j=0;j<J;j++) for(let i=0;i<I;i++){ const k = i+','+j; if(C.has(k)) continue; if(made < n){ const ch = svFoChunk(i, j, s); made++; if(ch){ ch.top = svFoTopChunk(i, j, s); C.set(k, ch); continue; } } left++; }
+  return 1 - left/(I*J); }
 function svLoadTick(G, now){ // (build 563) 들어가는 중 — 숲 그림 · 바닥 마스크 · 처음 보이는 바닥 조각이 다 되면 걷음 (최대 8초)
   const ns = ['ground'].concat(svFoCfg(G.map).T, Array.from(new Set(G.map.pcs.map(p=>p.t)))), ok = ns.filter(n=>{ const im = svFoImg(n); return im.complete && im.naturalWidth; }).length;
   const cam = sv.cam || { x:0, y:0 }, C = sv.foCh; let need = 0, have = 0; for(let j=Math.floor(cam.y/SV_FCH); j<=Math.floor((cam.y + SV_H)/SV_FCH); j++) for(let i=Math.floor(cam.x/SV_FCH); i<=Math.floor((cam.x + SV_W)/SV_FCH); i++){ need++; if(C && C.has(i+','+j)) have++; }
-  const f = (ok/ns.length)*0.6 + (need ? have/need : 1)*0.4, el = sv.el.querySelector('.sv-load'); if(el){ const u = el.querySelector('u'); if(u) u.style.width = Math.round(f*100)+'%'; }
-  if((f >= 1 && now - G.loading > 500) || now - G.loading > 8000){ G.loading = 0; if(el){ el.classList.add('out'); setTimeout(()=>el.remove(), 450); } svGimGuide(G); } }
+  const pre = !svPhone() && have >= need && ok >= ns.length ? svFoPrebuild(6) : (svPhone() ? 1 : 0), f = (ok/ns.length)*0.5 + (need ? have/need : 1)*0.2 + pre*0.3, el = sv.el.querySelector('.sv-load'); if(el){ const u = el.querySelector('u'); if(u) u.style.width = Math.round(f*100)+'%'; }
+  if((f >= 0.999 && now - G.loading > 500) || now - G.loading > 12000){ G.loading = 0; if(el){ el.classList.add('out'); setTimeout(()=>el.remove(), 450); } svGimGuide(G); } }
 function svGimGuide(G){ // (build 563) 시작할 때 오른쪽에 이 맵 기믹 안내 · (build 564) 12초 뒤(또는 누르면) 오른쪽으로 쏙 들어가고 「맵 정보」 탭을 누르면 다시 나옴 (사용자 10/29)
   if(!G.map || !G.map.fo || !sv.el) return; const b = 'assets/survival/'+SV_FOD, d = document.createElement('div'); d.className = 'sv-gim';
   d.innerHTML = '<button class="tab" type="button">맵<br>정보</button><b>'+SV_MAPS[G.stage].nm+'</b>'
@@ -13728,7 +13735,7 @@ function svAimDir(p){ // 바라보는 방향 — 내 정령이고 마우스 조�
 }
 function svOath(){ return sv.game.players.some(q=>q.leader==='light_b'); } // 서약: 나와 친구 모두
 function svSpd(p){ return p.spd * (1 + 0.08*svPasLv(p, 'swift')) * (svOath() ? 1.12 : 1) * (p.spdB > 0 ? 1.3 : 1) * (svBless('spd') ? 1.2 : 1); }
-function svCdK(p, w){ return (p.cdK || 1) * Math.pow(0.92, svPasLv(p, 'haste')) * (w.evo ? ((svEvoD(w)||{}).cd || 0.8) : 1) * (svOath() ? 0.92 : 1) * (p.rush > 0 ? 0.7 : 1) * (svBless('cd') ? 0.8 : 1); }
+function svCdK(p, w){ return (p.cdK || 1) * Math.pow(0.92, svPasLv(p, 'haste')) * (w.evo ? ((svEvoD(w)||{}).cd || 0.8) : 1) * (svOath() ? 0.92 : 1) * (p.rush > 0 ? 0.7 : 1) * (svBless('rage') ? 0.5 : 1) * (svBless('cd') ? 0.8 : 1); }
 // 레벨업 카드 — 스킬 새로/올리기 · 능력 새로/올리기 (Swarm처럼) · 새 스킬은 해금한 것만 · 대표 정령의 스킬2는 궁극기라 빠짐
 // (build 552) 협동 룬 — 둘 이상일 때만 카드에 나옴 · 한 사람에 하나(룬 5칸과 따로) · Lv5까지 (사용자 10/29 「2인 이상일 때만 뜨는 추가 룬」) · 그림은 임시로 UI 아이콘
 const SV_CO = {
@@ -13964,11 +13971,11 @@ function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄
   const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
   let best = null, bn = -1; c.slice(0, 25).forEach(e=>{ let n = 0; c.forEach(o=>{ if(Math.hypot(o.x-e.x, o.y-e.y) < 55) n++; }); if(n > bn){ bn = n; best = e; } }); return best;
 }
-function svHurt(p, dmg){ if(p.leader==='wood_a') dmg *= 0.75; { const g = sv.game.players.find(q=>q!==p && !q.down && svCoOn(q, 'guard') && Math.hypot(q.x-p.x, q.y-p.y) < 140); if(g) dmg *= 1 - (0.04 + 0.02*g.co.lv); } /* (build 552) 수호의 손길 */ dmg *= 100/(100 + svDef(p)); /* (build 543) 방어력 */ dmg *= (1 + 0.03*svPasLv(p, 'might')) * (1 - 0.06*svPasLv(p, 'rampart')); if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; return dmg; }
+function svHurt(p, dmg){ if(svBless('inv')) return 0; /* (build 626) 불사 */ if(p.leader==='wood_a') dmg *= 0.75; { const g = sv.game.players.find(q=>q!==p && !q.down && svCoOn(q, 'guard') && Math.hypot(q.x-p.x, q.y-p.y) < 140); if(g) dmg *= 1 - (0.04 + 0.02*g.co.lv); } /* (build 552) 수호의 손길 */ dmg *= 100/(100 + svDef(p)); /* (build 543) 방어력 */ dmg *= (1 + 0.03*svPasLv(p, 'might')) * (1 - 0.06*svPasLv(p, 'rampart')); if(p.shield > 0){ const a = Math.min(p.shield, dmg); p.shield -= a; dmg -= a; } p.hp -= dmg; return dmg; }
 function svStLs(p){ return 0; } // (build 566) 스탯 통일 — 피해 흡혈(준 피해의 몇 배 회복) · 처치 시 회복 · 초당 회복 · 경험치 · 골드 — 새 룬·유물은 여기에 더함 (사용자 10/29)
 function svStKill(p){ return 0.4*svPasLv(p, 'fang'); }
 function svStRegen(p){ return 0.25*svPasLv(p, 'vital'); }
-function svStXp(p){ return 0.12*svPasLv(p, 'greed') + (svBless('xp') ? 0.4 : 0); }
+function svStXp(p){ return 0.12*svPasLv(p, 'greed') + (svBless('xp') ? 0.4 : 0) + (svBless('gold') ? 0.3 : 0); }
 function svStGold(p){ return 0.12*svPasLv(p, 'greed'); }
 function svWM(p, w){ return SV_LVM[w.lv-1] * (w.evo ? ((svEvoD(w)||{}).dm || 2.2) : 1) * (1 + 0.12*svPasLv(p, 'might')) * (p.buff > 0 ? 1.5 : 1) * SV_DMGK * svAtkK(p) * (SV_SPDW[w.id] ? svSpd(p)/120 : 1) * svCoK(p) * (svBless('atk') ? 1.25 : 1); } // (build 543) 공격력 · 백록 무기는 이동 속도(120 기준)도
 const SV_SPDW = { light_b_1:1, light_b_2:1 }; // 이동 속도가 피해에 들어가는 무기
@@ -14234,13 +14241,13 @@ function svTick(dt){
     const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-o.x, b.y-o.y) < Math.hypot(a.x-o.x, a.y-o.y) ? b : a, null); if(!p) return;
     const d = Math.hypot(p.x-o.x, p.y-o.y), pull = o.k==='rune' ? 70 : p.mag * (1 + 0.25*svPasLv(p, 'greed')); if(d < pull){ o.x += (p.x-o.x)/d*Math.min(d, 380*dt); o.y += (p.y-o.y)/d*Math.min(d, 380*dt); } // 골드·회복·자석도 경험치처럼 끌려옴
     if(d < 16){ if(o.k==='rune' && G.pickWait) return; /* 고르는 중이면 끝난 뒤에 */ o.done = true;
-      if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (p.goldK || 1)); /* (build 610) 업그레이드 골드 */ G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
+      if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (p.goldK || 1) * (svBless('gold') ? 2 : 1)); /* (build 610) 업그레이드 골드 · (build 626) 황금 시간 */ G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
       else if(o.k==='lorb'){ const h = Math.round(p.maxHp*0.06); p.hp = Math.min(p.maxHp, p.hp + h); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+h, col:'#fff3a0', sz:11 }); } /* (build 595) 빛의 이삭 */ else if(o.k==='heal'){ p.hp = Math.min(p.maxHp, p.hp + 30); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+30', col:'#7ce07c', sz:11 }); }
       else if(o.k==='mag'){ G.gems.forEach(g=>{ g.pull = true; }); svFx({ k:'text', x:p.x, y:p.y-40, t:0, d:1, s:'바람 나침반 — 모두 끌어당김', col:'#7ae0ff', sz:12 }); }
       else if(o.k==='rune'){ G.pickWait = true; G.pickAt = Date.now(); G.pickGift = 1; p.pick = svChoices(p); if(!p.pick || !p.pick.length){ p.pick = null; G.pickWait = false; G.pickGift = 0; } svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col:'#ffd557', r:70 }); try{ sfx('enhance'); }catch(e){} } } }); // (build 520) 정령의 선물 — 카드 3장
   G.loot = G.loot.filter(o=>!o.done);
-  G.gems.forEach(g=>{ const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-g.x, b.y-g.y) < Math.hypot(a.x-g.x, a.y-g.y) ? b : a, null); if(!p) return; const d = Math.hypot(p.x-g.x, p.y-g.y), mag = p.mag * (1 + 0.25*svPasLv(p, 'greed'));
-    if(d < mag || g.pull){ const v = g.pull ? 520 : 380; g.x += (p.x-g.x)/d*Math.min(d, v*dt); g.y += (p.y-g.y)/d*Math.min(d, v*dt); } if(d < 12){ g.done = true; G.xp += g.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (svBless('xp') ? 1.4 : 1) * (p.xpK || 1); /* (build 610) 업그레이드 경험치 */ } });
+  G.gems.forEach(g=>{ const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-g.x, b.y-g.y) < Math.hypot(a.x-g.x, a.y-g.y) ? b : a, null); if(!p) return; const d = Math.hypot(p.x-g.x, p.y-g.y), mag = p.mag * (1 + 0.25*svPasLv(p, 'greed')) * (svBless('mag') ? 3 : 1);
+    if(d < mag || g.pull){ const v = g.pull ? 520 : 380; g.x += (p.x-g.x)/d*Math.min(d, v*dt); g.y += (p.y-g.y)/d*Math.min(d, v*dt); } if(d < 12){ g.done = true; G.xp += g.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (svBless('xp') ? 1.4 : svBless('gold') ? 1.3 : 1) * (p.xpK || 1); /* (build 610) 업그레이드 경험치 */ } });
   G.gems = G.gems.filter(g=>!g.done); if(G.gems.length > 400) G.gems.splice(0, G.gems.length - 400);
   if(G.xp >= G.xpNext && !G.pickWait) svLevelUp();
 }
@@ -14295,7 +14302,7 @@ function svHud(){
     const h = tm + (tm ? '' : '<span>체력</span><b>'+Math.ceil(me.hp)+' / '+me.maxHp+'</b>') + val('공격력', atkV, B.atk) + val('방어력', svDef(me), B.def) + val('이동 속도', spdV, B.spd) + '<span>치명타 확률</span><b class="'+(cr ? 'up' : '')+'">'+cr+'%</b>' + '<span>치명타 피해</span><b class="'+(svStCritDmg(me) > 2 ? 'up' : '')+'">'+Math.round(svStCritDmg(me)*100)+'%</b>' + row('쿨타임 감소', cd, cd > 0) + row('공격 범위', ar, ar > 0) + row('받는 피해', tk, tk < 0) + row('획득 범위', pk, pk > 0) + (svStLs(me) ? row('피해 흡혈', pc(svStLs(me)), true) : '') + (svStKill(me) ? '<span>처치 시 회복</span><b class="up">+'+(Math.round(svStKill(me)*10)/10)+'</b>' : '') + (svStRegen(me) ? '<span>초당 회복</span><b class="up">+'+(Math.round(svStRegen(me)*100)/100)+'</b>' : '') + (svStXp(me) ? row('경험치', pc(svStXp(me)), true) : '') + (svStGold(me) ? row('골드', pc(svStGold(me)), true) : '') + (svProj(me) ? '<span>투사체</span><b class="up">+'+svProj(me)+'</b>' : ''); /* (build 593) */ /* (build 566) 0이면 안 보임 */
     if(st._h !== h && !(performance.now() - (st._t||0) < 250)){ st._h = h; st._t = performance.now(); st.innerHTML = h; } } } /* (build 620) 능력치 칸은 0.25초에 한 번까지 */ { const wd = q('.sv-wasd'); if(wd && wd.classList.contains('on') !== !!sv.pc) wd.classList.toggle('on', !!sv.pc); } { const br = q('.sv-bar'), fb = q('.sv-fire'); if((sv.hudN = (sv.hudN||0) + 1) % 30 === 0){ const bh = (br ? br.offsetHeight : 0)+'|'+(fb && !fb.classList.contains('off') ? 1 : 0); /* (build 620) 화면 배치 높이 읽기는 0.5초마다 — 매 프레임 읽으면 글자를 바꾼 직후 화면을 통째로 다시 배치함 */ if(sv.barH !== bh){ sv.barH = bh; if(sv.fit) sv.fit(); } } } // (build 579) 아래 칸 높이가 바뀌면(유물 줄 생김 등) 이동 안내·버튼 자리 다시 — 처음 높이로 남아 유물 칸과 겹쳤음 (사용자 10/30)
   { let bf = q('.sv-buff'); const B = G.bless; if(B && B.t > 0){ if(!bf){ bf = document.createElement('div'); bf.className = 'sv-buff'; bf.innerHTML = '<img class="uic" src="assets/ui/ic_awaken.webp" alt=""><span><b>정령의 축복</b><em></em></span><i><u></u></i>'; q('.sv-cv').appendChild(bf); }
-      set(bf.querySelector('em'), 't', SV_BLESS[B.k]+' · '+Math.ceil(B.t)+'초', (el, v)=>{ el.textContent = v; }); set(bf.querySelector('u'), 'w', Math.round(B.t/45*200)/2, (el, v)=>{ el.style.width = v+'%'; }); bf.classList.toggle('end', B.t < 5); }
+      set(bf.querySelector('em'), 't', SV_BLESS[B.k]+' · '+Math.ceil(B.t)+'초', (el, v)=>{ el.textContent = v; }); set(bf.querySelector('u'), 'w', Math.round(B.t/(B.d||45)*200)/2, (el, v)=>{ el.style.width = v+'%'; }); bf.classList.toggle('end', B.t < 5); }
     else if(bf) bf.remove(); } /* (build 624) 석상 축복 — 화면 위 가운데에 효과·남은 시간·줄어드는 막대 (사용자 11/05 「활성화 중이고 무슨 효과인지 보여 주기」) */
   { const oe = q('.sv-obj'); if(oe){ const h = (G.obj ? '<b>목표</b>'+G.obj.map(o=>'<span class="'+(o.ok ? 'ok' : o.no ? 'no' : '')+'">'+SV_OBJ[o.k].s+' <i>'+(o.k==='safe' ? svFmtT(o.c)+'/5:00' : Math.floor(o.c)+'/'+SV_OBJ[o.k].n)+'</i></span>').join('') : ''); if(oe._h !== h){ oe._h = h; oe.innerHTML = h; oe.style.display = h ? '' : 'none'; } } } // (build 551) 판 안 목표
   const ub = q('.sv-ult'); if(ub && me){ const cd = Math.max(0, me.ultCd); if(ub.dataset.l !== me.leader){ ub.dataset.l = me.leader; ub.querySelector('img').src = svSkIc(me.leader+'_2'); ub.style.setProperty('--ec', SV_EC[me.leader.split('_')[0]]); }
@@ -21119,7 +21126,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 625, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 626, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
