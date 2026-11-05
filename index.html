@@ -13334,11 +13334,11 @@ function svPnlBody(SH, msg){ const u = svUnl(), L = sv.leader;
         + (op && V !== L ? '<button type="button" class="svs-btn g" data-ld="'+V+'" data-ldclose="1">이 정령으로</button>' : op ? '<div class="svs-cur">'+uiIc('check')+' 지금 고른 정령</div>' : '')+'</div>'; }
     else if(T==='rn'){ const ids = Object.keys(SV_SK), V = sv.dexSel && SV_SK[sv.dexSel] ? sv.dexSel : ids[0], op = u.sk.includes(V);
       c = '<div class="svs-gl">'+ids.map(id=>'<button type="button" class="svs-it'+(u.sk.includes(id) ? '' : ' lock')+'" data-sel="'+id+'" aria-pressed="'+(id===V)+'"><img src="'+svSkIc(id)+'" alt="">'+svSkNm(id)+'</button>').join('')+'</div>'
-        + '<div class="svs-dt"><img class="ic" src="'+svSkIc(V)+'" alt=""><h3>'+svSkNm(V)+'</h3><div class="el">룬 · 레벨업 카드로 나옴 · Lv5까지</div>'+(op ? '' : '<div class="lkt">'+uiIc('lock')+' '+(svUnlTxt('sk', V) || '정령 「'+SPIRITS[svKey(svSkLine(V),4)].name+'」을 열면 해금')+'</div>')+'<p>'+svSkDesc(V, 0, 1)+svLinkTxt(V)+'</p></div>'; }
+        + '<div class="svs-dt"><img class="ic" src="'+svSkIc(V)+'" alt=""><h3>'+svSkNm(V)+'</h3><div class="el">룬 — 성장 카드로 나오고 Lv5까지</div>'+(op ? '' : '<div class="lkt">'+uiIc('lock')+' '+(svUnlTxt('sk', V) || '정령 「'+SPIRITS[svKey(svSkLine(V),4)].name+'」을 열면 해금')+'</div>')+'<p>'+svSkDesc(V, 0, 1)+svLinkTxt(V)+'</p></div>'; }
     else if(T==='rl'){ const ids = Object.keys(SV_PAS), V = sv.dexSel && SV_PAS[sv.dexSel] ? sv.dexSel : ids[0], P = SV_PAS[V];
       c = '<div class="svs-gl">'+ids.map(k=>'<button type="button" class="svs-it" data-sel="'+k+'" aria-pressed="'+(k===V)+'"><img src="assets/ui/'+SV_PAS[k].ic+'.webp" alt="">'+SV_PAS[k].nm+'</button>').join('')+'</div>'
         + '<div class="svs-dt"><img class="ic" src="assets/ui/'+P.ic+'.webp" alt=""><h3>'+P.nm+'</h3><div class="el">유물 · 최대 4개 · Lv5까지</div><p>'+(SV_PASS[V] ? svStatLine(SV_PASS[V], 0, 1, true) : P.d)+'</p></div>'; }
-    else c = '<div class="svs-how"><div>'+uiIc('auto')+'화면을 끌거나 WASD로 움직임 · 공격은 자동 · 궁극기 = 오른쪽 아래 버튼(Space)</div><div>'+uiIc('level')+'레벨업마다 카드 3장 — 룬(시작 룬 포함 최대 5) · 유물(최대 4) · 각각 Lv5까지</div><div>'+uiIc('awaken')+'<span><em>각성</em> = 룬 Lv5 + 연계 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</span></div><div>'+uiIc('party')+'<span>같이 하면 <em>협동 룬</em>이 카드에 나옴 — 한 사람에 하나 · Lv5까지</span></div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 모은 골드로 업그레이드</div></div>';
+    else c = '<div class="svs-how"><div>'+uiIc('auto')+'화면을 끌거나 WASD로 움직임 · 공격은 자동 · 궁극기 = 오른쪽 아래 버튼(Space)</div><div>'+uiIc('level')+'레벨업마다 성장 카드 3장 중 하나 — 룬은 시작 룬 포함 최대 5개, 유물은 최대 4개, 각각 Lv5까지</div><div>'+uiIc('awaken')+'<span><em>각성</em> = 룬 Lv5 + 연계 유물을 갖추는 순간 바로 · 정예를 잡으면 「정령의 선물」(카드 하나 더)</span></div><div>'+uiIc('party')+'<span>같이 하면 <em>협동 룬</em>이 카드에 나옴 — 한 사람에 하나 · Lv5까지</span></div><div>'+uiIc('crown')+'5분 중간 보스 · 10분 최종 보스 · 상자를 부수면 골드 · 모은 골드로 업그레이드</div></div>';
     return tabs+'<div class="svs-vc">'+c+'</div>'; }
   if(SH==='goal') return '<div class="svs-goals">'+SV_UNL.map(g=>{ const id = g.ld || g.sk, ok = svHas(g.ld ? 'ld' : 'sk', id); return '<div class="svs-gr'+(ok ? ' ok' : '')+'"><img src="'+(g.ld ? 'assets/spirits/'+svKey(g.ld,4)+'.webp' : svSkIc(g.sk))+'" alt=""><span><b>'+g.txt+'</b><small>'+(g.ld ? '정령 「'+SPIRITS[svKey(g.ld,4)].name+'」' : '룬 「'+svSkNm(g.sk)+'」')+' 열림</small></span><i>'+(ok ? '완료' : '진행 중')+'</i></div>'; }).join('')+'</div>';
   if(SH==='up'){ const sel = SV_UPS.find(x=>x[0]===sv.upSel) || SV_UPS[0], U = state.svUp || {}, lv = U[sel[0]]||0, mx = lv >= sel[3], c = svUpCost(sel, lv), g = state.svGold||0;
@@ -14326,7 +14326,7 @@ function svHud(){
       } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
   if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
-      box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 업!')+'</div><div class="sv-psub">'+(G.pickGift ? '카드 하나 더' : '레벨 '+G.lvl)+' · 하나 고르기'+(sv.pc ? ' (1~3)' : '')+'</div><div class="sv-pcs">' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('') + '</div>' + (me.rr > 0 && sv.net.role!=='guest' ? '<button type="button" class="sv-rr" data-rr="1">'+uiIc('dice')+'다시 뽑기 · '+me.rr+'번 남음</button>' : ''); /* (build 610) 새 카드 모양 · 업그레이드 「카드 다시 뽑기」 */
+      box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 업!')+'</div><div class="sv-psub">'+(G.pickGift ? '성장 카드를 하나 더 고르기' : '성장 카드 고르기')+(sv.pc ? ' (숫자키 1~3)' : '')+'</div><div class="sv-pcs">' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('') + '</div>' + (me.rr > 0 && sv.net.role!=='guest' ? '<button type="button" class="sv-rr" data-rr="1">'+uiIc('dice')+'다시 뽑기 · '+me.rr+'번 남음</button>' : ''); /* (build 610) 새 카드 모양 · 업그레이드 「카드 다시 뽑기」 */
       { const rb = box.querySelector('[data-rr]'); if(rb) rb.addEventListener('click', e=>{ e.stopPropagation(); if(!(me.rr > 0) || !me.pick) return; me.rr--; me.pick = svChoices(me); box.dataset.k = ''; try{ sfx('enhance'); }catch(e2){} }); }
       { const cs = [...box.querySelectorAll('.sv-card')], h = Math.max(...cs.map(x=>x.offsetHeight)); if(h > 0) cs.forEach(x=>x.style.height = h+'px'); } // (build 513) 카드 높이 맞춤
       box.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', e=>{ const pe = e.target.closest('.sv-pair'); if(pe){ svPairTip(b, pe); return; } /* (build 579) 연계 유물 표시를 누르면 고르지 않고 설명만 */ const i = +b.dataset.pk; svPickFx(b); if(sv.net.role==='guest'){ sv.myPick = { i, k: key }; svGuestSend(); box.dataset.k = 'sent'; box.innerHTML = '<div class="sv-ptl">다른 사람이 고르는 중…</div>'; } else svDoPick(G.me, i); })); } }
@@ -21145,7 +21145,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 634, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 635, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
