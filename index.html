@@ -13476,6 +13476,7 @@ function svLobbyRe(){ if(!sv || sv.game || !sv.el) return; const l0 = sv.el.quer
 function svHostActs(v){ // (build 544) 방장: 친구들 행동(raidActs/<코드>/p1~p3) — 준비 화면에선 대표 정령·해금 룬 · 판에선 위치·궁극기·카드
   if(!sv || !v) return; const n = sv.net, G = sv.game; let ch = false;
   [1, 2, 3].forEach(s=>{ const a = v['p'+s]; if(!a) return;
+    n.gv = n.gv || {}; n.gv[s] = a.nv || 1; /* (build 632) 친구 버전 */
     if(!G){ if(n.gl[s] !== a.ld){ n.gl[s] = a.ld; ch = true; } n.gn = n.gn || {}; const nm = svNickOk(a.nm); if(nm && n.gn[s] !== nm){ n.gn[s] = nm; ch = true; } n.gs[s] = Array.isArray(a.sk) ? a.sk.filter(id=>SV_SK[id]) : null; n.gu = n.gu || {}; n.gu[s] = a.up && typeof a.up==='object' ? a.up : null; return; }
     const i = n.ix && n.ix[s], p = i && G.players[i]; if(!p || (a.t||0) === p.actT) return; p.actT = a.t; p.lastAct = Date.now(); // 다른 친구가 보낸 때도 불리므로 보낸 시각으로 새것만
     if(Number.isFinite(a.x) && !p.down){ p.x = a.x; p.y = a.y; } if(a.fx) p.face = [a.fx, a.fy]; if(a.am) p.am = a.am==='f' ? 'face' : a.am==='m' ? 'mouse' : 'near'; p.fm = a.fm==='m' ? 'manual' : 'auto'; p.md = !!a.md; p.ma = Number.isFinite(a.ma) ? a.ma : null;
@@ -14377,11 +14378,11 @@ function svHostSend(){
     o: G.pools.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.trap ? (o.trig >= 0 ? 4 : 3) : o.web ? 1 : o.pull ? 2 : 0]).concat((G.poR||[]).map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.ty, o.o])),
     f: (G.netFx || []).slice(-40) };
   G.netFx = [];
-  fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), JSON.stringify(snap)).catch(()=>{}); /* (build 631) 글자 한 줄로 — 묶음(적 150·보석 150·투사체 …)을 Firebase가 칸 수천 개로 쪼개 저장·전달하느라 방장·친구 모두 0.1초마다 무거웠음 (사용자 11/05 「멀티에서 렉이 더 심함」) */
+  const allNew = Object.keys(n.sl||{}).filter(k=>n.sl[k]).every(k=>(n.gv||{})[k] >= 2); fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), allNew ? JSON.stringify(snap) : snap).catch(()=>{}); /* (build 632) 옛 버전 친구가 있으면 예전 방식 그대로 — 631만 받는 글자를 옛 친구가 못 읽어 방장·몹이 멈춰 보였음 (사용자 11/05) */ /* (build 631) 글자 한 줄로 — 묶음(적 150·보석 150·투사체 …)을 Firebase가 칸 수천 개로 쪼개 저장·전달하느라 방장·친구 모두 0.1초마다 무거웠음 (사용자 11/05 「멀티에서 렉이 더 심함」) */
 }
 function svGuestSend(){
   const fb = raidNet.fb; if(!sv || !fb || !sv.net.code || !sv.net.slot) return; const G = sv.game, p = G && G.players[G.me];
-  const a = { ld: sv.leader, sk: svUnl().sk, up: state.svUp || {}, t: Date.now(), u: sv.ultReq || 0 }; /* (build 610) 업그레이드도 방장에게 */ if(!G) a.nm = svNick(); /* (build 612) 닉네임 — 준비 화면에서만 */
+  const a = { ld: sv.leader, sk: svUnl().sk, up: state.svUp || {}, t: Date.now(), u: sv.ultReq || 0, nv: 2 }; /* (build 632) 이 친구가 글자 한 줄 상태를 읽을 수 있음 */ /* (build 610) 업그레이드도 방장에게 */ if(!G) a.nm = svNick(); /* (build 612) 닉네임 — 준비 화면에서만 */
   if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; a.am = { face:'f', mouse:'m' }[svAimMode()] || 'n'; if(svFireMode(p)==='manual'){ a.fm = 'm'; a.md = sv.mDown ? 1 : 0; } if((a.am==='m' || a.fm==='m') && sv.mouse && sv.cam) a.ma = Math.round(Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x)*100)/100; } // (build 567) 내 조작도 보냄
   if(p && sv.loc && sv.loc.on){ const L = sv.loc, R = Math.round; a.lc = 1; svLocBatch(); a.hb = L.bat; /* (build 570) 내 공격은 내가 계산 — 맞힌 적·상태·회복·효과를 묶음 번호로 (방장이 받았다고 할 때까지 다시 보냄) */
     a.pr = L.pr.slice(0, 40).map(b=>[R(b.x), R(b.y), b.col, b.kind==='wave' ? 2 : b.kind==='spark' ? 3 : 0, b.kind==='wave' ? R(Math.atan2(b.vy, b.vx)*100)/100 : 0, b.kind==='wave' ? R(b.w) : 0, R(b.vx||0), R(b.vy||0)]); a.po = L.po.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.trap ? (o.trig >= 0 ? 4 : 3) : o.web ? 1 : o.pull ? 2 : 0]); }
@@ -21135,7 +21136,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 631, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 632, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
