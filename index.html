@@ -1130,7 +1130,7 @@
   .svt .ttl{font-family:var(--fun,"Jua"),sans-serif; font-size:24px; margin-right:auto; text-shadow:0 2px 6px #000;}
   .svt .pill{display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px 0 6px; border-radius:99px; background:#0b0d26cc; border:1px solid var(--line); font-weight:900; font-size:13px; white-space:nowrap;} .svt .pill img{width:22px; height:22px;} .svt .pill b{color:var(--gold);}
   .svt .pill.acc{padding:0 12px;} .svt .pill.acc i{display:block; width:46px; height:6px; border-radius:3px; background:#ffffff1c; overflow:hidden;} .svt .pill.acc u{display:block; height:100%; background:var(--gold);}
-  .svt-ps{display:flex; gap:4px; padding:3px; border-radius:12px; background:#0b0d26cc; border:1px solid var(--line);} .svt-ps button{height:32px; min-width:40px; border-radius:9px; border:none; background:none; color:var(--sub); font:900 13px "Noto Sans KR",sans-serif; cursor:pointer;} .svt-ps button[aria-pressed="true"]{background:var(--gold); color:#2a1a00;}
+  .svt-ps{display:flex; gap:4px; padding:3px; border-radius:12px; background:#0b0d26cc; border:1px solid var(--line); max-width:330px; overflow-x:auto; scrollbar-width:none;} .svt-ps::-webkit-scrollbar{display:none;} .svt-ps button{flex:none;} .svt-ps button.add{color:#ffd557; border:1px dashed #ffd55788;} .svt .cf .r button.g{border:none; background:linear-gradient(180deg,#ffe98a,#f0a400); color:#2a1a00;} .sv-ph .svt-ps{max-width:210px;} .svt-ps button{height:32px; min-width:40px; border-radius:9px; border:none; background:none; color:var(--sub); font:900 13px "Noto Sans KR",sans-serif; cursor:pointer;} .svt-ps button[aria-pressed="true"]{background:var(--gold); color:#2a1a00;}
   .svt-zm{position:absolute; z-index:5; left:14px; bottom:14px; display:flex; flex-direction:column; gap:6px;} .svt-zm button{width:42px; height:42px; border-radius:12px; border:1px solid var(--line); background:#0b0d26d9; color:#eef0ff; font:900 20px sans-serif; cursor:pointer;}
   .svt .card{position:absolute; z-index:6; right:14px; bottom:14px; width:340px; max-height:calc(100% - 80px); overflow:auto; border-radius:20px; background:#141a46f2; border:1.5px solid color-mix(in srgb,var(--c,#ffd557) 60%,transparent); box-shadow:0 18px 40px #000c; padding:16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; text-align:left;}
   .svt .card .hd{display:flex; gap:12px; align-items:center;} .svt .card .hd > img{width:52px; height:52px; object-fit:contain;} .svt .card .k{font-size:12px; font-weight:900; color:var(--c);} .svt .card h3{margin:0; font-family:var(--fun,"Jua"),sans-serif; font-weight:400; font-size:21px;} .svt .card h3 em{font-style:normal; font-family:"Noto Sans KR",sans-serif; font-size:13px; font-weight:900; color:var(--c); margin-left:6px;}
@@ -13482,6 +13482,7 @@ function svApplyUp(p, U){ if(!U) return p; const lv = k=>Math.max(0, Math.min(SV
 //  포인트 = 계정 레벨(판마다 경험치) + 단계 최종 보스 첫 처치마다 3 + ??? 조건마다 1 · 첫 정령(현무·광명·불사귀)은 골드로 계약 · 둘째 정령은 같은 계열 조건 · 유물은 처음 넷만 나오고 나머지는 트리에서 열어야 성장 카드에 나옴
 //  융합 제단·융합 정령·동행의 맹세는 「준비 중」 (새 그림·기술이 필요)
 const SV_TR_ANG = { fire:-90, light:-18, dark:54, wood:126, water:198 }, SV_TR_ELN = { fire:'불', water:'물', wood:'나무', light:'빛', dark:'어둠' }, SV_TR_COL = { root:'#ffd557', fu:'#ffffff', fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#b07aff' };
+const SV_TR_PMAX = 10, svTrPCost = n=>1000 + 500*(n - 3); // (build 646) 프리셋 — 처음 3개 무료 · 4번째부터 골드로 열기(1,000부터 500씩) · 최대 10개 (사용자 11/06)
 const SV_TR_CT = 1500, SV_TR_RS = 500, SV_TR_REL0 = ['area', 'swift', 'greed', 'hunter'], SV_TR_LVMAX = 60;
 const SV_TR = (()=>{ const N = {}, E = [], SC = 1.32, add = (id, o)=>{ N[id] = Object.assign({ id, max:1 }, o); }, link = (a, b, x)=>E.push([a, b, !!x]);
   const P = (el, r, da)=>{ const a = (SV_TR_ANG[el] + (da||0))*Math.PI/180; return { x:Math.round(Math.cos(a)*r*SC), y:Math.round(Math.sin(a)*r*SC) }; };
@@ -13515,7 +13516,7 @@ const SV_TR = (()=>{ const N = {}, E = [], SC = 1.32, add = (id, o)=>{ N[id] = O
 function svTrNm(n){ return n.ty==='re' ? SV_PAS[n.rel].nm : n.ld ? SPIRITS[svKey(n.ld, 4)].name : n.nm; }
 function svTrIc(n){ return n.ty==='re' ? 'assets/ui/'+SV_PAS[n.rel].ic+'.webp' : n.ld ? ''+svSpImg(n.ld)+'' : 'assets/ui/'+(n.ic || 'ic_star')+'.webp'; }
 function svTrSoon(n){ return n.ty==='fu' || n.ty==='fsp' || n.ty==='co'; } // 준비 중
-function svTr(){ const T = state.svTree = state.svTree && typeof state.svTree==='object' ? state.svTree : {}; if(!Array.isArray(T.p) || T.p.length !== 3) T.p = [{}, {}, {}]; T.p = T.p.map(o=>o && typeof o==='object' ? o : {}); T.c = Math.max(0, Math.min(2, T.c|0)); if(!Array.isArray(T.hd)) T.hd = []; return T; }
+function svTr(){ const T = state.svTree = state.svTree && typeof state.svTree==='object' ? state.svTree : {}; if(!Array.isArray(T.p)) T.p = []; T.p = T.p.slice(0, SV_TR_PMAX); while(T.p.length < 3) T.p.push({}); T.p = T.p.map(o=>o && typeof o==='object' ? o : {}); T.c = Math.max(0, Math.min(T.p.length - 1, T.c|0)); if(!Array.isArray(T.hd)) T.hd = []; return T; }
 function svAcc(){ const A = state.svAcc = state.svAcc && typeof state.svAcc==='object' ? state.svAcc : {}; A.lv = Math.max(1, Math.min(SV_TR_LVMAX, A.lv|0 || 1)); A.xp = Math.max(0, +A.xp || 0); return A; }
 function svAccNeed(lv){ return 50 + 25*(lv - 1); } // 다음 레벨까지 경험치
 function svAccGain(G){ return Math.floor((G.t||0)/6) + Math.floor((G.kills||0)/40) + (G.over==='win' ? 30 : 0); } // 10분 판 ≈ 160
@@ -13574,7 +13575,11 @@ function svTrNode(n, A, P, T){ const id = n.id, on = A.has(id), lv = P[id]|0, sp
 function svTrDraw(){ const R = sv.el.querySelector('.svt'); if(!R) return; const T = svTr(), P = T.p[T.c], A = svTrAct(P), N = SV_TR.N, mx = svTrMax(), us = svTrUsed(P);
   R.querySelector('.svt-pt').textContent = (mx - us)+' / '+mx; R.querySelector('.svt-gold').textContent = (state.svGold||0).toLocaleString('ko-KR');
   { const Ac = svAcc(), lb = R.querySelector('.svt-acc'); lb.innerHTML = 'Lv <b>'+Ac.lv+'</b><i><u style="width:'+(Ac.lv >= SV_TR_LVMAX ? 100 : Math.round(Ac.xp/svAccNeed(Ac.lv)*100))+'%"></u></i>'; lb.title = '계정 레벨 — 판을 할 때마다 경험치 · 레벨마다 트리 포인트 1'; }
-  R.querySelector('.svt-ps').innerHTML = [0, 1, 2].map(i=>'<button type="button" data-tps="'+i+'" aria-pressed="'+(T.c===i)+'">'+(i+1)+'</button>').join('');
+  R.querySelector('.svt-ps').innerHTML = T.p.map((_, i)=>'<button type="button" data-tps="'+i+'" aria-pressed="'+(T.c===i)+'">'+(i+1)+'</button>').join('') + (T.p.length < SV_TR_PMAX ? '<button type="button" class="add" data-tpadd="1" aria-label="프리셋 늘리기">+</button>' : '');
+  { const ps = R.querySelector('.svt-ps'), s = ps.querySelector('[aria-pressed="true"]'); if(s && ps.scrollWidth > ps.clientWidth) ps.scrollLeft = Math.max(0, s.offsetLeft - ps.clientWidth/2 + s.offsetWidth/2); } /* 고른 프리셋이 보이게 */
+  { const ab = R.querySelector('[data-tpadd]'); if(ab) ab.onclick = ()=>{ const n = T.p.length, c = svTrPCost(n), g = state.svGold||0, cf = R.querySelector('.svt-cf');
+    cf.innerHTML = '<div class="cf"><div><b>프리셋 '+(n+1)+' 열기</b><p>골드 '+c.toLocaleString('ko-KR')+'으로 프리셋 칸을 하나 더 엶<br>최대 '+SV_TR_PMAX+'개까지</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="g" data-tpy="1"'+(g < c ? ' disabled' : '')+'>'+(g < c ? '골드 부족' : '열기')+'</button></div></div></div>';
+    cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tpy]').onclick = ()=>{ if((state.svGold||0) < c || T.p.length >= SV_TR_PMAX) return; state.svGold -= c; T.p.push({}); T.c = T.p.length - 1; save(); cf.innerHTML = ''; try{ sfx('enhance'); }catch(e){} if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; }; } /* (build 646) 프리셋 늘리기 */
   R.querySelectorAll('[data-tps]').forEach(b=>b.onclick = ()=>{ T.c = +b.dataset.tps; save(); if(sv.net.role==='guest') svGuestSend(); svTrDraw(); });
   const ed = SV_TR.E.map(([a, b, x])=>{ const on = A.has(a) && A.has(b); return '<line class="e'+(on ? ' on' : '')+(x ? ' x' : '')+'" style="--c:'+SV_TR_COL[N[b].el==='fu' ? N[a].el : N[b].el]+'" x1="'+N[a].x+'" y1="'+N[a].y+'" x2="'+N[b].x+'" y2="'+N[b].y+'"/>'; }).join('');
   R.querySelector('.svt-nodes').innerHTML = '<svg class="svt-ed" width="1" height="1">'+ed+'</svg>' + Object.values(N).map(n=>svTrNode(n, A, P, T)).join('');
@@ -21444,7 +21449,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 645, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 646, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
