@@ -4032,6 +4032,7 @@ const SV_ART_READY = new Set([ // (651) 트리 칸 30개 + 융합 제단 5개 (�
   ...['hd1','hd2','hd3','co','root','fu_fire_light','fu_light_dark','fu_dark_wood','fu_wood_water','fu_water_fire'].map(k=>'tree/tr_'+k)]);
 function svArt(path, fb){ return SV_ART_READY.has(path) ? 'assets/survival/'+path+'.webp' : fb; }
 // (653) 거점 단상에 발이 가운데 오게 — 전신 그림에서 발바닥 줄 가운데가 그림 가운데에서 벗어난 비율 (assets/survival/full 기준)
+const SV_HSC = { fire_a:.87, water_b:.89, wood_a:.89 }; // (1.0.0 다듬기) 거점에 세운 정령 크기 맞춤 · 그림에서 칠해진 면적이 중간값보다 큰 정령만 줄임 (면적비^-0.6, 스콜 1.27배, 요르문간드와 현무 1.22배) · 사용자 11/07 「테티스는 작게 나와 화질이 좋은데 스콜은 크게 나와 화질이 구림」
 const SV_FOOTX = { dark_a:.137, dark_b:.029, fire_a:.089, fire_b:.006, light_a:.031, light_b:.059, water_a:.035, water_b:.046, wood_a:-.006, wood_b:.059 };
 function svSkIc(id){ return svArt('rune/rn_'+id, 'assets/ui/sk_'+id+'.webp'); }
 function svLpNm(l){ return LINE_KITS[l].passive.name; }
@@ -4710,7 +4711,7 @@ function svLobC(msg){ const n = sv.net, gst = n.role==='guest', me = gst ? n.slo
   + '<div class="svc-c l"><button type="button" class="svc-card" data-sheet="goal"><b>정령 '+nOpen+' / '+SV_LINE_IDS.length+'</b>'+(lk ? '<span>다음: 「'+SPIRITS[svKey(lk,4)].name+'」 '+escTxt(svUnlTxt('ld', lk))+'</span>' : '<span>모든 정령을 모았음</span>')+'</button>'
     + '<button type="button" class="svc-card" data-sheet="tree"><b>'+svUi('acc')+'계정 Lv '+A.lv+'</b><span class="row"><span>'+svUi('tp')+'트리 포인트</span> <em>'+(fr > 0 ? fr+'개 남음' : '다 씀')+'</em></span><i class="bar"><u style="width:'+(A.lv >= SV_TR_LVMAX ? 100 : Math.round(A.xp/svAccNeed(A.lv)*100))+'%"></u></i></button></div>'
   + '<div class="svc-c r"><button type="button" class="svc-card" data-sheet="dex" data-dt0="st"><b>최근 기록</b>'+(last && SV_MAPS[last.st] ? '<span class="row">'+SV_MAPS[last.st].nm+' <em>'+(last.w ? '승리' : '쓰러짐')+'</em></span><span class="row">버틴 시간 <em>'+svFmtT(last.t||0)+'</em></span><span class="row">처치 <em>'+(last.k||0).toLocaleString()+'</em></span>' : '<span>아직 기록 없음</span>')+'</button></div>'
-  + '<div class="svs-hero svc-hero" style="--ec:'+SV_EC[L.split('_')[0]]+';"><div class="art"><img src="'+svSpImg(L)+'" alt="" style="translate:'+(-(SV_FOOTX[L]||0)*100).toFixed(1)+'% 0"></div><h2>'+LN+'</h2><div class="kv">패시브 <b>「'+svLpNm(L)+'」</b>, 궁극기 <b>「'+svUltNm(L)+'」</b></div>'
+  + '<div class="svs-hero svc-hero" style="--ec:'+SV_EC[L.split('_')[0]]+';"><div class="art"><img src="'+svSpImg(L)+'" alt="" style="translate:'+(-(SV_FOOTX[L]||0)*100).toFixed(1)+'% 0'+(SV_HSC[L] ? '; scale:'+SV_HSC[L]+'; transform-origin:50% 100%' : '')+'"></div><h2>'+LN+'</h2><div class="kv">패시브 <b>「'+svLpNm(L)+'」</b>, 궁극기 <b>「'+svUltNm(L)+'」</b></div>'
     + (dr ? '<div class="s4">'+[['체력', B.hp], ['공격', B.atk], ['방어', B.def], ['속도', B.spd]].map(([k, v])=>'<span><small>'+k+'</small><b>'+v+'</b></span>').join('')+'</div>' : '')
     + '<button type="button" class="svs-co" data-sheet="pick">'+svUi('swap')+'정령 바꾸기</button>'+(msg && !sv.sheet ? '<div class="sv-msg">'+msg+'</div>' : '')+'</div>'
   + '<div class="svc-dr" aria-hidden="'+(!dr)+'"><div class="svc-h"><b>'+(n.code ? '파티 출전' : '출전')+'</b>'+(n.code ? '<span class="svc-rc">방 코드<u>'+n.code+'</u></span>' : '')+(n.code ? '' : '<button type="button" class="svc-x" data-dr="0" aria-label="닫기">✕</button>')+'</div>'
@@ -7564,7 +7565,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 668, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 669, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
