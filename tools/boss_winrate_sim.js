@@ -10,7 +10,7 @@ const N = parseInt(process.argv[2]||'4'), chs = (process.argv[3]||'1,2,3,4,5,6,7
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   for(const c of chs){
     const p = await b.newPage({ viewport:{width:390,height:844} }); const errs=[]; p.on('pageerror', e=>errs.push(e.message));
-    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
+    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900); await p.evaluate(()=>loadLegacy()); /* (1.0.0) 예전 게임 코드는 legacy/legacy.js */
     const t0 = Date.now();
     const r = await p.evaluate(async ([N,c,process_env_TWEAK,GEAR])=>{
       window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.showSkillStageScreen=()=>{}; window.render=()=>{}; window.afterFightMutation=()=>{}; window.unmountBattleScreen=()=>{}; state.skillAuto=true; // (v8.16.0) 화면 그리기를 끄면 수십 배 빠름 · 자동 전투를 켜야 내 차례가 진행됨

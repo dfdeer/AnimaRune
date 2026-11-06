@@ -1,7 +1,8 @@
 # 아니마룬 (AnimaRune) — 작업 규칙
 
 ## 구성
-- 게임 전체가 `index.html` 한 파일에 있는 PWA이고, `sw.js`는 서비스 워커(오프라인 캐시)야.
+- 게임은 `index.html`(서바이벌과 계정, 친구, 알림 같은 공통 코드)에 있는 PWA이고, `sw.js`는 서비스 워커(오프라인 캐시)야.
+- **(1.0.0 다듬기, 사용자 11/07) 예전 아니마룬 전용 코드는 `legacy/legacy.js`로 뺐어** — 켤 때는 안 불러오고, 관리자가 「원래 아니마룬」을 열 때만 `loadLegacy()`로 불러옴 · 예전 화면 함수(`render` 등 13개)는 index.html에 빈 함수로만 있고 legacy가 덮어씀 · **서바이벌 작업은 index.html만**, 예전 게임을 고칠 일은 legacy.js · 새 코드에서 legacy 쪽 함수나 값을 부르지 마 (불러오기 전엔 없음) · 나눈 방법은 `tools/legacy_split/README.md`
 - 문서는 `docs/`, 도구는 `tools/`에 있어.
 - 다음 작업을 이어받을 때는 **`docs/인수인계.md`를 먼저 읽을 것.**
 
@@ -54,9 +55,9 @@
   - **자잘한 수정과 큰 작업(기존 콘텐츠 큰 변경·새 콘텐츠)이 섞이면 나눠서 올려** — 버전 올림 폭이 다르니 PR·버전을 따로.
 
 ## 검증
-- 문법 검사: `index.html`에서 가장 큰 `<script>` 블록을 뽑아 `node --check`로 확인해.
+- 문법 검사: `index.html`에서 가장 큰 `<script>` 블록을 뽑아 `node --check`로 확인해. `legacy/legacy.js`를 고쳤으면 그것도 `node --check`.
 - 브라우저 테스트:
   - 저장소 루트에서 `python3 -m http.server 8765`로 서버를 띄워.
   - Playwright(`playwright-core`, `executablePath: '/opt/pw-browsers/chromium'`)로 페이지 에러가 0건인지 확인해.
-- 보스 밸런스: 챕터 보스는 `tools/boss_winrate_sim.js`, 레이드는 `tools/raid_winrate_sim.js`를 써. 사용법은 파일 맨 위에 적혀 있어.
+- 보스 밸런스(예전 게임): 챕터 보스는 `tools/boss_winrate_sim.js`, 레이드는 `tools/raid_winrate_sim.js`를 써. 사용법은 파일 맨 위에 적혀 있어. (예전 게임 시뮬은 페이지를 연 뒤 `loadLegacy()`를 먼저 부름)
 - **시뮬은 신화 장비 풀강 기준 (사용자 결정 10/15 — 이제 유저들이 신화 장비를 찍기 시작함):** 정령마다 같은 속성 신화 무기·방어구 +10. 두 시뮬 도구는 기본으로 이렇게 돌고(`simGear`), 장비 없이 보려면 `GEAR=0`. 새로 짜는 시뮬·테스트도 같은 기준으로.

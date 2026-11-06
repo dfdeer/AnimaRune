@@ -13,7 +13,7 @@ const bossArg = process.argv[4] || '';
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   for(const t of tiers){
     const p = await b.newPage({ viewport:{width:390,height:844} }); const errs=[]; p.on('pageerror', e=>errs.push(e.message));
-    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
+    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900); await p.evaluate(()=>loadLegacy()); /* (1.0.0) 예전 게임 코드는 legacy/legacy.js */
     const r = await p.evaluate(async ([N,t,TWEAK,bossArg])=>{
       window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.showSkillStageScreen=()=>{}; window.render=()=>{}; window.checkAchievements=()=>{}; window.bingoBump=()=>{}; state.skillAuto = true; window.isEquipUnlocked=()=>true;
       if(TWEAK) eval(TWEAK);
