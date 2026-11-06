@@ -2,7 +2,7 @@
 
 ## 구성
 - 게임은 `index.html`(서바이벌과 계정, 친구, 알림 같은 공통 코드)에 있는 PWA이고, `sw.js`는 서비스 워커(오프라인 캐시)야.
-- **(1.0.0 다듬기, 사용자 11/07) 예전 아니마룬 전용 코드는 `legacy/legacy.js`로 뺐어** — 켤 때는 안 불러오고, 관리자가 「원래 아니마룬」을 열 때만 `loadLegacy()`로 불러옴 · 예전 화면 함수(`render` 등 13개)는 index.html에 빈 함수로만 있고 legacy가 덮어씀 · **서바이벌 작업은 index.html만**, 예전 게임을 고칠 일은 legacy.js · 새 코드에서 legacy 쪽 함수나 값을 부르지 마 (불러오기 전엔 없음) · 나눈 방법은 `tools/legacy_split/README.md`
+- **(1.0.0 다듬기, 사용자 11/07) 예전 아니마룬 전용 코드는 `legacy/legacy.js`로 뺐어** — 켤 때는 안 불러오고, 관리자가 「원래 아니마룬」을 열 때만 `loadLegacy()`로 불러옴 · 예전 화면 함수(`render` 등 13개)는 index.html에 빈 함수로만 있고 legacy가 덮어씀 · **서바이벌 작업은 index.html만**, 예전 게임을 고칠 일은 legacy.js · 새 코드에서 legacy 쪽 함수나 값을 부르지 마 (불러오기 전엔 없음) · 예전 전용 스타일은 `legacy/legacy.css`(예전 게임을 열 때 index.html 스타일 대신 씀) · **서바이벌 스타일은 index.html의 `<style id="coreCss">`에만** · 나눈 방법은 `tools/legacy_split/README.md`
 - 문서는 `docs/`, 도구는 `tools/`에 있어.
 - 다음 작업을 이어받을 때는 **`docs/인수인계.md`를 먼저 읽을 것.**
 
