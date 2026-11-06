@@ -1999,7 +1999,7 @@ function showAccRestore(){
   const fmt = t=>{ const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); };
   const rows = L.map((b,i)=>{ let sum = '읽을 수 없음'; try{ sum = accSummary(JSON.parse(b.raw)); }catch(e){} return '<button class="acc-pick" data-rb="'+i+'"><b>'+fmt(b.t)+'에 덮이기 전</b><span>'+sum+'</span></button>'; }).join('');
   document.getElementById('modalRoot').innerHTML = '<div class="modal-bg" id="modalBg"><div class="modal" style="position:relative;"><button class="close-x" id="modalClose">x</button>'
-    + '<h3 style="text-align:center;">덮어쓰기 전 진행</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">다른 기기나 서버 진행으로 바뀌기 직전의 이 기기 진행<br>되살리면 지금 진행은 이 목록에 보관'+(acc.linked ? '하고 서버에도 저장' : '')+'</div>'
+    + '<h3 style="text-align:center;">덮어쓰기 전 진행</h3><div class="sub" style="text-align:center; font-size:12px; margin-bottom:8px;">초기화나 다른 기기 진행으로 바뀌기 직전의 이 기기 진행<br>되살리면 지금 진행은 이 목록에 보관'+(acc.linked ? '하고 서버에도 저장' : '')+'</div>'
     + '<div class="acc-pick" style="pointer-events:none; opacity:.8;"><b>지금 진행</b><span>'+accSummary(state)+'</span></div>' + rows + '</div></div>';
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.querySelectorAll('[data-rb]').forEach(b=>b.addEventListener('click', async ()=>{
@@ -2009,6 +2009,7 @@ function showAccRestore(){
     closeModal(); render(); svSetRedraw();
     if(acc.on && acc.linked && !acc.kicked){ const snap = await raidNet.fb.get(accRef('saves')).catch(()=>null), cloud = snap && snap.exists() ? snap.val() : null; acc.base = (cloud && cloud.rev)||0; const ok = await accPush(true); toast(ok ? '진행 되살리고 서버에 저장' : '진행 되살림 (서버 저장은 다음 연결 때)'); }
     else toast('진행 되살림');
+    if(SV_MAIN) setTimeout(()=>location.reload(), 700); /* (1.0.0 다듬기) 서바이벌 화면이 되살린 진행으로 다시 뜨게 */
   }));
 }
 async function raidInitNet(){
@@ -4753,11 +4754,11 @@ function svSetAcc(row, tg2){ const s = state.settings || {}, b = (k, t)=>'<butto
   if(!raidNet.fb || !acc.on) g = row('level', '구글 계정', '서버에 연결하는 중', '');
   else if(!acc.linked) g = row('level', '구글 계정', '지금은 이 기기에만 저장, 연동하면 폰과 컴퓨터 어디서든 이어서 플레이 (다른 기기에서 연동했으면 같은 버튼으로 불러오기)', b('link', '연동'));
   else g = row('level', '구글 계정', '연동됨'+(acc.email ? ' ('+escTxt(acc.email)+')' : '')+', 자동으로 서버에 저장'+(acc.lastPush ? ', 마지막 '+new Date(acc.lastPush).toTimeString().slice(0,5) : ''), b('cloud', '지금 저장'));
-  if(typeof accBackups==='function' && accBackups().length) g += row('backup', '덮어쓰기 전 진행', '다른 기기 진행으로 바뀌기 직전의 이 기기 진행 되살리기', b('restore', '보기'));
+  if(typeof accBackups==='function' && accBackups().length) g += row('backup', '덮어쓰기 전 진행', '초기화나 다른 기기 진행으로 바뀌기 직전 진행 되살리기', b('restore', '보기'));
   if(pushReady || s.push) g += row('bell', '휴대폰 알림', s.push ? '켜짐, 친구 요청과 큰 업데이트 소식' : '꺼짐', b('push', '설정'));
   if(!isStandaloneApp()) g += row('map', '홈 화면에 추가', '앱처럼 전체 화면으로 열리고 알림도 받을 수 있음', b('inst', '방법 보기'));
   if(DONATE_URL) g += row('gift', '개발 응원하기', '보상 없이 응원만 받음', b('donate', '보기'));
-  g += row('warn', '게임 초기화', '모든 진행을 지우고 처음부터 시작', '<button type="button" class="svs-btn rd" data-sa="reset">초기화</button>');
+  g += row('warn', '게임 초기화', '서바이벌 진행을 지우고 처음부터 시작', '<button type="button" class="svs-btn rd" data-sa="reset">초기화</button>');
   g += '<div class="svs-lnk"><a href="terms.html" target="_blank" rel="noopener">이용약관</a><a href="privacy.html" target="_blank" rel="noopener">개인정보 처리방침</a></div>';
   return g; }
 // (1.0.0 다듬기) 세이브 내보내기와 불러오기는 없앰 (사용자 11/07 「세이브 로드 시스템 없애도 될 것 같음」) · 초기화는 계정 탭 맨 아래
@@ -4765,7 +4766,9 @@ function svSetAcc(row, tg2){ const s = state.settings || {}, b = (k, t)=>'<butto
 function svSetRedraw(){ if(SV_MAIN && typeof sv!=='undefined' && sv && sv.el && !sv.game && sv.sheet==='set') svLobby(); }
 function setBack(pg){ return ()=>{ if(SV_MAIN && document.getElementById('svScr')){ closeModal(); svSetRedraw(); } else showSettingsModal(pg); }; }
 async function svReloadSaved(){ try{ if(acc.on && acc.linked && !acc.kicked){ acc.busy = false; await Promise.race([accPush(true), new Promise(r=>setTimeout(r, 5000))]); } }catch(e){} setTimeout(()=>location.reload(), 400); }
-function svDoReset(){ svConfirm('게임 초기화', '서바이벌 기록, 골드, 트리, 업그레이드와 보관 중인 예전 진행까지 모두 지워지고 되돌릴 수 없음', '초기화', ()=>{ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} state = defaultState(); save(); toast('초기화됨'); svReloadSaved(); }, null, '취소'); }
+// (1.0.0 다듬기) 서바이벌 진행만 지움 · 예전 아니마룬 진행, 닉네임, 설정은 그대로 (사용자 11/07 「초기화하니 예전 아니마룬 데이터도 초기화되는 것 같음」, 전엔 저장 전체를 지웠음)
+const SV_PROG_KEYS = ['svUnl', 'svGold', 'svUp', 'svClear', 'svBest', 'svStageSel', 'svLeader', 'svEvoSeen', 'svTree', 'svAcc', 'svStat', 'svLast'];
+function svDoReset(){ svConfirm('게임 초기화', '서바이벌 진행을 지우고 처음부터 시작', '초기화', ()=>{ try{ accBackupNow(); }catch(e){} /* 바로 전 진행은 계정 칸 「덮어쓰기 전 진행」에서 되살릴 수 있음 */ SV_PROG_KEYS.forEach(k=>{ delete state[k]; }); save(); toast('초기화됨'); svReloadSaved(); }, null, '취소'); }
 function svPnlMore(SH){ const L = sv.leader;
   if(SH==='fr'){ const T = sv.frT || 'list', ok = typeof friendsAvailable==='function' && friendsAvailable() && friendNet.on;
     if(!ok) return '<div class="svs-none">친구 서버에 연결하는 중이라 잠시 뒤 다시 열기</div>';
@@ -7565,7 +7568,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 670, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 671, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
