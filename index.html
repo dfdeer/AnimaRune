@@ -4928,7 +4928,7 @@ function svTrNode(n, A, P, T){ const id = n.id, on = A.has(id), lv = P[id]|0, sp
   const cls = ['svt-n', n.ty==='fu' ? 'fu' : '', n.ty==='ks' ? 'ks' : '', n.ty==='no' || n.ty==='co' ? 'no' : '', sp ? 'sp' : '', on ? 'on' : '', can ? 'can' : '', ready ? 'ready' : '', lock ? 'lock' : '', sv.trSel===id ? 'sel' : ''].join(' ');
   const o = n.ty==='fu' ? '<span class="o fu" style="--a:'+SV_TR_COL[n.pair[0]]+'; --b:'+SV_TR_COL[n.pair[1]]+'">'+(SV_ART_READY.has('tree/tr_'+n.id) ? '<img class="one" src="'+svTrIc(n)+'" alt="" draggable="false">' : '<img src="assets/ui/'+n.ic+'.webp" alt="" draggable="false"><img src="assets/ui/'+n.ic2+'.webp" alt="" draggable="false">')+'</span>'
     : n.ty==='fsp' ? '<span class="o fsp" style="--a:'+SV_TR_COL[n.pair[0]]+'; --b:'+SV_TR_COL[n.pair[1]]+'"><b>?</b></span>' : hid ? '<span class="o hdq"><b>?</b></span>' : '<span class="o"><img src="'+svTrIc(n)+'" alt="" draggable="false"></span>';
-  const lvt = soon ? '준비 중' : n.ty==='st' ? lv+'/'+n.max : n.ty==='sp' ? (svHas('ld', n.ld) ? '해금' : '') : n.ty==='ct' ? (svHas('ld', n.ld) ? '' : SV_TR_CT.toLocaleString('ko-KR')+'골드') : n.ty==='start' || id==='root' || hid ? '' : (lv ? '열림' : n.cost+'P');
+  const lvt = soon ? '준비 중' : n.ty==='st' ? lv+'/'+n.max : n.ty==='sp' ? (svHas('ld', n.ld) ? '해금' : '') : n.ty==='ct' ? (svHas('ld', n.ld) ? '' : uiIc('gold')+SV_TR_CT.toLocaleString('ko-KR')) : n.ty==='start' || id==='root' || hid ? '' : (lv ? '열림' : n.cost+'P');
   const nm = hid || n.ty==='fsp' ? '???' : svTrNm(n);
   return '<button type="button" class="'+cls+'" data-tn="'+id+'" style="left:'+n.x+'px; top:'+n.y+'px; --s:'+sz+'px; --c:'+SV_TR_COL[n.el]+'" aria-label="'+nm+'">'+o+'<span class="t">'+nm+'</span>'+(lvt ? '<span class="lv">'+lvt+'</span>' : '')+'</button>'; }
 function svTrDraw(){ const R = sv.el.querySelector('.svt'); if(!R) return; const T = svTr(), P = T.p[T.c], A = svTrAct(P), N = SV_TR.N, mx = svTrMax(), us = svTrUsed(P);
@@ -4943,10 +4943,10 @@ function svTrCard(){ const R = sv.el.querySelector('.svt'); if(!R) return; const
   const kind = n.ty==='fsp' ? '융합 정령' : { st:'강화', no:'빌드', re:'유물', sp:'정령', ks:'핵심', start:'정령', ct:'정령', fu:'융합 제단', co:'빌드', hd:'' }[n.ty];
   const prev = (SV_TR.ADJ[n.id]||[]).filter(o=>SV_TR.DEP[o] < SV_TR.DEP[n.id]), pOn = prev.filter(o=>A.has(o)), Rq = [];
   if(soon) Rq.push([false, '준비 중 (다음 업데이트에서 열림)']);
-  else if(n.ty==='ct'){ if(!svHas('ld', n.ld)){ Rq.push([(state.svGold||0) >= SV_TR_CT, '골드 '+SV_TR_CT.toLocaleString('ko-KR')]); } }
-  else if(n.ty==='hd'){ Rq.push([T.hd.includes(n.id), n.rv]); if(!hid && !lv) Rq.push([left >= n.cost, '포인트 '+n.cost]); }
+  else if(n.ty==='ct'){ if(!svHas('ld', n.ld)){ Rq.push([(state.svGold||0) >= SV_TR_CT, uiIc('gold')+SV_TR_CT.toLocaleString('ko-KR')]); } }
+  else if(n.ty==='hd'){ Rq.push([T.hd.includes(n.id), n.rv]); if(!hid && !lv) Rq.push([left >= n.cost, n.cost+'P']); }
   else if(n.ty==='sp'){ const un = svHas('ld', n.ld); if(!un){ Rq.push([pOn.length > 0, '이전 칸 '+prev.map(o=>'「'+svTrNm(SV_TR.N[o])+'」').join(' 또는 ')+' 해금']); Rq.push([false, svUnlTxt('ld', n.ld)]); } }
-  else if(n.ty!=='start' && n.id!=='root'){ if(!lv && !prev.includes('root')) Rq.push([pOn.length > 0, '이전 칸 '+prev.map(o=>'「'+svTrNm(SV_TR.N[o])+'」').join(' 또는 ')+' 해금']); if(lv < n.max) Rq.push([left >= n.cost, '포인트 '+n.cost]); }
+  else if(n.ty!=='start' && n.id!=='root'){ if(!lv && !prev.includes('root')) Rq.push([pOn.length > 0, '이전 칸 '+prev.map(o=>'「'+svTrNm(SV_TR.N[o])+'」').join(' 또는 ')+' 해금']); if(lv < n.max) Rq.push([left >= n.cost, n.cost+'P']); }
   const ref = k=>'<button type="button" class="ref" data-trf="'+k+'">['+SV_PAS[k].nm+']</button>';
   let desc = '';
   if(n.ld){ const B = svBase(n.ld); desc = '<div class="stt">'+[['체력', B.hp], ['공격', B.atk], ['방어', B.def], ['속도', B.spd]].map(([k, v])=>'<span><small>'+k+'</small><b>'+v+'</b></span>').join('')+'</div><div class="skl"><span><small>고유 기술</small>'+svSkNm(n.ld+'_1', { leader:n.ld })+'</span><span><small>궁극기</small>'+svUltNm(n.ld)+'</span><span><small>패시브</small>'+svLpNm(n.ld)+'</span></div>'; }
@@ -4957,8 +4957,8 @@ function svTrCard(){ const R = sv.el.querySelector('.svt'); if(!R) return; const
   else desc = n.d ? '<p>'+n.d+'</p>' : '';
   let btn = '';
   if(soon) btn = '';
-  else if(n.ty==='ct') btn = svHas('ld', n.ld) ? '<button type="button" class="act" disabled>계약함</button>' : '<button type="button" class="act" data-tbuy="1"'+(can ? '' : ' disabled')+'>'+SV_TR_CT.toLocaleString('ko-KR')+'골드로 계약</button>';
-  else if(['st', 'no', 're', 'ks'].includes(n.ty) || (n.ty==='hd' && !hid)) btn = '<button type="button" class="act" data-tbuy="1"'+(can ? '' : ' disabled')+'>'+(lv >= n.max ? (n.max > 1 ? '최대' : '열림') : n.cost+'P로 '+(n.max > 1 ? '올리기' : '열기'))+'</button>';
+  else if(n.ty==='ct') btn = svHas('ld', n.ld) ? '<button type="button" class="act" disabled>계약함</button>' : '<button type="button" class="act" data-tbuy="1"'+(can ? '' : ' disabled')+'>'+uiIc('gold')+SV_TR_CT.toLocaleString('ko-KR')+'</button>'; /* 비용만 */
+  else if(['st', 'no', 're', 'ks'].includes(n.ty) || (n.ty==='hd' && !hid)) btn = '<button type="button" class="act" data-tbuy="1"'+(can ? '' : ' disabled')+'>'+(lv >= n.max ? (n.max > 1 ? '최대' : '열림') : n.cost+'P')+'</button>'; /* (1.0.0 다듬기) 비용만 (사용자 11/07 「1P만 적고 뒤에 덧붙이지 말기」) */
   const ic = hid || n.ty==='fsp' ? '<span class="qi">?</span>' : n.ty==='fu' ? '<span class="o fu mini" style="--a:'+SV_TR_COL[n.pair[0]]+'; --b:'+SV_TR_COL[n.pair[1]]+'">'+(SV_ART_READY.has('tree/tr_'+n.id) ? '<img class="one" src="'+svTrIc(n)+'" alt="">' : '<img src="assets/ui/'+n.ic+'.webp" alt=""><img src="assets/ui/'+n.ic2+'.webp" alt="">')+'</span>' : '<img src="'+svTrIc(n)+'" alt="">';
   box.innerHTML = '<div class="card" style="--c:'+SV_TR_COL[n.el]+'"><button type="button" class="x" data-tcx="1" aria-label="닫기">✕</button><div class="hd">'+ic+'<div>'+(hid || n.ty==='root' ? '' : '<div class="k">'+(n.pair ? el+'의 '+kind : el+' '+kind)+'</div>')+'<h3>'+(hid || n.ty==='fsp' ? '???' : svTrNm(n))+(n.ty==='st' ? ' <em>'+lv+'/'+n.max+'</em>' : '')+'</h3></div></div>'
     + desc + (Rq.length ? '<ul class="rq">'+Rq.map(([ok, t])=>'<li class="'+(ok ? 'ok' : 'no')+'"><i>'+(ok ? '✓' : '<img src="assets/ui/ic_lock.webp" alt="잠김">')+'</i><span>'+t+'</span></li>').join('')+'</ul>' : '') + btn + '</div>';
@@ -4980,7 +4980,7 @@ function svTree(){ svTr(); svAcc();
   R.querySelectorAll('[data-tz]').forEach(b=>b.onclick = ()=>{ const f = +b.dataset.tz; if(!f) svTrCenter(); else svTrZoom(f, (sv.sw||W)/2, (sv.sh||H)/2); });
   R.querySelector('[data-trs]').onclick = ()=>{ const T = svTr(), cf = R.querySelector('.svt-cf'), g = state.svGold||0;
     const P = T.p[0], back = svTrUsed(P), cnt = Object.keys(P).filter(k=>SV_TR.N[k] && P[k] > 0).length, no = back <= 0; /* (build 649) 돌려받는 것을 보여 주고 확정하면 바로 */
-    cf.innerHTML = '<div class="cf"><div><b>트리 초기화</b><div class="svt-back"><span>돌려받는 트리 포인트</span><b>'+back+'</b><small>칸 '+cnt+'개를 비움</small></div><p>'+(SV_TR_RS ? '골드 <b>'+SV_TR_RS+'</b> 사용 (지금 '+g.toLocaleString('ko-KR')+')<br>' : '')+'해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(no || g < SV_TR_RS ? ' disabled' : '')+'>'+(no ? '돌려받을 게 없음' : g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
+    cf.innerHTML = '<div class="cf"><div><b>트리 초기화</b><div class="svt-back"><span>돌려받는 트리 포인트</span><b>'+back+'</b><small>칸 '+cnt+'개를 비움</small></div><p>'+(SV_TR_RS ? '골드 <b>'+SV_TR_RS+'</b><br>' : '')+'해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(no || g < SV_TR_RS ? ' disabled' : '')+'>'+(no ? '돌려받을 게 없음' : g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
     cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tcy]').onclick = ()=>{ if((state.svGold||0) < SV_TR_RS || svTrUsed(T.p[0]) <= 0) return; const back = svTrUsed(T.p[0]); state.svGold -= SV_TR_RS; T.p[0] = {}; save(); cf.innerHTML = ''; try{ toast('트리 포인트 '+back+' 돌려받음'); }catch(e){} if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; };
   const ptrs = new Map(); let moved = 0, pinch = null;
   scr.addEventListener('pointerdown', e=>{ sv.trR = sv.el.getBoundingClientRect(); /* (build 644) 끄는 동안 다시 읽지 않음 */ const q = svTrPt(e); if(e.isPrimary) ptrs.clear(); /* 놓친 손가락이 남아 두 손가락으로 잘못 보지 않게 */ ptrs.set(e.pointerId, q); moved = 0; if(ptrs.size===2){ const [a, b] = [...ptrs.values()]; pinch = { d:Math.hypot(a.x-b.x, a.y-b.y)||1, k:sv.trV.k }; } try{ scr.setPointerCapture(e.pointerId); }catch(x){} scr.classList.add('drag'); });
@@ -7565,7 +7565,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 669, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 670, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
