@@ -171,7 +171,7 @@ async function tick(env){
   if(new Date(now).getUTCMinutes() % 10 === 0){ try{
     const t = await (await fetch(SUBJECT+'sw.js?t='+now)).text(), m = t.match(/APP_VERSION\s*=\s*'(\d+)\.(\d+)\.(\d+)'/);
     if(m){ const major = +m[1], p = await dbGet(env, 'pushCfg/major'), prev = typeof p==='number' ? p : 4; // 처음 켤 때는 5.0.0 알림이 가게 4부터
-      if(major > prev){ upd['pushCfg/major'] = major; upd['pushQ/upd'+major] = { head:'🎉 '+m[1]+'.0 업데이트', title:'새 콘텐츠 · 우편함에 업데이트 선물', kind:'update', t: now, after:'' }; }
+      if(major !== prev){ upd['pushCfg/major'] = major; upd['pushQ/upd'+major+'_'+now] = { head:'🎉 '+m[1]+'.0 업데이트', title:'새 콘텐츠 업데이트', kind:'update', t: now, after:'' }; } // (1.0.0) 버전을 1.0.0부터 새로 세서 「커지면」이 아니라 「바뀌면」 · 선물 우편은 없앰 (사용자 결정 11/06)
       else if(typeof p!=='number') upd['pushCfg/major'] = major; }
   }catch(e){ console.log('ver check', String(e)); } }
   // 전체 우편 대기열 — 사람 이름순으로 이어서
