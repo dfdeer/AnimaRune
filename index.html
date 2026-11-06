@@ -12744,15 +12744,8 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
   sv.tints = sv.tints || {}; const k = im.src + col; if(sv.tints[k]) return sv.tints[k];
   const oc = document.createElement('canvas'); oc.width = im.naturalWidth; oc.height = im.naturalHeight; const x = oc.getContext('2d'); x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, oc.width, oc.height); if(svHasInk(oc)) sv.tints[k] = oc; return oc;
 }
-// (build 640) 로비·트리·도감의 정령 = 판 안 SD 조각을 서 있는 자세로 한 장에 그려 둔 그림 (사용자 11/05 「정령 우리 SD 만든 걸로 · 트리도」) · 그림이 덜 오면 빈 그림 → 다 오면 화면 다시
-const SV_SDURL = {}, SV_SD0 = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-function svSpImg(L){ return svSdUrl(L) || SV_SD0+'#sd='+L; } // 덜 왔으면 빈 그림(뒤에 정령 이름) → svSdWait가 그 자리만 바꿔 끼움
-function svSdUrl(L){ if(SV_SDURL[L]) return SV_SDURL[L]; const sd = SV_SD[L], rg = !sd && SV_RIG[L]; if(!sd && !rg) return null;
-  if(!(sd ? svSdReady(L) : svRigReady(L))){ svSdWait(L); return null; }
-  try{ const W = 720, H = 720, cv = document.createElement("canvas"); cv.width = W; cv.height = H; const c = cv.getContext("2d"), s = 7; c.scale(s, s); (sd ? svDrawSD : svDrawRig)(c, L, { x:W/2/s, y:H*0.78/s - 14 }, { w:0, ph:0, hit:-1, atk:-1, f:1, kOn:0 }, 0); c.setTransform(1, 0, 0, 1, 0, 0);
-    const d = c.getImageData(0, 0, W, H).data; let x0 = W, y0 = H, x1 = -1, y1 = -1; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(d[(y*W + x)*4 + 3] > 8){ if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y; } if(x1 < 0) return null;
-    const pd = 4, cw = x1 - x0 + 1 + pd*2, ch = y1 - y0 + 1 + pd*2, o = document.createElement('canvas'); o.width = cw; o.height = ch; o.getContext('2d').drawImage(cv, x0 - pd, y0 - pd, cw, ch, 0, 0, cw, ch); return SV_SDURL[L] = o.toDataURL('image/png'); }catch(e){ return null; } }
-function svSdWait(L){ const P = SV_SD[L] ? SV_SD[L].parts.map(q=>svSdImg(L, q.n)) : SV_RIG[L].parts.map(q=>svRigImg(L, q.n)); P.forEach(im=>{ if(im._sdw) return; im._sdw = 1; im.addEventListener('load', ()=>{ clearTimeout(SV_SDURL._t); SV_SDURL._t = setTimeout(()=>{ if(!sv || !sv.el) return; sv.el.querySelectorAll('img').forEach(g=>{ const s = g.getAttribute('src')||''; if(s.indexOf(SV_SD0+'#sd=')===0){ const u = svSdUrl(s.slice(SV_SD0.length + 4)); if(u) g.src = u; } }); }, 120); }, { once:true }); /* 화면을 다시 그리지 않고 그림 자리만 — 다시 그리면 닉네임 창 등이 지워졌음 */ }); }
+// (build 642) 로비·트리·도감의 정령 = SD 전신 원본을 다듬은 그림 (assets/survival/full/ · 높이 560) — 전엔 판 안 SD 조각(몸통 80px 남짓)을 합쳐 크게 키워서 흐렸음 (사용자 11/06 「화질이 너무 구림」) · 스콜은 큰 조각을 크게 합쳐 만듦
+function svSpImg(L){ return 'assets/survival/full/'+L+'.webp'; }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
   const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_flamepatch','fx_root','fx_lightdome','fx_webwall','fx_spiderling'].forEach(n=>svImg(b+n+'.webp'));
@@ -13384,7 +13377,7 @@ function svUnFull(){ try{ if(screen.orientation && screen.orientation.unlock) sc
 // (build 634) 그림을 다 불러온 뒤에 보여 줌 — 화면을 보는 도중 그림이 하나씩 그려지지 않게 (사용자 11/05 「모든 화면에 로딩을 둬서 그려지는 게 안 보이게」) · 덜 된 그림이 있으면 그 부분을 가리고 가운데 로딩 표시 · 최대 2.5초
 function svGate(el){ if(!el) return; const im = [...el.querySelectorAll('img')].filter(i=>!(i.complete && i.naturalWidth)); if(!im.length) return; el.classList.add('sv-wait');
   const done = ()=>el.classList.remove('sv-wait'); Promise.race([Promise.all(im.map(i=>i.decode ? i.decode().catch(()=>{}) : new Promise(r=>{ i.addEventListener('load', r, { once:true }); i.addEventListener('error', r, { once:true }); }))), new Promise(r=>setTimeout(r, 2500))]).then(done); }
-function svLobbyPreload(){ const U = 'assets/ui/', A = []; SV_LINE_IDS.forEach(l=>{ if(SV_SD[l]) SV_SD[l].parts.forEach(q=>A.push('assets/survival/body/sd/'+l+'_'+q.n+'.webp')); else if(SV_RIG[l]) SV_RIG[l].parts.forEach(q=>A.push(svRigImg(l, q.n).src)); }); /* (build 640) 로비·트리 정령은 SD 그림 */ SV_MAPS.forEach((m, i)=>{ if(i < SV_STAGE_READY) A.push(SV_THUMB[m.id] ? 'assets/survival/'+m.id+'_card.webp' : 'assets/boss/'+m.mid+'.webp'); });
+function svLobbyPreload(){ const U = 'assets/ui/', A = []; SV_LINE_IDS.forEach(l=>A.push(svSpImg(l))); /* (build 642) 로비·트리 정령 그림 */ SV_MAPS.forEach((m, i)=>{ if(i < SV_STAGE_READY) A.push(SV_THUMB[m.id] ? 'assets/survival/'+m.id+'_card.webp' : 'assets/boss/'+m.mid+'.webp'); });
   ['time','gold','friends','settings','lock','dex','achieve','duel','awaken','invite','crown','sound','music','target','map','power','shield','atk','auto','level','party','star','dice'].forEach(n=>A.push(U+'ic_'+n+'.webp')); SV_UPS.forEach(x=>A.push(U+x[1]+'.webp')); Object.keys(SV_SK).forEach(id=>A.push(svSkIc(id))); Object.keys(SV_PAS).forEach(k=>A.push(U+SV_PAS[k].ic+'.webp')); A.push('assets/home_stage.webp');
   A.forEach(src=>{ const im = svImg(src); if(im.decode) im.decode().catch(()=>{}); }); } // 로비·도감·업그레이드·카드에 쓰는 그림을 로딩창에서 미리 — 로딩창은 sv.imgs가 다 될 때까지 기다림
 function svSplash(){ // (build 599) 처음 켤 때와 같은 로딩창 — 별개의 게임처럼 (사용자 10/30) · 그림을 다 부르면 「화면을 터치해서 시작」
@@ -21447,7 +21440,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 641, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 642, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
