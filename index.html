@@ -629,7 +629,7 @@ body:has(.modal-bg.summon-bg) #main{visibility:hidden;} /* (v7.0.0) 소환 연�
   .upd-dot{display:inline-block; width:8px; height:8px; margin-left:5px; border-radius:50%; background:#ff5757; vertical-align:middle;}
   #headerMenuBtn.has-dot::after, #headerMenuBtn.bell-dot::after{content:''; position:absolute; top:1px; right:1px; width:8px; height:8px; border-radius:50%; background:#ff5757; border:1.5px solid var(--panel);}
   /* (v246) 보상 창 공통 줄 */ /* (v5.2.0) 보상이 많으면 이름이 한 글자씩 세로로 줄바꿈되던 것 — 이름은 단어 단위로, 보상 쪽이 줄을 바꿈 */ /* (v269) 무한 표시가 너무 작아 안 보였음 · 상점 글씨 Jua */ /* (v300) 우편 보상 줄 */
-  .inv-notice{position:fixed; top:calc(10px + var(--sat)); left:50%; transform:translateX(-50%); z-index:9000; display:flex; align-items:center; gap:8px; width:min(92vw, 420px); padding:10px 14px; border-radius:16px; border:2px solid #ffd557; background:linear-gradient(135deg,#3b2f7a,#26215c); color:var(--text); box-shadow:0 8px 24px #000a; text-align:left; animation:invIn .35s ease-out;} .inv-notice b{flex:1; font-size:14px;} .inv-notice small{color:#ffd557; font-weight:800; white-space:nowrap;} .inv-notice span{font-size:20px;}
+  .inv-notice{position:fixed; top:calc(10px + var(--sat)); left:50%; transform:translateX(-50%); z-index:9000; display:flex; align-items:center; gap:8px; width:min(92vw, 420px); padding:10px 14px; border-radius:16px; border:2px solid #ffd557; background:linear-gradient(135deg,#3b2f7a,#26215c); color:var(--text); box-shadow:0 8px 24px #000a; text-align:left; animation:invIn .35s ease-out;} .sv .inv-notice{width:440px; top:14px; z-index:60;} /* (1.0.0 다듬기) 서바이벌 무대 안 */ .inv-notice b{flex:1; font-size:14px;} .inv-notice small{color:#ffd557; font-weight:800; white-space:nowrap;} .inv-notice span{font-size:20px;}
   @keyframes invIn{from{opacity:0; transform:translate(-50%,-16px);} to{opacity:1; transform:translate(-50%,0);}} /* (v8.12.5) 제목(h3)의 글자 그림자가 딱지에 물려 +3이 2px 아래로 한 번 더 찍혀 겹쳐 보였음 */ /* (v5.2.0) 제목 글꼴(Jua)은 굵기가 하나라 굵게 흉내 내다 글자가 겹쳐 보였음 */
   .btn.gold{background:linear-gradient(180deg,#ffe58a 0%,#ffcd57 55%,#f0b652 100%); color:#3d2303; text-shadow:none; box-shadow:inset 0 2px 0 #ffffff88, inset 0 -3px 0 #0000001f, 0 4px 0 #9a5d0c, 0 6px 12px #0006;}
   .btn.gold:active{box-shadow:inset 0 2px 0 #ffffff66, 0 1px 0 #9a5d0c;}
@@ -1484,13 +1484,15 @@ function showRaidJoiningModal(iv){ // (v8.14.1) 초대 수락 후 방에 들어�
 }
 // (v239) 레이드·결투 초대 알림 — 전투 중이 아니면 화면 위에 띄우고, 누르면 친구 → 요청 탭
 function inviteNotice(from, iv){
-  const txt = String(iv.name||raidNameOf(from)||'친구').slice(0,12)+(iv.kind==='duel' ? '님의 결투 신청' : iv.kind==='sv' ? '님의 서바이벌 초대' : '님의 레이드 초대');
+  const nm0 = String(iv.name||raidNameOf(from)||'친구').slice(0,12), txt = iv.kind==='sv' ? '「'+nm0+'」의 파티 초대' : nm0+(iv.kind==='duel' ? '님의 결투 신청' : '님의 레이드 초대'); /* (1.0.0 다듬기) 서바이벌 초대 문구 */
+  const svOn = iv.kind==='sv' && typeof sv!=='undefined' && sv && sv.el && sv.el.isConnected && sv.el.style.display !== 'none';
+  if(svOn && sv.game){ toast(uiIc('invite')+' '+txt); return; } /* 판 중엔 판을 가리지 않게 짧은 알림만 */
   if(document.getElementById('battleScreen')){ toast((iv.kind==='duel'?uiIc('atk'):uiIc('invite'))+' '+txt); return; } // 전투 중엔 짧은 알림만
   let el = document.getElementById('inviteNotice'); if(el) el.remove();
   el = document.createElement('button'); el.id = 'inviteNotice'; el.className = 'inv-notice';
-  el.innerHTML = '<span>'+(iv.kind==='duel'?uiIc('atk'):uiIc('invite'))+'</span><b>'+escTxt(txt)+'</b><small>눌러서 보기 ›</small>';
+  el.innerHTML = '<span>'+(iv.kind==='duel'?uiIc('atk'):uiIc('invite'))+'</span><b>'+escTxt(txt)+'</b><small>'+(iv.kind==='sv' ? '눌러서 참가' : '눌러서 보기 ›')+'</small>';
   el.addEventListener('click', ()=>{ el.remove(); if(iv.kind==='sv'){ friendAcceptInvite(from); return; } /* (build 605) 서바이벌 초대는 누르면 바로 참가 */ if(xpLockBlock()) return; closeModal(); activeTab = 'friends'; friendTab = 'req'; render(); }); // (v315) 출정 중엔 못 감
-  document.body.appendChild(el); sfx('claim');
+  (svOn ? sv.el : document.body).appendChild(el); sfx('claim'); /* 서바이벌이면 무대 안에 (폰을 세로로 들어도 같이 돌아감) */
   setTimeout(()=>{ if(el.isConnected) el.remove(); }, 8000);
 }
 // (v239) 방장 쪽: 초대 상태(대기·거절) — 같은 사람은 거절 3초 뒤 다시 초대, 다른 사람은 바로
@@ -3892,7 +3894,7 @@ const SV_EVNM = { fire_a_2:'화산 심장', fire_b_1:'불새 폭풍', fire_b_2:'
 Object.keys(SV_SK).forEach(id=>{ if(!SV_EVO[id] && SV_SK[id].pair) SV_EVO[id] = { [SV_SK[id].pair]:{ nm:SV_EVNM[id] || '', ev:SV_SK[id].ev || '' } }; });
 function svLinks(id){ return Object.keys(SV_EVO[id] || {}); } // 그 룬의 연계 유물들
 function svEvoD(w){ return (w && w.evo && SV_EVO[w.id] && SV_EVO[w.id][w.evo]) || null; } // 지금 각성 모양
-const SV_RUNE_NM = { fire_a_1:'화염 할퀴기', fire_b_1:'불새 깃털', water_a_1:'맑은 파도', water_b_1:'꿰뚫는 물살', wood_a_1:'나뭇잎 칼날', wood_b_1:'독실 올가미', light_a_1:'천상의 창', light_b_1:'유성 꿰뚫기', dark_a_1:'피의 갈증', dark_b_1:'저주 깃털' };
+const SV_RUNE_NM = { fire_a_1:'불꽃 발톱', fire_b_1:'깃털 부메랑', water_a_1:'치유의 물결', water_b_1:'해룡 물줄기', wood_a_1:'잎새 연격', wood_b_1:'거미줄 덫', light_a_1:'빛의 창', light_b_1:'별빛 돌진', dark_a_1:'피의 갈증', dark_b_1:'저주 깃털' }; // (1.0.0 다듬기) 시작 룬 이름 하나로 · 전엔 대표 정령일 때와 룬 카드일 때 이름이 달랐음(「치유의 물결」과 「맑은 파도」 등) · 하는 일에 맞는 쪽으로 (사용자 11/07 「스킬 이름 손보기 진행」)
 const SV_SKS = (()=>{ const m = l=>SV_LVM[l-1]*SV_DMGK, D = (b)=>{ const f = l=>Math.round(b*m(l)); f.b = b; return f; }, F = (f)=>l=>f(l); return { // (build 489) 스킬 수치표 — [이름, 레벨→값, 붙는 글자] (카드에 바뀌는 것만 노랗게 · 사용자 10/26)
   fire_a_1:[['피해', D(28)], ['범위', F(l=>66+5*l)], ['치명타', F(()=>25), '%']],
   fire_a_2:[['피해', D(24)], ['범위', F(l=>60+6*l)], ['화상', D(4)]],
@@ -3915,7 +3917,7 @@ const SV_SKS = (()=>{ const m = l=>SV_LVM[l-1]*SV_DMGK, D = (b)=>{ const f = l=>
   dark_b_1:[['깃털', F(l=>[1,1,2,2,3][l-1]), '개'], ['튕김', F(l=>[2,3,3,4,4][l-1]), '번'], ['피해', D(8)]],
   dark_b_2:[['피해', D(8)], ['터질 때 피해', D(30)], ['범위', F(l=>50+5*l)]] }; })();
 const SV_SKT = { // (build 514) 룬 설명 — 수치를 문장 안에 넣어 이어서 씀 · (build 526) 줄표·화살표 없이 자연스러운 문장으로 다시 씀 (사용자 10/29) ({n} = SV_SKS의 n번째 값 · 사용자 10/27: 「터짐」만 보면 뭔지 모름)
-  fire_a_1:'앞쪽 반지름 {1} 안을 크게 할퀴어 {0} 피해를 줌 (치명타 확률 {2})',
+  fire_a_1:'앞쪽 반지름 {1} 안을 양쪽 발톱으로 교차해 할퀴어 {0} 피해를 줌 (치명타 확률 {2})',
   fire_a_2:'내 둘레 반지름 {1} 안을 터뜨려 {0} 피해를 주고, 초당 {2} 화상을 남김',
   fire_b_1:'불꽃 깃털을 {0} 던지면 날아갔다 돌아오며 닿는 적마다 {1} 피해를 줌',
   fire_b_2:'적이 있는 곳에 화염구를 떨어뜨려 반지름 {1} 안에 {0} 피해를 주고, 초당 {2} 화상을 남김',
@@ -4011,7 +4013,7 @@ const SV_UNL = [ // (build 636) 둘째 정령 — 같은 계열 첫 정령으로
   { ld:'wood_b', txt:'「현무」로 「재생 이끼」 Lv5를 만들고 3분 버티기', ok:c=>c.ld==='wood_a' && c.t >= 180 && svPasLv(c.me, 'vital') >= 5 },
   { ld:'light_b', txt:'「광명」으로 「숫돌」 Lv5를 만든 뒤 적 300 처치', ok:c=>c.ld==='light_a' && c.trk.k5 != null && c.kills - c.trk.k5 >= 300 },
   { ld:'dark_b', txt:'「불사귀」로 「흡혈 송곳니」 Lv5를 만든 뒤 한 판에 체력 500 회복', ok:c=>c.ld==='dark_a' && c.trk.heal >= 500 } /* (build 637) 체력 30% 아래로 30초 → 회복 500 (사용자 11/05 「흡혈하는 앤데 낮은 체력 유지는 어려움」) */
-].concat(SV_LINE_IDS.map(l=>({ sk:l+'_2', txt:'「'+SV_RUNE_NM[l+'_1']+'」('+svSkNm0(l+'_1')+') 각성시키기', ok:c=>c.me.wp.some(w=>w.id===l+'_1' && w.evo) })));
+].concat(SV_LINE_IDS.map(l=>({ sk:l+'_2', txt:'「'+svSkNm0(l+'_1')+'」 각성시키기', ok:c=>c.me.wp.some(w=>w.id===l+'_1' && w.evo) })));
 const SV_EC = { fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#a46bff' };
 const SV_ECR = Object.fromEntries(Object.entries(SV_EC).map(([k,v])=>[v,k])); // 색 → 속성 (맞는 효과 고르기)
 const SV_RC = ['#b8bcc4', '#5798ff', '#b657ff', '#ffc857', '#ffc857', '#ff5777']; // 스킬 Lv1~5 · 각성
@@ -4030,8 +4032,8 @@ function svLinkTxt(id){ const L = svLinks(id).filter(k=>svEvoSeen(id, k)); retur
 function svIsRune(p, id){ return !p || id !== p.leader+'_1'; } // (build 512) 대표 정령의 시작 스킬 = 고유 기술 · 판에서 줍는 나머지 = 룬 (사용자 10/27: 이름이 아니마룬이라)
 function svUltNm(L){ const k = LINE_KITS[L]; return k ? k.s2.name : svSkNm(L+'_2'); } // (build 540) 궁극기 이름 = 원래 스킬2 이름 · 룬으로 주울 땐 SV_SK.nm (다른 이름)
 // (build 548) 고유 기술이 다른 정령에게 룬으로 나올 땐 다른 이름 (사용자 10/29 「이름 같은 건 다른 이름으로」) — p를 주면 그 정령의 고유 기술이면 원래 이름 · 안 주면 룬 이름
-function svSkNm(id, p){ if(SV_RUNE_NM[id] && svIsRune(p, id)) return SV_RUNE_NM[id]; return svSkNm0(id); }
-function svSkNm0(id){ if(SV_SK[id] && SV_SK[id].nm) return SV_SK[id].nm; const k = LINE_KITS[svSkLine(id)]; return k ? k['s'+id.slice(-1)].name : id; } // 서바이벌 동작에 안 맞는 이름은 SV_SK.nm으로 바꿈
+function svSkNm(id, p){ return svSkNm0(id); }
+function svSkNm0(id){ if(SV_RUNE_NM[id]) return SV_RUNE_NM[id]; if(SV_SK[id] && SV_SK[id].nm) return SV_SK[id].nm; const k = LINE_KITS[svSkLine(id)]; return k ? k['s'+id.slice(-1)].name : id; } // 서바이벌 동작에 안 맞는 이름은 SV_SK.nm으로 바꿈
 // (650) 서바이벌 전용 새 그림 자리 — 받은 파일을 assets/survival/tree/·rune/에 webp로 넣고 이름을 여기에 적으면 바로 바뀜 (없으면 예전 그림)
 const SV_ART_READY = new Set([ // (651) 트리 칸 30개 + 융합 제단 5개 (융합 룬 rn_fu_*는 파일만 — 룬이 생기면 여기에)
   ...['fire','water','wood','light','dark'].flatMap(e=>[1,2,3,4].map(i=>'tree/tr_'+e+'_b'+i).concat('tree/tr_'+e+'_ks')),
@@ -4055,7 +4057,7 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
 function svSpImg(L){ return 'assets/survival/full/'+L+'.webp'; }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
-  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_flamepatch','fx_root','fx_lightdome','fx_webwall','fx_spiderling'].forEach(n=>svImg(b+n+'.webp'));
+  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_root','fx_lightdome','fx_webwall','fx_spiderling'].forEach(n=>svImg(b+n+'.webp'));
   if(M && SV_FOMAP[M.id]) ['normal','fast','big','elite'].forEach(k=>svImg(b+M.id+'_mob_'+k+'.webp')); else if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring', M.id+'_map']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
   Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); Object.keys(SV_SD).forEach(L=>SV_SD[L].parts.forEach(q=>svSdImg(L, q.n))); // (build 531) 조각 동작 그림
@@ -5724,10 +5726,10 @@ function svAttack(p, w, dt){
   if(id==='fire_a_1'){ // 불꽃 발톱 — (build 489) 사용자 결정 10/26: 즉발이 아니라 할퀴는 동안(0.22초) 발톱이 지나간 자리에 닿은 적만 맞음 · 대상 안 고름 · 좌우 번갈아
     const E = ev ? w.evo : '', R0 = (66 + lv*5)*ar*(E==='area' ? 1.5 : 1), d0 = aimTo(420), half = 1.35; if(ev) for(let k=0;k<12;k++){ const a = d0 + (Math.random() - 0.5)*2.4, v = 120 + Math.random()*180; svPart(p.x + Math.cos(a)*R0*0.6, p.y + Math.sin(a)*R0*0.6, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#ffd27a' : '#ff6a2a', 0.45, 3); } /* (build 510) 진화 — 불티 */ w.alt = 1; G.sweeps = G.sweeps || [];
     // (build 589) 그림을 가리개로 자르지 않고 발톱 그림 전체를 그음 (사용자 10/30 「그림이 짤리지 않게」) — 크기(sz: 범위의 배)·앞으로 옮김(dz)·돌림(rot)으로 각도를 맞춤 · cone = 바로 앞 가까운 적 판정 폭(반각)
-    const cut = (o)=>{ const go = ()=>{ const dir = d0 + (o.rot || 0), q = { s:o.s || 1, sz:o.sz, dz:o.dz, pl:o.pl, a0:o.a0, sp:o.sp, cone:o.cone, wq:o.wq, reach:o.reach, tint:o.tint }; G.sweeps.push(Object.assign({ p, wr:w, exe:o.exe, dir, half, R:R0, t:0, d:o.d || 0.13, dmg:28*m, cr, ev, col, m, hit:[] }, q)); svFx(Object.assign({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:(o.d || 0.13) + 0.14, sw:o.d || 0.13, col, r:R0, a:dir, half }, q)); }; if(o.dl) (G.later = G.later || []).push({ t:o.dl, f:go }); else go(); };
+    const cut = (o)=>{ const go = ()=>{ const dir = d0 + (o.rot || 0), q = { s:o.s || 1, sz:o.sz, dz:o.dz, pl:o.pl, a0:o.a0, sp:o.sp, cone:o.cone, wq:o.wq, reach:o.reach, tint:o.tint }; G.sweeps.push(Object.assign({ p, wr:w, exe:o.exe, dir, half, R:R0, t:0, d:o.d || 0.13, dmg:28*m, cr, ev, col, m, hit:o.hit || [] }, q)); svFx(Object.assign({ k:'claw', pi:p.i, x:p.x, y:p.y, t:0, d:(o.d || 0.13) + 0.14, sw:o.d || 0.13, col, r:R0, a:dir, half }, q)); }; if(o.dl) (G.later = G.later || []).push({ t:o.dl, f:go }); else go(); };
     if(E==='axe') cut({ exe:1, tint:'#c8102e' }); /* (build 592) 참수 발톱(처형인의 도끼) — 원래 발톱 · 핏빛 · 약한 적 즉사 + 다음 할퀴기 바로 */
     else if(E==='haste'){ cut({ s:1, rot:-0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, cone:1.0 }); cut({ s:-1, rot:0.4, sz:1.3, dz:0.35, pl:0.06, d:0.1, dl:0.09, cone:1.0 }); } /* 제비 쌍조(제비 깃) — 양쪽 대각선에서 안쪽으로 X자로 두 번 */
-    else cut({}); } /* (build 591) 기본 = 원래 발톱 그대로 (사용자 10/30 「기본 원래대로」 — 45도로 좁힌 것 되돌림) */
+    else { const H = []; cut({ s:1, hit:H }); cut({ s:-1, hit:H, dl:0.05 }); } } /* (1.0.0 다듬기) 양쪽 발톱이 교차하며 할퀴기 (사용자 11/07 「특이하게 양쪽으로」) · 맞은 적 목록을 같이 써서 한 번만 맞음 (피해는 그대로) */ /* (build 591) 기본 = 원래 발톱 그대로 (사용자 10/30 「기본 원래대로」 — 45도로 좁힌 것 되돌림) */
   else if(id==='fire_a_2' && w.evo==='area'){ const R = (60 + lv*6)*ar*2.4; (G.frings = G.frings || []).push({ p, x:p.x, y:p.y, R, t:0, d:0.75, dmg:24*m, burn:5*m, col, hit:[] }); svFx({ k:'fring', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.95, r:Math.round(R), ro:Math.round(Math.random()*628)/100 }); } /* (build 594) 화염 고리(메아리 북) — 불의 고리가 바깥으로 퍼짐 */
   else if(id==='fire_a_2' && w.evo==='swift'){ const L = w.lastP; if(!L || Math.hypot(p.x - L[0], p.y - L[1]) > 16 || !G.pools.some(o=>o.fire && o.p===p && Math.hypot(o.x - p.x, o.y - p.y) < 14)){ w.lastP = [p.x, p.y]; if(G.pools.length < 60) G.pools.push({ x:Math.round(p.x), y:Math.round(p.y + 4), R:24*ar, t:0, d:1.8, dps:16*m, fire:1, ro:Math.round(Math.random()*628)/100, col, p }); } } /* (build 594) 불길 질주(질풍 장화) — 걸어간 자리에 불길 */
   else if(id==='fire_a_2'){ const R = (60 + lv*6)*ar, tg = inR(R); tg.forEach(e=>{ hit(e, 24*m); svBurn(e, (ev ? 7 : 4)*m, 2); }); svFx({ k:'fburst', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.4, col, r:Math.round(R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 }); } /* (build 585) 불 둘레 폭발 그림 */
@@ -6184,7 +6186,7 @@ function svDraw(){
     { const fa = Math.max(0, Math.min(1, o.t*5, (o.d - o.t)*2)); if(o.spring) svFxImg(c, 'fx_wave', o.x, o.y, o.R*2.1, o.t*0.6, 1, 0.55*fa); if(o.sprout) svFxImg(c, 'fx_root', o.x, o.y, o.R*1.9*Math.min(1, o.t*3), (o.ro||0)*0.7, 1, 0.95*fa);
       if(o.dome && !svFxImg(c, 'fx_lightdome', o.x, o.y, o.R*2.16, o.t*0.15, 1, 0.9*fa)){ c.save(); c.globalAlpha = 0.2*fa; c.fillStyle = '#fff3b0'; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill(); c.globalAlpha = 0.9*fa; c.strokeStyle = '#ffe17a'; c.lineWidth = 2.5; c.stroke(); c.restore(); } /* (build 596) 빛의 돔 그림 */
       if(o.wall){ const im = svImg('assets/survival/fx_webwall.webp'); c.save(); c.globalAlpha = 0.95*fa; c.translate(o.x, o.y); c.rotate(Math.atan2(o.uy, o.ux)); if(im.naturalWidth){ const W = o.L*1.12, H = W*im.naturalHeight/im.naturalWidth; c.drawImage(im, -W/2, -H*0.42, W, H); } /* (build 596) 거미줄 장벽 그림 — 판정은 가운데 줄 */ else { c.strokeStyle = '#ffffffaa'; c.lineWidth = 3; c.beginPath(); c.moveTo(-o.L/2, 0); c.lineTo(o.L/2, 0); c.stroke(); } c.restore(); } } /* (build 595) 샘·새싹·빛의 돔·거미줄 벽 */ // (build 493) 미리 그린 빛 (전엔 매 프레임 그라디언트)
-    if(o.fire) svFxImg(c, 'fx_flamepatch', o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
+    if(o.fire) svFxImg(c,  o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
     if(o.web){ c.save(); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; for(let k=0;k<6;k++){ const a = k*1.047; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x + Math.cos(a)*o.R, o.y + Math.sin(a)*o.R); c.stroke(); } [0.4, 0.75].forEach(f=>{ c.beginPath(); c.arc(o.x, o.y, o.R*f, 0, 6.283); c.stroke(); }); c.restore(); }
     if(o.pull && svFxImg(c, 'fx_vortex', o.x, o.y, o.R*2.2*Math.min(1, 0.4 + o.t*3), (o.ro||0) + (o.sg||1)*o.t*5, o.sg||1, o.t > o.d - 0.25 ? (o.d - o.t)/0.25 : 0.9)){} // (build 586) 검은 소용돌이 그림
     else if(o.pull){ c.save(); c.strokeStyle = '#c9a6ff'; c.lineWidth = 2; for(let k=0;k<3;k++){ c.beginPath(); c.arc(o.x, o.y, o.R*(0.35 + k*0.25), G.t*6 + k*2, G.t*6 + k*2 + 2.2); c.stroke(); } c.restore(); } });
@@ -7574,7 +7576,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 674, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 675, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
