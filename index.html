@@ -1104,6 +1104,8 @@
   .sv-ph .svc-c{top:52px; width:190px; gap:6px;} .sv-ph .svc-c.l{left:16px;} .sv-ph .svc-c.r{right:16px;} .sv-ph .svc-card{padding:8px 10px; font-size:11.5px;}
   .sv-ph .svc-dr{top:50px; right:12px; width:350px; max-height:calc(100% - 124px); padding:10px 14px; gap:6px;} .sv-ph .svc-h b{font-size:20px;} .sv-ph .svc .svc-dr .svs-desc{display:none;} .sv-ph .svc-pty .svs-sl{height:58px;} .sv-ph .svc-pty .svs-sl.add b{top:4px; font-size:20px;} .sv-ph .svc-co{height:44px;} .sv-ph .svc .svc-ft .svs-go{height:46px; font-size:22px;} .sv-ph .svc .svc-go{width:240px;}
   @media (prefers-reduced-motion:reduce){ .svc .svs-hero, .svc-dr, .svc-c{transition:none;} }
+  .svs-dt.sp{overflow:hidden; gap:8px;} .svs-dts{position:relative; flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:10px; overscroll-behavior:contain;} .svs-dt.sp > .svs-btn, .svs-dt.sp > .svs-cur{flex:none;} /* (build 643) 버튼은 늘 보임 */
+  .svs-more-h{position:sticky; bottom:0; margin-top:auto; display:flex; align-items:center; justify-content:center; gap:4px; padding:14px 0 2px; font-size:11.5px; font-weight:900; color:#ffd557; background:linear-gradient(#0b0d2600, #121640 70%); pointer-events:none; transition:opacity .2s;} .svs-more-h .ch{width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-4px; animation:svsMh 1.2s ease-in-out infinite;} .svs-dts.end .svs-more-h{opacity:0;} @keyframes svsMh{50%{transform:translateY(3px) rotate(45deg);}} @media (prefers-reduced-motion:reduce){ .svs-more-h .ch{animation:none;} }
   /* (build 636) 정령 트리 화면 — 무대 안 · 끌어서 둘러보기 (미리보기 그대로) */
   .svt{position:absolute; inset:0; z-index:30; overflow:hidden; color:#eef0ff; font-family:"Noto Sans KR",system-ui,sans-serif; --gold:#ffd557; --sub:#a9b1e6; --line:#ffffff22;}
   .svt-scr{position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab; background:radial-gradient(60% 60% at 50% 45%,#1a2063 0%,#0b0e2e 55%,#070818 100%);} .svt-scr.drag{cursor:grabbing;}
@@ -13419,9 +13421,9 @@ function svLobC(msg){ const n = sv.net, gst = n.role==='guest', me = gst ? n.slo
 // (build 641) 정령 고르기 — 도감 정령 칸과 같은 내용 (거점의 「정령 바꾸기」 · 도감 「정령」 탭)
 function svSpPickC(u, L){ const ids = SV_LINE_IDS, V = sv.dexSel && ids.includes(sv.dexSel) ? sv.dexSel : L, op = u.ld.includes(V), B = svBase(V);
   return '<div class="svs-gl">'+ids.map(l=>'<button type="button" class="svs-it sp'+(u.ld.includes(l) ? '' : ' lock')+'" data-sel="'+l+'" aria-pressed="'+(l===V)+'"><img src="'+svSpImg(l)+'" alt="">'+(u.ld.includes(l) ? SPIRITS[svKey(l,4)].name : '???')+(l===L ? '<i class="cur">출전</i>' : '')+'</button>').join('')+'</div>'
-    + '<div class="svs-dt"><img class="art'+(op ? '' : ' lock')+'" src="'+svSpImg(V)+'" alt=""><h3>'+(op ? SPIRITS[svKey(V,4)].name : '???')+'</h3>'+(op ? '' : '<div class="lkt">'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</div>')
+    + '<div class="svs-dt sp"><div class="svs-dts"><img class="art'+(op ? '' : ' lock')+'" src="'+svSpImg(V)+'" alt=""><h3>'+(op ? SPIRITS[svKey(V,4)].name : '???')+'</h3>'+(op ? '' : '<div class="lkt">'+uiIc('lock')+' '+svUnlTxt('ld', V)+'</div>')
     + (op ? '<div class="svs-st4"><div>체력<b>'+B.hp+'</b></div><div>공격<b>'+B.atk+'</b></div><div>방어<b>'+B.def+'</b></div><div>이속<b>'+B.spd+'</b></div></div>'
-    + '<div class="svs-kv"><div><em>패시브 · '+svLpNm(V)+'</em>'+SV_LP[V]+'</div><div><em>시작 룬 · '+svSkNm(V+'_1', { leader:V })+'</em>'+svSkDesc(V+'_1', 0, 1)+'</div><div><em>궁극기 · '+svUltNm(V)+'</em>'+SV_ULT[V]+'</div></div>' : '')
+    + '<div class="svs-kv"><div><em>패시브 · '+svLpNm(V)+'</em>'+SV_LP[V]+'</div><div><em>시작 룬 · '+svSkNm(V+'_1', { leader:V })+'</em>'+svSkDesc(V+'_1', 0, 1)+'</div><div><em>궁극기 · '+svUltNm(V)+'</em>'+SV_ULT[V]+'</div></div>' : '')+'<div class="svs-more-h" aria-hidden="true"><i class="ch"></i>아래로 더 보기</div></div>' /* (build 643) 정보만 스크롤 · 버튼은 늘 아래에 (사용자 11/06 「출전 버튼을 내려야 보임」) */
     + (op && V !== L ? '<button type="button" class="svs-btn g" data-ld="'+V+'" data-ldclose="1">이 정령으로 출전</button>' : op ? '<div class="svs-cur">'+uiIc('check')+' 지금 출전하는 정령</div>' : '')+'</div>'; }
 // (build 610) 가운데 창 내용
 function svPnlSub(SH){ if(SH==='goal') return '<em>'+SV_UNL.filter(g=>svHas(g.ld ? 'ld' : 'sk', g.ld || g.sk)).length+' / '+SV_UNL.length+' 완료</em>'; if(SH==='up') return '<span class="svs-pill">'+uiIc('gold')+(state.svGold||0).toLocaleString()+'</span>'; return ''; }
@@ -13704,6 +13706,7 @@ function svLobby(msg){
   const PT = { pick:['정령 고르기', 'spirits'], dex:['도감', 'dex'], goal:['목표', 'achieve'], up:['업그레이드', 'awaken'], inv:['같이 하기', 'party'], set:['설정', 'settings'] }[SH];
   sv.el.innerHTML = svLobC(msg) + (PT ? '<div class="svs-dim'+(still ? ' still' : '')+'" data-x="1"></div><div class="svs-pnl'+(still ? ' still' : '')+'"><div class="svs-ph">'+uiIc(PT[1])+'<b>'+PT[0]+'</b>'+svPnlSub(SH)+'<button type="button" class="svs-x" data-x="1" aria-label="닫기">✕</button></div><div class="svs-pb">'+svPnlBody(SH, msg)+'</div></div>' : ''); svGate(sv.el.querySelector('.svs-pnl')); svGate(sv.el.querySelector('.svs-card')); svGate(sv.el.querySelector('.svs-side')); /* (build 634) */
   const Q = s=>sv.el.querySelector(s), on = (s, f)=>{ const b = Q(s); if(b) b.addEventListener('click', f); };
+  sv.el.querySelectorAll('.svs-dts').forEach(el=>{ const f = ()=>el.classList.toggle('end', el.scrollTop + el.clientHeight >= el.scrollHeight - 6); f(); el.addEventListener('scroll', f, { passive:true }); el.querySelectorAll('img').forEach(i=>i.addEventListener('load', f, { once:true })); }); /* (build 643) 더 볼 게 없으면 「아래로 더 보기」 숨김 */
   const keep = ()=>{ const lob = Q('.sv-lob'); return lob ? lob.scrollTop : 0; }, re = top=>{ svLobby(msg); const lob = Q('.sv-lob'); if(lob) lob.scrollTop = top; };
   sv.el.querySelectorAll('[data-ld]').forEach(b=>b.addEventListener('click', ()=>{ const l = b.dataset.ld, top = keep(); sv.view = l;
     if(svHas('ld', l)){ sv.leader = l; state.svLeader = l; save(); if(b.dataset.ldclose && sv.sheet==='pick') sv.sheet = null; if(sv.net.role==='guest') svGuestSend(); else if(sv.net.role==='host' && sv.net.code && raidNet.fb) raidNet.fb.update(raidNet.fb.ref(raidNet.fb.rtdb, 'raids/'+sv.net.code), { hl: l }).catch(()=>{}); } re(top); }));
@@ -21440,7 +21443,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 642, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 643, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
