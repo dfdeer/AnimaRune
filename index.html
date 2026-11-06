@@ -1972,6 +1972,7 @@
   #splash .sp-go, #svSplash .sp-go{position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom, 0px) + 5vh - 8px); text-align:center; color:#fff; font-family:var(--fun, "Jua"), sans-serif; font-size:clamp(17px, 5vw, 22px); letter-spacing:1px; text-shadow:0 2px 0 #3b2a7a, 0 0 12px #b48cff; opacity:0; pointer-events:none;}
   #splash.ready, #svSplash.ready{cursor:pointer;} #splash.ready .sp-bar, #svSplash.ready .sp-bar{opacity:0; transition:opacity .2s;} #splash.ready .sp-go, #svSplash.ready .sp-go{animation:spBlink 1.4s ease-in-out infinite;}
   @keyframes spBlink{0%,100%{opacity:.35;} 50%{opacity:1;}}
+  #splash.svboot{background:#0b0d26;} #splash.svboot::before{display:none;} #splash.svboot .bg{position:absolute; inset:0; background:url(assets/survival/camp_bg.webp) 50% 0 / cover no-repeat #0b0d26;} #splash.svboot .bg::after{content:''; position:absolute; inset:0; background:radial-gradient(70% 60% at 50% 42%, #0b0d2633, #0b0d26d9 75%), linear-gradient(180deg, #0b0d2688, #0b0d2600 30%, #0b0d26cc 100%);} #splash.svboot .mid{position:absolute; left:0; right:0; top:calc(50% - min(28.125vw, 50vh) + min(15.19vw, 27vh)); text-align:center; color:#fff;} #splash.svboot .t{font-family:var(--fun,"Jua"),sans-serif; font-size:min(9.06vw, 16.11vh); line-height:1; text-shadow:0 5px 0 #3b2a7a, 0 0 30px #b48cff, 0 0 60px #6b4cff88;} #splash.svboot .s{margin-top:.4em; font-family:var(--fun,"Jua"),sans-serif; font-size:min(2.34vw, 4.17vh); letter-spacing:.53em; padding-left:.53em; color:#ffe7a0; text-shadow:0 2px 0 #3b2a7a, 0 0 14px #ffb84d;} /* (1.0.0 다듬기) 첫 화면 */
   /* (1.0.0) 가로 로딩창 — 무대(1280×720 · 폰 853×480)와 같은 크기·돌림 */
   #svSplash.svsp{inset:auto; left:0; top:0; transform-origin:0 0; z-index:100001; background:#0b0d26; color:#fff; cursor:default;}
   #svSplash.svsp::before{display:none;}
@@ -2478,7 +2479,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 </script>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><div class="sp-frame"><div class="sp-t">아니마룬</div><div class="sp-s">AnimaRune</div><div class="sp-bar"><i></i></div><div class="sp-go">화면을 터치해서 시작</div></div></div>
+<div id="splash" class="svboot" aria-hidden="true"><div class="bg"></div><div class="mid"><div class="t">아니마룬</div><div class="s">SURVIVAL</div></div></div><!-- (1.0.0 다듬기) 첫 화면부터 서바이벌 모양 (사용자 11/07 「들어갈 때 예전 시작 화면이 잠깐 뜸」) · 스크립트를 다 읽으면 svSplash가 이어받고 이걸 지움 -->
 <div id="app">
   <header>
     <div class="title"><img class="uic" src="assets/ui/ic_summon.webp" alt="" draggable="false"><span class="tname"> 아니마룬</span></div>
@@ -13454,6 +13455,7 @@ function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia &
 function svFull(){ try{ const d = document, el = d.documentElement; if(!(d.fullscreenElement || d.webkitFullscreenElement)){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if(f){ const r = f.call(el, { navigationUI:'hide' }); if(r && r.then) r.then(svLockLand, ()=>{}); else svLockLand(); return; } } svLockLand(); }catch(e){} }
 function svLockLand(){ try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){} try{ if(navigator.keyboard && navigator.keyboard.lock && (document.fullscreenElement || document.webkitFullscreenElement)) navigator.keyboard.lock(['Escape']).catch(()=>{}); }catch(e){} } // (build 618) 전체 화면에서 Esc를 게임이 받음(크롬·엣지) — 한 번 누르면 나가기 버튼 · 길게 누르면 전체 화면 풀림
 // (1.0.0 다듬기) 폰은 화면을 누를 때마다 전체 화면이 풀려 있으면 다시 켬 (사용자 11/07 「켜자마자 전체 화면」) · 브라우저는 누르기 전엔 전체 화면을 막아서 첫 터치에 켬 · 설치한 앱은 manifest의 display: fullscreen으로 처음부터 전체 화면
+{ let pcOnce = false; const pcGo = e=>{ try{ if(!SV_MAIN || pcOnce || (e.pointerType && e.pointerType!=='mouse')) return; pcOnce = true; const d = document; if(!(d.fullscreenElement || d.webkitFullscreenElement) && d.getElementById('svScr')) svFull(); }catch(_){} }; document.addEventListener('mousedown', pcGo, true); document.addEventListener('keydown', pcGo, true); } /* PC는 켠 뒤 처음 한 번만 (Esc로 나가면 그대로 둠) · PC 크롬 앱은 manifest의 fullscreen을 지원하지 않음 */
 document.addEventListener('pointerup', e=>{ try{ if(!SV_MAIN || e.pointerType==='mouse') return; const d = document; if(d.fullscreenElement || d.webkitFullscreenElement || !d.getElementById('svScr')) return; svFull(); }catch(_){} }, true);
 function svUnFull(){ try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){} try{ const d = document; if(d.fullscreenElement && d.exitFullscreen) d.exitFullscreen().catch(()=>{}); else if(d.webkitFullscreenElement && d.webkitExitFullscreen) d.webkitExitFullscreen(); }catch(e){} }
 // (build 634) 그림을 다 불러온 뒤에 보여 줌 — 화면을 보는 도중 그림이 하나씩 그려지지 않게 (사용자 11/05 「모든 화면에 로딩을 둬서 그려지는 게 안 보이게」) · 덜 된 그림이 있으면 그 부분을 가리고 가운데 로딩 표시 · 최대 2.5초
@@ -21600,7 +21602,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 665, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 666, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
