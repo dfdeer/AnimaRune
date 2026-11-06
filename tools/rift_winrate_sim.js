@@ -15,7 +15,7 @@ const N = parseInt(process.argv[2]||'10'), floors = (process.argv[3]||'10,11,12'
   const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
   for(const f of floors){
     const p = await b.newPage({ viewport:{width:390,height:844} }); const errs=[]; p.on('pageerror', e=>errs.push(e.message));
-    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
+    await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900); await p.evaluate(()=>loadLegacy()); /* (1.0.0) 예전 게임 코드는 legacy/legacy.js */
     const t0 = Date.now();
     const r = await p.evaluate(async ([N,f,TWEAK,GEAR,ANC])=>{
       window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.showSkillStageScreen=()=>{}; window.render=()=>{}; window.afterFightMutation=()=>{}; window.unmountBattleScreen=()=>{}; window.bingoBump=()=>{}; state.skillAuto = true;

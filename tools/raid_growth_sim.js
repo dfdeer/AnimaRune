@@ -13,7 +13,7 @@ const N = parseInt(process.argv[2]||'6'), bosses = (process.argv[3]||'frostTyran
 (async()=>{ const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 for(const boss of bosses) for(const diff of diffs){
   const p = await b.newPage({ viewport:{width:390,height:844} }); const errs=[]; p.on('pageerror', e=>errs.push(e.message));
-  await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900);
+  await p.goto('http://localhost:'+port+'/index.html'); await p.waitForTimeout(900); await p.evaluate(()=>loadLegacy()); /* (1.0.0) 예전 게임 코드는 legacy/legacy.js */
   const r = await p.evaluate(([N,boss,diff,TWEAK])=>{ window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.bingoBump=()=>{}; window.render=()=>{}; window.showSkillStageScreen=()=>{}; window.afterFightMutation=()=>{}; window.unmountBattleScreen=()=>{}; raidNet.role='solo'; state.skillAuto = true;
     if(TWEAK) eval(TWEAK);
     const base = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity==='mythic' && !SPIRITS[k].limited);

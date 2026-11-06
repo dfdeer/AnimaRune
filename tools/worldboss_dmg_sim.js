@@ -4,7 +4,7 @@
 const { chromium } = require('playwright-core');
 (async()=>{ const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
 for(const g of ['frostGiant','lavaLord','abyssCrystal']){
-const p=await b.newPage(); await p.goto('http://localhost:8765/index.html'); await p.waitForTimeout(900);
+const p=await b.newPage(); await p.goto('http://localhost:8765/index.html'); await p.waitForTimeout(900); await p.evaluate(()=>loadLegacy()); /* (1.0.0) 예전 게임 코드는 legacy/legacy.js */
 const r=await p.evaluate(([g,ANC])=>{ window.toast=()=>{}; window.sfx=()=>{}; window.save=()=>{}; window.render=()=>{}; window.showSkillStageScreen=()=>{}; window.afterFightMutation=()=>{}; window.unmountBattleScreen=()=>{}; window.wbSubmit=()=>{}; window.bingoBump=()=>{}; state.skillAuto=true;
  window.wbPhase=()=>WB_BOSSES.find(x=>x.g===g); window.wbRemain=()=>4500000; window.wbHp=()=>4500000;
  const base = Object.keys(SPIRITS).filter(k=>SPIRITS[k].rarity==='mythic' && !SPIRITS[k].limited);
