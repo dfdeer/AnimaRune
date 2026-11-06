@@ -13453,6 +13453,8 @@ function svOrient(){ if(!sv || !sv.el) return; const touch = window.matchMedia &
 // (build 612) 전체 화면 — 컴퓨터는 창 틀·폰(안드로이드)은 상단 바 없이 · 가로로 고정 (사용자 10/31 「진짜 게임처럼」) · 아이폰은 브라우저가 막아서 안 됨 → 폰을 가로로 돌리면 상단 바가 사라짐
 function svFull(){ try{ const d = document, el = d.documentElement; if(!(d.fullscreenElement || d.webkitFullscreenElement)){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if(f){ const r = f.call(el, { navigationUI:'hide' }); if(r && r.then) r.then(svLockLand, ()=>{}); else svLockLand(); return; } } svLockLand(); }catch(e){} }
 function svLockLand(){ try{ if(screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){} try{ if(navigator.keyboard && navigator.keyboard.lock && (document.fullscreenElement || document.webkitFullscreenElement)) navigator.keyboard.lock(['Escape']).catch(()=>{}); }catch(e){} } // (build 618) 전체 화면에서 Esc를 게임이 받음(크롬·엣지) — 한 번 누르면 나가기 버튼 · 길게 누르면 전체 화면 풀림
+// (1.0.0 다듬기) 폰은 화면을 누를 때마다 전체 화면이 풀려 있으면 다시 켬 (사용자 11/07 「켜자마자 전체 화면」) · 브라우저는 누르기 전엔 전체 화면을 막아서 첫 터치에 켬 · 설치한 앱은 manifest의 display: fullscreen으로 처음부터 전체 화면
+document.addEventListener('pointerup', e=>{ try{ if(!SV_MAIN || e.pointerType==='mouse') return; const d = document; if(d.fullscreenElement || d.webkitFullscreenElement || !d.getElementById('svScr')) return; svFull(); }catch(_){} }, true);
 function svUnFull(){ try{ if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){} try{ const d = document; if(d.fullscreenElement && d.exitFullscreen) d.exitFullscreen().catch(()=>{}); else if(d.webkitFullscreenElement && d.webkitExitFullscreen) d.webkitExitFullscreen(); }catch(e){} }
 // (build 634) 그림을 다 불러온 뒤에 보여 줌 — 화면을 보는 도중 그림이 하나씩 그려지지 않게 (사용자 11/05 「모든 화면에 로딩을 둬서 그려지는 게 안 보이게」) · 덜 된 그림이 있으면 그 부분을 가리고 가운데 로딩 표시 · 최대 2.5초
 function svGate(el){ if(!el) return; const im = [...el.querySelectorAll('img')].filter(i=>!(i.complete && i.naturalWidth)); if(!im.length) return; el.classList.add('sv-wait');
@@ -21598,7 +21600,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 664, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 665, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
