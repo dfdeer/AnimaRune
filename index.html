@@ -6520,7 +6520,6 @@ const SV_NOTES = [
   ]}
 ];
 // (1.0.3) 설정의 계정과 저장 칸 (사용자 11/06: 원래 아니마룬 설정 창 대신 서바이벌 설정 안에서)
-function svVerB(n){ const v = verTxt(n); return verTxt(updLatest)===verTxt(APP_BUILD) ? v+' ('+n+')' : v; } // (1.0.0 다듬는 중) 버전이 같으면 build 번호로 구분
 function svSetAcc(row, tg2){ const s = state.settings || {}, b = (k, t)=>'<button type="button" class="svs-btn" data-sa="'+k+'">'+t+'</button>';
   let g;
   if(!raidNet.fb || !acc.on) g = row('level', '구글 계정', '서버에 연결하는 중', '');
@@ -6555,7 +6554,7 @@ function svPnlMore(SH){ const L = sv.leader;
       + '<div class="svs-mycode"><small>친구 코드</small><u>'+code+'</u><button type="button" class="svs-btn" data-frcopy="1">복사</button></div></div></div>'; }
   if(SH==='news'){ if((state.svNewsSeen|0) < APP_BUILD){ state.svNewsSeen = APP_BUILD; save(); }
     const up = typeof updLatest!=='undefined' && updLatest > APP_BUILD;
-    return '<div class="svs-set">'+(up ? '<div class="svs-upd"><span><b>새 버전 '+svVerB(updLatest)+'</b><small>지금 '+svVerB(APP_BUILD)+' (업데이트하면 잠깐 새로 불러오고 진행은 그대로)</small></span><button type="button" class="svs-btn g" data-appupd="1">지금 업데이트</button></div>' : '<div class="svs-cur">지금 버전 <b>v'+APP_VERSION+'</b> (최신, '+APP_BUILD+')</div>')
+    return '<div class="svs-set">'+(up ? '<div class="svs-upd"><span><b>'+(verTxt(updLatest)===verTxt(APP_BUILD) ? '새 업데이트 있음' : '새 버전 '+verTxt(updLatest))+'</b><small>'+(verTxt(updLatest)===verTxt(APP_BUILD) ? '' : '지금 '+verTxt(APP_BUILD)+', ')+'업데이트하면 잠깐 새로 불러오고 진행은 그대로</small></span><button type="button" class="svs-btn g" data-appupd="1">지금 업데이트</button></div>' : '<div class="svs-cur">지금 버전 <b>v'+APP_VERSION+'</b> (최신)</div>')
       + '<div class="svs-news">'+SV_NOTES.map(n=>'<div class="nt"><div class="nh"><b>v'+n.v+'</b><em>'+n.date+'</em></div>'+n.secs.map(sc=>'<h4>'+escTxt(sc.t)+'</h4><div class="ls">'+sc.items.map(it=>'<p>'+escTxt(it)+'</p>').join('')+'</div>').join('')+'</div>').join('')+'</div></div>'; }
   return ''; }
 function svPnlBody(SH, msg){ if(SH==='fr' || SH==='me' || SH==='news') return svPnlMore(SH); const u = svUnl(), L = sv.leader;
