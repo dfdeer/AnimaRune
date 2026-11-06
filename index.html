@@ -13343,7 +13343,7 @@ function showSurvival(){
   const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); svLobbyPreload(); // 로비에서부터 미리 불러 둠
   svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); }; })();
   svFull(); if(!svNick()) svNickAsk(1); if(svGpu().soft && !window.__svGpuT){ window.__svGpuT = 1; setTimeout(()=>toast('그래픽 가속이 꺼져 있어 화질을 낮춤 — 크롬 설정 → 시스템 → 「가능한 경우 그래픽 가속 사용」을 켜면 훨씬 부드러워짐', 6000), 1500); } el.addEventListener('dragstart', e=>e.preventDefault()); /* (build 622) 그림·글자가 끌리지 않게 (사용자 10/31) */
-  { const s0 = sv, ek = e=>{ if(sv !== s0){ window.removeEventListener('keydown', ek); return; } if(e.code!=='Escape' || sv.game || e.repeat) return; const cf = sv.el.querySelector('.svs-cfw [data-cf="0"]'); if(cf){ e.preventDefault(); cf.click(); return; } { const t = sv.el.querySelector('.svt-cf [data-tcn]') || sv.el.querySelector('.svt-card2 [data-tcx2]') || sv.el.querySelector('.svt-card [data-tcx]') || sv.el.querySelector('[data-tback]'); if(t){ e.preventDefault(); t.click(); return; } } /* (build 636) 트리 — 창부터 닫고 로비로 */ const x = sv.el.querySelector('[data-x]'); if(x){ e.preventDefault(); x.click(); } }; window.addEventListener('keydown', ek); } // (build 618) 로비에서 Esc = 열린 창 닫기
+  { const s0 = sv, ek = e=>{ if(sv !== s0){ window.removeEventListener('keydown', ek); return; } if(e.code!=='Escape' || sv.game || e.repeat) return; const cf = sv.el.querySelector('.svs-cfw [data-cf="0"]'); if(cf){ e.preventDefault(); cf.click(); return; } { const t = sv.el.querySelector('.svt-cf [data-tcn]') || sv.el.querySelector('.svt-card2 [data-tcx2]') || sv.el.querySelector('.svt-card [data-tcx]') || sv.el.querySelector('[data-tback]'); if(t){ e.preventDefault(); t.click(); return; } } /* (build 636) 트리 — 창부터 닫고 로비로 */ const x = sv.el.querySelector('[data-x]'); if(x){ e.preventDefault(); x.click(); return; } if(sv.dr && !sv.net.code && !sv.sheet){ e.preventDefault(); sv.dr = 0; svLobby(); } }; /* (build 648) Esc로 출전 창도 닫음 */ window.addEventListener('keydown', ek); } // (build 618) 로비에서 Esc = 열린 창 닫기
 }
 // (build 608) 사용자 10/31 「가로 고정 · 서바이벌 들어가면 자동으로 가로로」 — 폰(터치)이 세로면 서바이벌 화면을 90도 돌려 그림(아이폰 웹 앱은 화면 방향을 바꾸는 기능이 막혀 있음) · 되는 기기는 화면 방향도 가로로 잠금 · 원래 아니마룬은 그대로 세로
 function svRH(el){ const r = el.getBoundingClientRect(); return (sv && sv.rot ? r.width : r.height) / ((sv && sv.stk) || 1); } // (build 608) 무대 안 높이 — 90도 돌려 그릴 땐 너비가 높이 · (build 610) 무대 배율로 나눔
@@ -13540,7 +13540,7 @@ function svApplyTree(p, T){ p.tr = null; p.rel = null; if(!T || typeof T!=='obje
 function svTrClean(T){ if(!T || typeof T!=='object' || Array.isArray(T)) return null; const o = {}; Object.keys(T).slice(0, 80).forEach(k=>{ if(SV_TR.N[k] && (T[k]|0) > 0) o[k] = Math.min(SV_TR.N[k].max, T[k]|0); }); return o; } // 친구가 보낸 트리
 const SV_STKEYS = ['dmg', 'kills', 'taken', 'heal', 'sh', 'ult', 'dodge', 'hLs', 'hRg', 'hSk', 'hOut', 'hIn', 'hEtc', 'crit', 'maxHit', 'boss', 'elite', 'pods', 'down', 'revive', 'dist'];
 function svStPack(S){ const o = {}; SV_STKEYS.forEach(k=>{ if(S[k]) o[k] = Math.round(S[k]); }); return o; }
-function svHeal(src, q, v, k){ const a = Math.max(0, Math.min(q.maxHp - q.hp, v || 0)); q.hp += a; if(a > 0){ const s = src || q; if(k==='etc') svSt(q, 'hEtc', a); else if(s===q) svSt(q, k==='ls' ? 'hLs' : k==='rg' ? 'hRg' : 'hSk', a); else { svSt(s, 'hOut', a); svSt(q, 'hIn', a); } } return a; } // (build 640) 회복 출처 — 흡혈 hLs · 재생 hRg · 내 기술 hSk · 남에게 준 hOut · 남에게 받은 hIn · 줍기·지형 hEtc
+function svHeal(src, q, v, k){ const a = Math.max(0, Math.min(q.maxHp - q.hp, v || 0)); q.hp += a; if(!src) k = 'etc'; /* (build 648) 주인 없는 회복(맵 장판 등)은 아이템과 지형으로 */ if(a > 0){ const s = src || q; if(k==='etc') svSt(q, 'hEtc', a); else if(s===q) svSt(q, k==='ls' ? 'hLs' : k==='rg' ? 'hRg' : 'hSk', a); else { svSt(s, 'hOut', a); svSt(q, 'hIn', a); } } return a; } // (build 640) 회복 출처 — 흡혈 hLs · 재생 hRg · 내 기술 hSk · 남에게 준 hOut · 남에게 받은 hIn · 줍기·지형 hEtc
 function svSt(p, k, v){ if(!p) return; const S = p.st = p.st || {}; S[k] = (S[k]||0) + v; } // (build 639) 판 통계 — dmg 준 피해 · kills 처치 · taken 받은 피해 · heal 회복 · sh 보호막 · ult 궁극기 · dodge 피함
 function svStCr(p){ return 0.07*svPasLv(p, 'crit') + (p.leader==='dark_b' ? 0.12 : 0) + ((p.tr && p.tr.cr) || 0); } // 치명타 확률
 // ---------- 트리 화면 (로비 무대 안 · 끌어서 둘러보기) ----------
@@ -21449,7 +21449,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 647, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 648, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
