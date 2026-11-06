@@ -1106,6 +1106,7 @@
   @media (prefers-reduced-motion:reduce){ .svc .svs-hero, .svc-dr, .svc-c{transition:none;} }
   .svs-dt.sp{overflow:hidden; gap:8px;} .svs-dts{position:relative; flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:10px; overscroll-behavior:contain;} .svs-dt.sp > .svs-btn, .svs-dt.sp > .svs-cur{flex:none;} /* (build 643) 버튼은 늘 보임 */
   .svs-more-h{position:sticky; bottom:0; margin-top:auto; display:flex; align-items:center; justify-content:center; gap:4px; padding:14px 0 2px; font-size:11.5px; font-weight:900; color:#ffd557; background:linear-gradient(#0b0d2600, #121640 70%); pointer-events:none; transition:opacity .2s;} .svs-more-h .ch{width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-4px; animation:svsMh 1.2s ease-in-out infinite;} .svs-dts.end .svs-more-h{opacity:0;} @keyframes svsMh{50%{transform:translateY(3px) rotate(45deg);}} @media (prefers-reduced-motion:reduce){ .svs-more-h .ch{animation:none;} }
+  .svt .svt-back{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px; border-radius:12px; background:#ffd55714; border:1px solid #ffd55755;} .svt .svt-back span{font-size:12px; color:#aab3e8;} .svt .svt-back b{font-family:var(--fun,"Jua"),sans-serif; font-weight:400; font-size:30px; color:#ffd557;} .svt .svt-back small{font-size:11.5px; color:#aab3e8;} .svt .cf p b{font-size:inherit; color:#ffd557;}
   /* (build 636) 정령 트리 화면 — 무대 안 · 끌어서 둘러보기 (미리보기 그대로) */
   .svt{position:absolute; inset:0; z-index:30; overflow:hidden; color:#eef0ff; font-family:"Noto Sans KR",system-ui,sans-serif; --gold:#ffd557; --sub:#a9b1e6; --line:#ffffff22;}
   .svt-scr{position:absolute; inset:0; overflow:hidden; touch-action:none; cursor:grab; background:radial-gradient(60% 60% at 50% 45%,#1a2063 0%,#0b0e2e 55%,#070818 100%);} .svt-scr.drag{cursor:grabbing;}
@@ -13482,8 +13483,7 @@ function svApplyUp(p, U){ if(!U) return p; const lv = k=>Math.max(0, Math.min(SV
 //  포인트 = 계정 레벨(판마다 경험치) + 단계 최종 보스 첫 처치마다 3 + ??? 조건마다 1 · 첫 정령(현무·광명·불사귀)은 골드로 계약 · 둘째 정령은 같은 계열 조건 · 유물은 처음 넷만 나오고 나머지는 트리에서 열어야 성장 카드에 나옴
 //  융합 제단·융합 정령·동행의 맹세는 「준비 중」 (새 그림·기술이 필요)
 const SV_TR_ANG = { fire:-90, light:-18, dark:54, wood:126, water:198 }, SV_TR_ELN = { fire:'불', water:'물', wood:'나무', light:'빛', dark:'어둠' }, SV_TR_COL = { root:'#ffd557', fu:'#ffffff', fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#b07aff' };
-const SV_TR_PMAX = 10, svTrPCost = n=>1000 + 500*(n - 3); // (build 646) 프리셋 — 처음 3개 무료 · 4번째부터 골드로 열기(1,000부터 500씩) · 최대 10개 (사용자 11/06)
-const SV_TR_CT = 1500, SV_TR_RS = 0 /* (build 647) 초기화 무료 (사용자 11/06) */, SV_TR_REL0 = ['area', 'swift', 'greed', 'hunter'], SV_TR_LVMAX = 60;
+const SV_TR_CT = 1500, SV_TR_RS = 500 /* (build 649) 트리가 하나라 초기화는 500골드 (사용자 11/06 · 647에서 잠깐 무료) */, SV_TR_REL0 = ['area', 'swift', 'greed', 'hunter'], SV_TR_LVMAX = 60;
 const SV_TR = (()=>{ const N = {}, E = [], SC = 1.32, add = (id, o)=>{ N[id] = Object.assign({ id, max:1 }, o); }, link = (a, b, x)=>E.push([a, b, !!x]);
   const P = (el, r, da)=>{ const a = (SV_TR_ANG[el] + (da||0))*Math.PI/180; return { x:Math.round(Math.cos(a)*r*SC), y:Math.round(Math.sin(a)*r*SC) }; };
   const M = (a, b, r)=>{ let A = SV_TR_ANG[a], B = SV_TR_ANG[b]; if(B < A) B += 360; const m = (A + B)/2*Math.PI/180; return { x:Math.round(Math.cos(m)*r*SC), y:Math.round(Math.sin(m)*r*SC) }; };
@@ -13516,7 +13516,9 @@ const SV_TR = (()=>{ const N = {}, E = [], SC = 1.32, add = (id, o)=>{ N[id] = O
 function svTrNm(n){ return n.ty==='re' ? SV_PAS[n.rel].nm : n.ld ? SPIRITS[svKey(n.ld, 4)].name : n.nm; }
 function svTrIc(n){ return n.ty==='re' ? 'assets/ui/'+SV_PAS[n.rel].ic+'.webp' : n.ld ? ''+svSpImg(n.ld)+'' : 'assets/ui/'+(n.ic || 'ic_star')+'.webp'; }
 function svTrSoon(n){ return n.ty==='fu' || n.ty==='fsp' || n.ty==='co'; } // 준비 중
-function svTr(){ const T = state.svTree = state.svTree && typeof state.svTree==='object' ? state.svTree : {}; if(!Array.isArray(T.p)) T.p = []; T.p = T.p.slice(0, SV_TR_PMAX); while(T.p.length < 3) T.p.push({}); T.p = T.p.map(o=>o && typeof o==='object' ? o : {}); T.c = Math.max(0, Math.min(T.p.length - 1, T.c|0)); if(!Array.isArray(T.hd)) T.hd = []; return T; }
+function svTr(){ const T = state.svTree = state.svTree && typeof state.svTree==='object' ? state.svTree : {}; if(!Array.isArray(T.p)) T.p = [];
+  if(!T.one){ T.one = 1; const keep = T.p[Math.max(0, Math.min(T.p.length - 1, T.c|0))]; let back = 0; for(let n=3; n<Math.min(T.p.length, 10); n++) back += 1000 + 500*(n - 3); T.p = [keep && typeof keep==='object' ? keep : {}]; T.c = 0; if(back > 0){ state.svGold = (state.svGold||0) + back; try{ toast('트리를 하나로 정리 — 프리셋 연 골드 '+back.toLocaleString('ko-KR')+' 돌려받음'); }catch(e){} } try{ save(); }catch(e){} } /* (build 649) 프리셋 없앰 — 지금 고른 트리만 남기고, 4번째 이후 프리셋을 연 골드는 바로 돌려줌 (사용자 11/06) */
+  T.p = T.p.slice(0, 1); if(!T.p.length) T.p.push({}); T.p = T.p.map(o=>o && typeof o==='object' ? o : {}); T.c = Math.max(0, Math.min(T.p.length - 1, T.c|0)); if(!Array.isArray(T.hd)) T.hd = []; return T; }
 function svAcc(){ const A = state.svAcc = state.svAcc && typeof state.svAcc==='object' ? state.svAcc : {}; A.lv = Math.max(1, Math.min(SV_TR_LVMAX, A.lv|0 || 1)); A.xp = Math.max(0, +A.xp || 0); return A; }
 function svAccNeed(lv){ return 50 + 25*(lv - 1); } // 다음 레벨까지 경험치
 function svAccGain(G){ return Math.floor((G.t||0)/6) + Math.floor((G.kills||0)/40) + (G.over==='win' ? 30 : 0); } // 10분 판 ≈ 160
@@ -13575,12 +13577,7 @@ function svTrNode(n, A, P, T){ const id = n.id, on = A.has(id), lv = P[id]|0, sp
 function svTrDraw(){ const R = sv.el.querySelector('.svt'); if(!R) return; const T = svTr(), P = T.p[T.c], A = svTrAct(P), N = SV_TR.N, mx = svTrMax(), us = svTrUsed(P);
   R.querySelector('.svt-pt').textContent = (mx - us)+' / '+mx; R.querySelector('.svt-gold').textContent = (state.svGold||0).toLocaleString('ko-KR');
   { const Ac = svAcc(), lb = R.querySelector('.svt-acc'); lb.innerHTML = 'Lv <b>'+Ac.lv+'</b><i><u style="width:'+(Ac.lv >= SV_TR_LVMAX ? 100 : Math.round(Ac.xp/svAccNeed(Ac.lv)*100))+'%"></u></i>'; lb.title = '계정 레벨 — 판을 할 때마다 경험치 · 레벨마다 트리 포인트 1'; }
-  R.querySelector('.svt-ps').innerHTML = T.p.map((_, i)=>'<button type="button" data-tps="'+i+'" aria-pressed="'+(T.c===i)+'">'+(i+1)+'</button>').join('') + (T.p.length < SV_TR_PMAX ? '<button type="button" class="add" data-tpadd="1" aria-label="프리셋 늘리기">+</button>' : '');
-  { const ps = R.querySelector('.svt-ps'), s = ps.querySelector('[aria-pressed="true"]'); if(s && ps.scrollWidth > ps.clientWidth) ps.scrollLeft = Math.max(0, s.offsetLeft - ps.clientWidth/2 + s.offsetWidth/2); } /* 고른 프리셋이 보이게 */
-  { const ab = R.querySelector('[data-tpadd]'); if(ab) ab.onclick = ()=>{ const n = T.p.length, c = svTrPCost(n), g = state.svGold||0, cf = R.querySelector('.svt-cf');
-    cf.innerHTML = '<div class="cf"><div><b>프리셋 '+(n+1)+' 열기</b><p>골드 '+c.toLocaleString('ko-KR')+'으로 프리셋 칸을 하나 더 엶<br>최대 '+SV_TR_PMAX+'개까지</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="g" data-tpy="1"'+(g < c ? ' disabled' : '')+'>'+(g < c ? '골드 부족' : '열기')+'</button></div></div></div>';
-    cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tpy]').onclick = ()=>{ if((state.svGold||0) < c || T.p.length >= SV_TR_PMAX) return; state.svGold -= c; T.p.push({}); T.c = T.p.length - 1; save(); cf.innerHTML = ''; try{ sfx('enhance'); }catch(e){} if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; }; } /* (build 646) 프리셋 늘리기 */
-  R.querySelectorAll('[data-tps]').forEach(b=>b.onclick = ()=>{ T.c = +b.dataset.tps; save(); if(sv.net.role==='guest') svGuestSend(); svTrDraw(); });
+  /* (build 649) 프리셋 없음 */
   const ed = SV_TR.E.map(([a, b, x])=>{ const on = A.has(a) && A.has(b); return '<line class="e'+(on ? ' on' : '')+(x ? ' x' : '')+'" style="--c:'+SV_TR_COL[N[b].el==='fu' ? N[a].el : N[b].el]+'" x1="'+N[a].x+'" y1="'+N[a].y+'" x2="'+N[b].x+'" y2="'+N[b].y+'"/>'; }).join('');
   R.querySelector('.svt-nodes').innerHTML = '<svg class="svt-ed" width="1" height="1">'+ed+'</svg>' + Object.values(N).map(n=>svTrNode(n, A, P, T)).join('');
   svTrCard(); }
@@ -13618,15 +13615,16 @@ function svTrCenter(){ const W = sv.sw || 1280, H = sv.sh || 720; sv.trV = { x:W
 function svTrZoom(f, cx, cy){ const V = sv.trV, k = Math.min(1.8, Math.max(0.3, V.k*f)); V.x = cx - (cx - V.x)*k/V.k; V.y = cy - (cy - V.y)*k/V.k; V.k = k; svTrApply(1); }
 function svTree(){ svTr(); svAcc();
   sv.el.innerHTML = '<div class="svt"><div class="svt-scr"><div class="svt-stars"></div><div class="svt-w">'+svTrBg()+'<div class="svt-nodes"></div></div></div>'
-    + '<div class="svt-top"><button type="button" class="tb" data-tback="1">← 로비</button><span class="ttl">정령 트리</span><span class="pill acc svt-acc"></span><span class="pill"><img src="assets/ui/ic_star.webp" alt="">트리 포인트 <b class="svt-pt"></b></span><span class="pill"><img src="assets/ui/ic_gold.webp" alt=""><b class="svt-gold"></b></span><div class="svt-ps" aria-label="프리셋"></div><button type="button" class="tb rs" data-trs="1">초기화</button></div>'
+    + '<div class="svt-top"><button type="button" class="tb" data-tback="1">← 로비</button><span class="ttl">정령 트리</span><span class="pill acc svt-acc"></span><span class="pill"><img src="assets/ui/ic_star.webp" alt="">트리 포인트 <b class="svt-pt"></b></span><span class="pill"><img src="assets/ui/ic_gold.webp" alt=""><b class="svt-gold"></b></span><button type="button" class="tb rs" data-trs="1">초기화</button></div>'
     + '<div class="svt-zm"><button type="button" data-tz="1.2" aria-label="크게">+</button><button type="button" data-tz="0.8333" aria-label="작게">−</button><button type="button" data-tz="0" aria-label="가운데로" style="font-size:14px">◎</button></div>'
     + '<div class="svt-card"></div><div class="svt-card2"></div><div class="svt-cf"></div></div>';
   const R = sv.el.querySelector('.svt'), scr = R.querySelector('.svt-scr'), W = sv.sw || 1280, H = sv.sh || 720;
   R.querySelector('[data-tback]').onclick = ()=>{ sv.sheet = null; svLobby(); };
   R.querySelectorAll('[data-tz]').forEach(b=>b.onclick = ()=>{ const f = +b.dataset.tz; if(!f) svTrCenter(); else svTrZoom(f, (sv.sw||W)/2, (sv.sh||H)/2); });
   R.querySelector('[data-trs]').onclick = ()=>{ const T = svTr(), cf = R.querySelector('.svt-cf'), g = state.svGold||0;
-    cf.innerHTML = '<div class="cf"><div><b>프리셋 '+(T.c+1)+' 초기화</b><p>'+(SV_TR_RS ? '골드 '+SV_TR_RS+'을 내고 ' : '')+'이 프리셋에 쓴 포인트를 모두 돌려받음<br>해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(g < SV_TR_RS ? ' disabled' : '')+'>'+(g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
-    cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tcy]').onclick = ()=>{ if((state.svGold||0) < SV_TR_RS) return; state.svGold -= SV_TR_RS; T.p[T.c] = {}; save(); cf.innerHTML = ''; if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; };
+    const P = T.p[0], back = svTrUsed(P), cnt = Object.keys(P).filter(k=>SV_TR.N[k] && P[k] > 0).length, no = back <= 0; /* (build 649) 돌려받는 것을 보여 주고 확정하면 바로 */
+    cf.innerHTML = '<div class="cf"><div><b>트리 초기화</b><div class="svt-back"><span>돌려받는 트리 포인트</span><b>'+back+'</b><small>칸 '+cnt+'개를 비움</small></div><p>'+(SV_TR_RS ? '골드 <b>'+SV_TR_RS+'</b> 사용 · 지금 '+g.toLocaleString('ko-KR')+'<br>' : '')+'해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(no || g < SV_TR_RS ? ' disabled' : '')+'>'+(no ? '돌려받을 게 없음' : g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
+    cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tcy]').onclick = ()=>{ if((state.svGold||0) < SV_TR_RS || svTrUsed(T.p[0]) <= 0) return; const back = svTrUsed(T.p[0]); state.svGold -= SV_TR_RS; T.p[0] = {}; save(); cf.innerHTML = ''; try{ toast('트리 포인트 '+back+' 돌려받음'); }catch(e){} if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; };
   const ptrs = new Map(); let moved = 0, pinch = null;
   scr.addEventListener('pointerdown', e=>{ sv.trR = sv.el.getBoundingClientRect(); /* (build 644) 끄는 동안 다시 읽지 않음 */ const q = svTrPt(e); if(e.isPrimary) ptrs.clear(); /* 놓친 손가락이 남아 두 손가락으로 잘못 보지 않게 */ ptrs.set(e.pointerId, q); moved = 0; if(ptrs.size===2){ const [a, b] = [...ptrs.values()]; pinch = { d:Math.hypot(a.x-b.x, a.y-b.y)||1, k:sv.trV.k }; } try{ scr.setPointerCapture(e.pointerId); }catch(x){} scr.classList.add('drag'); });
   scr.addEventListener('pointermove', e=>{ const p = ptrs.get(e.pointerId); if(!p) return; const q = svTrPt(e), dx = q.x - p.x, dy = q.y - p.y; p.x = q.x; p.y = q.y;
@@ -21449,7 +21447,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 648, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 649, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
