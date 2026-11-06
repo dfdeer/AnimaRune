@@ -13483,7 +13483,7 @@ function svApplyUp(p, U){ if(!U) return p; const lv = k=>Math.max(0, Math.min(SV
 //  융합 제단·융합 정령·동행의 맹세는 「준비 중」 (새 그림·기술이 필요)
 const SV_TR_ANG = { fire:-90, light:-18, dark:54, wood:126, water:198 }, SV_TR_ELN = { fire:'불', water:'물', wood:'나무', light:'빛', dark:'어둠' }, SV_TR_COL = { root:'#ffd557', fu:'#ffffff', fire:'#ff7a45', water:'#4aa8ff', wood:'#46c46a', light:'#ffd04a', dark:'#b07aff' };
 const SV_TR_PMAX = 10, svTrPCost = n=>1000 + 500*(n - 3); // (build 646) 프리셋 — 처음 3개 무료 · 4번째부터 골드로 열기(1,000부터 500씩) · 최대 10개 (사용자 11/06)
-const SV_TR_CT = 1500, SV_TR_RS = 500, SV_TR_REL0 = ['area', 'swift', 'greed', 'hunter'], SV_TR_LVMAX = 60;
+const SV_TR_CT = 1500, SV_TR_RS = 0 /* (build 647) 초기화 무료 (사용자 11/06) */, SV_TR_REL0 = ['area', 'swift', 'greed', 'hunter'], SV_TR_LVMAX = 60;
 const SV_TR = (()=>{ const N = {}, E = [], SC = 1.32, add = (id, o)=>{ N[id] = Object.assign({ id, max:1 }, o); }, link = (a, b, x)=>E.push([a, b, !!x]);
   const P = (el, r, da)=>{ const a = (SV_TR_ANG[el] + (da||0))*Math.PI/180; return { x:Math.round(Math.cos(a)*r*SC), y:Math.round(Math.sin(a)*r*SC) }; };
   const M = (a, b, r)=>{ let A = SV_TR_ANG[a], B = SV_TR_ANG[b]; if(B < A) B += 360; const m = (A + B)/2*Math.PI/180; return { x:Math.round(Math.cos(m)*r*SC), y:Math.round(Math.sin(m)*r*SC) }; };
@@ -13625,7 +13625,7 @@ function svTree(){ svTr(); svAcc();
   R.querySelector('[data-tback]').onclick = ()=>{ sv.sheet = null; svLobby(); };
   R.querySelectorAll('[data-tz]').forEach(b=>b.onclick = ()=>{ const f = +b.dataset.tz; if(!f) svTrCenter(); else svTrZoom(f, (sv.sw||W)/2, (sv.sh||H)/2); });
   R.querySelector('[data-trs]').onclick = ()=>{ const T = svTr(), cf = R.querySelector('.svt-cf'), g = state.svGold||0;
-    cf.innerHTML = '<div class="cf"><div><b>프리셋 '+(T.c+1)+' 초기화</b><p>골드 '+SV_TR_RS+'을 내고 이 프리셋에 쓴 포인트를 모두 돌려받음<br>해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(g < SV_TR_RS ? ' disabled' : '')+'>'+(g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
+    cf.innerHTML = '<div class="cf"><div><b>프리셋 '+(T.c+1)+' 초기화</b><p>'+(SV_TR_RS ? '골드 '+SV_TR_RS+'을 내고 ' : '')+'이 프리셋에 쓴 포인트를 모두 돌려받음<br>해금한 정령은 그대로</p><div class="r"><button type="button" data-tcn="1">그만두기</button><button type="button" class="d" data-tcy="1"'+(g < SV_TR_RS ? ' disabled' : '')+'>'+(g < SV_TR_RS ? '골드 부족' : '초기화')+'</button></div></div></div>';
     cf.querySelector('[data-tcn]').onclick = ()=>{ cf.innerHTML = ''; }; cf.querySelector('[data-tcy]').onclick = ()=>{ if((state.svGold||0) < SV_TR_RS) return; state.svGold -= SV_TR_RS; T.p[T.c] = {}; save(); cf.innerHTML = ''; if(sv.net.role==='guest') svGuestSend(); svTrDraw(); }; };
   const ptrs = new Map(); let moved = 0, pinch = null;
   scr.addEventListener('pointerdown', e=>{ sv.trR = sv.el.getBoundingClientRect(); /* (build 644) 끄는 동안 다시 읽지 않음 */ const q = svTrPt(e); if(e.isPrimary) ptrs.clear(); /* 놓친 손가락이 남아 두 손가락으로 잘못 보지 않게 */ ptrs.set(e.pointerId, q); moved = 0; if(ptrs.size===2){ const [a, b] = [...ptrs.values()]; pinch = { d:Math.hypot(a.x-b.x, a.y-b.y)||1, k:sv.trV.k }; } try{ scr.setPointerCapture(e.pointerId); }catch(x){} scr.classList.add('drag'); });
@@ -21449,7 +21449,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 646, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 647, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
