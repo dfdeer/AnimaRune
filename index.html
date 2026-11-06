@@ -12929,13 +12929,13 @@ function svSnowTick(G, alive, dt){ const bl = svBlizzard(G);
   alive.forEach(p=>{ const w = svWarm(G, p); p.cold = Math.max(0, Math.min(1, (p.cold||0) + (bl && !w ? dt/SV_SNOW.FILL : -dt/(w ? SV_SNOW.WARM : SV_SNOW.THAW))));
     if(p.cold >= 1){ p.biteT = (p.biteT||0) + dt; if(p.biteT >= 1){ p.biteT = 0; const h = svHurt(p, p.maxHp*SV_SNOW.BITE); svFx({ k:'num', x:p.x, y:p.y-24, t:0, d:0.7, s:'동상 -'+Math.round(h), col:'#9fdcff', sz:11 }); } } else p.biteT = 0; });
   G.players.forEach(p=>{ if(p.down) p.cold = 0; });
-  { const t = G.t % 60; if(t >= 36 && t - dt < 36) svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:2, s:'눈보라 출현', col:'#dff3ff', sz:16, scr:1 }); }
+  { const t = G.t % 60; if(t >= 36 && t - dt < 36) svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:2, s:'눈보라 출현', sub:'따뜻한 곳으로 피하기', col:'#dff3ff', sz:16, scr:1 }); }
   G.map.zones.forEach(z=>{ if(z.kind!=='snowman') return;
     if(z.aw > 0){ z.aw = Math.max(0, z.aw - dt); if(z.aw <= 0) z.cd = SV_SNOW.CD; z.sh -= dt;
       if(z.sh <= 0){ const tg = G.en.filter(e=>e.hp > 0 && e.kind!=='pod' && Math.hypot(e.x - z.x, e.y - z.y) < SV_SNOW.SBR).sort((a, b)=>Math.hypot(a.x - z.x, a.y - z.y) - Math.hypot(b.x - z.x, b.y - z.y))[0];
         if(tg){ z.sh = SV_SNOW.SBCD; const a = Math.atan2(tg.y - z.y, tg.x - z.x); G.pr.push({ x:z.x, y:z.y - 40, vx:Math.cos(a)*420, vy:Math.sin(a)*420, kind:'snowb', t:0, life:1.1, col:'#ffffff', dmg:(40 + 18*G.lvl)*SV_STK[G.stage||0], r:9 }); } } }
     else if(z.cd > 0) z.cd = Math.max(0, z.cd - dt);
-    else if(alive.some(p=>svInZ(z, p))){ z.aw = SV_SNOW.AW; z.sh = 0.3; svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.7, col:'#bfe8ff', r:160 }); svFx({ k:'text', x:z.x, y:z.y - 90, t:0, d:1.2, s:'눈사람 깨어남', col:'#dff3ff', sz:13 }); try{ sfx('claim'); }catch(e){} } }); }
+    else if(alive.some(p=>svInZ(z, p))){ z.aw = SV_SNOW.AW; z.sh = 0.3; svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.7, col:'#bfe8ff', r:160 }); svFx({ k:'text', x:z.x, y:z.y - 90, t:0, d:1.2, s:'눈사람 깨어남', sub:'곁에 있으면 따뜻함', col:'#dff3ff', sz:13 }); try{ sfx('claim'); }catch(e){} } }); }
 // (build 556) 숲 기믹 — 사용자 10/29 「기믹 여러 개 있으면 재밌고 좋지」: ① 정령 석상 넷 — 둘레에 서 있으면 차지(혼자 6초 · 둘 4초 · 셋 3초 · 넷 2.5초) → 모두에게 정령의 축복 하나 45초 · 그 석상은 90초 쉼 · (밤·반딧불 등불도 만들었다가 뺌 — 사용자 10/29 「그림자 심연이 어두운 맵이라 겹침」)
 const SV_BLESS = { atk:'공격력 +25%', spd:'이동 속도 +20%', xp:'경험치 +40%', cd:'쿨타임 −20%', rage:'폭주 (공격 속도 2배)', mag:'자석 (보석을 모두 끌어옴, 획득 범위 ×3)', inv:'불사 (무적, 닿는 적에게 피해)', bolt:'분노한 정령 (주변 적에게 번개)', gold:'황금 시간 (골드 2배, 경험치 +30%)' }; // (build 626) 새 축복 5개 (사용자 11/05 「석상 효과가 밋밋함 · 추가」)
 const SV_BLESS_T = { rage:20, mag:30, inv:10, bolt:25 }; // 축복 길이 (없으면 45초)
@@ -12943,7 +12943,7 @@ function svBless(k){ const G = sv && sv.game; return !!(G && G.bless && G.bless.
 function svForestTick(G, alive, dt){ const map = G.map;
   map.zones.forEach(z=>{
     if(z.kind==='shrine'){ if(z.cd > 0){ z.cd = Math.max(0, z.cd - dt); return; } const n = alive.filter(p=>svInZ(z, p)).length; z.cap = n ? Math.min(1, z.cap + dt/[0, 6, 4, 3, 2.5][Math.min(4, n)]) : Math.max(0, z.cap - dt/12);
-      if(z.cap >= 1){ z.cap = 0; z.cd = 90; const k = svRand(Object.keys(SV_BLESS)), bd = SV_BLESS_T[k] || 45; G.bless = { k, t:bd, d:bd }; if(k==='mag') G.gems.forEach(g=>{ g.pull = true; }); svObjAdd('shrine'); svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.8, col:'#ffd04a', r:200 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.8, s:'정령의 축복 「'+SV_BLESS[k].split(' (')[0]+'」', col:'#ffd04a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} } } });
+      if(z.cap >= 1){ z.cap = 0; z.cd = 90; const k = svRand(Object.keys(SV_BLESS)), bd = SV_BLESS_T[k] || 45; G.bless = { k, t:bd, d:bd }; if(k==='mag') G.gems.forEach(g=>{ g.pull = true; }); svObjAdd('shrine'); svFx({ k:'ring', x:z.x, y:z.y, t:0, d:0.8, col:'#ffd04a', r:200 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.8, s:'정령의 축복 「'+SV_BLESS[k].split(' (')[0]+'」', sub:(SV_BLESS[k].includes(' (') ? SV_BLESS[k].split(' (')[1].replace(')', '') : '')+(SV_BLESS[k].includes(' (') ? ', ' : '')+bd+'초 동안', col:'#ffd04a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} } } });
   if(G.bless){ G.bless.t -= dt; svBlessTick(G, dt, alive); if(G.bless.t <= 0) G.bless = null; } }
 function svBlessTick(G, dt, alive){ const B = G.bless, k = B.k, P = 1 + G.t/120; // (build 626) 움직이는 축복
   if(k==='bolt'){ B.bt = (B.bt||0) - dt; if(B.bt > 0) return; B.bt = 0.8; alive.forEach(p=>{ G.en.filter(e=>e.hp > 0 && Math.hypot(e.x - p.x, e.y - p.y) < 320).sort((a, b)=>Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 3).forEach(e=>{ svHitBy(p, e, 55*SV_DMGK*P, '#ffe066'); svFx({ k:'pillar', x:e.x, y:e.y, t:0, d:0.35, col:'#ffe066' }); svFx({ k:'ring', x:e.x, y:e.y, t:0, d:0.3, col:'#fff3a0', r:34 }); }); }); try{ sfx('bCrit'); }catch(e){} }
@@ -12955,7 +12955,7 @@ function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
   { const W = map.well; if(W){ if(W.cd > 0) W.cd = Math.max(0, W.cd - dt); else { const n = alive.filter(p=>svInZ(W, p)).length; // (build 555) 샘 둘레 돌바닥 안에 있으면 충전 // (build 550) 고대 샘 — 서 있으면 충전 · 같이 서면 빨리 (혼자 20초 · 둘 12초 · 셋 9초 · 넷 7초) · 다 차면 모든 아군 체력 50% + 보호막 20% · 90초 뒤 다시
     if(n) W.ch = Math.min(1, W.ch + dt/[0, 20, 12, 9, 7][Math.min(4, n)]); else W.ch = Math.max(0, W.ch - dt/40);
     if(W.ch >= 1){ W.ch = 0; W.cd = 90; alive.forEach(p=>{ const h = Math.round(p.maxHp*0.5); svHeal(p, p, h, 'etc'); p.shield = Math.max(p.shield, p.maxHp*0.2); svFx({ k:'num', x:p.x, y:p.y-24, t:0, d:0.9, s:'+'+h, col:'#7ce07c', sz:13 }); });
-      svObjAdd('well'); svFx({ k:'ring', x:W.x, y:W.y, t:0, d:0.9, col:'#7ae0ff', r:260 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.6, s:'고대 샘 회복', col:'#7ae0ff', sz:17, scr:1 }); try{ sfx('claim'); }catch(e){} } } } }
+      svObjAdd('well'); svFx({ k:'ring', x:W.x, y:W.y, t:0, d:0.9, col:'#7ae0ff', r:260 }); svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.6, s:'고대 샘 회복', sub:'모두 체력 회복', col:'#7ae0ff', sz:17, scr:1 }); try{ sfx('claim'); }catch(e){} } } } }
   if(M.gim==='spring') alive.forEach(p=>{ if(svZoneAt(p, 'spring') && p.hp < p.maxHp) svHeal(p, p, 5*dt, 'etc'); });
   if(M.gim==='lava') alive.forEach(p=>{ if(svZoneAt(p, 'lava') && !(p.inv > 0.7)){ p.lavaT = (p.lavaT||0) + dt; if(p.lavaT > 0.5){ p.lavaT = 0; svHurt(p, 5*SV_STD[map.stage]); svFx({ k:'num', x:p.x, y:p.y-22, t:0, d:0.5, s:'용암', col:'#ff7a45', sz:10 }); } } });
   if(M.gim==='trap') map.zones.forEach(z=>{ if(z.kind!=='trap') return; const st = svTrapState(z, G.t); if(st===2 && !z.hit){ z.hit = true;
@@ -12963,7 +12963,7 @@ function svMapTick(dt){ // 방장 — 기믹 피해 · 분화
       G.en.forEach(e=>{ if(e.kind!=='boss' && Math.abs(e.x-z.x) < z.r && Math.abs(e.y-z.y) < z.r) svHit(e, e.max*0.3, '#ffd04a'); }); }
     if(st!==2) z.hit = false; });
   if(M.gim==='volcano' || M.gim==='lava'){ G.hz = G.hz || []; G.eruptT = (G.eruptT==null ? 20 : G.eruptT) - dt;
-    if(G.eruptT <= 0 && alive.length){ G.eruptT = 20; svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.4, s:'분화!', col:'#ff7a45', sz:18, scr:1 });
+    if(G.eruptT <= 0 && alive.length){ G.eruptT = 20; svFx({ k:'text', x:SV_W/2, y:110, uy:1, t:0, d:1.4, s:'분화!', sub:'빨간 원 피하기', col:'#ff7a45', sz:18, scr:1 });
       alive.forEach(p=>{ for(let k=0;k<3;k++){ const a = Math.random()*6.28, d = Math.random()*140; G.hz.push({ x: p.x + Math.cos(a)*d, y: p.y + Math.sin(a)*d, r: 55, t: 0, d: 1.6 }); } }); }
     G.hz.forEach(h=>{ h.t += dt; if(h.t >= h.d && !h.done){ h.done = true; svFx({ k:'boom', x:h.x, y:h.y, t:0, d:0.4, col:'#ff7a45', r:h.r });
       alive.forEach(p=>{ if(Math.hypot(p.x-h.x, p.y-h.y) < h.r && !(p.inv > 0)){ svHurt(p, 16*SV_STD[map.stage]); p.inv = 0.4; } });
@@ -14158,7 +14158,7 @@ function svEvolve(p){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 
     G.shake = 0.45; try{ sfx('summonLegend'); }catch(e){} return; }
   const up = p.wp.filter(x=>x.lv < 5).map(x=>({ k:'w', id:x.id })).concat(Object.keys(p.ps).filter(k=>p.ps[k] < 5).map(k=>({ k:'p', pas:k })));
   if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
-  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'각성할 룬 없음', col:'#c9a6ff', sz:10 });
+  svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'각성할 룬 없음', sub:'룬 Lv5와 연계 유물 필요', col:'#c9a6ff', sz:10 });
 }
 function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
 function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
@@ -14337,7 +14337,7 @@ function svKill(e, col){
   for(let k=0;k<(e.kind==='boss' ? 40 : 6);k++){ const a = Math.random()*6.28, v = 40 + Math.random()*(e.kind==='boss' ? 200 : 80); svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? (col||'#fff') : '#ff8a8a', 0.45, e.kind==='boss' ? 4 : 2); }
   if(e.kind==='boss'){ svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:1.6, s:'보스 처치!', col:'#ffe08a', sz:26, scr:1 }); G.shake = 0.5; try{ sfx('claim'); }catch(x){} if(e.final){ G.over = 'win'; svShowEnd(); } }
 }
-function svFx(f){ const G = sv.game; if(f.k==='num') f.d *= 1.8; if(f.k==='text' && f.scr && f.uy){ f.d = Math.max(3.2, f.d*1.8); const n = G.fx.filter(o=>o.k==='text' && o.scr && o.uy && o.t < o.d - 0.3 && Math.abs(o.y - f.y) < 60).length; f.y += n*26; } /* (build 624) 화면 위 안내 글자(정예·석상 등)는 3.2초 이상 · 겹치면 아래로 (사용자 11/05 「너무 빨리 사라짐」) */ /* (build 489) 피해 숫자 1.8배 오래 (사용자 10/26) */ if(G.fx.length < 140) G.fx.push(f); if(f.k==='num') return; if(sv.net.role==='host'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) }, sv.fxOwner ? { o:sv.fxOwner } : null)); } else if(sv.locOn && sv.loc && sv.loc.fx.length < 30) sv.loc.fx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0), t:0 })); } // 친구 화면에도 효과 (피해 숫자는 빼고)
+function svFx(f){ const G = sv.game; if(f.k==='num') f.d *= 1.8; if(f.k==='text' && f.scr && f.uy){ f.d = Math.max(3.2, f.d*1.8); const near = G.fx.filter(o=>o.k==='text' && o.scr && o.uy && o.t < o.d - 0.3 && Math.abs(o.y - f.y) < 80); f.y += near.reduce((t, o)=>t + (o.sub ? 42 : 26), 0); } /* (build 624) 화면 위 안내 글자(정예·석상 등)는 3.2초 이상 · 겹치면 아래로 (사용자 11/05 「너무 빨리 사라짐」) */ /* (build 489) 피해 숫자 1.8배 오래 (사용자 10/26) */ if(G.fx.length < 140) G.fx.push(f); if(f.k==='num') return; if(sv.net.role==='host'){ G.netFx = G.netFx || []; if(G.netFx.length < 40) G.netFx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0) }, sv.fxOwner ? { o:sv.fxOwner } : null)); } else if(sv.locOn && sv.loc && sv.loc.fx.length < 30) sv.loc.fx.push(Object.assign({}, f, { x:Math.round(f.x||0), y:Math.round(f.y||0), t:0 })); } // 친구 화면에도 효과 (피해 숫자는 빼고)
 function svPart(x, y, vx, vy, col, d, s){ const G = sv.game; if(sv.oneCv && (G.pt.length > 60 || Math.random() < 0.5)) return; /* (build 631) CPU — 파편 절반·최대 60 */ if(G.pt.length < 260) G.pt.push({ x, y, vx, vy, col, t:0, d, s }); }
 function svDense(p, range){ // 적이 가장 몰린 곳 (몇 마리만 살펴봄)
   const G = sv.game, c = G.en.filter(e=>e.hp>0 && Math.hypot(e.x-p.x, e.y-p.y) < range); if(!c.length) return null;
@@ -14577,7 +14577,7 @@ function svTick(dt){
     const alive = G.players.filter(q=>!q.down).sort(()=>Math.random() - 0.5), m = Math.min(alive.length, C.pack), sz = 5 + C.pack;
     for(let j=0;j<m;j++){ const o = svSpawnPos(alive[j]); for(let k=0;k<sz;k++){ const a = Math.random()*6.283, d = Math.random()*34; svSpawn(G.t > 120 && k%3===0 ? 'fast' : 'normal', { x: Math.max(10, Math.min(SV_MW-10, o.x + Math.cos(a)*d)), y: Math.max(10, Math.min(SV_MH-10, o.y + Math.sin(a)*d)) }); } }
     if(m) svFx({ k:'text', x:SV_W/2, y:110, t:0, d:1.3, s:'적 무리 '+m+'곳 등장', col:'#ff9a6a', sz:13, scr:1, uy:1 }); } }
-  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; { const al = G.players.filter(q=>!q.down); for(let j=0;j<C.elite;j++) svSpawn('elite', al.length ? svSpawnPos(al[j % al.length]) : null); } svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
+  G.eliteT -= dt; if(G.eliteT <= 0){ G.eliteT = 60; { const al = G.players.filter(q=>!q.down); for(let j=0;j<C.elite;j++) svSpawn('elite', al.length ? svSpawnPos(al[j % al.length]) : null); } svFx({ k:'text', x:SV_W/2, y:90, t:0, d:1.4, s:'정예 등장', sub:'잡으면 정령의 선물', col:'#c9a6ff', sz:13, scr:1, uy:1 }); }
   G.podT -= dt; if(G.podT <= 0){ G.podT = 12; if(G.en.filter(o=>o.kind==='pod').length < 6){ const sp = G.map && G.map.podSpots, fs = sp && sp.filter(q=>!G.en.some(o=>o.kind==='pod' && Math.hypot(o.x-q[0], o.y-q[1]) < 40)), f = fs && fs.length ? (q=>({ x:q[0], y:q[1] }))(svRand(fs)) : svFreeSpot(), hp = 40 * (1 + G.t/120); G.en.push({ x: f.x, y: f.y, r:13, spd:0, hp, max:hp, dmg:0, xp:0, kind:'pod', art:'assets/survival/pod.webp', mob:'assets/survival/pod.webp', fl:0 }); } } // (build 489) 상자는 때려서 부숨 (사용자 10/26) · 맵 곳곳
   svMapTick(dt);
   if(!G.mid && G.t >= SV_T_MID){ G.mid = true; svSpawnBoss(SV_MAPS[G.stage||0].mid, false); }
@@ -14605,7 +14605,7 @@ function svTick(dt){
       if(gl){ p.shield = Math.max(p.shield, p.maxHp*(0.1 + 0.04*gl)); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.5, col:'#9be07a', r:120 }); G.en.forEach(e=>{ if(e.hp>0 && e.kind!=='boss' && e.kind!=='pod'){ const d = Math.hypot(e.x-p.x, e.y-p.y); if(d < 120){ e.kvx = (e.x-p.x)/(d||1)*260; e.kvy = (e.y-p.y)/(d||1)*260; } } }); } } } /* (build 552) 수호의 손길 */ else p.rev = Math.max(0, p.rev - dt); return; }
     if(p.hp <= 0 && p.tr && p.tr.rw && !p.rwU && p.rwH && p.rwH.length){ const h = p.rwH[0]; p.rwU = 1; p.x = h[0]; p.y = h[1]; p.hp = Math.max(1, h[2]); p.inv = 1.5; svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col:'#c9a6ff', r:110 }); svFx({ k:'text', x:p.x, y:p.y-34, t:0, d:1.4, s:'되감기!', col:'#c9a6ff', sz:16 }); } /* (build 636) 되감기 */
     if(p.hp <= 0 && p.revs > 0){ p.revs--; p.hp = Math.round(p.maxHp*0.5); p.inv = 2.5; svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.8, col:'#ffd557', r:120 }); svFx({ k:'text', x:p.x, y:p.y-34, t:0, d:1.4, s:'부활!', col:'#ffd557', sz:16 }); try{ sfx('claim'); }catch(e){} } /* (build 610) 업그레이드 부활 */
-    if(p.hp <= 0){ p.hp = 0; p.down = true; p.rev = 0; svSt(p, 'down', 1); svFx({ k:'text', x:p.x, y:p.y-30, t:0, d:1.4, s:'쓰러짐', col:'#ff6a6a', sz:12 }); return; }
+    if(p.hp <= 0){ p.hp = 0; p.down = true; p.rev = 0; svSt(p, 'down', 1); svFx({ k:'text', x:p.x, y:p.y-30, t:0, d:1.4, s:'쓰러짐', sub:G.players.length > 1 ? '친구가 곁에 서면 부활' : '', col:'#ff6a6a', sz:12 }); return; }
     { const rg = svStRegen(p); if(rg > 0 && p.hp < p.maxHp) svHeal(p, p, rg*dt, 'rg'); }
     if(p.tr){ if(p.tr.ovf && p.hp >= p.maxHp && p.shield < p.maxHp*0.2) p.shield = Math.min(p.maxHp*0.2, p.shield + (p.maxHp*0.01 + svStRegen(p))*dt); if(p.tr.rw && !p.rwU){ p.rwT = (p.rwT||0) + dt; if(p.rwT >= 0.5){ p.rwT = 0; (p.rwH = p.rwH || []).push([p.x, p.y, p.hp]); if(p.rwH.length > 6) p.rwH.shift(); } } } /* (build 636) 물의 장막 · 되감기 기록(3초) */ // 재생 이끼 → 초당 회복 스탯
     p.lpT += dt; // 대표 패시브 — 맑은 물 · 빛의 축복
@@ -14626,7 +14626,7 @@ function svTick(dt){
     if(d < 16){ if(o.k==='rune' && G.pickWait) return; /* 고르는 중이면 끝난 뒤에 */ o.done = true;
       if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (p.goldK || 1) * (svBless('gold') ? 2 : 1)); /* (build 610) 업그레이드 골드 · (build 626) 황금 시간 */ G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
       else if(o.k==='lorb'){ const h = Math.round(p.maxHp*0.06); svHeal(p, p, h, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+h, col:'#fff3a0', sz:11 }); } /* (build 595) 빛의 이삭 */ else if(o.k==='heal'){ svHeal(p, p, 30, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+30', col:'#7ce07c', sz:11 }); }
-      else if(o.k==='mag'){ G.gems.forEach(g=>{ g.pull = true; }); svFx({ k:'text', x:p.x, y:p.y-40, t:0, d:1, s:'바람 나침반', col:'#7ae0ff', sz:12 }); }
+      else if(o.k==='mag'){ G.gems.forEach(g=>{ g.pull = true; }); svFx({ k:'text', x:p.x, y:p.y-40, t:0, d:1, s:'바람 나침반', sub:'보석을 모두 끌어당김', col:'#7ae0ff', sz:12 }); }
       else if(o.k==='rune'){ G.pickWait = true; G.pickAt = Date.now(); G.pickGift = 1; p.pick = svChoices(p); if(!p.pick || !p.pick.length){ p.pick = null; G.pickWait = false; G.pickGift = 0; } svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col:'#ffd557', r:70 }); try{ sfx('enhance'); }catch(e){} } } }); // (build 520) 정령의 선물 — 카드 3장
   G.loot = G.loot.filter(o=>!o.done);
   G.gems.forEach(g=>{ const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-g.x, b.y-g.y) < Math.hypot(a.x-g.x, a.y-g.y) ? b : a, null); if(!p) return; const d = Math.hypot(p.x-g.x, p.y-g.y), mag = p.mag * (1 + 0.25*svPasLv(p, 'greed')) * (svBless('mag') ? 3 : 1);
@@ -14859,7 +14859,7 @@ function svDrawScreen(c, G, cam){ // 카메라와 상관없는 화면 위 — �
       c.save(); c.translate(SV_W/2, ty); c.scale(sc, sc); c.font = '900 34px sans-serif'; c.lineWidth = 7; c.strokeStyle = '#000c'; const T0 = f.rn ? '룬 각성!' : '각성!'; c.strokeText(T0, 0, 0); c.fillStyle = '#ffe08a'; c.fillText(T0, 0, 0); c.restore();
       c.font = 'bold 18px sans-serif'; c.lineWidth = 5; c.strokeStyle = '#000c'; c.strokeText(f.s, SV_W/2, ty + 34); c.fillStyle = f.col; c.fillText(f.s, SV_W/2, ty + 34);
       if(f.s2){ c.font = 'bold 12px sans-serif'; c.lineWidth = 4; c.strokeText(f.s2, SV_W/2, ty + 58); c.fillStyle = '#fff'; c.fillText(f.s2, SV_W/2, ty + 58); } }
-    else if(f.k==='text'){ const sc = f.t < 0.12 ? 0.7 + f.t*2.5 : 1; c.translate(f.x, f.y + (f.uy ? (sv.uiTop||0) : 0) - (f.ub ? (sv.uiBot||0) : 0)); c.scale(sc, sc); c.fillStyle = f.col; c.font = 'bold '+(f.sz||20)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(f.s, 0, 0); c.fillText(f.s, 0, 0); }
+    else if(f.k==='text'){ const sc = f.t < 0.12 ? 0.7 + f.t*2.5 : 1; c.translate(f.x, f.y + (f.uy ? (sv.uiTop||0) : 0) - (f.ub ? (sv.uiBot||0) : 0)); c.scale(sc, sc); c.fillStyle = f.col; c.font = 'bold '+(f.sz||20)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(f.s, 0, 0); c.fillText(f.s, 0, 0); if(f.sub){ const z = Math.max(10, Math.round((f.sz||20)*0.62)); c.font = '700 '+z+'px sans-serif'; c.fillStyle = '#e8ecff'; c.lineWidth = 3; c.strokeText(f.sub, 0, (f.sz||20)*0.95); c.fillText(f.sub, 0, (f.sz||20)*0.95); } } /* (1.0.0) 큰 글자 아래 작은 부가 설명 (사용자 11/06) */
     c.restore(); });
   if(me){ const arrow = (o, col)=>{ const sx = o.x - cam.x, sy = o.y - cam.y; if(sx > -10 && sx < SV_W+10 && sy > -10 && sy < SV_H+10) return; // 화면 밖 룬 · 보스 쪽 화살표
       const cx = SV_W/2, cy = SV_H/2, dx = sx - cx, dy = sy - cy, k = Math.min((SV_W/2-18)/Math.abs(dx||1e-6), (SV_H/2-18)/Math.abs(dy||1e-6)), x = cx + dx*k, y = cy + dy*k, a = Math.atan2(dy, dx);
@@ -14997,7 +14997,7 @@ function svDraw(){
     else if(f.k==='pillar'){ const gg = c.createLinearGradient(0, f.y-80, 0, f.y); gg.addColorStop(0, f.col+'00'); gg.addColorStop(1, f.col+'dd'); c.fillStyle = gg; c.fillRect(f.x-7, f.y-80, 14, 80); }
     else if(f.k==='flash'){ c.globalAlpha = a*0.35; c.fillStyle = f.col; c.fillRect(0, 0, SV_W, SV_H); }
     else if(f.k==='num'){ c.fillStyle = f.col; c.font = 'bold '+(f.sz||9)+'px sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.5; c.strokeStyle = '#000a'; c.strokeText(f.s, f.x, f.y - f.t*13); c.fillText(f.s, f.x, f.y - f.t*13); }
-    else if(f.k==='text'){ const sc = f.t < 0.12 ? 0.7 + f.t*2.5 : 1; c.translate(f.x, f.y + (f.uy ? (sv.uiTop||0) : 0) - (f.ub ? (sv.uiBot||0) : 0)); c.scale(sc, sc); c.fillStyle = f.col; c.font = 'bold '+(f.sz||20)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(f.s, 0, 0); c.fillText(f.s, 0, 0); }
+    else if(f.k==='text'){ const sc = f.t < 0.12 ? 0.7 + f.t*2.5 : 1; c.translate(f.x, f.y + (f.uy ? (sv.uiTop||0) : 0) - (f.ub ? (sv.uiBot||0) : 0)); c.scale(sc, sc); c.fillStyle = f.col; c.font = 'bold '+(f.sz||20)+'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineWidth = 4; c.strokeStyle = '#000b'; c.strokeText(f.s, 0, 0); c.fillText(f.s, 0, 0); if(f.sub){ const z = Math.max(10, Math.round((f.sz||20)*0.62)); c.font = '700 '+z+'px sans-serif'; c.fillStyle = '#e8ecff'; c.lineWidth = 3; c.strokeText(f.sub, 0, (f.sz||20)*0.95); c.fillText(f.sub, 0, (f.sz||20)*0.95); } } /* (1.0.0) 큰 글자 아래 작은 부가 설명 (사용자 11/06) */
     c.restore(); });
   c.restore(); svDrawScreen(c, G, cam);
   if(sv.joy){ c.save(); c.globalAlpha = 0.5; c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(sv.joy.o.x, sv.joy.o.y, 40, 0, 6.283); c.stroke(); const dx = sv.joy.c.x-sv.joy.o.x, dy = sv.joy.c.y-sv.joy.o.y, d = Math.hypot(dx, dy), k = d > 40 ? 40/d : 1; c.fillStyle = '#fff'; c.beginPath(); c.arc(sv.joy.o.x+dx*k, sv.joy.o.y+dy*k, 14, 0, 6.283); c.fill(); c.restore(); }
