@@ -1104,8 +1104,8 @@
   .sv-ph .svc-c{top:52px; width:190px; gap:6px;} .sv-ph .svc-c.l{left:16px;} .sv-ph .svc-c.r{right:16px;} .sv-ph .svc-card{padding:8px 10px; font-size:11.5px;}
   .sv-ph .svc-dr{top:50px; right:12px; width:350px; max-height:calc(100% - 124px); padding:10px 14px; gap:6px;} .sv-ph .svc-h b{font-size:20px;} .sv-ph .svc .svc-dr .svs-desc{display:none;} .sv-ph .svc-pty .svs-sl{height:58px;} .sv-ph .svc-pty .svs-sl.add b{top:4px; font-size:20px;} .sv-ph .svc-co{height:44px;} .sv-ph .svc .svc-ft .svs-go{height:46px; font-size:22px;} .sv-ph .svc .svc-go{width:240px;}
   @media (prefers-reduced-motion:reduce){ .svc .svs-hero, .svc-dr, .svc-c{transition:none;} }
-  .svc .svs-hero{justify-content:flex-end;} .svc .svs-hero .art{flex:none; height:240px;} .svc.dr .svs-hero .art{height:210px;} .svc .svs-hero .art::before{width:190px; height:38px;} .svc .svs-hero .art::after{width:150px; height:24px; bottom:10px;} .svc .svs-hero h2{font-size:34px;} /* (build 650) 정령 크기 줄임 — 화면을 꽉 채워 커 보이고 그림이 깨져 보였음 (사용자 11/06) */
-  .sv-ph .svc .svs-hero .art{height:140px;} .sv-ph .svc.dr .svs-hero .art{height:118px;} .sv-ph .svc .svs-hero .art::before{width:120px; height:26px;} .sv-ph .svc .svs-hero .art::after{width:96px; height:16px; bottom:6px;} .sv-ph .svc .svs-hero h2{font-size:26px;}
+  .svc .svs-hero{justify-content:flex-end;} .svc .svs-hero .art{flex:none; height:200px;} .svc.dr .svs-hero .art{height:190px;} .svc .svs-bot .svc-go{position:absolute; left:calc(50% - 150px); bottom:0;} .svc .svs-bot [data-sheet="tree"]{margin-left:auto;} .svs::before{filter:blur(1px) brightness(.92);} .svc .svs-hero .art::before{width:190px; height:38px;} .svc .svs-hero .art::after{width:150px; height:24px; bottom:10px;} .svc .svs-hero h2{font-size:34px;} /* (build 650) 정령 크기 줄임 — 화면을 꽉 채워 커 보이고 그림이 깨져 보였음 (사용자 11/06) */
+  .sv-ph .svc .svs-hero .art{height:118px;} .sv-ph .svc.dr .svs-hero .art{height:108px;} .sv-ph .svc .svs-bot .svc-go{left:calc(50% - 120px);} .sv-ph .svc .svs-hero .art::before{width:120px; height:26px;} .sv-ph .svc .svs-hero .art::after{width:96px; height:16px; bottom:6px;} .sv-ph .svc .svs-hero h2{font-size:26px;}
   .svs-dt.sp{overflow:hidden; gap:8px;} .svs-dts{position:relative; flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:10px; overscroll-behavior:contain;} .svs-dt.sp > .svs-btn, .svs-dt.sp > .svs-cur{flex:none;} /* (build 643) 버튼은 늘 보임 */
   .svs-more-h{position:sticky; bottom:0; margin-top:auto; display:flex; align-items:center; justify-content:center; gap:4px; padding:14px 0 2px; font-size:11.5px; font-weight:900; color:#ffd557; background:linear-gradient(#0b0d2600, #121640 70%); pointer-events:none; transition:opacity .2s;} .svs-more-h .ch{width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin-top:-4px; animation:svsMh 1.2s ease-in-out infinite;} .svs-dts.end .svs-more-h{opacity:0;} @keyframes svsMh{50%{transform:translateY(3px) rotate(45deg);}} @media (prefers-reduced-motion:reduce){ .svs-more-h .ch{animation:none;} }
   .svt .svt-back{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px; border-radius:12px; background:#ffd55714; border:1px solid #ffd55755;} .svt .svt-back span{font-size:12px; color:#aab3e8;} .svt .svt-back b{font-family:var(--fun,"Jua"),sans-serif; font-weight:400; font-size:30px; color:#ffd557;} .svt .svt-back small{font-size:11.5px; color:#aab3e8;} .svt .cf p b{font-size:inherit; color:#ffd557;}
@@ -12744,6 +12744,8 @@ const SV_ART_READY = new Set([ // (651) 트리 칸 30개 + 융합 제단 5개 (�
   ...['fire','water','wood','light','dark'].flatMap(e=>[1,2,3,4].map(i=>'tree/tr_'+e+'_b'+i).concat('tree/tr_'+e+'_ks')),
   ...['hd1','hd2','hd3','co','root','fu_fire_light','fu_light_dark','fu_dark_wood','fu_wood_water','fu_water_fire'].map(k=>'tree/tr_'+k)]);
 function svArt(path, fb){ return SV_ART_READY.has(path) ? 'assets/survival/'+path+'.webp' : fb; }
+// (653) 거점 단상에 발이 가운데 오게 — 전신 그림에서 발바닥 줄 가운데가 그림 가운데에서 벗어난 비율 (assets/survival/full 기준)
+const SV_FOOTX = { dark_a:.137, dark_b:.029, fire_a:.089, fire_b:.006, light_a:.031, light_b:.059, water_a:.035, water_b:.046, wood_a:-.006, wood_b:.059 };
 function svSkIc(id){ return svArt('rune/rn_'+id, 'assets/ui/sk_'+id+'.webp'); }
 function svLpNm(l){ return LINE_KITS[l].passive.name; }
 function svKey(line, r){ const k = line.split('_'); return k[0]+'_'+RARITY_ORDER[Math.min(4, r)]+'_'+k[1]; }
@@ -13410,7 +13412,7 @@ function svLobC(msg){ const n = sv.net, gst = n.role==='guest', me = gst ? n.slo
   + '<div class="svc-c l"><button type="button" class="svc-card" data-sheet="goal"><b>정령 '+nOpen+' / '+SV_LINE_IDS.length+'</b>'+(lk ? '<span>다음: 「'+SPIRITS[svKey(lk,4)].name+'」 '+escTxt(svUnlTxt('ld', lk))+'</span>' : '<span>모든 정령을 모았음</span>')+'</button>'
     + '<button type="button" class="svc-card" data-sheet="tree"><b>'+svUi('acc')+'계정 Lv '+A.lv+'</b><span class="row"><span>'+svUi('tp')+'트리 포인트</span> <em>'+(fr > 0 ? fr+'개 남음' : '다 씀')+'</em></span><i class="bar"><u style="width:'+(A.lv >= SV_TR_LVMAX ? 100 : Math.round(A.xp/svAccNeed(A.lv)*100))+'%"></u></i></button></div>'
   + '<div class="svc-c r"><button type="button" class="svc-card" data-sheet="dex" data-dt0="st"><b>최근 기록</b>'+(last && SV_MAPS[last.st] ? '<span class="row">'+SV_MAPS[last.st].nm+' <em>'+(last.w ? '승리' : '쓰러짐')+'</em></span><span class="row">버틴 시간 <em>'+svFmtT(last.t||0)+'</em></span><span class="row">처치 <em>'+(last.k||0).toLocaleString()+'</em></span>' : '<span>아직 기록 없음</span>')+'</button></div>'
-  + '<div class="svs-hero svc-hero" style="--ec:'+SV_EC[L.split('_')[0]]+';"><div class="art"><img src="'+svSpImg(L)+'" alt=""></div><h2>'+LN+'</h2><div class="kv">패시브 <b>「'+svLpNm(L)+'」</b> · 궁극기 <b>「'+svUltNm(L)+'」</b></div>'
+  + '<div class="svs-hero svc-hero" style="--ec:'+SV_EC[L.split('_')[0]]+';"><div class="art"><img src="'+svSpImg(L)+'" alt="" style="translate:'+(-(SV_FOOTX[L]||0)*100).toFixed(1)+'% 0"></div><h2>'+LN+'</h2><div class="kv">패시브 <b>「'+svLpNm(L)+'」</b> · 궁극기 <b>「'+svUltNm(L)+'」</b></div>'
     + (dr ? '<div class="s4">'+[['체력', B.hp], ['공격', B.atk], ['방어', B.def], ['속도', B.spd]].map(([k, v])=>'<span><small>'+k+'</small><b>'+v+'</b></span>').join('')+'</div>' : '')
     + '<button type="button" class="svs-co" data-sheet="pick">'+svUi('swap')+'정령 바꾸기</button>'+(msg && !sv.sheet ? '<div class="sv-msg">'+msg+'</div>' : '')+'</div>'
   + '<div class="svc-dr" aria-hidden="'+(!dr)+'"><div class="svc-h"><b>'+(n.code ? '같이 출전' : '출전')+'</b>'+(n.code ? '<span class="svc-rc">방 코드<u>'+n.code+'</u></span>' : '')+(n.code ? '' : '<button type="button" class="svc-x" data-dr="0" aria-label="닫기">✕</button>')+'</div>'
@@ -21455,7 +21457,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 652, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 653, APP_VERSION = '10.6.2'; // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
