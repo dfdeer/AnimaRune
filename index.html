@@ -3895,11 +3895,10 @@ Object.keys(SV_SK).forEach(id=>{ if(!SV_EVO[id] && SV_SK[id].pair) SV_EVO[id] = 
 function svLinks(id){ return Object.keys(SV_EVO[id] || {}); } // 그 룬의 연계 유물들
 function svEvoD(w){ return (w && w.evo && SV_EVO[w.id] && SV_EVO[w.id][w.evo]) || null; } // 지금 각성 모양
 const SV_RUNE_NM = { fire_a_1:'불꽃 발톱', fire_b_1:'깃털 부메랑', water_a_1:'치유의 물결', water_b_1:'해룡 물줄기', wood_a_1:'잎새 연격', wood_b_1:'거미줄 덫', light_a_1:'빛의 창', light_b_1:'별빛 돌진', dark_a_1:'피의 갈증', dark_b_1:'저주 깃털' }; // (1.0.0 다듬기) 시작 룬 이름 하나로 · 전엔 대표 정령일 때와 룬 카드일 때 이름이 달랐음(「치유의 물결」과 「맑은 파도」 등) · 하는 일에 맞는 쪽으로 (사용자 11/07 「스킬 이름 손보기 진행」)
-const SV_GOK = [1, 0.75, 0.45, 0.38, 0.33]; // (1.0.0 다듬기) 깃털 부메랑 깃털 한 장 피해를 레벨마다 줄임 · 깃털이 1 → 15개로 늘어 Lv5 초당 피해가 다른 룬 중간값의 9.5배였음 (tools/sv_rune_dps_sim.js, 사용자 11/07 「전부 끝내」) · 기본 모양만 (불사조 강림, 추적 깃은 그대로)
-const SV_SKS = (()=>{ const m = l=>SV_LVM[l-1]*SV_DMGK, D = (b, k)=>{ const f = l=>Math.round(b*m(l)*(k ? k[l-1] : 1)); f.b = b; f.k = k; return f; }, F = (f)=>l=>f(l); return { // (build 489) 스킬 수치표 — [이름, 레벨→값, 붙는 글자] (카드에 바뀌는 것만 노랗게 · 사용자 10/26)
+const SV_SKS = (()=>{ const m = l=>SV_LVM[l-1]*SV_DMGK, D = (b, fl)=>{ const f = l=>Math.round(b*(fl ? SV_DMGK : m(l))); f.b = b; f.fl = fl; return f; }, F = (f)=>l=>f(l); return { // (build 489) 스킬 수치표 — [이름, 레벨→값, 붙는 글자] (카드에 바뀌는 것만 노랗게 · 사용자 10/26)
   fire_a_1:[['피해', D(28)], ['범위', F(l=>66+5*l)], ['치명타', F(()=>25), '%']],
   fire_a_2:[['피해', D(24)], ['범위', F(l=>60+6*l)], ['화상', D(4)]],
-  fire_b_1:[['깃털', F(l=>[1,3,6,10,15][l-1]), '개'], ['피해', D(10, SV_GOK)]],
+  fire_b_1:[['깃털', F(l=>[1,3,6,10,15][l-1]), '개'], ['피해', D(9, 1)]],
   fire_b_2:[['피해', D(22)], ['폭발', F(l=>44+4*l)], ['화상', D(5)]],
   water_a_1:[['피해', D(12)], ['회복', F(l=>2+l)], ['범위', F(l=>80+6*l)]],
   water_a_2:[['피해', D(20)], ['폭', F(l=>70+6*l)]],
@@ -3946,19 +3945,19 @@ const SV_SKX = { wood_a_1:{ 1:{ hp:0.08 } }, wood_a_2:{ 0:{ def:0.15 }, 2:{ def:
 const SV_SKRNG = ['범위', '폭', '길이', '반지름', '폭발', '거리'];
 function svSkSt(st){ return st ? { atk: st.atk||100, hp: st.maxHp||st.hp||100, def: st.def||0, spd: st.spd||120 } : null; }
 function svSkV(id, k, l, S){ const r = SV_SKS[id][k], x = (SV_SKX[id]||{})[k] || {}, n1 = v=>Math.round(v*10)/10;
-  if(r[1].b){ const pc = r[1].b*SV_LVM[l-1]*SV_DMGK*(r[1].k ? r[1].k[l-1] : 1); if(!S) return { v: r[1](l), s: r[2]||'' }; return { v: Math.round(S.atk*pc/100*(x.spd ? S.spd/120 : 1) + (x.hp ? S.hp*x.hp : 0) + (x.def ? S.def*x.def : 0)), s: '' }; }
+  if(r[1].b){ const pc = r[1].b*(r[1].fl ? 1 : SV_LVM[l-1])*SV_DMGK; if(!S) return { v: r[1](l), s: r[2]||'' }; return { v: Math.round(S.atk*pc/100*(x.spd ? S.spd/120 : 1) + (x.hp ? S.hp*x.hp : 0) + (x.def ? S.def*x.def : 0)), s: '' }; }
   if(x.t==='hp'){ const f = r[1](l); return S ? { v: n1(S.hp*f/100 + (x.def ? S.def*x.def : 0)), s: '' } : { v: f, s: '%' }; }
   if(x.t==='atk'){ const f = r[1](l); return S ? { v: n1(S.atk*f/100), s: '' } : { v: f, s: '' }; }
   return { v: r[1](l), s: r[2]||'' }; }
 function svSkFx(id, k, l, S){ const r = SV_SKS[id][k], x = (SV_SKX[id]||{})[k] || {}, P = v=>(Math.round(v*10)/10)+'%', L5 = [1, 2, 3, 4, 5], b = v=>'<b>'+v+'</b>', V = svSkV(id, k, l, S), out = [];
   const lvl = f=>'<div class="lv">'+L5.map(i=>'<span'+(i===l ? ' class="on"' : '')+'>Lv'+i+' '+f(i)+'</span>').join('')+'</div>';
-  if(r[1].b){ const pc = i=>r[1].b*SV_LVM[i-1]*SV_DMGK*(r[1].k ? r[1].k[i-1] : 1), A = S ? S.atk : 100, parts = ['공격력 '+b(A)+'의 '+b(P(pc(l)))];
+  if(r[1].b){ const pc = i=>r[1].b*(r[1].fl ? 1 : SV_LVM[i-1])*SV_DMGK, A = S ? S.atk : 100, parts = ['공격력 '+b(A)+'의 '+b(P(pc(l)))];
     if(x.spd) parts[0] += ' × 이동 속도 '+b(S ? S.spd : 120)+' ÷ 120';
     if(x.hp) parts.push('최대 체력'+(S ? ' '+b(S.hp) : '')+'의 '+b(P(x.hp*100)));
     if(x.def) parts.push('방어력'+(S ? ' '+b(S.def) : '')+'의 '+b(P(x.def*100)));
     out.push('<p>'+r[0]+' '+b(V.v+V.s)+' = '+parts.join(' + ')+'</p>');
     if(!S) out.push('<p class="nt">공격력 100일 때 숫자</p>');
-    out.push(lvl(i=>P(pc(i)))); out.push('<p class="nt">'+(r[1].k ? '개수가 늘어나는 만큼 한 개 피해는 줄어듦' : '레벨마다 공격력의 몇 %인지 커짐')+', 치명타와 유물 및 정령의 축복은 따로 더 곱해짐</p>'); }
+    out.push(lvl(i=>P(pc(i)))); out.push('<p class="nt">'+(r[1].fl ? '레벨이 올라도 한 개 피해는 같고 개수가 늘어남' : '레벨마다 공격력의 몇 %인지 커짐')+', 치명타와 유물 및 정령의 축복은 따로 더 곱해짐</p>'); }
   else if(x.t==='hp'){ out.push('<p>'+r[0]+' '+b(V.v+V.s)+' = 최대 체력'+(S ? ' '+b(S.hp) : '')+'의 '+b(r[1](l)+'%')+(x.def ? ' + 방어력'+(S ? ' '+b(S.def) : '')+'의 '+b(P(x.def*100)) : '')+'</p>'); out.push(lvl(i=>r[1](i)+'%')); out.push('<p class="nt">시전한 정령의 최대 체력 기준</p>'); }
   else if(x.t==='atk'){ out.push('<p>'+r[0]+' '+b(V.v)+' = 공격력'+(S ? ' '+b(S.atk) : '')+'의 '+b(r[1](l)+'%')+'</p>'); if(!S) out.push('<p class="nt">공격력 100일 때 숫자</p>'); out.push(lvl(i=>r[1](i)+'%')); out.push('<p class="nt">박쥐가 문 적 하나마다 회복</p>'); }
   else { const fl = L5.every(i=>r[1](i)===r[1](1)); out.push('<p>'+r[0]+' '+b(V.v+V.s)+(fl ? ', 레벨과 상관없이 같음' : '')+'</p>'); if(!fl) out.push(lvl(i=>r[1](i)+(r[2]||''))); if(SV_SKRNG.includes(r[0])) out.push('<p class="nt">공격 범위 유물(메아리 북)로 더 넓어짐</p>'); }
@@ -5738,7 +5737,7 @@ function svAttack(p, w, dt){
     const a0 = aimTo(240), D = (150 + lv*6)*ar, cf = SV_GO[lv] || SV_GO[5], list = [];
     if(w.evo==='might'){ for(let k=0; k<=svProj(p); k++) list.push({ a:a0 + (k - svProj(p)/2)*0.35, side:0, c:0, dl:k*0.12, D:D*1.25, big:3, fast:1.1, dk:3 }); } /* (build 594) 불사조 강림(유리 대포) — 거대한 불새 하나 · 한 방이 큼 */
     else if(w.evo==='hunter'){ const tgt = G.en.filter(o=>o.hp>0 && o.kind!=='pod' && Math.hypot(o.x-p.x, o.y-p.y) < 420).sort((a, b)=>(b.max||0) - (a.max||0))[0]; const nn = cf.n + svProj(p); if(!tgt){ w.cd = 0.3; return; } for(let i=0;i<nn;i++) list.push({ hm:1, tg:tgt, hx:tgt.x, hy:tgt.y, ph:i*6.283/nn, ht:2.2, a:a0, side:0, c:0, dl:i*0.06, D }); } /* (build 594) 추적 깃(사냥꾼의 표식) — 가장 센 적을 따라다니며 계속 꿰뚫음 */
-    else { const nn = cf.n + svProj(p), spr = nn > cf.n ? Math.max(cf.sp, 0.14*(nn - 1)) : cf.sp; for(let v=0; v<cf.v; v++) for(let i=0;i<nn;i++){ const a = nn === 1 ? 0 : (i/(nn-1) - 0.5)*spr*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1, dk:SV_GOK[Math.min(5, lv) - 1] }); } }
+    else { const nn = cf.n + svProj(p), spr = nn > cf.n ? Math.max(cf.sp, 0.14*(nn - 1)) : cf.sp; for(let v=0; v<cf.v; v++) for(let i=0;i<nn;i++){ const a = nn === 1 ? 0 : (i/(nn-1) - 0.5)*spr*2; list.push({ a:a0 + a, side: a === 0 ? 0 : a > 0 ? 1 : -1, c:cf.c, dl:v*(cf.fast ? 0.18 : 0.22), D, big:cf.big || 1, fast:cf.fast || 1, dk:0.9/SV_LVM[Math.min(5, lv) - 1] }); /* (1.0.0 다듬기) 깃털 한 장 피해는 레벨과 상관없이 공격력의 약 12%로 같고 개수만 늘어남 (사용자 11/07 「약한 배율을 유지하면서 개수가 늘어나면 됨」) · 불사조 강림, 추적 깃은 그대로 */ } }
     G.goF = G.goF || []; list.forEach(f=>{ f.x0 = Math.round(p.x); f.y0 = Math.round(p.y); const tot = svGoTot(f), tg = f.tg; delete f.tg; const fx = Object.assign({ k:'gofe', pi:p.i, t:0, d:f.dl + tot }, f); G.goF.push({ p, f: f.hm ? fx : f, tg, t:-f.dl, tot, hit:new Map(), dmg:10*m*(f.dk||1), cr, col }); svFx(fx); }); } /* (build 594) 추적 깃은 그림과 같은 물체를 써서 따라가는 자리를 같이 봄 */
   else if(id==='fire_b_2'){ const tg = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 240).sort(()=>Math.random()-0.5); for(let k=0; k<=svProj(p); k++){ const e = tg.length ? tg[k % tg.length] : ahead(150 + k*40); /* (build 593) 투사체 수만큼 화염구 */ G.pr.push({ x:p.x, y:p.y, tx:e.x, ty:e.y, sp:300, kind:'boom', dmg:22*m, burn:5*m, col, R:(44 + lv*4)*ar, p, lava: w.evo==='rampart' ? 1 : 0, split: w.evo==='crit' ? 1 : 0 }); } /* (build 594) 용암 웅덩이(성벽 돌) · 유성 분열(숫돌) — 터질 때 */ }
   else if(id==='water_a_1'){ const R = (80 + lv*6)*ar*(ev ? 1.3 : 1); (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); // (build 502) 물결 — 모았다가 물마루가 퍼지며 닿는 적부터 맞고 밀려남 (사용자 10/26: 그림만 키우면 맛이 안 남 · 미리보기 시제품대로)
@@ -7577,7 +7576,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 677, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 678, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
