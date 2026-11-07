@@ -5627,7 +5627,7 @@ function svHitBy(p, e, v, col, crit){ // 대표 패시브가 붙는 피해
   if(p && e.kind==='pod'){ if(e.hp <= 0) svSt(p, 'pods', 1); } else if(p){ const dd = h0 - Math.max(0, e.hp); if(dd > 0){ svSt(p, 'dmg', dd); e.lp = p; const S = p.st; if(dd > (S.maxHit||0)) S.maxHit = dd; if(e.kind==='boss') svSt(p, 'boss', dd); } if(crit) svSt(p, 'crit', 1); if(e.hp <= 0){ svSt(p, 'kills', 1); if(e.kind==='elite') svSt(p, 'elite', 1); } } /* (build 639) 통계 · (build 640) 최대 한 방·보스 피해·치명타·정예·상자 */
 }
 // (build 551) 판 안 목표 — 숲은 판마다 셋(seed로 같게) · 다 채우면 정령의 선물 + 골드 30 (사용자 10/29 맵 설계: 스웜처럼 판 안 목표) · 함께 채움
-const SV_OBJ = { box:{ s:'상자 부수기', n:8 }, well:{ s:'고대 샘 켜기', n:2 }, elite:{ s:'정예 처치', n:3 }, swamp:{ s:'늪 속 적 처치', n:40 }, safe:{ s:'5분까지 아무도 안 쓰러지기', n:300 }, shrine:{ s:'정령 석상 차지', n:3 } };
+const SV_OBJ = { box:{ s:'상자 부수기', n:8 }, well:{ s:'고대 샘 켜기', n:2 }, elite:{ s:'정예 처치', n:3 }, swamp:{ s:'늪 속 적 처치', n:40 }, safe:{ s:'무사히 버티기', n:300 }, shrine:{ s:'정령 석상 차지', n:3 } };
 function svObjInit(G){ G.obj = null; if(!G.map || !G.map.forest) return; const R = svRng((sv.seed||1) + 99), pool = Object.keys(SV_OBJ).filter(k=>k!=='swamp' || G.map.zones.some(z=>z.kind==='swamp')); /* (build 558) 늪 없는 맵이면 늪 목표 뺌 */ G.obj = []; while(G.obj.length < 3) G.obj.push({ k: pool.splice(Math.floor(R()*pool.length), 1)[0], c:0, ok:0, no:0 }); }
 function svObjAdd(k, v){ const G = sv.game; if(!G || !G.obj || sv.net.role==='guest') return;
   G.obj.forEach(o=>{ if(o.k!==k || o.ok || o.no) return; const n = SV_OBJ[k].n; o.c = Math.min(n, k==='safe' ? v : o.c + (v||1)); if(o.c < n) return; o.ok = 1; G.gold += 30;
@@ -7583,7 +7583,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 699, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 700, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
