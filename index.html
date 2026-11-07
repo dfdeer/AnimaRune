@@ -4039,6 +4039,7 @@ const SV_ART_READY = new Set([ // (651) 트리 칸 30개 + 융합 제단 5개 (�
   ...['fire','water','wood','light','dark'].flatMap(e=>[1,2,3,4].map(i=>'tree/tr_'+e+'_b'+i).concat('tree/tr_'+e+'_ks')),
   ...['hd1','hd2','hd3','co','root','fu_fire_light','fu_light_dark','fu_dark_wood','fu_wood_water','fu_water_fire'].map(k=>'tree/tr_'+k)]);
 function svArt(path, fb){ return SV_ART_READY.has(path) ? 'assets/survival/'+path+'.webp' : fb; }
+function svArtProbe(){ if(svArtProbe.on) return; svArtProbe.on = 1; Object.keys(SV_SK).map(id=>'rune/rn_'+id).filter(p=>!SV_ART_READY.has(p)).forEach(p=>{ const im = new Image(); im.onload = ()=>{ SV_ART_READY.add(p); }; im.src = 'assets/survival/'+p+'.webp'; }); } // (1.0.0 다듬기) 아직 안 받은 룬 아이콘(요청서 14, 15번 블록 rn_<룬>)은 파일이 있으면 저절로 씀 (사용자 11/07 「받지 않은 그림도 적용시켜 놔」) · 없으면 예전 아이콘
 // (653) 거점 단상에 발이 가운데 오게 — 전신 그림에서 발바닥 줄 가운데가 그림 가운데에서 벗어난 비율 (assets/survival/full 기준)
 const SV_HSC = { fire_a:.87, water_b:.89, wood_a:.89 }; // (1.0.0 다듬기) 거점에 세운 정령 크기 맞춤 · 그림에서 칠해진 면적이 중간값보다 큰 정령만 줄임 (면적비^-0.6, 스콜 1.27배, 요르문간드와 현무 1.22배) · 사용자 11/07 「테티스는 작게 나와 화질이 좋은데 스콜은 크게 나와 화질이 구림」
 const SV_FOOTX = { dark_a:.137, dark_b:.029, fire_a:.089, fire_b:.006, light_a:.031, light_b:.059, water_a:.035, water_b:.046, wood_a:-.006, wood_b:.059 };
@@ -5066,7 +5067,7 @@ function svStageHtml(){
     + '<div class="sv-sti"><b><i class="svtg" style="--tc:#ffd557;">'+(S+1)+'단계</i>'+M.nm+'</b><small>'+M.d+'</small><div>'+bi(M.mid)+'<span>5분 중간 보스<br><b>'+SV_BOSS_NM[M.mid]+'</b></span>'+bi(M.fin)+'<span>10분 최종 보스<br><b>'+SV_BOSS_NM[M.fin]+'</b></span></div></div>';
 }
 function svUnlTxt(kind, id){ if(kind==='ld' && (id==='wood_a' || id==='light_a' || id==='dark_a')) return '정령 트리에서 골드 '+SV_TR_CT.toLocaleString('ko-KR')+'으로 계약'; const u = SV_UNL.find(x=>x[kind]===id); return u ? u.txt : ''; } // (build 636)
-function svLobby(msg){
+function svLobby(msg){ svArtProbe();
   sv.el.classList.remove('sv-game');
   if(sv.sheet==='tree'){ svTree(); return; } /* (build 636) 정령 트리 화면 */
   const n = sv.net, L = sv.leader, V = sv.view || L, el = V.split('_')[0], vOpen = svHas('ld', V), u = svUnl();
@@ -5616,7 +5617,7 @@ function svHitBy(p, e, v, col, crit){ // 대표 패시브가 붙는 피해
   else svHit(e, v, col, crit);
   if(L==='fire_b') svBurn(e, v*0.12, 3);
   if(L==='water_b') e.slow = Math.max(e.slow||0, 1);
-  if(L==='wood_b' && e.hp<=0 && Math.random() < 0.25){ const G = sv.game; if(G.pools.length < 30) G.pools.push({ x:e.x, y:e.y, R:28, t:0, d:2.5, dps:8*(1 + G.t/150)*SV_DMGK, col:SV_EC.wood, p }); }
+  if(L==='wood_b' && e.hp<=0 && Math.random() < 0.25){ const G = sv.game; if(G.pools.length < 30) G.pools.push({ x:e.x, y:e.y, R:28, t:0, d:2.5, dps:8*(1 + G.t/150)*SV_DMGK, col:SV_EC.wood, p, poi:1, ro:Math.random()*6.28 }); }
   if(p && e.kind==='pod'){ if(e.hp <= 0) svSt(p, 'pods', 1); } else if(p){ const dd = h0 - Math.max(0, e.hp); if(dd > 0){ svSt(p, 'dmg', dd); e.lp = p; const S = p.st; if(dd > (S.maxHit||0)) S.maxHit = dd; if(e.kind==='boss') svSt(p, 'boss', dd); } if(crit) svSt(p, 'crit', 1); if(e.hp <= 0){ svSt(p, 'kills', 1); if(e.kind==='elite') svSt(p, 'elite', 1); } } /* (build 639) 통계 · (build 640) 최대 한 방·보스 피해·치명타·정예·상자 */
 }
 // (build 551) 판 안 목표 — 숲은 판마다 셋(seed로 같게) · 다 채우면 정령의 선물 + 골드 30 (사용자 10/29 맵 설계: 스웜처럼 판 안 목표) · 함께 채움
@@ -6183,7 +6184,7 @@ function svDraw(){
   c.save(); c.translate(-cam.x, -cam.y);
   if(G.map){ svDrawMap(c, G, cam); svDrawObstacles(c, G, cam); }
   (G.poR && G.poR.length ? G.pools.concat(G.poR) : G.pools).forEach(o=>{ if(o.trap){ if(o.mine){ svFxImg(c, 'fx_thorns', o.x, o.y, o.R*2.8, o.ro||0, 1, 0.95); return; } svDrawTrap(c, o, G); return; } if(!o.wall && !o.dome) c.drawImage(svGlow(o.col, o.pull ? 'cc' : '77'), o.x - o.R, o.y - o.R, o.R*2, o.R*2);
-    { const fa = Math.max(0, Math.min(1, o.t*5, (o.d - o.t)*2)); if(o.spring) svFxImg(c, 'fx_wave', o.x, o.y, o.R*2.1, o.t*0.6, 1, 0.55*fa); if(o.sprout) svFxImg(c, 'fx_root', o.x, o.y, o.R*1.9*Math.min(1, o.t*3), (o.ro||0)*0.7, 1, 0.95*fa);
+    { const fa = Math.max(0, Math.min(1, o.t*5, (o.d - o.t)*2)); if(o.spring) svFxImg(c, 'fx_wave', o.x, o.y, o.R*2.1, o.t*0.6, 1, 0.55*fa); if(o.poi) svFxImg(c, 'fx_poison', o.x, o.y, o.R*2.2, o.ro||0, 1, 0.9*fa); /* (1.0.0 다듬기) 아난시 독 장판 그림 (fx_poison, 받으면 바로 나옴 · 없으면 원래 빛 원만) */ if(o.sprout) svFxImg(c, 'fx_root', o.x, o.y, o.R*1.9*Math.min(1, o.t*3), (o.ro||0)*0.7, 1, 0.95*fa);
       if(o.dome && !svFxImg(c, 'fx_lightdome', o.x, o.y, o.R*2.16, o.t*0.15, 1, 0.9*fa)){ c.save(); c.globalAlpha = 0.2*fa; c.fillStyle = '#fff3b0'; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill(); c.globalAlpha = 0.9*fa; c.strokeStyle = '#ffe17a'; c.lineWidth = 2.5; c.stroke(); c.restore(); } /* (build 596) 빛의 돔 그림 */
       if(o.wall){ const im = svImg('assets/survival/fx_webwall.webp'); c.save(); c.globalAlpha = 0.95*fa; c.translate(o.x, o.y); c.rotate(Math.atan2(o.uy, o.ux)); if(im.naturalWidth){ const W = o.L*1.12, H = W*im.naturalHeight/im.naturalWidth; c.drawImage(im, -W/2, -H*0.42, W, H); } /* (build 596) 거미줄 장벽 그림 — 판정은 가운데 줄 */ else { c.strokeStyle = '#ffffffaa'; c.lineWidth = 3; c.beginPath(); c.moveTo(-o.L/2, 0); c.lineTo(o.L/2, 0); c.stroke(); } c.restore(); } } /* (build 595) 샘·새싹·빛의 돔·거미줄 벽 */ // (build 493) 미리 그린 빛 (전엔 매 프레임 그라디언트)
     if(o.fire) svFxImg(c, 'fx_flamepatch', o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
@@ -6287,7 +6288,7 @@ function svDraw(){
     else if(f.k==='quake') svDrawQuake(c, f);
     else if(f.k==='spear') svDrawSpear(c, f);
     else if(f.k==='poison') svDrawPoison(c, f);
-    else if(f.k==='hit'){ const pr = f.t/f.d, im = { naturalWidth:0 } /* (1.0.0 다듬기) hit_<속성> 그림은 받은 적이 없어 매번 404만 났음, 코드로 그림 */; c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
+    else if(f.k==='hit'){ const pr = f.t/f.d, im = svImg('assets/survival/hit_'+f.el+'.webp'); c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
       if(im.naturalWidth){ const sz = f.r*(1.6 + pr*1.2); c.translate(f.x, f.y); c.rotate(f.rot); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
       else if(f.el==='fire'){ c.translate(f.x, f.y); c.rotate(f.rot); for(let k=0;k<6;k++){ const a = k*1.047, L = f.r*(0.5 + pr*0.9); c.fillStyle = k%2 ? '#ffd27a' : '#ff6a2a'; c.beginPath(); c.moveTo(Math.cos(a-0.25)*f.r*0.25, Math.sin(a-0.25)*f.r*0.25); c.lineTo(Math.cos(a)*L, Math.sin(a)*L); c.lineTo(Math.cos(a+0.25)*f.r*0.25, Math.sin(a+0.25)*f.r*0.25); c.fill(); } }
       else if(f.el==='water'){ c.strokeStyle = '#bfe8ff'; c.lineWidth = 2.5*(1-pr) + 0.5; c.beginPath(); c.ellipse(f.x, f.y, f.r*(0.4 + pr), f.r*(0.25 + pr*0.6), 0, 0, 6.283); c.stroke(); c.fillStyle = '#7ac8ff'; for(let k=0;k<4;k++){ const a = f.rot + k*1.57; c.beginPath(); c.arc(f.x + Math.cos(a)*f.r*(0.3 + pr), f.y + Math.sin(a)*f.r*(0.3 + pr) - pr*6, 2.2, 0, 6.283); c.fill(); } }
@@ -7576,7 +7577,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 680, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 681, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
