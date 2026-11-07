@@ -6082,7 +6082,7 @@ function svHostSend(){
     o: G.pools.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.trap ? (o.trig >= 0 ? 4 : 3) : o.web ? 1 : o.pull ? 2 : 0]).concat((G.poR||[]).map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.ty, o.o])),
     f: (G.netFx || []).slice(-40) };
   G.netFx = [];
-  const allNew = Object.keys(n.sl||{}).filter(k=>n.sl[k]).every(k=>(n.gv||{})[k] >= 2); fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), allNew ? JSON.stringify(snap) : snap).catch(()=>{}); /* (build 632) 옛 버전 친구가 있으면 예전 방식 그대로 — 631만 받는 글자를 옛 친구가 못 읽어 방장·몹이 멈춰 보였음 (사용자 11/05) */ /* (build 631) 글자 한 줄로 — 묶음(적 150·보석 150·투사체 …)을 Firebase가 칸 수천 개로 쪼개 저장·전달하느라 방장·친구 모두 0.1초마다 무거웠음 (사용자 11/05 「멀티에서 렉이 더 심함」) */
+  const allNew = Object.keys(n.sl||{}).filter(k=>n.sl[k]).every(k=>(n.gv||{})[k] >= 2); (()=>{ try{ return fb.set(fb.ref(fb.rtdb, 'raids/'+n.code+'/s'), allNew ? JSON.stringify(snap) : JSON.parse(JSON.stringify(snap))); }catch(e){ return Promise.resolve(); } })().catch(()=>{}); /* (build 632) 옛 버전 친구가 있으면 예전 방식 그대로 — 631만 받는 글자를 옛 친구가 못 읽어 방장·몹이 멈춰 보였음 (사용자 11/05) */ /* (build 631) 글자 한 줄로 — 묶음(적 150·보석 150·투사체 …)을 Firebase가 칸 수천 개로 쪼개 저장·전달하느라 방장·친구 모두 0.1초마다 무거웠음 (사용자 11/05 「멀티에서 렉이 더 심함」) */
 }
 function svGuestSend(){
   const fb = raidNet.fb; if(!sv || !fb || !sv.net.code || !sv.net.slot) return; const G = sv.game, p = G && G.players[G.me];
@@ -6090,7 +6090,7 @@ function svGuestSend(){
   if(p){ a.x = Math.round(p.x); a.y = Math.round(p.y); a.fx = Math.round(p.face[0]*100)/100; a.fy = Math.round(p.face[1]*100)/100; if(sv.myPick) a.pk = sv.myPick; a.am = { face:'f', mouse:'m' }[svAimMode()] || 'n'; if(svFireMode(p)==='manual'){ a.fm = 'm'; a.md = sv.mDown ? 1 : 0; } if((a.am==='m' || a.fm==='m') && sv.mouse && sv.cam) a.ma = Math.round(Math.atan2(sv.mouse.y + sv.cam.y - p.y, sv.mouse.x + sv.cam.x - p.x)*100)/100; } // (build 567) 내 조작도 보냄
   if(p && sv.loc && sv.loc.on){ const L = sv.loc, R = Math.round; a.lc = 1; svLocBatch(); a.hb = L.bat; /* (build 570) 내 공격은 내가 계산 — 맞힌 적·상태·회복·효과를 묶음 번호로 (방장이 받았다고 할 때까지 다시 보냄) */
     a.pr = L.pr.slice(0, 40).map(b=>[R(b.x), R(b.y), b.col, b.kind==='wave' ? 2 : b.kind==='spark' ? 3 : 0, b.kind==='wave' ? R(Math.atan2(b.vy, b.vx)*100)/100 : 0, b.kind==='wave' ? R(b.w) : 0, R(b.vx||0), R(b.vy||0)]); a.po = L.po.map(o=>[R(o.x), R(o.y), R(o.R), o.col, o.trap ? (o.trig >= 0 ? 4 : 3) : o.web ? 1 : o.pull ? 2 : 0]); }
-  fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), a).catch(()=>{}); // (build 544) 자리마다 따로
+  try{ fb.set(fb.ref(fb.rtdb, 'raidActs/'+sv.net.code+'/p'+sv.net.slot), JSON.parse(JSON.stringify(a))).catch(()=>{}); }catch(e){} /* (1.0.0 다듬기) 실제 Firebase는 값 안에 undefined가 하나라도 있으면 쓰기를 통째로 거부(그 자리에서 오류) — 발톱 효과의 빈 칸(sz, dz 등) 때문에 친구 위치, 공격, 카드가 방장에게 하나도 안 가서 방장 화면의 친구가 멈춰 있다가 12초 뒤 쓰러졌음 (사용자 11/07 「호스트가 친구 움직임이 안 보임, 카드 한 번 고르면 친구 즉사」) · JSON을 거치면 undefined는 빠지고 NaN은 null */ // (build 544) 자리마다 따로
 }
 function svGuestApply(v){
   const G = sv.game; { const now = performance.now(); G.netDt = G.netAt ? Math.max(0.05, Math.min(0.3, (now - G.netAt)/1000)) : 0.1; G.netAt = now; } /* (build 630) 받은 간격 — 속도 예측용 */ G.t = v.t/10; G.lvl = v.lv; G.xp = v.xp; G.xpNext = v.xn; G.kills = v.k; G.gold = v.gd||0; G.pickWait = !!v.pw; G.pickLeft = v.pl || 0; G.midKilled = !!v.mk; if(v.gm && G.map && G.map.forest){ const zs = G.map.zones.filter(z=>z.kind==='shrine'); (v.gm.z||[]).forEach((a, i)=>{ const z = zs[i]; if(z && Array.isArray(a)){ z.cap = a[0]/100; z.cd = a[1]; } }); G.bless = v.gm.b ? { k:v.gm.b[0], t:v.gm.b[1] } : null; } if(Array.isArray(v.ob)) G.obj = v.ob.filter(a=>SV_OBJ[a[0]]).map(a=>({ k:a[0], c:a[1], ok: a[2]===1 ? 1 : 0, no: a[2]===2 ? 1 : 0 })); if(Array.isArray(v.sn) && G.map && G.map.snow){ const zs = G.map.zones.filter(z=>z.kind==='snowman'); v.sn.forEach((a, i)=>{ const z = zs[i]; if(z){ z.aw = a[0]; z.cd = a[1]; } }); } if(v.wl && G.map && G.map.well){ G.map.well.ch = v.wl[0]/100; G.map.well.cd = v.wl[1]; } G.hz = (v.hz||[]).map(a=>({ x:a[0], y:a[1], r:a[2], t:a[3]/10, d:a[4]/10 }));
@@ -7580,7 +7580,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 683, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 684, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
