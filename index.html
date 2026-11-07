@@ -27,7 +27,7 @@
 <style>:root{--sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px); box-sizing:border-box; padding-top:var(--sat); padding-bottom:var(--sab);} html{scroll-padding-top:env(safe-area-inset-top,0px);}</style>
 <title>아니마룬</title>
 <style id="coreCss">
-  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;} /* (1.0.0 다듬기) 폰 브라우저가 넓은 글 상자의 글자를 저절로 키우지 않게 · 입력칸(.sv-in)은 16px 이상 — 아이폰은 16px보다 작은 입력칸을 누르면 화면을 확대하고 그대로 둠 (사용자 11/07 「가끔 설정에서 글자랑 패널이 커진 상태」) */
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%;} body, .sv, .sv *{word-break:keep-all; overflow-wrap:break-word;} /* (1.0.0 다듬기) 한글은 낱말 단위로 줄바꿈 — 기본값은 글자 단위라 「보호막 / 까지」처럼 낱말 중간에서 끊겼음, 칸보다 긴 낱말만 쪼갬 (사용자 11/08) */ /* (1.0.0 다듬기) 폰 브라우저가 넓은 글 상자의 글자를 저절로 키우지 않게 · 입력칸(.sv-in)은 16px 이상 — 아이폰은 16px보다 작은 입력칸을 누르면 화면을 확대하고 그대로 둠 (사용자 11/07 「가끔 설정에서 글자랑 패널이 커진 상태」) */
   :root{
     --fire:#ff7557; --water:#57ccff; --wood:#5cd65c; --light:#ffe066; --dark:#9b6bff;
     --common:#b8bcc4; --rare:#5798ff; --epic:#b657ff; --legendary:#ffc857;
@@ -3995,7 +3995,7 @@ const SV_PAS = { // 능력 — 균열 유물 그림·이름 그대로 (사용자
 };
 function svPI(k){ return '<img class="sv-pi" src="assets/ui/'+SV_PAS[k].ic+'.webp" alt="">'; }
 const SV_LP = { // 대표 패시브 (계열 패시브 이름 그대로)
-  fire_a:'체력 50% 이하면 공격력 +30%', fire_b:'내 공격이 화상을 남김 (3초)', water_a:'4초마다 체력 비율이 가장 낮은 아군을 최대 체력의 8%만큼 회복', water_b:'내 공격에 맞은 적 느려짐',
+  fire_a:'체력 50% 이하면 공격력 +30%', fire_b:'내 공격이 화상을 남김 (3초)', water_a:'4초마다 체력 비율이 가장 낮은 아군을 최대 체력의 8% 회복', water_b:'내 공격에 맞은 적 느려짐',
   wood_a:'받는 피해 −25%', wood_b:'쓰러뜨린 적 자리에 25% 확률로 독 장판', light_a:'10초마다 보호막 (최대 체력 20%)', light_b:'모든 아군 이동 속도 +12%와 쿨타임 −8%',
   dark_a:'적이 잃은 체력만큼 피해 증가 (최대 +40%)', dark_b:'치명타 확률 +12%'
 };
@@ -5419,7 +5419,7 @@ const SV_CO = {
   together:{ nm:'함께하는 힘', ic:'ic_party', d:l=>'반지름 220 안의 아군 한 명마다 내 룬 피해 +'+(6+2*l)+'%' },
   resonance:{ nm:'공명', ic:'ic_power', d:l=>'반지름 170 안에 아군이 있으면 '+(4.5-0.4*l).toFixed(1)+'초마다 둘 사이에서 터져, 반지름 '+(70+6*l)+' 안에 '+Math.round(32*SV_LVM[l-1]*SV_DMGK)+' 피해를 줌' },
   guard:{ nm:'수호의 손길', ic:'ic_guard', d:l=>'반지름 140 안의 아군이 받는 피해 −'+(4+2*l)+'%, 쓰러진 아군을 '+(1.5+0.25*l)+'배 빨리 일으키고, 일으키면 둘레 적을 밀쳐내며 그 아군에게 최대 체력 '+(10+4*l)+'% 보호막' },
-  share:{ nm:'나눔', ic:'ic_gift', d:l=>'4초마다 반지름 260 안에서 체력 비율이 가장 낮은 아군을 내 최대 체력 '+(4+1.5*l)+'%만큼 회복' }
+  share:{ nm:'나눔', ic:'ic_gift', d:l=>'4초마다 반지름 260 안에서 체력 비율이 가장 낮은 아군을 내 최대 체력 '+(4+1.5*l)+'% 회복' }
 };
 function svCoOn(p, id){ return p && p.co && p.co.id===id ? p.co.lv : 0; }
 function svCoK(p){ const l = svCoOn(p, 'together'); if(!l) return 1; const n = sv.game.players.filter(q=>q!==p && !q.down && Math.hypot(q.x-p.x, q.y-p.y) < 220).length; return 1 + (0.06 + 0.02*l)*n; }
@@ -7583,7 +7583,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 696, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 697, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
