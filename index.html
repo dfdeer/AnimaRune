@@ -3873,7 +3873,7 @@ const SV_EVO = {
   fire_b_2:{ rampart:{ nm:'용암 웅덩이', ev:'떨어진 자리에 용암이 남아 몇 초 동안 들어오는 적을 지짐', dm:1.6 },
     crit:{ nm:'유성 분열', ev:'화염구가 터지면 작은 화염구 4개로 갈라져 둘레로 튐', dm:1.6 } },
   // (build 595) 물·나무·빛·어둠 확정본 (미리보기 https://claude.ai/artifact/ApuywHGmyPQ4kXG8B3SwLV · 사용자 10/30 「한 번에 다 넣어」)
-  water_a_1:{ swift:{ nm:'물결 타기', ev:'걸어간 거리만큼 발자국마다 작은 물결이 일어남, 많이 걸을수록 셈', cd:0.2, dm:1.6 }, vital:{ nm:'치유의 샘', ev:'물결 대신 발밑에 샘이 생겨, 들어와 있는 아군은 계속 회복, 들어온 적은 느려짐', dm:1.6 } },
+  water_a_1:{ swift:{ nm:'물결 타기', ev:'걸어간 거리만큼 발자국마다 작은 물결이 일어남, 많이 걸을수록 셈', cd:0.2, dm:1.6 }, vital:{ nm:'치유의 샘', ev:'물결 대신 발밑에 샘이 생겨, 들어와 있는 아군은 계속 회복, 들어온 적은 느려지고 계속 피해를 입음', dm:1.6 } },
   water_a_2:{ rampart:{ nm:'물의 성채', ev:'물의 벽이 조금 나간 뒤 2초 동안 그 자리에 버티며 적을 막음', dm:1.6 }, area:{ nm:'대해일', ev:'물의 벽이 멀리까지 밀려가며 점점 넓어짐', dm:1.6 } },
   water_b_1:{ area:{ nm:'부채 물살', ev:'물줄기 한 줄 대신 넓은 부채꼴로 여러 줄을 뿜어 앞쪽을 휩씀', dm:1.6 }, frost:{ nm:'빙결 창', ev:'물줄기 대신 얼음 창을 던져, 박힌 자리 둘레 적을 얼림', dm:1.6 } },
   water_b_2:{ haste:{ nm:'얼음 연사', ev:'둘레를 돌던 얼음이 하나씩 가까운 적에게 날아가 박히고 다시 생김', dm:1.6 }, rampart:{ nm:'얼음 방패', ev:'얼음 조각이 바라보는 쪽 앞에 멈춰 방패가 됨, 부딪힌 적은 밀려나고 얼어붙음', dm:1.6 } },
@@ -4057,7 +4057,7 @@ function svTint(im, col){ // 그림 모양 그대로 한 색으로 칠한 사본
 function svSpImg(L){ return 'assets/survival/full/'+L+'.webp'; }
 function svImg(src){ sv.imgs = sv.imgs || {}; if(!sv.imgs[src]){ const im = new Image(); im.src = src; sv.imgs[src] = im; } return sv.imgs[src]; }
 function svPreload(stage){ // (build 503) 판에 쓰는 그림을 미리 불러 둠 — 전엔 처음 쓸 때 불러서 첫 타에 그림 대신 임시 선(옛 모양)이 먼저 보였음 (사용자 10/26)
-  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_root','fx_lightdome','fx_webwall','fx_spiderling'].forEach(n=>svImg(b+n+'.webp'));
+  const M = SV_MAPS[stage||0], b = 'assets/survival/'; ['fx_claw','fx_wave','gem_s','gem_b','pod','rune','fx_firefeather','fx_jet','fx_leaf','fx_crackline','fx_web','fx_poisonburst','fx_spear','fx_sigil','fx_feather','fx_startrail','fx_star','fx_bat1','fx_bat2','fx_darkfeather','fx_bloodorb','fx_darkburst','fx_burst','fx_iceshard','fx_waterwall','fx_scythe','fx_lightburst','fx_starfall','fx_vortex','fx_thorns','fx_explosion','fx_flamepatch','fx_root','fx_lightdome','fx_webwall','fx_spiderling'].forEach(n=>svImg(b+n+'.webp'));
   if(M && SV_FOMAP[M.id]) ['normal','fast','big','elite'].forEach(k=>svImg(b+M.id+'_mob_'+k+'.webp')); else if(M){ [M.id+'_ground'].concat([1,2,3,4].map(k=>M.id+'_ob'+k), [1,2,3].map(k=>M.id+'_deco'+k), ['normal','fast','big','elite'].map(k=>M.id+'_mob_'+k), [M.id+'_spring', M.id+'_map']).forEach(n=>svImg(b+n+'.webp')); }
   const cl = svImg(b+'fx_claw.webp'), ready = ()=>{ try{ svClawTex(cl); }catch(e){} }; if(cl.decode) cl.decode().then(ready, ()=>{}); else if(cl.complete && cl.naturalWidth) ready(); else cl.addEventListener('load', ready, { once:true }); // (build 518) 다 푼 뒤에 try{ svWaveParts(); }catch(e){}
   Object.keys(SV_RIG).forEach(L=>SV_RIG[L].parts.forEach(q=>svRigImg(L, q.n))); Object.keys(SV_SD).forEach(L=>SV_SD[L].parts.forEach(q=>svSdImg(L, q.n))); // (build 531) 조각 동작 그림
@@ -5663,7 +5663,7 @@ function svStrong(p, r){ return sv.game.en.filter(o=>o.hp>0 && o.kind!=='pod' &&
 const SV_EVA = {
   water_a_1:{
     swift:c=>{ const { p, w, G, m, ar, col, cr } = c, L = w.lastP; if(L && Math.hypot(p.x - L[0], p.y - L[1]) < 34) return true; w.lastP = [p.x, p.y]; const R = 52*ar; (G.waves = G.waves || []).push({ p, x:p.x, y:p.y, R, t:0, dmg:12*m, cr, col, hit:[] }); svFx({ k:'wave', x:p.x, y:p.y, t:0, d:0.7, r:R, sd:1 + Math.floor(Math.random()*9999) }); G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-p.x, q.y-p.y) < R + 20) svHeal(p, q, p.maxHp*0.01, 'sk'); }); return true; },
-    vital:c=>{ const { p, G, ar, lv } = c; if(G.pools.length < 60) G.pools.push({ x:Math.round(p.x), y:Math.round(p.y + 6), R:(62 + lv*4)*ar, t:0, d:3.2, dps:0, spring:1, hps:p.maxHp*(0.02 + 0.006*lv), col:'#7cc8ff', p }); return true; } },
+    vital:c=>{ const { p, G, ar, lv, m } = c; if(G.pools.length < 60) G.pools.push({ x:Math.round(p.x), y:Math.round(p.y + 6), R:(62 + lv*4)*ar, t:0, d:3.2, dps:15*m /* (1.0.0 다듬기) 각성 중 피해가 아예 없던 건 이것뿐이라 샘 안 적에게 초당 피해 (사용자 11/07) */, spring:1, hps:p.maxHp*(0.02 + 0.006*lv), col:'#7cc8ff', p }); return true; } },
   water_a_2:{
     rampart:c=>{ const { p, G, m, ar, lv, col, cr, aimTo } = c, a = aimTo(240); G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*200, vy:Math.sin(a)*200, kind:'wave', life:2.5, stop:0.45, w:(70 + lv*6)*ar, dmg:20*m, hitS:[], col, p, crit:cr }); return true; },
     area:c=>{ const { p, G, m, ar, lv, col, cr, aimTo } = c, a = aimTo(240); G.pr.push({ x:p.x, y:p.y, vx:Math.cos(a)*240, vy:Math.sin(a)*240, kind:'wave', life:1.9, grow:0.9, w:(70 + lv*6)*ar, dmg:20*m, hitS:[], col, p, crit:cr }); return true; } },
@@ -5837,7 +5837,7 @@ function svWeapTick(dt){ const G = sv.game;
     if(o.follow && o.follow.hp > 0){ o.x = o.follow.x; o.y = o.follow.y; } /* (build 595) 포식자의 눈 */
     if((o.spring || o.sprout) && o.hps) G.players.forEach(q=>{ if(!q.down && q.hp < q.maxHp && Math.hypot(q.x-o.x, q.y-o.y) < o.R + 8){ svHeal(o.p, q, o.hps*dt, 'sk'); q.hsT = (q.hsT||0) + o.hps*dt; if(q.hsT >= 3){ svFx({ k:'num', x:q.x, y:q.y - 20, t:0, d:0.6, s:'+'+Math.round(q.hsT), col:'#7ce07c', sz:10 }); q.hsT = 0; } } }); /* (build 595) 치유의 샘·새싹 길 */
     if(o.greed){ const R2 = o.R*2.2; G.gems.concat(G.loot.filter(l=>l.k==='gold')).forEach(g=>{ const d = Math.hypot(g.x-o.x, g.y-o.y); if(d > R2) return; if(o.t > o.d - 0.12){ g.x = o.p.x; g.y = o.p.y; } else if(d > 2){ g.x += (o.x-g.x)/d*Math.min(d, 260*dt); g.y += (o.y-g.y)/d*Math.min(d, 260*dt); } }); } /* (build 595) 탐욕의 구멍 */
-    G.en.forEach(e=>{ if(e.hp<=0) return; const d = Math.hypot(e.x-o.x, e.y-o.y); if(o.spring || o.sprout || o.dome || o.wall){ svPoolSp(o, e, d, dt); return; }
+    G.en.forEach(e=>{ if(e.hp<=0) return; const d = Math.hypot(e.x-o.x, e.y-o.y); if(o.spring || o.sprout || o.dome || o.wall){ svPoolSp(o, e, d, dt); if(!(o.spring && o.dps)) return; }
       if(o.pull && d < o.R*1.6 && d > 4 && e.kind!=='boss'){ e.x += (o.x-e.x)/d*90*dt; e.y += (o.y-e.y)/d*90*dt; }
       if(d < o.R + e.r){ const dd = o.dps*dt*(e.curse > 0 ? 1.25 : 1); if(sv.locOn) svLocDot(e, dd, o.col); else { if(o.p && e.kind!=='pod') svSt(o.p, 'dmg', Math.min(dd, Math.max(0, e.hp))); e.hp -= dd; } /* (build 570) 친구 기기는 장판 피해를 모아 방장에게 */ e.fl = Math.max(e.fl, 0.03); if(o.web) e.web = Math.max(e.web||0, 0.3); if(o.wev && e.kind!=='boss') e.root = Math.max(e.root||0, 0.1); /* (build 509) 진화 거미줄 — 꼼짝 못 함 (짝: 서리 결정) */ if(e.hp<=0) svKill(e, o.col); } });
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
@@ -6186,7 +6186,7 @@ function svDraw(){
     { const fa = Math.max(0, Math.min(1, o.t*5, (o.d - o.t)*2)); if(o.spring) svFxImg(c, 'fx_wave', o.x, o.y, o.R*2.1, o.t*0.6, 1, 0.55*fa); if(o.sprout) svFxImg(c, 'fx_root', o.x, o.y, o.R*1.9*Math.min(1, o.t*3), (o.ro||0)*0.7, 1, 0.95*fa);
       if(o.dome && !svFxImg(c, 'fx_lightdome', o.x, o.y, o.R*2.16, o.t*0.15, 1, 0.9*fa)){ c.save(); c.globalAlpha = 0.2*fa; c.fillStyle = '#fff3b0'; c.beginPath(); c.arc(o.x, o.y, o.R, 0, 6.283); c.fill(); c.globalAlpha = 0.9*fa; c.strokeStyle = '#ffe17a'; c.lineWidth = 2.5; c.stroke(); c.restore(); } /* (build 596) 빛의 돔 그림 */
       if(o.wall){ const im = svImg('assets/survival/fx_webwall.webp'); c.save(); c.globalAlpha = 0.95*fa; c.translate(o.x, o.y); c.rotate(Math.atan2(o.uy, o.ux)); if(im.naturalWidth){ const W = o.L*1.12, H = W*im.naturalHeight/im.naturalWidth; c.drawImage(im, -W/2, -H*0.42, W, H); } /* (build 596) 거미줄 장벽 그림 — 판정은 가운데 줄 */ else { c.strokeStyle = '#ffffffaa'; c.lineWidth = 3; c.beginPath(); c.moveTo(-o.L/2, 0); c.lineTo(o.L/2, 0); c.stroke(); } c.restore(); } } /* (build 595) 샘·새싹·빛의 돔·거미줄 벽 */ // (build 493) 미리 그린 빛 (전엔 매 프레임 그라디언트)
-    if(o.fire) svFxImg(c,  o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
+    if(o.fire) svFxImg(c, 'fx_flamepatch', o.x, o.y - 2, o.R*2.3, o.ro||0, 1, Math.min(1, o.t*5, (o.d - o.t)*2)*0.95); // (build 594) 불길·용암 장판
     if(o.web){ c.save(); c.strokeStyle = '#ffffff55'; c.lineWidth = 1; for(let k=0;k<6;k++){ const a = k*1.047; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(o.x + Math.cos(a)*o.R, o.y + Math.sin(a)*o.R); c.stroke(); } [0.4, 0.75].forEach(f=>{ c.beginPath(); c.arc(o.x, o.y, o.R*f, 0, 6.283); c.stroke(); }); c.restore(); }
     if(o.pull && svFxImg(c, 'fx_vortex', o.x, o.y, o.R*2.2*Math.min(1, 0.4 + o.t*3), (o.ro||0) + (o.sg||1)*o.t*5, o.sg||1, o.t > o.d - 0.25 ? (o.d - o.t)/0.25 : 0.9)){} // (build 586) 검은 소용돌이 그림
     else if(o.pull){ c.save(); c.strokeStyle = '#c9a6ff'; c.lineWidth = 2; for(let k=0;k<3;k++){ c.beginPath(); c.arc(o.x, o.y, o.R*(0.35 + k*0.25), G.t*6 + k*2, G.t*6 + k*2 + 2.2); c.stroke(); } c.restore(); } });
@@ -6287,7 +6287,7 @@ function svDraw(){
     else if(f.k==='quake') svDrawQuake(c, f);
     else if(f.k==='spear') svDrawSpear(c, f);
     else if(f.k==='poison') svDrawPoison(c, f);
-    else if(f.k==='hit'){ const pr = f.t/f.d, im = svImg('assets/survival/hit_'+f.el+'.webp'); c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
+    else if(f.k==='hit'){ const pr = f.t/f.d, im = { naturalWidth:0 } /* (1.0.0 다듬기) hit_<속성> 그림은 받은 적이 없어 매번 404만 났음, 코드로 그림 */; c.globalAlpha = Math.max(0, 1 - pr*pr); // 속성별 맞는 효과 — 그림(hit_<속성>)이 있으면 그림, 없으면 코드
       if(im.naturalWidth){ const sz = f.r*(1.6 + pr*1.2); c.translate(f.x, f.y); c.rotate(f.rot); c.drawImage(im, -sz/2, -sz/2, sz, sz); }
       else if(f.el==='fire'){ c.translate(f.x, f.y); c.rotate(f.rot); for(let k=0;k<6;k++){ const a = k*1.047, L = f.r*(0.5 + pr*0.9); c.fillStyle = k%2 ? '#ffd27a' : '#ff6a2a'; c.beginPath(); c.moveTo(Math.cos(a-0.25)*f.r*0.25, Math.sin(a-0.25)*f.r*0.25); c.lineTo(Math.cos(a)*L, Math.sin(a)*L); c.lineTo(Math.cos(a+0.25)*f.r*0.25, Math.sin(a+0.25)*f.r*0.25); c.fill(); } }
       else if(f.el==='water'){ c.strokeStyle = '#bfe8ff'; c.lineWidth = 2.5*(1-pr) + 0.5; c.beginPath(); c.ellipse(f.x, f.y, f.r*(0.4 + pr), f.r*(0.25 + pr*0.6), 0, 0, 6.283); c.stroke(); c.fillStyle = '#7ac8ff'; for(let k=0;k<4;k++){ const a = f.rot + k*1.57; c.beginPath(); c.arc(f.x + Math.cos(a)*f.r*(0.3 + pr), f.y + Math.sin(a)*f.r*(0.3 + pr) - pr*6, 2.2, 0, 6.283); c.fill(); } }
@@ -7576,7 +7576,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 679, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 680, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
