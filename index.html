@@ -4024,7 +4024,7 @@ const SV_SLOT = ['guest', 'g2', 'g3']; // (build 544) 방 자리 1~3 = raids/<�
 // (build 544) 인원수 난이도 (사용자 10/29 「4명 · 인원수에 따라 몹 수·나오는 위치(+위치 수)·몹 스탯」) — n 몹 나오는 빠르기 · hp 몹 체력 · dmg 몹 피해 · boss 보스 체력 · pack 적 무리가 한 번에 몰려오는 곳 수(혼자는 없음) · elite 1분마다 정예 수
 const SV_COOP = [null, { n:1, hp:1, dmg:1, boss:1, pack:0, elite:1 }, { n:1.5, hp:1.3, dmg:1.05, boss:1.7, pack:1, elite:1 }, { n:1.95, hp:1.55, dmg:1.1, boss:2.3, pack:2, elite:2 }, { n:2.4, hp:1.8, dmg:1.15, boss:2.9, pack:3, elite:2 }];
 function svCoop(G){ return SV_COOP[Math.min(4, Math.max(1, G.players.length))]; }
-let SV_HPK = 1, SV_SPAWN = 1, SV_CONTACT = 0.5, SV_GROW = 80, SV_XPK = 2, SV_DMGK = 1.3; // 세기 (let — 시뮬)
+let SV_HPK = 1.15, SV_DGROW = 150, SV_SPAWN = 1, SV_CONTACT = 0.5, SV_GROW = 80, SV_XPK = 2, SV_DMGK = 1.3; // 세기 (let — 시뮬) // (1.0.0 다듬기) 사용자 11/11 「1단계가 너무 쉬움, 뒤로 갈수록 적 피해와 체력 더」 → 기본 체력 ×1.15, 체력 증가 (t/170)^2.2 → (t/150)^2.3, 피해 ×(1 + t/150) (보스는 t/300)
 let sv = null;
 function svSkLine(id){ return id.slice(0, -2); }
 function svEvoSeen(id, k){ const S = state.svEvoSeen || {}; if(k) return !!(S[id+':'+k] || (S[id] && SV_SK[id].pair===k)); return svLinks(id).some(q=>svEvoSeen(id, q)); } // (build 588) 연계 유물마다 따로 (예전 기록은 예전 짝으로 봄) // (build 517) 한 번이라도 각성시켜 본 룬·기술만 짝을 보여 줌 — 그 전엔 「?」 (사용자 10/27)
@@ -5441,11 +5441,11 @@ function svChoices(p){
   if(sv.game.players.length >= 2){ if(p.co){ if(p.co.lv < 5) pool.push({ k:'c', id:p.co.id }); } else Object.keys(SV_CO).forEach(id=>pool.push({ k:'c', id })); } // (build 552) 협동 룬
   if(pk.length < SV_MAX_P) Object.keys(SV_PAS).filter(k=>!pk.includes(k) && (!p.rel || p.rel.includes(k))).forEach(k=>pool.push({ k:'p', pas:k })); /* (build 636) 유물은 처음 넷 + 트리에서 연 것만 */
   const pairs = p.wp.flatMap(w=>svLinks(w.id)); pool.slice().forEach(c=>{ if(c.k==='p' && pairs.includes(c.pas)) pool.push(c, c); }); // 가진 스킬의 짝 유물은 잘 나오게 (유물이 13종이라)
-  const nC = p.tr && p.tr.wish && !p.wishU && sv.game.lvl >= 10 && !sv.game.pickGift ? (p.wishU = 1, 5) : 3; /* (build 636) 별똥 소원 */ const out = []; while(out.length < nC && pool.length){ const c = pool[Math.floor(Math.random()*pool.length)]; out.push(c); for(let i=pool.length-1;i>=0;i--) if(svCardKey(pool[i])===svCardKey(c)) pool.splice(i,1); }
+  const nC = p.tr && p.tr.wish && !p.wishU && sv.game.lvl >= 10 && !sv.game.pickGift ? (p.wishU = 1, 5) : 3; /* (build 636) 별똥 소원 */ const out = p.wp.filter(w=>svCanEvo(p, w)).flatMap(w=>svLinks(w.id).filter(k=>svPasLv(p, k) > 0 && SV_EVO[w.id] && SV_EVO[w.id][k]).map(k=>({ k:'e', id:w.id, pas:k }))).slice(0, nC - 1); /* (1.0.0 다듬기) 각성할 수 있으면 짝마다 각성 카드를 먼저 (나머지 칸은 평소처럼) */ while(out.length < nC && pool.length){ const c = pool[Math.floor(Math.random()*pool.length)]; out.push(c); for(let i=pool.length-1;i>=0;i--) if(svCardKey(pool[i])===svCardKey(c)) pool.splice(i,1); }
   if(!out.length) out.push({ k:'heal' }, { k:'gold' });
   return out;
 }
-function svCardKey(c){ return c.k+':'+(c.id || c.pas || ''); }
+function svCardKey(c){ return c.k+':'+(c.k==='e' ? c.id+'~'+c.pas : (c.id || c.pas || '')); }
 function svApplyPick(p, c){
   if(!c) return;
   if(c.k==='w'){ const w = p.wp.find(x=>x.id===c.id); if(w){ w.lv = Math.min(5, w.lv+1); svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1, s:svSkNm(w.id, p)+' Lv'+w.lv, col:SV_RC[w.lv-1], sz:12 }); }
@@ -5454,13 +5454,14 @@ function svApplyPick(p, c){
   else if(c.k==='c'){ if(p.co && p.co.id===c.id) p.co.lv = Math.min(5, p.co.lv + 1); else p.co = { id:c.id, lv:1, t:0 }; svFx({ k:'text', x:p.x, y:p.y-36, t:0, d:1.1, s:SV_CO[c.id].nm+' Lv'+p.co.lv, col:'#ff9ad0', sz:12 }); }
   else if(c.k==='heal') p.hp = p.maxHp;
   else if(c.k==='gold') sv.game.gold += 30;
-  for(let g=0; g<5 && p.wp.some(x=>svCanEvo(p, x)); g++) svEvolve(p); // (build 520) 룬 Lv5 + 짝 유물을 갖추는 순간 바로 각성 — 어느 쪽을 나중에 얻어도 (사용자 10/27: 스웜처럼 · 각성석 없음)
+  else if(c.k==='e'){ const w = p.wp.find(x=>x.id===c.id); if(w && svCanEvo(p, w) && svPasLv(p, c.pas) > 0 && svLinks(w.id).includes(c.pas)) svEvolve(p, w, c.pas); }
+  /* (1.0.0 다듬기) 각성은 카드로 고름 — 조건이 되면 레벨 업 때 「각성」 카드가 나오고, 다른 카드를 고르면 미룸 (사용자 11/11 「원하는 빌드가 있는데 바로 각성하면 억울」) */ // (build 520) 룬 Lv5 + 짝 유물을 갖추는 순간 바로 각성 — 어느 쪽을 나중에 얻어도 (사용자 10/27: 스웜처럼 · 각성석 없음)
 }
 function svCanEvo(p, w){ return !w.evo && w.lv >= 5 && svLinks(w.id).some(k=>svPasLv(p, k) > 0); }
 function svEvoKey(p, w){ const L = svLinks(w.id); return Object.keys(p.ps).find(k=>L.includes(k) && p.ps[k] > 0) || L.find(k=>svPasLv(p, k) > 0); } // 먼저 가진 연계 유물
-function svEvolve(p){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 갖추는 순간 svApplyPick에서 부름
-  const w = p.wp.find(x=>svCanEvo(p, x));
-  if(w){ w.evo = svEvoKey(p, w); const col = '#ff5777', G = sv.game, E = svEvoD(w) || {}; if(p.i === G.me) svMarkEvo(w.id, w.evo); /* (build 517) 짝 알게 됨 · (build 588) 연계 유물마다 */
+function svEvolve(p, w0, key){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 유물을 갖추는 순간 svApplyPick에서 부름
+  const w = w0 || p.wp.find(x=>svCanEvo(p, x));
+  if(w){ w.evo = key || svEvoKey(p, w); const col = '#ff5777', G = sv.game, E = svEvoD(w) || {}; if(p.i === G.me) svMarkEvo(w.id, w.evo); /* (build 517) 짝 알게 됨 · (build 588) 연계 유물마다 */
     // (build 510) 진화 순간 — 화면이 어두워지며 빛줄기 · 「각성!」 큰 글자 · 둘레 적을 크게 밀쳐내며 피해 (사용자 10/27: 스웜처럼 임팩트 있게) · (build 511) 세상이 느려지는 건 뺌 — 둘이 할 때 친구까지 느려져서 (사용자 10/27)
     svFx({ k:'evo', scr:1, pi:p.i, t:0, d:1.7, rn: svIsRune(p, w.id) ? 1 : 0, s:E.nm || svSkNm(w.id, p), s2:E.ev||'', col:SV_EC[w.id.split('_')[0]] }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.8, col, r:260 }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.5, col:'#ffe08a', r:180 });
     G.en.forEach(e=>{ if(e.hp<=0) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy)||1; if(d > 260 + e.r) return; svHitBy(p, e, 60*SV_DMGK*(1 + G.t/120), col); if(e.kind!=='boss' && e.kind!=='pod'){ e.kvx = dx/d*420; e.kvy = dy/d*420; e.sqT = 0.2; } });
@@ -5591,15 +5592,15 @@ function svSpawnPos(tp){ // 살아 있는 사람 하나의 화면 바로 밖 (�
 function svFreeSpot(){ const map = sv.game.map; for(let t=0;t<30;t++){ const x = 40 + Math.random()*(SV_MW-80), y = 40 + Math.random()*(SV_MH-80); if(!map || ((!map.walk || svInPoly(x, y, map.walk)) && map.ob.every(b=>Math.hypot(b.x-x, b.y-y) > b.r + 20) && map.zones.every(z=>Math.hypot(z.x-x, z.y-y) > z.r + 10))) return { x, y }; } return { x: SV_MW/2, y: SV_MH/2 }; }
 function svSpawn(kind, at){
   const G = sv.game, C = svCoop(G), sp = at || svSpawnPos(); let x = sp.x, y = sp.y;
-  const k = 1 + G.t/SV_GROW + Math.pow(G.t/170, 2.2), hpk = k * SV_HPK * C.hp * SV_STK[G.stage||0];
+  const k = 1 + G.t/SV_GROW + Math.pow(G.t/150, 2.3), dk = 1 + G.t/SV_DGROW, hpk = k * SV_HPK * C.hp * SV_STK[G.stage||0];
   const el = Math.random() < 0.6 ? SV_MAPS[G.stage||0].el : svRand(ELEMENTS), v = Math.random()<0.5 ? 'a' : 'b';
   const T = { normal:{ r:10, spd:42, hp:18, dmg:10, xp:1, rar:'common' }, fast:{ r:8, spd:78, hp:9, dmg:8, xp:1, rar:'common' }, big:{ r:16, spd:30, hp:80, dmg:18, xp:4, rar:'rare' }, elite:{ r:27, spd:36, hp:520, dmg:22, xp:20, rar:'epic' } }[kind];
-  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0]*C.dmg, xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
+  G.en.push({ x, y, r:T.r, spd:T.spd + Math.min(25, G.t/14), hp:T.hp*hpk, max:T.hp*hpk, dmg:T.dmg*SV_STD[G.stage||0]*C.dmg*dk, xp:T.xp, kind, art:'assets/spirits/'+el+'_'+T.rar+'_'+v+'.webp', mob:'assets/survival/'+SV_MAPS[G.stage||0].id+'_mob_'+kind+'.webp', fl:0 }); // 몬스터 그림이 있으면 그것 (없으면 정령 그림)
 }
 function svSpawnBoss(g, final){
   const G = sv.game, st = G.stage||0, hp = (final ? 16000 : 6000) * SV_HPK * svCoop(G).boss * (1 + G.t/300) * SV_STK[st];
   const tp = G.players.find(q=>!q.down) || G.players[0], by = tp.y - 300 > 40 ? tp.y - 300 : tp.y + 300;
-  G.en.push({ x: Math.max(40, Math.min(SV_MW-40, tp.x)), y: Math.max(40, Math.min(SV_MH-40, by)), r:34, spd:30, hp, max:hp, dmg:30*SV_STD[st]*svCoop(G).dmg, xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', mob:'assets/boss/'+g+'.webp', fl:0, skT:3 }); /* (1.0.0 다듬기) 보스도 몸 전체 그림으로 (전엔 둥근 테 안 얼굴, 사용자 11/08 「빨간 원으로 나옴」) */
+  G.en.push({ x: Math.max(40, Math.min(SV_MW-40, tp.x)), y: Math.max(40, Math.min(SV_MH-40, by)), r:34, spd:30, hp, max:hp, dmg:30*SV_STD[st]*svCoop(G).dmg*(1 + G.t/(SV_DGROW*2)), xp:60, kind:'boss', boss:g, final, art:'assets/boss/'+g+'.webp', mob:'assets/boss/'+g+'.webp', fl:0, skT:3 }); /* (1.0.0 다듬기) 보스도 몸 전체 그림으로 (전엔 둥근 테 안 얼굴, 사용자 11/08 「빨간 원으로 나옴」) */
   svFx({ k:'text', x:SV_W/2, y:SV_H/2-60, t:0, d:2.2, s:(final ? '최종 보스 ' : '중간 보스 ')+'「'+(SV_BOSS_NM[g]||'')+'」 등장', col:'#ff6a6a', sz:22, scr:1 }); try{ sfx('battleStart'); }catch(e){}
 }
 function svNearT(x, y, r){ return svNear(x, y, r); } /* (build 623) 상자도 적과 똑같이 가까운 순 (사용자 10/31 「상자가 가까운데 먼 적을 때림」) */ // (build 582) 조준 대상 — 적 먼저, 없으면 상자도 (사용자 10/30: 자동 조준이 상자를 안 때림)
@@ -5954,6 +5955,7 @@ function svPairTip(card, pe){ const old = card.querySelector('.sv-ptip'); clearT
 function svCardHtml(me, c, i){ if(c.k==='c'){ const C = SV_CO[c.id], lv = me.co && me.co.id===c.id ? me.co.lv + 1 : 1; return '<button class="sv-card co" data-pk="'+i+'"><img src="assets/ui/'+C.ic+'.webp" alt=""><b>'+C.nm+' <em class="sv-cot">협동 룬</em></b><span>'+(lv > 1 ? 'Lv'+(lv-1)+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 협동 룬')+'</span><small class="sv-st2">'+C.d(lv)+'</small></button>'; } // (build 552) 협동 룬 카드 // (build 489) 사용자 10/26: 필요한 정보만 · 레벨이 오르면 바뀌는 수치를 노랗게
   if(c.k==='w'){ const w = me.wp.find(x=>x.id===c.id), lv = w ? w.lv+1 : 1, LK = svLinks(c.id).filter(k=>svEvoSeen(c.id, k)), evoReady = lv===5 && svLinks(c.id).some(k=>svPasLv(me, k) > 0);
     const rn = svIsRune(me, c.id); return '<button class="sv-card'+(rn ? ' rune' : '')+'" data-pk="'+i+'" style="--rc:'+SV_RC[lv-1]+'; --ec:'+SV_EC[c.id.split('_')[0]]+';">'+(rn ? '<i class="sv-rs"><img src="'+svSkIc(c.id)+'" alt=""></i>' : '<img src="'+svSkIc(c.id)+'" alt="">')+'<b>'+svSkNm(c.id, me)+(rn ? ' 룬' : '')+'</b><span>'+(w ? 'Lv'+w.lv+' → '+lv+(lv===5 ? ' (최대)' : '') : uiIc('star')+' 새 룬')+'</span><small class="sv-st2">'+svSkDesc(c.id, w ? w.lv : 0, lv, me)+'</small>'+(LK.length ? '<em class="sv-pair'+(evoReady ? ' ok' : '')+'" title="연계 유물: '+LK.map(k=>SV_PAS[k].nm+' → 「'+SV_EVO[c.id][k].nm+'」').join(', ')+', 룬이 최대 레벨일 때 연계 유물이 있으면 각성">'+LK.map(k=>svPI(k)).join('')+'</em>' : '') /* (build 579) 모르는 연계 유물 「?」 표시는 뺌 — 눌러 보는 버튼으로 헷갈림 (사용자 10/30) */+'</button>'; } // (build 513) 각성 짝은 오른쪽 위 작은 아이콘만 — 글 줄이 있으면 카드 높이가 제각각이라 불편 (사용자 10/27)
+  if(c.k==='e'){ const E = (SV_EVO[c.id] || {})[c.pas] || {}, rn = svIsRune(me, c.id); return '<button class="sv-card evo'+(rn ? ' rune' : '')+'" data-pk="'+i+'" style="--rc:'+SV_RC[5]+'; --ec:'+SV_EC[c.id.split('_')[0]]+';">'+(rn ? '<i class="sv-rs"><img src="'+svSkIc(c.id)+'" alt=""></i>' : '<img src="'+svSkIc(c.id)+'" alt="">')+'<b>'+(E.nm || svSkNm(c.id, me))+'</b><span>'+uiIc('awaken')+' '+svSkNm(c.id, me)+(rn ? ' 룬' : '')+' 각성</span><small class="sv-st2">'+(E.ev || '')+'</small><em class="sv-pair ok" title="연계 유물: '+SV_PAS[c.pas].nm+'">'+svPI(c.pas)+'</em></button>'; } /* (1.0.0 다듬기) 각성 카드 */
   if(c.k==='p'){ const P = SV_PAS[c.pas], lv = svPasLv(me, c.pas)+1, pairs = me.wp.filter(w=>svLinks(w.id).includes(c.pas) && svEvoSeen(w.id, c.pas)).map(w=>svSkNm(w.id, me)+(svIsRune(me, w.id) ? ' 룬' : '')+' → 「'+SV_EVO[w.id][c.pas].nm+'」');
     return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+P.ic+'.webp" alt=""><b>'+P.nm+'</b><span>'+(lv>1 ? 'Lv'+(lv-1)+' → '+lv : uiIc('star')+' 새 유물')+'</span><small class="sv-st2">'+svStatLine(SV_PASS[c.pas], lv > 1 ? lv-1 : 0, lv, true)+'</small>'+(pairs.length ? '<em class="sv-pair" title="연계 룬: '+pairs.join(', ')+'">'+me.wp.filter(w=>svLinks(w.id).includes(c.pas) && svEvoSeen(w.id, c.pas)).map(w=>'<img src="'+svSkIc(w.id)+'" alt="">').join('')+'</em>' : '')+'</button>'; }
   return '<button class="sv-card pas" data-pk="'+i+'"><img src="assets/ui/'+(c.k==='heal' ? 'rl_spring' : 'ic_gold')+'.webp" alt=""><b>'+(c.k==='heal' ? '생명의 샘' : '골드 30')+'</b><small>'+(c.k==='heal' ? '체력 모두 회복' : '모두 최대 레벨')+'</small></button>';
@@ -6106,7 +6108,7 @@ function svGuestApply(v){
     p.leader = q.ld || p.leader; if(q.st && typeof q.st==='object') p.st = q.st; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {}; p.co = Array.isArray(q.co) && SV_CO[q.co[0]] ? { id:q.co[0], lv:q.co[1] } : null;
     p.wp = (q.w||[]).map((a,k)=>{ const o = (p.wp||[])[k] || {}; const ek = a[2] ? (SV_EVO[a[0]] && SV_EVO[a[0]][a[2]] ? a[2] : svLinks(a[0])[0] || 1) : false; if(i === G.me && ek) svMarkEvo(a[0], ek); /* (build 517) 친구 화면 — 내 룬이 각성하면 짝 알게 됨 · (build 588) 어떤 유물로 각성했는지 */ if(o.id === a[0]){ o.lv = a[1]; o.evo = ek; return o; } /* (build 570) 내가 직접 쏘니 쿨타임·각도 유지 */ return { id:a[0], lv:a[1], evo: ek, cd:0.3, a: o.a || Math.random()*6 }; }); p.buff = (q.bf||0)/10; p.cold = (q.cl||0)/100;
     if(i===G.me && sv.loc){ const ak = q.ak||0; sv.loc.bat = sv.loc.bat.filter(B=>B.s > ak); sv.loc.pdb = sv.loc.pdb.filter(B=>B.s > ak); }
-    if(i===G.me){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' || k==='c' ? { k, id:x } : k==='p' ? { k, pas:x } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
+    if(i===G.me){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' || k==='c' ? { k, id:x } : k==='p' ? { k, pas:x } : k==='e' ? { k, id:x.split('~')[0], pas:x.split('~')[1] } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
   { const old = new Map(); G.en.forEach(e=>{ if(e.id != null) old.set(e.id, e); }); /* (build 570) 같은 적은 같은 물체로 — 내 무기가 맞힌 적·얼음 간격 등을 기억 */
     G.en = (v.e||[]).map(a=>{ const e = (a[7] != null && old.get(a[7])) || {}; old.delete(a[7]); const fresh = e.sx == null || Math.hypot(e.sx - a[0], e.sy - a[1]) > 120; if(fresh){ e.x = a[0]; e.y = a[1]; e.nvx = e.nvy = 0; } else { e.nvx = (a[0] - e.sx)/G.netDt; e.nvy = (a[1] - e.sy)/G.netDt; } e.sx = e.tx = a[0]; e.sy = e.ty = a[1]; /* (build 630) 적도 바로 옮기지 않고 부드럽게 (전엔 1초에 10번 순간이동 — 끊겨 보임) */ return Object.assign(e, { id:a[7], mx:a[8] || 0, r:a[2], hp:a[3], max:100, art:a[4], fl: a[5]&1 ? 0.1 : 0, burn: a[5]&2 ? 1 : 0, curse: a[5]&4 ? 1 : 0, frz: a[5]&8 ? 1 : 0, web: a[5]&16 ? 1 : 0, kind: a[6]===1 ? 'boss' : a[6]===2 ? 'elite' : a[6]===3 ? 'pod' : '', mob: a[6]===1 ? a[4] : svGuestMob(a[6]) }); }); /* (build 629) 친구 화면도 몬스터 그림 — 전엔 그림 경로를 안 받아 동그란 정령 얼굴로 그렸음 (사용자 11/05) */
     old.forEach(e=>{ e.hp = 0; }); if(sv.loc){ const pd = svLocPend(); G.en.forEach(e=>{ const d = pd[e.id]; if(d) e.hp = Math.max(0, e.hp - d); }); } } /* (build 573) 아직 방장이 안 받은 내 피해는 미리 깎아 둠 */ if(v.lc && !sv.loc) sv.loc = { on:1, pr:[], po:[], seq:0, bat:[], hit:[], st:[], hl:[], fx:[], dot:{}, pd:{}, pdb:[] };
@@ -7586,7 +7588,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 701, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 702, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
