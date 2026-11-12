@@ -5433,7 +5433,7 @@ function svCoTick(p, dt){ const G = sv.game, c = p.co, l = c.lv, m = SV_LVM[l-1]
   else if(c.id==='resonance'){ const q = nearest(170); if(!q) return; c.t = 4.5 - 0.4*l; const x = (p.x+q.x)/2, y = (p.y+q.y)/2, R = 70 + 6*l; svFx({ k:'boom', x, y, t:0, d:0.4, col:'#ffd04a', r:R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-x, e.y-y) < R + e.r) svHitBy(p, e, 32*m, '#ffd04a'); }); }
   else if(c.id==='share'){ c.t = 4; let q = null; al.concat(p).forEach(o=>{ if(Math.hypot(o.x-p.x, o.y-p.y) < 260 && o.hp < o.maxHp && (!q || o.hp/o.maxHp < q.hp/q.maxHp)) q = o; }); if(!q) return; const h = Math.round(p.maxHp*(0.04 + 0.015*l)); svHeal(p, q, h, 'sk'); svFx({ k:'num', x:q.x, y:q.y-22, t:0, d:0.7, s:'+'+h, col:'#ff9ad0', sz:11 }); svFx({ k:'ring', x:q.x, y:q.y, t:0, d:0.4, col:'#ff9ad0', r:26 }); }
   else c.t = 1; }
-function svChoices(p){
+function svChoices(p, keepN){
   const pool = [], wl = p.wp.map(w=>w.id), pk = Object.keys(p.ps);
   p.wp.forEach(w=>{ if(w.lv < 5) pool.push({ k:'w', id:w.id }); });
   if(p.wp.length < SV_MAX_W) Object.keys(SV_SK).filter(id=>!wl.includes(id) && id !== p.leader+'_2' && (p.unl||[]).includes(id)).forEach(id=>pool.push({ k:'w', id }));
@@ -5441,7 +5441,7 @@ function svChoices(p){
   if(sv.game.players.length >= 2){ if(p.co){ if(p.co.lv < 5) pool.push({ k:'c', id:p.co.id }); } else Object.keys(SV_CO).forEach(id=>pool.push({ k:'c', id })); } // (build 552) 협동 룬
   if(pk.length < SV_MAX_P) Object.keys(SV_PAS).filter(k=>!pk.includes(k) && (!p.rel || p.rel.includes(k))).forEach(k=>pool.push({ k:'p', pas:k })); /* (build 636) 유물은 처음 넷 + 트리에서 연 것만 */
   const pairs = p.wp.flatMap(w=>svLinks(w.id)); pool.slice().forEach(c=>{ if(c.k==='p' && pairs.includes(c.pas)) pool.push(c, c); }); // 가진 스킬의 짝 유물은 잘 나오게 (유물이 13종이라)
-  const nC = p.tr && p.tr.wish && !p.wishU && sv.game.lvl >= 10 && !sv.game.pickGift ? (p.wishU = 1, 5) : 3; /* (build 636) 별똥 소원 */ const out = []; while(out.length < nC && pool.length){ const c = pool[Math.floor(Math.random()*pool.length)]; out.push(c); for(let i=pool.length-1;i>=0;i--) if(svCardKey(pool[i])===svCardKey(c)) pool.splice(i,1); }
+  const nC = keepN > 3 ? keepN : p.tr && p.tr.wish && !p.wishU && sv.game.lvl >= 10 && !sv.game.pickGift ? (p.wishU = 1, 5) : 3; /* (build 636) 별똥 소원 */ const out = []; while(out.length < nC && pool.length){ const c = pool[Math.floor(Math.random()*pool.length)]; out.push(c); for(let i=pool.length-1;i>=0;i--) if(svCardKey(pool[i])===svCardKey(c)) pool.splice(i,1); }
   if(!out.length) out.push({ k:'heal' }, { k:'gold' });
   return out;
 }
@@ -5475,7 +5475,7 @@ function svEvolve(p, w0, key){ // 각성 — (build 520) 룬·기술 Lv5 + 짝 �
   if(up.length) svApplyPick(p, svRand(up)); else { p.hp = p.maxHp; }
   svFx({ k:'text', x:p.x, y:p.y-56, t:0, d:1.2, s:'각성할 룬 없음', sub:'룬 Lv5와 연계 유물 필요', col:'#c9a6ff', sz:10 });
 }
-function svBurn(e, dps, d){ if(e.hp<=0) return; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(e.burn > 0.05 ? (e.bdps||0) : 0, dps); }
+function svBurn(e, dps, d){ if(e.hp<=0) return; const on = (e.burn||0) > 0.05; e.burn = Math.max(e.burn||0, d); e.bdps = Math.max(on ? (e.bdps||0) : 0, dps); } // (1.0.0) 꺼진 화상의 세기는 이어 쓰지 않음 (Fable 리뷰: 한 번 센 화상이 끝나도 약한 화상이 그 세기로 다시 붙었음)
 function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
   const G = sv.game; if(!p || p.down || p.ultCd > 0 || G.over || G.pickWait) return;
   const L = p.leader, col = SV_EC[L.split('_')[0]], k = (1 + G.t/120) * SV_DMGK * svAtkK(p); p.ultCd = SV_ULT_CD; svSt(p, 'ult', 1);
@@ -5985,13 +5985,13 @@ function svTick(dt){
     if(p._h0 != null){ const hl = p.hp - p._h0 + (p._hd||0), sg = p.shield - p._s0 + (p._sd||0); if(hl > 0.001) svSt(p, 'heal', hl); if(sg > 0.001) svSt(p, 'sh', sg); } p._h0 = p.hp; p._s0 = p.shield; p._hd = 0; p._sd = 0; /* (build 639) 통계 — 회복·보호막 (맞아서 줄어든 만큼은 되돌려 셈) */
     if(!p.lc) p.wp.forEach(w=>{ const n0 = G.pr.length, f0 = G.fx.length, o0 = G.pools.length, x0 = (G.netFx||[]).length; svAttack(p, w, dt); if(w.evo){ for(let i=n0;i<G.pr.length;i++) G.pr[i].ev = 1; for(let i=f0;i<G.fx.length;i++) if(G.fx[i].k!=='num') G.fx[i].ev = 1; for(let i=o0;i<G.pools.length;i++) G.pools[i].ev = 1; for(let i=x0;i<(G.netFx||[]).length;i++) G.netFx[i].ev = 1; } }); }); // (build 510) 진화한 스킬이 만든 것은 ev — 그림을 크게·화려하게 (사용자 10/27: 스웜처럼 진화 임팩트)
   if(G.obj){ if(G.players.some(p=>p.down)) G.obj.forEach(o=>{ if(o.k==='safe' && !o.ok) o.no = 1; }); else svObjAdd('safe', G.t); }
-  if(G.players.every(p=>p.down)){ G.over = 'lost'; svShowEnd(); return; }
+  if(G.over) return; /* (1.0.0) 같은 순간에 최종 보스를 잡고 쓰러져도 승리 그대로 (Fable 리뷰) */ if(G.players.every(p=>p.down)){ G.over = 'lost'; svShowEnd(); return; }
   svWeapTick(dt);
   G.en = G.en.filter(e=>e.hp>0);
   // 상자 · 룬 · 골드
   G.loot.forEach(o=>{
     const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-o.x, b.y-o.y) < Math.hypot(a.x-o.x, a.y-o.y) ? b : a, null); if(!p) return;
-    const d = Math.hypot(p.x-o.x, p.y-o.y), pull = o.k==='rune' ? 70 : p.mag * (1 + 0.25*svPasLv(p, 'greed')); if(d < pull){ o.x += (p.x-o.x)/d*Math.min(d, 380*dt); o.y += (p.y-o.y)/d*Math.min(d, 380*dt); } // 골드·회복·자석도 경험치처럼 끌려옴
+    const d = Math.hypot(p.x-o.x, p.y-o.y), pull = o.k==='rune' ? 70 : p.mag * (1 + 0.25*svPasLv(p, 'greed')); if(d < pull && d > 0.01){ o.x += (p.x-o.x)/d*Math.min(d, 380*dt); o.y += (p.y-o.y)/d*Math.min(d, 380*dt); } // 골드·회복·자석도 경험치처럼 끌려옴
     if(d < 16){ if(o.k==='rune' && G.pickWait) return; /* 고르는 중이면 끝난 뒤에 */ o.done = true;
       if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (p.goldK || 1) * (svBless('gold') ? 2 : 1)); /* (build 610) 업그레이드 골드 · (build 626) 황금 시간 */ G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
       else if(o.k==='lorb'){ const h = Math.round(p.maxHp*0.06); svHeal(p, p, h, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+h, col:'#fff3a0', sz:11 }); } /* (build 595) 빛의 이삭 */ else if(o.k==='heal'){ svHeal(p, p, 30, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+30', col:'#7ce07c', sz:11 }); }
@@ -6068,7 +6068,7 @@ function svHud(){
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
       if(ev) box.innerHTML = '<div class="sv-ptl">각성</div><div class="sv-psub">각성할 짝 고르기</div><div class="sv-pcs">' + me.pick.map((c,i)=>c.k==='e' ? svCardHtml(me, c, i) : '').join('') + '</div><button type="button" class="sv-rr sv-skip" data-pk="'+me.pick.findIndex(c=>c.k==='skip')+'">건너뛰기'+(sv.pc ? ' <small>(Esc)</small>' : '')+'</button>'; /* (1.0.0 다듬기) 각성 창 */
       else box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 업!')+'</div><div class="sv-psub">'+(G.pickGift ? '성장 카드를 하나 더 고르기' : '성장 카드 고르기')+(sv.pc ? ' (숫자키 1~'+me.pick.length+')' : '')+'</div><div class="sv-pcs'+(me.pick.length > 3 ? ' n5' : '')+'">' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('') + '</div>' + (me.rr > 0 && sv.net.role!=='guest' ? '<button type="button" class="sv-rr" data-rr="1">'+uiIc('dice')+'다시 뽑기 <small>('+me.rr+'번 남음)</small></button>' : ''); /* (build 610) 새 카드 모양 · 업그레이드 「카드 다시 뽑기」 */
-      { const rb = box.querySelector('[data-rr]'); if(rb) rb.addEventListener('click', e=>{ e.stopPropagation(); if(!(me.rr > 0) || !me.pick) return; me.rr--; svPickSet(me, svChoices(me)); box.dataset.k = ''; try{ sfx('enhance'); }catch(e2){} }); }
+      { const rb = box.querySelector('[data-rr]'); if(rb) rb.addEventListener('click', e=>{ e.stopPropagation(); if(!(me.rr > 0) || !me.pick) return; me.rr--; svPickSet(me, svChoices(me, me.pick.length)); /* (1.0.0) 별똥 소원 5장도 다시 뽑으면 5장 (Fable 리뷰) */ box.dataset.k = ''; try{ sfx('enhance'); }catch(e2){} }); }
       { const cs = [...box.querySelectorAll('.sv-card')], h = Math.max(...cs.map(x=>x.offsetHeight)); if(h > 0) cs.forEach(x=>x.style.height = h+'px'); } // (build 513) 카드 높이 맞춤
       box.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', e=>{ const pe = e.target.closest('.sv-pair'); if(pe){ svPairTip(b, pe); return; } /* (build 579) 연계 유물 표시를 누르면 고르지 않고 설명만 */ const i = +b.dataset.pk; if(!b.classList.contains('sv-skip')) svPickFx(b); if(sv.net.role==='guest'){ sv.myPick = { i, k: key }; svGuestSend(); box.dataset.k = 'sent'; box.innerHTML = '<div class="sv-ptl">다른 사람이 고르는 중…</div>'; } else svDoPick(G.me, i); })); } }
   else if(G.pickWait && !G.over){ if(box.dataset.k !== 'wait' && box.dataset.k !== 'sent'){ box.dataset.k = 'wait'; box.innerHTML = '<div class="sv-ptl">다른 사람이 고르는 중…</div>'; box.classList.add('on'); } }
@@ -6113,7 +6113,7 @@ function svShowEnd(){ setTimeout(()=>{ if(sv && sv.el) svGate(sv.el.querySelecto
     + '<small>최고 기록 '+svFmtT(state.svBest||0)+', 모은 골드 '+(state.svGold||0).toLocaleString()+(svUpCan() ? ' (업그레이드 가능)' : '')+'</small>'
     + '<div class="sv-erow"><button class="sv-btn" data-sv="out">거점으로</button>'+(sv.net.role==='solo' ? '<button class="sv-btn g" data-sv="again">다시</button>' : '')+'</div></div>'+svEndStats(G)+'</div>';
   box.classList.add('on');
-  const reset = ()=>{ cancelAnimationFrame(sv.raf); window.removeEventListener('resize', sv.fit); sv.game = null; sv.cv = null; };
+  const reset = ()=>{ cancelAnimationFrame(sv.raf); window.removeEventListener('resize', sv.fit); if(sv.keyOff){ sv.keyOff(); sv.keyOff = null; } sv.game = null; sv.cv = null; }; /* (1.0.0) 「다시」 할 때 키 처리를 떼어 냄 — 안 떼면 판마다 겹쳐 숫자키 한 번에 카드가 두 장 골라졌음 (Fable 리뷰 11/12) */
   const a = box.querySelector('[data-sv="again"]'); if(a) a.addEventListener('click', ()=>{ reset(); svStart('solo'); });
   box.querySelector('[data-sv="out"]').addEventListener('click', ()=>{ sv.dr = 1; svToHome('home'); }); /* (build 641) 출전 창이 열린 채로 */
 }
@@ -7647,7 +7647,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 707, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 708, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
