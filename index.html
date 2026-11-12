@@ -5156,7 +5156,7 @@ function svHostActs(v){ // (build 544) 방장: 친구들 행동(raidActs/<코드
     if(Array.isArray(a.sk)) p.unl = a.sk.filter(id=>SV_SK[id]);
     p.lc = !!a.lc; if(p.lc) svHostLoc(i, p, a); /* (build 570) 친구가 직접 계산한 공격 */
     if((a.u||0) > (p.ultSeq||0)){ p.ultSeq = a.u; svUlt(p); }
-    if(a.pk && p.pick && a.pk.k === p.pick.map(svCardKey).join('|')) svDoPick(i, a.pk.i); });
+    if(a.pk && p.pick && a.pk.k === svPickKey(p)) svDoPick(i, a.pk.i); });
   if(ch) svLobbyRe(); }
 // ---------- 둘이 하기: 방 ----------
 async function svHost(){
@@ -5446,6 +5446,9 @@ function svChoices(p){
   return out;
 }
 function svEvoChoices(p){ const E = p.wp.filter(w=>svCanEvo(p, w)).flatMap(w=>svLinks(w.id).filter(k=>svPasLv(p, k) > 0 && SV_EVO[w.id] && SV_EVO[w.id][k]).map(k=>({ k:'e', id:w.id, pas:k }))); return E.length ? E.concat({ k:'skip' }) : null; } // (1.0.0 다듬기) 각성 창 — 카드를 고른 뒤 각성할 수 있으면 짝마다 각성 카드와 「각성 안 함」 (사용자 11/11 「카드 선택과 별개로 창을 한 번 더, 아래에 선택하지 않는 버튼」)
+function svSnapEn(G, n){ if(G.en.length <= n) return G.en; const al = G.players.filter(p=>!p.down), d = e=>al.reduce((m, p)=>Math.min(m, Math.abs(p.x-e.x) + Math.abs(p.y-e.y)), 1e9); return G.en.map(e=>[e, (e.kind==='boss' || e.kind==='elite' || e.wv ? -1e9 : 0) + d(e)]).sort((a, b)=>a[1] - b[1]).slice(0, n).map(a=>a[0]); } // (1.0.0) 친구에게 보내는 적 — 보스, 정예, 웨이브 몬스터, 가까운 순 (Fable 리뷰 11/12: 앞쪽 120마리만 보내 새로 나온 웨이브와 보스가 친구 화면에 안 보였음)
+function svPickSet(p, L){ p.pick = L; if(L){ p.pkN = (p.pkN||0) + 1; p.pkAt = Date.now(); } } // (1.0.0) 고르기 창 번호 — 같은 카드 묶음이 연달아 나와도 예전 선택이 다시 쓰이지 않게, 창마다 30초 (Fable 리뷰 11/12)
+function svPickKey(p){ return p.pick ? p.pick.map(svCardKey).join('|')+'#'+(p.pkN||0) : ''; }
 function svCardKey(c){ return c.k+':'+(c.k==='e' ? c.id+'~'+c.pas : (c.id || c.pas || '')); }
 function svApplyPick(p, c){
   if(!c) return;
@@ -5575,13 +5578,13 @@ function svInput(dt){
 function svLevelUp(){
   const G = sv.game; G.lvl++; G.xp -= G.xpNext; G.xpNext = Math.round(4 + G.lvl*4 + Math.pow(G.lvl, 1.5));
   G.pickWait = true; G.pickAt = Date.now();
-  G.players.forEach(p=>{ p.pick = p.down ? null : svChoices(p); });
+  G.players.forEach(p=>svPickSet(p, p.down ? null : svChoices(p)));
   if(G.players.every(p=>!p.pick)) G.pickWait = false;
   try{ sfx('enhance'); }catch(e){}
 }
 function svDoPick(pi, idx){
   const G = sv.game, p = G.players[pi]; if(!p || !p.pick) return;
-  const c = p.pick[idx]; svApplyPick(p, c); p.pick = c && c.k!=='skip' ? svEvoChoices(p) : null; svPickDone(G); /* (1.0.0 다듬기) 고른 뒤 각성할 수 있으면 각성 창, 「각성 안 함」이면 다음 레벨 업 뒤에 다시 */
+  const c = p.pick[idx]; svApplyPick(p, c); svPickSet(p, c && c.k!=='skip' ? svEvoChoices(p) : null); svPickDone(G); /* (1.0.0 다듬기) 고른 뒤 각성할 수 있으면 각성 창, 「각성 안 함」이면 다음 레벨 업 뒤에 다시 */
 }
 function svPickDone(G){ if(G.players.every(q=>!q.pick)){ G.pickWait = false; G.pickGift = 0; if(G.xp >= G.xpNext) svLevelUp(); } }
 function svBlockedAt(x, y){ const map = sv.game.map; if(!map) return false; const b = svFlowBlk(map), i = Math.floor(x/SV_FG), j = Math.floor(y/SV_FG); return i < 0 || j < 0 || i >= map.fw || j >= map.fh || !!b[j*map.fw + i]; } // (build 550) 나무 벽·개울 안에선 안 나오게
@@ -5960,7 +5963,7 @@ function svTick(dt){
     if(G.map.ice && e.kind!=='boss' && svOnIce(G, e)){ const k = Math.min(1, dt*1.6), go = d > e.r + 8 ? sp : 0; e.ivx = (e.ivx == null ? mx*go : e.ivx) + (mx*go - (e.ivx||0))*k; e.ivy = (e.ivy == null ? my*go : e.ivy) + (my*go - (e.ivy||0))*k; e.x += e.ivx*dt; e.y += e.ivy*dt; svCollideFoot(e, e.r*0.6, e.r*0.75); } // (build 598) 설원 얼음 — 방향을 늦게 틀어 미끄러져 지나침
     else if(d > e.r + 8){ e.ivx = mx*sp; e.ivy = my*sp; e.x += mx*sp*dt; e.y += my*sp*dt; if(e.kind!=='boss') svCollideFoot(e, e.r*0.6, e.r*0.75); }
     } /* (1.0.0) 웨이브 몬스터는 svEvMove */
-    if(d < e.r + 10 && tg.inv <= 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; if(tg.tr && tg.tr.thorn && dmg > 0) svHitBy(tg, e, dmg*0.3, '#9be07a'); /* (build 636) 가시 반사 */ G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
+    if(d < e.r + 10 && tg.inv <= 0 && e.dmg > 0){ const dmg = svHurt(tg, e.dmg * SV_CONTACT); tg.inv = 0.6; if(tg.tr && tg.tr.thorn && dmg > 0) svHitBy(tg, e, dmg*0.3, '#9be07a'); /* (build 636) 가시 반사 */ G.shake = Math.max(G.shake||0, 0.12); svFx({ k:'num', x:tg.x, y:tg.y-22, t:0, d:0.6, s:'-'+Math.round(dmg), col:'#ff6a6a', sz:11 });
       const th = tg.wp.find(w=>w.id==='wood_a_2'); if(th) svHitBy(tg, e, (25*svWM(tg, th) + svDef(tg)*0.5)*(th.evo ? 2 : 1), '#9be07a'); } /* (build 509) 진화 반사 ×2 (짝: 성벽 돌) */ // 가시 갑옷 반사
     if(e.kind==='boss'){ e.skT -= dt; if(e.skT <= 0){ e.skT = e.final ? 2.4 : 3.2; const n = e.final ? 14 : 10; for(let k=0;k<n;k++){ const a = k*6.283/n + G.t; G.pr.push({ x:e.x, y:e.y, vx:Math.cos(a)*110, vy:Math.sin(a)*110, kind:'ebul', t:0, col: SV_EC[SV_MAPS[G.stage||0].el], dmg:12*SV_STD[G.stage||0] }); } } }
   });
@@ -5993,7 +5996,7 @@ function svTick(dt){
       if(o.k==='gold'){ const v = Math.round(o.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (p.goldK || 1) * (svBless('gold') ? 2 : 1)); /* (build 610) 업그레이드 골드 · (build 626) 황금 시간 */ G.gold += v; svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+v+'G', col:'#ffd557', sz:10 }); }
       else if(o.k==='lorb'){ const h = Math.round(p.maxHp*0.06); svHeal(p, p, h, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+'+h, col:'#fff3a0', sz:11 }); } /* (build 595) 빛의 이삭 */ else if(o.k==='heal'){ svHeal(p, p, 30, 'etc'); svFx({ k:'num', x:o.x, y:o.y-10, t:0, d:0.6, s:'+30', col:'#7ce07c', sz:11 }); }
       else if(o.k==='mag'){ G.gems.forEach(g=>{ g.pull = true; }); svFx({ k:'text', x:p.x, y:p.y-40, t:0, d:1, s:'바람 나침반', sub:'보석을 모두 끌어당김', col:'#7ae0ff', sz:12 }); }
-      else if(o.k==='rune'){ G.pickWait = true; G.pickAt = Date.now(); G.pickGift = 1; p.pick = svChoices(p); if(!p.pick || !p.pick.length){ p.pick = null; G.pickWait = false; G.pickGift = 0; } svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col:'#ffd557', r:70 }); try{ sfx('enhance'); }catch(e){} } } }); // (build 520) 정령의 선물 — 카드 3장
+      else if(o.k==='rune'){ G.pickWait = true; G.pickAt = Date.now(); G.pickGift = 1; svPickSet(p, svChoices(p)); if(!p.pick || !p.pick.length){ p.pick = null; G.pickWait = false; G.pickGift = 0; } svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.6, col:'#ffd557', r:70 }); try{ sfx('enhance'); }catch(e){} } } }); // (build 520) 정령의 선물 — 카드 3장
   G.loot = G.loot.filter(o=>!o.done);
   G.gems.forEach(g=>{ const p = alive.reduce((a,b)=> !a || Math.hypot(b.x-g.x, b.y-g.y) < Math.hypot(a.x-g.x, a.y-g.y) ? b : a, null); if(!p) return; const d = Math.hypot(p.x-g.x, p.y-g.y), mag = p.mag * (1 + 0.25*svPasLv(p, 'greed')) * (svBless('mag') ? 3 : 1);
     if(d < mag || g.pull){ const v = g.pull ? 520 : 380; g.x += (p.x-g.x)/d*Math.min(d, v*dt); g.y += (p.y-g.y)/d*Math.min(d, v*dt); } if(d < 12){ g.done = true; G.xp += g.v * (1 + 0.12*Math.max(...G.players.map(q=>svPasLv(q, 'greed')))) * (svBless('xp') ? 1.4 : svBless('gold') ? 1.3 : 1) * (p.xpK || 1); /* (build 610) 업그레이드 경험치 */ } });
@@ -6061,17 +6064,17 @@ function svHud(){
     const ab = q('.sv-aim'); if(ab){ const pc = !!sv.pc, lk = svAimLock(); if(ab.classList.contains('lock') !== lk) ab.classList.toggle('lock', lk); if(q('.sv-cv').classList.contains('pc') !== pc) q('.sv-cv').classList.toggle('pc', pc); const am = svAtkMode(), src = 'assets/ui/'+SV_ATK_IC[am]+'.webp'; const im = ab.querySelector('img'); if(im.getAttribute('src') !== src || ab.dataset.m !== am){ im.setAttribute('src', src); ab.dataset.m = am; ab.title = '조준 방식: '+SV_ATK_NM[am]+(pc ? ' (Q)' : ''); const lb = ab.querySelector('b'); if(lb) lb.textContent = '조준: '+SV_ATK_NM[am]; }
       { const fb = q('.sv-fire'), fk = q('[data-k="fire"]'), on = am==='mouse', ok = !!SV_MANUAL[svStartRune(me)], hk = (on ? 1 : 0) + (state.svHold && ok ? 'h' : 'a') + (ok ? '' : 'x'); if(fb && fb.dataset.m !== hk){ fb.dataset.m = hk; fb.classList.toggle('off', !on); if(fk) fk.classList.toggle('off', !on); fb.classList.toggle('lock', !ok); fb.querySelector('b').textContent = state.svHold && ok ? '누를 때만' : '자동 발사'; fb.title = ok ? '발사: '+(state.svHold ? '마우스를 누를 때만 (시작 룬)' : '자동')+' (C)' : '이 시작 룬은 자동 발사만 사용 가능'; } }
       } { const rd = cd <= 0 && !me.down; if(ub.classList.contains('ready') !== rd) ub.classList.toggle('ready', rd); } }
-  if(me && me.pick && !G.over){ const key = me.pick.map(svCardKey).join('|'), ev = me.pick.some(c=>c.k==='e');
+  if(me && me.pick && !G.over){ const key = svPickKey(me), ev = me.pick.some(c=>c.k==='e');
     if(box.dataset.k !== key){ box.dataset.k = key; box.classList.add('on');
       if(ev) box.innerHTML = '<div class="sv-ptl">각성</div><div class="sv-psub">각성할 짝 고르기</div><div class="sv-pcs">' + me.pick.map((c,i)=>c.k==='e' ? svCardHtml(me, c, i) : '').join('') + '</div><button type="button" class="sv-rr sv-skip" data-pk="'+me.pick.findIndex(c=>c.k==='skip')+'">건너뛰기'+(sv.pc ? ' <small>(Esc)</small>' : '')+'</button>'; /* (1.0.0 다듬기) 각성 창 */
       else box.innerHTML = '<div class="sv-ptl">'+(G.pickGift ? '정령의 선물!' : '레벨 업!')+'</div><div class="sv-psub">'+(G.pickGift ? '성장 카드를 하나 더 고르기' : '성장 카드 고르기')+(sv.pc ? ' (숫자키 1~'+me.pick.length+')' : '')+'</div><div class="sv-pcs'+(me.pick.length > 3 ? ' n5' : '')+'">' + me.pick.map((c,i)=>svCardHtml(me, c, i)).join('') + '</div>' + (me.rr > 0 && sv.net.role!=='guest' ? '<button type="button" class="sv-rr" data-rr="1">'+uiIc('dice')+'다시 뽑기 <small>('+me.rr+'번 남음)</small></button>' : ''); /* (build 610) 새 카드 모양 · 업그레이드 「카드 다시 뽑기」 */
-      { const rb = box.querySelector('[data-rr]'); if(rb) rb.addEventListener('click', e=>{ e.stopPropagation(); if(!(me.rr > 0) || !me.pick) return; me.rr--; me.pick = svChoices(me); box.dataset.k = ''; try{ sfx('enhance'); }catch(e2){} }); }
+      { const rb = box.querySelector('[data-rr]'); if(rb) rb.addEventListener('click', e=>{ e.stopPropagation(); if(!(me.rr > 0) || !me.pick) return; me.rr--; svPickSet(me, svChoices(me)); box.dataset.k = ''; try{ sfx('enhance'); }catch(e2){} }); }
       { const cs = [...box.querySelectorAll('.sv-card')], h = Math.max(...cs.map(x=>x.offsetHeight)); if(h > 0) cs.forEach(x=>x.style.height = h+'px'); } // (build 513) 카드 높이 맞춤
       box.querySelectorAll('[data-pk]').forEach(b=>b.addEventListener('click', e=>{ const pe = e.target.closest('.sv-pair'); if(pe){ svPairTip(b, pe); return; } /* (build 579) 연계 유물 표시를 누르면 고르지 않고 설명만 */ const i = +b.dataset.pk; if(!b.classList.contains('sv-skip')) svPickFx(b); if(sv.net.role==='guest'){ sv.myPick = { i, k: key }; svGuestSend(); box.dataset.k = 'sent'; box.innerHTML = '<div class="sv-ptl">다른 사람이 고르는 중…</div>'; } else svDoPick(G.me, i); })); } }
   else if(G.pickWait && !G.over){ if(box.dataset.k !== 'wait' && box.dataset.k !== 'sent'){ box.dataset.k = 'wait'; box.innerHTML = '<div class="sv-ptl">다른 사람이 고르는 중…</div>'; box.classList.add('on'); } }
   else if(box.classList.contains('on') && box.dataset.k){ box.classList.remove('on'); box.dataset.k = ''; box.innerHTML = ''; }
   { const ps = q('.sv-pst'); if(ps){ const on = G.pickWait && !G.over && G.players.length > 1, left = sv.net.role==='guest' ? (G.pickLeft||0) : Math.max(0, Math.ceil((SV_PICK_MS - (Date.now() - (G.pickAt||0)))/1000));
-    const h = on ? G.players.map((p, i)=>{ const wait = i===G.me ? !!(p.pick && !sv.myPick) : sv.net.role==='guest' ? !!p.pkw : !!p.pick; return '<span class="'+(wait ? '' : 'ok')+'" style="--pc:'+SV_PCOL[i]+';"><img src="'+svSkIc(p.leader+'_1')+'" alt="">'+(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P')+'<i>'+(p.down ? '쓰러짐' : wait ? '고르는 중' : uiIc('check'))+'</i></span>'; }).join('') + '<b>'+left+'초</b>' : ''; /* (build 573) 스웜처럼 누가 골랐는지 · 남은 시간 */
+    const h = on ? G.players.map((p, i)=>{ const wait = i===G.me ? !!(p.pick && !(sv.myPick && sv.myPick.k === svPickKey(p))) : sv.net.role==='guest' ? !!p.pkw : !!p.pick; return '<span class="'+(wait ? '' : 'ok')+'" style="--pc:'+SV_PCOL[i]+';"><img src="'+svSkIc(p.leader+'_1')+'" alt="">'+(i===G.me ? '나' : G.players.length===2 ? '친구' : (i+1)+'P')+'<i>'+(p.down ? '쓰러짐' : wait ? '고르는 중' : uiIc('check'))+'</i></span>'; }).join('') + '<b>'+left+'초</b>' : ''; /* (build 573) 스웜처럼 누가 골랐는지 · 남은 시간 */
     if(ps._h !== h){ ps._h = h; ps.innerHTML = h; ps.style.display = h ? '' : 'none'; } } }
   { const tb = q('[data-sv="team"]'); if(tb){ const co = G.players.length > 1; if(tb.style.display !== (co ? '' : 'none')) tb.style.display = co ? '' : 'none'; } if(sv.teamOn) svTeamDraw(); }
   const bar = q('.sv-bar'); if(bar){ const k = G.players.map(p=>p.wp.map(w=>w.id+w.lv+(w.evo?'e':'')+(svCanEvo(p,w)?'r':'')).join(',')+(p.co ? p.co.id+p.co.lv : '')+JSON.stringify(p.ps)+(p.down?'d':'')).join('/'); if(bar.dataset.k !== k){ bar.dataset.k = k;
@@ -6123,7 +6126,7 @@ function svNetStart(){
     sv.netT = setInterval(()=>{ if(!sv || !sv.game) return; if(document.hidden && sv.loopFn){ cancelAnimationFrame(sv.raf); sv.loopFn(performance.now()); } /* (build 633) 방장 창이 가려지거나 다른 창을 보면 브라우저가 화면 갱신을 멈춰 판이 멈췄음(친구 화면에 방장·몹이 그대로) → 0.1초마다 계속 진행 */ svHostSend(); const G = sv.game, now = Date.now();
       G.players.forEach((p,i)=>{ if(!i || G.over) return;
         if(now - (p.lastAct||0) > 12000){ p.down = true; p.hp = 0; if(p.pick){ p.pick = null; svPickDone(G); } } // 12초 동안 소식이 없으면 쓰러짐
-        }); if(G.pickWait && !G.over) G.players.forEach((p, i)=>{ if(p.pick && now - G.pickAt > SV_PICK_MS) svDoPick(i, 0); }); }, 100); // (build 573) 스웜처럼 모두 30초 — 안 고르면 첫 카드 (방장 자신도)
+        }); if(G.pickWait && !G.over) G.players.forEach((p, i)=>{ if(p.pick && now - (p.pkAt || G.pickAt) > SV_PICK_MS){ const sk = p.pick.findIndex(c=>c.k==='skip'); svDoPick(i, sk >= 0 ? sk : 0); } }); /* (1.0.0) 각성 창은 시간이 다 되면 건너뛰기 (Fable 리뷰 11/12: 첫 짝으로 각성돼 버렸음) */ }, 100); // (build 573) 스웜처럼 모두 30초 — 안 고르면 첫 카드 (방장 자신도)
   }else{
     sv.unsubs.push(fb.onValue(fb.ref(fb.rtdb, 'raids/'+code+'/s'), s=>{ let v = s.val(); if(typeof v === 'string'){ try{ v = JSON.parse(v); }catch(e){ v = null; } } if(v && sv && sv.game) svGuestApply(v); })); // (build 631) 글자 한 줄 → 풀어서
     sv.netT = setInterval(()=>svGuestSend(), 100);
@@ -6134,8 +6137,8 @@ function svHostSend(){
   const R = Math.round;
   G.en.forEach(e=>{ if(e.id == null) e.id = G.eidN = (G.eidN||0) + 1; }); /* (build 570) 적 번호 — 친구가 맞힌 적을 알려 줌 */
   G.stSend = ((G.snapN = (G.snapN||0) + 1) % 20 === 0); const snap = { lc:1, pl: G.pickWait ? Math.max(0, Math.ceil((SV_PICK_MS - (Date.now() - (G.pickAt||0)))/1000)) : 0, t: R(G.t*10), lv:G.lvl, xp:R(G.xp*10)/10, xn:G.xpNext, k:G.kills, gd:G.gold, ov: G.over || 0, pw: G.pickWait ? 1 : 0, mk: G.midKilled ? 1 : 0, sn: G.map && G.map.snow ? G.map.zones.filter(z=>z.kind==='snowman').map(z=>[Math.ceil(z.aw), Math.ceil(z.cd)]) : 0, gm: G.map && G.map.forest ? { z: G.map.zones.filter(z=>z.kind==='shrine').map(z=>[Math.round(z.cap*100), Math.ceil(z.cd)]), b: G.bless ? [G.bless.k, Math.ceil(G.bless.t)] : 0 } : 0, ob: G.obj ? G.obj.map(o=>[o.k, Math.floor(o.c), o.ok ? 1 : o.no ? 2 : 0]) : 0, wl: G.map && G.map.well ? [Math.round(G.map.well.ch*100), Math.ceil(G.map.well.cd)] : 0, hz: (G.hz||[]).map(h=>[R(h.x), R(h.y), h.r, R(h.t*10), R(h.d*10)]),
-    p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo || 0]), co: p.co ? [p.co.id, p.co.lv] : 0, ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0, bf: p.buff > 0 ? R(p.buff*10) : 0, ak: p.hitSeq || 0, cl: p.cold ? R(p.cold*100) : 0, st: p.st && (G.over || G.stSend) ? svStPack(p.st) : 0 })), /* (build 639) 통계 — 끝났을 때와 2초마다 */
-    e: G.en.slice(0, G.players.length >= 3 ? 150 : 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0) | (e.gold ? 32 : 0) | (e.ball ? 64 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : e.kind==='pod' ? 3 : e.kind==='fast' ? 4 : e.kind==='big' ? 5 : 0, e.id, R(e.max)]), /* (build 629) 빠른·큰 몬스터도 구분 — 친구 화면이 몬스터 그림을 고르게 */
+    p: G.players.map(p=>({ x:R(p.x), y:R(p.y), hp:R(p.hp), mh:p.maxHp, d: p.down ? 1 : 0, rv: R(p.rev*10), sh: R(p.shield), ld:p.leader, uc: R(p.ultCd*10), w: p.wp.map(w=>[w.id, w.lv, w.evo || 0]), co: p.co ? [p.co.id, p.co.lv] : 0, ps: p.ps, pk: p.pick ? p.pick.map(svCardKey) : 0, pn: p.pkN || 0, bf: p.buff > 0 ? R(p.buff*10) : 0, ak: p.hitSeq || 0, cl: p.cold ? R(p.cold*100) : 0, st: p.st && (G.over || G.stSend) ? svStPack(p.st) : 0 })), /* (build 639) 통계 — 끝났을 때와 2초마다 */
+    e: svSnapEn(G, G.players.length >= 3 ? 150 : 120).map(e=>[R(e.x), R(e.y), e.r, R(e.hp/e.max*100), e.art, (e.fl > 0 ? 1 : 0) | (e.burn > 0 ? 2 : 0) | (e.curse > 0 ? 4 : 0) | (e.frz > 0 ? 8 : 0) | (e.web > 0 ? 16 : 0) | (e.gold ? 32 : 0) | (e.ball ? 64 : 0), e.kind==='boss' ? 1 : e.kind==='elite' ? 2 : e.kind==='pod' ? 3 : e.kind==='fast' ? 4 : e.kind==='big' ? 5 : 0, e.id, R(e.max)]), /* (build 629) 빠른·큰 몬스터도 구분 — 친구 화면이 몬스터 그림을 고르게 */
     g: G.gems.slice(0, 150).map(g=>[R(g.x), R(g.y), g.big ? 1 : 0]),
     l: G.loot.slice(0, 40).map(o=>[R(o.x), R(o.y), o.k]),
     b: G.pr.slice(0, 80).map(b=>[R(b.x), R(b.y), b.col, b.kind==='ebul' ? 1 : b.kind==='wave' ? 2 : b.kind==='spark' ? 3 : 0, b.kind==='wave' ? R(Math.atan2(b.vy, b.vx)*100)/100 : 0, b.kind==='wave' ? R(b.w) : 0]).concat((G.prR||[]).slice(0, 60).map(b=>[R(b.x), R(b.y), b.col, b.k, R((b.ang||0)*100)/100, R(b.w||0), b.o])),
@@ -6160,7 +6163,7 @@ function svGuestApply(v){
     p.leader = q.ld || p.leader; if(q.st && typeof q.st==='object') p.st = q.st; p.hp = q.hp; p.maxHp = q.mh; p.down = !!q.d; p.rev = (q.rv||0)/10; p.shield = q.sh || 0; p.ultCd = (q.uc||0)/10; p.ps = q.ps || {}; p.co = Array.isArray(q.co) && SV_CO[q.co[0]] ? { id:q.co[0], lv:q.co[1] } : null;
     p.wp = (q.w||[]).map((a,k)=>{ const o = (p.wp||[])[k] || {}; const ek = a[2] ? (SV_EVO[a[0]] && SV_EVO[a[0]][a[2]] ? a[2] : svLinks(a[0])[0] || 1) : false; if(i === G.me && ek) svMarkEvo(a[0], ek); /* (build 517) 친구 화면 — 내 룬이 각성하면 짝 알게 됨 · (build 588) 어떤 유물로 각성했는지 */ if(o.id === a[0]){ o.lv = a[1]; o.evo = ek; return o; } /* (build 570) 내가 직접 쏘니 쿨타임·각도 유지 */ return { id:a[0], lv:a[1], evo: ek, cd:0.3, a: o.a || Math.random()*6 }; }); p.buff = (q.bf||0)/10; p.cold = (q.cl||0)/100;
     if(i===G.me && sv.loc){ const ak = q.ak||0; sv.loc.bat = sv.loc.bat.filter(B=>B.s > ak); sv.loc.pdb = sv.loc.pdb.filter(B=>B.s > ak); }
-    if(i===G.me){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' || k==='c' ? { k, id:x } : k==='p' ? { k, pas:x } : k==='e' ? { k, id:x.split('~')[0], pas:x.split('~')[1] } : { k }; }), key = ch.map(svCardKey).join('|'); p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
+    if(i===G.me){ if(q.pk){ const ch = q.pk.map(s=>{ const [k, x] = s.split(':'); return k==='w' || k==='c' ? { k, id:x } : k==='p' ? { k, pas:x } : k==='e' ? { k, id:x.split('~')[0], pas:x.split('~')[1] } : { k }; }), key = ch.map(svCardKey).join('|')+'#'+(q.pn||0); p.pkN = q.pn||0; p.pick = (sv.myPick && sv.myPick.k === key) ? null : ch; } else { p.pick = null; sv.myPick = null; } } });
   { const old = new Map(); G.en.forEach(e=>{ if(e.id != null) old.set(e.id, e); }); /* (build 570) 같은 적은 같은 물체로 — 내 무기가 맞힌 적·얼음 간격 등을 기억 */
     svEvRootsSync(v.rt);
     G.en = (v.e||[]).map(a=>{ const e = (a[7] != null && old.get(a[7])) || {}; old.delete(a[7]); const fresh = e.sx == null || Math.hypot(e.sx - a[0], e.sy - a[1]) > 120; if(fresh){ e.x = a[0]; e.y = a[1]; e.nvx = e.nvy = 0; } else { e.nvx = (a[0] - e.sx)/G.netDt; e.nvy = (a[1] - e.sy)/G.netDt; } e.sx = e.tx = a[0]; e.sy = e.ty = a[1]; /* (build 630) 적도 바로 옮기지 않고 부드럽게 (전엔 1초에 10번 순간이동 — 끊겨 보임) */ return Object.assign(e, { id:a[7], mx:a[8] || 0, r:a[2], hp:a[3], max:100, art:a[4], fl: a[5]&1 ? 0.1 : 0, burn: a[5]&2 ? 1 : 0, curse: a[5]&4 ? 1 : 0, frz: a[5]&8 ? 1 : 0, web: a[5]&16 ? 1 : 0, gold: a[5]&32 ? 1 : 0, ball: a[5]&64 ? 1 : 0, kind: a[6]===1 ? 'boss' : a[6]===2 ? 'elite' : a[6]===3 ? 'pod' : '', mob: a[6]===1 ? a[4] : svGuestMob(a[6]) }); }); /* (build 629) 친구 화면도 몬스터 그림 — 전엔 그림 경로를 안 받아 동그란 정령 얼굴로 그렸음 (사용자 11/05) */
@@ -7644,7 +7647,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 706, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 707, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
