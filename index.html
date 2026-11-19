@@ -4659,7 +4659,7 @@ function showSurvival(){
   const el = document.createElement('div'); el.id = 'svScr'; el.className = 'sv'; document.body.appendChild(el);
   const L = svHas('ld', state.svLeader) ? state.svLeader : 'fire_a';
   const st0 = state.svStageSel|0; sv = { el, imgs:{}, net:{ role:'solo' }, leader: L, view: L, stage: svStageOpen(st0) ? st0 : 0, tab:'home' }; svPreload(sv.stage); svLobbyPreload(); // 로비에서부터 미리 불러 둠
-  svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); }; })();
+  svLobby(); svSplash(); svOrient(); sv.orientOff = (()=>{ const f = ()=>setTimeout(()=>{ svOrient(); if(sv && sv.fit) sv.fit(); }, 120); window.addEventListener('resize', f); window.addEventListener('orientationchange', f); const vv = window.visualViewport; if(vv) vv.addEventListener('resize', f); /* (1.0.0) 아이폰 주소창이 생기고 사라질 때도 무대 크기 다시 (Fable 리뷰) */ return ()=>{ window.removeEventListener('resize', f); window.removeEventListener('orientationchange', f); if(vv) vv.removeEventListener('resize', f); }; })();
   svFull(); if(!svNick() && !SV_MAIN) svNickAsk(1); /* (1.0.0) 본 게임에선 로딩창을 걷은 뒤 (서버 진행을 불러온 다음) */ document.body.classList.add('sv-on'); if(svGpu().soft && !window.__svGpuT){ window.__svGpuT = 1; setTimeout(()=>toast('그래픽 가속이 꺼져 있어 화질을 낮춤 (크롬 설정 → 시스템 → 「가능한 경우 그래픽 가속 사용」을 켜면 훨씬 부드러워짐)', 6000), 1500); } el.addEventListener('dragstart', e=>e.preventDefault()); /* (build 622) 그림·글자가 끌리지 않게 (사용자 10/31) */
   { const s0 = sv, ek = e=>{ if(sv !== s0){ window.removeEventListener('keydown', ek); return; } if(e.code!=='Escape' || sv.game || e.repeat) return; e.preventDefault(); if(!svBackStep(true) && sv.el.style.display!=='none' && !sv.el.querySelector('.svs-cfw')){ sv.sheet = 'set'; sv.sheetX = 0; svLobby(); } }; /* (1.0.0 다듬기) 닫을 창이 없으면 Esc로 설정 열기 (사용자 11/08) */ /* (build 648) Esc로 출전 창도 닫음 · (1.0.0) 폰 뒤로 가기와 같은 함수 */ window.addEventListener('keydown', ek); } // (build 618) 로비에서 Esc = 열린 창 닫기
 }
@@ -5493,7 +5493,7 @@ function svUlt(p){ // 궁극기 = 대표 정령의 스킬2
   else if(L==='wood_b'){ inV.forEach(e=>{ e.web = e.kind==='boss' ? 2 : 6; svBurn(e, 14*k, 6); }); svFx({ k:'flash', t:0, d:0.35, col }); }
   else if(L==='light_a'){ allies.forEach(q=>{ q.shield = Math.max(q.shield, q.maxHp*0.6); q.inv = Math.max(q.inv, 3); }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
   else if(L==='light_b'){ allies.forEach(q=>{ q.buff = 8; q.rush = 8; }); svFx({ k:'ring', x:p.x, y:p.y, t:0, d:0.7, col, r:160 }); }
-  else if(L==='dark_a'){ near(170).forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite' && e.hp/e.max < 0.5) svHit(e, e.hp+1, col, true); else svHitBy(p, e, 90*k, col); }); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.5, col, r:170 }); }
+  else if(L==='dark_a'){ near(170).forEach(e=>{ if(e.kind!=='boss' && e.kind!=='elite' && e.hp/e.max < 0.5) svExec(p, e, col); else svHitBy(p, e, 90*k, col); }); svFx({ k:'scythe', x:p.x, y:p.y, t:0, d:0.5, col, r:170 }); }
   else { const k0 = G.kills; inV.forEach(e=>svHitBy(p, e, 100*k, col)); const n = G.kills - k0; svHeal(p, p, n*2, 'ls'); svFx({ k:'flash', t:0, d:0.4, col }); if(n) svFx({ k:'num', x:p.x, y:p.y-26, t:0, d:0.8, s:'+'+(n*2), col:'#7ce07c', sz:12 }); }
 }
 function svStart(role){
@@ -5644,6 +5644,8 @@ function svObjAdd(k, v){ const G = sv.game; if(!G || !G.obj || sv.net.role==='gu
   G.obj.forEach(o=>{ if(o.k!==k || o.ok || o.no) return; const n = SV_OBJ[k].n; o.c = Math.min(n, k==='safe' ? v : o.c + (v||1)); if(o.c < n) return; o.ok = 1; G.gold += 30;
     const al = G.players.filter(q=>!q.down), p = al.length ? svRand(al) : G.players[0]; G.loot.push({ x:p.x + 22, y:p.y - 10, k:'rune' }); svCollide(G.loot[G.loot.length-1], 10);
     svFx({ k:'text', x:SV_W/2, y:130, uy:1, t:0, d:2, s:'목표 「'+SV_OBJ[k].s+'」 달성', col:'#9be07a', sz:16, scr:1 }); try{ sfx('claim'); }catch(e){} }); }
+function svKillCredit(p, e){ if(!p || e.kind==='pod') return; e.lp = p; if(!p.down){ const kh = svStKill(p); if(kh > 0) svHeal(p, p, kh, 'ls'); } svSt(p, 'kills', 1); if(e.kind==='elite') svSt(p, 'elite', 1); } // (1.0.0) 즉사, 화상, 장판으로 잡아도 처치 회복(송곳니)과 통계, 불씨(e.lp)가 붙게 (Fable 리뷰 11/12)
+function svExec(p, e, col){ if(p) e.lp = p; svHit(e, e.hp + 1, col, true); if(p && e.hp <= 0) svKillCredit(p, e); }
 function svKill(e, col){
   const G = sv.game;
   if(e.kind==='pod'){ svFx({ k:'boom', x:e.x, y:e.y, t:0, d:0.3, col:'#ffd557', r:28 }); for(let k=0;k<10;k++){ const a = Math.random()*6.28, v = 60 + Math.random()*90; svPart(e.x, e.y, Math.cos(a)*v, Math.sin(a)*v, k%2 ? '#c98a4a' : '#ffd557', 0.5, 3); } // 상자 부서짐 → 보상이 흩어짐 (경험치처럼 끌어와 주움)
@@ -5797,7 +5799,7 @@ function svAttack(p, w, dt){
     if(w.evo==='fang') tg.forEach(e=>{ e.bmk = G.t + 1.0; (G.later = G.later || []).push({ t:1.0, f:()=>{ const x = e.x, y = e.y, R = 50*ar; svFx({ k:'dburst', x:Math.round(x), y:Math.round(y), t:0, d:0.35, ro:Math.round(Math.random()*628)/100, fl:1 }); let n = 0; G.en.forEach(o=>{ if(o.hp>0 && Math.hypot(o.x-x, o.y-y) < R + o.r){ svHitBy(p, o, 18*m, '#ff2a4a'); n++; } }); if(n){ const hh = Math.round(n*(1 + lv*0.3)*svAtkK(p)*10)/10; svHeal(p, p, hh, 'ls'); svFx({ k:'num', x:p.x, y:p.y - 24, t:0, d:0.6, s:'+'+hh, col:'#ff6b8a', sz:10 }); } } }); }); /* (build 595) 피의 낙인(흡혈 송곳니) */
     const h = (1 + lv*0.4)*(w.evo==='multi' ? 1.5 : 1)*tg.length*svAtkK(p); svHeal(p, p, h, 'ls'); /* (build 543) 공격력 비례 */ }
   else if(id==='dark_a_2'){ if(w.soulT < G.t) w.soul = 0; const R = (72 + lv*5)*ar*(w.evo==='axe' ? 1 + 0.04*(w.soul||0) : 1); svFx({ k:'scythe', x:Math.round(p.x), y:Math.round(p.y), t:0, d:0.3, col, r:Math.round(R), ro:Math.round(Math.random()*628)/100, fl:Math.random() < 0.5 ? -1 : 1 });
-    inR(R).forEach(e=>{ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*lv) (sv.locOn ? svLocHit(p, e, -1, col, true) : svHit(e, e.hp+1, col, true)); else hit(e, 20*m); if(w.evo==='axe' && e.hp <= 0){ w.soul = Math.min(10, (w.soul||0) + 1); w.soulT = G.t + 6; svFx({ k:'soul', x0:Math.round(e.x), y0:Math.round(e.y), pi:p.i, t:0, d:0.45 }); } }); } /* (build 595) 영혼 수확(처형인의 도끼) — 거둘수록 낫이 커짐 */
+    inR(R).forEach(e=>{ if(e.kind!=='boss' && e.hp/e.max < 0.12 + 0.03*lv) (sv.locOn ? svLocHit(p, e, -1, col, true) : svExec(p, e, col)); else hit(e, 20*m); if(w.evo==='axe' && e.hp <= 0){ w.soul = Math.min(10, (w.soul||0) + 1); w.soulT = G.t + 6; svFx({ k:'soul', x0:Math.round(e.x), y0:Math.round(e.y), pi:p.i, t:0, d:0.45 }); } }); } /* (build 595) 영혼 수확(처형인의 도끼) — 거둘수록 낫이 커짐 */
   else if(id==='dark_b_1'){ const K0 = SV_BNC[Math.min(4, lv - 1)], K = [w.evo==='multi' ? 1 : K0[0], K0[1] + svProj(p) + (w.evo==='multi' ? 1 : 0)] /* (build 593) 저주 깃털은 투사체 수만큼 깃털이 아니라 튕기는 횟수가 늘어남 (사용자 10/30) */, near = G.en.filter(o=>o.hp>0 && Math.hypot(o.x-p.x, o.y-p.y) < 280); if(!near.length){ w.cd = 0.3; return; } // (build 584) 칠흑조 — 적 사이를 튕기는 검은 깃털 [깃털, 튕김] · 진화는 튕길 때 보라 폭발 (미리보기 확정본) · 치명타 +50% (짝: 숫돌)
     near.sort(()=>Math.random() - 0.5); for(let k=0;k<K[0];k++){ const e = near[k % near.length]; G.pr.push({ x:p.x, y:p.y - 8, e, sp:520, kind:'bnc', left:K[1], seen:[e], dmg:8*m, curse:4, col, crit:cr, burst:0, split: w.evo==='multi' ? 1 : 0, grow: w.evo==='axe' ? 1.5 : 0, p, dl:k*0.08 }); /* (build 595) 흉조의 깃(쌍둥이 거울) 갈라짐 · 까마귀 사형(도끼) 피해 증가 */ } }
   else if(id==='dark_b_2'){ const e = svDense(p, 260); if(!e){ w.cd = 0.4; return; } G.pools.push({ x:e.x, y:e.y, R:(50 + lv*5)*ar, t:0, d:1.6, dps:8*m, pull:true, greed: w.evo==='greed' ? 1 : 0, end:30*m, col:'#7a3cff', p, sg:Math.random() < 0.5 ? -1 : 1, ro:Math.random()*6.28 }); }
@@ -5858,7 +5860,7 @@ function svWeapTick(dt){ const G = sv.game;
     if(o.greed){ const R2 = o.R*2.2; G.gems.concat(G.loot.filter(l=>l.k==='gold')).forEach(g=>{ const d = Math.hypot(g.x-o.x, g.y-o.y); if(d > R2) return; if(o.t > o.d - 0.12){ g.x = o.p.x; g.y = o.p.y; } else if(d > 2){ g.x += (o.x-g.x)/d*Math.min(d, 260*dt); g.y += (o.y-g.y)/d*Math.min(d, 260*dt); } }); } /* (build 595) 탐욕의 구멍 */
     G.en.forEach(e=>{ if(e.hp<=0) return; const d = Math.hypot(e.x-o.x, e.y-o.y); if(o.spring || o.sprout || o.dome || o.wall){ svPoolSp(o, e, d, dt); if(!(o.spring && o.dps)) return; }
       if(o.pull && d < o.R*1.6 && d > 4 && e.kind!=='boss'){ e.x += (o.x-e.x)/d*90*dt; e.y += (o.y-e.y)/d*90*dt; }
-      if(d < o.R + e.r){ const dd = o.dps*dt*(e.curse > 0 ? 1.25 : 1); if(sv.locOn) svLocDot(e, dd, o.col); else { if(o.p && e.kind!=='pod') svSt(o.p, 'dmg', Math.min(dd, Math.max(0, e.hp))); e.hp -= dd; } /* (build 570) 친구 기기는 장판 피해를 모아 방장에게 */ e.fl = Math.max(e.fl, 0.03); if(o.web) e.web = Math.max(e.web||0, 0.3); if(o.wev && e.kind!=='boss') e.root = Math.max(e.root||0, 0.1); /* (build 509) 진화 거미줄 — 꼼짝 못 함 (짝: 서리 결정) */ if(e.hp<=0) svKill(e, o.col); } });
+      if(d < o.R + e.r){ const dd = o.dps*dt*(e.curse > 0 ? 1.25 : 1); if(sv.locOn) svLocDot(e, dd, o.col); else { if(o.p && e.kind!=='pod') svSt(o.p, 'dmg', Math.min(dd, Math.max(0, e.hp))); e.hp -= dd; } /* (build 570) 친구 기기는 장판 피해를 모아 방장에게 */ e.fl = Math.max(e.fl, 0.03); if(o.web) e.web = Math.max(e.web||0, 0.3); if(o.wev && e.kind!=='boss') e.root = Math.max(e.root||0, 0.1); /* (build 509) 진화 거미줄 — 꼼짝 못 함 (짝: 서리 결정) */ if(e.hp<=0){ if(o.p) svKillCredit(o.p, e); svKill(e, o.col); } } });
     if(o.pull && o.t >= o.d && !o.burst){ o.burst = true; svFx({ k:'boom', x:o.x, y:o.y, t:0, d:0.35, col:o.col, r:o.R }); G.en.forEach(e=>{ if(e.hp>0 && Math.hypot(e.x-o.x, e.y-o.y) < o.R + e.r) svHitBy(o.p, e, o.end, o.col); }); } });
   (G.sweeps||[]).forEach(w=>{ const p = w.p, f0 = Math.min(1, w.t/w.d); w.t += dt; const f1 = Math.min(1, w.t/w.d), A = w.a0 != null ? w.a0 : -2.04, S = w.sp != null ? w.sp : 4.0, L0 = A + S*svClawE(f0), L1 = A + S*svClawE(f1); // (build 491) 발톱 끝이 지나가는 각도와 같게(처음 빠르고 끝에 느려짐) — 이번 틱에 지난 각도(그림 기준) · 맞는 건 앞쪽 ±half 안
     G.en.forEach(e=>{ if(e.hp<=0 || w.hit.includes(e)) return; const dx = e.x-p.x, dy = e.y-p.y, d = Math.hypot(dx, dy); if(d > w.R*1.4 + e.r) return;
@@ -5954,7 +5956,7 @@ function svTick(dt){
   if(!G.end && G.t >= SV_T_END){ G.end = true; svSpawnBoss(SV_MAPS[G.stage||0].fin, true); }
   const alive = G.players.filter(p=>!p.down);
   G.en.forEach(e=>{ if(e.hp<=0) return; if(e.kind==='pod'){ if(e.fl>0) e.fl -= dt; return; } if(e.fl>0) e.fl -= dt; if(e.iceT>0) e.iceT -= dt; if(e.slow>0) e.slow -= dt; if(e.web>0) e.web -= dt; if(e.curse>0) e.curse -= dt;
-    if(e.burn > 0){ e.burn -= dt; if(e.lp) svSt(e.lp, 'dmg', Math.min(e.bdps*dt, Math.max(0, e.hp))); e.hp -= e.bdps*dt; if(e.hp<=0){ svKill(e, SV_EC.fire); return; } }
+    if(e.burn > 0){ e.burn -= dt; if(e.lp) svSt(e.lp, 'dmg', Math.min(e.bdps*dt, Math.max(0, e.hp))); e.hp -= e.bdps*dt; if(e.hp<=0){ if(e.lp) svKillCredit(e.lp, e); svKill(e, SV_EC.fire); return; } }
     if(e.sqT > 0) e.sqT -= dt; if(e.kvx || e.kvy){ e.x += e.kvx*dt; e.y += e.kvy*dt; const dm = Math.exp(-14*dt); e.kvx *= dm; e.kvy *= dm; if(Math.abs(e.kvx) + Math.abs(e.kvy) < 6) e.kvx = e.kvy = 0; svCollide(e, e.r); } // (build 502) 물결에 밀려남
     if(e.frz>0){ e.frz -= dt; return; } if(e.root>0){ e.root -= dt; return; } // (build 504) 거미줄 덫에 묶임
     const tg = alive.length ? alive.reduce((a,b)=> Math.hypot(b.x-e.x, b.y-e.y) < Math.hypot(a.x-e.x, a.y-e.y) ? b : a) : null; if(!tg) return;
@@ -6204,8 +6206,8 @@ function svLocBatch(){ const L = sv.loc, dot = Object.keys(L.dot).map(id=>[+id, 
 function svHostLoc(i, p, a){ const G = sv.game, now = performance.now();
   if(a.hb && typeof a.hb==='object'){ let ids = null; const E = id=>{ if(!ids){ ids = new Map(); G.en.forEach(e=>{ if(e.id != null) ids.set(e.id, e); }); } return ids.get(id); };
     sv.fxOwner = i; try{ Object.values(a.hb).sort((x, y)=>(x && x.s||0) - (y && y.s||0)).forEach(B=>{ if(!B || !(B.s > (p.hitSeq||0))) return; p.hitSeq = B.s; const A = v=>v ? Object.values(v) : [];
-      A(B.h).forEach(h=>{ const e = E(h[0]); if(!e || !(e.hp > 0) || !Number.isFinite(h[1])) return; if(h[1] === -1){ if(e.kind!=='boss' && e.kind!=='pod') svHit(e, e.hp+1, h[3], true); } else svHitBy(p, e, Math.min(h[1], 1e6), h[3], !!h[2]); });
-      A(B.d).forEach(([id, v, col])=>{ const e = E(id); if(!e || !(e.hp > 0) || !(v > 0)) return; if(e.kind!=='pod') svSt(p, 'dmg', Math.min(v, e.hp)); e.hp -= Math.min(v, 1e5); e.fl = Math.max(e.fl||0, 0.03); if(e.hp<=0) svKill(e, col); }); /* 장판 피해 */
+      A(B.h).forEach(h=>{ const e = E(h[0]); if(!e || !(e.hp > 0) || !Number.isFinite(h[1])) return; if(h[1] === -1){ if(e.kind!=='boss' && e.kind!=='pod') svExec(p, e, h[3]); } else svHitBy(p, e, Math.min(h[1], 1e6), h[3], !!h[2]); });
+      A(B.d).forEach(([id, v, col])=>{ const e = E(id); if(!e || !(e.hp > 0) || !(v > 0)) return; if(e.kind!=='pod') svSt(p, 'dmg', Math.min(v, e.hp)); e.hp -= Math.min(v, 1e5); e.fl = Math.max(e.fl||0, 0.03); if(e.hp<=0){ svKillCredit(p, e); svKill(e, col); } }); /* 장판 피해 */
       A(B.st).forEach(([id, s])=>{ const e = E(id); if(!e || e.hp<=0 || !s) return; if(e.kind!=='boss' && e.kind!=='pod' && Number.isFinite(s.dx)){ e.x += s.dx; e.y += s.dy; svCollide(e, e.r); }
         ['slow', 'frz', 'web', 'root', 'curse'].forEach(k=>{ if(Number.isFinite(s[k])) e[k] = Math.max(e[k]||0, s[k]); }); if(s.burn) svBurn(e, s.bdps||0, s.burn); if(Number.isFinite(s.kvx) && e.kind!=='boss' && e.kind!=='pod'){ e.kvx = s.kvx; e.kvy = s.kvy||0; } });
       A(B.hl).forEach(([j, dh, sh])=>{ const q = G.players[j]; if(!q || q.down) return; if(dh > 0) svHeal(p, q, Math.min(dh, q.maxHp), 'sk'); if(sh > 0) q.shield = Math.max(q.shield||0, Math.min(sh, q.maxHp*2)); });
@@ -7650,7 +7652,7 @@ raidInitNet();
 
 // ===================== (v263) 업데이트 버튼 · 뒤로가기 =====================
 // APP_BUILD는 sw.js 의 CACHE 숫자와 같게 올림 — 서버의 sw.js 숫자가 더 크면 새 버전
-const APP_BUILD = 710, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
+const APP_BUILD = 711, APP_VERSION = '1.0.0'; // (1.0.0) 서바이벌이 본 게임이 되며 1.0.0부터 새로 셈 (사용자 결정 11/06) — 예전 기기(10.x)는 앞자리가 낮아 보여도 sw.js MIN_BUILD로 강제 업데이트 // (v276) 보이는 버전은 APP_VERSION — sw.js의 APP_VERSION과 같게
 // (v263) 내부 번호(APP_BUILD)는 sw.js 캐시 숫자와 같게 1씩 올림 · (v276) 보이는 버전(APP_VERSION)은 따로 — 새 콘텐츠 3.00 · 기존 콘텐츠 큰 업데이트 2.80 · 자잘한 업데이트 2.77
 var buildVer = {}; buildVer[APP_BUILD] = APP_VERSION;
 function verTxt(n){ return 'v'+(buildVer[n] || (n/100).toFixed(2)); }
